@@ -35,7 +35,7 @@ struct SearchDeltaNeighborhoodError : public std::exception
     }
 };
 
-struct SearchDeltaError : public std::exception
+struct SearchDeltaTrustRegionError : public std::exception
 {
     virtual const char* what() const throw()
     {
@@ -46,7 +46,7 @@ struct SearchDeltaError : public std::exception
     }
 };
 
-struct SearchDeltaRestorationError : public std::exception
+struct SearchDeltaTrustRegionRestorationError : public std::exception
 {
     virtual const char* what() const throw()
     {
