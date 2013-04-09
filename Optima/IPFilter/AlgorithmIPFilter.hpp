@@ -30,14 +30,52 @@ public:
 
     AlgorithmIPFilter();
 
-    double CalculateLargestDelta(const State& state) const;
+    void SetParams(const Params& params);
 
-    double CalculateBacktrackingDelta(const State& state) const;
+    void SetOptions(const Options& options);
+
+    void SetProblem(const OptimumProblem& problem);
+
+    void Initialise(const State& state);
+
+    void Solve() throw(MaxIterationError);
+
+private:
+
+    void SetState(const VectorXd& x, const VectorXd& y, const VectorXd& z, State& state) const;
+
+    void UpdateNextState(double delta);
+
+    void AcceptTrialPoint();
+
+    /// Calculates the largest trust-region radius that satisfies the positivity conditions
+    double CalculateLargestDelta() const;
+
+    /// Searches for a trust-region radius that satisfies the centrality neighborhood conditions
+    void SearchDeltaNeighborhood() throw(SearchDeltaNeighborhoodError);
+
+    void SearchDelta() throw(SearchDeltaError);
+
+    void SearchDeltaRestoration() throw(SearchDeltaRestorationError);
+
+    void ComputeSteps();
+
+    void SolveRestoration() throw(MaxIterationError);
+
+    double CalculateNextLinearModel() const;
+
+    double CalculateSigma() const;
+
+    bool PassStoppingCriteria() const;
+
+    bool PassRestorationCondition() const;
+
+    bool PassFilterCondition() const;
 
 public:
     struct Options
     {
-        OptimalityMeasure psi;
+        unsigned psi_scheme;
 
         unsigned max_iter;
 
@@ -49,106 +87,69 @@ public:
      */
     struct State
     {
-        State(const OptimumProblem& problem, const Params& params, const Options& options);
-
-        void Initialise(const VectorXd& x, const VectorXd& y, const VectorXd& z);
-
-        /// Updates all quantities that are dependent on delta
-        void UpdateDelta(double delta);
-
-        void AcceptTrialPoint();
-
-        /// Calculates the largest trust-region radius that satisfies the positivity conditions
-        double CalculateLargestDelta() const;
-
-        /// Searches for a trust-region radius that satisfies the centrality neighborhood conditions
-        void SearchDeltaNeighborhood() throw(SearchDeltaNeighborhoodError);
-
-        void SearchDelta() throw(SearchDeltaError);
-
-        void SearchDeltaRestoration() throw(SearchDeltaRestorationError);
-
-        void ComputeSteps();
-
-        void SolveRestoration() throw(MaxIterationError);
-
-        void Solve() throw(MaxIterationError);
-
-        double CalculatePsi() const;
-
-        double CalculateLinearModel() const;
-
-        bool PassStoppingCriteria() const;
-
-        bool PassRestorationCondition() const;
-
-        bool PassFilterCondition() const;
-
-        unsigned dimx, dimy;
-
-        const OptimumProblem& problem;
-
-        const Params& params;
-
-        const Options& options;
-
-        VectorXd snx, stx;
-
-        VectorXd sny, sty;
-
-        VectorXd snz, stz;
-
-        double norm_sn, norm_st;
-
-        Filter filter;
-
-        double alpha_n, alpha_t;
-
-        double delta;
-
-        double delta_max;
+        State();
 
         VectorXd x, y, z;
 
-        VectorXd x_old, y_old, z_old;
+        ObjectiveState f;
 
-        ObjectiveState f, f_old;
+        ConstraintState h;
 
-        ConstraintState h, h_old;
-
-        double mu, mu_old;
+        double mu;
 
         double thh, thc, thl;
 
-        double thh_old, thc_old, thl_old;
+        double theta;
 
-        double theta, theta_old;
-
-        double psi, psi_old;
-
-        double m, m_old;
-
-        double c;
-
-        double sigma;
-
-        double gamma;
-
-        double M;
-
-        unsigned iter;
-
-        PartialPivLU<MatrixXd> lu;
-
-        MatrixXd lhs;
-
-        VectorXd rhs, u;
-
-        MatrixXd H;
+        double psi;
     };
 
 private:
     OptimumProblem problem;
+
+    Params params;
+
+    Options options;
+
+    unsigned dimx, dimy;
+
+    State curr, next;
+
+    VectorXd snx, stx;
+
+    VectorXd sny, sty;
+
+    VectorXd snz, stz;
+
+    double norm_sn, norm_st;
+
+    double alphan, alphat;
+
+    Filter filter;
+
+    double delta;
+
+    double delta_max;
+
+    double c;
+
+    double gamma;
+
+    double M;
+
+    unsigned iter;
+
+    bool restoration;
+
+    bool safe_step;
+
+    PartialPivLU<MatrixXd> lu;
+
+    MatrixXd lhs;
+
+    VectorXd rhs, u;
+
+    MatrixXd H;
 };
 
 } /* namespace IPFilter */

@@ -37,7 +37,9 @@ double CalculateLargestBoundaryStep(const VectorXd& p, const VectorXd& dp)
 }
 
 /// Calculate the step length t that solves the family of quadratic functions f_i(t)
-double CalculateLargestQuadraticStep(const VectorXd& a, const VectorXd& b, const VectorXd& c, const VectorXd& d, unsigned n, double gamma)
+double CalculateLargestQuadraticStep(
+    const VectorXd& a, const VectorXd& b,
+    const VectorXd& c, const VectorXd& d, unsigned n, double gamma)
 {
     const VectorXd a1 = b.array() * d.array() * n - b.dot(d) * gamma;
     const VectorXd a2 = (a.array() * d.array() + b.array() * c.array()) * n - (a.dot(d) + b.dot(c)) * gamma;
@@ -72,51 +74,91 @@ bool AnyFloatingPointException(const ConstraintState& h)
     else return true;
 }
 
-AlgorithmIPFilter::State::State(const OptimumProblem& problem, const Params& params, const Options& options)
-: dimx(problem.dim_objective), dimy(problem.dim_constraint),
-  problem(problem), params(params), options(options)
-{
-    const unsigned dim = dimx + dimy;
+AlgorithmIPFilter::State::State()
+{}
 
-    lhs.resize(dim, dim);
-    rhs.resize(dim);
+AlgorithmIPFilter::AlgorithmIPFilter()
+{}
+
+void AlgorithmIPFilter::SetParams(const Params& params)
+{
+    this->params = params;
 }
 
-void AlgorithmIPFilter::State::Initialise(const VectorXd& x_, const VectorXd& y_, const VectorXd& z_)
+void AlgorithmIPFilter::SetOptions(const Options& options)
 {
-    x = x_old = x_;
-    y = y_old = y_;
-    z = z_old = z_;
+    this->options = options;
+}
 
-    f = f_old = problem.objective(x_old);
-    h = h_old = problem.constraint(x_old);
-
-
-
-
+void AlgorithmIPFilter::Initialise(const State& state)
+{
+    // Initialise the current and next states
+    curr = next = state;
 
     // Initialise the value of the parameter gamma
-    gamma = std::min(params.gamma_min, x.cwiseProduct(z).minCoeff()/(2.0*mu));
+    gamma = std::min(params.gamma_min, curr.x.cwiseProduct(curr.z).minCoeff()/(2.0*curr.mu));
 
     // Initialise the value of the parameter c
-    const double sig = params.sigma_slow;
-    c = 3 * dimx/(1 - sig) * std::pow(std::max(1.0, (1 - sig)/gamma), 2);
+    c = 3*dimx/(1 - params.sigma_slow)*std::pow(std::max(1.0, (1 - params.sigma_slow)/gamma), 2);
 
     // Initialise the value of the neighborhood parameter M
-    const double Mcirc = params.neighM_max;
-    const double alphM = params.alphaM;
-    M = std::max(Mcirc, alphM*(thh + thl)/mu);
+    M = std::max(params.neighM_max, params.alphaM*(curr.thh + curr.thl)/curr.mu);
 }
 
-double AlgorithmIPFilter::State::CalculateLargestDelta() const
+void AlgorithmIPFilter::SetState(const VectorXd& x, const VectorXd& y, const VectorXd& z, State& state) const
+{
+    // Initialise the iterates x, y and z
+    state.x = x;
+    state.y = y;
+    state.z = z;
+
+    // Initialise the objective and constraint state at x0
+    state.f = problem.objective(x);
+    state.h = problem.constraint(x);
+
+    // Initialise the barrier parameter at (x,y,z)
+    state.mu = x.dot(z)/dimx;
+
+    // Initialise the auxiliary optimality theta measures at (x,y,z)
+    state.thc = (x.array() * z.array() - state.mu).matrix().norm();
+    state.thh = (state.h.func).norm();
+    state.thl = (state.f.grad + state.h.grad.transpose() * y - z).norm();
+
+    // Initialise the feasibility/centrality theta measure at (x,y,z)
+    state.theta = state.thh + state.thc;
+
+    // Initialise the optimality psi measure at (x,y,z)
+    state.psi = (options.psi_scheme == 0) ?
+        state.f.func + c * state.mu :
+        state.f.func + c * state.mu + state.h.func.dot(y);
+}
+
+void AlgorithmIPFilter::UpdateNextState(double del)
+{
+    // Update the delta value
+    delta = del;
+
+    // Update the normal and tangencial step lengths
+    alphan = std::min(1.0, delta/norm_sn);
+    alphat = std::min(alphan, delta/norm_st);
+
+    // Update the iterates x(delta), y(delta), and z(delta)
+    next.x.noalias() = curr.x + alphan * snx + alphat * stx;
+    next.y.noalias() = curr.y + alphan * sny + alphat * sty;
+    next.z.noalias() = curr.z + alphan * snz + alphat * stz;
+
+    SetState(next.x, next.y, next.z, next);
+}
+
+double AlgorithmIPFilter::CalculateLargestDelta() const
 {
     // Define some auxiliary variables
-    const auto& n    = problem.dim_objective;
+    const auto& n    = dimx;
     const auto& ones = VectorXd::Ones(n);
 
     // The vectors x(delta) and z(delta) assuming that both alpha_n and alpha_t are 1
-    const VectorXd xcirc = x_old + snx + stx;
-    const VectorXd zcirc = z_old + snz + stz;
+    const VectorXd xcirc = curr.x + snx + stx;
+    const VectorXd zcirc = curr.z + snz + stz;
 
     // Check if the Trivial Case is satisfied, where alpha_n = alpha_n = 1 yields positivity condition
     if(xcirc.minCoeff() > 0 and zcirc.minCoeff() > 0)
@@ -124,15 +166,15 @@ double AlgorithmIPFilter::State::CalculateLargestDelta() const
             return infinity;
 
     // Calculate the auxiliary vectors a and b for Case I
-    const VectorXd aI = x_old + snx;
+    const VectorXd aI = curr.x + snx;
     const VectorXd bI = stx/norm_st;
-    const VectorXd cI = z_old + snz;
+    const VectorXd cI = curr.z + snz;
     const VectorXd dI = stz/norm_st;
 
     // Calculate the auxiliary vectors a and b for Case II
-    const VectorXd&aII = x_old;
+    const VectorXd&aII = curr.x;
     const VectorXd bII = snx/norm_sn + stx/std::max(norm_sn, norm_st);
-    const VectorXd&cII = z_old;
+    const VectorXd&cII = curr.z;
     const VectorXd dII = snz/norm_sn + stz/std::max(norm_sn, norm_st);
 
     // Calculate the auxiliary delta values for Case I
@@ -146,15 +188,15 @@ double AlgorithmIPFilter::State::CalculateLargestDelta() const
     const double delta_xzII = CalculateLargestQuadraticStep(aII, bII, cII, dII, n, gamma);
 
     // Calculate the minimum among all auxiliary delta values for Case I and II
-    const double delta = std::min({delta_xI, delta_zI, delta_xII, delta_zII, delta_xzI, delta_xzII});
+    const double aux_delta = std::min({delta_xI, delta_zI, delta_xII, delta_zII, delta_xzI, delta_xzII});
 
     // Calculate the adjustment factor tau
-    const double tau = 1.0 - std::min(0.01, 100.0*mu_old*mu_old);
+    const double tau = 1.0 - std::min(0.01, 100.0 * curr.mu * curr.mu);
 
-    return tau*delta;
+    return tau*aux_delta;
 }
 
-void AlgorithmIPFilter::State::SearchDeltaNeighborhood() throw(SearchDeltaNeighborhoodError)
+void AlgorithmIPFilter::SearchDeltaNeighborhood() throw(SearchDeltaNeighborhoodError)
 {
     // Calculate the largest delta that solves the positivity conditions
     const double delta_largest = CalculateLargestDelta();
@@ -165,7 +207,7 @@ void AlgorithmIPFilter::State::SearchDeltaNeighborhood() throw(SearchDeltaNeighb
     while(true)
     {
         // Update the members that are dependent on delta
-        UpdateDelta(delta_trial);
+        UpdateNextState(delta_trial);
 
         // Decrease the current value of the trial delta
         delta_trial *= params.delta_decrease_factor;
@@ -175,29 +217,33 @@ void AlgorithmIPFilter::State::SearchDeltaNeighborhood() throw(SearchDeltaNeighb
             throw SearchDeltaNeighborhoodError();
 
         // Check if the current delta results results in any IEEE floating point exception
-        if(AnyFloatingPointException(f) or AnyFloatingPointException(h))
+        if(AnyFloatingPointException(next.f) or AnyFloatingPointException(next.h))
             continue;
 
         // Check if the current delta results in a point (x,y,z) that pass the centrality neighborhood condition
-        if(thh + thl <= M*mu)
+        if(next.thh + next.thl <= M * next.mu)
             break;
     }
 }
 
-void AlgorithmIPFilter::State::SearchDelta() throw(SearchDeltaError)
+void AlgorithmIPFilter::SearchDelta() throw(SearchDeltaError)
 {
     while(true)
     {
+        // Calculate the linear model at the current and next states
+        const double curr_m = curr.psi;
+        const double next_m = CalculateNextLinearModel();
+
         // Check if the current trust-region radius is less than the allowed minimum
         if(delta < params.delta_min)
             throw SearchDeltaError();
 
-        if(m_old - m < params.kappa*theta_old*theta_old)
+        if(curr_m - next_m < params.kappa * curr.theta * curr.theta)
         {
-            const double beta_theta = theta_old * (1 - params.alpha_theta);
-            const double beta_psi   = psi_old - params.alpha_psi*theta_old;
+            const double beta_theta = curr.theta * (1 - params.alpha_theta);
+            const double beta_psi = curr.psi - params.alpha_psi * curr.theta;
 
-            if((theta < beta_theta or psi < beta_psi) and filter.IsAcceptable({theta, psi}))
+            if((next.theta < beta_theta or next.psi < beta_psi) and filter.IsAcceptable({next.theta, next.psi}))
             {
                 // Increase the current maximum trust-region radius
                 delta_max *= params.delta_increase_factor;
@@ -206,13 +252,13 @@ void AlgorithmIPFilter::State::SearchDelta() throw(SearchDeltaError)
                 filter.Add({beta_theta, beta_psi});
 
                 // Reset the Lagrange multipliers z
-                const double aux1 = mu*params.kappa_zreset;
-                const double aux2 = mu/params.kappa_zreset;
-                z = z.array().min(aux1/x.array()).max(aux2/x.array());
+                const double aux1 = next.mu*params.kappa_zreset;
+                const double aux2 = next.mu/params.kappa_zreset;
+                next.z = next.z.array().min(aux1/next.x.array()).max(aux2/next.x.array());
 
                 // Update the neighborhood parameter M
-                if(thh + thl > mu * params.epsilonM * M)
-                    M = std::max(params.neighM_max, params.alphaM*(thh + thl)/mu);
+                if(next.thh + next.thl > next.mu * params.epsilonM * M)
+                    M = std::max(params.neighM_max, params.alphaM*(next.thh + next.thl)/next.mu);
 
                 // Trial point has been found: leave loop
                 break;
@@ -221,21 +267,21 @@ void AlgorithmIPFilter::State::SearchDelta() throw(SearchDeltaError)
         else
         {
             // Calculate the ratio of decrease in actual and predicted optimality
-            const double rho = (psi_old - psi)/(m_old - m);
+            const double rho = (curr.psi - next.psi)/(curr_m - next_m);
 
-            if(rho > params.eta_small and filter.IsAcceptable({theta, psi}))
+            if(rho > params.eta_small and filter.IsAcceptable({next.theta, next.psi}))
             {
                 // Increase the current maximum trust-region radius
                 if(rho > params.eta_large) delta_max *= params.delta_increase_factor;
 
                 // Reset the Lagrange multipliers z
-                const double aux1 = mu*params.kappa_zreset;
-                const double aux2 = mu/params.kappa_zreset;
-                z = z.array().min(aux1/x.array()).max(aux2/x.array());
+                const double aux1 = next.mu*params.kappa_zreset;
+                const double aux2 = next.mu/params.kappa_zreset;
+                next.z = next.z.array().min(aux1/next.x.array()).max(aux2/next.x.array());
 
                 // Update the neighborhood parameter M
-                if(thh + thl > mu * params.epsilonM * M)
-                    M = std::max(params.neighM_max, params.alphaM*(thh + thl)/mu);
+                if(next.thh + next.thl > next.mu * params.epsilonM * M)
+                    M = std::max(params.neighM_max, params.alphaM*(next.thh + next.thl)/next.mu);
 
                 // Trial point has been found: leave loop
                 break;
@@ -243,19 +289,19 @@ void AlgorithmIPFilter::State::SearchDelta() throw(SearchDeltaError)
         }
 
         // Decrease the trust-region radius
-        UpdateDelta(params.delta_decrease_factor * delta);
+        UpdateNextState(params.delta_decrease_factor * delta);
     }
 }
 
-void AlgorithmIPFilter::State::SearchDeltaRestoration() throw(SearchDeltaRestorationError)
+void AlgorithmIPFilter::SearchDeltaRestoration() throw(SearchDeltaRestorationError)
 {
     // Calculate the optimality measure of the restoration algorithm at w
-    const double theta2_old = (thh_old*thh_old + thc_old*thc_old)/2.0;
+    const double curr_theta2 = (curr.thh*curr.thh + curr.thc*curr.thc)/2.0;
 
     // Calculate the d/dx and d/dz derivatives of 1/2*thh^2 and 1/2*thc^2
-    const auto& ddx_thh2 = h_old.grad.transpose() * h_old.func;
-    const auto& ddx_thc2 = (z_old.array() * (x_old.array() * z_old.array() - mu_old)).matrix();
-    const auto& ddz_thc2 = (x_old.array() * (x_old.array() * z_old.array() - mu_old)).matrix();
+    const auto& ddx_thh2 = curr.h.grad.transpose() * curr.h.func;
+    const auto& ddx_thc2 = (curr.z.array() * (curr.x.array() * curr.z.array() - curr.mu)).matrix();
+    const auto& ddz_thc2 = (curr.x.array() * (curr.x.array() * curr.z.array() - curr.mu)).matrix();
 
     // Calculate the dot product of grad(theta2) with the normal step sn
     const double grad_theta2_dot_sn = (ddx_thh2 + ddx_thc2).dot(snx) + ddz_thc2.dot(snz);
@@ -263,10 +309,10 @@ void AlgorithmIPFilter::State::SearchDeltaRestoration() throw(SearchDeltaRestora
     while(true)
     {
         // Calculate the optimality measure of the restoration algorithm at w(delta)
-        const double theta2 = (thh*thh + thc*thc)/2.0;
+        const double next_theta2 = (next.thh*next.thh + next.thc*next.thc)/2.0;
 
         // Calculate the ratio of decrease in actual and predicted of theta2
-        const double rho = (theta2_old - theta2)/(-grad_theta2_dot_sn);
+        const double rho = (curr_theta2 - next_theta2)/(-grad_theta2_dot_sn);
 
         // Increase the current maximum trust-region radius
         if(rho > params.xi2) delta_max = delta * params.delta_increase_factor;
@@ -276,7 +322,7 @@ void AlgorithmIPFilter::State::SearchDeltaRestoration() throw(SearchDeltaRestora
             break;
 
         // Decrease the current trust-region radius and update all delta dependent quantities
-        UpdateDelta(delta * params.delta_decrease_factor);
+        UpdateNextState(delta * params.delta_decrease_factor);
 
         // Check if delta is now less than the allowed minimum
         if(delta < params.delta_min)
@@ -284,86 +330,37 @@ void AlgorithmIPFilter::State::SearchDeltaRestoration() throw(SearchDeltaRestora
     }
 }
 
-void AlgorithmIPFilter::State::UpdateDelta(double value)
+void AlgorithmIPFilter::AcceptTrialPoint()
 {
-    // Update the delta member
-    delta = value;
-
-    // Update the normal and tangencial step lengths
-    alpha_n = std::min(1.0, delta/norm_sn);
-    alpha_t = std::min(alpha_n, delta/norm_st);
-
-    // Update the iterates x(delta), y(delta), and z(delta)
-    x = x_old + alpha_n * snx + alpha_t * stx;
-    y = y_old + alpha_n * sny + alpha_t * sty;
-    z = z_old + alpha_n * snz + alpha_t * stz;
-
-    // Update the objective and constraint state at x(delta)
-    f = problem.objective(x);
-    h = problem.constraint(x);
-
-    // Update the barrier parameter at (x(delta),y(delta),z(delta))
-    mu = x.dot(z)/dimx;
-
-    // Update the auxiliary optimality theta measures at (x(delta),y(delta),z(delta))
-    thc = (x.array() * z.array() - mu).matrix().norm();
-    thh = (h.func).norm();
-    thl = (f.grad + h.grad.transpose() * y - z).norm();
-
-    // Update the feasibility/centrality theta measure at (x(delta),y(delta),z(delta))
-    theta = thh + thc;
-
-    // Update the optimality psi measure at (x(delta),y(delta),z(delta))
-    psi = CalculatePsi();
-
-    // Update the linear model m(w(Delta))
-    m = CalculateLinearModel();
+    curr = next; ++iter;
 }
 
-void AlgorithmIPFilter::State::AcceptTrialPoint()
-{
-    x_old     = x;
-    y_old     = y;
-    z_old     = z;
-    f_old     = f;
-    h_old     = h;
-    mu_old    = mu;
-    thh_old   = thh;
-    thc_old   = thc;
-    thl_old   = thl;
-    theta_old = theta;
-    psi_old   = psi;
-    m_old     = m;
-
-    ++iter;
-}
-
-void AlgorithmIPFilter::State::ComputeSteps()
+void AlgorithmIPFilter::ComputeSteps()
 {
     // Define some auxiliary variables
     const unsigned n = dimx;
     const unsigned m = dimy;
 
     // Calculate the matrix H, which is the block(1,1) of the linear system
-    H = f_old.hessian;
+    H = curr.f.hessian;
 
-    for(unsigned i = 0; i < h_old.hessian.size(); ++i)
-        H += y_old[i] * h_old.hessian[i];
+    for(unsigned i = 0; i < curr.h.hessian.size(); ++i)
+        H += curr.y[i] * curr.h.hessian[i];
 
-    H += z_old.cwiseQuotient(x_old).asDiagonal();
+    H += curr.z.cwiseQuotient(curr.x).asDiagonal();
 
     // Assemble the coefficient matrix of the linear system
     lhs.block(0, 0, n, n) = H;
-    lhs.block(0, n, n, m) = h_old.grad.transpose();
-    lhs.block(n, 0, m, n) = h_old.grad;
+    lhs.block(0, n, n, m) = curr.h.grad.transpose();
+    lhs.block(n, 0, m, n) = curr.h.grad;
     lhs.block(n, n, m, m) = MatrixXd::Identity(m, m);
 
     // Calculate the LU decomposition of the coefficient matrix
     lu.compute(lhs);
 
     // Assemble the normal rhs vector of the linear system
-    rhs.segment(0, n) = - z_old + (mu_old/x_old.array()).matrix();
-    rhs.segment(n, m) = - h_old.func;
+    rhs.segment(0, n) = - curr.z + (curr.mu/curr.x.array()).matrix();
+    rhs.segment(n, m) = - curr.h.func;
 
     // Calculate the normal step
     u = lu.solve(rhs);
@@ -372,8 +369,11 @@ void AlgorithmIPFilter::State::ComputeSteps()
     snx = u.segment(0, n);
     sny = u.segment(n, m);
 
+    // Calculate the sigma parameter
+    const double sigma = CalculateSigma();
+
     // Assemble the tangential rhs vector of the linear system
-    rhs.segment(0, n) = - f_old.grad - h_old.grad.transpose()*y_old + z_old - ((1 - sigma)*mu_old/x.array()).matrix();
+    rhs.segment(0, n) = - curr.f.grad - curr.h.grad.transpose()*curr.y + curr.z - ((1 - sigma)*curr.mu/curr.x.array()).matrix();
     rhs.segment(n, m) = - VectorXd::Zero(m);
 
     // Calculate the tangential step
@@ -384,15 +384,15 @@ void AlgorithmIPFilter::State::ComputeSteps()
     sty = u.segment(n, m);
 
     // Calculate the z components of the normal and tangential steps
-    snz = -(z_old.array()*snx.array() + x_old.array()*z_old.array() - mu_old)/x_old.array();
-    stz = -(z_old.array()*stx.array() + mu_old*(1 - sigma))/x_old.array();
+    snz = -(curr.z.array() * snx.array() + curr.x.array() * curr.z.array() - curr.mu)/curr.x.array();
+    stz = -(curr.z.array() * stx.array() + curr.mu * (1 - sigma))/curr.x.array();
 
     // Calculate the norms of the normal and tangential steps
     norm_sn = std::sqrt(snx.squaredNorm() + sny.squaredNorm() + snz.squaredNorm());
     norm_st = std::sqrt(stx.squaredNorm() + sty.squaredNorm() + stz.squaredNorm());
 }
 
-void AlgorithmIPFilter::State::SolveRestoration() throw(MaxIterationError)
+void AlgorithmIPFilter::SolveRestoration() throw(MaxIterationError)
 {
     while(true)
     {
@@ -412,7 +412,7 @@ void AlgorithmIPFilter::State::SolveRestoration() throw(MaxIterationError)
     }
 }
 
-void AlgorithmIPFilter::State::Solve() throw(MaxIterationError)
+void AlgorithmIPFilter::Solve() throw(MaxIterationError)
 {
     while(true)
     {
@@ -429,54 +429,46 @@ void AlgorithmIPFilter::State::Solve() throw(MaxIterationError)
     }
 }
 
-double AlgorithmIPFilter::State::CalculatePsi() const
+double AlgorithmIPFilter::CalculateNextLinearModel() const
 {
-    switch(options.psi)
-    {
-    case Objective:
-        return f.func + c * mu;
-    case Lagrange:
-        return f.func + h.func.dot(y) + c * mu;
-    default:
-        return f.func + c * mu;
-    }
+    if(options.psi_scheme == 0)
+        return curr.psi + (curr.f.grad + c/dimx*curr.z).dot(next.x - curr.x) + c/dimx*curr.x.dot(next.z - curr.z);
+    else
+        return curr.psi + (curr.f.grad + curr.h.grad.transpose()*curr.y + c/dimx*curr.z).dot(next.x - curr.x) +
+            curr.h.func.dot(next.y - curr.y) + c/dimx*curr.x.dot(next.z - curr.z);
 }
 
-double AlgorithmIPFilter::State::CalculateLinearModel() const
+double AlgorithmIPFilter::CalculateSigma() const
 {
-    switch(options.psi)
-    {
-    case Objective:
-        return psi_old + (f_old.grad + c/dimx*z_old).dot(x - x_old) + c/dimx*x_old.dot(z - z_old);
-    case Lagrange:
-        return psi_old + (f_old.grad + h_old.grad.transpose()*y_old + c/dimx*z_old).dot(x - x_old) + h.func.dot(y - y_old) + c/dimx*x_old.dot(z - z_old);
-    default:
-        return psi_old + (f_old.grad + c/dimx*z_old).dot(x - x_old) + c/dimx*x_old.dot(z - z_old);
-    }
+    if(restoration) return params.sigma_restoration;
+
+    if(safe_step) return (alphat < params.safe_step_threshold_alphat) ? params.sigma_safe_max : params.sigma_safe_min;
+
+    return (curr.mu < params.mu_threshold) ? params.sigma_fast : params.sigma_slow;
 }
 
-bool AlgorithmIPFilter::State::PassStoppingCriteria() const
+bool AlgorithmIPFilter::PassStoppingCriteria() const
 {
-    const double sc = 0.01 * std::max(100.0, z.lpNorm<1>()/dimx);
-    const double sl = 0.01 * std::max(100.0, (y.lpNorm<1>() + z.lpNorm<1>())/(dimx + dimy));
+    const double sc = 0.01 * std::max(100.0, next.z.lpNorm<1>()/dimx);
+    const double sl = 0.01 * std::max(100.0, (next.y.lpNorm<1>() + next.z.lpNorm<1>())/(dimx + dimy));
 
-    const double opt1 = (f.grad + h.grad.transpose()*y - z).lpNorm<Infinity>();
-    const double opt2 = h.func.lpNorm<Infinity>();
-    const double opt3 = (x.array() * z.array() - mu).matrix().lpNorm<Infinity>();
+    const double opt1 = (next.f.grad + next.h.grad.transpose()*next.y - next.z).lpNorm<Infinity>();
+    const double opt2 = next.h.func.lpNorm<Infinity>();
+    const double opt3 = (next.x.array() * next.z.array() - next.mu).matrix().lpNorm<Infinity>();
 
     const double error = std::max({opt1/sl, opt2, opt3/sc});
 
     return error < options.tolerance;
 }
 
-bool AlgorithmIPFilter::State::PassRestorationCondition() const
+bool AlgorithmIPFilter::PassRestorationCondition() const
 {
-    return theta <= delta * std::min(params.gamma1, params.gamma2*std::pow(delta, params.beta));
+    return next.theta <= delta * std::min(params.gamma1, params.gamma2*std::pow(delta, params.beta));
 }
 
-bool AlgorithmIPFilter::State::PassFilterCondition() const
+bool AlgorithmIPFilter::PassFilterCondition() const
 {
-    return filter.IsAcceptable({theta, psi});
+    return filter.IsAcceptable({next.theta, next.psi});
 }
 
 } /* namespace IPFilter */
