@@ -14,6 +14,7 @@ using namespace Eigen;
 
 // Optima includes
 #include "Common.hpp"
+#include "Exceptions.hpp"
 #include "Filter.hpp"
 #include "Utils.hpp"
 #include <IPFilter/Params.hpp>
@@ -37,6 +38,10 @@ public:
     struct Options
     {
         OptimalityMeasure psi;
+
+        unsigned max_iter;
+
+        double tolerance;
     };
 
     /**
@@ -44,26 +49,40 @@ public:
      */
     struct State
     {
+        State(const OptimumProblem& problem, const Params& params, const Options& options);
+
+        void Initialise(const VectorXd& x, const VectorXd& y, const VectorXd& z);
+
         /// Updates all quantities that are dependent on delta
         void UpdateDelta(double delta);
+
+        void AcceptTrialPoint();
 
         /// Calculates the largest trust-region radius that satisfies the positivity conditions
         double CalculateLargestDelta() const;
 
         /// Searches for a trust-region radius that satisfies the centrality neighborhood conditions
-        void SearchDeltaNeighborhood();
+        void SearchDeltaNeighborhood() throw(SearchDeltaNeighborhoodError);
 
-        void SearchDeltaTrialTests();
+        void SearchDelta() throw(SearchDeltaError);
 
-        void SearchDeltaRestoration();
+        void SearchDeltaRestoration() throw(SearchDeltaRestorationError);
 
-        void UpdateNormalTangentialSteps();
+        void ComputeSteps();
+
+        void SolveRestoration() throw(MaxIterationError);
+
+        void Solve() throw(MaxIterationError);
 
         double CalculatePsi() const;
 
         double CalculateLinearModel() const;
 
-        double CalculateRhoRestoration() const;
+        bool PassStoppingCriteria() const;
+
+        bool PassRestorationCondition() const;
+
+        bool PassFilterCondition() const;
 
         unsigned dimx, dimy;
 
@@ -73,29 +92,29 @@ public:
 
         const Options& options;
 
-        VectorXd x, y, z;
-
-        VectorXd x_old, y_old, z_old;
-
         VectorXd snx, stx;
 
         VectorXd sny, sty;
 
         VectorXd snz, stz;
 
-        ObjectiveState f, f_old;
-
-        ConstraintState h, h_old;
+        double norm_sn, norm_st;
 
         Filter filter;
-
-        double norm_sn, norm_st;
 
         double alpha_n, alpha_t;
 
         double delta;
 
         double delta_max;
+
+        VectorXd x, y, z;
+
+        VectorXd x_old, y_old, z_old;
+
+        ObjectiveState f, f_old;
+
+        ConstraintState h, h_old;
 
         double mu, mu_old;
 
@@ -117,13 +136,13 @@ public:
 
         double M;
 
+        unsigned iter;
+
         PartialPivLU<MatrixXd> lu;
 
         MatrixXd lhs;
 
-        VectorXd rhs_n, rhs_t;
-
-        VectorXd un, ut;
+        VectorXd rhs, u;
 
         MatrixXd H;
     };
