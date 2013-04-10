@@ -46,6 +46,12 @@ typedef std::function<
 
 struct ObjectiveState
 {
+    ObjectiveState()
+    {}
+
+    ObjectiveState(unsigned dimx)
+    : grad(dimx), hessian(dimx, dimx) {}
+
     double func;
 
     VectorXd grad;
@@ -55,6 +61,12 @@ struct ObjectiveState
 
 struct ConstraintState
 {
+    ConstraintState()
+    {}
+
+    ConstraintState(unsigned dimx, unsigned dimh)
+    : func(dimh), grad(dimh, dimx) {}
+
     VectorXd func;
 
     MatrixXd grad;

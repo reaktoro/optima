@@ -98,42 +98,22 @@ void AlgorithmIPFilter::SetProblem(const OptimumProblem& problem)
     rhs.resize(dim);
 }
 
-void AlgorithmIPFilter::Solve(const State& state)
+void AlgorithmIPFilter::Solve(State& state)
 {
     Initialise(state);
 
-    while(true)
-    {
-        // Calculate the normal and tangential steps for the trust-region algorithm
-        UpdateNormalTangentialSteps();
+    Solve();
 
-        // Search for a trust-region radius that satisfies the centrality neighborhood conditions
-        SearchDeltaNeighborhood();
-
-        // If the current state pass the restoration condition, search for a suitable trust-region radius
-        if(PassRestorationCondition()) SearchDeltaTrustRegion();
-
-        // Otherwise, start the restoration algorithm that finds a suitable (x,y,z)
-        else SolveRestoration();
-
-        // Accept the current trial point
-        AcceptTrialPoint();
-
-        // Check if the current state pass the stopping criteria of optimality
-        if(PassStoppingCriteria()) break;
-    }
+    state = next;
 }
 
-void AlgorithmIPFilter::Solve(const VectorXd& x)
+void AlgorithmIPFilter::Solve(VectorXd& x)
 {
-    State guess;
+    Initialise(x);
 
-    InitialiseInitialGuess(x, guess);
+    Solve();
 
-    if(AnyFloatingPointException(guess))
-        throw InitialGuessError();
-
-    Solve(guess);
+    x = curr.x;
 }
 
 bool AlgorithmIPFilter::AnyFloatingPointException(const State& state) const
@@ -255,6 +235,10 @@ void AlgorithmIPFilter::ExtendFilter()
 
 void AlgorithmIPFilter::Initialise(const State& state)
 {
+    // Check if the initial guess results in floating point exceptions
+    if(AnyFloatingPointException(state))
+        throw InitialGuessError();
+
     // Initialise the current maximum value of the trust-region radius
     delta_max = params.delta_initial;
 
@@ -271,7 +255,7 @@ void AlgorithmIPFilter::Initialise(const State& state)
     gamma = std::min(params.gamma_min, curr.x.cwiseProduct(curr.z).minCoeff()/(2.0*curr.mu));
 
     // Initialise the value of the parameter c
-    c = 3*dimx/(1 - params.sigma_slow)*std::pow(std::max(1.0, (1 - params.sigma_slow)/gamma), 2);
+    c = 3*dimx*dimx/(1 - params.sigma_slow)*std::pow(std::max(1.0, (1 - params.sigma_slow)/gamma), 2);
 
     // Initialise the value of the neighborhood parameter M
     M = std::max(params.neighM_max, params.alphaM*(curr.thh + curr.thl)/curr.mu);
@@ -280,33 +264,44 @@ void AlgorithmIPFilter::Initialise(const State& state)
     restoration = false;
 }
 
-void AlgorithmIPFilter::InitialiseInitialGuess(const VectorXd& x, State& state) const
+void AlgorithmIPFilter::Initialise(const VectorXd& x)
 {
     // Initialise the iterates x and z
-    state.x = x;
-    state.z = options.mu/x.array();
+    curr.x = x;
+    curr.z = options.mu/x.array();
 
     // Initialise the objective and constraint state at x
-    state.f = problem.objective(x);
-    state.h = problem.constraint(x);
+    curr.f = problem.objective(x);
+    curr.h = problem.constraint(x);
 
     // Calculate the A matrix and b vector for the least squares problem
-    const MatrixXd A = state.h.grad.transpose();
-    const VectorXd b = state.z - state.f.grad;
+    const MatrixXd A = curr.h.grad.transpose();
+    const VectorXd b = curr.z - curr.f.grad;
 
     // Calculate y by solving a least squares problem
-    state.y = A.jacobiSvd(ComputeThinU | ComputeThinV).solve(b);
+    curr.y = A.jacobiSvd(ComputeThinU | ComputeThinV).solve(b);
 
     // Discard the estimate of the Lagrange multiplier y if its norm is too high
-    if(state.y.norm()/dimy > params.y_max)
-        state.y.setZero(dimy);
+    if(curr.y.norm()/dimy > params.y_max)
+        curr.y.setZero(dimy);
 
-    // Calculate an improved z
-    const VectorXd z0 = state.f.grad + state.h.grad.transpose() * state.y;
-    state.z = state.z.cwiseMax(z0);
+    // Improve the Lagrange multiplier z
+    curr.z = curr.z.cwiseMax(curr.f.grad + curr.h.grad.transpose() * curr.y);
+
+    // Initialise the barrier parameter
+    curr.mu = curr.x.dot(curr.z)/dimx;
+
+    // Initialise the value of the parameter gamma
+    gamma = std::min(params.gamma_min, curr.x.cwiseProduct(curr.z).minCoeff()/(2.0*curr.mu));
+
+    // Initialise the value of the parameter c
+    c = 3*dimx*dimx/(1 - params.sigma_slow)*std::pow(std::max(1.0, (1 - params.sigma_slow)/gamma), 2);
 
     // Update the state curr with the x, y, z iterates
-    UpdateState(state.x, state.y, state.z, state);
+    UpdateState(curr.x, curr.y, curr.z, curr);
+
+    // Initialise the rest of the state
+    Initialise(curr);
 }
 
 void AlgorithmIPFilter::ResetLagrangeMultipliersZ(State& state) const
@@ -441,6 +436,30 @@ void AlgorithmIPFilter::SearchDeltaTrustRegionRestoration()
         // Check if delta is now less than the allowed minimum
         if(delta < params.delta_min)
             throw SearchDeltaTrustRegionRestorationError();
+    }
+}
+
+void AlgorithmIPFilter::Solve()
+{
+    while(true)
+    {
+        // Calculate the normal and tangential steps for the trust-region algorithm
+        UpdateNormalTangentialSteps();
+
+        // Search for a trust-region radius that satisfies the centrality neighborhood conditions
+        SearchDeltaNeighborhood();
+
+        // If the current state pass the restoration condition, search for a suitable trust-region radius
+        if(PassRestorationCondition()) SearchDeltaTrustRegion();
+
+        // Otherwise, start the restoration algorithm that finds a suitable (x,y,z)
+        else SolveRestoration();
+
+        // Accept the current trial point
+        AcceptTrialPoint();
+
+        // Check if the current state pass the stopping criteria of optimality
+        if(PassStoppingCriteria()) break;
     }
 }
 

@@ -36,9 +36,9 @@ public:
 
     void SetProblem(const OptimumProblem& problem);
 
-    void Solve(const State& state);
+    void Solve(State& state);
 
-    void Solve(const VectorXd& x);
+    void Solve(VectorXd& x);
 
 private:
 
@@ -54,11 +54,12 @@ private:
     void AcceptTrialPoint();
     void ExtendFilter();
     void Initialise(const State& state);
-    void InitialiseInitialGuess(const VectorXd& x, State& state) const;
+    void Initialise(const VectorXd& x);
     void ResetLagrangeMultipliersZ(State& state) const;
     void SearchDeltaNeighborhood();
     void SearchDeltaTrustRegion();
     void SearchDeltaTrustRegionRestoration();
+    void Solve();
     void SolveRestoration();
     void UpdateNeighborhoodParameterM();
     void UpdateNextState(double delta);
