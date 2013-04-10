@@ -34,6 +34,11 @@ struct Params
     double delta_decrease_factor = 0.5;
 
     /**
+     * The initial value of the trust-region radius
+     */
+    double delta_initial = 1.0e+05;
+
+    /**
      * The parameter used in the verification of the linear model reduction
      *
      * This is the \f$ \kappa \f$ parameter used in the following condition
@@ -73,6 +78,11 @@ struct Params
      */
     double kappa_zreset = 1.0e+08;
 
+    /**
+     * The threshold used to determine if the initial estimate of the Lagrange multiplier y is suitable
+     */
+    double y_max = 2.0e+03;
+
     //==================================
     // RESTORATION ALGORITHM PARAMETERS
     //==================================
@@ -109,8 +119,14 @@ struct Params
      */
     double beta = 0.75;
 
+    /**
+     * The Cauchy parameter used in the restoration algorithm to verify convergence progress
+     */
     double xi1 = 1.0e-05;
 
+    /**
+     * The Cauchy parameter used in the restoration algorithm to verify need of increasing the trust-region radius
+     */
     double xi2 = 0.5;
 
     //============================================================

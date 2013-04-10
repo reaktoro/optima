@@ -30,15 +30,15 @@ public:
 
     AlgorithmIPFilter();
 
-    void SetParams(const Params& params);
-
     void SetOptions(const Options& options);
+
+    void SetParams(const Params& params);
 
     void SetProblem(const OptimumProblem& problem);
 
-    void Initialise(const State& state);
+    void Solve(const State& state);
 
-    void Solve();
+    void Solve(const VectorXd& x);
 
 private:
 
@@ -52,10 +52,15 @@ private:
     double CalculateSigma() const;
 
     void AcceptTrialPoint();
+    void ExtendFilter();
+    void Initialise(const State& state);
+    void InitialiseInitialGuess(const VectorXd& x, State& state) const;
+    void ResetLagrangeMultipliersZ(State& state) const;
     void SearchDeltaNeighborhood();
     void SearchDeltaTrustRegion();
     void SearchDeltaTrustRegionRestoration();
     void SolveRestoration();
+    void UpdateNeighborhoodParameterM();
     void UpdateNextState(double delta);
     void UpdateNormalTangentialSteps();
     void UpdateState(const VectorXd& x, const VectorXd& y, const VectorXd& z, State& state) const;
@@ -75,6 +80,17 @@ public:
          * The maximum number of iterations allowed in the algorithm
          */
         unsigned max_iter = 100;
+
+        /**
+         * The start value used for the barrier parameter
+         *
+         * This parameter is used when only the iterate x is
+         * provided as initial guess. In that case, it is
+         * necessary an initial value of \f$ \mu \f$ in order
+         * to estimate an initial guess for the Lagrange
+         * multipliers y and z.
+         */
+        double mu = 0.1;
 
         /**
          * The tolerance parameter used for the stopping criteria of the algorithm

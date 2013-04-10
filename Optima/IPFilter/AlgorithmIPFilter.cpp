@@ -11,6 +11,10 @@
 #include <cmath>
 #include <limits>
 
+// Eigen includes
+#include <Eigen/SVD>
+using namespace Eigen;
+
 // Optima includes
 #include "MathUtils.hpp"
 
@@ -71,14 +75,14 @@ AlgorithmIPFilter::State::State()
 AlgorithmIPFilter::AlgorithmIPFilter()
 {}
 
-void AlgorithmIPFilter::SetParams(const Params& params)
-{
-    this->params = params;
-}
-
 void AlgorithmIPFilter::SetOptions(const Options& options)
 {
     this->options = options;
+}
+
+void AlgorithmIPFilter::SetParams(const Params& params)
+{
+    this->params = params;
 }
 
 void AlgorithmIPFilter::SetProblem(const OptimumProblem& problem)
@@ -94,26 +98,10 @@ void AlgorithmIPFilter::SetProblem(const OptimumProblem& problem)
     rhs.resize(dim);
 }
 
-void AlgorithmIPFilter::Initialise(const State& state)
+void AlgorithmIPFilter::Solve(const State& state)
 {
-    // Initialise the current and next states
-    curr = next = state;
+    Initialise(state);
 
-    // Initialise the value of the parameter gamma
-    gamma = std::min(params.gamma_min, curr.x.cwiseProduct(curr.z).minCoeff()/(2.0*curr.mu));
-
-    // Initialise the value of the parameter c
-    c = 3*dimx/(1 - params.sigma_slow)*std::pow(std::max(1.0, (1 - params.sigma_slow)/gamma), 2);
-
-    // Initialise the value of the neighborhood parameter M
-    M = std::max(params.neighM_max, params.alphaM*(curr.thh + curr.thl)/curr.mu);
-
-    // Deactivate the restoration flag
-    restoration = false;
-}
-
-void AlgorithmIPFilter::Solve()
-{
     while(true)
     {
         // Calculate the normal and tangential steps for the trust-region algorithm
@@ -134,6 +122,18 @@ void AlgorithmIPFilter::Solve()
         // Check if the current state pass the stopping criteria of optimality
         if(PassStoppingCriteria()) break;
     }
+}
+
+void AlgorithmIPFilter::Solve(const VectorXd& x)
+{
+    State guess;
+
+    InitialiseInitialGuess(x, guess);
+
+    if(AnyFloatingPointException(guess))
+        throw InitialGuessError();
+
+    Solve(guess);
 }
 
 bool AlgorithmIPFilter::AnyFloatingPointException(const State& state) const
@@ -243,6 +243,79 @@ void AlgorithmIPFilter::AcceptTrialPoint()
         throw MaxIterationError();
 }
 
+void AlgorithmIPFilter::ExtendFilter()
+{
+    // Calculate the components of the new entry
+    const double beta_theta = curr.theta * (1 - params.alpha_theta);
+    const double beta_psi   = curr.psi - params.alpha_psi * curr.theta;
+
+    // Add a new entry to the filter
+    filter.Add({beta_theta, beta_psi});
+}
+
+void AlgorithmIPFilter::Initialise(const State& state)
+{
+    // Initialise the current maximum value of the trust-region radius
+    delta_max = params.delta_initial;
+
+    // Initialise the current number of iterations
+    iter = 0;
+
+    // Initialise the logical flags to false
+    restoration = safe_step = false;
+
+    // Initialise the current and next states
+    curr = next = state;
+
+    // Initialise the value of the parameter gamma
+    gamma = std::min(params.gamma_min, curr.x.cwiseProduct(curr.z).minCoeff()/(2.0*curr.mu));
+
+    // Initialise the value of the parameter c
+    c = 3*dimx/(1 - params.sigma_slow)*std::pow(std::max(1.0, (1 - params.sigma_slow)/gamma), 2);
+
+    // Initialise the value of the neighborhood parameter M
+    M = std::max(params.neighM_max, params.alphaM*(curr.thh + curr.thl)/curr.mu);
+
+    // Deactivate the restoration flag
+    restoration = false;
+}
+
+void AlgorithmIPFilter::InitialiseInitialGuess(const VectorXd& x, State& state) const
+{
+    // Initialise the iterates x and z
+    state.x = x;
+    state.z = options.mu/x.array();
+
+    // Initialise the objective and constraint state at x
+    state.f = problem.objective(x);
+    state.h = problem.constraint(x);
+
+    // Calculate the A matrix and b vector for the least squares problem
+    const MatrixXd A = state.h.grad.transpose();
+    const VectorXd b = state.z - state.f.grad;
+
+    // Calculate y by solving a least squares problem
+    state.y = A.jacobiSvd(ComputeThinU | ComputeThinV).solve(b);
+
+    // Discard the estimate of the Lagrange multiplier y if its norm is too high
+    if(state.y.norm()/dimy > params.y_max)
+        state.y.setZero(dimy);
+
+    // Calculate an improved z
+    const VectorXd z0 = state.f.grad + state.h.grad.transpose() * state.y;
+    state.z = state.z.cwiseMax(z0);
+
+    // Update the state curr with the x, y, z iterates
+    UpdateState(state.x, state.y, state.z, state);
+}
+
+void AlgorithmIPFilter::ResetLagrangeMultipliersZ(State& state) const
+{
+    const double aux1 = state.mu * params.kappa_zreset;
+    const double aux2 = state.mu / params.kappa_zreset;
+    state.z = state.z.array().min(aux1/state.x.array()).max(aux2/state.x.array());
+}
+
 void AlgorithmIPFilter::SearchDeltaNeighborhood()
 {
     // Calculate the largest delta that solves the positivity conditions
@@ -253,15 +326,15 @@ void AlgorithmIPFilter::SearchDeltaNeighborhood()
 
     while(true)
     {
+        // Check if delta is now less than the allowed minimum
+        if(delta_trial < params.delta_min)
+            throw SearchDeltaNeighborhoodError();
+
         // Update the members that are dependent on delta
         UpdateNextState(delta_trial);
 
         // Decrease the current value of the trial delta
         delta_trial *= params.delta_decrease_factor;
-
-        // Check if delta is now less than the allowed minimum
-        if(delta_trial < params.delta_min)
-            throw SearchDeltaNeighborhoodError();
 
         // Check if the current delta results results in any IEEE floating point exception
         if(AnyFloatingPointException(next))
@@ -285,27 +358,24 @@ void AlgorithmIPFilter::SearchDeltaTrustRegion()
         if(delta < params.delta_min)
             throw SearchDeltaTrustRegionError();
 
-        if(curr_m - next_m < params.kappa * curr.theta * curr.theta)
+        if(curr_m - next_m < params.kappa*curr.theta*curr.theta)
         {
             const double beta_theta = curr.theta * (1 - params.alpha_theta);
             const double beta_psi = curr.psi - params.alpha_psi * curr.theta;
 
-            if((next.theta < beta_theta or next.psi < beta_psi) and filter.IsAcceptable({next.theta, next.psi}))
+            if((next.theta < beta_theta or next.psi < beta_psi) and PassFilterCondition())
             {
-                // Increase the current maximum trust-region radius
-                delta_max *= params.delta_increase_factor;
+                // Extend the filter with the current (theta, psi) pair
+                ExtendFilter();
 
-                // Add a new entry to the filter
-                filter.Add({beta_theta, beta_psi});
-
-                // Reset the Lagrange multipliers z
-                const double aux1 = next.mu*params.kappa_zreset;
-                const double aux2 = next.mu/params.kappa_zreset;
-                next.z = next.z.array().min(aux1/next.x.array()).max(aux2/next.x.array());
+                // Reset the Lagrange multipliers z of the next state
+                ResetLagrangeMultipliersZ(next);
 
                 // Update the neighborhood parameter M
-                if(next.thh + next.thl > next.mu * params.epsilonM * M)
-                    M = std::max(params.neighM_max, params.alphaM*(next.thh + next.thl)/next.mu);
+                UpdateNeighborhoodParameterM();
+
+                // Increase the current maximum trust-region radius
+                delta_max *= params.delta_increase_factor;
 
                 // Trial point has been found: leave loop
                 break;
@@ -316,19 +386,16 @@ void AlgorithmIPFilter::SearchDeltaTrustRegion()
             // Calculate the ratio of decrease in actual and predicted optimality
             const double rho = (curr.psi - next.psi)/(curr_m - next_m);
 
-            if(rho > params.eta_small and filter.IsAcceptable({next.theta, next.psi}))
+            if(rho > params.eta_small and PassFilterCondition())
             {
-                // Increase the current maximum trust-region radius
-                if(rho > params.eta_large) delta_max *= params.delta_increase_factor;
-
-                // Reset the Lagrange multipliers z
-                const double aux1 = next.mu*params.kappa_zreset;
-                const double aux2 = next.mu/params.kappa_zreset;
-                next.z = next.z.array().min(aux1/next.x.array()).max(aux2/next.x.array());
+                // Reset the Lagrange multipliers z of the next state
+                ResetLagrangeMultipliersZ(next);
 
                 // Update the neighborhood parameter M
-                if(next.thh + next.thl > next.mu * params.epsilonM * M)
-                    M = std::max(params.neighM_max, params.alphaM*(next.thh + next.thl)/next.mu);
+                UpdateNeighborhoodParameterM();
+
+                // Increase the current maximum trust-region radius
+                if(rho > params.eta_large) delta_max *= params.delta_increase_factor;
 
                 // Trial point has been found: leave loop
                 break;
@@ -379,8 +446,8 @@ void AlgorithmIPFilter::SearchDeltaTrustRegionRestoration()
 
 void AlgorithmIPFilter::SolveRestoration()
 {
-    // Add the current (theta, psi) pair to the filter
-    filter.Add({curr.theta, curr.psi});
+    // Extend the filter with the current (theta, psi) pair
+    ExtendFilter();
 
     // Activate the restoration flag
     restoration = true;
@@ -390,12 +457,12 @@ void AlgorithmIPFilter::SolveRestoration()
         // Use the current normal step to find a delta that sufficiently decreases the theta2 measure
         SearchDeltaTrustRegionRestoration();
 
+        // Accept the current trial point
+        AcceptTrialPoint();
+
         // Check if the restoration condition and the filter acceptance condition applies
         if(PassRestorationCondition() and PassFilterCondition())
             break;
-
-        // Accept the current trial point
-        AcceptTrialPoint();
 
         // Calculate the new normal and tangential steps for the restoration algorithm
         UpdateNormalTangentialSteps();
@@ -406,6 +473,12 @@ void AlgorithmIPFilter::SolveRestoration()
 
     // Deactivate the restoration flag
     restoration = false;
+}
+
+void AlgorithmIPFilter::UpdateNeighborhoodParameterM()
+{
+    if(next.thh + next.thl > next.mu * params.epsilonM * M)
+        M = std::max(params.neighM_max, params.alphaM*(next.thh + next.thl)/next.mu);
 }
 
 void AlgorithmIPFilter::UpdateNextState(double del)
@@ -443,7 +516,7 @@ void AlgorithmIPFilter::UpdateNormalTangentialSteps()
     lhs.block(0, 0, n, n) = H;
     lhs.block(0, n, n, m) = curr.h.grad.transpose();
     lhs.block(n, 0, m, n) = curr.h.grad;
-    lhs.block(n, n, m, m) = MatrixXd::Identity(m, m);
+    lhs.block(n, n, m, m) = MatrixXd::Zero(m, m);
 
     // Calculate the LU decomposition of the coefficient matrix
     lu.compute(lhs);
@@ -489,7 +562,7 @@ void AlgorithmIPFilter::UpdateState(const VectorXd& x, const VectorXd& y, const 
     state.y = y;
     state.z = z;
 
-    // Initialise the objective and constraint state at x0
+    // Initialise the objective and constraint state at x
     state.f = problem.objective(x);
     state.h = problem.constraint(x);
 

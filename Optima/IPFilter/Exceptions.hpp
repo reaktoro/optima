@@ -19,8 +19,19 @@ struct MaxIterationError : public std::exception
     virtual const char* what() const throw()
     {
         return "Unable to converge to an optimum point within the specified maximum "
-               "number of iterations. Try to use a another initial guess or increase "
+               "number of iterations. Try another initial guess or increase "
                "the allowed maximum number of iterations.";
+    }
+};
+
+struct InitialGuessError : public std::exception
+{
+    virtual const char* what() const throw()
+    {
+        return "Unable to proceed with the calculation using the provided initial "
+               "guess. This initial guess results in a IEEE floating-point exception "
+               "when either the objective or the constraint function is evaluated. Try "
+               "another initial guess.";
     }
 };
 
@@ -29,9 +40,8 @@ struct SearchDeltaNeighborhoodError : public std::exception
     virtual const char* what() const throw()
     {
         return "Could not find a trust-region radius that satisfies the centrality "
-               "neighborhood condition in the interior-point algorithm. Try to use "
-               "a another initial guess or set the minimum allowed delta to a "
-               "smaller value.";
+               "neighborhood condition in the interior-point algorithm. Try another "
+               "initial guess or decrease the minimum allowed delta.";
     }
 };
 
@@ -41,8 +51,7 @@ struct SearchDeltaTrustRegionError : public std::exception
     {
         return "Could not find a trust-region radius that satisfies the Cauchy "
                "condition of sufficient decrease in the interior-point algorithm. "
-               "Try to use a another initial guess or set the minimum allowed delta "
-               "to a smaller value.";
+               "Try another initial guess or decrease the minimum allowed delta.";
     }
 };
 
@@ -52,8 +61,7 @@ struct SearchDeltaTrustRegionRestorationError : public std::exception
     {
         return "Could not find a trust-region radius that satisfies the Cauchy "
                "condition of sufficient decrease in the restoration algorithm. "
-               "Try to use a another initial guess or set the minimum allowed "
-               "delta to a smaller value.";
+               "Try another initial guess or decrease the minimum allowed delta.";
     }
 };
 
