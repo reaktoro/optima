@@ -73,7 +73,24 @@ AlgorithmIPFilter::State::State()
 {}
 
 AlgorithmIPFilter::AlgorithmIPFilter()
-{}
+{
+    // Initialise the output instance
+    output.AddEntry("iter");
+    output.AddEntries(dimx, "x");
+    output.AddEntrySeparator();
+    output.AddEntry("f(x)");
+    output.AddEntry("h(x)");
+    output.AddEntry("error");
+    output.AddEntry("alphan");
+    output.AddEntry("alphat");
+    output.AddEntry("mu(w)");
+    output.AddEntry("delta");
+    output.AddEntry("theta(w)");
+    output.AddEntry("psi(w)");
+    output.AddEntry("thc(w)");
+    output.AddEntry("thh(w)");
+    output.AddEntry("thl(w)");
+}
 
 void AlgorithmIPFilter::SetOptions(const Options& options)
 {
@@ -302,6 +319,31 @@ void AlgorithmIPFilter::Initialise(const VectorXd& x)
 
     // Initialise the rest of the state
     Initialise(curr);
+}
+
+void AlgorithmIPFilter::OutputHeader() const
+{
+    if(options.output) output.OutputHeader();
+}
+
+void AlgorithmIPFilter::OutputState() const
+{
+    // Initialise the output instance
+    output.AddValue(iter);
+    output.AddValues(curr.x.data(), curr.x.data() + dimx);
+    output.AddValueSeparator();
+    output.AddValue(curr.f.func);
+    output.AddValue(curr.h.func.norm());
+    output.AddValue("error");
+    output.AddValue("alphan");
+    output.AddValue("alphat");
+    output.AddValue("mu(w)");
+    output.AddValue("delta");
+    output.AddValue("theta(w)");
+    output.AddValue("psi(w)");
+    output.AddValue("thc(w)");
+    output.AddValue("thh(w)");
+    output.AddValue("thl(w)");
 }
 
 void AlgorithmIPFilter::ResetLagrangeMultipliersZ(State& state) const

@@ -16,6 +16,7 @@ using namespace Eigen;
 #include "Common.hpp"
 #include "Exceptions.hpp"
 #include "Filter.hpp"
+#include "Output.hpp"
 #include "Utils.hpp"
 #include <IPFilter/Params.hpp>
 
@@ -55,6 +56,8 @@ private:
     void ExtendFilter();
     void Initialise(const State& state);
     void Initialise(const VectorXd& x);
+    void OutputHeader() const;
+    void OutputState() const;
     void ResetLagrangeMultipliersZ(State& state) const;
     void SearchDeltaNeighborhood();
     void SearchDeltaTrustRegion();
@@ -97,6 +100,11 @@ public:
          * The tolerance parameter used for the stopping criteria of the algorithm
          */
         double tolerance = 1.0e-06;
+
+        /**
+         * The logical flag that activates output during the calculation
+         */
+        bool output = false;
     };
 
     /**
@@ -138,6 +146,9 @@ private:
 
     /// The options used for the optimisation calculation
     Options options;
+
+    /// The output instance for printing the calculation progress
+    Output output;
 
     /// The dimension of the objective and constraint functions respectively
     unsigned dimx, dimy;
