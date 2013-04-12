@@ -1,5 +1,5 @@
 /*
- * Exceptions.hpp
+ * IPFilterExceptions.hpp
  *
  *  Created on: 5 Apr 2013
  *      Author: allan
@@ -12,7 +12,6 @@
 #include <sstream>
 
 namespace Optima {
-namespace IPFilter {
 
 struct MaxIterationError : public std::exception
 {
@@ -65,7 +64,6 @@ struct SearchDeltaTrustRegionRestorationError : public std::exception
     }
 };
 
-} /* namespace IPFilter */
 } /* namespace Optima */
 
 

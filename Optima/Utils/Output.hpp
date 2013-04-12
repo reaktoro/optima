@@ -49,6 +49,8 @@ private:
 
     std::string separator = "|";
 
+    bool fixed = false;
+
     bool scientific = false;
 
     unsigned precision  = 6;
@@ -67,7 +69,8 @@ void Output::AddValue(const T& val)
 {
     std::stringstream ss;
     ss << std::setprecision(precision);
-    ss << ((scientific) ? std::scientific : std::fixed);
+    if(fixed)      ss << std::fixed;
+    if(scientific) ss << std::scientific;
     ss << val;
     values.push_back(ss.str());
 }

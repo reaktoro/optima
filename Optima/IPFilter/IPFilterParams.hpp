@@ -8,12 +8,11 @@
 #pragma once
 
 namespace Optima {
-namespace IPFilter {
 
 /**
  * The list of algorithm parameters and their default values
  */
-struct Params
+struct IPFilterParams
 {
     //===========================
     // MAIN ALGORITHM PARAMETERS
@@ -315,5 +314,4 @@ struct Params
     double alpha_psi = 1.0e-03;
 };
 
-} /* namespace IPFilter */
 } /* namespace Optima */

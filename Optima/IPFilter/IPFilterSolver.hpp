@@ -1,5 +1,5 @@
 /*
- * AlgorithmIPFilter.hpp
+ * IPFilterSolver.hpp
  *
  *  Created on: 4 Apr 2013
  *      Author: allan
@@ -8,37 +8,57 @@
 #pragma once
 
 // Eigen includes
-#include <Eigen/Core>
-#include <Eigen/LU>
+#include <Eigen/Dense>
 using namespace Eigen;
 
 // Optima includes
-#include "Common.hpp"
-#include "Exceptions.hpp"
-#include "Filter.hpp"
-#include "Output.hpp"
-#include "Utils.hpp"
-#include <IPFilter/Params.hpp>
+#include <IPFilter/IPFilterOptions.hpp>
+#include <IPFilter/IPFilterParams.hpp>
+#include <IPFilter/IPFilterState.hpp>
+#include <Utils/Filter.hpp>
+#include <Utils/OptimumProblem.hpp>
+#include <Utils/Output.hpp>
 
 namespace Optima {
-namespace IPFilter {
 
-class AlgorithmIPFilter
+/**
+ * The primal-dial interior-point non-convex minimisation solver based on the ipfilter algorithm
+ */
+class IPFilterSolver
 {
 public:
-    struct State;
-    struct Options;
+    typedef IPFilterOptions Options;
+    typedef IPFilterParams Params;
+    typedef IPFilterState State;
 
-    AlgorithmIPFilter();
+    /**
+     * Constructs a default @ref IPFilterSolver instance
+     */
+    IPFilterSolver();
 
+    /**
+     * Sets the options for the minimisation calculation
+     */
     void SetOptions(const Options& options);
 
+    /**
+     * Sets the parameters of the minimisation algorithm
+     */
     void SetParams(const Params& params);
 
+    /**
+     * Sets the definition of the minimisation problem
+     */
     void SetProblem(const OptimumProblem& problem);
 
+    /**
+     * Solves the minimisation problem
+     */
     void Solve(State& state);
 
+    /**
+     * Solves the minimisation problem
+     */
     void Solve(VectorXd& x);
 
 private:
@@ -49,6 +69,8 @@ private:
     bool PassStoppingCriteria() const;
 
     double CalculateDeltaPositivity() const;
+    double CalculateLargestBoundaryStep(const VectorXd& p, const VectorXd& dp) const;
+    double CalculateLargestQuadraticStep(const VectorXd& a, const VectorXd& b, const VectorXd& c, const VectorXd& d) const;
     double CalculateNextLinearModel() const;
     double CalculateSigma() const;
 
@@ -56,8 +78,8 @@ private:
     void ExtendFilter();
     void Initialise(const State& state);
     void Initialise(const VectorXd& x);
-    void OutputHeader() const;
-    void OutputState() const;
+    void OutputHeader();
+    void OutputState();
     void ResetLagrangeMultipliersZ(State& state) const;
     void SearchDeltaNeighborhood();
     void SearchDeltaTrustRegion();
@@ -68,74 +90,6 @@ private:
     void UpdateNextState(double delta);
     void UpdateNormalTangentialSteps();
     void UpdateState(const VectorXd& x, const VectorXd& y, const VectorXd& z, State& state) const;
-
-public:
-    /**
-     * The options used for the algorithm
-     */
-    struct Options
-    {
-        /**
-         * The scheme used for the calculation of the psi optimality measure
-         */
-        unsigned psi_scheme = 0;
-
-        /**
-         * The maximum number of iterations allowed in the algorithm
-         */
-        unsigned max_iter = 100;
-
-        /**
-         * The start value used for the barrier parameter
-         *
-         * This parameter is used when only the iterate x is
-         * provided as initial guess. In that case, it is
-         * necessary an initial value of \f$ \mu \f$ in order
-         * to estimate an initial guess for the Lagrange
-         * multipliers y and z.
-         */
-        double mu = 0.1;
-
-        /**
-         * The tolerance parameter used for the stopping criteria of the algorithm
-         */
-        double tolerance = 1.0e-06;
-
-        /**
-         * The logical flag that activates output during the calculation
-         */
-        bool output = false;
-    };
-
-    /**
-     * The algorithmic state at the point (x,y,z)
-     */
-    struct State
-    {
-        /// Constructs a default @ref State instance
-        State();
-
-        /// The iterates x, y, z of the algorithm
-        VectorXd x, y, z;
-
-        /// The state of the objective function at x
-        ObjectiveState f;
-
-        /// The state of the constraint function at x
-        ConstraintState h;
-
-        /// The barrier parameter at (x,z)
-        double mu;
-
-        /// The auxiliary theta_h, theta_c, and theta_l optimality measures
-        double thh, thc, thl;
-
-        /// The theta optimality measure
-        double theta;
-
-        /// The psi optimality measure
-        double psi;
-    };
 
 private:
     /// The definition of the optimisation problem
@@ -211,5 +165,4 @@ private:
     MatrixXd H;
 };
 
-} /* namespace IPFilter */
 } /* namespace Optima */

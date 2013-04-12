@@ -60,8 +60,14 @@ void Output::OutputState()
         if(val == separator) std::cout << separator;
         else std::cout << std::setw(width) << std::left << val;
     }
+    std::cout << std::endl;
 
     values.clear();
+}
+
+void Output::OutputMessage(const std::string& message)
+{
+    std::cout << message << std::endl;
 }
 
 } /* namespace Optima */

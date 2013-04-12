@@ -12,7 +12,6 @@
 using namespace Eigen;
 
 // GeoMath includes
-#include "Common.hpp"
 #include "Scaling.hpp"
 
 namespace Optima {

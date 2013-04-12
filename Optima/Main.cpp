@@ -11,7 +11,7 @@
 #include <tuple>
 
 // Optima includes
-#include <IPFilter/AlgorithmIPFilter.hpp>
+#include <IPFilter/IPFilterSolver.hpp>
 using namespace Optima;
 
 ObjectiveState Obj1(const VectorXd& x)
@@ -38,20 +38,21 @@ ConstraintState Cons1(const VectorXd& x)
 int main()
 {
     OptimumProblem problem;
-    problem.dim_objective  = 2;
-    problem.dim_constraint = 1;
+    problem.num_variables  = 2;
+    problem.num_constraints = 1;
     problem.objective      = Obj1;
     problem.constraint     = Cons1;
 
-    IPFilter::AlgorithmIPFilter solver;
+    IPFilterSolver::Options options;
+    options.output = true;
 
+    IPFilterSolver solver;
+
+    solver.SetOptions(options);
     solver.SetProblem(problem);
 
     VectorXd x(2);
-    x << 2, 3;
+    x << 200, 30000;
 
     solver.Solve(x);
-
-    std::cout << x << std::endl;
-
 }

@@ -49,6 +49,19 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<folderInfo id="cdt.managedbuild.config.gnu.cross.exe.debug.1998055209.1438148373" name="/" resourcePath="Excluded">
+						<toolChain id="cdt.managedbuild.toolchain.gnu.cross.exe.debug.2077644210" name="Cross GCC" superClass="cdt.managedbuild.toolchain.gnu.cross.exe.debug" unusedChildren="">
+							<tool id="cdt.managedbuild.tool.gnu.cross.c.compiler.1645662712" name="Cross GCC Compiler" superClass="cdt.managedbuild.tool.gnu.cross.c.compiler.1851837812"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.compiler.601379060" name="Cross G++ Compiler" superClass="cdt.managedbuild.tool.gnu.cross.cpp.compiler.1337916266"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.c.linker.107031284" name="Cross GCC Linker" superClass="cdt.managedbuild.tool.gnu.cross.c.linker.712815795"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.linker.82784313" name="Cross G++ Linker" superClass="cdt.managedbuild.tool.gnu.cross.cpp.linker.1502226104"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.archiver.27006988" name="Cross GCC Archiver" superClass="cdt.managedbuild.tool.gnu.cross.archiver.508827933"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.assembler.2058816255" name="Cross GCC Assembler" superClass="cdt.managedbuild.tool.gnu.cross.assembler.312791882"/>
+						</toolChain>
+					</folderInfo>
+					<sourceEntries>
+						<entry excluding="Excluded" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+					</sourceEntries>
 				</configuration>
 			</storageModule>
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
@@ -101,6 +114,19 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<folderInfo id="cdt.managedbuild.config.gnu.cross.exe.release.86485169.505377367" name="/" resourcePath="Excluded">
+						<toolChain id="cdt.managedbuild.toolchain.gnu.cross.exe.release.941850152" name="Cross GCC" superClass="cdt.managedbuild.toolchain.gnu.cross.exe.release" unusedChildren="">
+							<tool id="cdt.managedbuild.tool.gnu.cross.c.compiler.883729227" name="Cross GCC Compiler" superClass="cdt.managedbuild.tool.gnu.cross.c.compiler.1618824702"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.compiler.433872727" name="Cross G++ Compiler" superClass="cdt.managedbuild.tool.gnu.cross.cpp.compiler.1819867477"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.c.linker.89649370" name="Cross GCC Linker" superClass="cdt.managedbuild.tool.gnu.cross.c.linker.2093291152"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.linker.1143978281" name="Cross G++ Linker" superClass="cdt.managedbuild.tool.gnu.cross.cpp.linker.1363690761"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.archiver.1136217553" name="Cross GCC Archiver" superClass="cdt.managedbuild.tool.gnu.cross.archiver.1707232351"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.assembler.855702056" name="Cross GCC Assembler" superClass="cdt.managedbuild.tool.gnu.cross.assembler.703740446"/>
+						</toolChain>
+					</folderInfo>
+					<sourceEntries>
+						<entry excluding="Excluded" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+					</sourceEntries>
 				</configuration>
 			</storageModule>
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>

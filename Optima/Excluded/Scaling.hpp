@@ -11,9 +11,6 @@
 #include <Eigen/Core>
 using namespace Eigen;
 
-// Optima includes
-#include "Common.hpp"
-
 namespace Optima {
 
 class Scaling
