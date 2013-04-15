@@ -1,22 +1,20 @@
 /*
- * Main.cpp
+ * Demo1.cpp
  *
- *  Created on: 22 Mar 2013
+ *  Created on: 15 Apr 2013
  *      Author: allan
  */
 
 // C++ includes
-#include <functional>
 #include <iostream>
-#include <tuple>
 
 // Optima includes
-#include <IPFilter/IPFilterSolver.hpp>
+#include <Optima.hpp>
 using namespace Optima;
 
-ObjectiveState Obj1(const VectorXd& x)
+ObjectiveResult Obj1(const VectorXd& x)
 {
-    ObjectiveState f;
+    ObjectiveResult f;
 
     f.func    = x[0]*x[0] + x[1]*x[1];
     f.grad    = 2.0*x;
@@ -25,9 +23,9 @@ ObjectiveState Obj1(const VectorXd& x)
     return f;
 }
 
-ConstraintState Cons1(const VectorXd& x)
+ConstraintResult Cons1(const VectorXd& x)
 {
-    ConstraintState h(2, 1);
+    ConstraintResult h(2, 1);
 
     h.func << x[0] - x[1];
     h.grad << 1.0, -1.0;
@@ -38,10 +36,10 @@ ConstraintState Cons1(const VectorXd& x)
 int main()
 {
     OptimumProblem problem;
-    problem.num_variables  = 2;
-    problem.num_constraints = 1;
-    problem.objective      = Obj1;
-    problem.constraint     = Cons1;
+    problem.SetNumVariables(2);
+    problem.SetNumConstraints(1);
+    problem.SetObjectiveFunction(Obj1);
+    problem.SetConstraintFunction(Cons1);
 
     IPFilterSolver::Options options;
     options.output = true;

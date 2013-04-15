@@ -12,8 +12,8 @@
 using namespace Eigen;
 
 // Optima includes
-#include <Utils/ConstraintState.hpp>
-#include <Utils/ObjectiveState.hpp>
+#include <Utils/Constraint.hpp>
+#include <Utils/Objective.hpp>
 
 namespace Optima {
 
@@ -26,10 +26,10 @@ struct IPFilterState
     VectorXd x, y, z;
 
     /// The state of the objective function at x
-    ObjectiveState f;
+    ObjectiveResult f;
 
     /// The state of the constraint function at x
-    ConstraintState h;
+    ConstraintResult h;
 
     /// The barrier parameter at (x,z)
     double mu;

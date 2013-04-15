@@ -36,8 +36,8 @@ void IPFilterSolver::SetProblem(const OptimumProblem& problem)
     this->problem = problem;
 
     // Initialise the dimension variables
-    dimx = problem.num_variables;
-    dimy = problem.num_constraints;
+    dimx = problem.GetNumVariables();
+    dimy = problem.GetNumConstraints();
 
     // Initialise the KKT linear system data
     const unsigned dim = dimx + dimy;
@@ -265,8 +265,8 @@ void IPFilterSolver::Initialise(const VectorXd& x)
     curr.z = options.mu/x.array();
 
     // Initialise the objective and constraint state at x
-    curr.f = problem.objective(x);
-    curr.h = problem.constraint(x);
+    curr.f = problem.Objective(x);
+    curr.h = problem.Constraint(x);
 
     // Calculate the A matrix and b vector for the least squares problem
     const MatrixXd A = curr.h.grad.transpose();
@@ -624,8 +624,8 @@ void IPFilterSolver::UpdateState(const VectorXd& x, const VectorXd& y, const Vec
     state.z = z;
 
     // Update the objective and constraint state at x
-    state.f = problem.objective(x);
-    state.h = problem.constraint(x);
+    state.f = problem.Objective(x);
+    state.h = problem.Constraint(x);
 
     // Update the barrier parameter at (x,y,z)
     state.mu = x.dot(z)/dimx;
