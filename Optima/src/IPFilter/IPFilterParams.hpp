@@ -183,25 +183,25 @@ struct IPFilterParams
      * unchanged during this process, so its decomposition
      * can be reused.
      */
-      bool safe_step_active = true;
+      bool safe_step = true;
 
     /**
-     * The threshold used to determine if a safe tangencial step calculatio is necessary
+     * The threshold used to determine if a safe tangencial step calculation is necessary
      *
-     * If @c alphat < @c safe_step_threshold, then
+     * If @c alphat < @c threshold_safe_step, then
      * recompute the tangencial step by using a different
      * value for @c sigma.
      */
-    double safe_step_threshold = 0.8;
+    double threshold_safe_step = 0.8;
 
     /**
      * The threshold used to determine which value of sigma is used in the safe tangencial step calculation
      *
      * In the safe tangencial step calculation, if
-     * @c alphat < @c safe_step_threshold_alphat, then
+     * @c alphat < @c threshold_alphat, then
      * @c sigma = @c sigma_safe_max, else @c sigma = @c sigma_safe_min.
      */
-    double safe_step_threshold_alphat = 1.0e-3;
+    double threshold_alphat = 1.0e-3;
 
     /**
      * The threshold value of @c mu that indicates which value of @c sigma to be used

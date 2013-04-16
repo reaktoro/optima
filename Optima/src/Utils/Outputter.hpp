@@ -1,5 +1,5 @@
 /*
- * Output.hpp
+ * Outputter.hpp
  *
  *  Created on: 11 Apr 2013
  *      Author: allan
@@ -14,10 +14,14 @@
 
 namespace Optima {
 
-class Output
+class Outputter
 {
 public:
-    Output();
+    struct Options;
+
+    Outputter();
+
+    void SetOptions(const Options& options);
 
     void AddEntry(std::string name);
 
@@ -42,41 +46,49 @@ public:
 
     void OutputMessage(const std::string& message);
 
+public:
+    struct Options
+    {
+        bool active = false;
+
+        bool fixed = false;
+
+        bool scientific = false;
+
+        unsigned precision = 6;
+
+        unsigned width = 15;
+
+        std::string separator = "|";
+    };
+
 private:
     std::list<std::string> entries;
 
     std::list<std::string> values;
 
-    std::string separator = "|";
-
-    bool fixed = false;
-
-    bool scientific = false;
-
-    unsigned precision  = 6;
-
-    unsigned width = 15;
+    Options options;
 };
 
 template <typename Iter>
-void Output::AddEntries(const Iter& begin, const Iter& end)
+void Outputter::AddEntries(const Iter& begin, const Iter& end)
 {
     entries.insert(entries.end(), begin, end);
 }
 
 template <typename T>
-void Output::AddValue(const T& val)
+void Outputter::AddValue(const T& val)
 {
     std::stringstream ss;
-    ss << std::setprecision(precision);
-    if(fixed)      ss << std::fixed;
-    if(scientific) ss << std::scientific;
+    ss << std::setprecision(options.precision);
+    if(options.fixed) ss << std::fixed;
+    if(options.scientific) ss << std::scientific;
     ss << val;
     values.push_back(ss.str());
 }
 
 template <typename Iter>
-void Output::AddValues(const Iter& begin, const Iter& end)
+void Outputter::AddValues(const Iter& begin, const Iter& end)
 {
     for(Iter iter = begin; iter != end; ++iter)
         AddValue(*iter);

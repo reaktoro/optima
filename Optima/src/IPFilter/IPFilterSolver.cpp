@@ -9,6 +9,7 @@
 
 // C++ includes
 #include <cmath>
+#include <iostream>
 
 // Optima includes
 #include <IPFilter/IPFilterExceptions.hpp>
@@ -45,23 +46,24 @@ void IPFilterSolver::SetProblem(const OptimumProblem& problem)
     rhs.resize(dim);
 
     // Initialise the output instance
-    if(options.output)
+    if(options.output.active)
     {
-        output = Output();
-        output.AddEntry("iter");
-        output.AddEntries(dimx, "x");
-        output.AddEntry("f(x)");
-        output.AddEntry("h(x)");
-        output.AddEntry("error");
-        output.AddEntry("alphan");
-        output.AddEntry("alphat");
-        output.AddEntry("mu(w)");
-        output.AddEntry("delta");
-        output.AddEntry("theta(w)");
-        output.AddEntry("psi(w)");
-        output.AddEntry("thc(w)");
-        output.AddEntry("thh(w)");
-        output.AddEntry("thl(w)");
+        outputter = Outputter();
+        outputter.SetOptions(options.output);
+        outputter.AddEntry("iter");
+        outputter.AddEntries(dimx, "x");
+        outputter.AddEntry("f(x)");
+        outputter.AddEntry("h(x)");
+        outputter.AddEntry("error");
+        outputter.AddEntry("alphan");
+        outputter.AddEntry("alphat");
+        outputter.AddEntry("mu(w)");
+        outputter.AddEntry("delta");
+        outputter.AddEntry("theta(w)");
+        outputter.AddEntry("psi(w)");
+        outputter.AddEntry("thc(w)");
+        outputter.AddEntry("thh(w)");
+        outputter.AddEntry("thl(w)");
     }
 }
 
@@ -100,7 +102,12 @@ bool IPFilterSolver::PassRestorationCondition() const
     return curr.theta <= delta * std::min(params.gamma1, params.gamma2*std::pow(delta, params.beta));
 }
 
-bool IPFilterSolver::PassStoppingCriteria() const
+bool IPFilterSolver::PassSafeStepCondition() const
+{
+    return params.safe_step and alphat < params.threshold_safe_step;
+}
+
+bool IPFilterSolver::PassConvergenceCondition() const
 {
     return next.error < options.tolerance;
 }
@@ -142,12 +149,7 @@ double IPFilterSolver::CalculateDeltaPositivity() const
     const double delta_xzII = CalculateLargestQuadraticStep(aII, bII, cII, dII);
 
     // Calculate the minimum among all auxiliary delta values for Case I and II
-    const double aux_delta = std::min({delta_xI, delta_zI, delta_xII, delta_zII, delta_xzI, delta_xzII});
-
-    // Calculate the adjustment factor tau
-    const double tau = 1.0 - std::min(0.01, 100.0 * curr.mu * curr.mu);
-
-    return tau*aux_delta;
+    return std::min({delta_xI, delta_zI, delta_xII, delta_zII, delta_xzI, delta_xzII});
 }
 
 double IPFilterSolver::CalculateLargestBoundaryStep(const VectorXd& p, const VectorXd& dp) const
@@ -186,7 +188,8 @@ double IPFilterSolver::CalculateLargestQuadraticStep(
 double IPFilterSolver::CalculateNextLinearModel() const
 {
     if(options.psi_scheme == 0)
-        return curr.psi + (curr.f.grad + c/dimx*curr.z).dot(next.x - curr.x) + c/dimx*curr.x.dot(next.z - curr.z);
+        return curr.psi + (curr.f.grad + c/dimx*curr.z).dot(next.x - curr.x) +
+            c/dimx*curr.x.dot(next.z - curr.z);
     else
         return curr.psi + (curr.f.grad + curr.h.grad.transpose()*curr.y + c/dimx*curr.z).dot(next.x - curr.x) +
             curr.h.func.dot(next.y - curr.y) + c/dimx*curr.x.dot(next.z - curr.z);
@@ -195,8 +198,6 @@ double IPFilterSolver::CalculateNextLinearModel() const
 double IPFilterSolver::CalculateSigma() const
 {
     if(restoration) return params.sigma_restoration;
-
-    if(safe_step) return (alphat < params.safe_step_threshold_alphat) ? params.sigma_safe_max : params.sigma_safe_min;
 
     return (curr.mu < params.mu_threshold) ? params.sigma_fast : params.sigma_slow;
 }
@@ -231,7 +232,7 @@ void IPFilterSolver::Initialise(const State& state)
         throw InitialGuessError();
 
     // Initialise the current maximum value of the trust-region radius
-    delta = delta_max = params.delta_initial;
+    delta = delta_initial = params.delta_initial;
 
     // Initialise the normal and tangencial step-lengths respectively
     alphan = alphat = 1.0;
@@ -240,7 +241,7 @@ void IPFilterSolver::Initialise(const State& state)
     iter = 0;
 
     // Initialise the logical flags to false
-    restoration = safe_step = false;
+    restoration = false;
 
     // Initialise the current and next states
     curr = next = state;
@@ -276,7 +277,7 @@ void IPFilterSolver::Initialise(const VectorXd& x)
     curr.y = A.jacobiSvd(ComputeThinU | ComputeThinV).solve(b);
 
     // Discard the estimate of the Lagrange multiplier y if its norm is too high
-    if(curr.y.norm()/dimy > params.y_max)
+    if(curr.y.lpNorm<Infinity>() > params.y_max)
         curr.y.setZero(dimy);
 
     // Improve the Lagrange multiplier z
@@ -300,28 +301,28 @@ void IPFilterSolver::Initialise(const VectorXd& x)
 
 void IPFilterSolver::OutputHeader()
 {
-    if(options.output) output.OutputHeader();
+    if(options.output.active) outputter.OutputHeader();
 }
 
 void IPFilterSolver::OutputState()
 {
-    if(options.output)
+    if(options.output.active)
     {
-        output.AddValue(iter);
-        output.AddValues(curr.x.data(), curr.x.data() + dimx);
-        output.AddValue(curr.f.func);
-        output.AddValue(curr.h.func.norm());
-        output.AddValue(curr.error);
-        output.AddValue(alphan);
-        output.AddValue(alphat);
-        output.AddValue(curr.mu);
-        output.AddValue(delta);
-        output.AddValue(curr.theta);
-        output.AddValue(curr.psi);
-        output.AddValue(curr.thc);
-        output.AddValue(curr.thh);
-        output.AddValue(curr.thl);
-        output.OutputState();
+        outputter.AddValue(iter);
+        outputter.AddValues(curr.x.data(), curr.x.data() + dimx);
+        outputter.AddValue(curr.f.func);
+        outputter.AddValue(curr.h.func.norm());
+        outputter.AddValue(curr.error);
+        outputter.AddValue(alphan);
+        outputter.AddValue(alphat);
+        outputter.AddValue(curr.mu);
+        outputter.AddValue(delta);
+        outputter.AddValue(curr.theta);
+        outputter.AddValue(curr.psi);
+        outputter.AddValue(curr.thc);
+        outputter.AddValue(curr.thh);
+        outputter.AddValue(curr.thl);
+        outputter.OutputState();
     }
 }
 
@@ -335,10 +336,13 @@ void IPFilterSolver::ResetLagrangeMultipliersZ(State& state) const
 void IPFilterSolver::SearchDeltaNeighborhood()
 {
     // Calculate the largest delta that solves the positivity conditions
-    const double delta_positivity = CalculateDeltaPositivity();
+    const double delta_max = CalculateDeltaPositivity();
+
+    // Calculate the adjustment factor tau
+    const double tau = 1.0 - std::min(0.01, 100.0 * curr.mu * curr.mu);
 
     // Calculate the start trial delta so that it is not greater than the current maximum allowed
-    double delta_trial = std::min(delta_positivity, delta_max);
+    double delta_trial = std::min(tau*delta_max, delta_initial);
 
     while(true)
     {
@@ -391,7 +395,7 @@ void IPFilterSolver::SearchDeltaTrustRegion()
                 UpdateNeighborhoodParameterM();
 
                 // Increase the current maximum trust-region radius
-                delta_max *= params.delta_increase_factor;
+                delta_initial = delta * params.delta_increase_factor;
 
                 // Trial point has been found: leave loop
                 break;
@@ -411,7 +415,7 @@ void IPFilterSolver::SearchDeltaTrustRegion()
                 UpdateNeighborhoodParameterM();
 
                 // Increase the current maximum trust-region radius
-                if(rho > params.eta_large) delta_max *= params.delta_increase_factor;
+                if(rho > params.eta_large) delta_initial = delta * params.delta_increase_factor;
 
                 // Trial point has been found: leave loop
                 break;
@@ -444,7 +448,7 @@ void IPFilterSolver::SearchDeltaTrustRegionRestoration()
         const double rho = (curr_theta2 - next_theta2)/(-grad_theta2_dot_sn);
 
         // Increase the current maximum trust-region radius
-        if(rho > params.xi2) delta_max = delta * params.delta_increase_factor;
+        if(rho > params.xi2) delta_initial = delta * params.delta_increase_factor;
 
         // Check if rho satisfies the Cauchy condition of the restoration algorithm
         if(rho > params.xi1)
@@ -458,7 +462,6 @@ void IPFilterSolver::SearchDeltaTrustRegionRestoration()
             throw SearchDeltaTrustRegionRestorationError();
     }
 }
-
 
 void IPFilterSolver::Solve()
 {
@@ -476,6 +479,16 @@ void IPFilterSolver::Solve()
         // Search for a trust-region radius that satisfies the centrality neighborhood conditions
         SearchDeltaNeighborhood();
 
+        // Check if the current tangential step needs to be safely recalculated
+        if(PassSafeStepCondition())
+        {
+            // Calculate the safe tangential step
+            UpdateSafeTangentialStep();
+
+            // Repeat the search for a trust-region radius that satisfies the neighborhood conditions
+            SearchDeltaNeighborhood();
+        }
+
         // If the current state pass the restoration condition, search for a suitable trust-region radius
         if(PassRestorationCondition()) SearchDeltaTrustRegion();
 
@@ -486,7 +499,7 @@ void IPFilterSolver::Solve()
         AcceptTrialPoint();
 
         // Check if the current state pass the stopping criteria of optimality
-        if(PassStoppingCriteria()) break;
+        if(PassConvergenceCondition()) break;
     }
 
     // Output the final state of the calculation
@@ -505,7 +518,7 @@ void IPFilterSolver::SolveRestoration()
     restoration = true;
 
     // Output a message indicating the start of the restoration algorithm
-    if(options.output) output.OutputMessage("...beginning the restoration algorithm");
+    if(options.output.active) outputter.OutputMessage("...beginning the restoration algorithm");
 
     while(true)
     {
@@ -530,7 +543,7 @@ void IPFilterSolver::SolveRestoration()
     }
 
     // Output a message indicating the end of the restoration algorithm
-    if(options.output) output.OutputMessage("...finishing the restoration algorithm");
+    if(options.output.active) outputter.OutputMessage("...finishing the restoration algorithm");
 
     // Deactivate the restoration flag
     restoration = false;
@@ -616,6 +629,34 @@ void IPFilterSolver::UpdateNormalTangentialSteps()
     norm_st = std::sqrt(stx.squaredNorm() + sty.squaredNorm() + stz.squaredNorm());
 }
 
+void IPFilterSolver::UpdateSafeTangentialStep()
+{
+    // Define some auxiliary variables
+    const unsigned n = dimx;
+    const unsigned m = dimy;
+
+    // Calculate the value of parameter sigma for the safe tangential step re-calculation
+    const double sigma = (alphat < params.threshold_alphat) ?
+        params.sigma_safe_max : params.sigma_safe_min;
+
+    // Assemble the tangential rhs vector of the linear system
+    rhs.segment(0, n) = - curr.f.grad - curr.h.grad.transpose()*curr.y + curr.z - ((1 - sigma)*curr.mu/curr.x.array()).matrix();
+    rhs.segment(n, m) = - VectorXd::Zero(m);
+
+    // Calculate the safe tangential step
+    u = lu.solve(rhs);
+
+    // Extract the x and y components of the safe tangential step
+    stx = u.segment(0, n);
+    sty = u.segment(n, m);
+
+    // Calculate the z components of the safe tangential step
+    stz = -(curr.z.array() * stx.array() + curr.mu * (1 - sigma))/curr.x.array();
+
+    // Calculate the norm of the safe tangential steps
+    norm_st = std::sqrt(stx.squaredNorm() + sty.squaredNorm() + stz.squaredNorm());
+}
+
 void IPFilterSolver::UpdateState(const VectorXd& x, const VectorXd& y, const VectorXd& z, State& state) const
 {
     // Update the iterates x, y and z
@@ -633,7 +674,7 @@ void IPFilterSolver::UpdateState(const VectorXd& x, const VectorXd& y, const Vec
     // Update the auxiliary optimality theta measures at (x,y,z)
     state.thc = (x.array() * z.array() - state.mu).matrix().norm();
     state.thh = (state.h.func).norm();
-    state.thl = (state.f.grad + state.h.grad.transpose() * y - z).norm();
+    state.thl = (state.f.grad + state.h.grad.transpose()*y - z).norm();
 
     // Update the feasibility/centrality theta measure at (x,y,z)
     state.theta = state.thh + state.thc;
@@ -649,7 +690,7 @@ void IPFilterSolver::UpdateState(const VectorXd& x, const VectorXd& y, const Vec
 
     state.errorh = state.h.func.lpNorm<Infinity>();
     state.errorc = 1.0/sc * x.cwiseProduct(z).lpNorm<Infinity>();
-    state.errorl = 1.0/sl * (state.f.grad + state.h.grad.transpose()*state.y - state.z).lpNorm<Infinity>();
+    state.errorl = 1.0/sl * (state.f.grad + state.h.grad.transpose()*y - z).lpNorm<Infinity>();
 
     // Update the maximum among the feasibility, centrality, and optimality errors
     state.error = std::max({state.errorh, state.errorc, state.errorl});

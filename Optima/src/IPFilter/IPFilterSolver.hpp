@@ -17,7 +17,7 @@ using namespace Eigen;
 #include <IPFilter/IPFilterState.hpp>
 #include <Utils/Filter.hpp>
 #include <Utils/OptimumProblem.hpp>
-#include <Utils/Output.hpp>
+#include <Utils/Outputter.hpp>
 
 namespace Optima {
 
@@ -66,7 +66,8 @@ private:
     bool AnyFloatingPointException(const State& state) const;
     bool PassFilterCondition() const;
     bool PassRestorationCondition() const;
-    bool PassStoppingCriteria() const;
+    bool PassSafeStepCondition() const;
+    bool PassConvergenceCondition() const;
 
     double CalculateDeltaPositivity() const;
     double CalculateLargestBoundaryStep(const VectorXd& p, const VectorXd& dp) const;
@@ -89,6 +90,7 @@ private:
     void UpdateNeighborhoodParameterM();
     void UpdateNextState(double delta);
     void UpdateNormalTangentialSteps();
+    void UpdateSafeTangentialStep();
     void UpdateState(const VectorXd& x, const VectorXd& y, const VectorXd& z, State& state) const;
 
 private:
@@ -102,7 +104,7 @@ private:
     Options options;
 
     /// The output instance for printing the calculation progress
-    Output output;
+    Outputter outputter;
 
     /// The dimension of the objective and constraint functions respectively
     unsigned dimx, dimy;
@@ -131,8 +133,8 @@ private:
     /// The current radius of the trust-region
     double delta;
 
-    /// The current maximum allowed radius of the trust-region
-    double delta_max;
+    /// The current initial value of the trust-region radius used search a radius that satisfies the neighborhood conditions
+    double delta_initial;
 
     /// The parameter c used for the calculation of the psi measure (initialised at the beginning of the calculation)
     double c;
@@ -148,9 +150,6 @@ private:
 
     /// The flag that indicates if the algorithm is currently in the restoration mode
     bool restoration;
-
-    /// The flag that indicates if the algorithm is currently in the safe tangencial step mode
-    bool safe_step;
 
     /// The LU decomposition of the reduced KKT matrix
     PartialPivLU<MatrixXd> lu;

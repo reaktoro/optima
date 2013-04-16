@@ -42,7 +42,7 @@ int main()
     problem.SetConstraintFunction(Cons1);
 
     IPFilterSolver::Options options;
-    options.output = true;
+    options.output.active = true;
 
     IPFilterSolver solver;
 

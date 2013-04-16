@@ -12,5 +12,5 @@
 #include <Utils/Filter.hpp>
 #include <Utils/Math.hpp>
 #include <Utils/Objective.hpp>
-#include <Utils/Output.hpp>
+#include <Utils/Outputter.hpp>
 #include <Utils/OptimumProblem.hpp>

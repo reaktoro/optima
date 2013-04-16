@@ -7,6 +7,9 @@
 
 #pragma once
 
+// Optima includes
+#include <Utils/Outputter.hpp>
+
 namespace Optima {
 
 /**
@@ -43,7 +46,7 @@ struct IPFilterOptions
     /**
      * The logical flag that activates output during the calculation
      */
-    bool output = false;
+    Outputter::Options output;
 };
 
 } /* namespace Optima */
