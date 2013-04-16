@@ -14,6 +14,7 @@ using namespace Eigen;
 // Optima includes
 #include <IPFilter/IPFilterOptions.hpp>
 #include <IPFilter/IPFilterParams.hpp>
+#include <IPFilter/IPFilterResult.hpp>
 #include <IPFilter/IPFilterState.hpp>
 #include <Utils/Filter.hpp>
 #include <Utils/OptimumProblem.hpp>
@@ -29,6 +30,7 @@ class IPFilterSolver
 public:
     typedef IPFilterOptions Options;
     typedef IPFilterParams Params;
+    typedef IPFilterResult Result;
     typedef IPFilterState State;
 
     /**
@@ -52,6 +54,26 @@ public:
     void SetProblem(const OptimumProblem& problem);
 
     /**
+     * Gets the calculation options of the minimisation solver
+     */
+    const Options& GetOptions() const;
+
+    /**
+     * Gets the algorithm params of the minimisation solver
+     */
+    const Params& GetParams() const;
+
+    /**
+     * Gets the result details of the last minimisation calculation
+     */
+    const Result& GetResult() const;
+
+    /**
+     * Gets the optimisation problem of the minimisation solver
+     */
+    const OptimumProblem& GetProblem() const;
+
+    /**
      * Solves the minimisation problem
      */
     void Solve(State& state);
@@ -73,6 +95,7 @@ private:
     double CalculateLargestBoundaryStep(const VectorXd& p, const VectorXd& dp) const;
     double CalculateLargestQuadraticStep(const VectorXd& a, const VectorXd& b, const VectorXd& c, const VectorXd& d) const;
     double CalculateNextLinearModel() const;
+    double CalculatePsi(const State& state) const;
     double CalculateSigma() const;
 
     void AcceptTrialPoint();
@@ -91,7 +114,7 @@ private:
     void UpdateNextState(double delta);
     void UpdateNormalTangentialSteps();
     void UpdateSafeTangentialStep();
-    void UpdateState(const VectorXd& x, const VectorXd& y, const VectorXd& z, State& state) const;
+    void UpdateState(const VectorXd& x, const VectorXd& y, const VectorXd& z, State& state);
 
 private:
     /// The definition of the optimisation problem
@@ -102,6 +125,9 @@ private:
 
     /// The options used for the optimisation calculation
     Options options;
+
+    /// The result details of the last minimisation calculation
+    Result result;
 
     /// The output instance for printing the calculation progress
     Outputter outputter;
@@ -145,9 +171,6 @@ private:
     /// The parameter M used in the neighborhood condition checking (initialised at the beginning of the calculation)
     double M;
 
-    /// The current iteration number
-    unsigned iter;
-
     /// The flag that indicates if the algorithm is currently in the restoration mode
     bool restoration;
 
@@ -160,8 +183,11 @@ private:
     /// The right-hand side vector of the linear system and the auxiliary linear system solution
     VectorXd rhs, u;
 
-    /// The auxiliary matrix used to assemble the hessian of the Lagrange function
-    MatrixXd H;
+    /// The gradient of the Lagrange function with respect to x at the current state
+    VectorXd Lx;
+
+    /// The Hessian of the Lagrange function with respect to x at the current state
+    MatrixXd Lxx;
 };
 
 } /* namespace Optima */

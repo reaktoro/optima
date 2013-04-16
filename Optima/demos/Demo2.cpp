@@ -182,45 +182,80 @@ ConstraintFunction CreateGibbsConstraintFunction(const VectorXd& b)
 
 int main()
 {
-    VectorXd b(num_elements);
-//    std::cout << "Enter nH2O and nCO2:" << std::endl;
-//    double nH2O, nCO2; std::cin >> nH2O >> nCO2;
-    double nH2O = 55, nCO2 = 1.0;
-    b << 2*nH2O, nH2O + 2*nCO2, nCO2;
+    std::vector<double> nCO2vals = {1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1e-0, 1e+1, 1e+2};
 
-//    std::cout << "Enter scale: " << std::endl;
-    double scale = 1;// std::cin >> scale;
+    double nH2O = 55;
 
-    OptimumProblem problem;
-    problem.SetNumVariables(num_species);
-    problem.SetNumConstraints(num_elements);
-    problem.SetObjectiveFunction(CreateGibbsObjectiveFunction(scale));
-    problem.SetConstraintFunction(CreateGibbsConstraintFunction(b));
-
-    IPFilterSolver::Params params;
-//    params.safe_step = true;
-//    params.sigma_fast = 0.5; // (0.5,0.1,0.5,0.5)->54c, (0.5,0.5,0.5,0.5)->60c,
-//    params.sigma_slow = 0.1;
-//    params.sigma_safe_max = 0.5; // 0.1->402i, 0.2->131i(converged), 0.3->333i, 0.4->131i(converged),
-//    params.sigma_safe_min = 0.5; // 0.5->57i(converged), 0.6->66i(converged), 0.7->101i(converged), 0.8->102i(converged), 0.9->171i(converged), 1.0->
+    while(true) {
+    std::cout << "Enter the psi scheme (0:Objective, 1:Lagrange, 2:GradLagrange): " << std::endl;
+    unsigned psi; std::cin >> psi;
 
     IPFilterSolver::Options options;
-    options.output.active    = true;
+    options.output.active    = false;
     options.output.precision = 10;
     options.output.width     = 20;
     options.max_iter         = 1000;
+    options.psi              = (psi == 2) ? GradLagrange : (psi == 1) ? Lagrange : Objective;
 
-    IPFilterSolver solver;
+    IPFilterSolver::Params params;
 
-    solver.SetParams(params);
-    solver.SetOptions(options);
-    solver.SetProblem(problem);
+    std::cout << "Use safe-step approach when needed? " << std::endl;
+    std::cin >> params.safe_step;
 
-    VectorXd n = VectorXd::Constant(num_species, 1.0e-5);
-    n[iH2Oa] = nH2O;
-    n[iCO2g] = nCO2;
+    std::cout << "Use default sigma parameters: " << std::endl;
+    bool default_sigma; std::cin >> default_sigma;
+    if(not default_sigma)
+    {
+        params.sigma_fast     = 0.5;
+        params.sigma_slow     = 0.5;
+        params.sigma_safe_max = 0.5;
+        params.sigma_safe_min = 0.5;
+    }
 
-//    n << 54.99498493, 0.005015069615, 6.223546418e-09, 0.005015063392, 0.9949849366, 1.0e-5, 1.0e-5;
+    std::cout << "Enter initial guess option (0:n[CO2(a)] = nCO2, 1: n[CO2(g)] = nCO2): " << std::endl;
+    unsigned nCO2guess; std::cin >> nCO2guess;
 
-    solver.Solve(n);
+    std::vector<IPFilterSolver::Result> results;
+
+    for(double nCO2 : nCO2vals)
+    {
+        VectorXd b(num_elements);
+        b << 2*nH2O, nH2O + 2*nCO2, nCO2;
+
+        OptimumProblem problem;
+        problem.SetNumVariables(num_species);
+        problem.SetNumConstraints(num_elements);
+        problem.SetObjectiveFunction(CreateGibbsObjectiveFunction());
+        problem.SetConstraintFunction(CreateGibbsConstraintFunction(b));
+
+        IPFilterSolver solver;
+
+        solver.SetParams(params);
+        solver.SetOptions(options);
+        solver.SetProblem(problem);
+
+        VectorXd n = VectorXd::Constant(num_species, 1.0e-5);
+        n[iH2Oa] = nH2O;
+        n[iCO2a] = (nCO2guess == 0) ? nCO2 : n[iCO2a];
+        n[iCO2g] = (nCO2guess == 1) ? nCO2 : n[iCO2g];
+
+        try { solver.Solve(n); } catch (...) {}
+        //catch(const std::exception& e) { std::cout << e.what() << std::endl; }
+
+        results.push_back(solver.GetResult());
+    }
+
+    std::cout << std::left << std::setw(10) << "nCO2";
+    std::cout << std::left << std::setw(10) << std::boolalpha << "converged";
+    std::cout << std::left << std::setw(10) << "iters";
+    std::cout << std::endl;
+
+    for(unsigned i = 0; i < nCO2vals.size(); ++i)
+    {
+        std::cout << std::left << std::setw(10) << nCO2vals[i];
+        std::cout << std::left << std::setw(10) << std::boolalpha << results[i].converged;
+        std::cout << std::left << std::setw(10) << results[i].iterations;
+        std::cout << std::endl;
+    }
+    }
 }

@@ -67,6 +67,26 @@ void IPFilterSolver::SetProblem(const OptimumProblem& problem)
     }
 }
 
+const IPFilterSolver::Options& IPFilterSolver::GetOptions() const
+{
+    return options;
+}
+
+const IPFilterSolver::Params& IPFilterSolver::GetParams() const
+{
+    return params;
+}
+
+const IPFilterSolver::Result& IPFilterSolver::GetResult() const
+{
+    return result;
+}
+
+const OptimumProblem& IPFilterSolver::GetProblem() const
+{
+    return problem;
+}
+
 void IPFilterSolver::Solve(State& state)
 {
     Initialise(state);
@@ -187,12 +207,29 @@ double IPFilterSolver::CalculateLargestQuadraticStep(
 
 double IPFilterSolver::CalculateNextLinearModel() const
 {
-    if(options.psi_scheme == 0)
-        return curr.psi + (curr.f.grad + c/dimx*curr.z).dot(next.x - curr.x) +
-            c/dimx*curr.x.dot(next.z - curr.z);
-    else
-        return curr.psi + (curr.f.grad + curr.h.grad.transpose()*curr.y + c/dimx*curr.z).dot(next.x - curr.x) +
-            curr.h.func.dot(next.y - curr.y) + c/dimx*curr.x.dot(next.z - curr.z);
+    VectorXd psix = VectorXd::Zero(dimx);
+    VectorXd psiy = VectorXd::Zero(dimy);
+    VectorXd psiz = VectorXd::Zero(dimx);
+
+    switch(options.psi)
+    {
+    case Objective:
+        psix.noalias() = curr.f.grad + c/dimx*curr.z;
+        psiz.noalias() = c/dimx*curr.x;
+        break;
+    case Lagrange:
+        psix.noalias() = curr.f.grad + curr.h.grad.transpose()*curr.y + c/dimx*curr.z;
+        psiy.noalias() = curr.h.func;
+        psiz.noalias() = c/dimx*curr.x;
+        break;
+    case GradLagrange:
+        psix.noalias() = 2*Lxx.transpose()*Lx + curr.z/dimx;
+        psiy.noalias() = 2*curr.h.grad*Lx;
+        psiz.noalias() =-2*Lx + curr.x/dimx;
+        break;
+    }
+
+    return curr.psi + psix.dot(next.x - curr.x) + psiy.dot(next.y - curr.y) + psiz.dot(next.z - curr.z);
 }
 
 double IPFilterSolver::CalculateSigma() const
@@ -202,16 +239,29 @@ double IPFilterSolver::CalculateSigma() const
     return (curr.mu < params.mu_threshold) ? params.sigma_fast : params.sigma_slow;
 }
 
+double IPFilterSolver::CalculatePsi(const State& state) const
+{
+    switch(options.psi)
+    {
+    case Objective:
+        return state.f.func + c * state.mu;
+    case Lagrange:
+        return state.f.func + c * state.mu + state.h.func.dot(state.y);
+    case GradLagrange:
+        return (state.f.grad + state.h.grad.transpose()*state.y - state.z).squaredNorm() + state.mu;
+    }
+}
+
 void IPFilterSolver::AcceptTrialPoint()
 {
     // Update the current state curr
     curr = next;
 
     // Update the number of iterations
-    ++iter;
+    ++result.iterations;
 
     // Check if the maximum number of iterations has been achieved
-    if(iter > options.max_iter)
+    if(result.iterations > options.max_iter)
         throw MaxIterationError();
 }
 
@@ -219,7 +269,7 @@ void IPFilterSolver::ExtendFilter()
 {
     // Calculate the components of the new entry
     const double beta_theta = curr.theta * (1 - params.alpha_theta);
-    const double beta_psi   = curr.psi - params.alpha_psi * curr.theta;
+    const double beta_psi = curr.psi - params.alpha_psi * curr.theta;
 
     // Add a new entry to the filter
     filter.Add({beta_theta, beta_psi});
@@ -231,14 +281,14 @@ void IPFilterSolver::Initialise(const State& state)
     if(AnyFloatingPointException(state))
         throw InitialGuessError();
 
+    // Initialise the result member
+    result = Result();
+
     // Initialise the current maximum value of the trust-region radius
     delta = delta_initial = params.delta_initial;
 
     // Initialise the normal and tangencial step-lengths respectively
     alphan = alphat = 1.0;
-
-    // Initialise the current number of iterations
-    iter = 0;
 
     // Initialise the logical flags to false
     restoration = false;
@@ -308,7 +358,7 @@ void IPFilterSolver::OutputState()
 {
     if(options.output.active)
     {
-        outputter.AddValue(iter);
+        outputter.AddValue(result.iterations);
         outputter.AddValues(curr.x.data(), curr.x.data() + dimx);
         outputter.AddValue(curr.f.func);
         outputter.AddValue(curr.h.func.norm());
@@ -507,6 +557,9 @@ void IPFilterSolver::Solve()
 
     // Output the header on the bottom of the calculation output
     OutputHeader();
+
+    // Update the convergency condition of result
+    result.converged = true;
 }
 
 void IPFilterSolver::SolveRestoration()
@@ -516,6 +569,9 @@ void IPFilterSolver::SolveRestoration()
 
     // Activate the restoration flag
     restoration = true;
+
+    // Update the restoration counter of the result
+    ++result.restorations;
 
     // Output a message indicating the start of the restoration algorithm
     if(options.output.active) outputter.OutputMessage("...beginning the restoration algorithm");
@@ -578,19 +634,20 @@ void IPFilterSolver::UpdateNormalTangentialSteps()
     const unsigned n = dimx;
     const unsigned m = dimy;
 
-    // Calculate the matrix H, which is the block(1,1) of the linear system
-    H = curr.f.hessian;
+    // Calculate the gradient of the Lagrange function with respect to x at the current state
+    Lx = curr.f.grad + curr.h.grad.transpose()*curr.y - curr.z;
 
+    // Calculate the Hessian of the Lagrange function with respect to x at the current state
+    Lxx = curr.f.hessian;
     for(unsigned i = 0; i < curr.h.hessian.size(); ++i)
-        H += curr.y[i] * curr.h.hessian[i];
-
-    H += curr.z.cwiseQuotient(curr.x).asDiagonal();
+        Lxx += curr.y[i] * curr.h.hessian[i];
 
     // Assemble the coefficient matrix of the linear system
-    lhs.block(0, 0, n, n) = H;
-    lhs.block(0, n, n, m) = curr.h.grad.transpose();
-    lhs.block(n, 0, m, n) = curr.h.grad;
-    lhs.block(n, n, m, m) = MatrixXd::Zero(m, m);
+    lhs.block(0, 0, n, n).noalias() = Lxx;
+    lhs.block(0, 0, n, n) += curr.z.cwiseQuotient(curr.x).asDiagonal();
+    lhs.block(0, n, n, m).noalias() = curr.h.grad.transpose();
+    lhs.block(n, 0, m, n).noalias() = curr.h.grad;
+    lhs.block(n, n, m, m).noalias() = MatrixXd::Zero(m, m);
 
     // Calculate the LU decomposition of the coefficient matrix
     lu.compute(lhs);
@@ -636,8 +693,7 @@ void IPFilterSolver::UpdateSafeTangentialStep()
     const unsigned m = dimy;
 
     // Calculate the value of parameter sigma for the safe tangential step re-calculation
-    const double sigma = (alphat < params.threshold_alphat) ?
-        params.sigma_safe_max : params.sigma_safe_min;
+    const double sigma = (alphat < params.threshold_alphat) ? params.sigma_safe_max : params.sigma_safe_min;
 
     // Assemble the tangential rhs vector of the linear system
     rhs.segment(0, n) = - curr.f.grad - curr.h.grad.transpose()*curr.y + curr.z - ((1 - sigma)*curr.mu/curr.x.array()).matrix();
@@ -657,7 +713,7 @@ void IPFilterSolver::UpdateSafeTangentialStep()
     norm_st = std::sqrt(stx.squaredNorm() + sty.squaredNorm() + stz.squaredNorm());
 }
 
-void IPFilterSolver::UpdateState(const VectorXd& x, const VectorXd& y, const VectorXd& z, State& state) const
+void IPFilterSolver::UpdateState(const VectorXd& x, const VectorXd& y, const VectorXd& z, State& state)
 {
     // Update the iterates x, y and z
     state.x = x;
@@ -667,6 +723,10 @@ void IPFilterSolver::UpdateState(const VectorXd& x, const VectorXd& y, const Vec
     // Update the objective and constraint state at x
     state.f = problem.Objective(x);
     state.h = problem.Constraint(x);
+
+    // Update the counter of objective and constraint evaluations in result
+    ++result.objective_evals;
+    ++result.constraint_evals;
 
     // Update the barrier parameter at (x,y,z)
     state.mu = x.dot(z)/dimx;
@@ -680,9 +740,7 @@ void IPFilterSolver::UpdateState(const VectorXd& x, const VectorXd& y, const Vec
     state.theta = state.thh + state.thc;
 
     // Update the optimality psi measure at (x,y,z)
-    state.psi = (options.psi_scheme == 0) ?
-        state.f.func + c * state.mu :
-        state.f.func + c * state.mu + state.h.func.dot(y);
+    state.psi = CalculatePsi(state);
 
     // Update feasibility, centrality, and optimality errors
     const double sc = 0.01 * std::max(100.0, state.z.lpNorm<1>()/dimx);

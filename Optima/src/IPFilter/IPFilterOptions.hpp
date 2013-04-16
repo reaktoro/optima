@@ -13,14 +13,31 @@
 namespace Optima {
 
 /**
+ * Defines the types of schemes used for the calculation of the optimality measure \f$\psi\f$
+ */
+enum IPFilterPsiScheme
+{
+    /// Uses the scheme \f$\psi(\mathbf{w})=f(\mathbf{x})+c\mu\f$
+    Objective,
+
+    /// Uses the scheme \f$\psi(\mathbf{w})=\mathcal{L}(\mathbf{w})+(c+n)\mu\f$
+    Lagrange,
+
+    /// Uses the scheme \f$\psi(\mathbf{w})=\lVert\nabla_{x}\mathcal{L}(\mathbf{w})\rVert^{2}+\mathbf{x}^{T}\mathbf{z}/n\f$
+    GradLagrange
+};
+
+/**
  * The options used for the algorithm
  */
 struct IPFilterOptions
 {
     /**
-     * The scheme used for the calculation of the psi optimality measure
+     * The scheme used for the calculation of the optimality measure \f$\psi\f$
+     *
+     * @see IPFilterPsiScheme
      */
-    unsigned psi_scheme = 0;
+    IPFilterPsiScheme psi = Objective;
 
     /**
      * The maximum number of iterations allowed in the algorithm
