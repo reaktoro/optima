@@ -64,9 +64,14 @@ public:
     const Params& GetParams() const;
 
     /**
-     * Gets the result details of the last minimisation calculation
+     * Gets the solution result of the last minimisation calculation
      */
     const Result& GetResult() const;
+
+    /**
+     * Gets the solution state of the last minimisation calculation
+     */
+    const State& GetState() const;
 
     /**
      * Gets the optimisation problem of the minimisation solver
@@ -97,6 +102,8 @@ private:
     double CalculateNextLinearModel() const;
     double CalculatePsi(const State& state) const;
     double CalculateSigma() const;
+    double CalculateSigmaDefault() const;
+    double CalculateSigmaLOQO() const;
 
     void AcceptTrialPoint();
     void ExtendFilter();

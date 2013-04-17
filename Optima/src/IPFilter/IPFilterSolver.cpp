@@ -82,6 +82,11 @@ const IPFilterSolver::Result& IPFilterSolver::GetResult() const
     return result;
 }
 
+const IPFilterSolver::State& IPFilterSolver::GetState() const
+{
+    return curr;
+}
+
 const OptimumProblem& IPFilterSolver::GetProblem() const
 {
     return problem;
@@ -236,7 +241,25 @@ double IPFilterSolver::CalculateSigma() const
 {
     if(restoration) return params.sigma_restoration;
 
+    switch(options.sigma)
+    {
+    case SigmaDefault:
+        return CalculateSigmaDefault();
+    case SigmaLOQO:
+        return CalculateSigmaLOQO();
+    }
+}
+
+double IPFilterSolver::CalculateSigmaDefault() const
+{
     return (curr.mu < params.mu_threshold) ? params.sigma_fast : params.sigma_slow;
+}
+
+double IPFilterSolver::CalculateSigmaLOQO() const
+{
+    const double xi = curr.x.cwiseProduct(curr.z).minCoeff()/curr.mu;
+
+    return 0.1 * std::pow(std::min(0.05*(1 - xi)/xi, 2.0), 3);
 }
 
 double IPFilterSolver::CalculatePsi(const State& state) const
@@ -303,38 +326,64 @@ void IPFilterSolver::Initialise(const State& state)
     c = 3*dimx*dimx/(1 - params.sigma_slow)*std::pow(std::max(1.0, (1 - params.sigma_slow)/gamma), 2);
 
     // Initialise the value of the neighborhood parameter M
-    M = std::max(params.neighM_max, params.alphaM*(curr.thh + curr.thl)/curr.mu);
+    M = std::max(params.neighM_max, params.alphaM_initial*(curr.thh + curr.thl)/curr.mu);
 
     // Deactivate the restoration flag
     restoration = false;
 }
 
+//void IPFilterSolver::Initialise(const VectorXd& x)
+//{
+//    // Initialise the iterates x and z
+//    curr.x = x;
+//    curr.z = options.mu/x.array();
+//
+//    // Initialise the objective and constraint state at x
+//    curr.f = problem.Objective(x);
+//    curr.h = problem.Constraint(x);
+//
+//    // Calculate the A matrix and b vector for the least squares problem
+//    const MatrixXd A = curr.h.grad.transpose();
+//    const VectorXd b = curr.z - curr.f.grad;
+//
+//    // Calculate y by solving a least squares problem
+//    curr.y = A.jacobiSvd(ComputeThinU | ComputeThinV).solve(b);
+//
+//    // Discard the estimate of the Lagrange multiplier y if its norm is too high
+//    if(curr.y.lpNorm<Infinity>() > params.y_max)
+//        curr.y.setZero(dimy);
+//
+//    // Improve the Lagrange multiplier z
+//    curr.z = curr.z.cwiseMax(curr.f.grad + curr.h.grad.transpose() * curr.y);
+//
+//    // Initialise the barrier parameter
+//    curr.mu = curr.x.dot(curr.z)/dimx;
+//
+//    // Initialise the value of the parameter gamma
+//    gamma = std::min(params.gamma_min, curr.x.cwiseProduct(curr.z).minCoeff()/(2.0*curr.mu));
+//
+//    // Initialise the value of the parameter c
+//    c = 3*dimx*dimx/(1 - params.sigma_slow)*std::pow(std::max(1.0, (1 - params.sigma_slow)/gamma), 2);
+//
+//    // Update the state curr with the x, y, z iterates
+//    UpdateState(curr.x, curr.y, curr.z, curr);
+//
+//    // Initialise the rest of the state
+//    Initialise(curr);
+//}
+
 void IPFilterSolver::Initialise(const VectorXd& x)
 {
     // Initialise the iterates x and z
     curr.x = x;
+    curr.y = VectorXd::Zero(dimy);
     curr.z = options.mu/x.array();
+
+    curr.mu = options.mu;
 
     // Initialise the objective and constraint state at x
     curr.f = problem.Objective(x);
     curr.h = problem.Constraint(x);
-
-    // Calculate the A matrix and b vector for the least squares problem
-    const MatrixXd A = curr.h.grad.transpose();
-    const VectorXd b = curr.z - curr.f.grad;
-
-    // Calculate y by solving a least squares problem
-    curr.y = A.jacobiSvd(ComputeThinU | ComputeThinV).solve(b);
-
-    // Discard the estimate of the Lagrange multiplier y if its norm is too high
-    if(curr.y.lpNorm<Infinity>() > params.y_max)
-        curr.y.setZero(dimy);
-
-    // Improve the Lagrange multiplier z
-    curr.z = curr.z.cwiseMax(curr.f.grad + curr.h.grad.transpose() * curr.y);
-
-    // Initialise the barrier parameter
-    curr.mu = curr.x.dot(curr.z)/dimx;
 
     // Initialise the value of the parameter gamma
     gamma = std::min(params.gamma_min, curr.x.cwiseProduct(curr.z).minCoeff()/(2.0*curr.mu));

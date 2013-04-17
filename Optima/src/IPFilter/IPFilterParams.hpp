@@ -82,6 +82,29 @@ struct IPFilterParams
      */
     double y_max = 2.0e+03;
 
+    /**
+     * The threshold value of @c mu that indicates which value of @c sigma to be used
+     *
+     * The value of @c sigma is chosen as follows: if @c mu < @c mu_threshold, then
+     * @c sigma = @c sigma_fast, else
+     * @c sigma = @c sigma_slow.
+     */
+    double mu_threshold = 1.0e-06;
+
+    /**
+     * The value of @c sigma used when @c mu is large
+     *
+     * This value of sigma is used whenever @c mu > @c mu_threshold.
+     */
+    double sigma_slow = 0.1;
+
+    /**
+     * The value of @c sigma used when @c mu is small
+     *
+     * This value of sigma is used whenever @c mu < @c mu_threshold.
+     */
+    double sigma_fast = 0.5;
+
     //==================================
     // RESTORATION ALGORITHM PARAMETERS
     //==================================
@@ -204,35 +227,12 @@ struct IPFilterParams
     double threshold_alphat = 1.0e-3;
 
     /**
-     * The threshold value of @c mu that indicates which value of @c sigma to be used
-     *
-     * The value of @c sigma is chosen as follows: if @c mu < @c mu_threshold, then
-     * @c sigma = @c sigma_fast, else
-     * @c sigma = @c sigma_slow.
-     */
-    double mu_threshold = 1.0e-06;
-
-    /**
-     * The value of @c sigma used when @c mu is large
-     *
-     * This value of sigma is used whenever @c mu > @c mu_threshold.
-     */
-    double sigma_slow = 1.0e-05;
-
-    /**
-     * The value of @c sigma used when @c mu is small
-     *
-     * This value of sigma is used whenever @c mu < @c mu_threshold.
-     */
-    double sigma_fast = 2.6e-03;
-
-    /**
      * The minimum value of @c sigma used in the safe tangencial step calculation
      *
      * The safe tangencial calculation uses this minimum
      * value of @c sigma when @c alphat > @c safe_step_threshold_alphat.
      */
-    double sigma_safe_min = 1.0e-03;
+    double sigma_safe_min = 0.5;
 
     /**
      * The maximum value of @c sigma used in the safe tangencial step calculation
@@ -240,7 +240,7 @@ struct IPFilterParams
      * The safe tangencial calculation uses this maximum
      * value of @c sigma when @c alphat < @c safe_step_threshold_alphat.
      */
-    double sigma_safe_max = 0.1;
+    double sigma_safe_max = 0.5;
 
     /**
      * The value of @c sigma used during the restoration algorithm

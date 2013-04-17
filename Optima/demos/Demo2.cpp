@@ -183,39 +183,35 @@ ConstraintFunction CreateGibbsConstraintFunction(const VectorXd& b)
 int main()
 {
     std::vector<double> nCO2vals = {1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1e-0, 1e+1, 1e+2};
+//    std::vector<double> nCO2vals = {10, 10, 10, 10, 10};//{1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1e-0, 1e+1, 1e+2};
 
     double nH2O = 55;
 
     while(true) {
     std::cout << "Enter the psi scheme (0:Objective, 1:Lagrange, 2:GradLagrange): " << std::endl;
+    std::cout << "Enter the sigma scheme (0:Default, 1:LOQO): " << std::endl;
+    std::cout << "Enter initial guess option (0:n[CO2(a)] = nCO2, 1: n[CO2(g)] = nCO2): " << std::endl;
     unsigned psi; std::cin >> psi;
+    unsigned sigma; std::cin >> sigma;
+    unsigned nCO2guess; std::cin >> nCO2guess;
 
     IPFilterSolver::Options options;
-    options.output.active    = false;
+    options.output.active    = true;
     options.output.precision = 10;
     options.output.width     = 20;
     options.max_iter         = 1000;
     options.psi              = (psi == 2) ? GradLagrange : (psi == 1) ? Lagrange : Objective;
+    options.sigma            = (sigma == 0) ? SigmaDefault : SigmaLOQO;
 
     IPFilterSolver::Params params;
 
-    std::cout << "Use safe-step approach when needed? " << std::endl;
-    std::cin >> params.safe_step;
-
-    std::cout << "Use default sigma parameters: " << std::endl;
-    bool default_sigma; std::cin >> default_sigma;
-    if(not default_sigma)
-    {
-        params.sigma_fast     = 0.5;
-        params.sigma_slow     = 0.5;
-        params.sigma_safe_max = 0.5;
-        params.sigma_safe_min = 0.5;
-    }
-
-    std::cout << "Enter initial guess option (0:n[CO2(a)] = nCO2, 1: n[CO2(g)] = nCO2): " << std::endl;
-    unsigned nCO2guess; std::cin >> nCO2guess;
-
     std::vector<IPFilterSolver::Result> results;
+
+    IPFilterSolver solver;
+    solver.SetParams(params);
+    solver.SetOptions(options);
+
+    bool first = true;
 
     for(double nCO2 : nCO2vals)
     {
@@ -228,19 +224,26 @@ int main()
         problem.SetObjectiveFunction(CreateGibbsObjectiveFunction());
         problem.SetConstraintFunction(CreateGibbsConstraintFunction(b));
 
-        IPFilterSolver solver;
-
-        solver.SetParams(params);
-        solver.SetOptions(options);
         solver.SetProblem(problem);
 
-        VectorXd n = VectorXd::Constant(num_species, 1.0e-5);
-        n[iH2Oa] = nH2O;
-        n[iCO2a] = (nCO2guess == 0) ? nCO2 : n[iCO2a];
-        n[iCO2g] = (nCO2guess == 1) ? nCO2 : n[iCO2g];
+        if(first)
+        {
+            VectorXd n = VectorXd::Constant(num_species, 1.0e-5);
+            n[iH2Oa] = nH2O;
+            n[iCO2a] = (nCO2guess == 0) ? nCO2 : n[iCO2a];
+            n[iCO2g] = (nCO2guess == 1) ? nCO2 : n[iCO2g];
 
-        try { solver.Solve(n); } catch (...) {}
-        //catch(const std::exception& e) { std::cout << e.what() << std::endl; }
+            try { solver.Solve(n); } catch (...) {}
+
+            first = false;
+        }
+        else
+        {
+            IPFilterState state = solver.GetState();
+            solver.Solve(state);
+//            VectorXd n = solver.GetState().x;
+//            solver.Solve(n);
+        }
 
         results.push_back(solver.GetResult());
     }
@@ -250,12 +253,16 @@ int main()
     std::cout << std::left << std::setw(10) << "iters";
     std::cout << std::endl;
 
+    unsigned total = 0;
     for(unsigned i = 0; i < nCO2vals.size(); ++i)
     {
+        total += results[i].iterations;
         std::cout << std::left << std::setw(10) << nCO2vals[i];
         std::cout << std::left << std::setw(10) << std::boolalpha << results[i].converged;
         std::cout << std::left << std::setw(10) << results[i].iterations;
         std::cout << std::endl;
     }
+
+    std::cout << "total: " << total << std::endl;
     }
 }

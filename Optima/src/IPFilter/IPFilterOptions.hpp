@@ -13,18 +13,69 @@
 namespace Optima {
 
 /**
- * Defines the types of schemes used for the calculation of the optimality measure \f$\psi\f$
+ * Defines the possible schemes for the calculation of the optimality measure &psi
  */
-enum IPFilterPsiScheme
+enum IPFilterPsi
 {
-    /// Uses the scheme \f$\psi(\mathbf{w})=f(\mathbf{x})+c\mu\f$
+    /**
+     * Uses the scheme \f$\psi(\mathbf{w})=f(\mathbf{x})+c\mu\f$
+     */
     Objective,
 
-    /// Uses the scheme \f$\psi(\mathbf{w})=\mathcal{L}(\mathbf{w})+(c+n)\mu\f$
+    /**
+     * Uses the scheme \f$\psi(\mathbf{w})=\mathcal{L}(\mathbf{w})+(c+n)\mu\f$
+     */
     Lagrange,
 
-    /// Uses the scheme \f$\psi(\mathbf{w})=\lVert\nabla_{x}\mathcal{L}(\mathbf{w})\rVert^{2}+\mathbf{x}^{T}\mathbf{z}/n\f$
+    /**
+     * Uses the scheme \f$\psi(\mathbf{w})=\lVert\nabla_{x}\mathcal{L}(\mathbf{w})\rVert^{2}+\mathbf{x}^{T}\mathbf{z}/n\f$
+     */
     GradLagrange
+};
+
+/**
+ * Defines the possible schemes for the calculation of the parameter &sigma
+ */
+enum IPFilterSigma
+{
+    /**
+     * Uses the default IPFilter scheme for the update of the &sigma parameter
+     *
+     * The update of the parameter &sigma is performed using
+     * the following formula:
+     *
+     * \f[
+     *     \sigma=\begin{cases}
+     *     \sigma_{\mathrm{fast}} & \mbox{if }\mu<\mu_{\mathrm{threshold}}\\
+     *     \sigma_{\mathrm{slow}} & \mbox{otherwise}
+     *     \end{cases}
+     * \f]
+     *
+     * where \f$\xi\f$ is given by:
+     *
+     * \f[
+     *     \xi=\frac{\min_{i}\{x_{i}z_{i}\}}{\mathbf{x}^{T}\mathbf{z}/n}.
+     * \f]
+     */
+    SigmaDefault,
+
+    /**
+     * Uses the LOQO scheme for the update of the &sigma parameter
+     *
+     * The update of the parameter &sigma is performed using
+     * the following formula:
+     *
+     * \f[
+     *     \sigma=0.1\min\left(0.05\frac{1-\xi}{\xi},2\right)^{3},
+     * \f]
+     *
+     * where the default values of the previous parameter are:
+     *
+     * \f[
+     *     \sigma_{\mathrm{slow}}=10^{-5},\quad\sigma_{\mathrm{fast}}=2.6\cdot10^{-3},\quad\mu_{\mathrm{threshold}}=10^{-6}.
+     * \f]
+     */
+    SigmaLOQO
 };
 
 /**
@@ -33,16 +84,23 @@ enum IPFilterPsiScheme
 struct IPFilterOptions
 {
     /**
-     * The scheme used for the calculation of the optimality measure \f$\psi\f$
+     * The scheme used for the calculation of the optimality measure &psi
      *
-     * @see IPFilterPsiScheme
+     * @see IPFilterPsi
      */
-    IPFilterPsiScheme psi = Objective;
+    IPFilterPsi psi = Objective;
+
+    /**
+     * The scheme used for the calculation of the parameter &sigma
+     *
+     * @see IPFilterSigma
+     */
+    IPFilterSigma sigma = SigmaLOQO;
 
     /**
      * The maximum number of iterations allowed in the algorithm
      */
-    unsigned max_iter = 100;
+    unsigned max_iter = 1000;
 
     /**
      * The start value used for the barrier parameter
