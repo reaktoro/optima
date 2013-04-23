@@ -79,14 +79,33 @@ public:
     const OptimumProblem& GetProblem() const;
 
     /**
-     * Solves the minimisation problem
-     */
-    void Solve(State& state);
-
-    /**
-     * Solves the minimisation problem
+     * Solves the optimisation problem
+     *
+     * This method allows the user to provide only the initial guess
+     * for the primal variables @a x. The initial guess of the Lagrange
+     * multipliers @a y and @a z are automatically estimated.
+     *
+     * @param x The initial guess of the primal variables @a x
      */
     void Solve(VectorXd& x);
+
+    /**
+     * Solves the optimisation problem
+     *
+     * This method allows the user to provide the initial guess
+     * for the primal variables @a x as well as the Lagrange
+     * multipliers @a y and @a z.
+     *
+     * This is usefull for sequential calculations where the
+     * i-th calculation uses the result of the (i-1)-th
+     * calculation as initial guess. Therefore, convergence
+     * to an optimal point might result in less iterations.
+     *
+     * @param x The initial guess of the primal variables @a x
+     * @param y The initial guess of the Lagrange multipliers @a y
+     * @param z The initial guess of the Lagrange multipliers @a z
+     */
+    void Solve(VectorXd& x, VectorXd& y, VectorXd& z);
 
 private:
 
@@ -96,7 +115,8 @@ private:
     bool PassSafeStepCondition() const;
     bool PassConvergenceCondition() const;
 
-    double CalculateDeltaPositivity() const;
+    double CalculateDeltaPositiveXZ() const;
+    double CalculateDeltaXzGreaterGammaMu() const;
     double CalculateLargestBoundaryStep(const VectorXd& p, const VectorXd& dp) const;
     double CalculateLargestQuadraticStep(const VectorXd& a, const VectorXd& b, const VectorXd& c, const VectorXd& d) const;
     double CalculateNextLinearModel() const;
@@ -107,8 +127,8 @@ private:
 
     void AcceptTrialPoint();
     void ExtendFilter();
-    void Initialise(const State& state);
     void Initialise(const VectorXd& x);
+    void Initialise(const VectorXd& x, const VectorXd& y, const VectorXd& z);
     void OutputHeader();
     void OutputState();
     void ResetLagrangeMultipliersZ(State& state) const;

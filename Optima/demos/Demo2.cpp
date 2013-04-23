@@ -9,7 +9,7 @@
 #include <iostream>
 
 // Eigen includes
-#include <Eigen/Core>
+#include <Eigen/Dense>
 using namespace Eigen;
 
 // Optima includes
@@ -27,9 +27,11 @@ const double R = 8.3144621e-3;
 
 /// The number of chemical species in the system
 const unsigned num_species = 7;
+const unsigned N = num_species;
 
 /// The number of chemical elements in the system
 const unsigned num_elements = 3;
+const unsigned E = num_elements;
 
 /// The chemical species in the system
 const std::vector<std::string> species = {"H2O(a)", "H+", "OH-", "HCO3-", "CO2(a)", "CO2(g)", "H2O(g)"};
@@ -69,10 +71,25 @@ double CalculateMolesPhase(unsigned iphase, const VectorXd& n)
 }
 
 /// Calculates the molar fraction of a species
-double CalculateMolarFraction(unsigned ispecies, const VectorXd& n)
+double CalculateMolarFraction(unsigned i, const VectorXd& n)
 {
-    const unsigned iphase = species2phase[ispecies];
-    return n[ispecies]/CalculateMolesPhase(iphase, n);
+    const unsigned iphase = species2phase[i];
+    return n[i]/CalculateMolesPhase(iphase, n);
+}
+
+double CalculateMolarFractionGrad(unsigned i, unsigned j, const VectorXd& n)
+{
+    const unsigned iphase = species2phase[i];
+    const unsigned jphase = species2phase[j];
+
+    if(iphase != jphase)
+        return 0.0;
+
+    auto kronecker = [](unsigned i, unsigned j) { return (i == j) ? 1.0 : 0.0; };
+    const double xi = CalculateMolarFraction(i, n);
+    const double nt = CalculateMolesPhase(iphase, n);
+
+    return (kronecker(i, j) - xi)/nt;
 }
 
 /// Calculates the molar fractions of all species
@@ -82,6 +99,15 @@ VectorXd CalculateMolarFractions(const VectorXd& n)
     for(unsigned i = 0; i < num_species; ++i)
         x[i] = CalculateMolarFraction(i, n);
     return x;
+}
+
+MatrixXd CalculateMolarFractionsGrad(const VectorXd& n)
+{
+    MatrixXd dxdn(num_species, num_species);
+    for(unsigned i = 0; i < num_species; ++i)
+        for(unsigned j = 0; j < num_species; ++j)
+            dxdn(i, j) = CalculateMolarFractionGrad(i, j, n);
+    return dxdn;
 }
 
 /// Calculates the vector of the chemical potentials of the species
@@ -116,15 +142,13 @@ VectorXd CalculateGibbsGradient(const VectorXd& n)
 /// Calculates the Hessian of the Gibbs free energy of the system
 MatrixXd CalculateGibbsHessian(const VectorXd& n)
 {
-    MatrixXd hessian = MatrixXd::Zero(num_species, num_species);
+    VectorXd x = CalculateMolarFractions(n);
+    MatrixXd dxdn = CalculateMolarFractionsGrad(n);
 
-    hessian.block(0, 0, 5, 5) = n.segment(0, 5).asDiagonal().inverse();
-    hessian.block(0, 0, 5, 5) -= MatrixXd::Ones(5, 5)/n.segment(0, 5).sum();
+    MatrixXd U = x.asDiagonal().inverse() * dxdn;
+    MatrixXd A = U + U.transpose() - U.transpose() * n.asDiagonal() * U;
 
-    hessian.block(5, 5, 2, 2) = n.segment(5, 2).asDiagonal().inverse();
-    hessian.block(5, 5, 2, 2) -= MatrixXd::Ones(2, 2)/n.segment(5, 2).sum();
-
-    return hessian;
+    return A;
 }
 
 /// Assembles the formula matrix of the system
@@ -152,14 +176,20 @@ MatrixXd CalculateMassBalanceConstraintGradient(const VectorXd& n)
 }
 
 /// Creates the objective function for the chemical equilibrium problem
-ObjectiveFunction CreateGibbsObjectiveFunction(double scale = 1.0)
+ObjectiveFunction CreateGibbsObjectiveFunction(const VectorXd& D)
 {
-    ObjectiveFunction objective = [=](const VectorXd& n) -> ObjectiveResult
+    ObjectiveFunction objective = [=](const VectorXd& nscaled) -> ObjectiveResult
     {
+        VectorXd n = D.asDiagonal() * nscaled;
+
         ObjectiveResult f;
-        f.func    = scale * CalculateGibbs(n);
-        f.grad    = scale * CalculateGibbsGradient(n);
-        f.hessian = scale * CalculateGibbsHessian(n);
+        f.func    = CalculateGibbs(n);
+        f.grad    = CalculateGibbsGradient(n);
+        f.hessian = CalculateGibbsHessian(n);
+
+        f.grad    = D.asDiagonal() * f.grad;
+        f.hessian = D.asDiagonal() * f.hessian * D.asDiagonal();
+
         return f;
     };
 
@@ -167,13 +197,18 @@ ObjectiveFunction CreateGibbsObjectiveFunction(double scale = 1.0)
 }
 
 /// Creates the mass-balace constraint function for the chemical equilibrium problem
-ConstraintFunction CreateGibbsConstraintFunction(const VectorXd& b)
+ConstraintFunction CreateGibbsConstraintFunction(const VectorXd& b, const VectorXd& D)
 {
-    ConstraintFunction constraint = [=](const VectorXd& x) -> ConstraintResult
+    ConstraintFunction constraint = [=](const VectorXd& nscaled) -> ConstraintResult
     {
+        VectorXd n = D.asDiagonal() * nscaled;
+
         ConstraintResult h;
-        h.func = CalculateMassBalanceConstraint(x, b);
-        h.grad = CalculateMassBalanceConstraintGradient(x);
+        h.func = CalculateMassBalanceConstraint(n, b);
+        h.grad = CalculateMassBalanceConstraintGradient(n);
+
+        h.grad = h.grad * D.asDiagonal();
+
         return h;
     };
 
@@ -182,30 +217,35 @@ ConstraintFunction CreateGibbsConstraintFunction(const VectorXd& b)
 
 int main()
 {
-    std::vector<double> nCO2vals = {1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1e-0, 1e+1, 1e+2};
-//    std::vector<double> nCO2vals = {10, 10, 10, 10, 10};//{1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1e-0, 1e+1, 1e+2};
+//    std::vector<double> nCO2vals = {1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 0.1, 1, 1.01, 10, 20, 100};
+    std::vector<double> nCO2vals = {0.1, 0.2, 0.3, 0.4, 1, 1.01, 10, 20, 100};
 
     double nH2O = 55;
 
-    while(true) {
-    std::cout << "Enter the psi scheme (0:Objective, 1:Lagrange, 2:GradLagrange): " << std::endl;
-    std::cout << "Enter the sigma scheme (0:Default, 1:LOQO): " << std::endl;
-    std::cout << "Enter initial guess option (0:n[CO2(a)] = nCO2, 1: n[CO2(g)] = nCO2): " << std::endl;
-    unsigned psi; std::cin >> psi;
-    unsigned sigma; std::cin >> sigma;
-    unsigned nCO2guess; std::cin >> nCO2guess;
+//    std::cout << "Enter the psi scheme (0:Objective, 1:Lagrange, 2:GradLagrange): " << std::endl;
+//    std::cout << "Enter the sigma scheme (0:Default, 1:LOQO): " << std::endl;
+//    std::cout << "Enter initial guess option (0:n[CO2(a)] = nCO2, 1: n[CO2(g)] = nCO2): " << std::endl;
+    unsigned psi = 0;// std::cin >> psi;
+    unsigned sigma = 0;// std::cin >> sigma;
+    unsigned nCO2guess = 1;// std::cin >> nCO2guess;
 
     IPFilterSolver::Options options;
     options.output.active    = true;
-    options.output.precision = 10;
-    options.output.width     = 20;
-    options.max_iter         = 1000;
+    options.output.precision = 8;
+    options.output.width     = 15;
+    options.max_iter         = 200;
     options.psi              = (psi == 2) ? GradLagrange : (psi == 1) ? Lagrange : Objective;
     options.sigma            = (sigma == 0) ? SigmaDefault : SigmaLOQO;
 
     IPFilterSolver::Params params;
+    params.xlower               = 1.0e-2;
+    params.delta_min            = 1.0e-12;
+    params.safe_step            = true;
+    params.restoration          = true;
+    params.neighbourhood_search = true;
 
     std::vector<IPFilterSolver::Result> results;
+    std::vector<std::string> errors;
 
     IPFilterSolver solver;
     solver.SetParams(params);
@@ -213,56 +253,147 @@ int main()
 
     bool first = true;
 
+    VectorXd nold, yold, zold;
+
+    MatrixXd W = FormulaMatrix();
+
     for(double nCO2 : nCO2vals)
     {
         VectorXd b(num_elements);
         b << 2*nH2O, nH2O + 2*nCO2, nCO2;
 
+        if(nCO2 == 10.0)
+        {
+            std::vector<unsigned> idxa = {5, 6};
+            std::vector<unsigned> idxi = {0, 1, 2, 3, 4};
+
+            MatrixXd Wa(E, 2);
+            MatrixXd Wi(E, N-2);
+
+            VectorXd na(2);
+            VectorXd ni(N-2);
+
+            for(unsigned i = 0; i < Wa.cols(); ++i)
+            {
+                Wa.col(i) = W.col(idxa[i]);
+                na[i] = nold[idxa[i]];
+            }
+
+            for(unsigned i = 0; i < Wi.cols(); ++i)
+            {
+                Wi.col(i) = W.col(idxi[i]);
+                ni[i] = nold[idxi[i]];
+            }
+
+            VectorXd ba = b - Wi*ni;
+            MatrixXd Ma = Wa.transpose()*Wa;
+            VectorXd rhs = Wa.transpose()*ba;
+            na = Ma.lu().solve(rhs);
+
+            nold[iCO2g] = std::max(params.xlower, na[0]);
+            nold[iH2Og] = std::max(params.xlower, na[1]);
+        }
+
+        VectorXd D = first ? VectorXd::Ones(num_species) : nold;
+
         OptimumProblem problem;
         problem.SetNumVariables(num_species);
         problem.SetNumConstraints(num_elements);
-        problem.SetObjectiveFunction(CreateGibbsObjectiveFunction());
-        problem.SetConstraintFunction(CreateGibbsConstraintFunction(b));
+        problem.SetObjectiveFunction(CreateGibbsObjectiveFunction(D));
+        problem.SetConstraintFunction(CreateGibbsConstraintFunction(b, D));
 
         solver.SetProblem(problem);
 
+        VectorXd n, y, z;
         if(first)
         {
-            VectorXd n = VectorXd::Constant(num_species, 1.0e-5);
+            n = VectorXd::Constant(num_species, 1.0e-5);
             n[iH2Oa] = nH2O;
             n[iCO2a] = (nCO2guess == 0) ? nCO2 : n[iCO2a];
             n[iCO2g] = (nCO2guess == 1) ? nCO2 : n[iCO2g];
-
-            try { solver.Solve(n); } catch (...) {}
-
-            first = false;
         }
         else
         {
-            IPFilterState state = solver.GetState();
-            solver.Solve(state);
-//            VectorXd n = solver.GetState().x;
-//            solver.Solve(n);
+            n = nold;
+            y = yold;
+            z = zold;
         }
+
+        std::string bar(105, '=');
+        std::cout << bar << std::endl;
+        std::cout << "nCO2 = " << nCO2 << std::endl;
+
+        try
+        {
+            if(first)
+            {
+                VectorXd nscaled = D.asDiagonal().inverse() * n;
+                solver.Solve(nscaled);
+            }
+            else
+            {
+                VectorXd nscaled = D.asDiagonal().inverse() * n;
+                VectorXd yscaled = y;
+                VectorXd zscaled = D.asDiagonal() * z;
+                solver.Solve(nscaled, yscaled, zscaled);
+            }
+
+            errors.push_back("None");
+        }
+        catch(const std::exception& e) { errors.push_back(e.what()); }
+
+        auto state = solver.GetState();
+
+        VectorXd Lx = state.f.grad + state.h.grad.transpose() * state.y;
+
+        std::cout << bar << std::endl;
+        std::cout << std::left << std::setw(15) << "x";
+        std::cout << std::left << std::setw(15) << "y";
+        std::cout << std::left << std::setw(15) << "z";
+        std::cout << std::left << std::setw(15) << "D*x";
+        std::cout << std::left << std::setw(15) << "D^-1*z";
+        std::cout << std::left << std::setw(15) << "Lx";
+        std::cout << std::left << std::setw(15) << "D^-1*Lx";
+        std::cout << std::endl;
+
+        for(unsigned i = 0; i < num_species; ++i)
+        {
+            std::cout << std::left << std::setw(15) << state.x[i];
+            if(i < num_elements) std::cout << std::left << std::setw(15) << state.y[i];
+            else std::cout << std::left << std::setw(15) << "";
+            std::cout << std::left << std::setw(15) << state.z[i];
+            std::cout << std::left << std::setw(15) << D[i]*state.x[i];
+            std::cout << std::left << std::setw(15) << 1.0/D[i]*state.z[i];
+            std::cout << std::left << std::setw(15) << Lx[i];
+            std::cout << std::left << std::setw(15) << 1.0/D[i]*Lx[i];
+            std::cout << std::endl;
+        }
+
+        first = false;
+
+        nold = D.asDiagonal() * solver.GetState().x;
+        yold = solver.GetState().y;
+        zold = D.asDiagonal().inverse() * solver.GetState().z;
 
         results.push_back(solver.GetResult());
     }
 
-    std::cout << std::left << std::setw(10) << "nCO2";
-    std::cout << std::left << std::setw(10) << std::boolalpha << "converged";
-    std::cout << std::left << std::setw(10) << "iters";
+    std::cout << std::left << std::setw(15) << "nCO2";
+    std::cout << std::left << std::setw(15) << std::boolalpha << "converged";
+    std::cout << std::left << std::setw(15) << "iters";
+    std::cout << std::left << std::setw(15) << "error";
     std::cout << std::endl;
 
     unsigned total = 0;
     for(unsigned i = 0; i < nCO2vals.size(); ++i)
     {
         total += results[i].iterations;
-        std::cout << std::left << std::setw(10) << nCO2vals[i];
-        std::cout << std::left << std::setw(10) << std::boolalpha << results[i].converged;
-        std::cout << std::left << std::setw(10) << results[i].iterations;
+        std::cout << std::left << std::setw(15) << nCO2vals[i];
+        std::cout << std::left << std::setw(15) << std::boolalpha << results[i].converged;
+        std::cout << std::left << std::setw(15) << results[i].iterations;
+        std::cout << std::left << errors[i];
         std::cout << std::endl;
     }
 
     std::cout << "total: " << total << std::endl;
-    }
 }

@@ -47,13 +47,13 @@ struct ConstraintResult
      * Constructs a @ref ConstraintResult instance
      *
      * This constructor will allocate memory for the data
-     * members @ref func and @ref grad. Moreover, if the logical flag
+     * members @ref func and @ref grad. Moreover, if the boolean value
      * @c allocate_hessian is @c true, than the data member @ref hessian
      * will also have memory allocated.
      *
      * @param num_variables The number of variables of the constraint function
      * @param num_constraints The number of constraints of the constraint function
-     * @param allocate_hessian The logical flag that indicates if memory will be allocated for @c hessian
+     * @param allocate_hessian The boolean value that indicates if memory will be allocated for @c hessian
      */
     ConstraintResult(unsigned num_variables, unsigned num_constraints, bool allocate_hessian);
 

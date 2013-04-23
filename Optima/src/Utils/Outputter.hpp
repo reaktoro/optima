@@ -9,6 +9,7 @@
 
 // C++ includes
 #include <iomanip>
+#include <iostream>
 #include <list>
 #include <sstream>
 
@@ -45,6 +46,22 @@ public:
     void OutputState();
 
     void OutputMessage(const std::string& message);
+
+    template<typename T>
+    void OutputMessage(const T& arg)
+    {
+        if(options.active) std::cout << arg << std::endl;
+    }
+
+    template<typename T, typename... Args>
+    void OutputMessage(const T& arg, const Args&... args)
+    {
+        if(options.active)
+        {
+            std::cout << arg;
+            OutputMessage(args...);
+        }
+    }
 
 public:
     struct Options

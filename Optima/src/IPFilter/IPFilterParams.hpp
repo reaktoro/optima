@@ -105,9 +105,19 @@ struct IPFilterParams
      */
     double sigma_fast = 0.5;
 
+    /**
+     * The lower bound of the initial guess of the variables @a x
+     */
+    double xlower = 0.01;
+
     //==================================
     // RESTORATION ALGORITHM PARAMETERS
     //==================================
+    /**
+     * The boolean value that indicates if the restoration algorithm should be applied when needed
+     */
+      bool restoration = true;
+
     /**
      * The parameter used to verify the necessity of the restoration algorithm
      *
@@ -196,7 +206,7 @@ struct IPFilterParams
     // TANGENTIAL STEP PARAMETERS
     //============================
     /**
-     * The logical flag that indicates if safe tangencial step calculations are performed when necessary
+     * The boolean value that indicates if safe tangencial step calculations are performed when necessary
      *
      * If @c safe_step_active is true, then whenever the
      * tangencial step length @c alphat < @c safe_step_threshold,
@@ -250,6 +260,18 @@ struct IPFilterParams
     //=========================
     // NEIGHBORHOOD PARAMETERS
     //=========================
+    /**
+     * The boolean value that indicates if the neighbourhood search algorithm is activated
+     *
+     * This boolean value indicates if a seach for a &Delta that
+     * satisfies the neighbourhood conditions should be performed at every iteration.
+     *
+     * Setting this flag to @c false will cause the calculation to use, at
+     * every iteration, the largest possible value of &Delta that satisfies
+     * the positivity conditions of the iterate @a x and @a z.
+     */
+      bool neighbourhood_search = true;
+
     /**
      * The relaxation parameter used to update the neighborhood parameter M
      *

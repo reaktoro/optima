@@ -86,7 +86,7 @@ private:
     /// The number of equality constraints in the optimisation problem
     unsigned num_constraints;
 
-    /// The logical flag that indicates that a contraint function has been provided
+    /// The boolean value that indicates that a contraint function has been provided
     bool has_constraints;
 
     /// The objective function in the optimisation problem

@@ -119,7 +119,7 @@ struct IPFilterOptions
     double tolerance = 1.0e-06;
 
     /**
-     * The logical flag that activates output during the calculation
+     * The boolean value that activates output during the calculation
      */
     Outputter::Options output;
 };

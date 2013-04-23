@@ -7,9 +7,6 @@
 
 #include "Outputter.hpp"
 
-// C++ includes
-#include <iostream>
-
 namespace Optima {
 
 Outputter::Outputter()
@@ -47,35 +44,41 @@ void Outputter::AddValueSeparator()
 
 void Outputter::OutputHeader()
 {
-    const std::string bar(options.width, '=');
+    if(options.active)
+    {
+        const std::string bar(options.width, '=');
 
-    for(const std::string& entry : entries)
-        std::cout << (entry == options.separator ? options.separator : bar);
-    std::cout << std::endl;
+        for(const std::string& entry : entries)
+            std::cout << (entry == options.separator ? options.separator : bar);
+        std::cout << std::endl;
 
-    for(const std::string& entry : entries)
-        if(entry == options.separator) std::cout << options.separator;
-        else std::cout << std::setw(options.width) << std::left << entry;
-    std::cout << std::endl;
+        for(const std::string& entry : entries)
+            if(entry == options.separator) std::cout << options.separator;
+            else std::cout << std::setw(options.width) << std::left << entry;
+        std::cout << std::endl;
 
-    for(const std::string& entry : entries)
-        std::cout << (entry == options.separator ? options.separator : bar);
-    std::cout << std::endl;
+        for(const std::string& entry : entries)
+            std::cout << (entry == options.separator ? options.separator : bar);
+        std::cout << std::endl;
+    }
 }
 
 void Outputter::OutputState()
 {
-    for(const std::string& val : values)
-        if(val == options.separator) std::cout << options.separator;
-        else std::cout << std::setw(options.width) << std::left << val;
-    std::cout << std::endl;
+    if(options.active)
+    {
+        for(const std::string& val : values)
+            if(val == options.separator) std::cout << options.separator;
+            else std::cout << std::setw(options.width) << std::left << val;
+        std::cout << std::endl;
 
-    values.clear();
+        values.clear();
+    }
 }
 
 void Outputter::OutputMessage(const std::string& message)
 {
-    std::cout << message << std::endl;
+    if(options.active) std::cout << message << std::endl;
 }
 
 } /* namespace Optima */

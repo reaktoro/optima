@@ -92,15 +92,6 @@ const OptimumProblem& IPFilterSolver::GetProblem() const
     return problem;
 }
 
-void IPFilterSolver::Solve(State& state)
-{
-    Initialise(state);
-
-    Solve();
-
-    state = next;
-}
-
 void IPFilterSolver::Solve(VectorXd& x)
 {
     Initialise(x);
@@ -108,6 +99,17 @@ void IPFilterSolver::Solve(VectorXd& x)
     Solve();
 
     x = curr.x;
+}
+
+void IPFilterSolver::Solve(VectorXd& x, VectorXd& y, VectorXd& z)
+{
+    Initialise(x, y, z);
+
+    Solve();
+
+    x = curr.x;
+    y = curr.y;
+    z = curr.z;
 }
 
 bool IPFilterSolver::AnyFloatingPointException(const State& state) const
@@ -124,6 +126,9 @@ bool IPFilterSolver::PassFilterCondition() const
 
 bool IPFilterSolver::PassRestorationCondition() const
 {
+    if(not params.restoration)
+        return true;
+
     return curr.theta <= delta * std::min(params.gamma1, params.gamma2*std::pow(delta, params.beta));
 }
 
@@ -137,8 +142,36 @@ bool IPFilterSolver::PassConvergenceCondition() const
     return next.error < options.tolerance;
 }
 
-double IPFilterSolver::CalculateDeltaPositivity() const
+double IPFilterSolver::CalculateDeltaPositiveXZ() const
 {
+    // The vectors x(delta) and z(delta) assuming that both alpha_n and alpha_t are 1
+    const auto xcirc = curr.x + snx + stx;
+    const auto zcirc = curr.z + snz + stz;
+
+    // Check if the Trivial Case is satisfied, where alpha_n = alpha_n = 1 yields positive xcirc and zcirc
+    if(xcirc.minCoeff() > 0.0 and zcirc.minCoeff() > 0.0)
+        return INF;
+
+    // Calculate the minimum and the maximum norms
+    const double minnorm = std::min(norm_sn, norm_st);
+    const double maxnorm = std::max(norm_sn, norm_st);
+
+    // Calculate the auxiliary delta values for Cases I and II
+    double delta_xI  = CalculateLargestBoundaryStep(curr.x, snx/norm_sn + stx/maxnorm);
+    double delta_zI  = CalculateLargestBoundaryStep(curr.z, snz/norm_sn + stz/maxnorm);
+    double delta_xII = CalculateLargestBoundaryStep(curr.x + snx, stx/norm_st);
+    double delta_zII = CalculateLargestBoundaryStep(curr.z + snz, stz/norm_st);
+
+    // Return the minimum among all other delta values
+    return 0.99 * std::min({delta_xI, delta_zI, delta_xII, delta_zII});
+}
+
+double IPFilterSolver::CalculateDeltaXzGreaterGammaMu() const
+{
+    // Check if the neighbourhood search algorithm is not activated
+    if(not params.neighbourhood_search)
+        return INF;
+
     // Define some auxiliary variables
     const auto& ones = VectorXd::Ones(dimx);
 
@@ -146,44 +179,30 @@ double IPFilterSolver::CalculateDeltaPositivity() const
     const VectorXd xcirc = curr.x + snx + stx;
     const VectorXd zcirc = curr.z + snz + stz;
 
-    // Check if the Trivial Case is satisfied, where alpha_n = alpha_n = 1 yields positivity condition
-    if(xcirc.minCoeff() > 0 and zcirc.minCoeff() > 0)
-        if((xcirc.cwiseProduct(zcirc) - gamma/dimx * xcirc.dot(zcirc) * ones).minCoeff() > 0.0)
-            return INF;
+    // Check if the Trivial Case is satisfied, where alpha_n = alpha_n = 1 yields X(delta)z(delta) > gamma*mu(delta)
+    if((xcirc.cwiseProduct(zcirc) - gamma/dimx * xcirc.dot(zcirc) * ones).minCoeff() > 0.0)
+        return INF;
 
-    // Calculate the auxiliary vectors a and b for Case I
-    const VectorXd aI = curr.x + snx;
-    const VectorXd bI = stx/norm_st;
-    const VectorXd cI = curr.z + snz;
-    const VectorXd dI = stz/norm_st;
+    // Calculate the the maximum among the two norms norm_sn and norm_st
+    const double maxnorm = std::max(norm_sn, norm_st);
 
-    // Calculate the auxiliary vectors a and b for Case II
-    const VectorXd&aII = curr.x;
-    const VectorXd bII = snx/norm_sn + stx/std::max(norm_sn, norm_st);
-    const VectorXd&cII = curr.z;
-    const VectorXd dII = snz/norm_sn + stz/std::max(norm_sn, norm_st);
+    // Calculate the auxiliary delta values for Cases I and II
+    const double delta_xzI  = CalculateLargestQuadraticStep(curr.x + snx, stx/norm_st, curr.z + snz, stz/norm_st);
+    const double delta_xzII = CalculateLargestQuadraticStep(curr.x, snx/norm_sn + stx/maxnorm, curr.z, snz/norm_sn + stz/maxnorm);
 
-    // Calculate the auxiliary delta values for Case I
-    const double delta_xI  = CalculateLargestBoundaryStep( aI,  bI);
-    const double delta_zI  = CalculateLargestBoundaryStep( cI,  dI);
-    const double delta_xII = CalculateLargestBoundaryStep(aII, bII);
-    const double delta_zII = CalculateLargestBoundaryStep(cII, dII);
-
-    // Calculate the auxiliary delta values for Case II
-    const double delta_xzI  = CalculateLargestQuadraticStep( aI,  bI,  cI,  dI);
-    const double delta_xzII = CalculateLargestQuadraticStep(aII, bII, cII, dII);
-
-    // Calculate the minimum among all auxiliary delta values for Case I and II
-    return std::min({delta_xI, delta_zI, delta_xII, delta_zII, delta_xzI, delta_xzII});
+    // Calculate the minimum among all previous delta values
+    return std::min(delta_xzI, delta_xzII);
 }
 
 double IPFilterSolver::CalculateLargestBoundaryStep(const VectorXd& p, const VectorXd& dp) const
 {
-    const auto& zero = VectorXd::Zero(p.rows());
-
-    const double step = -p.cwiseQuotient(dp).cwiseMin(zero).maxCoeff();
-
-    return positive(step);
+    double step = INF;
+    for(unsigned i = 0; i < dimx; ++i)
+    {
+        const double aux = -p[i]/dp[i];
+        if(aux > 0.0) step = std::min(step, aux);
+    }
+    return step;
 }
 
 double IPFilterSolver::CalculateLargestQuadraticStep(
@@ -237,6 +256,19 @@ double IPFilterSolver::CalculateNextLinearModel() const
     return curr.psi + psix.dot(next.x - curr.x) + psiy.dot(next.y - curr.y) + psiz.dot(next.z - curr.z);
 }
 
+double IPFilterSolver::CalculatePsi(const State& state) const
+{
+    switch(options.psi)
+    {
+    case Objective:
+        return state.f.func + c * state.mu;
+    case Lagrange:
+        return state.f.func + c * state.mu + state.h.func.dot(state.y);
+    case GradLagrange:
+        return (state.f.grad + state.h.grad.transpose()*state.y - state.z).squaredNorm() + state.mu;
+    }
+}
+
 double IPFilterSolver::CalculateSigma() const
 {
     if(restoration) return params.sigma_restoration;
@@ -262,19 +294,6 @@ double IPFilterSolver::CalculateSigmaLOQO() const
     return 0.1 * std::pow(std::min(0.05*(1 - xi)/xi, 2.0), 3);
 }
 
-double IPFilterSolver::CalculatePsi(const State& state) const
-{
-    switch(options.psi)
-    {
-    case Objective:
-        return state.f.func + c * state.mu;
-    case Lagrange:
-        return state.f.func + c * state.mu + state.h.func.dot(state.y);
-    case GradLagrange:
-        return (state.f.grad + state.h.grad.transpose()*state.y - state.z).squaredNorm() + state.mu;
-    }
-}
-
 void IPFilterSolver::AcceptTrialPoint()
 {
     // Update the current state curr
@@ -298,11 +317,36 @@ void IPFilterSolver::ExtendFilter()
     filter.Add({beta_theta, beta_psi});
 }
 
-void IPFilterSolver::Initialise(const State& state)
+void IPFilterSolver::Initialise(const VectorXd& x)
 {
+    // Initialise the iterates x, y and z
+    curr.x = x.cwiseMax(params.xlower);
+    curr.y = VectorXd::Zero(dimy);
+    curr.z = options.mu/curr.x.array();
+
+    Initialise(curr.x, curr.y, curr.z);
+}
+
+void IPFilterSolver::Initialise(const VectorXd& x, const VectorXd& y, const VectorXd& z)
+{
+    // Initialise the value of the parameter gamma
+    gamma = std::min(params.gamma_min, x.cwiseProduct(z).minCoeff()/(2.0*x.dot(z)/dimx));
+
+    // Initialise the value of the parameter c
+    c = 3*dimx*dimx/(1 - params.sigma_slow)*std::pow(std::max(1.0, (1 - params.sigma_slow)/gamma), 2);
+
+    // Update the current state
+    UpdateState(x, y, z, curr);
+
+    // Initialise the value of the neighborhood parameter M
+    M = std::max(params.neighM_max, params.alphaM_initial*(curr.thh + curr.thl)/curr.mu);
+
     // Check if the initial guess results in floating point exceptions
-    if(AnyFloatingPointException(state))
+    if(AnyFloatingPointException(curr))
         throw InitialGuessError();
+
+    // Initialise the filter
+    filter = Filter();
 
     // Initialise the result member
     result = Result();
@@ -313,23 +357,11 @@ void IPFilterSolver::Initialise(const State& state)
     // Initialise the normal and tangencial step-lengths respectively
     alphan = alphat = 1.0;
 
-    // Initialise the logical flags to false
+    // Initialise the boolean values to false
     restoration = false;
 
-    // Initialise the current and next states
-    curr = next = state;
-
-    // Initialise the value of the parameter gamma
-    gamma = std::min(params.gamma_min, curr.x.cwiseProduct(curr.z).minCoeff()/(2.0*curr.mu));
-
-    // Initialise the value of the parameter c
-    c = 3*dimx*dimx/(1 - params.sigma_slow)*std::pow(std::max(1.0, (1 - params.sigma_slow)/gamma), 2);
-
-    // Initialise the value of the neighborhood parameter M
-    M = std::max(params.neighM_max, params.alphaM_initial*(curr.thh + curr.thl)/curr.mu);
-
-    // Deactivate the restoration flag
-    restoration = false;
+    // Initialise the next state with the just initialised current state
+    next = curr;
 }
 
 //void IPFilterSolver::Initialise(const VectorXd& x)
@@ -372,32 +404,6 @@ void IPFilterSolver::Initialise(const State& state)
 //    Initialise(curr);
 //}
 
-void IPFilterSolver::Initialise(const VectorXd& x)
-{
-    // Initialise the iterates x and z
-    curr.x = x;
-    curr.y = VectorXd::Zero(dimy);
-    curr.z = options.mu/x.array();
-
-    curr.mu = options.mu;
-
-    // Initialise the objective and constraint state at x
-    curr.f = problem.Objective(x);
-    curr.h = problem.Constraint(x);
-
-    // Initialise the value of the parameter gamma
-    gamma = std::min(params.gamma_min, curr.x.cwiseProduct(curr.z).minCoeff()/(2.0*curr.mu));
-
-    // Initialise the value of the parameter c
-    c = 3*dimx*dimx/(1 - params.sigma_slow)*std::pow(std::max(1.0, (1 - params.sigma_slow)/gamma), 2);
-
-    // Update the state curr with the x, y, z iterates
-    UpdateState(curr.x, curr.y, curr.z, curr);
-
-    // Initialise the rest of the state
-    Initialise(curr);
-}
-
 void IPFilterSolver::OutputHeader()
 {
     if(options.output.active) outputter.OutputHeader();
@@ -434,30 +440,39 @@ void IPFilterSolver::ResetLagrangeMultipliersZ(State& state) const
 
 void IPFilterSolver::SearchDeltaNeighborhood()
 {
-    // Calculate the largest delta that solves the positivity conditions
-    const double delta_max = CalculateDeltaPositivity();
+    // Calculate the delta sizes that yield x,z > 0 and Xz > gamma*mu
+    const double delta1 = CalculateDeltaPositiveXZ();
+    const double delta2 = CalculateDeltaXzGreaterGammaMu();
 
     // Calculate the adjustment factor tau
     const double tau = 1.0 - std::min(0.01, 100.0 * curr.mu * curr.mu);
 
-    // Calculate the start trial delta so that it is not greater than the current maximum allowed
-    double delta_trial = std::min(tau*delta_max, delta_initial);
+    // Calculate the damped delta size that yield simultaneously yield x,z > 0 and Xz > gamma*mu
+    const double delta_max = tau*std::min(delta1, delta2);
 
+    // Calculate the start trial delta so that it is not greater than the current maximum allowed
+    double trial = std::min(delta_max, delta_initial);
+
+    // Begin the neighbourhood search loop
     while(true)
     {
-        // Check if delta is now less than the allowed minimum
-        if(delta_trial < params.delta_min)
-            throw SearchDeltaNeighborhoodError();
-
-        // Update the members that are dependent on delta
-        UpdateNextState(delta_trial);
+        // Update the next state with the new delta value
+        UpdateNextState(trial);
 
         // Decrease the current value of the trial delta
-        delta_trial *= params.delta_decrease_factor;
+        trial *= params.delta_decrease_factor;
+
+        // Check if delta is now less than the allowed minimum
+        if(trial < params.delta_min)
+            throw SearchDeltaNeighborhoodError();
 
         // Check if the current delta results results in any IEEE floating point exception
         if(AnyFloatingPointException(next))
             continue;
+
+        // Prevent further tentative delta sizes if the neighbourhood search algorithm deactivated
+        if(not params.neighbourhood_search)
+            break;
 
         // Check if the current delta results in a point (x,y,z) that pass the centrality neighborhood condition
         if(next.thh + next.thl <= M * next.mu)
@@ -604,9 +619,6 @@ void IPFilterSolver::Solve()
     // Output the final state of the calculation
     OutputState();
 
-    // Output the header on the bottom of the calculation output
-    OutputHeader();
-
     // Update the convergency condition of result
     result.converged = true;
 }
@@ -673,6 +685,12 @@ void IPFilterSolver::UpdateNextState(double del)
     next.x.noalias() = curr.x + alphan * snx + alphat * stx;
     next.y.noalias() = curr.y + alphan * sny + alphat * sty;
     next.z.noalias() = curr.z + alphan * snz + alphat * stz;
+
+    if(next.z.minCoeff() < 0)
+        next.z.noalias() = curr.z + 0.99*alphan * snz + 0.99*alphat * stz;
+
+    if(next.x.minCoeff() < 0 or next.z.minCoeff() < 0)
+        throw std::runtime_error("x or z negative.");
 
     UpdateState(next.x, next.y, next.z, next);
 }

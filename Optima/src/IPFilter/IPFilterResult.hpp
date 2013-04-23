@@ -35,9 +35,14 @@ struct IPFilterResult
     unsigned restorations = 0;
 
     /**
-     * The logical flag that indicates if the calculation converged to a local solution
+     * The boolean value that indicates if the calculation converged to a local solution
      */
     bool converged = false;
+
+    /**
+     * The error message if the last calculation failed.
+     */
+    std::string error;
 
     /**
      * The conversion operator that returns true if the calculation converged to a local solution

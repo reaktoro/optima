@@ -99,7 +99,7 @@ public:
 
     struct Options
     {
-        /// The logical flag that indicates if output of the calculation will be performed (default: false)
+        /// The boolean value that indicates if output of the calculation will be performed (default: false)
         bool output;
 
         /// The maximum number of iterations (default: 100)
@@ -117,7 +117,7 @@ public:
 
     struct Result
     {
-        /// The logical flag that indicates if the calculation converged
+        /// The boolean value that indicates if the calculation converged
         bool converged;
 
         /// The number of iterations took to converge
