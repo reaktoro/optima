@@ -23,6 +23,18 @@ void OptimumProblem::SetNumVariables(unsigned num_variables)
     this->num_variables = num_variables;
 }
 
+void OptimumProblem::SetConstraintFunction(const ConstraintFunction& constraint)
+{
+    this->constraint = constraint;
+
+    has_constraints = true;
+}
+
+void OptimumProblem::SetObjectiveFunction(const ObjectiveFunction& objective)
+{
+    this->objective = objective;
+}
+
 bool OptimumProblem::HasConstraints() const
 {
     return has_constraints;
@@ -38,16 +50,14 @@ unsigned OptimumProblem::GetNumVariables() const
     return num_variables;
 }
 
-void OptimumProblem::SetConstraintFunction(const ConstraintFunction& constraint)
+const ConstraintFunction& OptimumProblem::GetConstraintFunction() const
 {
-    this->constraint = constraint;
-
-    has_constraints = true;
+    return constraint;
 }
 
-void OptimumProblem::SetObjectiveFunction(const ObjectiveFunction& objective)
+const ObjectiveFunction& OptimumProblem::GetObjectiveFunction() const
 {
-    this->objective = objective;
+    return objective;
 }
 
 ConstraintResult OptimumProblem::Constraint(const VectorXd& x) const

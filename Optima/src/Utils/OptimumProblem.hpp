@@ -64,6 +64,16 @@ public:
     unsigned GetNumVariables() const;
 
     /**
+     * Gets the constraint function of the optimisation problem
+     */
+    const ConstraintFunction& GetConstraintFunction() const;
+
+    /**
+     * Gets the objective function of the optimisation problem
+     */
+    const ObjectiveFunction& GetObjectiveFunction() const;
+
+    /**
      * Evaluates the constraint function
      *
      * @param x The vector of variables

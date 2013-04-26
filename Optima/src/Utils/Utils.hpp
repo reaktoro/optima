@@ -14,3 +14,4 @@
 #include <Utils/Objective.hpp>
 #include <Utils/Outputter.hpp>
 #include <Utils/OptimumProblem.hpp>
+#include <Utils/Scaling.hpp>

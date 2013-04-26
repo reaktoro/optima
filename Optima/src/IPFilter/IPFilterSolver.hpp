@@ -7,6 +7,9 @@
 
 #pragma once
 
+// C++ includes
+#include <set>
+
 // Eigen includes
 #include <Eigen/Dense>
 using namespace Eigen;
@@ -16,14 +19,16 @@ using namespace Eigen;
 #include <IPFilter/IPFilterParams.hpp>
 #include <IPFilter/IPFilterResult.hpp>
 #include <IPFilter/IPFilterState.hpp>
+#include <Utils/ActiveMonitoring.hpp>
 #include <Utils/Filter.hpp>
 #include <Utils/OptimumProblem.hpp>
 #include <Utils/Outputter.hpp>
+#include <Utils/Scaling.hpp>
 
 namespace Optima {
 
 /**
- * The primal-dial interior-point non-convex minimisation solver based on the ipfilter algorithm
+ * The primal-dial interior-point non-convex optimisation solver based on the ipfilter algorithm
  */
 class IPFilterSolver
 {
@@ -39,42 +44,50 @@ public:
     IPFilterSolver();
 
     /**
-     * Sets the options for the minimisation calculation
+     * Sets the options for the optimisation calculation
      */
     void SetOptions(const Options& options);
 
     /**
-     * Sets the parameters of the minimisation algorithm
+     * Sets the parameters of the optimisation algorithm
      */
     void SetParams(const Params& params);
 
     /**
-     * Sets the definition of the minimisation problem
+     * Sets the definition of the optimisation problem
      */
     void SetProblem(const OptimumProblem& problem);
 
     /**
-     * Gets the calculation options of the minimisation solver
+     * Sets the scaling factors for the optimisation problem
+     * @param scaling
+     */
+    void SetScaling(const Scaling& scaling);
+
+    void SetActiveMonitoring(const ActiveMonitoring& active_monitor);
+
+    /**
+     * Gets the calculation options of the optimisation solver
      */
     const Options& GetOptions() const;
 
     /**
-     * Gets the algorithm params of the minimisation solver
+     * Gets the algorithm params of the optimisation solver
      */
     const Params& GetParams() const;
 
     /**
-     * Gets the solution result of the last minimisation calculation
+     * Gets the solution result of the last optimisation calculation
      */
     const Result& GetResult() const;
 
     /**
-     * Gets the solution state of the last minimisation calculation
+     * Gets the solution state of the last optimisation calculation
      */
     const State& GetState() const;
 
     /**
-     * Gets the optimisation problem of the minimisation solver
+     * Gets the optimisation problem of the optimisation solver
      */
     const OptimumProblem& GetProblem() const;
 
@@ -110,10 +123,10 @@ public:
 private:
 
     bool AnyFloatingPointException(const State& state) const;
+    bool PassConvergenceCondition() const;
     bool PassFilterCondition() const;
     bool PassRestorationCondition() const;
     bool PassSafeStepCondition() const;
-    bool PassConvergenceCondition() const;
 
     double CalculateDeltaPositiveXZ() const;
     double CalculateDeltaXzGreaterGammaMu() const;
@@ -127,8 +140,7 @@ private:
 
     void AcceptTrialPoint();
     void ExtendFilter();
-    void Initialise(const VectorXd& x);
-    void Initialise(const VectorXd& x, const VectorXd& y, const VectorXd& z);
+    void Initialise(VectorXd& x, VectorXd& y, VectorXd& z);
     void OutputHeader();
     void OutputState();
     void ResetLagrangeMultipliersZ(State& state) const;
@@ -137,9 +149,11 @@ private:
     void SearchDeltaTrustRegionRestoration();
     void Solve();
     void SolveRestoration();
+    void UpdateActiveMonitor();
     void UpdateNeighborhoodParameterM();
     void UpdateNextState(double delta);
     void UpdateNormalTangentialSteps();
+    void UpdateNormalTangentialStepsRestoration();
     void UpdateSafeTangentialStep();
     void UpdateState(const VectorXd& x, const VectorXd& y, const VectorXd& z, State& state);
 
@@ -153,8 +167,14 @@ private:
     /// The options used for the optimisation calculation
     Options options;
 
-    /// The result details of the last minimisation calculation
+    /// The result details of the last optimisation calculation
     Result result;
+
+    /// The scaling factors for the optimisation problem
+    Scaling scaling;
+
+    /// The partitioning of the primal variables that are active at the bounds simultaneously
+    ActiveMonitoring active_monitor;
 
     /// The output instance for printing the calculation progress
     Outputter outputter;
@@ -186,16 +206,16 @@ private:
     /// The current radius of the trust-region
     double delta;
 
-    /// The current initial value of the trust-region radius used search a radius that satisfies the neighborhood conditions
+    /// The initial value of the trust-region radius used for the trust-region search
     double delta_initial;
 
-    /// The parameter c used for the calculation of the psi measure (initialised at the beginning of the calculation)
+    /// The parameter c used for the calculation of the psi measure
     double c;
 
-    /// The parameter gamma used in the neighborhood condition checking (initialised at the beginning of the calculation)
+    /// The parameter gamma used in the neighborhood condition checking
     double gamma;
 
-    /// The parameter M used in the neighborhood condition checking (initialised at the beginning of the calculation)
+    /// The parameter M used in the neighborhood condition checking
     double M;
 
     /// The flag that indicates if the algorithm is currently in the restoration mode

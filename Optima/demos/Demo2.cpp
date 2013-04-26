@@ -9,7 +9,7 @@
 #include <iostream>
 
 // Eigen includes
-#include <Eigen/Dense>
+#include <Eigen/Core>
 using namespace Eigen;
 
 // Optima includes
@@ -176,19 +176,14 @@ MatrixXd CalculateMassBalanceConstraintGradient(const VectorXd& n)
 }
 
 /// Creates the objective function for the chemical equilibrium problem
-ObjectiveFunction CreateGibbsObjectiveFunction(const VectorXd& D)
+ObjectiveFunction CreateGibbsObjectiveFunction()
 {
-    ObjectiveFunction objective = [=](const VectorXd& nscaled) -> ObjectiveResult
+    ObjectiveFunction objective = [=](const VectorXd& n) -> ObjectiveResult
     {
-        VectorXd n = D.asDiagonal() * nscaled;
-
         ObjectiveResult f;
         f.func    = CalculateGibbs(n);
         f.grad    = CalculateGibbsGradient(n);
         f.hessian = CalculateGibbsHessian(n);
-
-        f.grad    = D.asDiagonal() * f.grad;
-        f.hessian = D.asDiagonal() * f.hessian * D.asDiagonal();
 
         return f;
     };
@@ -197,17 +192,13 @@ ObjectiveFunction CreateGibbsObjectiveFunction(const VectorXd& D)
 }
 
 /// Creates the mass-balace constraint function for the chemical equilibrium problem
-ConstraintFunction CreateGibbsConstraintFunction(const VectorXd& b, const VectorXd& D)
+ConstraintFunction CreateGibbsConstraintFunction(const VectorXd& b)
 {
-    ConstraintFunction constraint = [=](const VectorXd& nscaled) -> ConstraintResult
+    ConstraintFunction constraint = [=](const VectorXd& n) -> ConstraintResult
     {
-        VectorXd n = D.asDiagonal() * nscaled;
-
         ConstraintResult h;
         h.func = CalculateMassBalanceConstraint(n, b);
         h.grad = CalculateMassBalanceConstraintGradient(n);
-
-        h.grad = h.grad * D.asDiagonal();
 
         return h;
     };
@@ -217,52 +208,55 @@ ConstraintFunction CreateGibbsConstraintFunction(const VectorXd& b, const Vector
 
 int main()
 {
-//    std::vector<double> nCO2vals = {1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 0.1, 1, 1.01, 10, 20, 100};
-    std::vector<double> nCO2vals = {0.1, 0.2, 0.3, 0.4, 1, 1.01, 10, 20, 100};
+    std::vector<double> nCO2vals = {0.1, 0.2, 0.3, 0.4, 0.5, 1, 1.8, 1.84, 1.849, 1.85, 2.0, 10, 20};
+//    std::vector<double> nCO2vals = {0.1, 0.2, 0.3, 0.4, 0.5, 1, 2};
+//    std::vector<double> nCO2vals = {1, 1.5, 2};
 
     double nH2O = 55;
-
-//    std::cout << "Enter the psi scheme (0:Objective, 1:Lagrange, 2:GradLagrange): " << std::endl;
-//    std::cout << "Enter the sigma scheme (0:Default, 1:LOQO): " << std::endl;
-//    std::cout << "Enter initial guess option (0:n[CO2(a)] = nCO2, 1: n[CO2(g)] = nCO2): " << std::endl;
-    unsigned psi = 0;// std::cin >> psi;
-    unsigned sigma = 0;// std::cin >> sigma;
-    unsigned nCO2guess = 1;// std::cin >> nCO2guess;
 
     IPFilterSolver::Options options;
     options.output.active    = true;
     options.output.precision = 8;
     options.output.width     = 15;
-    options.max_iter         = 200;
-    options.psi              = (psi == 2) ? GradLagrange : (psi == 1) ? Lagrange : Objective;
-    options.sigma            = (sigma == 0) ? SigmaDefault : SigmaLOQO;
+    options.max_iterations   = 200;
+    options.tolerance        = 1.0e-6;
+    options.output_scaled    = false;
 
     IPFilterSolver::Params params;
     params.xlower               = 1.0e-2;
-    params.delta_min            = 1.0e-12;
+    params.delta_min            = 1.0e-8;
     params.safe_step            = true;
     params.restoration          = true;
     params.neighbourhood_search = true;
+    params.sigma_restoration    = 1.0;
+    params.active_monitoring_counter = 5;
 
     std::vector<IPFilterSolver::Result> results;
     std::vector<std::string> errors;
 
+    ActiveMonitoring active_monitor;
+    active_monitor.SetLowerBounds(VectorXd::Zero(N));
+    active_monitor.AddPartition({0, 1, 2, 3, 4});
+    active_monitor.AddPartition({5, 6});
+
     IPFilterSolver solver;
     solver.SetParams(params);
     solver.SetOptions(options);
+    solver.SetActiveMonitoring(active_monitor);
 
     bool first = true;
 
-    VectorXd nold, yold, zold;
-
     MatrixXd W = FormulaMatrix();
+
+    VectorXd n, y, z;
 
     for(double nCO2 : nCO2vals)
     {
-        VectorXd b(num_elements);
+        VectorXd b(E);
         b << 2*nH2O, nH2O + 2*nCO2, nCO2;
 
-        if(nCO2 == 10.0)
+        /**
+        if(nCO2 == 2.0)
         {
             std::vector<unsigned> idxa = {5, 6};
             std::vector<unsigned> idxi = {0, 1, 2, 3, 4};
@@ -276,13 +270,13 @@ int main()
             for(unsigned i = 0; i < Wa.cols(); ++i)
             {
                 Wa.col(i) = W.col(idxa[i]);
-                na[i] = nold[idxa[i]];
+                na[i] = n[idxa[i]];
             }
 
             for(unsigned i = 0; i < Wi.cols(); ++i)
             {
                 Wi.col(i) = W.col(idxi[i]);
-                ni[i] = nold[idxi[i]];
+                ni[i] = n[idxi[i]];
             }
 
             VectorXd ba = b - Wi*ni;
@@ -290,33 +284,30 @@ int main()
             VectorXd rhs = Wa.transpose()*ba;
             na = Ma.lu().solve(rhs);
 
-            nold[iCO2g] = std::max(params.xlower, na[0]);
-            nold[iH2Og] = std::max(params.xlower, na[1]);
+            n[iCO2g] = std::max(params.xlower, na[0]);
+            n[iH2Og] = std::max(params.xlower, na[1]);
         }
+        //*/
 
-        VectorXd D = first ? VectorXd::Ones(num_species) : nold;
+        VectorXd Dx = first ? VectorXd::Ones(N) : n;
 
         OptimumProblem problem;
-        problem.SetNumVariables(num_species);
-        problem.SetNumConstraints(num_elements);
-        problem.SetObjectiveFunction(CreateGibbsObjectiveFunction(D));
-        problem.SetConstraintFunction(CreateGibbsConstraintFunction(b, D));
+        problem.SetNumVariables(N);
+        problem.SetNumConstraints(E);
+        problem.SetObjectiveFunction(CreateGibbsObjectiveFunction());
+        problem.SetConstraintFunction(CreateGibbsConstraintFunction(b));
+
+        Optima::Scaling scaling;
+        scaling.SetScalingVariables(Dx);
 
         solver.SetProblem(problem);
+        solver.SetScaling(scaling);
 
-        VectorXd n, y, z;
         if(first)
         {
-            n = VectorXd::Constant(num_species, 1.0e-5);
+            n = VectorXd::Constant(N, 1.0e-2);
             n[iH2Oa] = nH2O;
-            n[iCO2a] = (nCO2guess == 0) ? nCO2 : n[iCO2a];
-            n[iCO2g] = (nCO2guess == 1) ? nCO2 : n[iCO2g];
-        }
-        else
-        {
-            n = nold;
-            y = yold;
-            z = zold;
+            n[iCO2g] = nCO2;
         }
 
         std::string bar(105, '=');
@@ -325,55 +316,44 @@ int main()
 
         try
         {
-            if(first)
-            {
-                VectorXd nscaled = D.asDiagonal().inverse() * n;
-                solver.Solve(nscaled);
-            }
-            else
-            {
-                VectorXd nscaled = D.asDiagonal().inverse() * n;
-                VectorXd yscaled = y;
-                VectorXd zscaled = D.asDiagonal() * z;
-                solver.Solve(nscaled, yscaled, zscaled);
-            }
-
+            solver.Solve(n, y, z);
             errors.push_back("None");
         }
         catch(const std::exception& e) { errors.push_back(e.what()); }
 
         auto state = solver.GetState();
 
-        VectorXd Lx = state.f.grad + state.h.grad.transpose() * state.y;
+        VectorXd Lx_scaled = state.f.grad + state.h.grad.transpose() * state.y - state.z;
 
+        scaling.UnscaleX(state.x);
+        scaling.UnscaleY(state.y);
+        scaling.UnscaleZ(state.z);
+        scaling.UnscaleObjective(state.f);
+        scaling.UnscaleConstraint(state.h);
+
+        VectorXd Lx = state.f.grad + state.h.grad.transpose() * state.y - state.z;
+
+        std::cout << std::scientific << std::setprecision(6);
         std::cout << bar << std::endl;
         std::cout << std::left << std::setw(15) << "x";
         std::cout << std::left << std::setw(15) << "y";
         std::cout << std::left << std::setw(15) << "z";
-        std::cout << std::left << std::setw(15) << "D*x";
-        std::cout << std::left << std::setw(15) << "D^-1*z";
         std::cout << std::left << std::setw(15) << "Lx";
-        std::cout << std::left << std::setw(15) << "D^-1*Lx";
+        std::cout << std::left << std::setw(15) << "Lx_scaled";
         std::cout << std::endl;
 
-        for(unsigned i = 0; i < num_species; ++i)
+        for(unsigned i = 0; i < N; ++i)
         {
-            std::cout << std::left << std::setw(15) << state.x[i];
-            if(i < num_elements) std::cout << std::left << std::setw(15) << state.y[i];
+            std::cout << std::left << std::setw(15) << n[i];
+            if(i < E) std::cout << std::left << std::setw(15) << y[i];
             else std::cout << std::left << std::setw(15) << "";
-            std::cout << std::left << std::setw(15) << state.z[i];
-            std::cout << std::left << std::setw(15) << D[i]*state.x[i];
-            std::cout << std::left << std::setw(15) << 1.0/D[i]*state.z[i];
+            std::cout << std::left << std::setw(15) << z[i];
             std::cout << std::left << std::setw(15) << Lx[i];
-            std::cout << std::left << std::setw(15) << 1.0/D[i]*Lx[i];
+            std::cout << std::left << std::setw(15) << Lx_scaled[i];
             std::cout << std::endl;
         }
 
         first = false;
-
-        nold = D.asDiagonal() * solver.GetState().x;
-        yold = solver.GetState().y;
-        zold = D.asDiagonal().inverse() * solver.GetState().z;
 
         results.push_back(solver.GetResult());
     }
@@ -387,10 +367,10 @@ int main()
     unsigned total = 0;
     for(unsigned i = 0; i < nCO2vals.size(); ++i)
     {
-        total += results[i].iterations;
+        total += results[i].num_iterations;
         std::cout << std::left << std::setw(15) << nCO2vals[i];
         std::cout << std::left << std::setw(15) << std::boolalpha << results[i].converged;
-        std::cout << std::left << std::setw(15) << results[i].iterations;
+        std::cout << std::left << std::setw(15) << results[i].num_iterations;
         std::cout << std::left << errors[i];
         std::cout << std::endl;
     }

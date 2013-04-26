@@ -17,22 +17,22 @@ struct IPFilterResult
     /**
      * The number of iterations executed in the IPFilter algorithm
      */
-    unsigned iterations = 0;
+    unsigned num_iterations = 0;
 
     /**
      * The number of evaluations of the objective function
      */
-    unsigned objective_evals = 0;
+    unsigned num_evals_objective = 0;
 
     /**
      * The number of evaluations of the constraint function
      */
-    unsigned constraint_evals = 0;
+    unsigned num_evals_constraint = 0;
 
     /**
      * The number of times the calculation entered the restoration phase algorithm
      */
-    unsigned restorations = 0;
+    unsigned num_restorations = 0;
 
     /**
      * The boolean value that indicates if the calculation converged to a local solution

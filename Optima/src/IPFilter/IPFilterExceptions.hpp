@@ -64,6 +64,17 @@ struct SearchDeltaTrustRegionRestorationError : public std::exception
     }
 };
 
+struct ActiveInitialGuessError : public std::exception
+{
+    virtual const char* what() const throw()
+    {
+        return "Unable to proceed with given initial guess. The monitoring of the "
+               "iterations so far indicates that there are active partitions at the "
+               "provided initial guess that should in fact be inactive. Try another "
+               "initial guess with such partitions not active.";
+    }
+};
+
 } /* namespace Optima */
 
 

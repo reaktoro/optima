@@ -20,17 +20,17 @@ enum IPFilterPsi
     /**
      * Uses the scheme \f$\psi(\mathbf{w})=f(\mathbf{x})+c\mu\f$
      */
-    Objective,
+    PsiObjective,
 
     /**
      * Uses the scheme \f$\psi(\mathbf{w})=\mathcal{L}(\mathbf{w})+(c+n)\mu\f$
      */
-    Lagrange,
+    PsiLagrange,
 
     /**
      * Uses the scheme \f$\psi(\mathbf{w})=\lVert\nabla_{x}\mathcal{L}(\mathbf{w})\rVert^{2}+\mathbf{x}^{T}\mathbf{z}/n\f$
      */
-    GradLagrange
+    PsiGradLagrange
 };
 
 /**
@@ -88,19 +88,19 @@ struct IPFilterOptions
      *
      * @see IPFilterPsi
      */
-    IPFilterPsi psi = Objective;
+    IPFilterPsi psi = PsiObjective;
 
     /**
      * The scheme used for the calculation of the parameter &sigma
      *
      * @see IPFilterSigma
      */
-    IPFilterSigma sigma = SigmaLOQO;
+    IPFilterSigma sigma = SigmaDefault;
 
     /**
      * The maximum number of iterations allowed in the algorithm
      */
-    unsigned max_iter = 1000;
+    unsigned max_iterations = 1000;
 
     /**
      * The start value used for the barrier parameter
@@ -122,6 +122,8 @@ struct IPFilterOptions
      * The boolean value that activates output during the calculation
      */
     Outputter::Options output;
+
+    bool output_scaled = false;
 };
 
 } /* namespace Optima */
