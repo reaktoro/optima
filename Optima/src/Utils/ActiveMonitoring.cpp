@@ -102,8 +102,8 @@ void ActiveMonitoring::Initialise(const VectorXd& x)
 {
     state = State();
 
-    state.lower_active_partitions = LowerActivePartitions(x);
-    state.upper_active_partitions = UpperActivePartitions(x);
+    state.lower_active_partitions = DetermineLowerActivePartitions(x);
+    state.upper_active_partitions = DetermineUpperActivePartitions(x);
 
     const unsigned num_lower = state.lower_active_partitions.size();
     const unsigned num_upper = state.upper_active_partitions.size();
@@ -142,7 +142,47 @@ void ActiveMonitoring::Update(const VectorXd& x)
     }
 }
 
-Indices ActiveMonitoring::LowerActivePartitions(const VectorXd& x) const
+Indices ActiveMonitoring::DetermineDepartingLowerActivePartitions() const
+{
+    const unsigned num_lower_active_partitions = state.lower_active_partitions.size();
+
+    Indices departing_lower_active_partitions;
+
+    if(num_lower_active_partitions)
+    {
+        for(unsigned i = 0; i < num_lower_active_partitions; ++i)
+        {
+            const auto& begin = state.progress_lower_active_partitions[i].begin();
+            const auto& end = state.progress_lower_active_partitions[i].end();
+            if(std::is_sorted(begin, end))
+                departing_lower_active_partitions.push_back(state.lower_active_partitions[i]);
+        }
+    }
+
+    return departing_lower_active_partitions;
+}
+
+Indices ActiveMonitoring::DetermineDepartingUpperActivePartitions() const
+{
+    const unsigned num_upper_active_partitions = state.upper_active_partitions.size();
+
+    Indices departing_upper_active_partitions;
+
+    if(num_upper_active_partitions)
+    {
+        for(unsigned i = 0; i < num_upper_active_partitions; ++i)
+        {
+            const auto& begin = state.progress_upper_active_partitions[i].begin();
+            const auto& end = state.progress_upper_active_partitions[i].end();
+            if(std::is_sorted(begin, end))
+                departing_upper_active_partitions.push_back(state.upper_active_partitions[i]);
+        }
+    }
+
+    return departing_upper_active_partitions;
+}
+
+Indices ActiveMonitoring::DetermineLowerActivePartitions(const VectorXd& x) const
 {
     Assert(partitions.size(), "The active partition is empty.");
 
@@ -164,7 +204,7 @@ Indices ActiveMonitoring::LowerActivePartitions(const VectorXd& x) const
     return active_partitions;
 }
 
-Indices ActiveMonitoring::UpperActivePartitions(const VectorXd& x) const
+Indices ActiveMonitoring::DetermineUpperActivePartitions(const VectorXd& x) const
 {
     Assert(partitions.size(), "The active partition is empty.");
 

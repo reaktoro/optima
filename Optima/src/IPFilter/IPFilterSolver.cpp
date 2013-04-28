@@ -131,6 +131,15 @@ void IPFilterSolver::Solve(VectorXd& x, VectorXd& y, VectorXd& z)
     scaling.UnscaleZ(z);
 }
 
+bool IPFilterSolver::AnyDepartingActivePartition() const
+{
+    ActiveMonitoring::State state = active_monitor.GetState();
+
+    if(state.departing_lower_active_partitions.size() or state.departing_upper_active_partitions.size())
+        if(alphan < 1.0 and alphat < 1.0)
+                throw ActiveInitialGuessError();
+}
+
 bool IPFilterSolver::AnyFloatingPointException(const State& state) const
 {
     if(isfinite(state.f.func) and isfinite(state.f.grad) and isfinite(state.f.hessian))

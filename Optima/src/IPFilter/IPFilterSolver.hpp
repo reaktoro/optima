@@ -122,6 +122,7 @@ public:
 
 private:
 
+    bool AnyDepartingActivePartition() const;
     bool AnyFloatingPointException(const State& state) const;
     bool PassConvergenceCondition() const;
     bool PassFilterCondition() const;

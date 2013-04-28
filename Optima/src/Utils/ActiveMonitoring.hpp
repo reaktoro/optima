@@ -46,13 +46,27 @@ public:
 
     const std::vector<Indices>& GetPartitions() const;
 
-    const State& GetState();
+    const State& GetState() const;
 
     bool IsPartitioningEmpty() const;
 
     void Initialise(const VectorXd& x);
 
     void Update(const VectorXd& x);
+
+    Indices DetermineLowerActivePartitions(const VectorXd& x) const;
+
+    Indices DetermineUpperActivePartitions(const VectorXd& x) const;
+
+    /**
+     * Determines the indices of the lower active partitions that have continuously departed from the lower bounds
+     */
+    Indices DetermineDepartingLowerActivePartitions() const;
+
+    /**
+     * Determines the indices of the upper active partitions that have continuously departed from the lower bounds
+     */
+    Indices DetermineDepartingUpperActivePartitions() const;
 
 public:
     struct State
@@ -97,11 +111,6 @@ private:
 
     /// The boolean value that indicates if the upper bound is positive infinity
     bool inf_upper_bound = true;
-
-private:
-    Indices LowerActivePartitions(const VectorXd& x) const;
-
-    Indices UpperActivePartitions(const VectorXd& x) const;
 };
 
 } /* namespace Optima */
