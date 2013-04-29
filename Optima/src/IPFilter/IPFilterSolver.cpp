@@ -67,6 +67,8 @@ void IPFilterSolver::SetProblem(const OptimumProblem& problem)
         outputter.AddEntry("thc(w)");
         outputter.AddEntry("thh(w)");
         outputter.AddEntry("thl(w)");
+        outputter.AddEntries(dimy, "y");
+        outputter.AddEntries(dimx, "z");
     }
 }
 
@@ -177,7 +179,7 @@ bool IPFilterSolver::PassFilterCondition() const
     return filter.IsAcceptable({next.theta, next.psi});
 }
 
-bool IPFilterSolver::PassRestorationCondition() const
+bool IPFilterSolver::PassRestorationCondition(double delta) const
 {
     if(not params.restoration)
         return true;
@@ -437,10 +439,15 @@ void IPFilterSolver::OutputState()
 {
     if(options.output.active)
     {
-        VectorXd x(curr.x); if(not options.output_scaled) scaling.UnscaleX(x);
+        if(not options.output_scaled)
+        {
+            scaling.UnscaleX(curr.x);
+            scaling.UnscaleY(curr.y);
+            scaling.UnscaleZ(curr.z);
+        }
 
         outputter.AddValue(result.num_iterations);
-        outputter.AddValues(x.data(), x.data() + dimx);
+        outputter.AddValues(curr.x.data(), curr.x.data() + dimx);
         outputter.AddValue(curr.f.func);
         outputter.AddValue(curr.h.func.norm());
         outputter.AddValue(curr.error);
@@ -453,7 +460,16 @@ void IPFilterSolver::OutputState()
         outputter.AddValue(curr.thc);
         outputter.AddValue(curr.thh);
         outputter.AddValue(curr.thl);
+        outputter.AddValues(curr.y.data(), curr.y.data() + dimy);
+        outputter.AddValues(curr.z.data(), curr.z.data() + dimx);
         outputter.OutputState();
+
+        if(not options.output_scaled)
+        {
+            scaling.ScaleX(curr.x);
+            scaling.ScaleY(curr.y);
+            scaling.ScaleZ(curr.z);
+        }
     }
 }
 
@@ -633,7 +649,7 @@ void IPFilterSolver::Solve()
         }
 
         // Check if the current state does not require the initiation of the restoration phase algorithm
-        if(PassRestorationCondition()) SearchDeltaTrustRegion();
+        if(PassRestorationCondition(delta)) SearchDeltaTrustRegion();
 
         // Start the restoration algorithm in order to decrease the primal infeasibility
         else SolveRestoration();
@@ -660,13 +676,20 @@ void IPFilterSolver::SolveRestoration()
     // Update the restoration counter of the result
     ++result.num_restorations;
 
-    delta_initial = delta;
-
     // Output a message indicating the start of the restoration algorithm
     if(options.output.active) outputter.OutputMessage("...beginning the restoration algorithm");
 
+    // Store the current value of the trust-region radius that was a result of the main iterations so far
+    double delta_main = delta;
+
     while(true)
     {
+        // Calculate the new normal and tangential steps for the restoration algorithm
+        UpdateNormalTangentialStepsRestoration();
+
+        // Search for a trust-region radius that satisfies the centrality neighborhood conditions
+        SearchDeltaNeighborhood();
+
         // Use the current normal step to find a delta that sufficiently decreases the theta2 measure
         SearchDeltaTrustRegionRestoration();
 
@@ -676,15 +699,9 @@ void IPFilterSolver::SolveRestoration()
         // Output the current state of the calculation in the restoration algorithm
         OutputState();
 
-        // Check if the restoration condition and the filter acceptance condition applies
-        if(PassRestorationCondition() and PassFilterCondition())
+        // Check if the restoration condition pass and the filter acceptance condition applies
+        if(PassRestorationCondition(delta_main) and PassFilterCondition())
             break;
-
-        // Calculate the new normal and tangential steps for the restoration algorithm
-        UpdateNormalTangentialSteps();
-
-        // Search for a trust-region radius that satisfies the centrality neighborhood conditions
-        SearchDeltaNeighborhood();
     }
 
     // Output a message indicating the end of the restoration algorithm
@@ -768,6 +785,64 @@ void IPFilterSolver::UpdateNormalTangentialSteps()
 
     // Assemble the tangential rhs vector of the linear system
     rhs.segment(0, n) = - Lx - ((1 - sigma)*curr.mu/curr.x.array()).matrix();
+    rhs.segment(n, m) = VectorXd::Zero(m);
+
+    // Calculate the tangential step
+    u = lu.solve(rhs);
+
+    // Extract the x and y components of the tangential step
+    stx = u.segment(0, n);
+    sty = u.segment(n, m);
+
+    // Calculate the z components of the normal and tangential steps
+    snz = -(curr.z.array() * snx.array() + curr.x.array() * curr.z.array() - curr.mu)/curr.x.array();
+    stz = -(curr.z.array() * stx.array() + curr.mu * (1 - sigma))/curr.x.array();
+
+    // Calculate the norms of the normal and tangential steps
+    norm_sn = std::sqrt(snx.squaredNorm() + sny.squaredNorm() + snz.squaredNorm());
+    norm_st = std::sqrt(stx.squaredNorm() + sty.squaredNorm() + stz.squaredNorm());
+}
+
+void IPFilterSolver::UpdateNormalTangentialStepsRestoration()
+{
+    // Define some auxiliary variables
+    const unsigned n = dimx;
+    const unsigned m = dimy;
+
+    // Calculate the gradient of the Lagrange function with respect to x at the current state
+    Lx = curr.f.grad + curr.h.grad.transpose()*curr.y - curr.z;
+
+    // Calculate the Hessian of the Lagrange function with respect to x at the current state
+    Lxx = curr.f.hessian;
+    for(unsigned i = 0; i < curr.h.hessian.size(); ++i)
+        Lxx += curr.y[i] * curr.h.hessian[i];
+
+    // Assemble the coefficient matrix of the linear system
+    lhs.block(0, 0, n, n).noalias() = Lxx;
+    lhs.block(0, 0, n, n) += curr.z.cwiseQuotient(curr.x).asDiagonal();
+    lhs.block(0, n, n, m).noalias() = curr.h.grad.transpose();
+    lhs.block(n, 0, m, n).noalias() = curr.h.grad;
+    lhs.block(n, n, m, m).noalias() = -curr.mu * MatrixXd::Identity(m, m);
+
+    // Calculate the LU decomposition of the coefficient matrix
+    lu.compute(lhs);
+
+    // Assemble the normal rhs vector of the linear system
+    rhs.segment(0, n) = - curr.z + (curr.mu/curr.x.array()).matrix();
+    rhs.segment(n, m) = - curr.h.func;
+
+    // Calculate the normal step
+    u = lu.solve(rhs);
+
+    // Extract the x and y components of the normal step
+    snx = u.segment(0, n);
+    sny = u.segment(n, m);
+
+    // Calculate the sigma parameter
+    const double sigma = CalculateSigma();
+
+    // Assemble the tangential rhs vector of the linear system
+    rhs.segment(0, n) = - ((1 - sigma)*curr.mu/curr.x.array()).matrix();
     rhs.segment(n, m) = VectorXd::Zero(m);
 
     // Calculate the tangential step

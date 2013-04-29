@@ -209,9 +209,7 @@ ConstraintFunction CreateGibbsConstraintFunction(const VectorXd& b)
 
 int main()
 {
-    std::vector<double> nCO2vals = {0.1, 0.2, 0.3, 0.4, 0.5, 1, 1.8, 1.84, 1.849, 1.85, 2.0, 10, 20};
-//    std::vector<double> nCO2vals = {0.1, 0.2, 0.3, 0.4, 0.5, 1, 2};
-//    std::vector<double> nCO2vals = {1, 1.5, 2};
+    std::vector<double> nCO2vals = {0.1, 0.2, 0.3, 0.4, 0.5, 1, 1.8, 1.84, 1.849, 1.85, 2.0, 10.0, 20.0};
 
     double nH2O = 55;
 
@@ -219,13 +217,11 @@ int main()
     options.output.active    = true;
     options.output.precision = 8;
     options.output.width     = 15;
-    options.max_iterations   = 200;
-    options.tolerance        = 1.0e-7;
+    options.max_iterations   = 2000;
+    options.tolerance        = 1.0e-6;
     options.output_scaled    = false;
 
     IPFilterSolver::Params params;
-    params.xlower               = 1.0e-2;
-    params.delta_min            = 1.0e-8;
     params.safe_step            = true;
     params.restoration          = true;
     params.neighbourhood_search = true;
@@ -268,20 +264,22 @@ int main()
         problem.SetObjectiveFunction(CreateGibbsObjectiveFunction());
         problem.SetConstraintFunction(CreateGibbsConstraintFunction(b));
 
-        VectorXd Dx = n;//first ? VectorXd::Ones(N) : n;
+//        n = n.cwiseMax(1.0e-10);
+//        z = z.cwiseMax(1.0e-10);
 
         Optima::Scaling scaling;
-        scaling.SetScalingVariables(Dx);
+        scaling.SetScalingVariables(n);
 
         solver.SetProblem(problem);
-        solver.SetScaling(scaling);
 
         std::string bar(105, '=');
         std::cout << bar << std::endl;
         std::cout << "nCO2 = " << nCO2 << std::endl;
 
+
         try
         {
+            solver.SetScaling(scaling);
             solver.Solve(n, y, z);
         }
         catch(const IPFilterSolver::ErrorInitialGuessActivePartition& e)
@@ -360,7 +358,7 @@ int main()
     std::cout << std::left << std::setw(15) << "iters";
     std::cout << std::left << std::setw(15) << "error";
     std::cout << std::endl;
-
+    std::cout << std::fixed;
     unsigned total = 0;
     for(unsigned i = 0; i < nCO2vals.size(); ++i)
     {

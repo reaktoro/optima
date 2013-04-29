@@ -139,7 +139,7 @@ private:
     bool AnyFloatingPointException(const State& state) const;
     bool PassConvergenceCondition() const;
     bool PassFilterCondition() const;
-    bool PassRestorationCondition() const;
+    bool PassRestorationCondition(double delta) const;
     bool PassSafeStepCondition() const;
 
     double CalculateDeltaPositiveXZ() const;
