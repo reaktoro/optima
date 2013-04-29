@@ -8,11 +8,12 @@
 #pragma once
 
 namespace Optima {
+namespace IPFilter {
 
 /**
  * Defines the result of the calculation performed by the IPFilter algorithm
  */
-struct IPFilterResult
+struct Result
 {
     /**
      * The number of iterations executed in the IPFilter algorithm
@@ -42,7 +43,7 @@ struct IPFilterResult
     /**
      * The error message if the last calculation failed.
      */
-    std::string error;
+    std::string error = "None";
 
     /**
      * The conversion operator that returns true if the calculation converged to a local solution
@@ -50,6 +51,5 @@ struct IPFilterResult
     operator bool() { return converged; }
 };
 
+} /* namespace IPFilter */
 } /* namespace Optima */
-
-

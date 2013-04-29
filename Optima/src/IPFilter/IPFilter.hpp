@@ -8,7 +8,7 @@
 #pragma once
 
 // Optima includes
-#include <IPFilter/IPFilterExceptions.hpp>
+#include <IPFilter/IPFilterErrors.hpp>
 #include <IPFilter/IPFilterOptions.hpp>
 #include <IPFilter/IPFilterParams.hpp>
 #include <IPFilter/IPFilterSolver.hpp>

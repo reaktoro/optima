@@ -15,6 +15,7 @@
 using namespace Eigen;
 
 // Optima includes
+#include <IPFilter/IPFilterErrors.hpp>
 #include <IPFilter/IPFilterOptions.hpp>
 #include <IPFilter/IPFilterParams.hpp>
 #include <IPFilter/IPFilterResult.hpp>
@@ -33,10 +34,21 @@ namespace Optima {
 class IPFilterSolver
 {
 public:
-    typedef IPFilterOptions Options;
-    typedef IPFilterParams Params;
-    typedef IPFilterResult Result;
-    typedef IPFilterState State;
+    typedef IPFilter::Options Options;
+    typedef IPFilter::Params  Params;
+    typedef IPFilter::Result  Result;
+    typedef IPFilter::State   State;
+
+    // The possible errors that might happen with the IPFilter algorithm
+    typedef IPFilter::ErrorInitialGuess                      ErrorInitialGuess;
+    typedef IPFilter::ErrorInitialGuessActivePartition       ErrorInitialGuessActivePartition;
+    typedef IPFilter::ErrorInitialGuessFloatingPoint         ErrorInitialGuessFloatingPoint;
+    typedef IPFilter::ErrorIteration                         ErrorIteration;
+    typedef IPFilter::ErrorIterationMaximumLimit             ErrorIterationMaximumLimit;
+    typedef IPFilter::ErrorSearchDelta                       ErrorSearchDelta;
+    typedef IPFilter::ErrorSearchDeltaNeighborhood           ErrorSearchDeltaNeighborhood;
+    typedef IPFilter::ErrorSearchDeltaTrustRegion            ErrorSearchDeltaTrustRegion;
+    typedef IPFilter::ErrorSearchDeltaTrustRegionRestoration ErrorSearchDeltaTrustRegionRestoration;
 
     /**
      * Constructs a default @ref IPFilterSolver instance
@@ -65,6 +77,8 @@ public:
     void SetScaling(const Scaling& scaling);
 
     void SetActiveMonitoring(const ActiveMonitoring& active_monitor);
+
+    const ActiveMonitoring& GetActiveMonitoring() const;
 
     /**
      * Gets the calculation options of the optimisation solver
@@ -121,7 +135,6 @@ public:
     void Solve(VectorXd& x, VectorXd& y, VectorXd& z);
 
 private:
-
     bool AnyDepartingActivePartition() const;
     bool AnyFloatingPointException(const State& state) const;
     bool PassConvergenceCondition() const;

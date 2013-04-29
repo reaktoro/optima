@@ -16,11 +16,12 @@ using namespace Eigen;
 #include <Utils/Objective.hpp>
 
 namespace Optima {
+namespace IPFilter {
 
 /**
  * The algorithmic state at the point (x,y,z)
  */
-struct IPFilterState
+struct State
 {
     /// The iterates x, y, z of the algorithm
     VectorXd x, y, z;
@@ -50,6 +51,5 @@ struct IPFilterState
     double error;
 };
 
+} /* namespace IPFilter */
 } /* namespace Optima */
-
-

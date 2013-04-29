@@ -12,7 +12,6 @@
 #include <iostream>
 
 // Optima includes
-#include <IPFilter/IPFilterExceptions.hpp>
 #include <Utils/Math.hpp>
 
 namespace Optima {
@@ -46,7 +45,7 @@ void IPFilterSolver::SetProblem(const OptimumProblem& problem)
     rhs.resize(dim);
 
     // Initialise a default active partitioning
-    if(active_monitor.IsPartitioningEmpty())
+    if(active_monitor.EmptyPartitioning())
         active_monitor.SetDefaultPartitioning(dimx);
 
     // Initialise the output instance
@@ -79,6 +78,11 @@ void IPFilterSolver::SetScaling(const Scaling& scaling)
 void IPFilterSolver::SetActiveMonitoring(const ActiveMonitoring& active_monitor)
 {
     this->active_monitor = active_monitor;
+}
+
+const ActiveMonitoring& IPFilterSolver::GetActiveMonitoring() const
+{
+    return active_monitor;
 }
 
 const IPFilterSolver::Options& IPFilterSolver::GetOptions() const
@@ -120,7 +124,23 @@ void IPFilterSolver::Solve(VectorXd& x, VectorXd& y, VectorXd& z)
 
     Initialise(curr.x, curr.y, curr.z);
 
-    Solve();
+    try
+    {
+        try
+        {
+            Solve();
+        }
+        catch(const ErrorSearchDelta& e)
+        {
+            AnyDepartingActivePartition() ? throw ErrorInitialGuessActivePartition() : throw;
+        }
+
+    }
+    catch(const std::exception& e)
+    {
+        result.error = e.what();
+        throw;
+    }
 
     x = curr.x;
     y = curr.y;
@@ -133,11 +153,16 @@ void IPFilterSolver::Solve(VectorXd& x, VectorXd& y, VectorXd& z)
 
 bool IPFilterSolver::AnyDepartingActivePartition() const
 {
-    ActiveMonitoring::State state = active_monitor.GetState();
+    if(alphan == 1.0 and alphat == 1.0)
+        return false;
 
-    if(state.departing_lower_active_partitions.size() or state.departing_upper_active_partitions.size())
-        if(alphan < 1.0 and alphat < 1.0)
-                throw ActiveInitialGuessError();
+    const Indices departing_lower = active_monitor.DetermineDepartingLowerActivePartitions();
+    const Indices departing_upper = active_monitor.DetermineDepartingUpperActivePartitions();
+
+    if(departing_lower.size() or departing_upper.size())
+        return true;
+
+    return false;
 }
 
 bool IPFilterSolver::AnyFloatingPointException(const State& state) const
@@ -265,16 +290,16 @@ double IPFilterSolver::CalculateNextLinearModel() const
 
     switch(options.psi)
     {
-    case PsiObjective:
+    case IPFilter::PsiObjective:
         psix.noalias() = curr.f.grad + c/dimx*curr.z;
         psiz.noalias() = c/dimx*curr.x;
         break;
-    case PsiLagrange:
+    case IPFilter::PsiLagrange:
         psix.noalias() = curr.f.grad + curr.h.grad.transpose()*curr.y + c/dimx*curr.z;
         psiy.noalias() = curr.h.func;
         psiz.noalias() = c/dimx*curr.x;
         break;
-    case PsiGradLagrange:
+    case IPFilter::PsiGradLagrange:
         psix.noalias() = 2*Lxx.transpose()*Lx + curr.z/dimx;
         psiy.noalias() = 2*curr.h.grad*Lx;
         psiz.noalias() =-2*Lx + curr.x/dimx;
@@ -288,11 +313,11 @@ double IPFilterSolver::CalculatePsi(const State& state) const
 {
     switch(options.psi)
     {
-    case PsiObjective:
+    case IPFilter::PsiObjective:
         return state.f.func + c * state.mu;
-    case PsiLagrange:
+    case IPFilter::PsiLagrange:
         return state.f.func + c * state.mu + state.h.func.dot(state.y);
-    case PsiGradLagrange:
+    case IPFilter::PsiGradLagrange:
         return (state.f.grad + state.h.grad.transpose()*state.y - state.z).squaredNorm() + state.mu;
     }
 }
@@ -303,9 +328,9 @@ double IPFilterSolver::CalculateSigma() const
 
     switch(options.sigma)
     {
-    case SigmaDefault:
+    case IPFilter::SigmaDefault:
         return CalculateSigmaDefault();
-    case SigmaLOQO:
+    case IPFilter::SigmaLOQO:
         return CalculateSigmaLOQO();
     }
 }
@@ -333,9 +358,14 @@ void IPFilterSolver::AcceptTrialPoint()
     // Update the monitoring state of the initially active partitions
     UpdateActiveMonitor();
 
+    // Check if there is any initially active partition departing from its bounds
+    if(result.num_iterations == params.active_monitoring_num_iterations)
+        if(AnyDepartingActivePartition())
+            throw ErrorInitialGuessActivePartition();
+
     // Check if the maximum number of iterations has been achieved
     if(result.num_iterations > options.max_iterations)
-        throw MaxIterationError();
+        throw ErrorIterationMaximumLimit();
 }
 
 void IPFilterSolver::ExtendFilter()
@@ -377,7 +407,7 @@ void IPFilterSolver::Initialise(VectorXd& x, VectorXd& y, VectorXd& z)
 
     // Check if the initial guess results in floating point exceptions
     if(AnyFloatingPointException(curr))
-        throw InitialGuessError();
+        throw ErrorInitialGuessFloatingPoint();
 
     // Initialise the filter
     filter = Filter();
@@ -460,7 +490,7 @@ void IPFilterSolver::SearchDeltaNeighborhood()
 
         // Check if delta is now less than the allowed minimum
         if(trial < params.delta_min)
-            throw SearchDeltaNeighborhoodError();
+            throw ErrorSearchDeltaNeighborhood();
 
         // Check if the current delta results results in any IEEE floating point exception
         if(AnyFloatingPointException(next))
@@ -486,7 +516,7 @@ void IPFilterSolver::SearchDeltaTrustRegion()
 
         // Check if the current trust-region radius is less than the allowed minimum
         if(delta < params.delta_min)
-            throw SearchDeltaTrustRegionError();
+            throw ErrorSearchDeltaTrustRegion();
 
         if(curr_m - next_m < params.kappa*curr.theta*curr.theta)
         {
@@ -572,7 +602,7 @@ void IPFilterSolver::SearchDeltaTrustRegionRestoration()
 
         // Check if delta is now less than the allowed minimum
         if(delta < params.delta_min)
-            throw SearchDeltaTrustRegionRestorationError();
+            throw ErrorSearchDeltaTrustRegionRestoration();
     }
 }
 
@@ -630,17 +660,13 @@ void IPFilterSolver::SolveRestoration()
     // Update the restoration counter of the result
     ++result.num_restorations;
 
+    delta_initial = delta;
+
     // Output a message indicating the start of the restoration algorithm
     if(options.output.active) outputter.OutputMessage("...beginning the restoration algorithm");
 
     while(true)
     {
-        // Calculate the new normal and tangential steps for the restoration algorithm
-        UpdateNormalTangentialSteps();
-
-        // Search for a trust-region radius that satisfies the centrality neighborhood conditions
-        SearchDeltaNeighborhood();
-
         // Use the current normal step to find a delta that sufficiently decreases the theta2 measure
         SearchDeltaTrustRegionRestoration();
 
@@ -653,6 +679,12 @@ void IPFilterSolver::SolveRestoration()
         // Check if the restoration condition and the filter acceptance condition applies
         if(PassRestorationCondition() and PassFilterCondition())
             break;
+
+        // Calculate the new normal and tangential steps for the restoration algorithm
+        UpdateNormalTangentialSteps();
+
+        // Search for a trust-region radius that satisfies the centrality neighborhood conditions
+        SearchDeltaNeighborhood();
     }
 
     // Output a message indicating the end of the restoration algorithm
@@ -665,20 +697,11 @@ void IPFilterSolver::SolveRestoration()
 void IPFilterSolver::UpdateActiveMonitor()
 {
     // Update the monitoring state of the initially active partitions
-    if(result.num_iterations < params.active_monitoring_counter)
+    if(result.num_iterations < params.active_monitoring_num_iterations)
     {
         scaling.UnscaleX(next.x);
             active_monitor.Update(next.x);
         scaling.ScaleX(next.x);
-    }
-
-    if(result.num_iterations == params.active_monitoring_counter)
-    {
-        ActiveMonitoring::State state = active_monitor.GetState();
-
-        if(state.departing_lower_active_partitions.size() or state.departing_upper_active_partitions.size())
-            if(alphan < 1.0 and alphat < 1.0)
-                throw ActiveInitialGuessError();
     }
 }
 

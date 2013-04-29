@@ -11,6 +11,7 @@
 #include <Utils/Outputter.hpp>
 
 namespace Optima {
+namespace IPFilter {
 
 /**
  * Defines the possible schemes for the calculation of the optimality measure &psi
@@ -81,7 +82,7 @@ enum IPFilterSigma
 /**
  * The options used for the algorithm
  */
-struct IPFilterOptions
+struct Options
 {
     /**
      * The scheme used for the calculation of the optimality measure &psi
@@ -126,4 +127,5 @@ struct IPFilterOptions
     bool output_scaled = false;
 };
 
+} /* namespace IPFilter */
 } /* namespace Optima */

@@ -8,11 +8,12 @@
 #pragma once
 
 namespace Optima {
+namespace IPFilter {
 
 /**
  * The list of algorithm parameters and their default values
  */
-struct IPFilterParams
+struct Params
 {
     //===========================
     // MAIN ALGORITHM PARAMETERS
@@ -358,7 +359,8 @@ struct IPFilterParams
      * better initial guess, which no longers contain that
      * partition as active.
      */
-    double active_monitoring_counter = 5;
+    double active_monitoring_num_iterations = 5;
 };
 
+} /* namespace IPFilter */
 } /* namespace Optima */

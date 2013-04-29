@@ -6,10 +6,11 @@
  */
 
 // C++ includes
+#include <algorithm>
 #include <iostream>
 
 // Eigen includes
-#include <Eigen/Core>
+#include <Eigen/Dense>
 using namespace Eigen;
 
 // Optima includes
@@ -219,7 +220,7 @@ int main()
     options.output.precision = 8;
     options.output.width     = 15;
     options.max_iterations   = 200;
-    options.tolerance        = 1.0e-6;
+    options.tolerance        = 1.0e-7;
     options.output_scaled    = false;
 
     IPFilterSolver::Params params;
@@ -229,10 +230,9 @@ int main()
     params.restoration          = true;
     params.neighbourhood_search = true;
     params.sigma_restoration    = 1.0;
-    params.active_monitoring_counter = 5;
+    params.active_monitoring_num_iterations = 5;
 
     std::vector<IPFilterSolver::Result> results;
-    std::vector<std::string> errors;
 
     ActiveMonitoring active_monitor;
     active_monitor.SetLowerBounds(VectorXd::Zero(N));
@@ -255,41 +255,12 @@ int main()
         VectorXd b(E);
         b << 2*nH2O, nH2O + 2*nCO2, nCO2;
 
-        /**
-        if(nCO2 == 2.0)
+        if(first)
         {
-            std::vector<unsigned> idxa = {5, 6};
-            std::vector<unsigned> idxi = {0, 1, 2, 3, 4};
-
-            MatrixXd Wa(E, 2);
-            MatrixXd Wi(E, N-2);
-
-            VectorXd na(2);
-            VectorXd ni(N-2);
-
-            for(unsigned i = 0; i < Wa.cols(); ++i)
-            {
-                Wa.col(i) = W.col(idxa[i]);
-                na[i] = n[idxa[i]];
-            }
-
-            for(unsigned i = 0; i < Wi.cols(); ++i)
-            {
-                Wi.col(i) = W.col(idxi[i]);
-                ni[i] = n[idxi[i]];
-            }
-
-            VectorXd ba = b - Wi*ni;
-            MatrixXd Ma = Wa.transpose()*Wa;
-            VectorXd rhs = Wa.transpose()*ba;
-            na = Ma.lu().solve(rhs);
-
-            n[iCO2g] = std::max(params.xlower, na[0]);
-            n[iH2Og] = std::max(params.xlower, na[1]);
+            n = VectorXd::Constant(N, 1.0e-2);
+            n[iH2Oa] = nH2O;
+            n[iCO2g] = nCO2;
         }
-        //*/
-
-        VectorXd Dx = first ? VectorXd::Ones(N) : n;
 
         OptimumProblem problem;
         problem.SetNumVariables(N);
@@ -297,18 +268,13 @@ int main()
         problem.SetObjectiveFunction(CreateGibbsObjectiveFunction());
         problem.SetConstraintFunction(CreateGibbsConstraintFunction(b));
 
+        VectorXd Dx = n;//first ? VectorXd::Ones(N) : n;
+
         Optima::Scaling scaling;
         scaling.SetScalingVariables(Dx);
 
         solver.SetProblem(problem);
         solver.SetScaling(scaling);
-
-        if(first)
-        {
-            n = VectorXd::Constant(N, 1.0e-2);
-            n[iH2Oa] = nH2O;
-            n[iCO2g] = nCO2;
-        }
 
         std::string bar(105, '=');
         std::cout << bar << std::endl;
@@ -317,9 +283,40 @@ int main()
         try
         {
             solver.Solve(n, y, z);
-            errors.push_back("None");
         }
-        catch(const std::exception& e) { errors.push_back(e.what()); }
+        catch(const IPFilterSolver::ErrorInitialGuessActivePartition& e)
+        {
+            const ActiveMonitoring& active_monitor = solver.GetActiveMonitoring();
+
+            auto partitions = active_monitor.GetPartitions();
+            auto departing_lower = active_monitor.DetermineDepartingLowerActivePartitions();
+
+            Indices idxa = active_monitor.DetermineDepartingLowerActiveComponents();
+            Indices idxi;
+            for(unsigned i = 0; i < N; ++i)
+                if(not std::count(idxa.begin(), idxa.end(), i))
+                    idxi.push_back(i);
+
+            const unsigned Na = idxa.size();
+            const unsigned Ni = idxi.size();
+
+            MatrixXd W = FormulaMatrix();
+            MatrixXd Wa(E, Na), Wi(E, Ni);
+            for(unsigned i = 0; i < Na; ++i) Wa.col(i) = W.col(idxa[i]);
+            for(unsigned i = 0; i < Ni; ++i) Wi.col(i) = W.col(idxi[i]);
+            VectorXd na(Na), ni(Ni);
+            for(unsigned i = 0; i < Ni; ++i) ni[i] = n[idxi[i]];
+            MatrixXd lhs = Wa.transpose()*Wa;
+            VectorXd rhs = Wa.transpose()*(b - Wi*ni);
+            na = lhs.lu().solve(rhs);
+            na = na.cwiseMax(VectorXd::Constant(Na, 1.0e-4));
+            std::cout << "na\n" << na << std::endl;
+            for(unsigned i = 0; i < Na; ++i) n[idxa[i]] = na[i];
+            scaling.SetScalingVariables(n);
+            solver.SetScaling(scaling);
+            solver.Solve(n, y, z);
+        }
+//        catch(...) { std::cerr << "There has been an error in the calculation." << std::endl; }
 
         auto state = solver.GetState();
 
@@ -371,7 +368,7 @@ int main()
         std::cout << std::left << std::setw(15) << nCO2vals[i];
         std::cout << std::left << std::setw(15) << std::boolalpha << results[i].converged;
         std::cout << std::left << std::setw(15) << results[i].num_iterations;
-        std::cout << std::left << errors[i];
+        std::cout << std::left << results[i].error;
         std::cout << std::endl;
     }
 
