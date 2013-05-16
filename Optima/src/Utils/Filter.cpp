@@ -10,7 +10,8 @@
 // C++ includes
 #include <algorithm>
 #include <cmath>
-#include <stdexcept>
+#include <iomanip>
+#include <sstream>
 
 namespace Optima {
 
@@ -50,6 +51,34 @@ void Filter::Add(const std::vector<double>& point)
 
     // Add the new point to the filter
     points.push_back(point);
+}
+
+const std::list<std::vector<double>>& Filter::GetPoints() const
+{
+    return points;
+}
+
+std::ostream& operator<<(std::ostream& out, const Filter& filter)
+{
+    if(filter.GetPoints().empty())
+        return out;
+
+    const unsigned dim = filter.GetPoints().front().size();
+
+    for(unsigned i = 0; i < dim; ++i)
+    {
+        std::stringstream entry; entry << "entry[" << i << "]";
+        out << std::setw(15) << std::left << entry.str();
+    }
+
+    for(const auto& point : filter.GetPoints())
+    {
+        for(const double& entry : point)
+            out << std::setw(15) << std::left << entry;
+        out << std::endl;
+    }
+
+    return out;
 }
 
 } /* namespace Optima */

@@ -9,6 +9,7 @@
 
 // C++ includes
 #include <cmath>
+#include <iomanip>
 #include <iostream>
 
 // Optima includes
@@ -134,6 +135,7 @@ void IPFilterSolver::Solve(VectorXd& x, VectorXd& y, VectorXd& z)
         }
         catch(const ErrorSearchDelta& e)
         {
+//            throw;
             AnyDepartingActivePartition() ? throw ErrorInitialGuessActivePartition() : throw;
         }
 
@@ -194,7 +196,7 @@ bool IPFilterSolver::PassSafeStepCondition() const
 
 bool IPFilterSolver::PassConvergenceCondition() const
 {
-    return next.error < options.tolerance;
+    return next.error < options.tolerance or (snx + stx).lpNorm<Infinity>() < options.tolerance;
 }
 
 double IPFilterSolver::CalculateDeltaPositiveXZ() const
@@ -385,7 +387,7 @@ void IPFilterSolver::Initialise(VectorXd& x, VectorXd& y, VectorXd& z)
     // Check if initial guesses have been provided for x, y and z
     if(x.rows() != dimx) x = VectorXd::Constant(dimx, params.xlower);
     if(y.rows() != dimy) y = VectorXd::Zero(dimy);
-    if(z.rows() != dimx) z = options.mu/x.array();
+    if(z.rows() != dimx) z = VectorXd::Constant(dimx, 1.0e-2);
 
     // Initialise the monitoring of the initial active partitions
     active_monitor.Initialise(x);
@@ -526,52 +528,36 @@ void IPFilterSolver::SearchDeltaTrustRegion()
 {
     while(true)
     {
-        // Calculate the linear model at the current and next states
-        const double curr_m = curr.psi;
-        const double next_m = CalculateNextLinearModel();
-
         // Check if the current trust-region radius is less than the allowed minimum
         if(delta < params.delta_min)
             throw ErrorSearchDeltaTrustRegion();
 
-        if(curr_m - next_m < params.kappa*curr.theta*curr.theta)
-        {
-            const double beta_theta = curr.theta * (1 - params.alpha_theta);
-            const double beta_psi = curr.psi - params.alpha_psi * curr.theta;
+        // Calculate the linear model at the current and next states
+        const double curr_m = curr.psi;
+        const double next_m = CalculateNextLinearModel();
 
-            if((next.theta < beta_theta or next.psi < beta_psi) and PassFilterCondition())
+        // Calculate the ratio of decrease in actual and predicted optimality
+        const double rho = (curr.psi - next.psi)/(curr_m - next_m);
+
+        // Check if w(delta) pass the filter condition
+        if(PassFilterCondition())
+        {
+            if(curr_m - next_m < params.kappa*curr.theta*curr.theta)
             {
                 // Extend the filter with the current (theta, psi) pair
                 ExtendFilter();
 
-                // Reset the Lagrange multipliers z of the next state
-                ResetLagrangeMultipliersZ(next);
-
-                // Update the neighborhood parameter M
-                UpdateNeighborhoodParameterM();
-
-                // Increase the current maximum trust-region radius
+                // Update the current maximum trust-region radius
                 delta_initial = delta * params.delta_increase_factor;
 
                 // Trial point has been found: leave loop
                 break;
             }
-        }
-        else
-        {
-            // Calculate the ratio of decrease in actual and predicted optimality
-            const double rho = (curr.psi - next.psi)/(curr_m - next_m);
 
-            if(rho > params.eta_small and PassFilterCondition())
+            if(rho > params.eta_small)
             {
-                // Reset the Lagrange multipliers z of the next state
-                ResetLagrangeMultipliersZ(next);
-
-                // Update the neighborhood parameter M
-                UpdateNeighborhoodParameterM();
-
-                // Increase the current maximum trust-region radius
-                if(rho > params.eta_large) delta_initial = delta * params.delta_increase_factor;
+                // Update the current maximum trust-region radius
+                delta_initial = (rho > params.eta_large) ? delta * params.delta_increase_factor : delta;
 
                 // Trial point has been found: leave loop
                 break;
@@ -581,6 +567,12 @@ void IPFilterSolver::SearchDeltaTrustRegion()
         // Decrease the trust-region radius
         UpdateNextState(params.delta_decrease_factor * delta);
     }
+
+    // Reset the Lagrange multipliers z of the next state
+    ResetLagrangeMultipliersZ(next);
+
+    // Update the neighborhood parameter M
+    UpdateNeighborhoodParameterM();
 
     // Accept the found delta and update the current state
     AcceptTrialPoint();
@@ -685,7 +677,7 @@ void IPFilterSolver::SolveRestoration()
     while(true)
     {
         // Calculate the new normal and tangential steps for the restoration algorithm
-        UpdateNormalTangentialStepsRestoration();
+        UpdateNormalTangentialSteps();
 
         // Search for a trust-region radius that satisfies the centrality neighborhood conditions
         SearchDeltaNeighborhood();
@@ -703,6 +695,9 @@ void IPFilterSolver::SolveRestoration()
         if(PassRestorationCondition(delta_main) and PassFilterCondition())
             break;
     }
+
+    // Recover the value of delta
+    delta = delta_initial = delta_main;
 
     // Output a message indicating the end of the restoration algorithm
     if(options.output.active) outputter.OutputMessage("...finishing the restoration algorithm");
@@ -776,6 +771,8 @@ void IPFilterSolver::UpdateNormalTangentialSteps()
     // Calculate the normal step
     u = lu.solve(rhs);
 
+    if((lhs*u - rhs).norm()/rhs.norm() > 1.0e-8) std::cerr << "Failed: (lhs*u - rhs).norm()/rhs.norm() <= 1.0e-8" << std::endl;
+
     // Extract the x and y components of the normal step
     snx = u.segment(0, n);
     sny = u.segment(n, m);
@@ -789,6 +786,8 @@ void IPFilterSolver::UpdateNormalTangentialSteps()
 
     // Calculate the tangential step
     u = lu.solve(rhs);
+
+    if((lhs*u - rhs).norm()/rhs.norm() > 1.0e-8) std::cerr << "Failed: (lhs*u - rhs).norm()/rhs.norm() <= 1.0e-8" << std::endl;
 
     // Extract the x and y components of the tangential step
     stx = u.segment(0, n);
