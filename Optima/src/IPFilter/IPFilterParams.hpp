@@ -15,6 +15,7 @@ namespace IPFilter {
  */
 struct Params
 {
+
     //===========================
     // MAIN ALGORITHM PARAMETERS
     //===========================
@@ -109,10 +110,61 @@ struct Params
     //==================================
     // RESTORATION ALGORITHM PARAMETERS
     //==================================
+    struct RestorationParams
+    {
+        /**
+         * The boolean value that indicates if the restoration algorithm should be applied when needed
+         */
+        bool active = true;
+
+        /**
+         * The parameter used to verify the necessity of the restoration algorithm
+         *
+         * This is the parameter \f$ \gamma_{1} \f$ in the following condition
+         * that indicates the necessity of the restoration algorithm:
+         * \f[
+         *     \theta(\mathbf{w})>\Delta_{k}\min\{\gamma_{1},\gamma_{2}\Delta_{k}^{\beta}\}.
+         * \f]
+         */
+        double gamma1 = 0.5;
+
+        /**
+         * The parameter used to verify the necessity of the restoration algorithm
+         *
+         * This is the parameter \f$ \gamma_{2} \f$ in the following
+         * condition that indicates the necessity of the restoration algorithm:
+         * \f[
+         *     \theta(\mathbf{w})>\Delta_{k}\min\{\gamma_{1},\gamma_{2}\Delta_{k}^{\beta}\}.
+         * \f]
+         */
+        double gamma2 = 1.0;
+
+        /**
+         * The parameter used to verify the necessity of the restoration algorithm
+         *
+         * This is the parameter \f$ \beta \f$ in the following
+         * condition that indicates the necessity of the restoration algorithm:
+         * \f[
+         *     \theta(\mathbf{w})>\Delta_{k}\min\{\gamma_{1},\gamma_{2}\Delta_{k}^{\beta}\}.
+         * \f]
+         */
+        double beta = 0.75;
+
+        /**
+         * The Cauchy parameter used in the restoration algorithm to verify convergence progress
+         */
+        double xi1 = 1.0e-05;
+
+        /**
+         * The Cauchy parameter used in the restoration algorithm to verify need of increasing the trust-region radius
+         */
+        double xi2 = 0.5;
+    };
+
     /**
      * The boolean value that indicates if the restoration algorithm should be applied when needed
      */
-      bool restoration = true;
+    bool restoration = true;
 
     /**
      * The parameter used to verify the necessity of the restoration algorithm
@@ -212,7 +264,7 @@ struct Params
      * unchanged during this process, so its decomposition
      * can be reused.
      */
-      bool safe_step = true;
+    bool safe_step = true;
 
     /**
      * The threshold used to determine if a safe tangencial step calculation is necessary
@@ -266,7 +318,7 @@ struct Params
      * every iteration, the largest possible value of &Delta that satisfies
      * the positivity conditions of the iterate @a x and @a z.
      */
-      bool neighbourhood_search = true;
+    bool neighbourhood_search = true;
 
     /**
      * The relaxation parameter used to update the neighborhood parameter M

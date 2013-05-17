@@ -207,15 +207,30 @@ ConstraintFunction CreateGibbsConstraintFunction(const VectorXd& b)
     return constraint;
 }
 
+struct Test
+{
+    struct RestorationParams
+    {
+        bool active;
+
+        double gamma1;
+
+        double gamma2;
+    } restoration;
+};
+
 int main()
 {
+    Test test;
+    test.restoration.active = true;
+
 //    std::vector<double> nCO2vals = {0.1, 0.2, 0.21, 0.22, 0.23, 0.24, 0.3, 0.4, 1.8, 2.0, 10.0, 20.0};
-//    std::vector<double> nCO2vals = {0.1, 0.2, 0.21, 0.22, 0.23, 0.24, 0.3, 0.4, 1.8, 1.84, 1.848, 1.849, 2.0, 10.0, 20.0};
+    std::vector<double> nCO2vals = {0.1, 0.2, 0.21, 0.22, 0.23, 0.24, 0.3, 0.4, 1.8, 1.84, 1.848, 1.849, 2.0, 10.0, 20.0};
 //    std::vector<double> nCO2vals = {0.1, 0.2, 0.3, 0.4, 0.5, 1, 1.8, 1.84, 1.849, 1.85, 2.0, 10.0, 20.0};
 //    std::vector<double> nCO2vals = {1.8, 2.0, 1.9, 1.85, 1.849, 1.848, 1.847, 1.846, 1.8375, 1.825, 1.8};
 //    std::vector<double> nCO2vals = {1.6, 1.8, 2.0};
 //    std::vector<double> nCO2vals = {1.8, 1.82, 1.84, 1.848, 1.849, 1.85, 1.9, 2.0};
-    std::vector<double> nCO2vals = {1.8, 2.0, 1.8};
+//    std::vector<double> nCO2vals = {1.8, 2.0, 1.8};
 
     double nH2O = 55;
 
@@ -254,9 +269,6 @@ int main()
         problem.SetObjectiveFunction(CreateGibbsObjectiveFunction());
         problem.SetConstraintFunction(CreateGibbsConstraintFunction(b));
 
-        n = n.cwiseMax(1.0e-14);
-        z = z.cwiseMax(1.0e-10);
-
         Optima::Scaling scaling;
         scaling.SetScalingVariables(n);
 
@@ -268,12 +280,11 @@ int main()
         std::cout << bar << std::endl;
         std::cout << "nCO2 = " << nCO2 << std::endl;
 
-        if(first)
-        {
-            std::tie(y, z) = solver.Solve(n);
-            first = false;
-        }
-        else solver.Solve(n, y, z);
+
+        if(not first) solver.SetScaling(scaling);
+        solver.Solve(n, y, z);
+
+        first = false;
 
         results.push_back(solver.GetResult());
     }

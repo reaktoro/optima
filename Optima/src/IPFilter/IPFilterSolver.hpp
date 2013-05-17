@@ -58,15 +58,6 @@ public:
     typedef IPFilter::State State;
 
     /**
-     * The solution of the minimisation calculation <em>(x, y, z)</em>
-     *
-     * The solution of the minimisation calculation is the
-     * tuple <em>(x, y, z)</em>, where @e x is the primal solution,
-     * and @e y and @e z are the Lagrange multipliers.
-     */
-    typedef std::tuple<const VectorXd&, const VectorXd&, const VectorXd&> Solution;
-
-    /**
      * Constructs a default @ref IPFilterSolver instance
      */
     IPFilterSolver();
@@ -115,7 +106,7 @@ public:
     /**
      * Gets the optimisation problem of the optimisation solver
      */
-    auto GetProblem() const -> const OptimumProblem&;
+    const OptimumProblem& GetProblem() const;
 
     /**
      * Solves the optimisation problem
@@ -132,7 +123,7 @@ public:
      *
      * @return The pair of Lagrange multipliers @e y and @e z.
      */
-    auto Solve(VectorXd& x) -> std::tuple<VectorXd, VectorXd>;
+    void Solve(VectorXd& x);
 
     /**
      * Solves the optimisation problem using a good initial guess
@@ -167,7 +158,7 @@ public:
      * @param[in,out] y The initial guess of the Lagrange multipliers @e y.
      * @param[in,out] z The initial guess of the Lagrange multipliers @e z.
      */
-    auto Solve(VectorXd& x, VectorXd& y, VectorXd& z) -> void;
+    void Solve(VectorXd& x, VectorXd& y, VectorXd& z);
 
     // The possible errors that might happen with the IPFilter algorithm
     typedef IPFilter::ErrorInitialGuess                      ErrorInitialGuess;

@@ -126,6 +126,8 @@ struct Options
 
     bool output_scaled = false;
 
+    double xguess = 1.0;
+
     double yguess = 0.0;
 
     double zguess = 0.01;

@@ -100,51 +100,26 @@ const OptimumProblem& IPFilterSolver::GetProblem() const
     return problem;
 }
 
-auto IPFilterSolver::Solve(VectorXd& x) -> std::tuple<VectorXd, VectorXd>
+void IPFilterSolver::Solve(VectorXd& x)
 {
-    // Check if the dimension of the initial guess x is correct
-    Assert(x.rows() == dimx, "Error: Dimension of vector `x` is not correct.");
+    VectorXd y, z;
 
-    // Initialise the current primal variables x, and the Lagrange multipliers y and z
-    curr.x.noalias() = x;
-    curr.y.noalias() = VectorXd::Constant(dimy, options.yguess);
-    curr.z.noalias() = VectorXd::Constant(dimx, options.zguess);
-
-    // Scale the primal variables x, and the Lagrange multipliers y and z
-    scaling.ScaleXYZ(curr.x, curr.y, curr.z);
-
-    // Initialise the solver with the provided initial guess
-    Initialise(curr.x, curr.y, curr.z);
-
-    // Solve the optimisation problem
-    try { Solve(); }
-
-    // Catch any exception thrown in the calculation, get its error message and rethrow
-    catch(const std::exception& e)
-        { result.error = e.what(); throw; }
-
-    // Unscale the primal variables x, and the Lagrange multipliers y and z
-    scaling.UnscaleXYZ(curr.x, curr.y, curr.z);
-
-    // Return the found optimum point curr.x to x
-    x.noalias() = curr.x;
-
-    // Return the found optimum Lagrange multipliers (curr.y, curr.z)
-    return std::forward_as_tuple(curr.y, curr.z);
+    Solve(x, y, z);
 }
 
 void IPFilterSolver::Solve(VectorXd& x, VectorXd& y, VectorXd& z)
 {
     // Check if the dimensions of the initial guesses x, y, and z are correct
-    Assert(x.rows() == dimx, "Error: Dimension of vector `x` is not correct.");
-    Assert(y.rows() == dimy, "Error: Dimension of vector `y` is not correct.");
-    Assert(z.rows() == dimx, "Error: Dimension of vector `z` is not correct.");
+    if(x.rows() != dimx) x.setConstant(dimx, options.xguess);
+    if(y.rows() != dimy) y.setConstant(dimy, options.yguess);
+    if(z.rows() != dimx) z.setConstant(dimx, options.zguess);
+
+    // Impose the lower bound limits on the initial guesses x and z
+    x = x.cwiseMax(options.xguessmin);
+    z = z.cwiseMax(options.zguessmin);
 
     // Output the header on the top of the calculation output
     OutputHeader();
-
-    // Initialise the filter
-    filter = Filter();
 
     // Initialise the result member
     result = Result();
@@ -156,9 +131,6 @@ void IPFilterSolver::Solve(VectorXd& x, VectorXd& y, VectorXd& z)
 
     for(unsigned attempts = 1; ; ++attempts)
     {
-        // Reset the scaling of x
-        scaling.SetScalingVariables(curr.x);
-
         // Scale the primal variables x, and the Lagrange multipliers y and z
         scaling.ScaleXYZ(curr.x, curr.y, curr.z);
 
@@ -182,7 +154,10 @@ void IPFilterSolver::Solve(VectorXd& x, VectorXd& y, VectorXd& z)
             scaling.UnscaleXYZ(curr.x, curr.y, curr.z);
 
             // Reset the Lagrange multipliers z
-            curr.z.setConstant(dimx, std::pow(params.restart_factor, attempts)*curr.mu);
+            curr.z.setConstant(dimx, std::min(0.1, std::pow(params.restart_factor, attempts) * curr.mu));
+
+            // Reset the scaling of the primal variables x
+            scaling.SetScalingVariables(curr.x);
         }
 
         // Catch any exception thrown in the calculation, get its error message and rethrow
@@ -410,6 +385,9 @@ void IPFilterSolver::ExtendFilter()
 
 void IPFilterSolver::Initialise(const VectorXd& x, const VectorXd& y, const VectorXd& z)
 {
+    // Initialise the filter
+    filter = Filter();
+
     // Initialise the value of the parameter gamma
     gamma = std::min(params.gamma_min, x.cwiseProduct(z).minCoeff()/(2.0*x.dot(z)/dimx));
 
@@ -590,20 +568,13 @@ void IPFilterSolver::SearchDeltaTrustRegionRestoration()
     // Calculate the optimality measure of the restoration algorithm at w
     const double curr_theta2 = (curr.thh*curr.thh + curr.thc*curr.thc)/2.0;
 
-    // Calculate the d/dx and d/dz derivatives of theta2 = 1/2*thh^2 + 1/2*thc^2
-    const VectorXd ddx_theta2 = curr.h.grad.transpose() * curr.h.func + (curr.z.array() * (curr.x.array() * curr.z.array() - curr.mu)).matrix();
-    const VectorXd ddz_theta2 = (curr.x.array() * (curr.x.array() * curr.z.array() - curr.mu)).matrix();
-
-    // Calculate the dot product of grad(theta2) with the normal step sn
-    const double grad_theta2_dot_sn = ddx_theta2.dot(snx) + ddz_theta2.dot(snz);
-
     while(true)
     {
         // Calculate the optimality measure of the restoration algorithm at w(delta)
         const double next_theta2 = (next.thh*next.thh + next.thc*next.thc)/2.0;
 
         // Calculate the ratio of decrease in actual and predicted of theta2
-        const double rho = (curr_theta2 - next_theta2)/(-grad_theta2_dot_sn);
+        const double rho = (curr_theta2 - next_theta2)/(2.0*curr_theta2);
 
         // Increase the current maximum trust-region radius
         if(rho > params.xi2) delta_initial = delta * params.delta_increase_factor;
