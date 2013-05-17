@@ -106,11 +106,6 @@ struct Params
      */
     double sigma_fast = 0.5;
 
-    /**
-     * The lower bound of the initial guess of the variables @a x
-     */
-    double xlower = 0.01;
-
     //==================================
     // RESTORATION ALGORITHM PARAMETERS
     //==================================
@@ -326,7 +321,7 @@ struct Params
      * This parameter ensures that a point acceptable by the
      * filter is sufficiently far from its \f$\theta\f$-borders.
      */
-    double alpha_theta = 1.0e-03;
+    double filter_alpha_theta = 1.0e-03;
 
     /**
      * The parameter used to increase the \f$\psi\f$-borders of the filter region
@@ -334,7 +329,25 @@ struct Params
      * This parameter ensures that a point acceptable by the
      * filter is sufficiently far from its \f$\psi\f$-borders.
      */
-    double alpha_psi = 1.0e-03;
+    double filter_alpha_psi = 1.0e-03;
+
+    //====================
+    // RESTART PARAMETERS
+    //====================
+    /**
+     * The boolean value that indicates if the restart scheme should be used
+     */
+    bool restart = true;
+
+    /**
+     * The maximum number of tentatives in the restart scheme
+     */
+    unsigned restart_tentatives = 4;
+
+    /**
+     * The factor used to increase \f$ \mu \f$ at every unsuccessful restart tentative
+     */
+    double restart_factor = 10.0;
 };
 
 } /* namespace IPFilter */

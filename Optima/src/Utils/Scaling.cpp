@@ -74,6 +74,13 @@ void Scaling::ScaleZ(VectorXd& z) const
         z.array() *= Dx.array();
 }
 
+void Scaling::ScaleXYZ(VectorXd& x, VectorXd& y, VectorXd& z) const
+{
+    ScaleX(x);
+    ScaleY(y);
+    ScaleZ(z);
+}
+
 void Scaling::ScaleConstraint(ConstraintResult& h) const
 {
     if(HasScalingVariables())
@@ -124,6 +131,13 @@ void Scaling::UnscaleZ(VectorXd& z) const
 {
     if(HasScalingVariables())
         z.array() /= Dx.array();
+}
+
+void Scaling::UnscaleXYZ(VectorXd& x, VectorXd& y, VectorXd& z) const
+{
+    UnscaleX(x);
+    UnscaleY(y);
+    UnscaleZ(z);
 }
 
 void Scaling::UnscaleConstraint(ConstraintResult& h) const

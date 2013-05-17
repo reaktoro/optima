@@ -125,6 +125,20 @@ struct Options
     Outputter::Options output;
 
     bool output_scaled = false;
+
+    double yguess = 0.0;
+
+    double zguess = 0.01;
+
+    /**
+     * The lower-bound on the initial guess of the primal variables @a x
+     */
+    double xguessmin = 1.0e-14;
+
+    /**
+     * The lower-bound on the initial guess of the dual variables @a z
+     */
+    double zguessmin = 1.0e-10;
 };
 
 } /* namespace IPFilter */

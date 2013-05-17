@@ -100,20 +100,18 @@ const OptimumProblem& IPFilterSolver::GetProblem() const
     return problem;
 }
 
-IPFilterSolver::Solution IPFilterSolver::Solve(VectorXd& x)
+auto IPFilterSolver::Solve(VectorXd& x) -> std::tuple<VectorXd, VectorXd>
 {
     // Check if the dimension of the initial guess x is correct
     Assert(x.rows() == dimx, "Error: Dimension of vector `x` is not correct.");
 
     // Initialise the current primal variables x, and the Lagrange multipliers y and z
     curr.x.noalias() = x;
-    curr.y.noalias() = VectorXd::Zero(dimy);
-    curr.z.noalias() = VectorXd::Constant(dimx, options.mu);
+    curr.y.noalias() = VectorXd::Constant(dimy, options.yguess);
+    curr.z.noalias() = VectorXd::Constant(dimx, options.zguess);
 
     // Scale the primal variables x, and the Lagrange multipliers y and z
-    scaling.ScaleX(curr.x);
-    scaling.ScaleY(curr.y);
-    scaling.ScaleZ(curr.z);
+    scaling.ScaleXYZ(curr.x, curr.y, curr.z);
 
     // Initialise the solver with the provided initial guess
     Initialise(curr.x, curr.y, curr.z);
@@ -121,100 +119,88 @@ IPFilterSolver::Solution IPFilterSolver::Solve(VectorXd& x)
     // Solve the optimisation problem
     try { Solve(); }
 
-    // Catch any exceptions thrown in the calculation, get its error message and rethrow
+    // Catch any exception thrown in the calculation, get its error message and rethrow
     catch(const std::exception& e)
         { result.error = e.what(); throw; }
 
     // Unscale the primal variables x, and the Lagrange multipliers y and z
-    scaling.UnscaleX(curr.x);
-    scaling.UnscaleY(curr.y);
-    scaling.UnscaleZ(curr.z);
+    scaling.UnscaleXYZ(curr.x, curr.y, curr.z);
 
-    // Transfer the found optimum point curr.x to x
+    // Return the found optimum point curr.x to x
     x.noalias() = curr.x;
 
-    // Return the found optimum point (curr.x, curr.y, curr.z)
-    return std::forward_as_tuple(curr.x, curr.y, curr.z);
+    // Return the found optimum Lagrange multipliers (curr.y, curr.z)
+    return std::forward_as_tuple(curr.y, curr.z);
 }
 
-IPFilterSolver::Solution IPFilterSolver::Solve(VectorXd& x, VectorXd& y, VectorXd& z)
+void IPFilterSolver::Solve(VectorXd& x, VectorXd& y, VectorXd& z)
 {
     // Check if the dimensions of the initial guesses x, y, and z are correct
     Assert(x.rows() == dimx, "Error: Dimension of vector `x` is not correct.");
     Assert(y.rows() == dimy, "Error: Dimension of vector `y` is not correct.");
     Assert(z.rows() == dimx, "Error: Dimension of vector `z` is not correct.");
+
+    // Output the header on the top of the calculation output
+    OutputHeader();
+
+    // Initialise the filter
+    filter = Filter();
+
+    // Initialise the result member
+    result = Result();
 
     // Initialise the current primal variables x, and the Lagrange multipliers y and z
     curr.x.noalias() = x;
     curr.y.noalias() = y;
     curr.z.noalias() = z;
 
-    // Scale the primal variables x, and the Lagrange multipliers y and z
-    scaling.ScaleX(curr.x);
-    scaling.ScaleY(curr.y);
-    scaling.ScaleZ(curr.z);
+    for(unsigned attempts = 1; ; ++attempts)
+    {
+        // Reset the scaling of x
+        scaling.SetScalingVariables(curr.x);
 
-    // Initialise the calculation with the provided initial guess
-    Initialise(curr.x, curr.y, curr.z);
+        // Scale the primal variables x, and the Lagrange multipliers y and z
+        scaling.ScaleXYZ(curr.x, curr.y, curr.z);
 
-    // Solve the optimisation problem
-    try { Solve(); }
+        // Initialise the calculation with the provided initial guess
+        Initialise(curr.x, curr.y, curr.z);
 
-    // Catch any exceptions thrown in the calculation, get its error message and rethrow
-    catch(const std::exception& e)
-        { result.error = e.what(); throw; }
+        // Solve the optimisation problem
+        try { Solve(); }
+
+        // Catch any exception that indicates a trust-region search error
+        catch(const ErrorSearchDelta& e)
+        {
+            // Check if the number of attempts is greater than the allowed number of restart attemps
+            if(attempts > params.restart_tentatives)
+                { result.error = e.what(); throw; }
+
+            // Output a message indicating the restarting algorithm
+            outputter.OutputMessage("...restarting the algorithm: attempt #", attempts);
+
+            // Unscale the primal variables x, and the Lagrange multipliers y and z
+            scaling.UnscaleXYZ(curr.x, curr.y, curr.z);
+
+            // Reset the Lagrange multipliers z
+            curr.z.setConstant(dimx, std::pow(params.restart_factor, attempts)*curr.mu);
+        }
+
+        // Catch any exception thrown in the calculation, get its error message and rethrow
+        catch(const std::exception& e)
+            { result.error = e.what(); throw; }
+
+        // Check if the last calculation converged
+        if(result.converged)
+            break;
+    }
 
     // Unscale the primal variables x, and the Lagrange multipliers y and z
-    scaling.UnscaleX(curr.x);
-    scaling.UnscaleY(curr.y);
-    scaling.UnscaleZ(curr.z);
+    scaling.UnscaleXYZ(curr.x, curr.y, curr.z);
 
     // Transfer the found optimum point (curr.x, curr.y, curr.z) to (x, y, z)
     x.noalias() = curr.x;
     y.noalias() = curr.y;
     z.noalias() = curr.z;
-
-    // Return the found optimum point (curr.x, curr.y, curr.z)
-    return std::forward_as_tuple(curr.x, curr.y, curr.z);
-}
-
-void IPFilterSolver::SolveSequential(VectorXd& x, VectorXd& y, VectorXd& z)
-{
-    // Check if the dimensions of the initial guesses x, y, and z are correct
-    Assert(x.rows() == dimx, "Error: Dimension of vector `x` is not correct.");
-    Assert(y.rows() == dimy, "Error: Dimension of vector `y` is not correct.");
-    Assert(z.rows() == dimx, "Error: Dimension of vector `z` is not correct.");
-
-    // Use the good initial guess x for the scaling of the primal variables
-    scaling.SetScalingVariables(x);
-
-    // Solve the optimisation problem
-    try { Solve(x, y, z); }
-
-    // Catch any exceptions thrown in the calculation, get its error message and rethrow
-    catch(const ErrorSearchDelta& e)
-    {
-        x.noalias() = curr.x;
-        y.noalias() = curr.y;
-        z.noalias() = curr.z;
-
-        scaling.UnscaleX(x);
-        scaling.UnscaleY(y);
-        scaling.UnscaleZ(z);
-
-        scaling.SetScalingVariables(x);
-
-        z.setConstant(dimx, curr.mu*10);
-
-        const Result res = result;
-
-        Solve(x, y, z);
-
-        result.num_constraint_evals += res.num_constraint_evals;
-        result.num_iterations       += res.num_iterations;
-        result.num_objective_evals  += res.num_objective_evals;
-        result.num_restorations     += res.num_restorations;
-    }
 }
 
 bool IPFilterSolver::AnyFloatingPointException(const State& state) const
@@ -415,8 +401,8 @@ void IPFilterSolver::AcceptTrialPoint()
 void IPFilterSolver::ExtendFilter()
 {
     // Calculate the components of the new entry
-    const double beta_theta = curr.theta * (1 - params.alpha_theta);
-    const double beta_psi = curr.psi - params.alpha_psi * curr.theta;
+    const double beta_theta = curr.theta * (1 - params.filter_alpha_theta);
+    const double beta_psi = curr.psi - params.filter_alpha_psi * curr.theta;
 
     // Add a new entry to the filter
     filter.Add({beta_theta, beta_psi});
@@ -439,12 +425,6 @@ void IPFilterSolver::Initialise(const VectorXd& x, const VectorXd& y, const Vect
     // Check if the initial guess results in floating point exceptions
     if(AnyFloatingPointException(curr))
         throw ErrorInitialGuessFloatingPoint();
-
-    // Initialise the filter
-    filter = Filter();
-
-    // Initialise the result member
-    result = Result();
 
     // Initialise the current maximum value of the trust-region radius
     delta = delta_initial = params.delta_initial;
@@ -643,9 +623,6 @@ void IPFilterSolver::SearchDeltaTrustRegionRestoration()
 
 void IPFilterSolver::Solve()
 {
-    // Output the header on the top of the calculation output
-    OutputHeader();
-
     while(true)
     {
         // Output the current state of the calculation
@@ -696,7 +673,7 @@ void IPFilterSolver::SolveRestoration()
     ++result.num_restorations;
 
     // Output a message indicating the start of the restoration algorithm
-    if(options.output.active) outputter.OutputMessage("...beginning the restoration algorithm");
+    outputter.OutputMessage("...beginning the restoration algorithm");
 
     // Store the current value of the trust-region radius that was a result of the main iterations so far
     double delta_main = delta;
@@ -727,7 +704,7 @@ void IPFilterSolver::SolveRestoration()
     delta = delta_initial = delta_main;
 
     // Output a message indicating the end of the restoration algorithm
-    if(options.output.active) outputter.OutputMessage("...finishing the restoration algorithm");
+    outputter.OutputMessage("...finishing the restoration algorithm");
 
     // Deactivate the restoration flag
     restoration = false;

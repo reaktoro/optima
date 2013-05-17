@@ -76,6 +76,8 @@ public:
 
     void ScaleZ(VectorXd& z) const;
 
+    void ScaleXYZ(VectorXd& x, VectorXd& y, VectorXd& z) const;
+
     void ScaleConstraint(ConstraintResult& h) const;
 
     void ScaleObjective(ObjectiveResult& f) const;
@@ -85,6 +87,8 @@ public:
     void UnscaleY(VectorXd& y) const;
 
     void UnscaleZ(VectorXd& z) const;
+
+    void UnscaleXYZ(VectorXd& x, VectorXd& y, VectorXd& z) const;
 
     void UnscaleConstraint(ConstraintResult& h) const;
 

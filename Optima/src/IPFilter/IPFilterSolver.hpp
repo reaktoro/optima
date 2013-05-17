@@ -115,38 +115,59 @@ public:
     /**
      * Gets the optimisation problem of the optimisation solver
      */
-    const OptimumProblem& GetProblem() const;
+    auto GetProblem() const -> const OptimumProblem&;
 
     /**
      * Solves the optimisation problem
      *
-     * This method allows the user to provide only the initial guess
-     * for the primal variables @a x. The initial guess of the Lagrange
-     * multipliers @a y and @a z are automatically estimated.
+     * This method allows the user to provide only the initial guess for the primal variables @a x.
      *
-     * @param x The initial guess of the primal variables @a x
+     * The initial guess of the Lagrange multipliers @a y and @a z are:
+     *
+     *  - <tt> y = yguess </tt> (see @ref IPFilterParams::yguess),
+     *  - <tt> z = zguess </tt> (see @ref IPFilterParams::zguess).
+     *
+     * @param[in,out] x The initial guess of the primal variables as input. The optimum solution at the end of
+     *     the calculation as output.
+     *
+     * @return The pair of Lagrange multipliers @e y and @e z.
      */
-    Solution Solve(VectorXd& x);
+    auto Solve(VectorXd& x) -> std::tuple<VectorXd, VectorXd>;
 
     /**
-     * Solves the optimisation problem
+     * Solves the optimisation problem using a good initial guess
      *
-     * This method allows the user to provide the initial guess
-     * for the primal variables @a x as well as the Lagrange
+     * This method allows the user to provide the initial guess for the primal variables @a x as well as the Lagrange
      * multipliers @a y and @a z.
      *
-     * This is usefull for sequential calculations where the
-     * i-th calculation uses the result of the (i-1)-th
-     * calculation as initial guess. Therefore, convergence
-     * to an optimal point might result in less iterations.
+     * This is usefull for sequential calculations where the i-th calculation uses the result of the (i-1)-th
+     * calculation as initial guess. Therefore, convergence to an optimal point might result in less iterations.
      *
-     * @param x The initial guess of the primal variables @a x
-     * @param y The initial guess of the Lagrange multipliers @a y
-     * @param z The initial guess of the Lagrange multipliers @a z
+     * Note, however, that some components of @c x and @c z might be modified in order to improve robustness and
+     * efficiency. The modification is given by:
+     *
+     *  - <tt> x = max(x, xguessmin) </tt> (see @ref IPFilterParams::xguessmin),
+     *  - <tt> z = max(z, zguessmin) </tt> (see @ref IPFilterParams::zguessmin).
+     *
+     * We assume in this method that a good initial guess is provided.
+     * Therefore, we scale the primal variables @e x using the initial
+     * guess @c x.
+     *
+     * This method uses a restart scheme in case of failure. If the
+     * provided initial guesses for @c x, @c y, and @c z results in any
+     * trust-region search error, the restart scheme is activated. It
+     * consists of resetting the Lagrange multipliers @c z as:
+     *
+     *  - <tt> z = zrestart </tt> (see @ref IPFilterParams::zrestart).
+     *
+     *  Then, we start restart the interior-point calculation using the reset @c z.
+     *  The values for @c x and @c y are those from where the calculation stopped.
+     *
+     * @param[in,out] x The initial guess of the primal variables @e x.
+     * @param[in,out] y The initial guess of the Lagrange multipliers @e y.
+     * @param[in,out] z The initial guess of the Lagrange multipliers @e z.
      */
-    Solution Solve(VectorXd& x, VectorXd& y, VectorXd& z);
-
-    void SolveSequential(VectorXd& x, VectorXd& y, VectorXd& z);
+    auto Solve(VectorXd& x, VectorXd& y, VectorXd& z) -> void;
 
     // The possible errors that might happen with the IPFilter algorithm
     typedef IPFilter::ErrorInitialGuess                      ErrorInitialGuess;

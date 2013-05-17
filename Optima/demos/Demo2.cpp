@@ -268,39 +268,12 @@ int main()
         std::cout << bar << std::endl;
         std::cout << "nCO2 = " << nCO2 << std::endl;
 
-        if(first) std::tie(n, y, z) = solver.Solve(n);
-        else solver.SolveSequential(n, y, z);
-
-//        try
-//        {
-//            if(first)
-//                std::tie(n, y, z) = solver.Solve(n);
-//            else
-//            {
-////                solver.SetScaling(scaling);
-////                solver.Solve(n, y, z);
-//                solver.SolveSequential(n, y, z);
-//            }
-//        }
-//        catch(...)
-//        {
-//            n = solver.GetState().x;
-//            y = solver.GetState().y;
-//            z = solver.GetState().z;
-//
-//            scaling.UnscaleX(n);
-//            scaling.UnscaleY(y);
-//            scaling.UnscaleZ(z);
-//
-//            z = VectorXd::Constant(N, 1.0e-10);
-//
-//            scaling.SetScalingVariables(n);
-//            solver.SetScaling(scaling);
-//
-//            solver.Solve(n, y, z);
-//        }
-
-        first = false;
+        if(first)
+        {
+            std::tie(y, z) = solver.Solve(n);
+            first = false;
+        }
+        else solver.Solve(n, y, z);
 
         results.push_back(solver.GetResult());
     }
