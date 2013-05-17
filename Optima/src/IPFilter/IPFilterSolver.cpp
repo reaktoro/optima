@@ -13,6 +13,7 @@
 #include <iostream>
 
 // Optima includes
+#include <Utils/Macros.hpp>
 #include <Utils/Math.hpp>
 
 namespace Optima {
@@ -45,10 +46,6 @@ void IPFilterSolver::SetProblem(const OptimumProblem& problem)
     lhs.resize(dim, dim);
     rhs.resize(dim);
 
-    // Initialise a default active partitioning
-    if(active_monitor.EmptyPartitioning())
-        active_monitor.SetDefaultPartitioning(dimx);
-
     // Initialise the output instance
     if(options.output.active)
     {
@@ -78,16 +75,6 @@ void IPFilterSolver::SetScaling(const Scaling& scaling)
     this->scaling = scaling;
 }
 
-void IPFilterSolver::SetActiveMonitoring(const ActiveMonitoring& active_monitor)
-{
-    this->active_monitor = active_monitor;
-}
-
-const ActiveMonitoring& IPFilterSolver::GetActiveMonitoring() const
-{
-    return active_monitor;
-}
-
 const IPFilterSolver::Options& IPFilterSolver::GetOptions() const
 {
     return options;
@@ -113,60 +100,121 @@ const OptimumProblem& IPFilterSolver::GetProblem() const
     return problem;
 }
 
-void IPFilterSolver::Solve(VectorXd& x)
+IPFilterSolver::Solution IPFilterSolver::Solve(VectorXd& x)
 {
-    VectorXd y, z;
-    Solve(x, y, z);
-}
+    // Check if the dimension of the initial guess x is correct
+    Assert(x.rows() == dimx, "Error: Dimension of vector `x` is not correct.");
 
-void IPFilterSolver::Solve(VectorXd& x, VectorXd& y, VectorXd& z)
-{
-    curr.x = x;
-    curr.y = y;
-    curr.z = z;
+    // Initialise the current primal variables x, and the Lagrange multipliers y and z
+    curr.x.noalias() = x;
+    curr.y.noalias() = VectorXd::Zero(dimy);
+    curr.z.noalias() = VectorXd::Constant(dimx, options.mu);
 
+    // Scale the primal variables x, and the Lagrange multipliers y and z
+    scaling.ScaleX(curr.x);
+    scaling.ScaleY(curr.y);
+    scaling.ScaleZ(curr.z);
+
+    // Initialise the solver with the provided initial guess
     Initialise(curr.x, curr.y, curr.z);
 
-    try
-    {
-        try
-        {
-            Solve();
-        }
-        catch(const ErrorSearchDelta& e)
-        {
-//            throw;
-            AnyDepartingActivePartition() ? throw ErrorInitialGuessActivePartition() : throw;
-        }
+    // Solve the optimisation problem
+    try { Solve(); }
 
-    }
+    // Catch any exceptions thrown in the calculation, get its error message and rethrow
     catch(const std::exception& e)
-    {
-        result.error = e.what();
-        throw;
-    }
+        { result.error = e.what(); throw; }
 
-    x = curr.x;
-    y = curr.y;
-    z = curr.z;
+    // Unscale the primal variables x, and the Lagrange multipliers y and z
+    scaling.UnscaleX(curr.x);
+    scaling.UnscaleY(curr.y);
+    scaling.UnscaleZ(curr.z);
 
-    scaling.UnscaleX(x);
-    scaling.UnscaleY(y);
-    scaling.UnscaleZ(z);
+    // Transfer the found optimum point curr.x to x
+    x.noalias() = curr.x;
+
+    // Return the found optimum point (curr.x, curr.y, curr.z)
+    return std::forward_as_tuple(curr.x, curr.y, curr.z);
 }
 
-bool IPFilterSolver::AnyDepartingActivePartition() const
+IPFilterSolver::Solution IPFilterSolver::Solve(VectorXd& x, VectorXd& y, VectorXd& z)
 {
-    if(alphan == 1.0 and alphat == 1.0)
-        return false;
+    // Check if the dimensions of the initial guesses x, y, and z are correct
+    Assert(x.rows() == dimx, "Error: Dimension of vector `x` is not correct.");
+    Assert(y.rows() == dimy, "Error: Dimension of vector `y` is not correct.");
+    Assert(z.rows() == dimx, "Error: Dimension of vector `z` is not correct.");
 
-    const Indices departing_lower = active_monitor.DetermineDepartingLowerActivePartitions();
-    const Indices departing_upper = active_monitor.DetermineDepartingUpperActivePartitions();
+    // Initialise the current primal variables x, and the Lagrange multipliers y and z
+    curr.x.noalias() = x;
+    curr.y.noalias() = y;
+    curr.z.noalias() = z;
 
-    if(departing_lower.size() or departing_upper.size())
-        return true;
+    // Scale the primal variables x, and the Lagrange multipliers y and z
+    scaling.ScaleX(curr.x);
+    scaling.ScaleY(curr.y);
+    scaling.ScaleZ(curr.z);
 
-    return false;
+    // Initialise the calculation with the provided initial guess
+    Initialise(curr.x, curr.y, curr.z);
+
+    // Solve the optimisation problem
+    try { Solve(); }
+
+    // Catch any exceptions thrown in the calculation, get its error message and rethrow
+    catch(const std::exception& e)
+        { result.error = e.what(); throw; }
+
+    // Unscale the primal variables x, and the Lagrange multipliers y and z
+    scaling.UnscaleX(curr.x);
+    scaling.UnscaleY(curr.y);
+    scaling.UnscaleZ(curr.z);
+
+    // Transfer the found optimum point (curr.x, curr.y, curr.z) to (x, y, z)
+    x.noalias() = curr.x;
+    y.noalias() = curr.y;
+    z.noalias() = curr.z;
+
+    // Return the found optimum point (curr.x, curr.y, curr.z)
+    return std::forward_as_tuple(curr.x, curr.y, curr.z);
+}
+
+void IPFilterSolver::SolveSequential(VectorXd& x, VectorXd& y, VectorXd& z)
+{
+    // Check if the dimensions of the initial guesses x, y, and z are correct
+    Assert(x.rows() == dimx, "Error: Dimension of vector `x` is not correct.");
+    Assert(y.rows() == dimy, "Error: Dimension of vector `y` is not correct.");
+    Assert(z.rows() == dimx, "Error: Dimension of vector `z` is not correct.");
+
+    // Use the good initial guess x for the scaling of the primal variables
+    scaling.SetScalingVariables(x);
+
+    // Solve the optimisation problem
+    try { Solve(x, y, z); }
+
+    // Catch any exceptions thrown in the calculation, get its error message and rethrow
+    catch(const ErrorSearchDelta& e)
+    {
+        x.noalias() = curr.x;
+        y.noalias() = curr.y;
+        z.noalias() = curr.z;
+
+        scaling.UnscaleX(x);
+        scaling.UnscaleY(y);
+        scaling.UnscaleZ(z);
+
+        scaling.SetScalingVariables(x);
+
+        z.setConstant(dimx, curr.mu*10);
+
+        const Result res = result;
+
+        Solve(x, y, z);
+
+        result.num_constraint_evals += res.num_constraint_evals;
+        result.num_iterations       += res.num_iterations;
+        result.num_objective_evals  += res.num_objective_evals;
+        result.num_restorations     += res.num_restorations;
+    }
 }
 
 bool IPFilterSolver::AnyFloatingPointException(const State& state) const
@@ -359,14 +407,6 @@ void IPFilterSolver::AcceptTrialPoint()
     // Update the number of iterations
     ++result.num_iterations;
 
-    // Update the monitoring state of the initially active partitions
-    UpdateActiveMonitor();
-
-    // Check if there is any initially active partition departing from its bounds
-    if(result.num_iterations == params.active_monitoring_num_iterations)
-        if(AnyDepartingActivePartition())
-            throw ErrorInitialGuessActivePartition();
-
     // Check if the maximum number of iterations has been achieved
     if(result.num_iterations > options.max_iterations)
         throw ErrorIterationMaximumLimit();
@@ -382,21 +422,8 @@ void IPFilterSolver::ExtendFilter()
     filter.Add({beta_theta, beta_psi});
 }
 
-void IPFilterSolver::Initialise(VectorXd& x, VectorXd& y, VectorXd& z)
+void IPFilterSolver::Initialise(const VectorXd& x, const VectorXd& y, const VectorXd& z)
 {
-    // Check if initial guesses have been provided for x, y and z
-    if(x.rows() != dimx) x = VectorXd::Constant(dimx, params.xlower);
-    if(y.rows() != dimy) y = VectorXd::Zero(dimy);
-    if(z.rows() != dimx) z = VectorXd::Constant(dimx, 1.0e-2);
-
-    // Initialise the monitoring of the initial active partitions
-    active_monitor.Initialise(x);
-
-    // Scale the primal variables x, and the Lagrange multipliers y and z
-    scaling.ScaleX(x);
-    scaling.ScaleY(y);
-    scaling.ScaleZ(z);
-
     // Initialise the value of the parameter gamma
     gamma = std::min(params.gamma_min, x.cwiseProduct(z).minCoeff()/(2.0*x.dot(z)/dimx));
 
@@ -677,7 +704,7 @@ void IPFilterSolver::SolveRestoration()
     while(true)
     {
         // Calculate the new normal and tangential steps for the restoration algorithm
-        UpdateNormalTangentialSteps();
+        UpdateNormalTangentialStepsRestoration();
 
         // Search for a trust-region radius that satisfies the centrality neighborhood conditions
         SearchDeltaNeighborhood();
@@ -704,17 +731,6 @@ void IPFilterSolver::SolveRestoration()
 
     // Deactivate the restoration flag
     restoration = false;
-}
-
-void IPFilterSolver::UpdateActiveMonitor()
-{
-    // Update the monitoring state of the initially active partitions
-    if(result.num_iterations < params.active_monitoring_num_iterations)
-    {
-        scaling.UnscaleX(next.x);
-            active_monitor.Update(next.x);
-        scaling.ScaleX(next.x);
-    }
 }
 
 void IPFilterSolver::UpdateNeighborhoodParameterM()
@@ -747,7 +763,7 @@ void IPFilterSolver::UpdateNormalTangentialSteps()
     const unsigned m = dimy;
 
     // Calculate the gradient of the Lagrange function with respect to x at the current state
-    Lx = curr.f.grad + curr.h.grad.transpose()*curr.y - curr.z;
+    Lx.noalias() = curr.f.grad + curr.h.grad.transpose()*curr.y - curr.z;
 
     // Calculate the Hessian of the Lagrange function with respect to x at the current state
     Lxx = curr.f.hessian;
@@ -765,33 +781,29 @@ void IPFilterSolver::UpdateNormalTangentialSteps()
     lu.compute(lhs);
 
     // Assemble the normal rhs vector of the linear system
-    rhs.segment(0, n) = - curr.z + (curr.mu/curr.x.array()).matrix();
-    rhs.segment(n, m) = - curr.h.func;
+    rhs.segment(0, n).noalias() = - curr.z + (curr.mu/curr.x.array()).matrix();
+    rhs.segment(n, m).noalias() = - curr.h.func;
 
     // Calculate the normal step
     u = lu.solve(rhs);
 
-    if((lhs*u - rhs).norm()/rhs.norm() > 1.0e-8) std::cerr << "Failed: (lhs*u - rhs).norm()/rhs.norm() <= 1.0e-8" << std::endl;
-
     // Extract the x and y components of the normal step
-    snx = u.segment(0, n);
-    sny = u.segment(n, m);
+    snx.noalias() = u.segment(0, n);
+    sny.noalias() = u.segment(n, m);
 
     // Calculate the sigma parameter
     const double sigma = CalculateSigma();
 
     // Assemble the tangential rhs vector of the linear system
-    rhs.segment(0, n) = - Lx - ((1 - sigma)*curr.mu/curr.x.array()).matrix();
-    rhs.segment(n, m) = VectorXd::Zero(m);
+    rhs.segment(0, n).noalias() = - Lx - ((1 - sigma)*curr.mu/curr.x.array()).matrix();
+    rhs.segment(n, m).noalias() = VectorXd::Zero(m);
 
     // Calculate the tangential step
     u = lu.solve(rhs);
 
-    if((lhs*u - rhs).norm()/rhs.norm() > 1.0e-8) std::cerr << "Failed: (lhs*u - rhs).norm()/rhs.norm() <= 1.0e-8" << std::endl;
-
     // Extract the x and y components of the tangential step
-    stx = u.segment(0, n);
-    sty = u.segment(n, m);
+    stx.noalias() = u.segment(0, n);
+    sty.noalias() = u.segment(n, m);
 
     // Calculate the z components of the normal and tangential steps
     snz = -(curr.z.array() * snx.array() + curr.x.array() * curr.z.array() - curr.mu)/curr.x.array();
@@ -809,7 +821,7 @@ void IPFilterSolver::UpdateNormalTangentialStepsRestoration()
     const unsigned m = dimy;
 
     // Calculate the gradient of the Lagrange function with respect to x at the current state
-    Lx = curr.f.grad + curr.h.grad.transpose()*curr.y - curr.z;
+    Lx.noalias() = curr.f.grad + curr.h.grad.transpose()*curr.y - curr.z;
 
     // Calculate the Hessian of the Lagrange function with respect to x at the current state
     Lxx = curr.f.hessian;
@@ -827,29 +839,29 @@ void IPFilterSolver::UpdateNormalTangentialStepsRestoration()
     lu.compute(lhs);
 
     // Assemble the normal rhs vector of the linear system
-    rhs.segment(0, n) = - curr.z + (curr.mu/curr.x.array()).matrix();
-    rhs.segment(n, m) = - curr.h.func;
+    rhs.segment(0, n).noalias() = - curr.z + (curr.mu/curr.x.array()).matrix();
+    rhs.segment(n, m).noalias() = - curr.h.func;
 
     // Calculate the normal step
     u = lu.solve(rhs);
 
     // Extract the x and y components of the normal step
-    snx = u.segment(0, n);
-    sny = u.segment(n, m);
+    snx.noalias() = u.segment(0, n);
+    sny.noalias() = u.segment(n, m);
 
     // Calculate the sigma parameter
     const double sigma = CalculateSigma();
 
     // Assemble the tangential rhs vector of the linear system
-    rhs.segment(0, n) = - ((1 - sigma)*curr.mu/curr.x.array()).matrix();
-    rhs.segment(n, m) = VectorXd::Zero(m);
+    rhs.segment(0, n).noalias() = - ((1 - sigma)*curr.mu/curr.x.array()).matrix();
+    rhs.segment(n, m).noalias() = VectorXd::Zero(m);
 
     // Calculate the tangential step
     u = lu.solve(rhs);
 
     // Extract the x and y components of the tangential step
-    stx = u.segment(0, n);
-    sty = u.segment(n, m);
+    stx.noalias() = u.segment(0, n);
+    sty.noalias() = u.segment(n, m);
 
     // Calculate the z components of the normal and tangential steps
     snz = -(curr.z.array() * snx.array() + curr.x.array() * curr.z.array() - curr.mu)/curr.x.array();
@@ -870,15 +882,15 @@ void IPFilterSolver::UpdateSafeTangentialStep()
     const double sigma = (alphat < params.threshold_alphat) ? params.sigma_safe_max : params.sigma_safe_min;
 
     // Assemble the tangential rhs vector of the linear system
-    rhs.segment(0, n) = - Lx - ((1 - sigma)*curr.mu/curr.x.array()).matrix();
-    rhs.segment(n, m) = VectorXd::Zero(m);
+    rhs.segment(0, n).noalias() = - Lx - ((1 - sigma)*curr.mu/curr.x.array()).matrix();
+    rhs.segment(n, m).noalias() = VectorXd::Zero(m);
 
     // Calculate the safe tangential step
     u = lu.solve(rhs);
 
     // Extract the x and y components of the safe tangential step
-    stx = u.segment(0, n);
-    sty = u.segment(n, m);
+    stx.noalias() = u.segment(0, n);
+    sty.noalias() = u.segment(n, m);
 
     // Calculate the z components of the safe tangential step
     stz = -(curr.z.array() * stx.array() + curr.mu * (1 - sigma))/curr.x.array();
@@ -890,9 +902,9 @@ void IPFilterSolver::UpdateSafeTangentialStep()
 void IPFilterSolver::UpdateState(const VectorXd& x, const VectorXd& y, const VectorXd& z, State& state)
 {
     // Update the iterates x, y and z
-    state.x = x;
-    state.y = y;
-    state.z = z;
+    state.x.noalias() = x;
+    state.y.noalias() = y;
+    state.z.noalias() = z;
 
     // Update the objective and constraint states at x
     scaling.UnscaleX(state.x);
@@ -905,8 +917,8 @@ void IPFilterSolver::UpdateState(const VectorXd& x, const VectorXd& y, const Vec
     scaling.ScaleConstraint(state.h);
 
     // Update the counter of objective and constraint evaluations in result
-    ++result.num_evals_objective;
-    ++result.num_evals_constraint;
+    ++result.num_objective_evals;
+    ++result.num_constraint_evals;
 
     // Update the barrier parameter at (x,y,z)
     state.mu = x.dot(z)/dimx;

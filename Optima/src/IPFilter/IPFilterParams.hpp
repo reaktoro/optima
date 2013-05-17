@@ -243,7 +243,7 @@ struct Params
      * The safe tangencial calculation uses this minimum
      * value of @c sigma when @c alphat > @c safe_step_threshold_alphat.
      */
-    double sigma_safe_min = 0.5;
+    double sigma_safe_min = 0.1;
 
     /**
      * The maximum value of @c sigma used in the safe tangencial step calculation
@@ -335,31 +335,6 @@ struct Params
      * filter is sufficiently far from its \f$\psi\f$-borders.
      */
     double alpha_psi = 1.0e-03;
-
-    //==============================
-    // ACTIVE MONITORING PARAMETERS
-    //==============================
-    /**
-     * The threshold value used to determine which partitions are active at the beginning of the calculation
-     */
-    double active_threshold = 1.0e-8;
-
-    /**
-     * The number of iterations during which the initially active partitions are monitored for increase
-     *
-     * In order to handle the case of initial guesses containing
-     * active partitions (i.e., group of components that become
-     * active simultaneously) that during the calculation show
-     * signs of becoming inactive, we monitor a few initial
-     * iterations.
-     *
-     * After these iterations, if an active partition has
-     * continuously increased, the calculation is stopped.
-     * This is done in order for the user to provide a
-     * better initial guess, which no longers contain that
-     * partition as active.
-     */
-    double active_monitoring_num_iterations = 5;
 };
 
 } /* namespace IPFilter */

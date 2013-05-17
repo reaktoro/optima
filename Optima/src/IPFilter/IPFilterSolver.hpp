@@ -20,7 +20,6 @@ using namespace Eigen;
 #include <IPFilter/IPFilterParams.hpp>
 #include <IPFilter/IPFilterResult.hpp>
 #include <IPFilter/IPFilterState.hpp>
-#include <Utils/ActiveMonitoring.hpp>
 #include <Utils/Filter.hpp>
 #include <Utils/OptimumProblem.hpp>
 #include <Utils/Outputter.hpp>
@@ -34,21 +33,38 @@ namespace Optima {
 class IPFilterSolver
 {
 public:
+    /**
+     * The options used for the algorithm
+     * @see IPFilter::Options
+     */
     typedef IPFilter::Options Options;
-    typedef IPFilter::Params  Params;
-    typedef IPFilter::Result  Result;
-    typedef IPFilter::State   State;
 
-    // The possible errors that might happen with the IPFilter algorithm
-    typedef IPFilter::ErrorInitialGuess                      ErrorInitialGuess;
-    typedef IPFilter::ErrorInitialGuessActivePartition       ErrorInitialGuessActivePartition;
-    typedef IPFilter::ErrorInitialGuessFloatingPoint         ErrorInitialGuessFloatingPoint;
-    typedef IPFilter::ErrorIteration                         ErrorIteration;
-    typedef IPFilter::ErrorIterationMaximumLimit             ErrorIterationMaximumLimit;
-    typedef IPFilter::ErrorSearchDelta                       ErrorSearchDelta;
-    typedef IPFilter::ErrorSearchDeltaNeighborhood           ErrorSearchDeltaNeighborhood;
-    typedef IPFilter::ErrorSearchDeltaTrustRegion            ErrorSearchDeltaTrustRegion;
-    typedef IPFilter::ErrorSearchDeltaTrustRegionRestoration ErrorSearchDeltaTrustRegionRestoration;
+    /**
+     * The list of algorithm parameters and their default values
+     * @see IPFilter::Params
+     */
+    typedef IPFilter::Params Params;
+
+    /**
+     * The result of the calculation performed by the IPFilter algorithm
+     * @see IPFilter::Result
+     */
+    typedef IPFilter::Result Result;
+
+    /**
+     * The algorithmic state at the point (x,y,z)
+     * @see IPFilter::State
+     */
+    typedef IPFilter::State State;
+
+    /**
+     * The solution of the minimisation calculation <em>(x, y, z)</em>
+     *
+     * The solution of the minimisation calculation is the
+     * tuple <em>(x, y, z)</em>, where @e x is the primal solution,
+     * and @e y and @e z are the Lagrange multipliers.
+     */
+    typedef std::tuple<const VectorXd&, const VectorXd&, const VectorXd&> Solution;
 
     /**
      * Constructs a default @ref IPFilterSolver instance
@@ -75,10 +91,6 @@ public:
      * @param scaling
      */
     void SetScaling(const Scaling& scaling);
-
-    void SetActiveMonitoring(const ActiveMonitoring& active_monitor);
-
-    const ActiveMonitoring& GetActiveMonitoring() const;
 
     /**
      * Gets the calculation options of the optimisation solver
@@ -114,7 +126,7 @@ public:
      *
      * @param x The initial guess of the primal variables @a x
      */
-    void Solve(VectorXd& x);
+    Solution Solve(VectorXd& x);
 
     /**
      * Solves the optimisation problem
@@ -132,10 +144,22 @@ public:
      * @param y The initial guess of the Lagrange multipliers @a y
      * @param z The initial guess of the Lagrange multipliers @a z
      */
-    void Solve(VectorXd& x, VectorXd& y, VectorXd& z);
+    Solution Solve(VectorXd& x, VectorXd& y, VectorXd& z);
+
+    void SolveSequential(VectorXd& x, VectorXd& y, VectorXd& z);
+
+    // The possible errors that might happen with the IPFilter algorithm
+    typedef IPFilter::ErrorInitialGuess                      ErrorInitialGuess;
+    typedef IPFilter::ErrorInitialGuessActivePartition       ErrorInitialGuessActivePartition;
+    typedef IPFilter::ErrorInitialGuessFloatingPoint         ErrorInitialGuessFloatingPoint;
+    typedef IPFilter::ErrorIteration                         ErrorIteration;
+    typedef IPFilter::ErrorIterationMaximumLimit             ErrorIterationMaximumLimit;
+    typedef IPFilter::ErrorSearchDelta                       ErrorSearchDelta;
+    typedef IPFilter::ErrorSearchDeltaNeighborhood           ErrorSearchDeltaNeighborhood;
+    typedef IPFilter::ErrorSearchDeltaTrustRegion            ErrorSearchDeltaTrustRegion;
+    typedef IPFilter::ErrorSearchDeltaTrustRegionRestoration ErrorSearchDeltaTrustRegionRestoration;
 
 private:
-    bool AnyDepartingActivePartition() const;
     bool AnyFloatingPointException(const State& state) const;
     bool PassConvergenceCondition() const;
     bool PassFilterCondition() const;
@@ -154,7 +178,7 @@ private:
 
     void AcceptTrialPoint();
     void ExtendFilter();
-    void Initialise(VectorXd& x, VectorXd& y, VectorXd& z);
+    void Initialise(const VectorXd& x, const VectorXd& y, const VectorXd& z);
     void OutputHeader();
     void OutputState();
     void ResetLagrangeMultipliersZ(State& state) const;
@@ -186,9 +210,6 @@ private:
 
     /// The scaling factors for the optimisation problem
     Scaling scaling;
-
-    /// The partitioning of the primal variables that are active at the bounds simultaneously
-    ActiveMonitoring active_monitor;
 
     /// The output instance for printing the calculation progress
     Outputter outputter;

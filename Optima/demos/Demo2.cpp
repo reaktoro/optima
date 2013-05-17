@@ -209,13 +209,13 @@ ConstraintFunction CreateGibbsConstraintFunction(const VectorXd& b)
 
 int main()
 {
-    std::vector<double> nCO2vals = {0.1, 0.2, 0.21, 0.22, 0.23, 0.24, 0.3, 0.4, 1.8, 2.0, 10.0, 20.0};
+//    std::vector<double> nCO2vals = {0.1, 0.2, 0.21, 0.22, 0.23, 0.24, 0.3, 0.4, 1.8, 2.0, 10.0, 20.0};
 //    std::vector<double> nCO2vals = {0.1, 0.2, 0.21, 0.22, 0.23, 0.24, 0.3, 0.4, 1.8, 1.84, 1.848, 1.849, 2.0, 10.0, 20.0};
 //    std::vector<double> nCO2vals = {0.1, 0.2, 0.3, 0.4, 0.5, 1, 1.8, 1.84, 1.849, 1.85, 2.0, 10.0, 20.0};
 //    std::vector<double> nCO2vals = {1.8, 2.0, 1.9, 1.85, 1.849, 1.848, 1.847, 1.846, 1.8375, 1.825, 1.8};
 //    std::vector<double> nCO2vals = {1.6, 1.8, 2.0};
 //    std::vector<double> nCO2vals = {1.8, 1.82, 1.84, 1.848, 1.849, 1.85, 1.9, 2.0};
-//    std::vector<double> nCO2vals = {1.8, 2.0, 1.8};
+    std::vector<double> nCO2vals = {1.8, 2.0, 1.8};
 
     double nH2O = 55;
 
@@ -227,30 +227,12 @@ int main()
     options.tolerance        = 1.0e-8;
     options.output_scaled    = false;
 
-    IPFilterSolver::Params params;
-    params.sigma_safe_min = 0.1;
-    params.sigma_safe_max = 0.5;
-    params.safe_step            = true;
-    params.restoration          = true;
-    params.neighbourhood_search = true;
-    params.sigma_restoration    = 1.0;
-    params.active_monitoring_num_iterations = 5000;
-
     std::vector<IPFilterSolver::Result> results;
 
-    ActiveMonitoring active_monitor;
-    active_monitor.SetLowerBounds(VectorXd::Zero(N));
-    active_monitor.AddPartition({0, 1, 2, 3, 4});
-    active_monitor.AddPartition({5, 6});
-
     IPFilterSolver solver;
-    solver.SetParams(params);
     solver.SetOptions(options);
-    solver.SetActiveMonitoring(active_monitor);
 
     bool first = true;
-
-    MatrixXd W = FormulaMatrix();
 
     VectorXd n, y, z;
 
@@ -261,7 +243,7 @@ int main()
 
         if(first)
         {
-            n = VectorXd::Constant(N, 1.0e-2);
+            n = VectorXd::Constant(N, 1.0e-7);
             n[iH2Oa] = nH2O;
             n[iCO2g] = nCO2;
         }
@@ -286,91 +268,36 @@ int main()
         std::cout << bar << std::endl;
         std::cout << "nCO2 = " << nCO2 << std::endl;
 
-        try
-        {
-            solver.SetScaling(scaling);
-            solver.Solve(n, y, z);
-        }
-        catch(...)
-        {
-            n = solver.GetState().x;
-            y = solver.GetState().y;
-            z = solver.GetState().z;
+        if(first) std::tie(n, y, z) = solver.Solve(n);
+        else solver.SolveSequential(n, y, z);
 
-            scaling.UnscaleX(n);
-            scaling.UnscaleY(y);
-            scaling.UnscaleZ(z);
-
-            z = z.cwiseMax(1.0e-6);
-
-            scaling.SetScalingVariables(n);
-            solver.SetScaling(scaling);
-
-            solver.Solve(n, y, z);
-        }
-//        catch(const IPFilterSolver::ErrorInitialGuessActivePartition& e)
+//        try
 //        {
-//            const ActiveMonitoring& active_monitor = solver.GetActiveMonitoring();
+//            if(first)
+//                std::tie(n, y, z) = solver.Solve(n);
+//            else
+//            {
+////                solver.SetScaling(scaling);
+////                solver.Solve(n, y, z);
+//                solver.SolveSequential(n, y, z);
+//            }
+//        }
+//        catch(...)
+//        {
+//            n = solver.GetState().x;
+//            y = solver.GetState().y;
+//            z = solver.GetState().z;
 //
-//            auto partitions = active_monitor.GetPartitions();
-//            auto departing_lower = active_monitor.DetermineDepartingLowerActivePartitions();
+//            scaling.UnscaleX(n);
+//            scaling.UnscaleY(y);
+//            scaling.UnscaleZ(z);
 //
-//            Indices idxa = active_monitor.DetermineDepartingLowerActiveComponents();
-//            Indices idxi;
-//            for(unsigned i = 0; i < N; ++i)
-//                if(not std::count(idxa.begin(), idxa.end(), i))
-//                    idxi.push_back(i);
+//            z = VectorXd::Constant(N, 1.0e-10);
 //
-//            const unsigned Na = idxa.size();
-//            const unsigned Ni = idxi.size();
-//
-//            MatrixXd W = FormulaMatrix();
-//            MatrixXd Wa(E, Na), Wi(E, Ni);
-//            for(unsigned i = 0; i < Na; ++i) Wa.col(i) = W.col(idxa[i]);
-//            for(unsigned i = 0; i < Ni; ++i) Wi.col(i) = W.col(idxi[i]);
-//            VectorXd na(Na), ni(Ni);
-//            for(unsigned i = 0; i < Ni; ++i) ni[i] = n[idxi[i]];
-//            MatrixXd lhs = Wa.transpose()*Wa;
-//            VectorXd rhs = Wa.transpose()*(b - Wi*ni);
-//            na = lhs.lu().solve(rhs);
-//            na = na.cwiseMax(VectorXd::Constant(Na, 1.0e-4));
-//            std::cout << "na\n" << na << std::endl;
-//            for(unsigned i = 0; i < Na; ++i) n[idxa[i]] = na[i];
 //            scaling.SetScalingVariables(n);
 //            solver.SetScaling(scaling);
-//            solver.Solve(n, y, z);
-//        }
-//        catch(...) { std::cerr << "There has been an error in the calculation." << std::endl; }
-
-        auto state = solver.GetState();
-
-        VectorXd Lx_scaled = state.f.grad + state.h.grad.transpose() * state.y - state.z;
-
-        scaling.UnscaleX(state.x);
-        scaling.UnscaleY(state.y);
-        scaling.UnscaleZ(state.z);
-        scaling.UnscaleObjective(state.f);
-        scaling.UnscaleConstraint(state.h);
-
-        VectorXd Lx = state.f.grad + state.h.grad.transpose() * state.y - state.z;
-
-//        std::cout << bar << std::endl;
-//        std::cout << std::left << std::setw(15) << "x";
-//        std::cout << std::left << std::setw(15) << "y";
-//        std::cout << std::left << std::setw(15) << "z";
-//        std::cout << std::left << std::setw(15) << "Lx";
-//        std::cout << std::left << std::setw(15) << "Lx_scaled";
-//        std::cout << std::endl;
 //
-//        for(unsigned i = 0; i < N; ++i)
-//        {
-//            std::cout << std::left << std::setw(15) << n[i];
-//            if(i < E) std::cout << std::left << std::setw(15) << y[i];
-//            else std::cout << std::left << std::setw(15) << "";
-//            std::cout << std::left << std::setw(15) << z[i];
-//            std::cout << std::left << std::setw(15) << Lx[i];
-//            std::cout << std::left << std::setw(15) << Lx_scaled[i];
-//            std::cout << std::endl;
+//            solver.Solve(n, y, z);
 //        }
 
         first = false;

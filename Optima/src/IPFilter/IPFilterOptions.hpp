@@ -112,7 +112,7 @@ struct Options
      * to estimate an initial guess for the Lagrange
      * multipliers y and z.
      */
-    double mu = 0.1;
+    double mu = 0.01;
 
     /**
      * The tolerance parameter used for the stopping criteria of the algorithm

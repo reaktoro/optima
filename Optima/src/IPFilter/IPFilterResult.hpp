@@ -11,7 +11,7 @@ namespace Optima {
 namespace IPFilter {
 
 /**
- * Defines the result of the calculation performed by the IPFilter algorithm
+ * The result of the calculation performed by the IPFilter algorithm
  */
 struct Result
 {
@@ -23,12 +23,12 @@ struct Result
     /**
      * The number of evaluations of the objective function
      */
-    unsigned num_evals_objective = 0;
+    unsigned num_objective_evals = 0;
 
     /**
      * The number of evaluations of the constraint function
      */
-    unsigned num_evals_constraint = 0;
+    unsigned num_constraint_evals = 0;
 
     /**
      * The number of times the calculation entered the restoration phase algorithm
