@@ -8,399 +8,390 @@
 #pragma once
 
 namespace Optima {
-namespace IPFilter {
 
 /**
  * The list of algorithm parameters and their default values
  */
-struct Params
+struct IPFilterParams
 {
-
-    //===========================
-    // MAIN ALGORITHM PARAMETERS
-    //===========================
     /**
-     * The minimum value that the trust-region radius can assume
+     * The parameters for the filter scheme
      */
-    double delta_min = 1.0e-12;
-
-    /**
-     * The parameter used to increase the trust-region radius when it becomes allowed
-     */
-    double delta_increase_factor = 2.0;
-
-    /**
-     * The parameter used to decrease the size of the trust-region
-     */
-    double delta_decrease_factor = 0.5;
-
-    /**
-     * The initial value of the trust-region radius
-     */
-    double delta_initial = 1.0e+05;
-
-    /**
-     * The parameter used in the verification of the linear model reduction
-     *
-     * This is the \f$ \kappa \f$ parameter used in the following condition
-     * to verify a sufficient decrease in the linear model \f$ m(\mathbf{w}(\Delta)) \f$:
-     * \f[
-     *     m_{k}(\mathbf{w}_{k})-m_{k}(\mathbf{w}_{k}(\Delta_{k}))<\kappa\theta(\mathbf{w}_{k})^{2}.
-     * \f]
-     */
-    double kappa = 0.1;
-
-    /**
-     * The smaller Cauchy condition parameter
-     *
-     * This is the parameter \f$ eta_{1} \f$ used in the following condition
-     * to determine if \f$ \theta_{g} \f$ has achieved a sufficient decrease
-     * with respect to the linear model \f$ m(\mathbf{w}(\Delta)) \f$:
-     * \f[
-     *     \rho_{k}\equiv\frac{\theta_{g}(\mathbf{w}_{k})-\theta_{g}(\mathbf{w}_{k}(\Delta_{k}))}{m(\mathbf{w}_{k})-m(\mathbf{w}_{k}(\Delta_{k}))}\geq\eta_{1}
-     * \f]
-     */
-    double eta_small = 1.0e-04;
-
-    /**
-     * The larger Cauchy condition parameter
-     *
-     * This is the parameter \f$ eta_{2} \f$ used in the following condition
-     * to determine if the trust-region radius \f$ \Delta \f$ needs to be increased:
-     * \f[
-     *     \rho_{k}\equiv\frac{\theta_{g}(\mathbf{w}_{k})-\theta_{g}(\mathbf{w}_{k}(\Delta_{k}))}{m(\mathbf{w}_{k})-m(\mathbf{w}_{k}(\Delta_{k}))}\geq\eta_{2}
-     * \f]
-     */
-    double eta_large = 0.8;
-
-    /**
-     * The parameter used in the resetting of the Lagrange multipliers z
-     *
-     */
-    double kappa_zreset = 1.0e+08;
-
-    /**
-     * The threshold used to determine if the initial estimate of the Lagrange multiplier y is suitable
-     */
-    double y_max = 2.0e+03;
-
-    /**
-     * The threshold value of @c mu that indicates which value of @c sigma to be used
-     *
-     * The value of @c sigma is chosen as follows: if @c mu < @c mu_threshold, then
-     * @c sigma = @c sigma_fast, else
-     * @c sigma = @c sigma_slow.
-     */
-    double mu_threshold = 1.0e-06;
-
-    /**
-     * The value of @c sigma used when @c mu is large
-     *
-     * This value of sigma is used whenever @c mu > @c mu_threshold.
-     */
-    double sigma_slow = 0.1;
-
-    /**
-     * The value of @c sigma used when @c mu is small
-     *
-     * This value of sigma is used whenever @c mu < @c mu_threshold.
-     */
-    double sigma_fast = 0.5;
-
-    //==================================
-    // RESTORATION ALGORITHM PARAMETERS
-    //==================================
-    struct RestorationParams
+    struct Filter
     {
         /**
-         * The boolean value that indicates if the restoration algorithm should be applied when needed
+         * The parameter @f$\alpha_{\theta}@f$ used to increase the @f$\theta@f$-borders of the filter region
+         *
+         * This parameter ensures that a point acceptable by the filter is sufficiently far from
+         * its @f$\theta@f$-borders.
+         */
+        double alpha_theta = 1.0e-03;
+
+        /**
+         * The parameter @f$\alpha_{\psi}@f$ used to increase the @f$\psi@f$-borders of the filter region
+         *
+         * This parameter ensures that a point acceptable by the filter is sufficiently far from
+         * its @f$\psi@f$-borders.
+         */
+        double alpha_psi = 1.0e-03;
+    };
+
+    /**
+     * The parameters for the inertia correction algorithm
+     *
+     * These parameters are used in the inertia correction of the KKT matrix whenever its inertia
+     * is not <em>(n, m, 0)</em>, where @e n is the number of variables, and @e m is the number of constraints.
+     */
+    struct InertiaControl
+    {
+        /**
+         * The initial value of the perturbation parameter used in block (1,1) of the KKT matrix
+         */
+        double epsilon1_initial = 0.5e-06;
+
+        /**
+         * The minimum value that the perturbation parameter @c epsilon1 can assume
+         */
+        double epsilon1_min = 1.0e-20;
+
+        /**
+         * The maximum value that the perturbation parameter @c epsilon1 can assume
+         */
+        double epsilon1_max = 1.0e+06;
+
+        /**
+         * The factor used to increase @c epsilon1 on its first increase
+         */
+        double epsilon1_increase0 = 10.0;
+
+        /**
+         * The factor used to increase @c epsilon1
+         */
+        double epsilon1_increase = 2.0;
+
+        /**
+         * The factor used to decrease @c epsilon1
+         */
+        double epsilon1_decrease = 3.0;
+
+        /**
+         * The perturbation used in block (2,2) of the KKT matrix whenever it is singular
+         */
+        double epsilon2 = 1.0e-20;
+    };
+
+    /**
+     * The parameters for the central neighbourhood scheme
+     */
+    struct Neighbourhood
+    {
+        /**
+         * The boolean value that indicates if the neighbourhood search algorithm is activated
+         *
+         * This boolean value indicates if a seach for a @f$\Delta@f$ that satisfies the neighbourhood
+         * conditions should be performed at every iteration.
+         *
+         * Setting this flag to @c false will cause the calculation to use, at every iteration, the
+         * largest possible value of @f$\Delta@f$ that satisfies the positivity conditions of the iterates
+         * @b x and @b z.
          */
         bool active = true;
 
         /**
-         * The parameter used to verify the necessity of the restoration algorithm
+         * The relaxation parameter used to calculate the initial neighborhood parameter @e M
          *
-         * This is the parameter \f$ \gamma_{1} \f$ in the following condition
-         * that indicates the necessity of the restoration algorithm:
-         * \f[
-         *     \theta(\mathbf{w})>\Delta_{k}\min\{\gamma_{1},\gamma_{2}\Delta_{k}^{\beta}\}.
-         * \f]
+         * This is the parameter @f$\alpha_{M}^{\circ}@f$ in the algorithm used to calculate the
+         * initial neighborhood parameter @f$ M_{0} @f$ as:
+         * @f[
+         *     M_{0}=\max(M^{\circ},\alpha_{M}^{\circ}\theta(\mathbf{w}_{0})/\mu_{0}).
+         * @f]
+         */
+        double alpha0 = 1.0e+03;
+
+        /**
+         * The relaxation parameter used to update the neighborhood parameter @e M
+         *
+         * This is the parameter @f$\alpha_{M}@f$ in the algorithm used to update the neighborhood
+         * parameter @f$ M_{k} @f$ as:
+         * @f[
+         *     M_{k}=\max(M^{\circ},\alpha_{M}\theta(\mathbf{w}_{k})/\mu_{k}).
+         * @f]
+         */
+        double alpha = 1.0e+01;
+
+        /**
+         * The tolerance parameter used to determine the necessity of updating the neighborhood parameter @e M
+         *
+         * This is the tolerance parameter @f$ \varepsilon_{M} @f$ used in the following condition:
+         *
+         * @f[
+         *     \theta(\mathbf{w}_{k})>\mu_{k}\varepsilon_{M}M_{k},
+         * @f]
+         *
+         * to determine if the neighborhood parameter @f$ M_{k+1} @f$ needs to be updated.
+         */
+        double epsilon = 1.0e-03;
+
+        /**
+         * The maximum allowed value of the neighborhood parameter @e M
+         */
+        double Mmax = 1.0e+03;
+
+        /**
+         * The minimum allowed value of the neighborhood parameter @f$ \gamma @f$
+         */
+        double gamma_min = 1.0e-03;
+    };
+
+    /**
+     * The parameters for the restart scheme
+     */
+    struct Restart
+    {
+        /**
+         * The boolean value that indicates if the restart scheme should be used
+         */
+        bool active = true;
+
+        /**
+         * The maximum number of tentatives in the restart scheme
+         */
+        unsigned tentatives = 4;
+
+        /**
+         * The restart factor used to increase @f$ \mu @f$ at every unsuccessful restart tentative
+     */
+        double factor = 10.0;
+    };
+
+    /**
+     * The parameters for the restoration algorithm
+     */
+    struct Restoration
+    {
+        /**
+         * The boolean value that indicates if the restoration algorithm is active
+         *
+         * If @c true, then whenever the condition:
+         *
+         * @f[
+         *     \theta(\mathbf{w}_{k})>\Delta_{k}\min\{\gamma_{1},\gamma_{2}\Delta_{k}^{\beta}\}
+         * @f]
+         *
+         * is satisfied, the restoration algorithm is started.
+         */
+        bool active = true;
+
+        /**
+         * The parameter @f$\gamma_{1}@f$ in the restoration condition
          */
         double gamma1 = 0.5;
 
         /**
-         * The parameter used to verify the necessity of the restoration algorithm
-         *
-         * This is the parameter \f$ \gamma_{2} \f$ in the following
-         * condition that indicates the necessity of the restoration algorithm:
-         * \f[
-         *     \theta(\mathbf{w})>\Delta_{k}\min\{\gamma_{1},\gamma_{2}\Delta_{k}^{\beta}\}.
-         * \f]
+         * The parameter @f$\gamma_{2}@f$ in the restoration condition
          */
         double gamma2 = 1.0;
 
         /**
-         * The parameter used to verify the necessity of the restoration algorithm
-         *
-         * This is the parameter \f$ \beta \f$ in the following
-         * condition that indicates the necessity of the restoration algorithm:
-         * \f[
-         *     \theta(\mathbf{w})>\Delta_{k}\min\{\gamma_{1},\gamma_{2}\Delta_{k}^{\beta}\}.
-         * \f]
+         * The parameter @f$\beta@f$ in the restoration condition
          */
         double beta = 0.75;
 
         /**
-         * The Cauchy parameter used in the restoration algorithm to verify convergence progress
+         * The Cauchy parameter @f$\xi_{1}@f$ used in the restoration algorithm to verify convergence progress
          */
         double xi1 = 1.0e-05;
 
         /**
-         * The Cauchy parameter used in the restoration algorithm to verify need of increasing the trust-region radius
+         * The Cauchy parameter @f$\xi_{2}@f$ used in the restoration algorithm to verify the need of increasing the trust-region radius
          */
         double xi2 = 0.5;
     };
 
     /**
-     * The boolean value that indicates if the restoration algorithm should be applied when needed
+     * The parameters for the safe tangencial step calculation
      */
-    bool restoration = true;
+    struct SafeTangentialStep
+    {
+        /**
+         * The boolean value that indicates if the safe tangencial step scheme is active
+         *
+         * If @c true, then whenever @f$ \alpha^{t}(\Delta) < \epsilon_{\alpha_{t}} @f$, where
+         * @f$ \epsilon_{\alpha_{t}} @f$ is given by @ref threshold, then a new tangencial step
+         * @f$ \mathbf{s}^{t} @f$ is calculated.
+         *
+         * Note that the KKT coefficient matrix remains unchanged during this process, so its decomposition
+         * can be reused.
+         */
+        bool active = true;
+
+        /**
+         * The threshold used to determine if a safe tangencial step calculation is necessary
+         *
+         * This is the threshold @f$ \epsilon_{\alpha_{t}} @f$ used in @f$ \alpha^{t}(\Delta) < \epsilon_{\alpha_{t}} @f$,
+         * to determine if a safe tangencial step is required.
+         */
+        double threshold = 0.8;
+    };
 
     /**
-     * The parameter used to verify the necessity of the restoration algorithm
-     *
-     * This is the parameter \f$ \gamma_{1} \f$ in the following condition
-     * that indicates the necessity of the restoration algorithm:
-     * \f[
-     *     \theta(\mathbf{w})>\Delta_{k}\min\{\gamma_{1},\gamma_{2}\Delta_{k}^{\beta}\}.
-     * \f]
+     * The parameters for the calculation of the centrality parameter @f$\sigma@f$
      */
-    double gamma1 = 0.5;
+    struct Sigma
+    {
+        /**
+         * The threshold value used to determine the value of @f$\sigma@f$
+         *
+         * The value of @f$\sigma@f$ is chosen as follows:
+         *
+         * @f[
+         *     \sigma=\begin{cases}
+         *         \sigma_{\mathrm{max}} & \mbox{if }\mu<\epsilon_{\mu}\\
+         *         \sigma_{\mathrm{min}} & \mbox{otherwise}\end{cases},
+         * @f]
+         *
+         * where @f$\sigma_{\mathrm{min}}@f$ and @f$\sigma_{\mathrm{max}}@f$ are given by @ref main_min and
+         * @ref main_max respectively, and @f$\epsilon_{\mu}@f$ is given by @ref threshold_mu.
+         */
+        double threshold_mu = 1.0e-06;
+
+        /**
+         * The threshold used to determine the value of sigma in the safe tangencial step calculation
+         *
+         * In the safe tangencial step calculation, the value of @f$\sigma@f$ is given by:
+         *
+         * @f[
+         *     \sigma=\begin{cases}
+         *         \sigma_{\mathrm{safe,max}} & \mbox{if }\alpha^{t}(\Delta)<\epsilon_{\alpha_{t}}\\
+         *         \sigma_{\mathrm{safe,min}} & \mbox{otherwise}\end{cases},
+         * @f]
+         *
+         * where @f$\sigma_{\mathrm{safe,min}}@f$ and @f$\sigma_{\mathrm{safe,max}}@f$ are given by @ref safe_min and
+         * @ref safe_max respectively, and @f$\epsilon_{\alpha_{t}}@f$ is given by @ref SafeTangentialStep::threshold.
+         */
+        double threshold_alphat = 1.0e-3;
+
+        /**
+         * The value of @f$\sigma@f$ when @f$\mu@f$ is large
+         *
+         * See @ref threshold_mu.
+         */
+        double main_min = 0.1;
+
+        /**
+         * The value of @f$\sigma@f$ when @f$\mu@f$ is small
+         *
+         * See @ref threshold_mu.
+         */
+        double main_max = 0.5;
+
+        /**
+         * The value of @f$\sigma@f$ used in the safe tangencial step calculation when @f$\alpha^{t}(\Delta)@f$ is large
+         *
+         * See @ref threshold_alphat.
+         */
+        double safe_min = 0.1;
+
+        /**
+         * The value of @f$\sigma@f$ used in the safe tangencial step calculation when @f$\alpha^{t}(\Delta)@f$ is small
+         *
+         * See @ref threshold_alphat.
+         */
+        double safe_max = 0.5;
+
+        /**
+         * The value of @f$\sigma@f$ used in the restoration algorithm
+         */
+        double restoration = 1.0;
+    };
 
     /**
-     * The parameter used to verify the necessity of the restoration algorithm
-     *
-     * This is the parameter \f$ \gamma_{2} \f$ in the following
-     * condition that indicates the necessity of the restoration algorithm:
-     * \f[
-     *     \theta(\mathbf{w})>\Delta_{k}\min\{\gamma_{1},\gamma_{2}\Delta_{k}^{\beta}\}.
-     * \f]
+     * The parameters for the trust-region algorithm
      */
-    double gamma2 = 1.0;
+    struct TrustRegion
+    {
+        /**
+         * The minimum value that the trust-region radius can assume
+         */
+        double delta_min = 1.0e-12;
 
-    /**
-     * The parameter used to verify the necessity of the restoration algorithm
-     *
-     * This is the parameter \f$ \beta \f$ in the following
-     * condition that indicates the necessity of the restoration algorithm:
-     * \f[
-     *     \theta(\mathbf{w})>\Delta_{k}\min\{\gamma_{1},\gamma_{2}\Delta_{k}^{\beta}\}.
-     * \f]
-     */
-    double beta = 0.75;
+        /**
+         * The parameter used to increase the trust-region radius
+         */
+        double delta_increase = 2.0;
 
-    /**
-     * The Cauchy parameter used in the restoration algorithm to verify convergence progress
-     */
-    double xi1 = 1.0e-05;
+        /**
+         * The parameter used to decrease the trust-region radius
+         */
+        double delta_decrease = 0.5;
 
-    /**
-     * The Cauchy parameter used in the restoration algorithm to verify need of increasing the trust-region radius
-     */
-    double xi2 = 0.5;
+        /**
+         * The initial value of the trust-region radius
+         */
+        double delta_initial = 1.0e+05;
 
-    //============================================================
-    // INERTIAL CORRECTION AND DIAGONAL REGULARIZATION PARAMETERS
-    //============================================================
-    /**
-     * The initial value of the perturbation parameter used in block (1,1) of the KKT matrix
-     *
-     * This perturbation value is used whenever the
-     * inertia of the KKT matrix is not (n,m,0).
-     */
-    double epsilon1_initial = 0.5e-06;
+        /**
+         * The parameter used in the verification of the linear model reduction
+         *
+         * This is the @f$ \kappa @f$ parameter used in the following condition
+         * to verify a sufficient decrease in the linear model @f$m_{k}(\mathbf{w}_{k}(\Delta))@f$:
+         * @f[
+         *     m_{k}(\mathbf{w}_{k})-m_{k}(\mathbf{w}_{k}(\Delta_{k}))<\kappa\theta(\mathbf{w}_{k})^{2}.
+         * @f]
+         */
+        double kappa = 0.1;
 
-    /**
-     * The minimum value that the perturbation parameter @c epsilon1 can assume
-     */
-    double epsilon1_min = 1.0e-20;
+        /**
+         * The smaller Cauchy condition parameter
+         *
+         * This is the parameter @f$\eta_{1}@f$ used in the condition:
+         *
+         * @f[
+         *     \rho_{k}\equiv\frac{\psi(\mathbf{w}_{k})-\psi(\mathbf{w}_{k}(\Delta))}{m_{k}(\mathbf{w}_{k})-m_{k}(\mathbf{w}_{k}(\Delta))}>\eta_{1}
+         * @f]
+         *
+         * to determine if @f$\psi@f$ has achieved a sufficient decrease with respect to the linear model
+         * @f$ m_{k}(\mathbf{w}_{k}(\Delta)) @f$.
+         */
+        double eta1 = 1.0e-04;
 
-    /**
-     * The maximum value that the perturbation parameter @c epsilon1 can assume
-     */
-    double epsilon1_max = 1.0e+06;
+        /**
+         * The larger Cauchy condition parameter
+         *
+         * This is the parameter @f$\eta_{2}@f$ used in the condition:
+         *
+         * @f[
+         *     \rho_{k}\equiv\frac{\psi(\mathbf{w}_{k})-\psi(\mathbf{w}_{k}(\Delta))}{m_{k}(\mathbf{w}_{k})-m_{k}(\mathbf{w}_{k}(\Delta))}>\eta_{2}
+         * @f]
+         *
+         * to determine if the trust-region radius @f$ \Delta @f$ needs to be increased.
+         */
+        double eta2 = 0.8;
+    };
 
-    /**
-     * The factor used to increase @c epsilon1 on its first increase
-     */
-    double epsilon1_increase_factor_first = 10.0;
+    /// The parameters for the filter scheme
+    Filter filter;
 
-    /**
-     * The factor used to increase @c epsilon1
-     */
-    double epsilon1_increase_factor = 2.0;
+    /// The parameters for the inertia correction algorithm
+    InertiaControl inertia;
 
-    /**
-     * The factor used to decrease @c epsilon1
-     */
-    double epsilon1_decrease_factor = 3.0;
+    /// The parameters for the central neighbourhood scheme
+    Neighbourhood neighbourhood;
 
-    /**
-     * The perturbation used in block (2,2) of the KKT matrix whenever it is singular
-     */
-    double epsilon2 = 1.0e-20;
+    /// The parameters for the restart scheme
+    Restart restart;
 
-    //============================
-    // TANGENTIAL STEP PARAMETERS
-    //============================
-    /**
-     * The boolean value that indicates if safe tangencial step calculations are performed when necessary
-     *
-     * If @c safe_step_active is true, then whenever the
-     * tangencial step length @c alphat < @c safe_step_threshold,
-     * a new tangencial step @c st is calculated.
-     *
-     * Note that the KKT coefficient matrix remains
-     * unchanged during this process, so its decomposition
-     * can be reused.
-     */
-    bool safe_step = true;
+    /// The parameters for the restoration algorithm
+    Restoration restoration;
 
-    /**
-     * The threshold used to determine if a safe tangencial step calculation is necessary
-     *
-     * If @c alphat < @c threshold_safe_step, then
-     * recompute the tangencial step by using a different
-     * value for @c sigma.
-     */
-    double threshold_safe_step = 0.8;
+    /// The parameters for the safe tangencial step calculation
+    SafeTangentialStep safestep;
 
-    /**
-     * The threshold used to determine which value of sigma is used in the safe tangencial step calculation
-     *
-     * In the safe tangencial step calculation, if
-     * @c alphat < @c threshold_alphat, then
-     * @c sigma = @c sigma_safe_max, else @c sigma = @c sigma_safe_min.
-     */
-    double threshold_alphat = 1.0e-3;
+    /// The parameters for the calculation of the centrality parameter @f$\sigma@f$
+    Sigma sigma;
 
-    /**
-     * The minimum value of @c sigma used in the safe tangencial step calculation
-     *
-     * The safe tangencial calculation uses this minimum
-     * value of @c sigma when @c alphat > @c safe_step_threshold_alphat.
-     */
-    double sigma_safe_min = 0.1;
-
-    /**
-     * The maximum value of @c sigma used in the safe tangencial step calculation
-     *
-     * The safe tangencial calculation uses this maximum
-     * value of @c sigma when @c alphat < @c safe_step_threshold_alphat.
-     */
-    double sigma_safe_max = 0.5;
-
-    /**
-     * The value of @c sigma used during the restoration algorithm
-     */
-    double sigma_restoration = 1.0;
-
-    //=========================
-    // NEIGHBORHOOD PARAMETERS
-    //=========================
-    /**
-     * The boolean value that indicates if the neighbourhood search algorithm is activated
-     *
-     * This boolean value indicates if a seach for a &Delta that
-     * satisfies the neighbourhood conditions should be performed at every iteration.
-     *
-     * Setting this flag to @c false will cause the calculation to use, at
-     * every iteration, the largest possible value of &Delta that satisfies
-     * the positivity conditions of the iterate @a x and @a z.
-     */
-    bool neighbourhood_search = true;
-
-    /**
-     * The relaxation parameter used to update the neighborhood parameter M
-     *
-     * This is the parameter \f$ \alpha_{M} \f$ in the algorithm used to
-     * update the neighborhood parameter M as:
-     * \f[
-     *     M=\max(M_{0},\alpha_{M}(\theta_{h}(\mathbf{w}_{k})+\theta_{\mathcal{L}}(\mathbf{w}_{k}))/\mu_{k}).
-     * \f]
-     */
-    double alphaM = 1.0e+01;
-
-    /**
-     * The relaxation parameter used to calculate the initial neighborhood parameter M
-     *
-     * This is the parameter \f$ \alpha_{M}^{\circ} \f$ in the algorithm used to
-     * calculate the initial neighborhood parameter M as:
-     * \f[
-     *     M_{0}=\max(M^{\circ},\alpha_{M}^{\circ}(\theta_{h}(\mathbf{w}_{0})+\theta_{\mathcal{L}}(\mathbf{w}_{0}))/\mu_{k}).
-     * \f]
-     */
-    double alphaM_initial = 1.0e+03;
-
-    /**
-     * The tolerance parameter used to determine the necessity of updating the neighborhood parameter M
-     *
-     * This is the tolerance parameter \f$ \varepsilon_{M} \f$ used in the algorithm
-     * to determine if the neighborhood parameter M needs to be updated. It appears in
-     * the following condition:
-     * \f[
-     *     \theta_{h}(\mathbf{w}_{k})+\theta_{\mathcal{L}}(\mathbf{w}_{k})>\mu_{k}\varepsilon_{M}M.
-     * \f]
-     */
-    double epsilonM = 1.0e-03;
-
-    /**
-     * The maximum allowed value of the neighborhood parameter M
-     */
-    double neighM_max = 1.0e+03;
-
-    /**
-     * The minimum allowed value of the neighborhood parameter \f$ \gamma \f$
-     */
-    double gamma_min = 1.0e-03;
-
-    //===================
-    // FILTER PARAMETERS
-    //===================
-    /**
-     * The parameter used to increase the \f$\theta\f$-borders of the filter region
-     *
-     * This parameter ensures that a point acceptable by the
-     * filter is sufficiently far from its \f$\theta\f$-borders.
-     */
-    double filter_alpha_theta = 1.0e-03;
-
-    /**
-     * The parameter used to increase the \f$\psi\f$-borders of the filter region
-     *
-     * This parameter ensures that a point acceptable by the
-     * filter is sufficiently far from its \f$\psi\f$-borders.
-     */
-    double filter_alpha_psi = 1.0e-03;
-
-    //====================
-    // RESTART PARAMETERS
-    //====================
-    /**
-     * The boolean value that indicates if the restart scheme should be used
-     */
-    bool restart = true;
-
-    /**
-     * The maximum number of tentatives in the restart scheme
-     */
-    unsigned restart_tentatives = 4;
-
-    /**
-     * The factor used to increase \f$ \mu \f$ at every unsuccessful restart tentative
-     */
-    double restart_factor = 10.0;
+    /// The parameters for the trust-region algorithm
+    TrustRegion main;
 };
 
-} /* namespace IPFilter */
 } /* namespace Optima */

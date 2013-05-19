@@ -15,6 +15,7 @@
 // Optima includes
 #include <Utils/Macros.hpp>
 #include <Utils/Math.hpp>
+#include <IPFilter/IPFilterParams.hpp>
 
 namespace Optima {
 
@@ -144,7 +145,7 @@ void IPFilterSolver::Solve(VectorXd& x, VectorXd& y, VectorXd& z)
         catch(const ErrorSearchDelta& e)
         {
             // Check if the number of attempts is greater than the allowed number of restart attemps
-            if(attempts > params.restart_tentatives)
+            if(attempts > params.restart.tentatives)
                 { result.error = e.what(); throw; }
 
             // Output a message indicating the restarting algorithm
@@ -154,7 +155,7 @@ void IPFilterSolver::Solve(VectorXd& x, VectorXd& y, VectorXd& z)
             scaling.UnscaleXYZ(curr.x, curr.y, curr.z);
 
             // Reset the Lagrange multipliers z
-            curr.z.setConstant(dimx, std::min(0.1, std::pow(params.restart_factor, attempts) * curr.mu));
+            curr.z.setConstant(dimx, std::min(0.1, std::pow(params.restart.factor, attempts) * curr.mu));
 
             // Reset the scaling of the primal variables x
             scaling.SetScalingVariables(curr.x);
@@ -192,15 +193,19 @@ bool IPFilterSolver::PassFilterCondition() const
 
 bool IPFilterSolver::PassRestorationCondition(double delta) const
 {
-    if(not params.restoration)
+    if(not params.restoration.active)
         return true;
 
-    return curr.theta <= delta * std::min(params.gamma1, params.gamma2*std::pow(delta, params.beta));
+    const double gamma1 = params.restoration.gamma1;
+    const double gamma2 = params.restoration.gamma2;
+    const double beta   = params.restoration.beta;
+
+    return curr.theta <= delta * std::min(gamma1, gamma2*std::pow(delta, beta));
 }
 
 bool IPFilterSolver::PassSafeStepCondition() const
 {
-    return params.safe_step and alphat < params.threshold_safe_step;
+    return params.safestep.active and alphat < params.safestep.threshold;
 }
 
 bool IPFilterSolver::PassConvergenceCondition() const
@@ -235,7 +240,7 @@ double IPFilterSolver::CalculateDeltaPositiveXZ() const
 double IPFilterSolver::CalculateDeltaXzGreaterGammaMu() const
 {
     // Check if the neighbourhood search algorithm is not activated
-    if(not params.neighbourhood_search)
+    if(not params.neighbourhood.active)
         return INF;
 
     // Define some auxiliary variables
@@ -303,16 +308,16 @@ double IPFilterSolver::CalculateNextLinearModel() const
 
     switch(options.psi)
     {
-    case IPFilter::PsiObjective:
+    case PsiObjective:
         psix.noalias() = curr.f.grad + c/dimx*curr.z;
         psiz.noalias() = c/dimx*curr.x;
         break;
-    case IPFilter::PsiLagrange:
+    case PsiLagrange:
         psix.noalias() = curr.f.grad + curr.h.grad.transpose()*curr.y + c/dimx*curr.z;
         psiy.noalias() = curr.h.func;
         psiz.noalias() = c/dimx*curr.x;
         break;
-    case IPFilter::PsiGradLagrange:
+    case PsiGradLagrange:
         psix.noalias() = 2*Lxx.transpose()*Lx + curr.z/dimx;
         psiy.noalias() = 2*curr.h.grad*Lx;
         psiz.noalias() =-2*Lx + curr.x/dimx;
@@ -326,31 +331,31 @@ double IPFilterSolver::CalculatePsi(const State& state) const
 {
     switch(options.psi)
     {
-    case IPFilter::PsiObjective:
+    case PsiObjective:
         return state.f.func + c * state.mu;
-    case IPFilter::PsiLagrange:
+    case PsiLagrange:
         return state.f.func + c * state.mu + state.h.func.dot(state.y);
-    case IPFilter::PsiGradLagrange:
+    case PsiGradLagrange:
         return (state.f.grad + state.h.grad.transpose()*state.y - state.z).squaredNorm() + state.mu;
     }
 }
 
 double IPFilterSolver::CalculateSigma() const
 {
-    if(restoration) return params.sigma_restoration;
+    if(restoration) return params.sigma.restoration;
 
     switch(options.sigma)
     {
-    case IPFilter::SigmaDefault:
+    case SigmaDefault:
         return CalculateSigmaDefault();
-    case IPFilter::SigmaLOQO:
+    case SigmaLOQO:
         return CalculateSigmaLOQO();
     }
 }
 
 double IPFilterSolver::CalculateSigmaDefault() const
 {
-    return (curr.mu < params.mu_threshold) ? params.sigma_fast : params.sigma_slow;
+    return (curr.mu < params.sigma.threshold_mu) ? params.sigma.main_max : params.sigma.main_min;
 }
 
 double IPFilterSolver::CalculateSigmaLOQO() const
@@ -376,8 +381,8 @@ void IPFilterSolver::AcceptTrialPoint()
 void IPFilterSolver::ExtendFilter()
 {
     // Calculate the components of the new entry
-    const double beta_theta = curr.theta * (1 - params.filter_alpha_theta);
-    const double beta_psi = curr.psi - params.filter_alpha_psi * curr.theta;
+    const double beta_theta = curr.theta * (1 - params.filter.alpha_theta);
+    const double beta_psi = curr.psi - params.filter.alpha_psi * curr.theta;
 
     // Add a new entry to the filter
     filter.Add({beta_theta, beta_psi});
@@ -389,23 +394,23 @@ void IPFilterSolver::Initialise(const VectorXd& x, const VectorXd& y, const Vect
     filter = Filter();
 
     // Initialise the value of the parameter gamma
-    gamma = std::min(params.gamma_min, x.cwiseProduct(z).minCoeff()/(2.0*x.dot(z)/dimx));
+    gamma = std::min(params.neighbourhood.gamma_min, x.cwiseProduct(z).minCoeff()/(2.0*x.dot(z)/dimx));
 
     // Initialise the value of the parameter c
-    c = 3*dimx*dimx/(1 - params.sigma_slow)*std::pow(std::max(1.0, (1 - params.sigma_slow)/gamma), 2);
+    c = 3*dimx*dimx/(1 - params.sigma.main_min)*std::pow(std::max(1.0, (1 - params.sigma.main_min)/gamma), 2);
 
     // Update the current state
     UpdateState(x, y, z, curr);
 
-    // Initialise the value of the neighborhood parameter M
-    M = std::max(params.neighM_max, params.alphaM_initial*(curr.thh + curr.thl)/curr.mu);
+    // Initialise the value of the neighbourhood parameter M
+    M = std::max(params.neighbourhood.Mmax, params.neighbourhood.alpha0*(curr.thh + curr.thl)/curr.mu);
 
     // Check if the initial guess results in floating point exceptions
     if(AnyFloatingPointException(curr))
         throw ErrorInitialGuessFloatingPoint();
 
     // Initialise the current maximum value of the trust-region radius
-    delta = delta_initial = params.delta_initial;
+    delta = delta_initial = params.main.delta_initial;
 
     // Initialise the normal and tangencial step-lengths respectively
     alphan = alphat = 1.0;
@@ -460,13 +465,6 @@ void IPFilterSolver::OutputState()
     }
 }
 
-void IPFilterSolver::ResetLagrangeMultipliersZ(State& state) const
-{
-    const double aux1 = state.mu * params.kappa_zreset;
-    const double aux2 = state.mu / params.kappa_zreset;
-    state.z = state.z.array().min(aux1/state.x.array()).max(aux2/state.x.array());
-}
-
 void IPFilterSolver::SearchDeltaNeighborhood()
 {
     // Calculate the delta sizes that yield x,z > 0 and Xz > gamma*mu
@@ -489,10 +487,10 @@ void IPFilterSolver::SearchDeltaNeighborhood()
         UpdateNextState(trial);
 
         // Decrease the current value of the trial delta
-        trial *= params.delta_decrease_factor;
+        trial *= params.main.delta_decrease;
 
         // Check if delta is now less than the allowed minimum
-        if(trial < params.delta_min)
+        if(trial < params.main.delta_min)
             throw ErrorSearchDeltaNeighborhood();
 
         // Check if the current delta results results in any IEEE floating point exception
@@ -500,7 +498,7 @@ void IPFilterSolver::SearchDeltaNeighborhood()
             continue;
 
         // Prevent further tentative delta sizes if the neighbourhood search algorithm deactivated
-        if(not params.neighbourhood_search)
+        if(not params.neighbourhood.active)
             break;
 
         // Check if the current delta results in a point (x,y,z) that pass the centrality neighborhood condition
@@ -514,7 +512,7 @@ void IPFilterSolver::SearchDeltaTrustRegion()
     while(true)
     {
         // Check if the current trust-region radius is less than the allowed minimum
-        if(delta < params.delta_min)
+        if(delta < params.main.delta_min)
             throw ErrorSearchDeltaTrustRegion();
 
         // Calculate the linear model at the current and next states
@@ -527,22 +525,23 @@ void IPFilterSolver::SearchDeltaTrustRegion()
         // Check if w(delta) pass the filter condition
         if(PassFilterCondition())
         {
-            if(curr_m - next_m < params.kappa*curr.theta*curr.theta)
+            if(curr_m - next_m < params.main.kappa*curr.theta*curr.theta)
             {
                 // Extend the filter with the current (theta, psi) pair
                 ExtendFilter();
 
                 // Update the current maximum trust-region radius
-                delta_initial = delta * params.delta_increase_factor;
+                delta_initial = delta * params.main.delta_increase;
 
                 // Trial point has been found: leave loop
                 break;
             }
 
-            if(rho > params.eta_small)
+            if(rho > params.main.eta1)
             {
                 // Update the current maximum trust-region radius
-                delta_initial = (rho > params.eta_large) ? delta * params.delta_increase_factor : delta;
+                delta_initial = (rho > params.main.eta2) ?
+                    delta * params.main.delta_increase : delta;
 
                 // Trial point has been found: leave loop
                 break;
@@ -550,11 +549,8 @@ void IPFilterSolver::SearchDeltaTrustRegion()
         }
 
         // Decrease the trust-region radius
-        UpdateNextState(params.delta_decrease_factor * delta);
+        UpdateNextState(params.main.delta_decrease * delta);
     }
-
-    // Reset the Lagrange multipliers z of the next state
-    ResetLagrangeMultipliersZ(next);
 
     // Update the neighborhood parameter M
     UpdateNeighborhoodParameterM();
@@ -577,17 +573,17 @@ void IPFilterSolver::SearchDeltaTrustRegionRestoration()
         const double rho = (curr_theta2 - next_theta2)/(2.0*curr_theta2);
 
         // Increase the current maximum trust-region radius
-        if(rho > params.xi2) delta_initial = delta * params.delta_increase_factor;
+        if(rho > params.restoration.xi2) delta_initial = delta * params.main.delta_increase;
 
         // Check if rho satisfies the Cauchy condition of the restoration algorithm
-        if(rho > params.xi1)
+        if(rho > params.restoration.xi1)
             break;
 
         // Decrease the current trust-region radius and update all delta dependent quantities
-        UpdateNextState(delta * params.delta_decrease_factor);
+        UpdateNextState(delta * params.main.delta_decrease);
 
         // Check if delta is now less than the allowed minimum
-        if(delta < params.delta_min)
+        if(delta < params.main.delta_min)
             throw ErrorSearchDeltaTrustRegionRestoration();
     }
 }
@@ -683,8 +679,8 @@ void IPFilterSolver::SolveRestoration()
 
 void IPFilterSolver::UpdateNeighborhoodParameterM()
 {
-    if(next.thh + next.thl > next.mu * params.epsilonM * M)
-        M = std::max(params.neighM_max, params.alphaM*(next.thh + next.thl)/next.mu);
+    if(next.theta > next.mu * params.neighbourhood.epsilon * M)
+        M = std::max(params.neighbourhood.Mmax, params.neighbourhood.alpha*next.theta/next.mu);
 }
 
 void IPFilterSolver::UpdateNextState(double del)
@@ -827,7 +823,7 @@ void IPFilterSolver::UpdateSafeTangentialStep()
     const unsigned m = dimy;
 
     // Calculate the value of parameter sigma for the safe tangential step re-calculation
-    const double sigma = (alphat < params.threshold_alphat) ? params.sigma_safe_max : params.sigma_safe_min;
+    const double sigma = (alphat < params.sigma.threshold_alphat) ? params.sigma.safe_max : params.sigma.safe_min;
 
     // Assemble the tangential rhs vector of the linear system
     rhs.segment(0, n).noalias() = - Lx - ((1 - sigma)*curr.mu/curr.x.array()).matrix();

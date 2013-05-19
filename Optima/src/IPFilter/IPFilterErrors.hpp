@@ -11,7 +11,6 @@
 #include <stdexcept>
 
 namespace Optima {
-namespace IPFilter {
 
 struct ErrorInitialGuess : public std::exception {};
 struct ErrorSearchDelta  : public std::exception {};
@@ -79,5 +78,4 @@ struct ErrorIterationMaximumLimit : public ErrorIteration
     }
 };
 
-} /* namespace IPFilter */
 } /* namespace Optima */

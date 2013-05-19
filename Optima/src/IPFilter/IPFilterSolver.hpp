@@ -37,25 +37,25 @@ public:
      * The options used for the algorithm
      * @see IPFilter::Options
      */
-    typedef IPFilter::Options Options;
+    typedef IPFilterOptions Options;
 
     /**
      * The list of algorithm parameters and their default values
      * @see IPFilter::Params
      */
-    typedef IPFilter::Params Params;
+    typedef IPFilterParams Params;
 
     /**
      * The result of the calculation performed by the IPFilter algorithm
      * @see IPFilter::Result
      */
-    typedef IPFilter::Result Result;
+    typedef IPFilterResult Result;
 
     /**
      * The algorithmic state at the point (x,y,z)
      * @see IPFilter::State
      */
-    typedef IPFilter::State State;
+    typedef IPFilterState State;
 
     /**
      * Constructs a default @ref IPFilterSolver instance
@@ -159,17 +159,6 @@ public:
      * @param[in,out] z The initial guess of the Lagrange multipliers @e z.
      */
     void Solve(VectorXd& x, VectorXd& y, VectorXd& z);
-
-    // The possible errors that might happen with the IPFilter algorithm
-    typedef IPFilter::ErrorInitialGuess                      ErrorInitialGuess;
-    typedef IPFilter::ErrorInitialGuessActivePartition       ErrorInitialGuessActivePartition;
-    typedef IPFilter::ErrorInitialGuessFloatingPoint         ErrorInitialGuessFloatingPoint;
-    typedef IPFilter::ErrorIteration                         ErrorIteration;
-    typedef IPFilter::ErrorIterationMaximumLimit             ErrorIterationMaximumLimit;
-    typedef IPFilter::ErrorSearchDelta                       ErrorSearchDelta;
-    typedef IPFilter::ErrorSearchDeltaNeighborhood           ErrorSearchDeltaNeighborhood;
-    typedef IPFilter::ErrorSearchDeltaTrustRegion            ErrorSearchDeltaTrustRegion;
-    typedef IPFilter::ErrorSearchDeltaTrustRegionRestoration ErrorSearchDeltaTrustRegionRestoration;
 
 private:
     bool AnyFloatingPointException(const State& state) const;

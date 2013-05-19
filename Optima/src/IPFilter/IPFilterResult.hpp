@@ -8,12 +8,11 @@
 #pragma once
 
 namespace Optima {
-namespace IPFilter {
 
 /**
  * The result of the calculation performed by the IPFilter algorithm
  */
-struct Result
+struct IPFilterResult
 {
     /**
      * The number of iterations executed in the IPFilter algorithm
@@ -51,5 +50,4 @@ struct Result
     operator bool() { return converged; }
 };
 
-} /* namespace IPFilter */
 } /* namespace Optima */
