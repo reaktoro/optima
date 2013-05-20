@@ -28,35 +28,11 @@ using namespace Eigen;
 namespace Optima {
 
 /**
- * The primal-dial interior-point non-convex optimisation solver based on the ipfilter algorithm
+ * The primal-dual interior-point optimisation solver based on the ipfilter algorithm
  */
 class IPFilterSolver
 {
 public:
-    /**
-     * The options used for the algorithm
-     * @see IPFilter::Options
-     */
-    typedef IPFilterOptions Options;
-
-    /**
-     * The list of algorithm parameters and their default values
-     * @see IPFilter::Params
-     */
-    typedef IPFilterParams Params;
-
-    /**
-     * The result of the calculation performed by the IPFilter algorithm
-     * @see IPFilter::Result
-     */
-    typedef IPFilterResult Result;
-
-    /**
-     * The algorithmic state at the point (x,y,z)
-     * @see IPFilter::State
-     */
-    typedef IPFilterState State;
-
     /**
      * Constructs a default @ref IPFilterSolver instance
      */
@@ -65,12 +41,12 @@ public:
     /**
      * Sets the options for the optimisation calculation
      */
-    void SetOptions(const Options& options);
+    void SetOptions(const IPFilterOptions& options);
 
     /**
      * Sets the parameters of the optimisation algorithm
      */
-    void SetParams(const Params& params);
+    void SetParams(const IPFilterParams& params);
 
     /**
      * Sets the definition of the optimisation problem
@@ -86,22 +62,22 @@ public:
     /**
      * Gets the calculation options of the optimisation solver
      */
-    const Options& GetOptions() const;
+    const IPFilterOptions& GetOptions() const;
 
     /**
      * Gets the algorithm params of the optimisation solver
      */
-    const Params& GetParams() const;
+    const IPFilterParams& GetParams() const;
 
     /**
      * Gets the solution result of the last optimisation calculation
      */
-    const Result& GetResult() const;
+    const IPFilterResult& GetResult() const;
 
     /**
      * Gets the solution state of the last optimisation calculation
      */
-    const State& GetState() const;
+    const IPFilterState& GetState() const;
 
     /**
      * Gets the optimisation problem of the optimisation solver
@@ -161,7 +137,7 @@ public:
     void Solve(VectorXd& x, VectorXd& y, VectorXd& z);
 
 private:
-    bool AnyFloatingPointException(const State& state) const;
+    bool AnyFloatingPointException(const IPFilterState& state) const;
     bool PassConvergenceCondition() const;
     bool PassFilterCondition() const;
     bool PassRestorationCondition(double delta) const;
@@ -172,7 +148,7 @@ private:
     double CalculateLargestBoundaryStep(const VectorXd& p, const VectorXd& dp) const;
     double CalculateLargestQuadraticStep(const VectorXd& a, const VectorXd& b, const VectorXd& c, const VectorXd& d) const;
     double CalculateNextLinearModel() const;
-    double CalculatePsi(const State& state) const;
+    double CalculatePsi(const IPFilterState& state) const;
     double CalculateSigma() const;
     double CalculateSigmaDefault() const;
     double CalculateSigmaLOQO() const;
@@ -182,7 +158,7 @@ private:
     void Initialise(const VectorXd& x, const VectorXd& y, const VectorXd& z);
     void OutputHeader();
     void OutputState();
-    void ResetLagrangeMultipliersZ(State& state) const;
+    void ResetLagrangeMultipliersZ(IPFilterState& state) const;
     void SearchDeltaNeighborhood();
     void SearchDeltaTrustRegion();
     void SearchDeltaTrustRegionRestoration();
@@ -194,20 +170,20 @@ private:
     void UpdateNormalTangentialSteps();
     void UpdateNormalTangentialStepsRestoration();
     void UpdateSafeTangentialStep();
-    void UpdateState(const VectorXd& x, const VectorXd& y, const VectorXd& z, State& state);
+    void UpdateState(const VectorXd& x, const VectorXd& y, const VectorXd& z, IPFilterState& state);
 
 private:
     /// The definition of the optimisation problem
     OptimumProblem problem;
 
     /// The parameters used for the optimisation calculation
-    Params params;
+    IPFilterParams params;
 
     /// The options used for the optimisation calculation
-    Options options;
+    IPFilterOptions options;
 
     /// The result details of the last optimisation calculation
-    Result result;
+    IPFilterResult result;
 
     /// The scaling factors for the optimisation problem
     Scaling scaling;
@@ -219,7 +195,7 @@ private:
     unsigned dimx, dimy;
 
     /// The current and next states respectively
-    State curr, next;
+    IPFilterState curr, next;
 
     /// The x-component of the normal and tangencial steps respectively
     VectorXd snx, stx;

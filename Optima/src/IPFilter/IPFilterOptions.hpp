@@ -13,89 +13,51 @@
 namespace Optima {
 
 /**
- * Defines the possible schemes for the calculation of the optimality measure &psi
- */
-enum IPFilterPsi
-{
-    /**
-     * Uses the scheme \f$\psi(\mathbf{w})=f(\mathbf{x})+c\mu\f$
-     */
-    PsiObjective,
-
-    /**
-     * Uses the scheme \f$\psi(\mathbf{w})=\mathcal{L}(\mathbf{w})+(c+n)\mu\f$
-     */
-    PsiLagrange,
-
-    /**
-     * Uses the scheme \f$\psi(\mathbf{w})=\lVert\nabla_{x}\mathcal{L}(\mathbf{w})\rVert^{2}+\mathbf{x}^{T}\mathbf{z}/n\f$
-     */
-    PsiGradLagrange
-};
-
-/**
- * Defines the possible schemes for the calculation of the parameter &sigma
- */
-enum IPFilterSigma
-{
-    /**
-     * Uses the default IPFilter scheme for the update of the &sigma parameter
-     *
-     * The update of the parameter &sigma is performed using
-     * the following formula:
-     *
-     * \f[
-     *     \sigma=\begin{cases}
-     *     \sigma_{\mathrm{fast}} & \mbox{if }\mu<\mu_{\mathrm{threshold}}\\
-     *     \sigma_{\mathrm{slow}} & \mbox{otherwise}
-     *     \end{cases}
-     * \f]
-     *
-     * where \f$\xi\f$ is given by:
-     *
-     * \f[
-     *     \xi=\frac{\min_{i}\{x_{i}z_{i}\}}{\mathbf{x}^{T}\mathbf{z}/n}.
-     * \f]
-     */
-    SigmaDefault,
-
-    /**
-     * Uses the LOQO scheme for the update of the &sigma parameter
-     *
-     * The update of the parameter &sigma is performed using
-     * the following formula:
-     *
-     * \f[
-     *     \sigma=0.1\min\left(0.05\frac{1-\xi}{\xi},2\right)^{3},
-     * \f]
-     *
-     * where the default values of the previous parameter are:
-     *
-     * \f[
-     *     \sigma_{\mathrm{slow}}=10^{-5},\quad\sigma_{\mathrm{fast}}=2.6\cdot10^{-3},\quad\mu_{\mathrm{threshold}}=10^{-6}.
-     * \f]
-     */
-    SigmaLOQO
-};
-
-/**
- * The options used for the algorithm
+ * The options for the optimisation calculation
  */
 struct IPFilterOptions
 {
     /**
-     * The scheme used for the calculation of the optimality measure &psi
-     *
-     * @see IPFilterPsi
+     * The options for the output of the optimisation calculation
      */
-    IPFilterPsi psi = PsiObjective;
+    struct OutputOptions : public Outputter::Options
+    {
+        /**
+         * The boolean flag that indicates if the output of the iterates should be scaled
+         */
+        bool scaled = false;
+    };
 
     /**
-     * The scheme used for the calculation of the parameter &sigma
-     *
-     * @see IPFilterSigma
+     * The options for the initial guess of the optimisation calculation
      */
-    IPFilterSigma sigma = SigmaDefault;
+    struct InitialGuessOptions
+    {
+        /**
+         * The initial guess for the primal variables @b x in the absence of a proper user-provided one
+         */
+        double x = 1.0;
+
+        /**
+         * The initial guess for the dual variables @b y in the absence of a proper user-provided one
+         */
+        double y = 0.0;
+
+        /**
+         * The initial guess for the dual variables @b z in the absence of a proper user-provided one
+         */
+        double z = 0.01;
+
+        /**
+         * The lower bound on the initial guess of the primal variables @b x
+         */
+        double xmin = 1.0e-14;
+
+        /**
+         * The lower bound on the initial guess of the dual variables @b z
+         */
+        double zmin = 1.0e-10;
+    };
 
     /**
      * The maximum number of iterations allowed in the algorithm
@@ -103,43 +65,19 @@ struct IPFilterOptions
     unsigned max_iterations = 1000;
 
     /**
-     * The start value used for the barrier parameter
-     *
-     * This parameter is used when only the iterate x is
-     * provided as initial guess. In that case, it is
-     * necessary an initial value of \f$ \mu \f$ in order
-     * to estimate an initial guess for the Lagrange
-     * multipliers y and z.
-     */
-    double mu = 0.01;
-
-    /**
      * The tolerance parameter used for the stopping criteria of the algorithm
      */
     double tolerance = 1.0e-06;
 
     /**
-     * The boolean value that activates output during the calculation
+     * The options for the output of the optimisation calculation
      */
-    Outputter::Options output;
-
-    bool output_scaled = false;
-
-    double xguess = 1.0;
-
-    double yguess = 0.0;
-
-    double zguess = 0.01;
+    OutputOptions output;
 
     /**
-     * The lower-bound on the initial guess of the primal variables @a x
+     * The options for the initial guess of the optimisation calculation
      */
-    double xguessmin = 1.0e-14;
-
-    /**
-     * The lower-bound on the initial guess of the dual variables @a z
-     */
-    double zguessmin = 1.0e-10;
+    InitialGuessOptions initialguess;
 };
 
 } /* namespace Optima */

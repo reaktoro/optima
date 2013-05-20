@@ -18,33 +18,51 @@ using namespace Eigen;
 namespace Optima {
 
 /**
- * The algorithmic state at the point (x,y,z)
+ * The algorithmic state at the point (@b x, @b y, @b z)
  */
 struct IPFilterState
 {
-    /// The iterates x, y, z of the algorithm
-    VectorXd x, y, z;
+    /// The primal iterate @b x of the algorithm
+    VectorXd x;
 
-    /// The state of the objective function at x
+    /// The dual iterate @b y of the algorithm
+    VectorXd y;
+
+    /// The dual iterate @b z of the algorithm
+    VectorXd z;
+
+    /// The state of the objective function at @b x
     ObjectiveResult f;
 
-    /// The state of the constraint function at x
+    /// The state of the constraint function at @b x
     ConstraintResult h;
 
-    /// The barrier parameter at (x,z)
+    /// The barrier parameter at (@b x, @b z)
     double mu;
 
-    /// The optimality measures theta_h, theta_c, and theta_l
-    double thh, thc, thl;
+    /// The optimality measure @f$\theta_{h}@f$
+    double thh;
 
-    /// The optimality measure theta
+    /// The optimality measure @f$\theta_{c}@f$
+    double thc;
+
+    /// The optimality measure @f$\theta_{l}@f$
+    double thl;
+
+    /// The optimality measure @f$\theta@f$
     double theta;
 
-    /// The optimality measure psi
+    /// The optimality measure @f$\psi@f$
     double psi;
 
-    /// The feasibility, centrality, and optimality errors respectively
-    double errorh, errorc, errorl;
+    /// The feasibility error given by @f$\left\Vert \mathbf{h}(\mathbf{x}_{k})\right\Vert _{\infty}@f$
+    double errorh;
+
+    /// The centrality error given by @f$\mathbf{x}_{k}^{T}\mathbf{z}_{k}@f$
+    double errorc;
+
+    /// The optimality error given by @f$\left\Vert \nabla_{x}\mathcal{L}(\mathbf{w}_{k})\right\Vert _{\infty}@f$
+    double errorl;
 
     /// The maximum among the feasibility, centrality, and optimality errors
     double error;

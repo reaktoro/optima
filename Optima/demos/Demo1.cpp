@@ -41,7 +41,7 @@ int main()
     problem.SetObjectiveFunction(Obj1);
     problem.SetConstraintFunction(Cons1);
 
-    IPFilterSolver::Options options;
+    IPFilterOptions options;
     options.output.active = true;
 
     IPFilterSolver solver;

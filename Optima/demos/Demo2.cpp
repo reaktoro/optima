@@ -234,15 +234,15 @@ int main()
 
     double nH2O = 55;
 
-    IPFilterSolver::Options options;
+    IPFilterOptions options;
     options.output.active    = true;
     options.output.precision = 8;
     options.output.width     = 15;
     options.max_iterations   = 200;
     options.tolerance        = 1.0e-8;
-    options.output_scaled    = false;
+    options.output.scaled    = false;
 
-    std::vector<IPFilterSolver::Result> results;
+    std::vector<IPFilterResult> results;
 
     IPFilterSolver solver;
     solver.SetOptions(options);

@@ -12,11 +12,11 @@
 
 namespace Optima {
 
-struct ErrorInitialGuess : public std::exception {};
-struct ErrorSearchDelta  : public std::exception {};
-struct ErrorIteration    : public std::exception {};
+struct IPFilterErrorInitialGuess : public std::exception {};
+struct IPFilterErrorSearchDelta  : public std::exception {};
+struct IPFilterErrorIteration    : public std::exception {};
 
-struct ErrorInitialGuessFloatingPoint : public ErrorInitialGuess
+struct IPFilterErrorInitialGuessFloatingPoint : public IPFilterErrorInitialGuess
 {
     virtual const char* what() const throw()
     {
@@ -27,7 +27,7 @@ struct ErrorInitialGuessFloatingPoint : public ErrorInitialGuess
     }
 };
 
-struct ErrorInitialGuessActivePartition : public ErrorInitialGuess
+struct IPFilterErrorInitialGuessActivePartition : public IPFilterErrorInitialGuess
 {
     virtual const char* what() const throw()
     {
@@ -38,7 +38,7 @@ struct ErrorInitialGuessActivePartition : public ErrorInitialGuess
     }
 };
 
-struct ErrorSearchDeltaNeighborhood : public ErrorSearchDelta
+struct IPFilterErrorSearchDeltaNeighborhood : public IPFilterErrorSearchDelta
 {
     virtual const char* what() const throw()
     {
@@ -48,7 +48,7 @@ struct ErrorSearchDeltaNeighborhood : public ErrorSearchDelta
     }
 };
 
-struct ErrorSearchDeltaTrustRegion : public ErrorSearchDelta
+struct IPFilterErrorSearchDeltaTrustRegion : public IPFilterErrorSearchDelta
 {
     virtual const char* what() const throw()
     {
@@ -58,7 +58,7 @@ struct ErrorSearchDeltaTrustRegion : public ErrorSearchDelta
     }
 };
 
-struct ErrorSearchDeltaTrustRegionRestoration : public ErrorSearchDelta
+struct IPFilterErrorSearchDeltaTrustRegionRestoration : public IPFilterErrorSearchDelta
 {
     virtual const char* what() const throw()
     {
@@ -68,7 +68,7 @@ struct ErrorSearchDeltaTrustRegionRestoration : public ErrorSearchDelta
     }
 };
 
-struct ErrorIterationMaximumLimit : public ErrorIteration
+struct IPFilterErrorIterationMaximumLimit : public IPFilterErrorIteration
 {
     virtual const char* what() const throw()
     {

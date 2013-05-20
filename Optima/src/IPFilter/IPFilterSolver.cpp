@@ -23,12 +23,12 @@ IPFilterSolver::IPFilterSolver()
 {
 }
 
-void IPFilterSolver::SetOptions(const Options& options)
+void IPFilterSolver::SetOptions(const IPFilterOptions& options)
 {
     this->options = options;
 }
 
-void IPFilterSolver::SetParams(const Params& params)
+void IPFilterSolver::SetParams(const IPFilterParams& params)
 {
     this->params = params;
 }
@@ -76,22 +76,22 @@ void IPFilterSolver::SetScaling(const Scaling& scaling)
     this->scaling = scaling;
 }
 
-const IPFilterSolver::Options& IPFilterSolver::GetOptions() const
+const IPFilterOptions& IPFilterSolver::GetOptions() const
 {
     return options;
 }
 
-const IPFilterSolver::Params& IPFilterSolver::GetParams() const
+const IPFilterParams& IPFilterSolver::GetParams() const
 {
     return params;
 }
 
-const IPFilterSolver::Result& IPFilterSolver::GetResult() const
+const IPFilterResult& IPFilterSolver::GetResult() const
 {
     return result;
 }
 
-const IPFilterSolver::State& IPFilterSolver::GetState() const
+const IPFilterState& IPFilterSolver::GetState() const
 {
     return curr;
 }
@@ -111,19 +111,19 @@ void IPFilterSolver::Solve(VectorXd& x)
 void IPFilterSolver::Solve(VectorXd& x, VectorXd& y, VectorXd& z)
 {
     // Check if the dimensions of the initial guesses x, y, and z are correct
-    if(x.rows() != dimx) x.setConstant(dimx, options.xguess);
-    if(y.rows() != dimy) y.setConstant(dimy, options.yguess);
-    if(z.rows() != dimx) z.setConstant(dimx, options.zguess);
+    if(x.rows() != dimx) x.setConstant(dimx, options.initialguess.x);
+    if(y.rows() != dimy) y.setConstant(dimy, options.initialguess.y);
+    if(z.rows() != dimx) z.setConstant(dimx, options.initialguess.z);
 
     // Impose the lower bound limits on the initial guesses x and z
-    x = x.cwiseMax(options.xguessmin);
-    z = z.cwiseMax(options.zguessmin);
+    x = x.cwiseMax(options.initialguess.xmin);
+    z = z.cwiseMax(options.initialguess.zmin);
 
     // Output the header on the top of the calculation output
     OutputHeader();
 
     // Initialise the result member
-    result = Result();
+    result = IPFilterResult();
 
     // Initialise the current primal variables x, and the Lagrange multipliers y and z
     curr.x.noalias() = x;
@@ -142,7 +142,7 @@ void IPFilterSolver::Solve(VectorXd& x, VectorXd& y, VectorXd& z)
         try { Solve(); }
 
         // Catch any exception that indicates a trust-region search error
-        catch(const ErrorSearchDelta& e)
+        catch(const IPFilterErrorSearchDelta& e)
         {
             // Check if the number of attempts is greater than the allowed number of restart attemps
             if(attempts > params.restart.tentatives)
@@ -179,7 +179,7 @@ void IPFilterSolver::Solve(VectorXd& x, VectorXd& y, VectorXd& z)
     z.noalias() = curr.z;
 }
 
-bool IPFilterSolver::AnyFloatingPointException(const State& state) const
+bool IPFilterSolver::AnyFloatingPointException(const IPFilterState& state) const
 {
     if(isfinite(state.f.func) and isfinite(state.f.grad) and isfinite(state.f.hessian))
         if(isfinite(state.h.func) and isfinite(state.h.grad)) return false;
@@ -306,7 +306,7 @@ double IPFilterSolver::CalculateNextLinearModel() const
     VectorXd psiy = VectorXd::Zero(dimy);
     VectorXd psiz = VectorXd::Zero(dimx);
 
-    switch(options.psi)
+    switch(params.psi.scheme)
     {
     case PsiObjective:
         psix.noalias() = curr.f.grad + c/dimx*curr.z;
@@ -327,9 +327,9 @@ double IPFilterSolver::CalculateNextLinearModel() const
     return curr.psi + psix.dot(next.x - curr.x) + psiy.dot(next.y - curr.y) + psiz.dot(next.z - curr.z);
 }
 
-double IPFilterSolver::CalculatePsi(const State& state) const
+double IPFilterSolver::CalculatePsi(const IPFilterState& state) const
 {
-    switch(options.psi)
+    switch(params.psi.scheme)
     {
     case PsiObjective:
         return state.f.func + c * state.mu;
@@ -344,7 +344,7 @@ double IPFilterSolver::CalculateSigma() const
 {
     if(restoration) return params.sigma.restoration;
 
-    switch(options.sigma)
+    switch(params.sigma.scheme)
     {
     case SigmaDefault:
         return CalculateSigmaDefault();
@@ -375,7 +375,7 @@ void IPFilterSolver::AcceptTrialPoint()
 
     // Check if the maximum number of iterations has been achieved
     if(result.num_iterations > options.max_iterations)
-        throw ErrorIterationMaximumLimit();
+        throw IPFilterErrorIterationMaximumLimit();
 }
 
 void IPFilterSolver::ExtendFilter()
@@ -407,7 +407,7 @@ void IPFilterSolver::Initialise(const VectorXd& x, const VectorXd& y, const Vect
 
     // Check if the initial guess results in floating point exceptions
     if(AnyFloatingPointException(curr))
-        throw ErrorInitialGuessFloatingPoint();
+        throw IPFilterErrorInitialGuessFloatingPoint();
 
     // Initialise the current maximum value of the trust-region radius
     delta = delta_initial = params.main.delta_initial;
@@ -431,7 +431,7 @@ void IPFilterSolver::OutputState()
 {
     if(options.output.active)
     {
-        if(not options.output_scaled)
+        if(not options.output.scaled)
         {
             scaling.UnscaleX(curr.x);
             scaling.UnscaleY(curr.y);
@@ -456,7 +456,7 @@ void IPFilterSolver::OutputState()
         outputter.AddValues(curr.z.data(), curr.z.data() + dimx);
         outputter.OutputState();
 
-        if(not options.output_scaled)
+        if(not options.output.scaled)
         {
             scaling.ScaleX(curr.x);
             scaling.ScaleY(curr.y);
@@ -491,7 +491,7 @@ void IPFilterSolver::SearchDeltaNeighborhood()
 
         // Check if delta is now less than the allowed minimum
         if(trial < params.main.delta_min)
-            throw ErrorSearchDeltaNeighborhood();
+            throw IPFilterErrorSearchDeltaNeighborhood();
 
         // Check if the current delta results results in any IEEE floating point exception
         if(AnyFloatingPointException(next))
@@ -513,7 +513,7 @@ void IPFilterSolver::SearchDeltaTrustRegion()
     {
         // Check if the current trust-region radius is less than the allowed minimum
         if(delta < params.main.delta_min)
-            throw ErrorSearchDeltaTrustRegion();
+            throw IPFilterErrorSearchDeltaTrustRegion();
 
         // Calculate the linear model at the current and next states
         const double curr_m = curr.psi;
@@ -584,7 +584,7 @@ void IPFilterSolver::SearchDeltaTrustRegionRestoration()
 
         // Check if delta is now less than the allowed minimum
         if(delta < params.main.delta_min)
-            throw ErrorSearchDeltaTrustRegionRestoration();
+            throw IPFilterErrorSearchDeltaTrustRegionRestoration();
     }
 }
 
@@ -843,7 +843,7 @@ void IPFilterSolver::UpdateSafeTangentialStep()
     norm_st = std::sqrt(stx.squaredNorm() + sty.squaredNorm() + stz.squaredNorm());
 }
 
-void IPFilterSolver::UpdateState(const VectorXd& x, const VectorXd& y, const VectorXd& z, State& state)
+void IPFilterSolver::UpdateState(const VectorXd& x, const VectorXd& y, const VectorXd& z, IPFilterState& state)
 {
     // Update the iterates x, y and z
     state.x.noalias() = x;
