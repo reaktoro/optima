@@ -155,7 +155,7 @@ void IPFilterSolver::Solve(VectorXd& x, VectorXd& y, VectorXd& z)
             scaling.UnscaleXYZ(curr.x, curr.y, curr.z);
 
             // Reset the Lagrange multipliers z
-            curr.z.setConstant(dimx, std::min(0.1, std::pow(params.restart.factor, attempts) * curr.mu));
+            curr.z.setConstant(dimx, std::min(options.initialguess.z, std::pow(params.restart.factor, attempts) * curr.mu));
 
             // Reset the scaling of the primal variables x
             scaling.SetScalingVariables(curr.x);

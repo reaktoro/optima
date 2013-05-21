@@ -87,22 +87,19 @@ public:
     /**
      * Solves the optimisation problem
      *
-     * This method allows the user to provide only the initial guess for the primal variables @a x.
+     * This method allows the user to provide only the initial guess for the primal variables @b x.
      *
-     * The initial guess of the Lagrange multipliers @a y and @a z are:
-     *
-     *  - <tt> y = yguess </tt> (see @ref IPFilterParams::yguess),
-     *  - <tt> z = zguess </tt> (see @ref IPFilterParams::zguess).
+     * The initial guess of the Lagrange multipliers @b y and @b z are given by the options
+     * @ref IPFilterOptions::InitialGuessOptions::y and @ref IPFilterOptions::InitialGuessOptions::z in
+     * IPFilterOptions::initialguess.
      *
      * @param[in,out] x The initial guess of the primal variables as input. The optimum solution at the end of
      *     the calculation as output.
-     *
-     * @return The pair of Lagrange multipliers @e y and @e z.
      */
     void Solve(VectorXd& x);
 
     /**
-     * Solves the optimisation problem using a good initial guess
+     * Solves the optimisation problem
      *
      * This method allows the user to provide the initial guess for the primal variables @a x as well as the Lagrange
      * multipliers @a y and @a z.
@@ -113,64 +110,33 @@ public:
      * Note, however, that some components of @c x and @c z might be modified in order to improve robustness and
      * efficiency. The modification is given by:
      *
-     *  - <tt> x = max(x, xguessmin) </tt> (see @ref IPFilterParams::xguessmin),
-     *  - <tt> z = max(z, zguessmin) </tt> (see @ref IPFilterParams::zguessmin).
+     *  - <tt> x = max(x, xguessmin) </tt> (see @ref IPFilterOptions::InitialGuessOptions::xmin),
+     *  - <tt> z = max(z, zguessmin) </tt> (see @ref IPFilterOptions::InitialGuessOptions::zmin).
      *
-     * We assume in this method that a good initial guess is provided.
-     * Therefore, we scale the primal variables @e x using the initial
-     * guess @c x.
+     * We assume in this method that a good initial guess is provided. Therefore, we scale the primal variables @b x
+     * using the initial guess @c x.
      *
-     * This method uses a restart scheme in case of failure. If the
-     * provided initial guesses for @c x, @c y, and @c z results in any
-     * trust-region search error, the restart scheme is activated. It
-     * consists of resetting the Lagrange multipliers @c z as:
+     * This method uses a restart scheme in case of failure. If the provided initial guesses @c x, @c y, and @c z
+     * results in any trust-region search error, the restart scheme is activated. It consists of resetting the
+     * Lagrange multipliers @c z as:
      *
-     *  - <tt> z = zrestart </tt> (see @ref IPFilterParams::zrestart).
+     *  - <tt> z = min(zguess, pow(factor, attempt)*mu) </tt>,
      *
-     *  Then, we start restart the interior-point calculation using the reset @c z.
-     *  The values for @c x and @c y are those from where the calculation stopped.
+     *  where @c zguess is given in @ref IPFilterOptions::InitialGuessOptions::z, @c factor is set in
+     *  @ref IPFilterParams::Restart::factor, @c attempt is the number of restart attempts so far, and @c mu is
+     *  the @f$\mu@f$ parameter where the calculation stopped.
      *
-     * @param[in,out] x The initial guess of the primal variables @e x.
-     * @param[in,out] y The initial guess of the Lagrange multipliers @e y.
-     * @param[in,out] z The initial guess of the Lagrange multipliers @e z.
+     *  Then, we start restart the interior-point calculation using the reset @c z. The values for @c x and @c y
+     *  are those from where the calculation stopped.
+     *
+     * @param[in,out] x The initial guess of the primal variables @b x as input. The optimum solution at the end of
+     *     the calculation as output.
+     * @param[in,out] y The initial guess of the Lagrange multipliers @b y. The optimum solution at the end of the
+     *     calculation as output.
+     * @param[in,out] z The initial guess of the Lagrange multipliers @b z. The optimum solution at the end of the
+     *     calculation as output.
      */
     void Solve(VectorXd& x, VectorXd& y, VectorXd& z);
-
-private:
-    bool AnyFloatingPointException(const IPFilterState& state) const;
-    bool PassConvergenceCondition() const;
-    bool PassFilterCondition() const;
-    bool PassRestorationCondition(double delta) const;
-    bool PassSafeStepCondition() const;
-
-    double CalculateDeltaPositiveXZ() const;
-    double CalculateDeltaXzGreaterGammaMu() const;
-    double CalculateLargestBoundaryStep(const VectorXd& p, const VectorXd& dp) const;
-    double CalculateLargestQuadraticStep(const VectorXd& a, const VectorXd& b, const VectorXd& c, const VectorXd& d) const;
-    double CalculateNextLinearModel() const;
-    double CalculatePsi(const IPFilterState& state) const;
-    double CalculateSigma() const;
-    double CalculateSigmaDefault() const;
-    double CalculateSigmaLOQO() const;
-
-    void AcceptTrialPoint();
-    void ExtendFilter();
-    void Initialise(const VectorXd& x, const VectorXd& y, const VectorXd& z);
-    void OutputHeader();
-    void OutputState();
-    void ResetLagrangeMultipliersZ(IPFilterState& state) const;
-    void SearchDeltaNeighborhood();
-    void SearchDeltaTrustRegion();
-    void SearchDeltaTrustRegionRestoration();
-    void Solve();
-    void SolveRestoration();
-    void UpdateActiveMonitor();
-    void UpdateNeighborhoodParameterM();
-    void UpdateNextState(double delta);
-    void UpdateNormalTangentialSteps();
-    void UpdateNormalTangentialStepsRestoration();
-    void UpdateSafeTangentialStep();
-    void UpdateState(const VectorXd& x, const VectorXd& y, const VectorXd& z, IPFilterState& state);
 
 private:
     /// The definition of the optimisation problem
@@ -247,6 +213,42 @@ private:
 
     /// The Hessian of the Lagrange function with respect to x at the current state
     MatrixXd Lxx;
+
+private:
+    bool AnyFloatingPointException(const IPFilterState& state) const;
+    bool PassConvergenceCondition() const;
+    bool PassFilterCondition() const;
+    bool PassRestorationCondition(double delta) const;
+    bool PassSafeStepCondition() const;
+
+    double CalculateDeltaPositiveXZ() const;
+    double CalculateDeltaXzGreaterGammaMu() const;
+    double CalculateLargestBoundaryStep(const VectorXd& p, const VectorXd& dp) const;
+    double CalculateLargestQuadraticStep(const VectorXd& a, const VectorXd& b, const VectorXd& c, const VectorXd& d) const;
+    double CalculateNextLinearModel() const;
+    double CalculatePsi(const IPFilterState& state) const;
+    double CalculateSigma() const;
+    double CalculateSigmaDefault() const;
+    double CalculateSigmaLOQO() const;
+
+    void AcceptTrialPoint();
+    void ExtendFilter();
+    void Initialise(const VectorXd& x, const VectorXd& y, const VectorXd& z);
+    void OutputHeader();
+    void OutputState();
+    void ResetLagrangeMultipliersZ(IPFilterState& state) const;
+    void SearchDeltaNeighborhood();
+    void SearchDeltaTrustRegion();
+    void SearchDeltaTrustRegionRestoration();
+    void Solve();
+    void SolveRestoration();
+    void UpdateActiveMonitor();
+    void UpdateNeighborhoodParameterM();
+    void UpdateNextState(double delta);
+    void UpdateNormalTangentialSteps();
+    void UpdateNormalTangentialStepsRestoration();
+    void UpdateSafeTangentialStep();
+    void UpdateState(const VectorXd& x, const VectorXd& y, const VectorXd& z, IPFilterState& state);
 };
 
 } /* namespace Optima */
