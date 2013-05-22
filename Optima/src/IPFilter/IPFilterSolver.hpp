@@ -20,6 +20,7 @@ using namespace Eigen;
 #include <IPFilter/IPFilterParams.hpp>
 #include <IPFilter/IPFilterResult.hpp>
 #include <IPFilter/IPFilterState.hpp>
+#include <Misc/QualitySolver.hpp>
 #include <Utils/Filter.hpp>
 #include <Utils/OptimumProblem.hpp>
 #include <Utils/Outputter.hpp>
@@ -214,6 +215,8 @@ private:
     /// The Hessian of the Lagrange function with respect to x at the current state
     MatrixXd Lxx;
 
+    QualitySolver quality;
+
 private:
     bool AnyFloatingPointException(const IPFilterState& state) const;
     bool PassConvergenceCondition() const;
@@ -230,6 +233,8 @@ private:
     double CalculateSigma() const;
     double CalculateSigmaDefault() const;
     double CalculateSigmaLOQO() const;
+    double CalculateSigmaQuality();
+    double CalculateSigmaSafeStep() const;
 
     void AcceptTrialPoint();
     void ExtendFilter();

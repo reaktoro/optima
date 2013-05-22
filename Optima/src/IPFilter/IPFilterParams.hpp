@@ -368,14 +368,14 @@ struct IPFilterParams
         double main_max = 0.5;
 
         /**
-         * The value of @f$\sigma@f$ used in the safe tangencial step calculation when @f$\alpha^{t}(\Delta)@f$ is large
+         * The value of @f$\sigma@f$ used in the safe tangencial step calculation when @f$\alpha^{t}(\Delta)@f$ is smaller than a threshold
          *
          * See @ref threshold_alphat.
          */
         double safe_min = 0.1;
 
         /**
-         * The value of @f$\sigma@f$ used in the safe tangencial step calculation when @f$\alpha^{t}(\Delta)@f$ is small
+         * The value of @f$\sigma@f$ used in the safe tangencial step calculation when @f$\alpha^{t}(\Delta)@f$ is larger than a threshold
          *
          * See @ref threshold_alphat.
          */

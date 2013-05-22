@@ -10,6 +10,8 @@
 // Optima includes
 #include <Misc/BrentSolver.hpp>
 #include <Misc/GoldenSolver.hpp>
+#include <Misc/QualitySolver.hpp>
+#include <Misc/Utils.hpp>
 
 
 

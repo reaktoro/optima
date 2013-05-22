@@ -12,35 +12,11 @@
 #include <cmath>
 #include <iostream>
 
+// Optima includes
+#include <Misc/Utils.hpp>
+
 namespace Optima {
 namespace Internal {
-
-/**
- * Shifts @c a to @c b, and @c b to @c c
- */
-inline void Shift(double& a, double& b, double c)
-{
-    a = b;
-    b = c;
-}
-
-/**
- * Shifts @c a to @c b, @c b to @c c, and @c c to @c d
- */
-inline void Shift(double& a, double& b, double& c, double d)
-{
-    a = b;
-    b = c;
-    c = d;
-}
-
-/**
- * Computes the magniture of @c a times Sign of @c b
- */
-inline double Sign(double a, double b)
-{
-    return (b >= 0) ? std::abs(a) : -std::abs(a);
-}
 
 /**
  * The one-dimensional function signature

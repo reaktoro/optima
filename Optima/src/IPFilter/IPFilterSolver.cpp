@@ -365,6 +365,68 @@ double IPFilterSolver::CalculateSigmaLOQO() const
     return 0.1 * std::pow(std::min(0.05*(1 - xi)/xi, 2.0), 3);
 }
 
+double IPFilterSolver::CalculateSigmaQuality()
+{
+    Assert(false, "IPFilterSolver::CalculateSigmaQuality() seems not to work with the ipfilter algorithm.");
+
+    // Define some auxiliary variables
+    const unsigned n = dimx;
+    const unsigned m = dimy;
+
+    // Define some auxiliary references
+    auto& data = quality.GetData();
+    auto& dx0  = data.dx0;
+    auto& dy0  = data.dy0;
+    auto& dz0  = data.dz0;
+    auto& dx1  = data.dx1;
+    auto& dy1  = data.dy1;
+    auto& dz1  = data.dz1;
+
+    // Assemble the rhs vector of the linear system using sigma = 0
+    rhs.segment(0, n).noalias() = - (Lx + curr.z);
+    rhs.segment(n, m).noalias() = - curr.h.func;
+
+    // Calculate the direction u = [dx0, dy0]
+    u = lu.solve(rhs);
+
+    // Extract the dx0 and dy0 components of u = [dx0, dy0]
+    dx0.noalias() = u.segment(0, n);
+    dy0.noalias() = u.segment(n, m);
+
+    // Calculate the direction dz0 = dz(0)
+    dz0 = -(curr.z.array() * dx0.array() + curr.x.array()*curr.z.array())/curr.x.array();
+
+    // Assemble the rhs vector of the linear system using sigma = 1
+    rhs.segment(0, n).noalias() = - (Lx + curr.z - (curr.mu/curr.x.array()).matrix());
+    rhs.segment(n, m).noalias() = - curr.h.func;
+
+    // Calculate the direction u = [dx1, dy1]
+    u = lu.solve(rhs);
+
+    // Extract the dx1 and dy1 components of u = [dx1, dy1]
+    dx1.noalias() = u.segment(0, n);
+    dy1.noalias() = u.segment(n, m);
+
+    // Calculate the direction dz1 = dz(1)
+    dz1 = -(curr.z.array() * dx1.array() + curr.x.array()*curr.z.array() - curr.mu)/curr.x.array();
+
+    data.x.noalias() = curr.x;
+    data.y.noalias() = curr.y;
+    data.z.noalias() = curr.z;
+
+    data.thh = curr.thh;
+    data.thl = curr.thl;
+
+    quality.SetData(data);
+
+    return quality.CalculateSigma();
+}
+
+double IPFilterSolver::CalculateSigmaSafeStep() const
+{
+    return (alphat < params.sigma.threshold_alphat) ? params.sigma.safe_min : params.sigma.safe_max;
+}
+
 void IPFilterSolver::AcceptTrialPoint()
 {
     // Update the current state curr
@@ -648,7 +710,7 @@ void IPFilterSolver::SolveRestoration()
     while(true)
     {
         // Calculate the new normal and tangential steps for the restoration algorithm
-        UpdateNormalTangentialStepsRestoration();
+        UpdateNormalTangentialSteps();
 
         // Search for a trust-region radius that satisfies the centrality neighborhood conditions
         SearchDeltaNeighborhood();
@@ -823,7 +885,7 @@ void IPFilterSolver::UpdateSafeTangentialStep()
     const unsigned m = dimy;
 
     // Calculate the value of parameter sigma for the safe tangential step re-calculation
-    const double sigma = (alphat < params.sigma.threshold_alphat) ? params.sigma.safe_max : params.sigma.safe_min;
+    const double sigma = CalculateSigmaSafeStep();
 
     // Assemble the tangential rhs vector of the linear system
     rhs.segment(0, n).noalias() = - Lx - ((1 - sigma)*curr.mu/curr.x.array()).matrix();

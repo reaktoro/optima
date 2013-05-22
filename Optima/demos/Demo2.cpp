@@ -231,11 +231,13 @@ int main()
 //    std::vector<double> nCO2vals = {1.6, 1.8, 2.0};
 //    std::vector<double> nCO2vals = {1.8, 1.82, 1.84, 1.848, 1.849, 1.85, 1.9, 2.0};
 //    std::vector<double> nCO2vals = {1.8, 2.0, 1.8};
-
-//    std::vector<double> nCO2vals = {100.0};
+//    std::vector<double> nCO2vals = {50.0, 20.0, 10.0, 2.0};
 //    double nH2O = 1;
 
     double nH2O = 55;
+
+    IPFilterParams params;
+    params.safestep.active = true;
 
     IPFilterOptions options;
     options.output.active    = true;
@@ -249,6 +251,7 @@ int main()
 
     IPFilterSolver solver;
     solver.SetOptions(options);
+    solver.SetParams(params);
 
     bool first = true;
 
