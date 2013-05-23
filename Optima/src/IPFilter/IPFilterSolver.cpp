@@ -210,7 +210,7 @@ bool IPFilterSolver::PassSafeStepCondition() const
 
 bool IPFilterSolver::PassConvergenceCondition() const
 {
-    return next.error < options.tolerance or (snx + stx).lpNorm<Infinity>() < options.tolerance;
+    return next.error < options.tolerance1 or (snx + stx).lpNorm<Infinity>() < options.tolerance2;
 }
 
 double IPFilterSolver::CalculateDeltaPositiveXZ() const

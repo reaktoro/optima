@@ -65,9 +65,14 @@ struct IPFilterOptions
     unsigned max_iterations = 1000;
 
     /**
-     * The tolerance parameter used for the stopping criteria of the algorithm
+     * The tolerance parameter used for the stopping criteria of the algorithm based on optimality
      */
-    double tolerance = 1.0e-06;
+    double tolerance1 = 1.0e-06;
+
+    /**
+     * The tolerance parameter used for the stopping criteria of the algorithm based on step size
+     */
+    double tolerance2 = 1.0e-9;
 
     /**
      * The options for the output of the optimisation calculation

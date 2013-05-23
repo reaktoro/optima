@@ -13,6 +13,7 @@
 
 // Optima includes
 #include <Misc/BrentSolver.hpp>
+#include <Misc/GoldenSolver.hpp>
 #include <Misc/Utils.hpp>
 #include <Utils/Functions.hpp>
 
@@ -85,42 +86,17 @@ double QualitySolver::CalculateSigma()
     const double alphax = CalculateLargestBoundaryStep(x, dx0);
     const double alphaz = CalculateLargestBoundaryStep(z, dz0);
 
-    const double alpha = std::min(alphax, alphaz);
+    double a = params.sigma_min;
+    double b = params.sigma_max;
+    double c;
 
-//    const double mu_aff = (x + alphax*dx0).dot(z + alphaz*dz0)/n;
-    const double mu_aff = (x + alpha*dx0).dot(z + alpha*dz0)/n;
-    const double mu = x.dot(z)/n;
+    Bracket(Q, a, b, c);
 
-    const double sigma = std::pow(mu_aff/mu, 3);
+    BrentSolver brent;
+    brent.SetFunction(Q);
+    brent.Solve(a, b, c);
 
-    std::cout << "sigma = " << sigma << std::endl;
-
-    return sigma;
-
-//    double a = 0.1;
-//    double b = 0.5;
-//    double c;
-//
-////    for(unsigned i = 0; i < 100; ++i)
-////    {
-////        const double s = (5.0*i)/100;
-////        std::cout << s << "\t" << Q(s) << std::endl;
-////    }
-//
-//    const double Q1 = Q(1.00);
-//    const double Q2 = Q(0.99);
-//
-//    Bracket(Q, a, b, c);
-//
-//    BrentSolver brent;
-//    brent.SetFunction(Q);
-//    brent.Solve(a, b, c);
-//
-//    const double sigma = (a < 0 or b < 0 or c < 0) ? 0.5 : brent.GetResult().xmin;
-//
-//    std::cout << "sigma = " << sigma << std::endl;
-//
-//    return sigma;
+    return brent.GetResult().xmin;
 }
 
 } /* namespace Optima */

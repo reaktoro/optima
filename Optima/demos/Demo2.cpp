@@ -207,51 +207,28 @@ ConstraintFunction CreateGibbsConstraintFunction(const VectorXd& b)
     return constraint;
 }
 
-struct Test
-{
-    struct RestorationParams
-    {
-        bool active;
-
-        double gamma1;
-
-        double gamma2;
-    } restoration;
-};
-
 int main()
 {
-    Test test;
-    test.restoration.active = true;
-
-//    std::vector<double> nCO2vals = {0.1, 0.2, 0.21, 0.22, 0.23, 0.24, 0.3, 0.4, 1.8, 2.0, 10.0, 20.0};
     std::vector<double> nCO2vals = {0.1, 0.2, 0.21, 0.22, 0.23, 0.24, 0.3, 0.4, 1.8, 1.84, 1.848, 1.849, 2.0, 3.0, 4.0};
-//    std::vector<double> nCO2vals = {0.1, 0.2, 0.3, 0.4, 0.5, 1, 1.8, 1.84, 1.849, 1.85, 2.0, 10.0, 20.0};
-//    std::vector<double> nCO2vals = {1.8, 2.0, 1.9, 1.85, 1.849, 1.848, 1.847, 1.846, 1.8375, 1.825, 1.8};
-//    std::vector<double> nCO2vals = {1.6, 1.8, 2.0};
-//    std::vector<double> nCO2vals = {1.8, 1.82, 1.84, 1.848, 1.849, 1.85, 1.9, 2.0};
 //    std::vector<double> nCO2vals = {1.8, 2.0, 1.8};
-//    std::vector<double> nCO2vals = {50.0, 20.0, 10.0, 2.0};
-//    double nH2O = 1;
 
     double nH2O = 55;
 
     IPFilterParams params;
-    params.safestep.active = true;
 
     IPFilterOptions options;
     options.output.active    = true;
     options.output.precision = 8;
     options.output.width     = 15;
     options.max_iterations   = 200;
-    options.tolerance        = 1.0e-8;
+    options.tolerance1       = 1.0e-6;
+    options.tolerance2       = 1.0e-12;
     options.output.scaled    = false;
 
     std::vector<IPFilterResult> results;
 
     IPFilterSolver solver;
     solver.SetOptions(options);
-    solver.SetParams(params);
 
     bool first = true;
 
