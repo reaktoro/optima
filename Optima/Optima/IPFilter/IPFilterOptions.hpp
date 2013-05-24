@@ -8,7 +8,7 @@
 #pragma once
 
 // Optima includes
-#include <Utils/Outputter.hpp>
+#include <Optima/Utils/Outputter.hpp>
 
 namespace Optima {
 

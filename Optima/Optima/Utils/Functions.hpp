@@ -12,7 +12,7 @@
 using namespace Eigen;
 
 // Optima includes
-#include <Utils/Math.hpp>
+#include <Optima/Utils/Math.hpp>
 
 namespace Optima {
 

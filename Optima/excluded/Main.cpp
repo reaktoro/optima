@@ -11,7 +11,7 @@
 //#include <tuple>
 //
 //// Optima includes
-//#include <IPFilter/IPFilterSolver.hpp>
+//#include <Optima/IPFilter/IPFilterSolver.hpp>
 //using namespace Optima;
 //
 //ObjectiveResult Obj1(const VectorXd& x)

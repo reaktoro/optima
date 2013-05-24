@@ -12,10 +12,10 @@
 #include <iostream>
 
 // Optima includes
-#include <Misc/BrentSolver.hpp>
-#include <Misc/GoldenSolver.hpp>
-#include <Misc/Utils.hpp>
-#include <Utils/Functions.hpp>
+#include <Optima/Misc/BrentSolver.hpp>
+#include <Optima/Misc/GoldenSolver.hpp>
+#include <Optima/Misc/Utils.hpp>
+#include <Optima/Utils/Functions.hpp>
 
 namespace Optima {
 

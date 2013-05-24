@@ -12,8 +12,8 @@
 using namespace Eigen;
 
 // Optima includes
-#include <Utils/Constraint.hpp>
-#include <Utils/Objective.hpp>
+#include <Optima/Utils/Constraint.hpp>
+#include <Optima/Utils/Objective.hpp>
 
 namespace Optima {
 

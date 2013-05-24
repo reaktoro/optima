@@ -13,9 +13,9 @@
 #include <iostream>
 
 // Optima includes
-#include <Utils/Macros.hpp>
-#include <Utils/Math.hpp>
-#include <IPFilter/IPFilterParams.hpp>
+#include <Optima/Utils/Macros.hpp>
+#include <Optima/Utils/Math.hpp>
+#include <Optima/IPFilter/IPFilterParams.hpp>
 
 namespace Optima {
 

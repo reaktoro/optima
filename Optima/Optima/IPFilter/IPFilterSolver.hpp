@@ -15,16 +15,16 @@
 using namespace Eigen;
 
 // Optima includes
-#include <IPFilter/IPFilterErrors.hpp>
-#include <IPFilter/IPFilterOptions.hpp>
-#include <IPFilter/IPFilterParams.hpp>
-#include <IPFilter/IPFilterResult.hpp>
-#include <IPFilter/IPFilterState.hpp>
-#include <Misc/QualitySolver.hpp>
-#include <Utils/Filter.hpp>
-#include <Utils/OptimumProblem.hpp>
-#include <Utils/Outputter.hpp>
-#include <Utils/Scaling.hpp>
+#include <Optima/IPFilter/IPFilterErrors.hpp>
+#include <Optima/IPFilter/IPFilterOptions.hpp>
+#include <Optima/IPFilter/IPFilterParams.hpp>
+#include <Optima/IPFilter/IPFilterResult.hpp>
+#include <Optima/IPFilter/IPFilterState.hpp>
+#include <Optima/Misc/QualitySolver.hpp>
+#include <Optima/Utils/Filter.hpp>
+#include <Optima/Utils/OptimumProblem.hpp>
+#include <Optima/Utils/Outputter.hpp>
+#include <Optima/Utils/Scaling.hpp>
 
 namespace Optima {
 

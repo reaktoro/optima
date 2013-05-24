@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 2.8)
 # Set some auxiliary variables
 set(OPTIMA_DEMOS_DIR     ${CMAKE_SOURCE_DIR}/demos)
 set(OPTIMA_RESOURCES_DIR ${CMAKE_SOURCE_DIR}/resources)
-set(OPTIMA_SOURCE_DIR    ${CMAKE_SOURCE_DIR}/src)
+set(OPTIMA_SOURCE_DIR    ${CMAKE_SOURCE_DIR}/Optima)
 set(OPTIMA_TESTS_DIR     ${CMAKE_SOURCE_DIR}/tests)
 set(OPTIMA_UTILITIES_DIR ${CMAKE_SOURCE_DIR}/utilities)
 set(OPTIMA_RUNTIME_DIR   ${CMAKE_BINARY_DIR}/bin)
@@ -36,8 +36,11 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${OPTIMA_LIBRARY_DIR}"
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${OPTIMA_ARQUIVE_DIR}"
     CACHE STRING "Static library build output directory")
 
+# Specify the include directories for the project
+include_directories(${CMAKE_SOURCE_DIR})
+
 # Add the following directories to be built
-add_subdirectory(src)
+add_subdirectory(Optima)
 add_subdirectory(demos)
 add_subdirectory(tests)
 

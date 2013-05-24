@@ -7,7 +7,7 @@
 
 #include <cmath>
 #include <iostream>
-#include <Optima.hpp>
+#include <Optima/Optima.hpp>
 
 double f(double x) { return 3*x*x + 6*x + 8; }
 double g(double x) { return x*std::sin(x); }

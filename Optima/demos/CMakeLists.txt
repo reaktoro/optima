@@ -4,9 +4,6 @@ project(demos)
 # Specify the minimum required version of cmake for the project
 cmake_minimum_required(VERSION 2.8)
 
-# Specify the library source directory
-include_directories(${OPTIMA_SOURCE_DIR})
-
 # Update the output path of the executable binaries produced by this project
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PROJECT_NAME})
 

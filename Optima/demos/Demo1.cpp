@@ -9,7 +9,7 @@
 #include <iostream>
 
 // Optima includes
-#include <Optima.hpp>
+#include <Optima/Optima.hpp>
 using namespace Optima;
 
 ObjectiveResult Obj1(const VectorXd& x)

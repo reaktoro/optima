@@ -14,7 +14,7 @@
 using namespace Eigen;
 
 // Optima includes
-#include <Optima.hpp>
+#include <Optima/Optima.hpp>
 using namespace Optima;
 
 /// The pressure of the system (in units of bar)
