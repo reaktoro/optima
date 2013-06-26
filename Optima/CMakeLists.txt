@@ -16,7 +16,7 @@ set(OPTIMA_ARQUIVE_DIR   ${CMAKE_BINARY_DIR}/lib)
 
 # Make sure g++ supports c++11 features
 if(CMAKE_COMPILER_IS_GNUCXX)
-    add_definitions(-std=c++11 -fmessage-length=0)
+    add_definitions(-std=c++11 -fmessage-length=0 -fPIC)
 endif()
 
 # Set the default build type to RelWithDebInfo
@@ -38,6 +38,9 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${OPTIMA_ARQUIVE_DIR}"
 
 # Specify the include directories for the project
 include_directories(${CMAKE_SOURCE_DIR})
+
+# Find the required libraries
+find_library(OPTIMA_LIB Optima)
 
 # Add the following directories to be built
 add_subdirectory(Optima)
