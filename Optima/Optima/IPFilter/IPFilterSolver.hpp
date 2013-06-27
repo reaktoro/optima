@@ -86,6 +86,37 @@ public:
     const OptimumProblem& GetProblem() const;
 
     /**
+     * Checks if the optimisation calculation has already converged
+     */
+    bool Converged() const;
+
+    /**
+     * Initialises the internal state of the optimisation solver
+     *
+     * This method should be called prior to any call to method @ref Iterate. It will set the initial guesses of
+     * iterates @b x, @b y, and @b z and compute internal parameters that depend on these data.
+     *
+     * The method scale the inputs @c x, @c y, and @c z according to the scaling specified in @ref SetScaling.
+     *
+     * @param[in,out] x The initial guess of iterate @b x as input. The scaled initial guess as output.
+     * @param[in,out] y The initial guess of iterate @b y as input. The scaled initial guess as output.
+     * @param[in,out] z The initial guess of iterate @b z as input. The scaled initial guess as output.
+     */
+    void Initialise(VectorXd& x, VectorXd& y, VectorXd& z);
+
+    /**
+     * Performs a single iteration towards the solution of the optimisation problem
+     *
+     * This method allows the user to provide the initial guess for the primal variables @b x as well as the Lagrange
+     * multipliers @b y and @b z.
+     *
+     * @param[in,out] x The current state of iterate @b x as input. Its improved state at the end of the iteration as output.
+     * @param[in,out] y The current state of iterate @b y as input. Its improved state at the end of the iteration as output.
+     * @param[in,out] z The current state of iterate @b z as input. Its improved state at the end of the iteration as output.
+     */
+    void Iterate(VectorXd& x, VectorXd& y, VectorXd& z);
+
+    /**
      * Solves the optimisation problem
      *
      * This method allows the user to provide only the initial guess for the primal variables @b x.
@@ -102,20 +133,17 @@ public:
     /**
      * Solves the optimisation problem
      *
-     * This method allows the user to provide the initial guess for the primal variables @a x as well as the Lagrange
-     * multipliers @a y and @a z.
+     * This method allows the user to provide the initial guess for the primal variables @b x as well as the Lagrange
+     * multipliers @b y and @b z.
      *
      * This is usefull for sequential calculations where the i-th calculation uses the result of the (i-1)-th
-     * calculation as initial guess. Therefore, convergence to an optimal point might result in less iterations.
+     * calculation as initial guess. Therefore, convergence to an optimal point might is achieved in less iterations.
      *
-     * Note, however, that some components of @c x and @c z might be modified in order to improve robustness and
-     * efficiency. The modification is given by:
+     * Note, however, that some components of parameters @c x and @c z might be modified in order to improve
+     * robustness and efficiency. The modification is given by:
      *
      *  - <tt> x = max(x, xguessmin) </tt> (see @ref IPFilterOptions::InitialGuessOptions::xmin),
      *  - <tt> z = max(z, zguessmin) </tt> (see @ref IPFilterOptions::InitialGuessOptions::zmin).
-     *
-     * We assume in this method that a good initial guess is provided. Therefore, we scale the primal variables @b x
-     * using the initial guess @c x.
      *
      * This method uses a restart scheme in case of failure. If the provided initial guesses @c x, @c y, and @c z
      * results in any trust-region search error, the restart scheme is activated. It consists of resetting the
@@ -127,15 +155,12 @@ public:
      *  @ref IPFilterParams::Restart::factor, @c attempt is the number of restart attempts so far, and @c mu is
      *  the @f$\mu@f$ parameter where the calculation stopped.
      *
-     *  Then, we start restart the interior-point calculation using the reset @c z. The values for @c x and @c y
+     *  Then, we restart the interior-point calculation using the reset @c z. The values for @c x and @c y
      *  are those from where the calculation stopped.
      *
-     * @param[in,out] x The initial guess of the primal variables @b x as input. The optimum solution at the end of
-     *     the calculation as output.
-     * @param[in,out] y The initial guess of the Lagrange multipliers @b y. The optimum solution at the end of the
-     *     calculation as output.
-     * @param[in,out] z The initial guess of the Lagrange multipliers @b z. The optimum solution at the end of the
-     *     calculation as output.
+     * @param[in,out] x The initial guess of iterate @b x as input. The optimum solution at the end of the calculation as output.
+     * @param[in,out] y The initial guess of iterate @b y as input. The optimum solution at the end of the calculation as output.
+     * @param[in,out] z The initial guess of iterate @b z as input. The optimum solution at the end of the calculation as output.
      */
     void Solve(VectorXd& x, VectorXd& y, VectorXd& z);
 
@@ -215,11 +240,11 @@ private:
     /// The Hessian of the Lagrange function with respect to x at the current state
     MatrixXd Lxx;
 
+    /// The quality solver used to calculate the sigma parameter based on the quality function approach
     QualitySolver quality;
 
 private:
     bool AnyFloatingPointException(const IPFilterState& state) const;
-    bool PassConvergenceCondition() const;
     bool PassFilterCondition() const;
     bool PassRestorationCondition(double delta) const;
     bool PassSafeStepCondition() const;
@@ -238,17 +263,15 @@ private:
 
     void AcceptTrialPoint();
     void ExtendFilter();
-    void Initialise(const VectorXd& x, const VectorXd& y, const VectorXd& z);
+    void InitialiseAuxiliary(VectorXd& x, VectorXd& y, VectorXd& z);
+    void InitialiseOutputter();
     void OutputHeader();
     void OutputState();
-    void ResetLagrangeMultipliersZ(IPFilterState& state) const;
+    void Restart();
     void SearchDeltaNeighborhood();
     void SearchDeltaTrustRegion();
     void SearchDeltaTrustRegionRestoration();
-    void Solve();
     void SolveRestoration();
-    void UpdateActiveMonitor();
-    void UpdateNeighborhoodParameterM();
     void UpdateNextState(double delta);
     void UpdateNormalTangentialSteps();
     void UpdateNormalTangentialStepsRestoration();

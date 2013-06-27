@@ -10,22 +10,29 @@
 namespace Optima {
 
 /**
- * The result of the calculation performed by the IPFilter algorithm
+ * The result information of the calculation performed by the IPFilter algorithm
+ *
+ * @see IPFilterSolver
  */
 struct IPFilterResult
 {
     /**
-     * The number of iterations executed in the IPFilter algorithm
+     * The boolean flag that indicates if the calculation converged
+     */
+    bool converged = false;
+
+    /**
+     * The number of iterations performed in the calculation
      */
     unsigned num_iterations = 0;
 
     /**
-     * The number of evaluations of the objective function
+     * The number of evaluations of the objective function performed in the calculation
      */
     unsigned num_objective_evals = 0;
 
     /**
-     * The number of evaluations of the constraint function
+     * The number of evaluations of the constraint function performed in the calculation
      */
     unsigned num_constraint_evals = 0;
 
@@ -35,14 +42,9 @@ struct IPFilterResult
     unsigned num_restorations = 0;
 
     /**
-     * The boolean value that indicates if the calculation converged to a local solution
+     * The number of times the calculation entered the restart algorithm
      */
-    bool converged = false;
-
-    /**
-     * The error message if the last calculation failed.
-     */
-    std::string error = "None";
+    unsigned num_restarts = 0;
 
     /**
      * The conversion operator that returns true if the calculation converged to a local solution

@@ -7,6 +7,10 @@
 
 #pragma once
 
+// Eigen includes
+#include <Eigen/Core>
+using namespace Eigen;
+
 // Optima includes
 #include <Optima/Utils/Outputter.hpp>
 
@@ -26,6 +30,91 @@ struct IPFilterOptions
          * The boolean flag that indicates if the output of the iterates should be scaled
          */
         bool scaled = false;
+
+        /**
+         * The boolean flag that indicates if the iteration number should be printed
+         */
+        bool iter = true;
+
+        /**
+         * The boolean flag that indicates if the primal iterate @b x should be printed
+         */
+        bool x = true;
+
+        /**
+         * The boolean flag that indicates if the dual iterate @b y should be printed
+         */
+        bool y = true;
+
+        /**
+         * The boolean flag that indicates if the dual iterate @b z should be printed
+         */
+        bool z = true;
+
+        /**
+         * The boolean flag that indicates if the objective function should be printed
+         */
+        bool f = true;
+
+        /**
+         * The boolean flag that indicates if the norm of the constraint function should be printed
+         */
+        bool h = true;
+
+        /**
+         * The boolean flag that indicates if the perturbation parameter @f$\mu@f$ should be printed
+         */
+        bool mu = true;
+
+        /**
+         * The boolean flag that indicates if the maximum among the feasibility, centrality, and optimality errors should be printed
+         */
+        bool error = true;
+
+        /**
+         * The boolean flag that indicates if the residual error defined as the norm of the KKT equations should be printed
+         */
+        bool residual = true;
+
+        /**
+         * The boolean flag that indicates if the normal step-length @f$\alpha^{n}@f$ should be printed
+         */
+        bool alphan = true;
+
+        /**
+         * The boolean flag that indicates if the tangencial step-length @f$\alpha^{t}@f$ should be printed
+         */
+        bool alphat = true;
+
+        /**
+         * The boolean flag that indicates if the radius of the trust-region @f$\Delta@f$ should be printed
+         */
+        bool delta = true;
+
+        /**
+         * The boolean flag that indicates if the optimality measure @f$\theta@f$ should be printed
+         */
+        bool theta = true;
+
+        /**
+         * The boolean flag that indicates if the optimality measure @f$\psi@f$ should be printed
+         */
+        bool psi = true;
+
+        /**
+         * The boolean flag that indicates if the optimality measure @f$\theta_{c}@f$ should be printed
+         */
+        bool thc = true;
+
+        /**
+         * The boolean flag that indicates if the optimality measure @f$\theta_{h}@f$ should be printed
+         */
+        bool thh = true;
+
+        /**
+         * The boolean flag that indicates if the optimality measure @f$\theta_{l}@f$ should be printed
+         */
+        bool thl = true;
     };
 
     /**

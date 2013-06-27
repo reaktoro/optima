@@ -20,60 +20,42 @@
 namespace Optima {
 
 IPFilterSolver::IPFilterSolver()
+: dimx(0), dimy(0)
+{}
+
+void IPFilterSolver::SetOptions(const IPFilterOptions& options_)
 {
+    options = options_;
+
+    // Initialise the outputter instance (because the options.output might have been changed)
+    InitialiseOutputter();
 }
 
-void IPFilterSolver::SetOptions(const IPFilterOptions& options)
+void IPFilterSolver::SetParams(const IPFilterParams& params_)
 {
-    this->options = options;
+    params = params_;
 }
 
-void IPFilterSolver::SetParams(const IPFilterParams& params)
-{
-    this->params = params;
-}
-
-void IPFilterSolver::SetProblem(const OptimumProblem& problem)
+void IPFilterSolver::SetProblem(const OptimumProblem& problem_)
 {
     // Initialise the optimisation problem
-    this->problem = problem;
+    problem = problem_;
 
     // Initialise the dimension variables
     dimx = problem.GetNumVariables();
     dimy = problem.GetNumConstraints();
 
     // Initialise the KKT linear system data
-    const unsigned dim = dimx + dimy;
-    lhs.resize(dim, dim);
-    rhs.resize(dim);
+    lhs.resize(dimx + dimy, dimx + dimy);
+    rhs.resize(dimx + dimy);
 
-    // Initialise the output instance
-    if(options.output.active)
-    {
-        outputter = Outputter();
-        outputter.SetOptions(options.output);
-        outputter.AddEntry("iter");
-        outputter.AddEntries(dimx, "x");
-        outputter.AddEntry("f(x)");
-        outputter.AddEntry("h(x)");
-        outputter.AddEntry("error");
-        outputter.AddEntry("alphan");
-        outputter.AddEntry("alphat");
-        outputter.AddEntry("mu(w)");
-        outputter.AddEntry("delta");
-        outputter.AddEntry("theta(w)");
-        outputter.AddEntry("psi(w)");
-        outputter.AddEntry("thc(w)");
-        outputter.AddEntry("thh(w)");
-        outputter.AddEntry("thl(w)");
-        outputter.AddEntries(dimy, "y");
-        outputter.AddEntries(dimx, "z");
-    }
+    // Initialise the outputter instance (because dimx and dimy might have been changed)
+    InitialiseOutputter();
 }
 
-void IPFilterSolver::SetScaling(const Scaling& scaling)
+void IPFilterSolver::SetScaling(const Scaling& scaling_)
 {
-    this->scaling = scaling;
+    scaling = scaling_;
 }
 
 const IPFilterOptions& IPFilterSolver::GetOptions() const
@@ -101,14 +83,12 @@ const OptimumProblem& IPFilterSolver::GetProblem() const
     return problem;
 }
 
-void IPFilterSolver::Solve(VectorXd& x)
+bool IPFilterSolver::Converged() const
 {
-    VectorXd y, z;
-
-    Solve(x, y, z);
+    return next.error < options.tolerance1 or (snx + stx).lpNorm<Infinity>() < options.tolerance2;
 }
 
-void IPFilterSolver::Solve(VectorXd& x, VectorXd& y, VectorXd& z)
+void IPFilterSolver::Initialise(VectorXd& x, VectorXd& y, VectorXd& z)
 {
     // Check if the dimensions of the initial guesses x, y, and z are correct
     if(x.rows() != dimx) x.setConstant(dimx, options.initialguess.x);
@@ -119,64 +99,80 @@ void IPFilterSolver::Solve(VectorXd& x, VectorXd& y, VectorXd& z)
     x = x.cwiseMax(options.initialguess.xmin);
     z = z.cwiseMax(options.initialguess.zmin);
 
-    // Output the header on the top of the calculation output
+    // Output the header of the calculation
     OutputHeader();
 
     // Initialise the result member
     result = IPFilterResult();
 
-    // Initialise the current primal variables x, and the Lagrange multipliers y and z
-    curr.x.noalias() = x;
-    curr.y.noalias() = y;
-    curr.z.noalias() = z;
+    // Initialise the remaining of the internal state
+    InitialiseAuxiliary(x, y, z);
+}
 
-    for(unsigned attempts = 1; ; ++attempts)
+void IPFilterSolver::Iterate(VectorXd& x, VectorXd& y, VectorXd& z)
+{
+    // Output the current state of the calculation
+    OutputState();
+
+    // Calculate the normal and tangential steps for the trust-region algorithm
+    UpdateNormalTangentialSteps();
+
+    // Keep track if any trust-region search error happens from now on
+    try
     {
-        // Scale the primal variables x, and the Lagrange multipliers y and z
-        scaling.ScaleXYZ(curr.x, curr.y, curr.z);
+        // Search for a trust-region radius that satisfies the centrality neighborhood conditions
+        SearchDeltaNeighborhood();
 
-        // Initialise the calculation with the provided initial guess
-        Initialise(curr.x, curr.y, curr.z);
-
-        // Solve the optimisation problem
-        try { Solve(); }
-
-        // Catch any exception that indicates a trust-region search error
-        catch(const IPFilterErrorSearchDelta& e)
+        // Check if the current tangential step needs to be safely recalculated
+        if(PassSafeStepCondition())
         {
-            // Check if the number of attempts is greater than the allowed number of restart attemps
-            if(attempts > params.restart.tentatives)
-                { result.error = e.what(); throw; }
+            // Calculate the safe tangential step
+            UpdateSafeTangentialStep();
 
-            // Output a message indicating the restarting algorithm
-            outputter.OutputMessage("...restarting the algorithm: attempt #", attempts);
-
-            // Unscale the primal variables x, and the Lagrange multipliers y and z
-            scaling.UnscaleXYZ(curr.x, curr.y, curr.z);
-
-            // Reset the Lagrange multipliers z
-            curr.z.setConstant(dimx, std::min(options.initialguess.z, std::pow(params.restart.factor, attempts) * curr.mu));
-
-            // Reset the scaling of the primal variables x
-            scaling.SetScalingVariables(curr.x);
+            // Repeat the search for a trust-region radius that satisfies the neighborhood conditions
+            SearchDeltaNeighborhood();
         }
 
-        // Catch any exception thrown in the calculation, get its error message and rethrow
-        catch(const std::exception& e)
-            { result.error = e.what(); throw; }
+        // Check if the current state does not require the initiation of the restoration phase algorithm
+        if(PassRestorationCondition(delta)) SearchDeltaTrustRegion();
 
-        // Check if the last calculation converged
-        if(result.converged)
-            break;
+        // Start the restoration algorithm in order to decrease the primal infeasibility
+        else SolveRestoration();
     }
 
-    // Unscale the primal variables x, and the Lagrange multipliers y and z
-    scaling.UnscaleXYZ(curr.x, curr.y, curr.z);
+    // Catch any exception that indicates a trust-region search error
+    catch(const IPFilterErrorSearchDelta& e)
+    {
+        // Perform the restart procedure to continue the calculation with an increased perturbation
+        Restart();
+    }
 
-    // Transfer the found optimum point (curr.x, curr.y, curr.z) to (x, y, z)
+    // Transfer the current iterate state (curr.x, curr.y, curr.z) to (x, y, z)
     x.noalias() = curr.x;
     y.noalias() = curr.y;
     z.noalias() = curr.z;
+}
+
+void IPFilterSolver::Solve(VectorXd& x)
+{
+    VectorXd y, z;
+
+    Solve(x, y, z);
+}
+
+void IPFilterSolver::Solve(VectorXd& x, VectorXd& y, VectorXd& z)
+{
+    // Initialise the optimisation solver
+    Initialise(x, y, z);
+
+    // Iterate until convergence
+    do { Iterate(x, y, z); } while(not Converged());
+
+    // Output the found optimum state
+    OutputState();
+
+    // Unscale the iterates (x, y, z)
+    scaling.UnscaleXYZ(x, y, z);
 }
 
 bool IPFilterSolver::AnyFloatingPointException(const IPFilterState& state) const
@@ -206,11 +202,6 @@ bool IPFilterSolver::PassRestorationCondition(double delta) const
 bool IPFilterSolver::PassSafeStepCondition() const
 {
     return params.safestep.active and alphat < params.safestep.threshold;
-}
-
-bool IPFilterSolver::PassConvergenceCondition() const
-{
-    return next.error < options.tolerance1 or (snx + stx).lpNorm<Infinity>() < options.tolerance2;
 }
 
 double IPFilterSolver::CalculateDeltaPositiveXZ() const
@@ -429,15 +420,15 @@ double IPFilterSolver::CalculateSigmaSafeStep() const
 
 void IPFilterSolver::AcceptTrialPoint()
 {
-    // Update the current state curr
-    curr = next;
-
     // Update the number of iterations
     ++result.num_iterations;
 
     // Check if the maximum number of iterations has been achieved
     if(result.num_iterations > options.max_iterations)
-        throw IPFilterErrorIterationMaximumLimit();
+        throw IPFilterErrorIterationAttemptLimit();
+
+    // Update the current state curr
+    curr = next;
 }
 
 void IPFilterSolver::ExtendFilter()
@@ -450,26 +441,35 @@ void IPFilterSolver::ExtendFilter()
     filter.Add({beta_theta, beta_psi});
 }
 
-void IPFilterSolver::Initialise(const VectorXd& x, const VectorXd& y, const VectorXd& z)
+void IPFilterSolver::InitialiseAuxiliary(VectorXd& x, VectorXd& y, VectorXd& z)
 {
+    // Scale the iterates (x, y, z)
+    scaling.ScaleXYZ(x, y, z);
+
+    // Initialise the current primal variables x, and the Lagrange multipliers y and z
+    curr.x.noalias() = x;
+    curr.y.noalias() = y;
+    curr.z.noalias() = z;
+
     // Initialise the filter
     filter = Filter();
 
     // Initialise the value of the parameter gamma
-    gamma = std::min(params.neighbourhood.gamma_min, x.cwiseProduct(z).minCoeff()/(2.0*x.dot(z)/dimx));
+    gamma = curr.x.cwiseProduct(curr.z).minCoeff()/(2.0*curr.x.dot(curr.z)/dimx);
+    gamma = std::min(gamma, params.neighbourhood.gamma_min);
 
     // Initialise the value of the parameter c
     c = 3*dimx*dimx/(1 - params.sigma.main_min)*std::pow(std::max(1.0, (1 - params.sigma.main_min)/gamma), 2);
 
     // Update the current state
-    UpdateState(x, y, z, curr);
-
-    // Initialise the value of the neighbourhood parameter M
-    M = std::max(params.neighbourhood.Mmax, params.neighbourhood.alpha0*(curr.thh + curr.thl)/curr.mu);
+    UpdateState(curr.x, curr.y, curr.z, curr);
 
     // Check if the initial guess results in floating point exceptions
     if(AnyFloatingPointException(curr))
         throw IPFilterErrorInitialGuessFloatingPoint();
+
+    // Initialise the value of the neighbourhood parameter M
+    M = std::max(params.neighbourhood.Mmax, params.neighbourhood.alpha0*(curr.thh + curr.thl)/curr.mu);
 
     // Initialise the current maximum value of the trust-region radius
     delta = delta_initial = params.main.delta_initial;
@@ -484,9 +484,40 @@ void IPFilterSolver::Initialise(const VectorXd& x, const VectorXd& y, const Vect
     next = curr;
 }
 
+void IPFilterSolver::InitialiseOutputter()
+{
+    // Reset the outputter instance
+    outputter = Outputter();
+
+    // Set the outputter options
+    outputter.SetOptions(options.output);
+
+    // Initialise the outputter instance
+    if(options.output.active)
+    {
+        if(options.output.iter)     outputter.AddEntry("iter");
+        if(options.output.x)        outputter.AddEntries(dimx, "x");
+        if(options.output.y)        outputter.AddEntries(dimy, "y");
+        if(options.output.z)        outputter.AddEntries(dimx, "z");
+        if(options.output.f)        outputter.AddEntry("f(x)");
+        if(options.output.h)        outputter.AddEntry("h(x)");
+        if(options.output.mu)       outputter.AddEntry("mu(w)");
+        if(options.output.error)    outputter.AddEntry("error");
+        if(options.output.residual) outputter.AddEntry("residual");
+        if(options.output.alphan)   outputter.AddEntry("alphan");
+        if(options.output.alphat)   outputter.AddEntry("alphat");
+        if(options.output.delta)    outputter.AddEntry("delta");
+        if(options.output.theta)    outputter.AddEntry("theta(w)");
+        if(options.output.psi)      outputter.AddEntry("psi(w)");
+        if(options.output.thc)      outputter.AddEntry("thc(w)");
+        if(options.output.thh)      outputter.AddEntry("thh(w)");
+        if(options.output.thl)      outputter.AddEntry("thl(w)");
+    }
+}
+
 void IPFilterSolver::OutputHeader()
 {
-    if(options.output.active) outputter.OutputHeader();
+    outputter.OutputHeader();
 }
 
 void IPFilterSolver::OutputState()
@@ -500,22 +531,24 @@ void IPFilterSolver::OutputState()
             scaling.UnscaleZ(curr.z);
         }
 
-        outputter.AddValue(result.num_iterations);
-        outputter.AddValues(curr.x.data(), curr.x.data() + dimx);
-        outputter.AddValue(curr.f.func);
-        outputter.AddValue(curr.h.func.norm());
-        outputter.AddValue(curr.error);
-        outputter.AddValue(alphan);
-        outputter.AddValue(alphat);
-        outputter.AddValue(curr.mu);
-        outputter.AddValue(delta);
-        outputter.AddValue(curr.theta);
-        outputter.AddValue(curr.psi);
-        outputter.AddValue(curr.thc);
-        outputter.AddValue(curr.thh);
-        outputter.AddValue(curr.thl);
-        outputter.AddValues(curr.y.data(), curr.y.data() + dimy);
-        outputter.AddValues(curr.z.data(), curr.z.data() + dimx);
+        if(options.output.iter)     outputter.AddValue(result.num_iterations);
+        if(options.output.x)        outputter.AddValues(curr.x.data(), curr.x.data() + dimx);
+        if(options.output.y)        outputter.AddValues(curr.y.data(), curr.y.data() + dimy);
+        if(options.output.z)        outputter.AddValues(curr.z.data(), curr.z.data() + dimx);
+        if(options.output.f)        outputter.AddValue(curr.f.func);
+        if(options.output.h)        outputter.AddValue(curr.h.func.norm());
+        if(options.output.mu)       outputter.AddValue(curr.mu);
+        if(options.output.error)    outputter.AddValue(curr.error);
+        if(options.output.residual) outputter.AddValue(curr.residual);
+        if(options.output.alphan)   outputter.AddValue(alphan);
+        if(options.output.alphat)   outputter.AddValue(alphat);
+        if(options.output.delta)    outputter.AddValue(delta);
+        if(options.output.theta)    outputter.AddValue(curr.theta);
+        if(options.output.psi)      outputter.AddValue(curr.psi);
+        if(options.output.thc)      outputter.AddValue(curr.thc);
+        if(options.output.thh)      outputter.AddValue(curr.thh);
+        if(options.output.thl)      outputter.AddValue(curr.thl);
+
         outputter.OutputState();
 
         if(not options.output.scaled)
@@ -525,6 +558,31 @@ void IPFilterSolver::OutputState()
             scaling.ScaleZ(curr.z);
         }
     }
+}
+
+void IPFilterSolver::Restart()
+{
+    // Update the number of times the calculation entered the restart algorithm
+    ++result.num_restarts;
+
+    // Output a message indicating the restarting algorithm
+    outputter.OutputMessage("...restarting the algorithm at attempt number: ", result.num_restarts);
+
+    // Check if the number of attempts is greater than the allowed number of restart attemps
+    if(result.num_restarts > params.restart.tentatives)
+        throw IPFilterErrorRestartAttemptLimit();
+
+    // Unscale the iterates (x, y, z)
+    scaling.UnscaleXYZ(curr.x, curr.y, curr.z);
+
+    // Reset the Lagrange multipliers z
+    curr.z.fill(std::min(options.initialguess.z, std::pow(params.restart.factor, result.num_restarts) * curr.mu));
+
+    // Reset the scaling of the primal variables x
+    scaling.SetScalingVariables(curr.x);
+
+    // Initialise the solver with the new iterates x and z
+    InitialiseAuxiliary(curr.x, curr.y, curr.z);
 }
 
 void IPFilterSolver::SearchDeltaNeighborhood()
@@ -559,7 +617,7 @@ void IPFilterSolver::SearchDeltaNeighborhood()
         if(AnyFloatingPointException(next))
             continue;
 
-        // Prevent further tentative delta sizes if the neighbourhood search algorithm deactivated
+        // Prevent further trial delta sizes if the neighbourhood search algorithm is not active
         if(not params.neighbourhood.active)
             break;
 
@@ -615,7 +673,8 @@ void IPFilterSolver::SearchDeltaTrustRegion()
     }
 
     // Update the neighborhood parameter M
-    UpdateNeighborhoodParameterM();
+    if(next.theta > next.mu * params.neighbourhood.epsilon * M)
+        M = std::max(params.neighbourhood.Mmax, params.neighbourhood.alpha*next.theta/next.mu);
 
     // Accept the found delta and update the current state
     AcceptTrialPoint();
@@ -650,59 +709,19 @@ void IPFilterSolver::SearchDeltaTrustRegionRestoration()
     }
 }
 
-void IPFilterSolver::Solve()
-{
-    while(true)
-    {
-        // Output the current state of the calculation
-        OutputState();
-
-        // Calculate the normal and tangential steps for the trust-region algorithm
-        UpdateNormalTangentialSteps();
-
-        // Search for a trust-region radius that satisfies the centrality neighborhood conditions
-        SearchDeltaNeighborhood();
-
-        // Check if the current tangential step needs to be safely recalculated
-        if(PassSafeStepCondition())
-        {
-            // Calculate the safe tangential step
-            UpdateSafeTangentialStep();
-
-            // Repeat the search for a trust-region radius that satisfies the neighborhood conditions
-            SearchDeltaNeighborhood();
-        }
-
-        // Check if the current state does not require the initiation of the restoration phase algorithm
-        if(PassRestorationCondition(delta)) SearchDeltaTrustRegion();
-
-        // Start the restoration algorithm in order to decrease the primal infeasibility
-        else SolveRestoration();
-
-        // Check if the current state pass the stopping criteria of optimality
-        if(PassConvergenceCondition()) break;
-    }
-
-    // Output the final state of the calculation
-    OutputState();
-
-    // Update the convergency condition of result
-    result.converged = true;
-}
-
 void IPFilterSolver::SolveRestoration()
 {
-    // Extend the filter with the current (theta, psi) pair
-    ExtendFilter();
+    // Output a message indicating the start of the restoration algorithm
+    outputter.OutputMessage("...beginning the restoration algorithm");
+
+    // Update the number of times the calculation entered the restoration phase algorithm
+    ++result.num_restorations;
 
     // Activate the restoration flag
     restoration = true;
 
-    // Update the restoration counter of the result
-    ++result.num_restorations;
-
-    // Output a message indicating the start of the restoration algorithm
-    outputter.OutputMessage("...beginning the restoration algorithm");
+    // Extend the filter with the current (theta, psi) pair
+    ExtendFilter();
 
     // Store the current value of the trust-region radius that was a result of the main iterations so far
     double delta_main = delta;
@@ -732,17 +751,11 @@ void IPFilterSolver::SolveRestoration()
     // Recover the value of delta
     delta = delta_initial = delta_main;
 
-    // Output a message indicating the end of the restoration algorithm
-    outputter.OutputMessage("...finishing the restoration algorithm");
-
     // Deactivate the restoration flag
     restoration = false;
-}
 
-void IPFilterSolver::UpdateNeighborhoodParameterM()
-{
-    if(next.theta > next.mu * params.neighbourhood.epsilon * M)
-        M = std::max(params.neighbourhood.Mmax, params.neighbourhood.alpha*next.theta/next.mu);
+    // Output a message indicating the end of the restoration algorithm
+    outputter.OutputMessage("...finishing the restoration algorithm");
 }
 
 void IPFilterSolver::UpdateNextState(double del)
@@ -948,8 +961,11 @@ void IPFilterSolver::UpdateState(const VectorXd& x, const VectorXd& y, const Vec
     state.errorc = 1.0/sc * x.cwiseProduct(z).lpNorm<Infinity>();
     state.errorl = 1.0/sl * (state.f.grad + state.h.grad.transpose()*y - z).lpNorm<Infinity>();
 
-    // Update the maximum among the feasibility, centrality, and optimality errors
+    // Update the maximum error among the feasibility, centrality and optimality errors
     state.error = std::max({state.errorh, state.errorc, state.errorl});
+
+    // Update the residual error defined as the norm of the KKT equations
+    state.residual = std::sqrt(state.thl*state.thl + state.thh*state.thh + x.cwiseProduct(z).squaredNorm());
 }
 
 } /* namespace Optima */

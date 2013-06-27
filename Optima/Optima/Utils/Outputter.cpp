@@ -12,9 +12,9 @@ namespace Optima {
 Outputter::Outputter()
 {}
 
-void Outputter::SetOptions(const Options& options)
+void Outputter::SetOptions(const Options& options_)
 {
-    this->options = options;
+    options = options_;
 }
 
 void Outputter::AddEntry(std::string name)

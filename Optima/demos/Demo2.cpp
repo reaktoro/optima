@@ -209,8 +209,8 @@ ConstraintFunction CreateGibbsConstraintFunction(const VectorXd& b)
 
 int main()
 {
-    std::vector<double> nCO2vals = {0.1, 0.2, 0.21, 0.22, 0.23, 0.24, 0.3, 0.4, 1.8, 1.84, 1.848, 1.849, 2.0, 3.0, 4.0};
-//    std::vector<double> nCO2vals = {1.8, 2.0, 1.8};
+//    std::vector<double> nCO2vals = {0.1, 0.2, 0.21, 0.22, 0.23, 0.24, 0.3, 0.4, 1.8, 1.84, 1.848, 1.849, 2.0, 3.0, 4.0};
+    std::vector<double> nCO2vals = {1.8, 2.0, 1.8};
 
     double nH2O = 55;
 
@@ -220,6 +220,9 @@ int main()
     options.output.active    = true;
     options.output.precision = 8;
     options.output.width     = 15;
+    options.output.x         = false;
+    options.output.y         = false;
+    options.output.z         = false;
     options.max_iterations   = 200;
     options.tolerance1       = 1.0e-6;
     options.tolerance2       = 1.0e-12;
@@ -228,11 +231,12 @@ int main()
     std::vector<IPFilterResult> results;
 
     IPFilterSolver solver;
-    solver.SetOptions(options);
 
     bool first = true;
 
     VectorXd n, y, z;
+
+    std::cout << std::scientific << std::setprecision(6);
 
     for(double nCO2 : nCO2vals)
     {
@@ -252,19 +256,17 @@ int main()
         problem.SetObjectiveFunction(CreateGibbsObjectiveFunction());
         problem.SetConstraintFunction(CreateGibbsConstraintFunction(b));
 
-        Optima::Scaling scaling;
-        scaling.SetScalingVariables(n);
-
         solver.SetProblem(problem);
 
-        std::cout << std::scientific << std::setprecision(6);
+        Optima::Scaling scaling;
+        scaling.SetScalingVariables(n);
+        if(not first) solver.SetScaling(scaling);
 
         std::string bar(105, '=');
         std::cout << bar << std::endl;
         std::cout << "nCO2 = " << nCO2 << std::endl;
 
-
-        if(not first) solver.SetScaling(scaling);
+        solver.SetOptions(options);
         solver.Solve(n, y, z);
 
         first = false;
@@ -275,7 +277,6 @@ int main()
     std::cout << std::left << std::setw(15) << "nCO2";
     std::cout << std::left << std::setw(15) << std::boolalpha << "converged";
     std::cout << std::left << std::setw(15) << "iters";
-    std::cout << std::left << std::setw(15) << "error";
     std::cout << std::endl;
     std::cout << std::fixed;
     unsigned total = 0;
@@ -285,7 +286,6 @@ int main()
         std::cout << std::left << std::setw(15) << nCO2vals[i];
         std::cout << std::left << std::setw(15) << std::boolalpha << results[i].converged;
         std::cout << std::left << std::setw(15) << results[i].num_iterations;
-        std::cout << std::left << results[i].error;
         std::cout << std::endl;
     }
 

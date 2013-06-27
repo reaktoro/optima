@@ -15,6 +15,7 @@ namespace Optima {
 struct IPFilterErrorInitialGuess : public std::exception {};
 struct IPFilterErrorSearchDelta  : public std::exception {};
 struct IPFilterErrorIteration    : public std::exception {};
+struct IPFilterErrorRestart      : public std::exception {};
 
 struct IPFilterErrorInitialGuessFloatingPoint : public IPFilterErrorInitialGuess
 {
@@ -68,13 +69,23 @@ struct IPFilterErrorSearchDeltaTrustRegionRestoration : public IPFilterErrorSear
     }
 };
 
-struct IPFilterErrorIterationMaximumLimit : public IPFilterErrorIteration
+struct IPFilterErrorIterationAttemptLimit : public IPFilterErrorIteration
 {
     virtual const char* what() const throw()
     {
         return "Unable to converge to an optimum point within the specified maximum "
-            "number of iterations. Try another initial guess or increase  the allowed "
+            "number of iterations. Try another initial guess or increase the allowed "
             "maximum number of iterations.";
+    }
+};
+
+struct IPFilterErrorRestartAttemptLimit : public IPFilterErrorRestart
+{
+    virtual const char* what() const throw()
+    {
+        return "Unable to converge to an optimum point within the specified maximum "
+            "number of restart attempts. Try another initial guess or increase the restart "
+            "factor to further increase the perturbation parameter every restart attempt.";
     }
 };
 
