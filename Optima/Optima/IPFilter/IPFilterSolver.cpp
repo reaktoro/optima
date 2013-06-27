@@ -173,6 +173,9 @@ void IPFilterSolver::Solve(VectorXd& x, VectorXd& y, VectorXd& z)
 
     // Unscale the iterates (x, y, z)
     scaling.UnscaleXYZ(x, y, z);
+
+    // Set the converged flag in the result member
+    result.converged = true;
 }
 
 bool IPFilterSolver::AnyFloatingPointException(const IPFilterState& state) const
