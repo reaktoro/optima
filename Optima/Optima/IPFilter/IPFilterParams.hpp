@@ -209,6 +209,15 @@ struct IPFilterParams
         double gamma_min = 1.0e-03;
     };
 
+    struct Newton
+    {
+        bool active = true;
+
+        double threshold = 1.0e-6;
+
+        double factor = 1.0e-4;
+    };
+
     /**
      * The parameters for the calculation of the optimality measure @f$\psi@f$
      */
@@ -460,6 +469,9 @@ struct IPFilterParams
     /// The parameters for the central neighbourhood scheme
     Neighbourhood neighbourhood;
 
+    /// The parameters for the Newton algorithm
+    Newton newton;
+
     /// The parameters for the calculation of the optimality measure @f$\psi@f$
     Psi psi;
 
@@ -470,13 +482,13 @@ struct IPFilterParams
     Restoration restoration;
 
     /// The parameters for the safe tangencial step calculation
-    SafeTangentialStep safestep;
+    SafeTangentialStep safe_step;
 
     /// The parameters for the calculation of the centrality parameter @f$\sigma@f$
     Sigma sigma;
 
     /// The parameters for the trust-region algorithm
-    TrustRegion main;
+    TrustRegion trust_region;
 };
 
 } /* namespace Optima */

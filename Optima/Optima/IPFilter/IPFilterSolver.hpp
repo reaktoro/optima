@@ -183,29 +183,41 @@ private:
     /// The output instance for printing the calculation progress
     Outputter outputter;
 
-    /// The dimension of the objective and constraint functions respectively
+    /// The filter used during the search for a suitable trust-region radius
+    Filter filter;
+
+    /// The quality solver used to calculate the sigma parameter based on the quality function approach
+    QualitySolver quality;
+
+    /// The dimension of the objective and constraint functions
     unsigned dimx, dimy;
 
-    /// The current and next states respectively
-    IPFilterState curr, next;
+    /// The previous, current and next solution states
+    IPFilterState prev, curr, next;
 
-    /// The x-component of the normal and tangencial steps respectively
+    /// The x-components of the normal and tangencial steps
     VectorXd snx, stx;
 
-    /// The y-component of the normal and tangencial steps respectively
+    /// The y-components of the normal and tangencial steps
     VectorXd sny, sty;
 
-    /// The z-component of the normal and tangencial steps respectively
+    /// The z-components of the normal and tangencial steps
     VectorXd snz, stz;
+
+    /// The x-, y- and z-components of the Newton step vector
+    VectorXd dx, dy, dz;
+
+    /// The perturbation parameter for the Newton iterations
+    double mu;
 
     /// The norms of the normal and tangencial steps respectively
     double norm_sn, norm_st;
 
-    /// The normal and tangencial step-lengths respectively
+    /// The step lengths of the normal and tangencial trust-region step vectors
     double alphan, alphat;
 
-    /// The filter used during the search for a suitable trust-region radius
-    Filter filter;
+    /// The step lengths of the x- and z-components of the Newton step vector
+    double alphax, alphaz;
 
     /// The current radius of the trust-region
     double delta;
@@ -222,9 +234,6 @@ private:
     /// The parameter M used in the neighborhood condition checking
     double M;
 
-    /// The flag that indicates if the algorithm is currently in the restoration mode
-    bool restoration;
-
     /// The LU decomposition of the reduced KKT matrix
     PartialPivLU<MatrixXd> lu;
 
@@ -239,9 +248,6 @@ private:
 
     /// The Hessian of the Lagrange function with respect to x at the current state
     MatrixXd Lxx;
-
-    /// The quality solver used to calculate the sigma parameter based on the quality function approach
-    QualitySolver quality;
 
 private:
     bool AnyFloatingPointException(const IPFilterState& state) const;
@@ -259,12 +265,15 @@ private:
     double CalculateSigmaDefault() const;
     double CalculateSigmaLOQO() const;
     double CalculateSigmaQuality();
+    double CalculateSigmaRestoration() const;
     double CalculateSigmaSafeStep() const;
 
     void AcceptTrialPoint();
     void ExtendFilter();
     void InitialiseAuxiliary(VectorXd& x, VectorXd& y, VectorXd& z);
     void InitialiseOutputter();
+    void IterateNewton(VectorXd& x, VectorXd& y, VectorXd& z);
+    void IterateTrustRegion(VectorXd& x, VectorXd& y, VectorXd& z);
     void OutputHeader();
     void OutputState();
     void Restart();
@@ -272,11 +281,13 @@ private:
     void SearchDeltaTrustRegion();
     void SearchDeltaTrustRegionRestoration();
     void SolveRestoration();
-    void UpdateNextState(double delta);
-    void UpdateNormalTangentialSteps();
-    void UpdateNormalTangentialStepsRestoration();
-    void UpdateSafeTangentialStep();
+    void UpdateNewtonNextState();
+    void UpdateNewtonSteps();
     void UpdateState(const VectorXd& x, const VectorXd& y, const VectorXd& z, IPFilterState& state);
+    void UpdateTrustRegionNextState(double delta);
+    void UpdateTrustRegionSafeTangentialStep();
+    void UpdateTrustRegionSteps();
+    void UpdateTrustRegionStepsRestoration();
 };
 
 } /* namespace Optima */

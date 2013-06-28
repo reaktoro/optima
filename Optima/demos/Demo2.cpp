@@ -209,8 +209,8 @@ ConstraintFunction CreateGibbsConstraintFunction(const VectorXd& b)
 
 int main()
 {
-//    std::vector<double> nCO2vals = {0.1, 0.2, 0.21, 0.22, 0.23, 0.24, 0.3, 0.4, 1.8, 1.84, 1.848, 1.849, 2.0, 3.0, 4.0};
-    std::vector<double> nCO2vals = {1.8, 2.0, 1.8};
+    std::vector<double> nCO2vals = {0.1, 0.2, 0.21, 0.22, 0.23, 0.24, 0.3, 0.4, 1.8, 1.84, 1.848, 1.849, 2.0, 3.0, 4.0};
+//    std::vector<double> nCO2vals = {1.8, 2.0, 1.8};
 
     double nH2O = 55;
 
@@ -224,13 +224,15 @@ int main()
     options.output.y         = false;
     options.output.z         = false;
     options.max_iterations   = 200;
-    options.tolerance1       = 1.0e-6;
+    options.tolerance1       = 1.0e-8;
     options.tolerance2       = 1.0e-12;
     options.output.scaled    = false;
 
     std::vector<IPFilterResult> results;
 
     IPFilterSolver solver;
+    solver.SetParams(params);
+    solver.SetOptions(options);
 
     bool first = true;
 
@@ -266,7 +268,6 @@ int main()
         std::cout << bar << std::endl;
         std::cout << "nCO2 = " << nCO2 << std::endl;
 
-        solver.SetOptions(options);
         solver.Solve(n, y, z);
 
         first = false;

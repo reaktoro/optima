@@ -140,12 +140,12 @@ struct IPFilterOptions
         /**
          * The lower bound on the initial guess of the primal variables @b x
          */
-        double xmin = 1.0e-14;
+        double xmin = 1.0e-16;
 
         /**
          * The lower bound on the initial guess of the dual variables @b z
          */
-        double zmin = 1.0e-10;
+        double zmin = 1.0e-16;
     };
 
     /**
