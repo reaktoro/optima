@@ -215,7 +215,7 @@ struct IPFilterParams
 
         double threshold = 1.0e-6;
 
-        double factor = 1.0e-4;
+        double mu = 1.0e-14;
     };
 
     /**

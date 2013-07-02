@@ -399,6 +399,9 @@ double IPFilterSolver::CalculateSigmaSafeStep() const
 
 void IPFilterSolver::AcceptTrialPoint()
 {
+    // Update the convergence rate
+    rate = std::log(next.residual/curr.residual)/std::log(curr.residual/prev.residual);
+
     // Update the number of iterations
     ++result.num_iterations;
 
@@ -481,6 +484,7 @@ void IPFilterSolver::InitialiseOutputter()
         if(options.output.mu)       outputter.AddEntry("mu(w)");
         if(options.output.error)    outputter.AddEntry("error");
         if(options.output.residual) outputter.AddEntry("residual");
+        if(options.output.rate)     outputter.AddEntry("rate");
         if(options.output.alphan)   outputter.AddEntry("alphan");
         if(options.output.alphat)   outputter.AddEntry("alphat");
         if(options.output.delta)    outputter.AddEntry("delta");
@@ -571,6 +575,7 @@ void IPFilterSolver::OutputState()
         if(options.output.mu)       outputter.AddValue(curr.mu);
         if(options.output.error)    outputter.AddValue(curr.error);
         if(options.output.residual) outputter.AddValue(curr.residual);
+        if(options.output.rate)     outputter.AddValue(rate);
         if(options.output.alphan)   outputter.AddValue(alphan);
         if(options.output.alphat)   outputter.AddValue(alphat);
         if(options.output.delta)    outputter.AddValue(delta);
@@ -827,7 +832,7 @@ void IPFilterSolver::UpdateNewtonSteps()
     lu.compute(lhs);
 
     // Calculate the perturbation parameter
-    mu = std::min(curr.mu, options.tolerance1*params.newton.factor);
+    mu = params.newton.mu;
 
     // Assemble the rhs vector of the linear system
     rhs.segment(0, n).noalias() = - Lx + mu*curr.x.cwiseInverse() - curr.z;
@@ -1015,7 +1020,7 @@ void IPFilterSolver::UpdateTrustRegionStepsRestoration()
     lhs.block(0, 0, n, n) += curr.z.cwiseQuotient(curr.x).asDiagonal();
     lhs.block(0, n, n, m).noalias() = curr.h.grad.transpose();
     lhs.block(n, 0, m, n).noalias() = curr.h.grad;
-    lhs.block(n, n, m, m).noalias() = -curr.mu * MatrixXd::Identity(m, m);
+    lhs.block(n, n, m, m).noalias() = MatrixXd::Zero(m, m);
 
     // Calculate the LU decomposition of the coefficient matrix
     lu.compute(lhs);
@@ -1035,7 +1040,7 @@ void IPFilterSolver::UpdateTrustRegionStepsRestoration()
     const double sigma = CalculateSigmaRestoration();
 
     // Assemble the tangential rhs vector of the linear system
-    rhs.segment(0, n).noalias() = - ((1 - sigma)*curr.mu/curr.x.array()).matrix();
+    rhs.segment(0, n).noalias() = - Lx - ((1 - sigma)*curr.mu/curr.x.array()).matrix();
     rhs.segment(n, m).noalias() = VectorXd::Zero(m);
 
     // Calculate the tangential step

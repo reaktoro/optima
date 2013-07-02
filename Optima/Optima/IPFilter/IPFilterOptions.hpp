@@ -115,6 +115,8 @@ struct IPFilterOptions
          * The boolean flag that indicates if the optimality measure @f$\theta_{l}@f$ should be printed
          */
         bool thl = true;
+
+        bool rate = true;
     };
 
     /**
