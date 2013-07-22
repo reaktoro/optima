@@ -224,8 +224,7 @@ int main()
     options.output.y         = false;
     options.output.z         = false;
     options.max_iterations   = 200;
-    options.tolerance1       = 1.0e-8;
-    options.tolerance2       = 1.0e-12;
+    options.tolerance        = 1.0e-8;
     options.output.scaled    = false;
 
     std::vector<IPFilterResult> results;
