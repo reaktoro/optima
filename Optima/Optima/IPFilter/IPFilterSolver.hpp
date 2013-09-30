@@ -249,8 +249,6 @@ private:
     /// The Hessian of the Lagrange function with respect to x at the current state
     MatrixXd Lxx;
 
-    double rate;
-
 private:
     bool AnyFloatingPointException(const IPFilterState& state) const;
     bool PassFilterCondition() const;

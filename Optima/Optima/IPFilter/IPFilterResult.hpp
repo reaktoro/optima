@@ -42,11 +42,6 @@ struct IPFilterResult
     unsigned num_restorations = 0;
 
     /**
-     * The number of times the calculation entered the restart algorithm
-     */
-    unsigned num_restarts = 0;
-
-    /**
      * The conversion operator that returns true if the calculation converged to a local solution
      */
     operator bool() { return converged; }

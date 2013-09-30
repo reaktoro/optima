@@ -399,9 +399,6 @@ double IPFilterSolver::CalculateSigmaSafeStep() const
 
 void IPFilterSolver::AcceptTrialPoint()
 {
-    // Update the convergence rate
-    rate = std::log(next.residual/curr.residual)/std::log(curr.residual/prev.residual);
-
     // Update the number of iterations
     ++result.num_iterations;
 
@@ -519,35 +516,24 @@ void IPFilterSolver::IterateTrustRegion(VectorXd& x, VectorXd& y, VectorXd& z)
     // Calculate the normal and tangential steps for the trust-region algorithm
     UpdateTrustRegionSteps();
 
-    // Keep track if any trust-region search error happens from now on
-    try
+    // Search for a trust-region radius that satisfies the centrality neighborhood conditions
+    SearchDeltaNeighborhood();
+
+    // Check if the current tangential step needs to be safely recalculated
+    if(PassSafeStepCondition())
     {
-        // Search for a trust-region radius that satisfies the centrality neighborhood conditions
+        // Calculate the safe tangential step
+        UpdateTrustRegionSafeTangentialStep();
+
+        // Repeat the search for a trust-region radius that satisfies the neighborhood conditions
         SearchDeltaNeighborhood();
-
-        // Check if the current tangential step needs to be safely recalculated
-        if(PassSafeStepCondition())
-        {
-            // Calculate the safe tangential step
-            UpdateTrustRegionSafeTangentialStep();
-
-            // Repeat the search for a trust-region radius that satisfies the neighborhood conditions
-            SearchDeltaNeighborhood();
-        }
-
-        // Check if the current state does not require the initiation of the restoration phase algorithm
-        if(PassRestorationCondition(delta)) SearchDeltaTrustRegion();
-
-        // Start the restoration algorithm in order to decrease the primal infeasibility
-        else SolveRestoration();
     }
 
-    // Catch any exception that indicates a trust-region search error
-    catch(const IPFilterErrorSearchDelta& e)
-    {
-        // Perform the restart procedure to continue the calculation with an increased perturbation
-        Restart();
-    }
+    // Check if the current state does not require the initiation of the restoration phase algorithm
+    if(PassRestorationCondition(delta)) SearchDeltaTrustRegion();
+
+    // Start the restoration algorithm in order to decrease the primal infeasibility
+    else SolveRestoration();
 }
 
 void IPFilterSolver::OutputHeader()
@@ -575,7 +561,6 @@ void IPFilterSolver::OutputState()
         if(options.output.mu)       outputter.AddValue(curr.mu);
         if(options.output.error)    outputter.AddValue(curr.error);
         if(options.output.residual) outputter.AddValue(curr.residual);
-        if(options.output.rate)     outputter.AddValue(rate);
         if(options.output.alphan)   outputter.AddValue(alphan);
         if(options.output.alphat)   outputter.AddValue(alphat);
         if(options.output.delta)    outputter.AddValue(delta);
@@ -594,31 +579,6 @@ void IPFilterSolver::OutputState()
             scaling.ScaleZ(curr.z);
         }
     }
-}
-
-void IPFilterSolver::Restart()
-{
-    // Update the number of times the calculation entered the restart algorithm
-    ++result.num_restarts;
-
-    // Output a message indicating the restarting algorithm
-    outputter.OutputMessage("...restarting the algorithm at attempt number: ", result.num_restarts);
-
-    // Check if the number of attempts is greater than the allowed number of restart attemps
-    if(result.num_restarts > params.restart.tentatives)
-        throw IPFilterErrorRestartAttemptLimit();
-
-    // Unscale the iterates (x, y, z)
-    scaling.UnscaleXYZ(curr.x, curr.y, curr.z);
-
-    // Reset the Lagrange multipliers z
-    curr.z.fill(std::min(options.initialguess.z, std::pow(params.restart.factor, result.num_restarts) * curr.mu));
-
-    // Reset the scaling of the primal variables x
-    scaling.SetScalingVariables(curr.x);
-
-    // Initialise the solver with the new iterates x and z
-    InitialiseAuxiliary(curr.x, curr.y, curr.z);
 }
 
 void IPFilterSolver::SearchDeltaNeighborhood()

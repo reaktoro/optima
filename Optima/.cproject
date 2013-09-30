@@ -129,26 +129,6 @@
 		<configuration configurationName="Release"/>
 		<configuration configurationName="Debug"/>
 	</storageModule>
-	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets">
-		<buildTargets>
-			<target name="CMake Debug" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
-				<buildCommand>cmake</buildCommand>
-				<buildArguments>-E chdir ${ProjDirPath}/build/Debug/ cmake ../../ -DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_DEBUG_POSTFIX=-d</buildArguments>
-				<buildTarget/>
-				<stopOnError>true</stopOnError>
-				<useDefaultCommand>false</useDefaultCommand>
-				<runAllBuilders>true</runAllBuilders>
-			</target>
-			<target name="CMake Release" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
-				<buildCommand>cmake</buildCommand>
-				<buildArguments>-E chdir ${ProjDirPath}/build/Release/ cmake ../../ -DCMAKE_BUILD_TYPE:STRING=Release</buildArguments>
-				<buildTarget/>
-				<stopOnError>true</stopOnError>
-				<useDefaultCommand>false</useDefaultCommand>
-				<runAllBuilders>true</runAllBuilders>
-			</target>
-		</buildTargets>
-	</storageModule>
 	<storageModule moduleId="scannerConfiguration">
 		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.cross.exe.debug.1998055209;cdt.managedbuild.config.gnu.cross.exe.debug.1998055209.;cdt.managedbuild.tool.gnu.cross.cpp.compiler.1337916266;cdt.managedbuild.tool.gnu.cpp.compiler.input.1166192818">
@@ -187,5 +167,23 @@
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.toolchain.gnu.cross.base.806375255;cdt.managedbuild.toolchain.gnu.cross.base.806375255.1935439275;cdt.managedbuild.tool.gnu.cross.cpp.compiler.1474055988;cdt.managedbuild.tool.gnu.cpp.compiler.input.1734228510">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileCPP"/>
 		</scannerConfigBuildInfo>
+	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets">
+		<buildTargets>
+			<target name="CMake Debug" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+				<buildCommand>cmake</buildCommand>
+				<buildArguments>-E chdir ${ProjDirPath}/build/Debug/ cmake ../../ -DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_DEBUG_POSTFIX=-d</buildArguments>
+				<stopOnError>true</stopOnError>
+				<useDefaultCommand>false</useDefaultCommand>
+				<runAllBuilders>true</runAllBuilders>
+			</target>
+			<target name="CMake Release" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+				<buildCommand>cmake</buildCommand>
+				<buildArguments>-E chdir ${ProjDirPath}/build/Release/ cmake ../../ -DCMAKE_BUILD_TYPE:STRING=Release</buildArguments>
+				<stopOnError>true</stopOnError>
+				<useDefaultCommand>false</useDefaultCommand>
+				<runAllBuilders>true</runAllBuilders>
+			</target>
+		</buildTargets>
 	</storageModule>
 </cproject>
