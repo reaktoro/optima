@@ -481,7 +481,6 @@ void IPFilterSolver::InitialiseOutputter()
         if(options.output.mu)       outputter.AddEntry("mu(w)");
         if(options.output.error)    outputter.AddEntry("error");
         if(options.output.residual) outputter.AddEntry("residual");
-        if(options.output.rate)     outputter.AddEntry("rate");
         if(options.output.alphan)   outputter.AddEntry("alphan");
         if(options.output.alphat)   outputter.AddEntry("alphat");
         if(options.output.delta)    outputter.AddEntry("delta");
@@ -966,13 +965,21 @@ void IPFilterSolver::UpdateTrustRegionStepsRestoration()
     // Define some auxiliary variables
     const unsigned n = dimx;
     const unsigned m = dimy;
-    const double eps = std::min(curr.mu, 1.0e-8);
+
+    // Calculate the gradient of the Lagrange function with respect to x at the current state
+    Lx.noalias() = curr.f.grad + curr.h.grad.transpose()*curr.y - curr.z;
+
+    // Calculate the Hessian of the Lagrange function with respect to x at the current state
+    Lxx = curr.f.hessian;
+    for(unsigned i = 0; i < curr.h.hessian.size(); ++i)
+        Lxx += curr.y[i] * curr.h.hessian[i];
 
     // Assemble the coefficient matrix of the linear system
-    lhs.block(0, 0, n, n).noalias() = MatrixXd::Identity(n, n);
+    lhs.block(0, 0, n, n).noalias() = Lxx;
+    lhs.block(0, 0, n, n) += curr.z.cwiseQuotient(curr.x).asDiagonal();
     lhs.block(0, n, n, m).noalias() = curr.h.grad.transpose();
     lhs.block(n, 0, m, n).noalias() = curr.h.grad;
-    lhs.block(n, n, m, m).noalias() = -eps * MatrixXd::Identity(m, m);
+    lhs.block(n, n, m, m).noalias() = MatrixXd::Zero(m, m);
 
     // Calculate the LU decomposition of the coefficient matrix
     lu.compute(lhs);
@@ -988,8 +995,12 @@ void IPFilterSolver::UpdateTrustRegionStepsRestoration()
     snx.noalias() = u.segment(0, n);
     sny.noalias() = u.segment(n, m);
 
+    // Calculate the sigma parameter
+    const double sigma = CalculateSigmaRestoration();
+
     // Assemble the tangential rhs vector of the linear system
-    rhs.fill(0.0);
+    rhs.segment(0, n).noalias() = - Lx - ((1 - sigma)*curr.mu/curr.x.array()).matrix();
+    rhs.segment(n, m).noalias() = VectorXd::Zero(m);
 
     // Calculate the tangential step
     u = lu.solve(rhs);
@@ -1000,7 +1011,7 @@ void IPFilterSolver::UpdateTrustRegionStepsRestoration()
 
     // Calculate the z components of the normal and tangential steps
     snz = -(curr.z.array() * snx.array() + curr.x.array() * curr.z.array() - curr.mu)/curr.x.array();
-    stz = -(curr.z.array() * stx.array())/curr.x.array();
+    stz = -(curr.z.array() * stx.array() + curr.mu * (1 - sigma))/curr.x.array();
 
     // Calculate the norms of the normal and tangential steps
     norm_sn = std::sqrt(snx.squaredNorm() + sny.squaredNorm() + snz.squaredNorm());
