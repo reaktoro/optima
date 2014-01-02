@@ -115,8 +115,6 @@ struct IPFilterOptions
          * The boolean flag that indicates if the optimality measure @f$\theta_{l}@f$ should be printed
          */
         bool thl = true;
-
-        bool rate = true;
     };
 
     /**
@@ -147,7 +145,7 @@ struct IPFilterOptions
         /**
          * The lower bound on the initial guess of the dual variables @b z
          */
-        double zmin = 1.0e-16;
+        double zmin = 1.0e-10;
     };
 
     /**
@@ -158,7 +156,7 @@ struct IPFilterOptions
     /**
      * The tolerance parameter used for the stopping criteria of the algorithm
      */
-    double tolerance = 1.0e-06;
+    double tolerance = 1.0e-08;
 
     /**
      * The options for the output of the optimisation calculation
