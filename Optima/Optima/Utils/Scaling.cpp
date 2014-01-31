@@ -125,10 +125,15 @@ void Scaling::UnscaleX(VectorXd& x) const
 
 void Scaling::UnscaleY(VectorXd& y) const
 {
+    if(HasScalingObjective())
+        y *= Df;
 }
 
 void Scaling::UnscaleZ(VectorXd& z) const
 {
+    if(HasScalingObjective())
+        z *= Df;
+
     if(HasScalingVariables())
         z.array() /= Dx.array();
 }
