@@ -66,10 +66,15 @@ void Scaling::ScaleX(VectorXd& x) const
 
 void Scaling::ScaleY(VectorXd& y) const
 {
+    if(HasScalingObjective())
+        y /= Df;
 }
 
 void Scaling::ScaleZ(VectorXd& z) const
 {
+    if(HasScalingObjective())
+        z /= Df;
+
     if(HasScalingVariables())
         z.array() *= Dx.array();
 }

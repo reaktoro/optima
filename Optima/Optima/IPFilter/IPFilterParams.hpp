@@ -230,27 +230,6 @@ struct IPFilterParams
     };
 
     /**
-     * The parameters for the restart scheme
-     */
-    struct Restart
-    {
-        /**
-         * The boolean value that indicates if the restart scheme should be used
-         */
-        bool active = true;
-
-        /**
-         * The maximum number of tentatives in the restart scheme
-         */
-        unsigned tentatives = 4;
-
-        /**
-         * The restart factor used to increase @f$ \mu @f$ at every unsuccessful restart tentative
-     */
-        double factor = 10.0;
-    };
-
-    /**
      * The parameters for the restoration algorithm
      */
     struct Restoration
@@ -474,9 +453,6 @@ struct IPFilterParams
 
     /// The parameters for the calculation of the optimality measure @f$\psi@f$
     Psi psi;
-
-    /// The parameters for the restart scheme
-    Restart restart;
 
     /// The parameters for the restoration algorithm
     Restoration restoration;

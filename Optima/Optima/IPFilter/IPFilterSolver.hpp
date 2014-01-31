@@ -145,19 +145,6 @@ public:
      *  - <tt> x = max(x, xguessmin) </tt> (see @ref IPFilterOptions::InitialGuessOptions::xmin),
      *  - <tt> z = max(z, zguessmin) </tt> (see @ref IPFilterOptions::InitialGuessOptions::zmin).
      *
-     * This method uses a restart scheme in case of failure. If the provided initial guesses @c x, @c y, and @c z
-     * results in any trust-region search error, the restart scheme is activated. It consists of resetting the
-     * Lagrange multipliers @c z as:
-     *
-     *  - <tt> z = min(zguess, pow(factor, attempt)*mu) </tt>,
-     *
-     *  where @c zguess is given in @ref IPFilterOptions::InitialGuessOptions::z, @c factor is set in
-     *  @ref IPFilterParams::Restart::factor, @c attempt is the number of restart attempts so far, and @c mu is
-     *  the @f$\mu@f$ parameter where the calculation stopped.
-     *
-     *  Then, we restart the interior-point calculation using the reset @c z. The values for @c x and @c y
-     *  are those from where the calculation stopped.
-     *
      * @param[in,out] x The initial guess of iterate @b x as input. The optimum solution at the end of the calculation as output.
      * @param[in,out] y The initial guess of iterate @b y as input. The optimum solution at the end of the calculation as output.
      * @param[in,out] z The initial guess of iterate @b z as input. The optimum solution at the end of the calculation as output.
@@ -276,7 +263,6 @@ private:
     void IterateTrustRegion(VectorXd& x, VectorXd& y, VectorXd& z);
     void OutputHeader();
     void OutputState();
-    void Restart();
     void SearchDeltaNeighborhood();
     void SearchDeltaTrustRegion();
     void SearchDeltaTrustRegionRestoration();
