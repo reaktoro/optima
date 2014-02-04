@@ -236,6 +236,9 @@ private:
     /// The Hessian of the Lagrange function with respect to x at the current state
     MatrixXd Lxx;
 
+    /// The boolean flag that indicates if the watchdog strategy is currently in use
+    bool watchdog;
+
 private:
     bool AnyFloatingPointException(const IPFilterState& state) const;
     bool PassFilterCondition() const;

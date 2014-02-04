@@ -91,9 +91,9 @@ bool IPFilterSolver::Converged() const
 void IPFilterSolver::Initialise(VectorXd& x, VectorXd& y, VectorXd& z)
 {
     // Check if the dimensions of the initial guesses x, y, and z are correct
-    if(x.rows() != dimx) x.setConstant(dimx, options.initialguess.x);
-    if(y.rows() != dimy) y.setConstant(dimy, options.initialguess.y);
-    if(z.rows() != dimx) z.setConstant(dimx, options.initialguess.z);
+    if(x.rows() != dimx) x.setConstant(dimx, options.initialguess.x); else scaling.ScaleX(x);
+    if(y.rows() != dimy) y.setConstant(dimy, options.initialguess.y); else scaling.ScaleY(y);
+    if(z.rows() != dimx) z.setConstant(dimx, options.initialguess.z); else scaling.ScaleZ(z);
 
     // Impose the lower bound limits on the initial guesses x and z
     x = x.cwiseMax(options.initialguess.xmin);
@@ -111,9 +111,18 @@ void IPFilterSolver::Initialise(VectorXd& x, VectorXd& y, VectorXd& z)
 
 void IPFilterSolver::Iterate(VectorXd& x, VectorXd& y, VectorXd& z)
 {
+    // The previous state of the watchdog strategy
+    const bool watchdog_prev = watchdog;
+
+    // Determines if the watchdog strategy should be applied
+    watchdog = params.newton.active and curr.mu < params.newton.threshold;
+
+    // Output a message indicating the start of the watchdog strategy
+    if(watchdog == true and watchdog != watchdog_prev)
+        outputter.OutputMessage("...starting the watchdog strategy");
+
     // Check if the Newton algorithm is to be applied
-    if(params.newton.active and curr.mu < params.newton.threshold)
-        IterateNewton(x, y, z);
+    if(watchdog) IterateNewton(x, y, z);
 
     // Apply the trust-region algorithm
     else IterateTrustRegion(x, y, z);
@@ -423,9 +432,6 @@ void IPFilterSolver::ExtendFilter()
 
 void IPFilterSolver::InitialiseAuxiliary(VectorXd& x, VectorXd& y, VectorXd& z)
 {
-    // Scale the iterates (x, y, z)
-    scaling.ScaleXYZ(x, y, z);
-
     // Initialise the current primal variables x, and the Lagrange multipliers y and z
     curr.x.noalias() = x;
     curr.y.noalias() = y;
