@@ -1017,7 +1017,7 @@ void IPFilterSolver::UpdateTrustRegionStepsRestoration()
 
     // Calculate the z components of the normal and tangential steps
     snz = -(curr.z.array() * snx.array() + curr.x.array() * curr.z.array() - curr.mu)/curr.x.array();
-    stz = -(curr.z.array() * stx.array() + curr.mu * (1 - sigma))/curr.x.array();
+    stz = -(curr.z.array() * stx.array())/curr.x.array();
 
     // Calculate the norms of the normal and tangential steps
     norm_sn = std::sqrt(snx.squaredNorm() + sny.squaredNorm() + snz.squaredNorm());
