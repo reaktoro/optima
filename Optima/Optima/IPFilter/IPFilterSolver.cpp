@@ -125,7 +125,17 @@ void IPFilterSolver::Iterate(VectorXd& x, VectorXd& y, VectorXd& z)
     if(watchdog) IterateNewton(x, y, z);
 
     // Apply the trust-region algorithm
-    else IterateTrustRegion(x, y, z);
+    else
+    {
+        // Try a trust-region iteration
+        try{ IterateTrustRegion(x, y, z); }
+        catch(...)
+        {
+            // Perform a watchdog iteration in case of error
+            outputter.OutputMessage("...there has been a trust-region error - performing a watchdog iteration instead");
+            IterateNewton(x, y, z);
+        }
+    }
 
     // Transfer the current iterate state to (x, y, z)
     x.noalias() = curr.x;
