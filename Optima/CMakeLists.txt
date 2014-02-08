@@ -14,10 +14,8 @@ set(OPTIMA_RUNTIME_DIR   ${CMAKE_BINARY_DIR}/bin)
 set(OPTIMA_LIBRARY_DIR   ${CMAKE_BINARY_DIR}/lib)
 set(OPTIMA_ARQUIVE_DIR   ${CMAKE_BINARY_DIR}/lib)
 
-# Make sure g++ supports c++11 features
-if(CMAKE_COMPILER_IS_GNUCXX)
-    add_definitions(-std=c++11 -fmessage-length=0 -fPIC)
-endif()
+# Make sure the compilation supports c++11 features
+add_definitions(-std=c++11 -fmessage-length=0 -fPIC)
 
 # Set the default build type to RelWithDebInfo
 if(NOT CMAKE_BUILD_TYPE)
