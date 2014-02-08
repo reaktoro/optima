@@ -9,6 +9,7 @@
 
 // C++ includes
 #include <functional>
+#include <vector>
 
 // Eigen includes
 #include <Eigen/Core>
