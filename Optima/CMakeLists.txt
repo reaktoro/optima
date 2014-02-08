@@ -34,8 +34,8 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${OPTIMA_LIBRARY_DIR}"
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${OPTIMA_ARQUIVE_DIR}"
     CACHE STRING "Static library build output directory")
 
-# Set the postfix for the debug libraries
-set(CMAKE_DEBUG_POSTFIX -d)
+# Set the suffix of the debug libraries
+set(CMAKE_DEBUG_POSTFIX "-d")
 
 # Specify the include directories for the project
 include_directories(${CMAKE_SOURCE_DIR})
