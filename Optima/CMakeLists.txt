@@ -1,60 +1,39 @@
-# Specify the name of the project
-project(Optima)
+# Require a certain version of cmake
+cmake_minimum_required(VERSION 3.0)
 
-# Specify the minimum required version of cmake for the project
-cmake_minimum_required(VERSION 2.8)
+# Recursively collect all header files from the current directory
+file(GLOB_RECURSE HEADER_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.hpp *.hxx)
 
-# Set some auxiliary variables
-set(OPTIMA_DEMOS_DIR     ${CMAKE_SOURCE_DIR}/demos)
-set(OPTIMA_RESOURCES_DIR ${CMAKE_SOURCE_DIR}/resources)
-set(OPTIMA_SOURCE_DIR    ${CMAKE_SOURCE_DIR}/Optima)
-set(OPTIMA_TESTS_DIR     ${CMAKE_SOURCE_DIR}/tests)
-set(OPTIMA_UTILITIES_DIR ${CMAKE_SOURCE_DIR}/utilities)
-set(OPTIMA_RUNTIME_DIR   ${CMAKE_BINARY_DIR}/bin)
-set(OPTIMA_LIBRARY_DIR   ${CMAKE_BINARY_DIR}/lib)
-set(OPTIMA_ARQUIVE_DIR   ${CMAKE_BINARY_DIR}/lib)
+# Recursively collect all source files from the current directory
+file(GLOB_RECURSE SOURCE_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cpp)
 
-# Make sure the compilation supports c++11 features
-add_definitions(-std=c++11 -fmessage-length=0 -fPIC)
+# The name of the shared and static libraries
+set(OPTIMA_SHARED_LIB ${PROJECT_NAME}${SUFFIX_SHARED_LIBS})
+set(OPTIMA_STATIC_LIB ${PROJECT_NAME}${SUFFIX_STATIC_LIBS})
 
-# Set the default build type to RelWithDebInfo
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." FORCE)
+# Set the list of names of the third-party targets and libraries
+# Compile Optima into object files
+add_library(OptimaObject OBJECT ${HEADER_FILES} ${SOURCE_FILES})
+
+# Check if a shared library for Optima must be built
+if(BUILD_SHARED_LIBS)
+    add_library(OptimaShared SHARED $<TARGET_OBJECTS:OptimaObject>)
+    set_target_properties(OptimaShared PROPERTIES OUTPUT_NAME Optima)
+    install(TARGETS OptimaShared DESTINATION "lib" COMPONENT libraries)
 endif()
 
-# Set the output path of the executable binaries produced by the project
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${OPTIMA_RUNTIME_DIR}"
-    CACHE STRING "Binary build output directory")
+# Check if a static library for Optima must be built
+if(BUILD_STATIC_LIBS)
+    add_library(OptimaStatic STATIC $<TARGET_OBJECTS:OptimaObject>)
+    set_target_properties(OptimaStatic PROPERTIES OUTPUT_NAME Optima)
+    install(TARGETS OptimaStatic DESTINATION "lib" COMPONENT libraries)
+endif()
 
-# Set the output path of the shared library binaries produced by the project
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${OPTIMA_LIBRARY_DIR}"
-    CACHE STRING "Shared library build output directory")
+# Create an install target for Optima header files
+install(DIRECTORY ${OPTIMA_SOURCE_DIR}
+    DESTINATION "include" COMPONENT headers
+    FILES_MATCHING PATTERN "*.hpp" PATTERN "*.hxx")
 
-# Set the output path of the static library binaries produced by the project
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${OPTIMA_ARQUIVE_DIR}"
-    CACHE STRING "Static library build output directory")
-
-# Set the suffix of the debug libraries
-set(CMAKE_DEBUG_POSTFIX "-d")
-
-# Specify the include directories for the project
-include_directories(${CMAKE_SOURCE_DIR})
-
-# Find the required libraries
-find_library(OPTIMA_LIB Optima)
-
-# Add the following directories to be built
-add_subdirectory(Optima)
-add_subdirectory(demos)
-add_subdirectory(tests)
-
-enable_testing()
-
-file(GLOB_RECURSE TEST_FILES ${CMAKE_BINARY_DIR}/bin/tests/*)
-list(REVERSE TEST_FILES)
-
-foreach(testfile ${TEST_FILES})
-    get_filename_component(testpath ${testfile} PATH)
-    get_filename_component(testname ${testfile} NAME_WE)
-    add_test(${testname} ${testpath}/${testname})
-endforeach()
+# Create an install target for Eigen header files
+install(DIRECTORY ${OPTIMA_SOURCE_DIR}/Eigen
+    DESTINATION "include/Optima" COMPONENT headers)
