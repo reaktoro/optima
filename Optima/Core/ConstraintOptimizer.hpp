@@ -38,9 +38,6 @@ struct RegularizerOptions
     /// accuracy by minimizing round-off errors.
     bool echelonize = true;
 
-
-    bool correctfeasibility = true;
-
     /// The maximum denominator that can exist in the coefficient matrix `A`.
     /// Set this option to zero if the coefficients in `A` are not represented
     /// by rational numbers. Otherwise, set it to the maximum denominator that can
@@ -49,7 +46,7 @@ struct RegularizerOptions
     unsigned maxdenominator = 0;
 };
 
-/// A type that used for regularization of the linear equality constraints.
+/// A type that represents a regularized optimization problem.
 class Regularizer
 {
 public:
@@ -68,14 +65,21 @@ public:
     /// Set the options for regularizing linear constraints.
     auto setOptions(const RegularizerOptions& options) -> void;
 
-    /// Regularize the linear equality constraints of the optimum problem.
-    auto regularize(const OptimumState& state, const OptimumProblem& problem) -> void;
+    /// Regularize the optimum problem, state, and options before they are used in an optimization calculation.
+    /// @param problem The optimum problem to be regularized.
+    /// @param state The optimum state to be regularized.
+    /// @param options The optimum options to be regularized.
+    auto regularize(OptimumProblem& problem, OptimumState& state, OptimumOptions& options) -> void;
 
-    /// Regularize the linear equality constraints with updated equality parameters `a`.
-    auto regularize(const OptimumState& state, const Vector& a) -> void;
+    /// Regularize the vectors `dg/dp` and `db/dp`, where `g = grad(f)`.
+    auto regularize(Vector& dgdp, Vector& dbdp) -> void;
 
-    /// Regularize the linear equality constraints with updated optimum state only.
-    auto regularize(const OptimumState& state) -> void;
+    /// Recover an optimum state to an state that corresponds to the original optimum problem.
+    /// @param state[in,out] The optimum state regularized in method `regularize`.
+    auto recover(OptimumState& state) -> void;
+
+    /// Recover the sensitivity derivative `dxdp`.
+    auto recover(Vector& dxdp) -> void;
 
 private:
     struct Impl;

@@ -18,7 +18,7 @@
 #pragma once
 
 // C++ includes
-#include <memory>
+#include <map>
 
 // Optima includes
 #include <Optima/Common/Index.hpp>
@@ -26,118 +26,72 @@
 
 namespace Optima {
 
-// Forward declarations
-struct RegularizedConstraint;
-
 /// A type used to describe a system of linear constraints.
-class Constraint
+struct Constraint
 {
-public:
-    /// Construct a default Constraint instance.
-    Constraint();
+    /// The coefficient matrix of the linear equality constraint `A*x = a`.
+    Matrix A;
 
-    /// Construct a Constraint instance.
-    /// @param n The number of variables.
-    Constraint(Index n);
+    /// The right-hand side vector of the linear equality constraint `A*x = a`.
+    Vector a;
 
-    /// Destroy this Constraint instance.
-    virtual ~Constraint();
+    /// The coefficient matrix of the linear inequality constraint `B*x >= b`.
+    Matrix B;
 
-    /// Set the lower bound of a variable.
-    /// @param index The index of the variable.
-    /// @param value The value of the lower bound.
-    auto xlower(Index index, double value) -> void;
+    /// The right-hand side vector of the linear equality constraint `B*x >= b`.
+    Vector b;
 
-    /// Set the lower bound of all variables to the same value.
-    /// @param value The value of the lower bound.
-    auto xlower(double value) -> void;
+    /// The lower bound of the primal variables `x`.
+    Vector xlower;
 
-    /// Set the upper bound of a variable.
-    /// @param index The index of the variable.
-    /// @param value The value of the upper bound.
-    auto xupper(Index index, double value) -> void;
+    /// The upper bound of the primal variables `x`.
+    Vector xupper;
 
-    /// Set the upper bound of all variables to the same value.
-    /// @param value The value of the upper bound.
-    auto xupper(double value) -> void;
+    /// The values of the fixed variables.
+    std::map<Index, double> xfixed;
+};
 
-    /// Set the value of a fixed variable.
-    /// @param index The index of the fixed variable.
-    /// @param value The value of the fixed variable.
-    auto xfixed(Index index, double value) -> void;
+/// A type used to describe an optimized constraint.
+/// This constraint type represents a constraint
+/// with no fixed variables and no linearly dependent
+/// constraint equations.
+struct ConstraintOptimized
+{
+    /// The coefficient matrix `A(opt)` of the optimized linear equality constraints `A*x = a`.
+    Matrix A;
 
-    /// Set the linear equality constraint equations.
-    /// @param A The coefficient matrix of the equality equations.
-    /// @param a The right-hand side vector of the equality equations.
-    auto equality(const Matrix& A, const Vector& a) -> void;
+    /// The right-hand side vector `a(opt)` of the optimized linear equality constraints `A*x = a`.
+    Vector a;
 
-    /// Set the coefficient matrix of the linear equality constraint equations.
-    /// @param A The coefficient matrix of the equality equations.
-    auto equality(const Matrix& A) -> void;
+    /// The coefficient matrix `B(opt)` of the optimized linear inequality constraints `B*x >= b`.
+    Matrix B;
 
-    /// Set the right-hand side of the linear equality constraint equations.
-    /// @param a The right-hand side vector of the equality equations.
-    auto equality(const Vector& a) -> void;
+    /// The right-hand side vector `b(opt)` of the optimized linear inequality constraints `B*x >= b`.
+    Vector b;
 
-    /// Set the linear inequality constraint equations.
-    /// @param B The coefficient matrix of the inequality equations.
-    /// @param b The right-hand side vector of the inequality equations.
-    auto inequality(const Matrix& B, const Vector& b) -> void;
+    /// The lower bounds of the optimized variables `x(opt)`.
+    Vector xlower;
 
-    /// Set the coefficient matrix of the linear inequality constraint equations.
-    /// @param B The coefficient matrix of the inequality equations.
-    auto inequality(const Matrix& B) -> void;
+    /// The upper bounds of the optimized variables `x(opt)`.
+    Vector xupper;
 
-    /// Set the right-hand side of the linear inequality constraint equations.
-    /// @param b The right-hand side vector of the inequality equations.
-    auto inequality(const Vector& b) -> void;
+    /// The indices of the linearly independent rows of original matrix `A(orig)`.
+    Indices iliA;
 
-    /// Set `true` if the entries in `A` are rational numbers.
-    auto rationalA(bool value) -> void;
+    /// The indices of the linearly independent rows of original matrix `B(orig)`.
+    Indices iliB;
 
-    /// Set `true` if the entries in `B` are rational numbers.
-    auto rationalB(bool value) -> void;
+    /// The indices of the original variables `x(orig)` fixed at their lower bounds.
+    Indices ifixed_lower_bounds;
 
-    /// Return the lower bounds of the variables.
-    auto xlower() const -> const Vector&;
+    /// The indices of the original variables `x(orig)` fixed at their upper bounds.
+    Indices ifixed_upper_bounds;
 
-    /// Return the upper bounds of the variables.
-    auto xupper() const -> const Vector&;
+    /// The indices of the original linear equality constraints only feasible at the lower bounds.
+    Indices iconstraints_lower_bounds;
 
-    /// Return the values of the fixed variables.
-    /// Use method ifixed to access the corresponding indices of the fixed variables.
-    auto xfixed() const -> const Vector&;
-
-    /// Return the indices of the fixed variables.
-    /// Use method xfixed to access the corresponding values of the fixed variables.
-    auto ifixed() const -> const Indices&;
-
-    /// Return the coefficient matrix of the linear equality constraints.
-    auto A() const -> const Matrix&;
-
-    /// Return the coefficient matrix of the linear inequality constraints.
-    auto B() const -> const Matrix&;
-
-    /// Return the right-hand side vector of the linear equality constraints.
-    auto a() const -> const Vector&;
-
-    /// Return the right-hand side vector of the linear inequality constraints.
-    auto b() const -> const Vector&;
-
-    /// Return `true` if the entries in `A` are rational numbers.
-    auto rationalA() const -> bool;
-
-    /// Return `true` if the entries in `A` are rational numbers.
-    auto rationalB() const -> bool;
-
-    /// Regularize the equality and inequality constraints.
-    /// @param x The values of the variables.
-    auto regularize(const Vector& x) -> RegularizedConstraint;
-
-private:
-    struct Impl;
-
-    std::shared_ptr<Impl> pimpl;
+    /// The indices of the original linear equality constraints only feasible at the upper bounds.
+    Indices iconstraints_upper_bounds;
 };
 
 /// A type used to describe a regularized constraint.
@@ -162,12 +116,36 @@ private:
 /// Matrix `R` is such that `R*A' = [Ib An]`, where `Ib` is the identity matrix of
 /// dimension `nb`, and `An` is a rectangular matrix of dimension
 /// `nb`-by-`nn`, with `nb = rank(A)` and `nn = ncols(A) -
-struct RegularizedConstraint
+struct ConstraintRegularized
 {
-    /// The regularizer matrix of `A` so that `R*A(orig) = [Ib An]`.
+    /// The coefficient matrix in the regularized linear equality constraints `xp + An*xn = a`.
+    Matrix An;
+
+    /// The right-hand side vector in the regularized linear equality constraints `xp + An*xn = a`.
+    Vector a;
+
+    /// The coefficient matrix in the regularized linear inequality constraints `xp + Bn*xn >= b`.
+    Matrix Bn;
+
+    /// The right-hand side vector in the regularized linear inequality constraints `xp + Bn*xn >= b`.
+    Vector b;
+
+    /// The lower bounds of the regularized variables.
+    Vector xlower;
+
+    /// The upper bounds of the regularized variables.
+    Vector xupper;
+
+    /// The indices of the basic regularized variables.
+    Indices ibasic;
+
+    /// The indices of the non-basic regularized variables.
+    Indices inonbasic;
+
+    /// The regularizer matrix of `A(opt)` so that `R*A(opt) = [Ib An]`.
     Matrix R;
 
-    /// The regularizer matrix of `B` so that `S*B(orig) = [Ib Bn]`.
+    /// The regularizer matrix of `B(opt)` so that `S*B(opt) = [Ib Bn]`.
     Matrix S;
 
     /// The inverse of the regularizer matrix `R`.
@@ -175,57 +153,9 @@ struct RegularizedConstraint
 
     /// The inverse of the regularizer matrix `S`.
     Matrix invS;
-
-    /// The regularized matrix `A` of the linear equality constraints corresponding to non-basic variables.
-    /// The matrix `An` is defined as `R*A(orig) = [Ib An]`, where `Ib` is the
-    /// identity matrix of dimension `nb`, the number of basic variables.
-    Matrix An;
-
-    /// The regularized matrix `B` of the linear inequality constraints corresponding to non-basic variables.
-    /// The matrix `Bn` is defined as `R*B(orig) = [Ib Bn]`, where `Ib` is the
-    /// identity matrix of dimension `nb`, the number of basic variables.
-    Matrix Bn;
-
-    /// The regularized vector `a` of the linear equality constraints.
-    /// The vector `a` is defined as `a = R*a(orig)`.
-    Vector a;
-
-    /// The regularized vector `b` of the linear inequality constraints.
-    /// The vector `b` is defined as `b = S*b(orig)`.
-    Vector b;
-
-    /// The lower bounds of the non-fixed variables.
-    Vector xlower;
-
-    /// The upper bounds of the non-fixed variables.
-    Vector xupper;
-
-    /// The values of the fixed variables.
-    Vector xfixed;
-
-    /// The indices of the fixed variables.
-    Indices ifixed;
-
-    /// The indices of the non-fixed variables.
-    Indices inonfixed;
-
-    /// The indices of the basic non-fixed variables.
-    Indices ibasic;
-
-    /// The indices of the non-basic non-fixed variables.
-    Indices inonbasic;
-
-    /// The indices of the zero variables.
-    Indices izerovariables;
-
-    /// The indices of the singular equality constraints.
-    Indices izeroconstraints;
-
-    /// The indices of the linearly independent rows of `A(orig)`.
-    Indices iliA;
-
-    /// The indices of the linearly independent rows of `B(orig)`.
-    Indices iliB;
 };
+
+struct ConstraintOptimizer;
+struct ConstraintRegularizer;
 
 } // namespace Optima

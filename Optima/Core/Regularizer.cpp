@@ -29,33 +29,86 @@
 #include <Optima/Math/Utils.hpp>
 
 namespace Optima {
+namespace {
 
+template<typename Matrix, typename Vector>
+auto determineQuasiFeasibleConstraints(
+	const Matrix& A,
+	const Vector& a,
+	const Vector& l,
+	const Vector& u,
+	Indices& iquasifeasible_lower,
+	Indices& iquasifeasible_upper) -> void
+{
+    // Clear the output vectors
+	iquasifeasible_lower.clear();
+	iquasifeasible_upper.clear();
+
+	for(Index i = 0; i < A.rows(); ++i)
+	{
+		if(min(A.row(i)) >= 0.0) // if all entries in A.row(i) are non-negative
+		{
+			if(l.rows() && A.row(i)*l >= a[i])
+				iquasifeasible_lower.push_back(i);
+			if(u.rows() && A.row(i)*u <= a[i])
+				iquasifeasible_upper.push_back(i);
+		}
+		else if(max(A.row(i)) < 0.0) // if all entries in A.row(i) are negative
+		{
+			if(l.rows() && A.row(i)*l <= a[i])
+				iquasifeasible_lower.push_back(i);
+			if(u.rows() && A.row(i)*u >= a[i])
+				iquasifeasible_upper.push_back(i);
+		}
+	}
+}
+
+template<typename Matrix>
+auto determineLowerUpperFixedVariables(
+	const Matrix& A,
+	const Indices& iquasifeasible_lower,
+	const Indices& iquasifeasible_upper,
+	Indices& ifixed_lower,
+	Indices& ifixed_upper) -> void
+{
+    ifixed_lower.clear;
+    ifixed_upper.clear;
+    for(auto i : iquasifeasible_lower)
+        for(Index = j = 0; j < A.cols(); ++j)
+            if(A(i, j) != 0.0)
+                ifixed_lower.push_back(j);
+}
+
+} // namespace
 struct Regularizer::Impl
 {
     /// The parameters for the regularization
-    RegularizerOptions params;
+    RegularizerOptions options;
 
-    /// The evaluation of the original objective function.
-    ObjectiveState f;
+    OptimumProblem problem;
+
+    /// The columns of A corresponding to free variables
+    Matrix Afree;
+
+    /// The columns of A corresponding to fixed variables
+    Matrix Afixed;
 
     //=============================================================================================
     // Data related to trivial and linearly dependent constraints.
     // Note that these members do not need to be recomputed if matrix A does not change.
     //=============================================================================================
-    /// The indices of the variables fixed at the lower bound
-    Indices itrivial_variables;
+    /// The indices of the variables fixed at their lower bounds because of linear equality equations quasi-feasible from below.
+    Indices ifixed_lower_bounds;
 
-    /// The indices of the equality constraints whose participating variables are fixed at the lower bound
-    Indices itrivial_constraints;
+    /// The indices of the variables fixed at their upper bounds because of linear equality equations quasi-feasible from above.
+    Indices ifixed_upper_bounds;
 
-    /// The indices of the non-trivial variables
-    Indices inontrivial_variables;
+    /// The indices of the linear equality constraints quasi-feasible from below.
+    Indices iconstraints_quasifeasible_lower;
 
-    /// The indices of the non-trivial constraints
-    Indices inontrivial_constraints;
+    /// The indices of the linear equality constraints quasi-feasible from above.
+    Indices iconstraints_quasifeasible_above;
 
-    /// The values of the trivial variables
-    Vector xtrivial;
 
     /// The indices of the linearly independent constraints
     Indices ili_constraints;
@@ -180,8 +233,8 @@ auto Regularizer::Impl::determineTrivialConstraints(const OptimumProblem& proble
     const Index n = A.cols();
 
     // Clear previous states of trivial and non-trivial constraints and variables
-    itrivial_constraints.clear();
-    itrivial_variables.clear();
+    izeroconstraints.clear();
+    ifixedlowerbounds.clear();
     inontrivial_constraints.clear();
     inontrivial_variables.clear();
 
@@ -195,22 +248,22 @@ auto Regularizer::Impl::determineTrivialConstraints(const OptimumProblem& proble
     // Determine the original equality constraints that fix variables on the lower bound
     for(Index i = 0; i < m; ++i)
         if(istrivial(i))
-            itrivial_constraints.push_back(i);
+            izeroconstraints.push_back(i);
 
     // Skip the rest if there are no trivial constraints
-    if(itrivial_constraints.size())
+    if(izeroconstraints.size())
     {
         // Determine the original trivial variables that are fixed at their lower bounds
         for(Index i = 0; i < n; ++i)
             for(Index j = 0; j < m; ++j)
-                if(A(j, i) != 0.0 && contained(j, itrivial_constraints))
-                    { itrivial_variables.push_back(i); break; }
+                if(A(j, i) != 0.0 && contained(j, izeroconstraints))
+                    { ifixedlowerbounds.push_back(i); break; }
 
         // Update  the indices of the non-trivial original constraints
-        inontrivial_constraints = difference(range(m), itrivial_constraints);
+        inontrivial_constraints = difference(range(m), izeroconstraints);
 
         // Update the indices of the non-trivial original variables
-        inontrivial_variables = difference(range(n), itrivial_variables);
+        inontrivial_variables = difference(range(n), ifixedlowerbounds);
 
         // Initialize the matrix `A_star` by removing trivial constraints and variables
         A_star = submatrix(A, inontrivial_constraints, inontrivial_variables);
@@ -224,7 +277,7 @@ auto Regularizer::Impl::determineTrivialConstraints(const OptimumProblem& proble
 
 auto Regularizer::Impl::determineTrivialVariables(const OptimumProblem& problem) -> void
 {
-    xtrivial = rows(problem.xlower, itrivial_variables);
+    xtrivial = rows(problem.xlower, ifixedlowerbounds);
 }
 
 auto Regularizer::Impl::determineLinearlyDependentConstraints(const OptimumProblem& problem) -> void
@@ -263,7 +316,7 @@ auto Regularizer::Impl::determineLinearlyDependentConstraints(const OptimumProbl
 auto Regularizer::Impl::assembleEchelonConstraints(const OptimumState& state) -> void
 {
     // Skip if echelonization should not be performed
-    if(!params.echelonize)
+    if(!options.echelonize)
         return;
 
     // Initialize the weight vector `W`
@@ -271,7 +324,7 @@ auto Regularizer::Impl::assembleEchelonConstraints(const OptimumState& state) ->
     W = W - min(W) + 1;
 
     // Remove all components in W corresponding to trivial variables
-    if(itrivial_constraints.size())
+    if(izeroconstraints.size())
         W = rows(W, inontrivial_variables);
 
     // Compute the LU decomposition of matrix A_star with column-sorting weights.
@@ -320,11 +373,11 @@ auto Regularizer::Impl::assembleEchelonConstraints(const OptimumState& state) ->
 
         // Check if the regularizer matrix is composed of rationals.
         // If so, round-off errors can be eliminated
-        if(params.maxdenominator)
+        if(options.maxdenominator)
         {
-            cleanRationalNumbers(A_echelon, params.maxdenominator);
-            cleanRationalNumbers(R, params.maxdenominator);
-            cleanRationalNumbers(invR, params.maxdenominator);
+            cleanRationalNumbers(A_echelon, options.maxdenominator);
+            cleanRationalNumbers(R, options.maxdenominator);
+            cleanRationalNumbers(invR, options.maxdenominator);
         }
     }
 }
@@ -333,7 +386,7 @@ auto Regularizer::Impl::removeTrivialConstraints(
     OptimumProblem& problem, OptimumState& state, OptimumOptions& options) -> void
 {
     // Skip the rest if there is no trivial constraint
-    if(itrivial_constraints.empty())
+    if(izeroconstraints.empty())
         return;
 
     // The auxiliary vector used in the lambda functions below.
@@ -431,7 +484,7 @@ auto Regularizer::Impl::echelonizeConstraints(
     OptimumProblem& problem, OptimumState& state, OptimumOptions& options) -> void
 {
     // Skip if echelonization should not be performed or A(echelon) was not computed
-    if(!params.echelonize || !A_echelon.size())
+    if(!options.echelonize || !A_echelon.size())
         return;
 
     // Compute the corresponding echelonized right-hand side vector b
@@ -450,7 +503,7 @@ auto Regularizer::Impl::echelonizeConstraints(
 
 auto Regularizer::Impl::updateConstraints(OptimumProblem& problem) -> void
 {
-    problem.A = params.echelonize && A_echelon.size() ? A_echelon : A_star;
+    problem.A = options.echelonize && A_echelon.size() ? A_echelon : A_star;
 }
 
 auto Regularizer::Impl::fixInfeasibleConstraints(OptimumProblem& problem) -> void
@@ -488,7 +541,7 @@ auto Regularizer::Impl::regularize(OptimumProblem& problem, OptimumState& state,
 auto Regularizer::Impl::regularize(Vector& dgdp, Vector& dbdp) -> void
 {
     // Remove derivative components corresponding to trivial constraints
-    if(itrivial_constraints.size())
+    if(izeroconstraints.size())
     {
         dbdp = rows(dbdp, inontrivial_constraints);
         dgdp = rows(dgdp, inontrivial_variables);
@@ -502,7 +555,7 @@ auto Regularizer::Impl::regularize(Vector& dgdp, Vector& dbdp) -> void
     }
 
     // Perform echelonization of the right-hand side vector if needed
-    if(params.echelonize && A_echelon.size())
+    if(options.echelonize && A_echelon.size())
     {
         dbdp = P_echelon * dbdp;
         dbdp = R * dbdp;
@@ -515,13 +568,13 @@ auto Regularizer::Impl::recover(OptimumState& state) -> void
     state.y = lu_star.trsolve(state.f.grad - state.z);
 
     // Check if there was any trivial variables and update state accordingly
-    if(itrivial_variables.size())
+    if(ifixedlowerbounds.size())
     {
         // Define some auxiliary size variables
         const Index nn = inontrivial_variables.size();
-        const Index nt = itrivial_variables.size();
+        const Index nt = ifixedlowerbounds.size();
         const Index mn = inontrivial_constraints.size();
-        const Index mt = itrivial_constraints.size();
+        const Index mt = izeroconstraints.size();
         const Index n = nn + nt;
         const Index m = mn + mt;
 
@@ -539,23 +592,23 @@ auto Regularizer::Impl::recover(OptimumState& state) -> void
         rows(state.z, inontrivial_variables)   = state.z.segment(0, nn).eval();
 
         // Set the components corresponding to trivial variables and constraints
-        rows(state.x, itrivial_variables)   = xtrivial;
-        rows(state.y, itrivial_constraints).fill(0.0);
-        rows(state.z, itrivial_variables).fill(0.0);
+        rows(state.x, ifixedlowerbounds)   = xtrivial;
+        rows(state.y, izeroconstraints).fill(0.0);
+        rows(state.z, ifixedlowerbounds).fill(0.0);
     }
 }
 
 auto Regularizer::Impl::recover(Vector& dxdp) -> void
 {
     // Set the components corresponding to trivial and non-trivial variables
-    if(itrivial_constraints.size())
+    if(izeroconstraints.size())
     {
         const Index nn = inontrivial_variables.size();
-        const Index nt = itrivial_variables.size();
+        const Index nt = ifixedlowerbounds.size();
         const Index n = nn + nt;
         dxdp.conservativeResize(n);
         rows(dxdp, inontrivial_variables) = dxdp.segment(0, nn).eval();
-        rows(dxdp, itrivial_variables).fill(0.0);
+        rows(dxdp, ifixedlowerbounds).fill(0.0);
     }
 }
 
@@ -578,7 +631,7 @@ auto Regularizer::operator=(Regularizer other) -> Regularizer&
 
 auto Regularizer::setOptions(const RegularizerOptions& options) -> void
 {
-    pimpl->params = options;
+    pimpl->options = options;
 }
 
 auto Regularizer::regularize(const OptimumState& state, const OptimumProblem& problem) -> void
