@@ -29,6 +29,11 @@ inline auto ones(Index rows) -> decltype(Vector::Ones(rows))
     return Vector::Ones(rows);
 }
 
+inline auto random(Index rows) -> decltype(Vector::Random(rows))
+{
+    return Vector::Random(rows);
+}
+
 inline auto constants(Index rows, double val) -> decltype(Vector::Constant(rows, val))
 {
     return Vector::Constant(rows, val);
@@ -47,6 +52,11 @@ inline auto zeros(Index rows, Index cols) -> decltype(Matrix::Zero(rows, cols))
 inline auto ones(Index rows, Index cols) -> decltype(Matrix::Ones(rows, cols))
 {
     return Matrix::Ones(rows, cols);
+}
+
+inline auto random(Index rows, Index cols) -> decltype(Matrix::Random(rows, cols))
+{
+    return Matrix::Random(rows, cols);
 }
 
 inline auto identity(Index rows, Index cols) -> decltype(Matrix::Identity(rows, cols))

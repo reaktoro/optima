@@ -17,6 +17,8 @@
 
 #pragma once
 
+#define EIGEN_MATRIX_PLUGIN "Optima/Math/EigenMatrixPlugin.hpp"
+
 // Eigen includes
 #include <Optima/Math/Eigen/Core>
 
@@ -397,6 +399,11 @@ auto zeros(Index rows) -> decltype(Vector::Zero(rows));
 /// @return The expression of a vector with entries equal to one
 auto ones(Index rows) -> decltype(Vector::Ones(rows));
 
+/// Return an expression of a vector with random entries
+/// @param rows The number of rows
+/// @return The expression of a vector with random entries equal to one
+auto random(Index rows) -> decltype(Vector::Random(rows));
+
 /// Return an expression of a unit vector
 /// @param rows The number of rows
 /// @param i The index at which the component is one
@@ -414,6 +421,12 @@ auto zeros(Index rows, Index cols) -> decltype(Matrix::Zero(rows, cols));
 /// @param cols The number of columns
 /// @return The expression of a matrix with entries equal to one
 auto ones(Index rows, Index cols) -> decltype(Matrix::Ones(rows, cols));
+
+/// Return an expression of a matrix with random entries
+/// @param rows The number of rows
+/// @param cols The number of columns
+/// @return The expression of a matrix with random entries
+auto random(Index rows, Index cols) -> decltype(Matrix::Random(rows, cols));
 
 /// Return an expression of an identity matrix
 /// @param rows The number of rows
