@@ -17,13 +17,16 @@
 
 #pragma once
 
+// C++ includes
+#include <iostream>
+
 // Optima includes
 #include <Optima/Math/Matrix.hpp>
 
 namespace Optima {
 
 /// A type used to describe a saddle point coefficient matrix.
-struct SaddlePointMatrix
+struct SaddlePointMatrix : MatrixBase // inherit from Eigen::MatrixBase
 {
 	/// The diagonal matrix `H` in the coefficient matrix.
     Vector H;
@@ -79,5 +82,17 @@ struct SaddlePointVectorCanonical
     /// The right-hand side vector `c = [cb, cs, cu]` of the canonical problem.
     Vector cb, cs, cu;
 };
+
+/// Output a SaddlePointMatrix instance.
+auto operator<<(std::ostream& out, const SaddlePointMatrix& mat) -> void;
+
+/// Output a SaddlePointVector instance.
+auto operator<<(std::ostream& out, const SaddlePointVector& vec) -> void;
+
+/// Output a SaddlePointMatrixCanonical instance.
+auto operator<<(std::ostream& out, const SaddlePointMatrixCanonical& mat) -> void;
+
+/// Output a SaddlePointVectorCanonical instance.
+auto operator<<(std::ostream& out, const SaddlePointVectorCanonical& vec) -> void;
 
 } // namespace Optima

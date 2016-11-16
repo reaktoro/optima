@@ -15,8 +15,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include "SaddlePointProblem.hpp"
+#include "SaddlePointMatrix.hpp"
 
 namespace Optima {
+
+auto operator<<(std::ostream& out, const SaddlePointMatrix& mat) -> void
+{
+
+}
+
+auto operator<<(std::ostream& out, const SaddlePointVector& vec) -> void
+{
+
+}
+
+auto operator<<(std::ostream& out, const SaddlePointMatrixCanonical& mat) -> void
+{
+
+}
+
+auto operator<<(std::ostream& out, const SaddlePointVectorCanonical& vec) -> void
+{
+
+}
 
 } // namespace Optima
