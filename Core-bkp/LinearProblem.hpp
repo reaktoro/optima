@@ -1,6 +1,6 @@
-// Reaktoro is a unified framework for modeling chemically reactive systems.
+// Optima is a C++ library for numerical solution of linear and nonlinear programing problems.
 //
-// Copyright (C) 2014-2015 Allan Leal
+// Copyright (C) 2014-2016 Allan Leal
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,29 +26,51 @@
 
 namespace Optima {
 
-/// A type used to describe a system of linear constraints.
-struct Constraint
+/// A type used to describe a saddle point problem.
+struct SaddlePointProblem
 {
-    /// The coefficient matrix of the linear equality constraint `A*x = a`.
+	/// The diagonal matrix `H` in the coefficient matrix.
+    Vector H;
+
+	/// The matrix `A` in the coefficient matrix.
     Matrix A;
 
-    /// The right-hand side vector of the linear equality constraint `A*x = a`.
-    Vector a;
+    /// The diagonal matrix `X` in the coefficient matrix.
+    Vector X;
 
-    /// The coefficient matrix of the linear inequality constraint `B*x >= b`.
-    Matrix B;
+    /// The diagonal matrix `Z` in the coefficient matrix.
+    Vector Z;
 
-    /// The right-hand side vector of the linear equality constraint `B*x >= b`.
-    Vector b;
+    /// The right-hand side vectors `[a, b, c]`.
+    Vector a, b, c;
+};
 
-    /// The lower bound of the primal variables `x`.
-    Vector xlower;
+/// A type used to describe a saddle point problem.
+struct SaddlePointProblemCanonical
+{
+	/// The diagonal matrix `G = diag(Gb, Gs, Gu)` in the coefficient matrix.
+    Vector Gb, Gs, Gu;
 
-    /// The upper bound of the primal variables `x`.
-    Vector xupper;
+	/// The diagonal matrix `Bb` in the canonical coefficient matrix.
+    Vector Bb;
 
-    /// The values of the fixed variables.
-    std::map<Index, double> xfixed;
+	/// The matrix `B = [Bb Bs Bu]` in the canonical coefficient matrix.
+    Matrix Bs, Bu;
+
+    /// The diagonal matrix `E = diag(Eb, Es, Eu)` in the coefficient matrix.
+    Vector Eb, Es, Eu;
+
+    /// The right-hand side vectors `[a, b, c]` of the canonical problem.
+    Vector a, b, c;
+
+    /// The regularizer matrix of `A` so that `R*A = [Ib As Au]*Q`.
+    Matrix R;
+
+    /// The inverse of the regularizer matrix `R`.
+    Matrix invR;
+
+    /// The permutation matrix `Q` in `R*A = [Ib As Au]*Q`.
+    PermutationMatrix Q;
 };
 
 /// A type used to describe an optimized constraint.
