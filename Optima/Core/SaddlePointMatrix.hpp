@@ -62,9 +62,9 @@ struct traits<Optima::SaddlePointVector>
     enum {
         Flags = Eigen::ColMajor,
         RowsAtCompileTime = Optima::Vector::RowsAtCompileTime,
-        ColsAtCompileTime = 1,
+        ColsAtCompileTime = Optima::Vector::ColsAtCompileTime,
         MaxRowsAtCompileTime = Optima::Vector::MaxRowsAtCompileTime,
-        MaxColsAtCompileTime = 1,
+        MaxColsAtCompileTime = Optima::Vector::MaxColsAtCompileTime,
         CoeffReadCost = Optima::Vector::CoeffReadCost
     };
 };
@@ -98,9 +98,9 @@ struct traits<Optima::SaddlePointVectorCanonical>
     enum {
         Flags = Eigen::ColMajor,
         RowsAtCompileTime = Optima::Vector::RowsAtCompileTime,
-        ColsAtCompileTime = 1,
+        ColsAtCompileTime = Optima::Vector::ColsAtCompileTime,
         MaxRowsAtCompileTime = Optima::Vector::MaxRowsAtCompileTime,
-        MaxColsAtCompileTime = 1,
+        MaxColsAtCompileTime = Optima::Vector::MaxColsAtCompileTime,
         CoeffReadCost = Optima::Vector::CoeffReadCost
     };
 };
@@ -235,6 +235,12 @@ struct SaddlePointVector : public Eigen::MatrixBase<SaddlePointVector>
         if(row < n + m) return b[row - n];
         return c[row - n - m];
     }
+
+    auto coeff(Index row, Index col) const -> Scalar
+	{
+    	eigen_assert(col == 0);
+    	return coeff(row);
+	}
 
     auto operator()(Index row) const -> Scalar { return coeff(row); }
 
@@ -515,6 +521,12 @@ struct SaddlePointVectorCanonical : public Eigen::MatrixBase<SaddlePointVectorCa
 
         return 0.0;
     }
+
+    auto coeff(Index row, Index col) const -> Scalar
+	{
+    	eigen_assert(col == 0);
+    	return coeff(row);
+	}
 
     auto operator()(Index row) const -> Scalar { return coeff(row); }
 

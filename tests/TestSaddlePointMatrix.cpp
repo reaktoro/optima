@@ -91,6 +91,53 @@ TEST_CASE("Testing SaddlePointMatrix...")
 	}
 }
 
+TEST_CASE("Testing SaddlePointVector...")
+{
+    SaddlePointVector vector;
+
+    vector.a = {1, 2, 3};
+    vector.b = {6, 7};
+    vector.c = {3, 2, 1};
+
+    REQUIRE(vector.valid());
+
+    REQUIRE(vector.rows() == 8);
+
+    Vector V = {1, 2, 3, 6, 7, 3, 2, 1};
+
+	SUBCASE("checking conversion to a Vector instance")
+	{
+		// Check `coeff` method implementation
+		CHECK(V.isApprox(vector));
+
+		// Check conversion to a Matrix instance
+		CHECK(V.isApprox(Vector(vector)));
+	}
+
+	SUBCASE("checking conversion when c is empty")
+	{
+		vector.c = {};
+
+		REQUIRE(vector.valid());
+
+		REQUIRE(vector.rows() == 5);
+
+		V.conservativeResize(5);
+
+		// Check `coeff` method implementation
+		CHECK(V.isApprox(vector));
+
+		// Check conversion to a Matrix instance
+		CHECK(V.isApprox(Vector(vector)));
+	}
+
+	SUBCASE("checking valid() when a and c have incompatible dimensions")
+	{
+		vector.c = {1, 2};
+		CHECK_FALSE(vector.valid());
+	}
+}
+
 TEST_CASE("Testing SaddlePointMatrixCanonical...")
 {
     SaddlePointMatrixCanonical matrix;
@@ -207,5 +254,86 @@ TEST_CASE("Testing SaddlePointMatrixCanonical...")
 
 		// Check conversion to a Matrix instance
 		CHECK(M.isApprox(Matrix(matrix)));
+	}
+}
+
+TEST_CASE("Testing SaddlePointVectorCanonical...")
+{
+    SaddlePointVectorCanonical vector;
+
+    vector.ab = {1, 2, 3};
+    vector.as = {4, 5};
+    vector.au = {6};
+    vector.b  = {7, 8};
+    vector.cb = {9, 8, 7};
+    vector.cs = {6, 5};
+    vector.cu = {4};
+
+    REQUIRE(vector.valid());
+
+    REQUIRE(vector.rows() == 14);
+
+    Vector V = {1, 2, 3, 4, 5, 6, 7, 8, 9, 8, 7, 6, 5, 4};
+
+	SUBCASE("checking conversion to a Vector instance")
+	{
+		// Check `coeff` method implementation
+		CHECK(V.isApprox(vector));
+
+		// Check conversion to a Matrix instance
+		CHECK(V.isApprox(Vector(vector)));
+	}
+
+	SUBCASE("checking conversion when au and cu are empty")
+	{
+		vector.au = vector.cu = {};
+
+		REQUIRE(vector.valid());
+
+		REQUIRE(vector.rows() == 12);
+
+		Vector V = {1, 2, 3, 4, 5, 7, 8, 9, 8, 7, 6, 5};
+
+		// Check `coeff` method implementation
+		CHECK(V.isApprox(vector));
+
+		// Check conversion to a Matrix instance
+		CHECK(V.isApprox(Vector(vector)));
+	}
+
+	SUBCASE("checking conversion when as, au, cs and cu are empty")
+	{
+		vector.as = vector.cs = {};
+		vector.au = vector.cu = {};
+
+		REQUIRE(vector.valid());
+
+		REQUIRE(vector.rows() == 8);
+
+		Vector V = {1, 2, 3, 7, 8, 9, 8, 7};
+
+		// Check `coeff` method implementation
+		CHECK(V.isApprox(vector));
+
+		// Check conversion to a Matrix instance
+		CHECK(V.isApprox(Vector(vector)));
+	}
+
+	SUBCASE("checking valid() when ab and cb have incompatible dimensions")
+	{
+		vector.ab = {};
+		CHECK_FALSE(vector.valid());
+	}
+
+	SUBCASE("checking valid() when as and cs have incompatible dimensions")
+	{
+		vector.as = {};
+		CHECK_FALSE(vector.valid());
+	}
+
+	SUBCASE("checking valid() when au and cu have incompatible dimensions")
+	{
+		vector.au = {};
+		CHECK_FALSE(vector.valid());
 	}
 }
