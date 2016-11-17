@@ -1,0 +1,15 @@
+#!/bin/bash
+
+DIR=$(dirname $(readlink -f $0))
+ROOT=$(readlink -f $DIR/..)
+TESTS=$ROOT/tests
+URL='https://raw.githubusercontent.com/onqtam/doctest/master/doctest/doctest.h'
+
+# Ensure the path `tests/doctest` exists
+mkdir -p $TESTS/doctest
+
+# Delete currect `doctest.h` header
+rm $TESTS/doctest/doctest.h
+
+# Download the most updated doctest header file
+wget $URL -P $TESTS/doctest

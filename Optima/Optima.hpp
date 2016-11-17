@@ -37,6 +37,7 @@
 //#include <Optima/Core/OptimumState.hpp>
 //#include <Optima/Core/Regularizer.hpp>
 //#include <Optima/Core/Utils.hpp>
+#include <Optima/Core/SaddlePointMatrix.hpp>
 #include <Optima/Core/SaddlePointProblem.hpp>
 #include <Optima/Core/SaddlePointSolution.hpp>
 #include <Optima/Core/SaddlePointSolver.hpp>

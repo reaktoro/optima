@@ -15,12 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+#include "doctest/doctest.hpp"
+
 // Optima includes
 #include <Optima/Optima.hpp>
 using namespace Optima;
-
-namespace Optima {
-
 
 auto operator<<(std::ostream& out, const SaddlePointProblemCanonical& problem) -> std::ostream&
 {
@@ -87,7 +86,7 @@ auto operator<<(std::ostream& out, const SaddlePointProblemCanonical& problem) -
     return out;
 }
 
-auto testSaddlePointSolver1() -> void
+auto testSaddlePointSolver1() -> bool
 {
     SaddlePointProblemCanonical problem;
     SaddlePointSolutionCanonical solution;
@@ -114,16 +113,18 @@ auto testSaddlePointSolver1() -> void
 
     solver(problem, solution);
 
-    std::cout << solution.xb << std::endl;
-    std::cout << solution.xs << std::endl;
-    std::cout << solution.xu << std::endl;
-    std::cout << solution.y  << std::endl;
-    std::cout << solution.zb << std::endl;
-    std::cout << solution.zs << std::endl;
-    std::cout << solution.zu << std::endl;
+//    std::cout << solution.xb << std::endl;
+//    std::cout << solution.xs << std::endl;
+//    std::cout << solution.xu << std::endl;
+//    std::cout << solution.y  << std::endl;
+//    std::cout << solution.zb << std::endl;
+//    std::cout << solution.zs << std::endl;
+//    std::cout << solution.zu << std::endl;
+
+    return true;
 }
 
-auto testSaddlePointSolver2() -> void
+auto testSaddlePointSolver2() -> bool
 {
     SaddlePointProblemCanonical problem;
     SaddlePointSolutionCanonical solution;
@@ -150,16 +151,18 @@ auto testSaddlePointSolver2() -> void
 
     solver(problem, solution);
 
-    std::cout << solution.xb << std::endl;
-    std::cout << solution.xs << std::endl;
-    std::cout << solution.xu << std::endl;
-    std::cout << solution.y  << std::endl;
-    std::cout << solution.zb << std::endl;
-    std::cout << solution.zs << std::endl;
-    std::cout << solution.zu << std::endl;
+//    std::cout << solution.xb << std::endl;
+//    std::cout << solution.xs << std::endl;
+//    std::cout << solution.xu << std::endl;
+//    std::cout << solution.y  << std::endl;
+//    std::cout << solution.zb << std::endl;
+//    std::cout << solution.zs << std::endl;
+//    std::cout << solution.zu << std::endl;
+
+    return true;
 }
 
-auto testSaddlePointSolver3() -> void
+auto testSaddlePointSolver3() -> bool
 {
     SaddlePointProblemCanonical problem;
     SaddlePointSolutionCanonical solution;
@@ -186,17 +189,19 @@ auto testSaddlePointSolver3() -> void
 
     solver(problem, solution);
 
-    std::cout << solution.xb << std::endl;
-    std::cout << solution.xs << std::endl;
-    std::cout << solution.xu << std::endl;
-    std::cout << solution.y  << std::endl;
-    std::cout << solution.zb << std::endl;
-    std::cout << solution.zs << std::endl;
-    std::cout << solution.zu << std::endl;
+//    std::cout << solution.xb << std::endl;
+//    std::cout << solution.xs << std::endl;
+//    std::cout << solution.xu << std::endl;
+//    std::cout << solution.y  << std::endl;
+//    std::cout << solution.zb << std::endl;
+//    std::cout << solution.zs << std::endl;
+//    std::cout << solution.zu << std::endl;
     //*/
+
+    return true;
 }
 
-auto testSaddlePointSolver4() -> void
+auto testSaddlePointSolver4() -> bool
 {
     SaddlePointProblemCanonical problem;
     SaddlePointSolutionCanonical solution;
@@ -244,18 +249,17 @@ auto testSaddlePointSolver4() -> void
     std::cout << problem << std::endl;
     solver(problem, solution);
 
-    std::cout << solution.xb << std::endl;
-    std::cout << solution.xs << std::endl;
-    std::cout << solution.xu << std::endl;
-    std::cout << solution.y  << std::endl;
-    std::cout << solution.zb << std::endl;
-    std::cout << solution.zs << std::endl;
-    std::cout << solution.zu << std::endl;
+//    std::cout << solution.xb << std::endl;
+//    std::cout << solution.xs << std::endl;
+//    std::cout << solution.xu << std::endl;
+//    std::cout << solution.y  << std::endl;
+//    std::cout << solution.zb << std::endl;
+//    std::cout << solution.zs << std::endl;
+//    std::cout << solution.zu << std::endl;
+    return true;
 }
 
-} // namespace Optima
-
-int main(int argc, char **argv)
+TEST_CASE("Testing SaddlePointSolver...")
 {
     testSaddlePointSolver1();
     testSaddlePointSolver2();

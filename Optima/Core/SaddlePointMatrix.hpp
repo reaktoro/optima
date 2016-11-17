@@ -25,8 +25,42 @@
 
 namespace Optima {
 
+// Forward declarations
+struct SaddlePointMatrix;
+struct SaddlePointMatrixCanonical;
+struct SaddlePointVector;
+struct SaddlePointVectorCanonical;
+
+}
+
+namespace Eigen {
+namespace internal {
+
+template<>
+struct traits<Optima::SaddlePointMatrix>
+{
+	typedef Eigen::Dense StorageKind;
+	typedef Eigen::MatrixXpr XprKind;
+	typedef Optima::Matrix::Scalar Scalar;
+	typedef Optima::Matrix::Index Index;
+	typedef Optima::Matrix::PlainObject PlainObject;
+	enum {
+		Flags = Eigen::ColMajor,
+		RowsAtCompileTime = Optima::Matrix::RowsAtCompileTime,
+		ColsAtCompileTime = Optima::Matrix::RowsAtCompileTime,
+		MaxRowsAtCompileTime = Optima::Matrix::MaxRowsAtCompileTime,
+		MaxColsAtCompileTime = Optima::Matrix::MaxRowsAtCompileTime,
+		CoeffReadCost = Optima::Matrix::CoeffReadCost
+	};
+};
+
+} // namespace internal
+} // namespace Eigen
+
+namespace Optima {
+
 /// A type used to describe a saddle point coefficient matrix.
-struct SaddlePointMatrix : MatrixBase // inherit from Eigen::MatrixBase
+struct SaddlePointMatrix : public Eigen::MatrixBase<SaddlePointMatrix>
 {
 	/// The diagonal matrix `H` in the coefficient matrix.
     Vector H;
@@ -39,6 +73,40 @@ struct SaddlePointMatrix : MatrixBase // inherit from Eigen::MatrixBase
 
     /// The diagonal matrix `Z` in the coefficient matrix.
     Vector Z;
+
+    EIGEN_DENSE_PUBLIC_INTERFACE(SaddlePointMatrix)
+
+    auto rows() const -> Index { return H.rows() + A.rows() + X.rows(); }
+    auto cols() const -> Index { return rows(); }
+
+    auto coeff(Index row, Index col) const -> Scalar
+	{
+    	const Index n = H.rows();
+    	const Index m = A.rows();
+
+    	if(row < n && col < n)
+    		return row == col ? H[row] : 0.0;
+    	if(row < n && col < n + m)
+    		return -A(col - n, row);
+    	if(row < n)
+    		return row == col - n - m ? -1.0 : 0.0;
+    	if(row < n + m)
+    		return col < n ? A(row - n, col) : 0.0;
+    	if(col < n) return row - n - m == col ? Z[col] : 0.0;
+    	if(col < n + m) return 0.0;
+    	return row == col ? X[col - n - m] : 0.0;
+	}
+
+    auto operator()(Index row, Index col) const -> Scalar { return coeff(row, col); }
+
+    operator PlainObject() const
+    {
+    	PlainObject res(rows(), cols());
+    	for(Index i = 0; i < rows(); ++i)
+    		for(Index j = 0; j < cols(); ++j)
+    			res(i, j) = coeff(i, j);
+    	return res;
+    }
 };
 
 /// A type used to describe a saddle point right-hand side vector.
@@ -82,17 +150,5 @@ struct SaddlePointVectorCanonical
     /// The right-hand side vector `c = [cb, cs, cu]` of the canonical problem.
     Vector cb, cs, cu;
 };
-
-/// Output a SaddlePointMatrix instance.
-auto operator<<(std::ostream& out, const SaddlePointMatrix& mat) -> void;
-
-/// Output a SaddlePointVector instance.
-auto operator<<(std::ostream& out, const SaddlePointVector& vec) -> void;
-
-/// Output a SaddlePointMatrixCanonical instance.
-auto operator<<(std::ostream& out, const SaddlePointMatrixCanonical& mat) -> void;
-
-/// Output a SaddlePointVectorCanonical instance.
-auto operator<<(std::ostream& out, const SaddlePointVectorCanonical& vec) -> void;
 
 } // namespace Optima

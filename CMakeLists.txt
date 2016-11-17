@@ -119,8 +119,10 @@ endif()
 
 # Build the tests
 if(BUILD_TESTS)
+    enable_testing()
     add_subdirectory(tests)
 else()
+    enable_testing()
     add_subdirectory(tests EXCLUDE_FROM_ALL)
 endif()
 

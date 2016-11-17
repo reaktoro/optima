@@ -15,8 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include "SaddlePointMatrix.hpp"
+#pragma once
 
-namespace Optima {
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include "doctest/doctest.h"
 
-} // namespace Optima
+
