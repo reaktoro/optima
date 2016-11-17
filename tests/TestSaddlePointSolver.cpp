@@ -21,72 +21,7 @@
 #include <Optima/Optima.hpp>
 using namespace Optima;
 
-auto operator<<(std::ostream& out, const SaddlePointProblemCanonical& problem) -> std::ostream&
-{
-    // Auxiliary alias to problem data members
-    const auto& Gb   = problem.Gb;
-    const auto& Gs   = problem.Gs;
-    const auto& Gu   = problem.Gu;
-    const auto& Bb   = problem.Bb;
-    const auto& Bs   = problem.Bs;
-    const auto& Bu   = problem.Bu;
-    const auto& Eb   = problem.Eb;
-    const auto& Es   = problem.Es;
-    const auto& Eu   = problem.Eu;
-//    const auto& ab   = problem.ab;
-//    const auto& as   = problem.as;
-//    const auto& au   = problem.au;
-//    const auto& b    = problem.b;
-//    const auto& cb   = problem.cb;
-//    const auto& cs   = problem.cs;
-//    const auto& cu   = problem.cu;
-
-    const auto nb = Gb.rows();
-    const auto ns = Gs.rows();
-    const auto nu = Gu.rows();
-    const auto n = nb + ns + nu;
-    const auto m = nb;
-    const auto t = 2*n + m;
-
-    Vector G(n);
-    if(nb) G.topRows(nb) = Gb;
-    if(ns) G.middleRows(nb, ns) = Gs;
-    if(nu) G.bottomRows(nu) = Gu;
-
-    Vector E(n);
-    if(nb) E.topRows(nb) = Eb;
-    if(ns) E.middleRows(nb, ns) = Es;
-    if(nu) E.bottomRows(nu) = Eu;
-
-    Matrix B(m, n);
-    if(nb) B.leftCols(nb) = diag(Bb);
-    if(ns) B.middleCols(nb, ns) = Bs;
-    if(nu) B.rightCols(nu) = Bu;
-
-    Matrix A(t, t);
-    A.topLeftCorner(n, n) = diag(G);
-    A.topRightCorner(n, n) = diag(E);
-    A.middleRows(n, m).leftCols(n) = B;
-    A.middleCols(n, m).topRows(n) = tr(B);
-    A.bottomLeftCorner(n, n) = diag(E);
-    A.bottomRightCorner(n, n) = diag(E);
-
-    out << "[";
-    for(auto i = 0; i < t; ++i)
-    {
-        out << "[";
-        for(auto j = 0; j < t; ++j)
-            out << (j > 0 ? ", " : "") << A(i, j);
-        out << "];\n";
-    }
-    out << "]";
-
-//    out << A;
-
-    return out;
-}
-
-auto testSaddlePointSolver1() -> bool
+TEST_CASE("Testing SaddlePointSolver - Case 1")
 {
     SaddlePointProblemCanonical problem;
     SaddlePointSolutionCanonical solution;
@@ -113,43 +48,9 @@ auto testSaddlePointSolver1() -> bool
 
     solver(problem, solution);
 
-//    std::cout << solution.xb << std::endl;
-//    std::cout << solution.xs << std::endl;
-//    std::cout << solution.xu << std::endl;
-//    std::cout << solution.y  << std::endl;
-//    std::cout << solution.zb << std::endl;
-//    std::cout << solution.zs << std::endl;
-//    std::cout << solution.zu << std::endl;
+    Vector expected = ones(6);
 
-    return true;
-}
-
-auto testSaddlePointSolver2() -> bool
-{
-    SaddlePointProblemCanonical problem;
-    SaddlePointSolutionCanonical solution;
-
-    problem.Gb = {5};
-    problem.Gs = {5};
-    problem.Gu = {};
-
-    problem.Bb = {2};
-    problem.Bs = {2};
-    problem.Bu = {};
-
-    problem.Eb = {1};
-    problem.Es = {1};
-    problem.Eu = {};
-
-    problem.ab = {8};
-    problem.as = {8};
-    problem.au = {};
-    problem.b  = {4};
-    problem.cb = {2};
-    problem.cs = {2};
-    problem.cu = {};
-
-    solver(problem, solution);
+//    CHECK(expected.isApprox(solution));
 
 //    std::cout << solution.xb << std::endl;
 //    std::cout << solution.xs << std::endl;
@@ -158,114 +59,150 @@ auto testSaddlePointSolver2() -> bool
 //    std::cout << solution.zb << std::endl;
 //    std::cout << solution.zs << std::endl;
 //    std::cout << solution.zu << std::endl;
-
-    return true;
 }
 
-auto testSaddlePointSolver3() -> bool
-{
-    SaddlePointProblemCanonical problem;
-    SaddlePointSolutionCanonical solution;
-
-    problem.Gb = {5};
-    problem.Gs = {};
-    problem.Gu = {1};
-
-    problem.Bb = {2};
-    problem.Bs = {};
-    problem.Bu = {2};
-
-    problem.Eb = {1};
-    problem.Es = {};
-    problem.Eu = {6};
-
-    problem.ab = {8};
-    problem.as = {};
-    problem.au = {9};
-    problem.b  = {4};
-    problem.cb = {2};
-    problem.cs = {};
-    problem.cu = {12};
-
-    solver(problem, solution);
-
-//    std::cout << solution.xb << std::endl;
-//    std::cout << solution.xs << std::endl;
-//    std::cout << solution.xu << std::endl;
-//    std::cout << solution.y  << std::endl;
-//    std::cout << solution.zb << std::endl;
-//    std::cout << solution.zs << std::endl;
-//    std::cout << solution.zu << std::endl;
-    //*/
-
-    return true;
-}
-
-auto testSaddlePointSolver4() -> bool
-{
-    SaddlePointProblemCanonical problem;
-    SaddlePointSolutionCanonical solution;
-
-    problem.Gb = {1, 2, 3};
-    problem.Gs = {4, 5};
-    problem.Gu = {6};
-
-    problem.Bb = {9, 8, 7};
-    problem.Bs = {{1, 2}, {2, 3}, {3, 4}};
-    problem.Bu = {5, 6, 7};
-
-    problem.Eb = {1, 1, 1};
-    problem.Es = {1, 1};
-    problem.Eu = {1};
-
-    problem.ab = {11, 11, 11};
-    problem.as = {11, 15};
-    problem.au = {25};
-    problem.b  = {17, 19, 21};
-    problem.cb = {2, 2, 2};
-    problem.cs = {2, 2};
-    problem.cu = {2};
-
-//    problem.Gb = {8, 7, 6};
-//    problem.Gs = {6, 5};
-//    problem.Gu = {4};
+//auto testSaddlePointSolver2() -> bool
+//{
+//    SaddlePointProblemCanonical problem;
+//    SaddlePointSolutionCanonical solution;
+//
+//    problem.Gb = {5};
+//    problem.Gs = {5};
+//    problem.Gu = {};
+//
+//    problem.Bb = {2};
+//    problem.Bs = {2};
+//    problem.Bu = {};
+//
+//    problem.Eb = {1};
+//    problem.Es = {1};
+//    problem.Eu = {};
+//
+//    problem.ab = {8};
+//    problem.as = {8};
+//    problem.au = {};
+//    problem.b  = {4};
+//    problem.cb = {2};
+//    problem.cs = {2};
+//    problem.cu = {};
+//
+//    solver(problem, solution);
+//
+////    std::cout << solution.xb << std::endl;
+////    std::cout << solution.xs << std::endl;
+////    std::cout << solution.xu << std::endl;
+////    std::cout << solution.y  << std::endl;
+////    std::cout << solution.zb << std::endl;
+////    std::cout << solution.zs << std::endl;
+////    std::cout << solution.zu << std::endl;
+//
+//    return true;
+//}
+//
+//auto testSaddlePointSolver3() -> bool
+//{
+//    SaddlePointProblemCanonical problem;
+//    SaddlePointSolutionCanonical solution;
+//
+//    problem.Gb = {5};
+//    problem.Gs = {};
+//    problem.Gu = {1};
+//
+//    problem.Bb = {2};
+//    problem.Bs = {};
+//    problem.Bu = {2};
+//
+//    problem.Eb = {1};
+//    problem.Es = {};
+//    problem.Eu = {6};
+//
+//    problem.ab = {8};
+//    problem.as = {};
+//    problem.au = {9};
+//    problem.b  = {4};
+//    problem.cb = {2};
+//    problem.cs = {};
+//    problem.cu = {12};
+//
+//    solver(problem, solution);
+//
+////    std::cout << solution.xb << std::endl;
+////    std::cout << solution.xs << std::endl;
+////    std::cout << solution.xu << std::endl;
+////    std::cout << solution.y  << std::endl;
+////    std::cout << solution.zb << std::endl;
+////    std::cout << solution.zs << std::endl;
+////    std::cout << solution.zu << std::endl;
+//    //*/
+//
+//    return true;
+//}
+//
+//auto testSaddlePointSolver4() -> bool
+//{
+//    SaddlePointProblemCanonical problem;
+//    SaddlePointSolutionCanonical solution;
+//
+//    problem.Gb = {1, 2, 3};
+//    problem.Gs = {4, 5};
+//    problem.Gu = {6};
 //
 //    problem.Bb = {9, 8, 7};
 //    problem.Bs = {{1, 2}, {2, 3}, {3, 4}};
-//    problem.Bu = {5, 5, 5};
+//    problem.Bu = {5, 6, 7};
 //
-//    problem.Eb = {1, 2, 3};
-//    problem.Es = {1, 3};
-//    problem.Eu = {9};
+//    problem.Eb = {1, 1, 1};
+//    problem.Es = {1, 1};
+//    problem.Eu = {1};
 //
-//    problem.ab = {18, 17, 16};
-//    problem.as = {13, 17};
-//    problem.au = {28};
-//    problem.b  = {17, 18, 19};
-//    problem.cb = {2, 4, 6};
-//    problem.cs = {2, 6};
-//    problem.cu = {18};
-
-    std::cout << problem << std::endl;
-    solver(problem, solution);
-
-//    std::cout << solution.xb << std::endl;
-//    std::cout << solution.xs << std::endl;
-//    std::cout << solution.xu << std::endl;
-//    std::cout << solution.y  << std::endl;
-//    std::cout << solution.zb << std::endl;
-//    std::cout << solution.zs << std::endl;
-//    std::cout << solution.zu << std::endl;
-    return true;
-}
-
-TEST_CASE("Testing SaddlePointSolver...")
-{
-    testSaddlePointSolver1();
-    testSaddlePointSolver2();
-    testSaddlePointSolver3();
-    testSaddlePointSolver4();
-}
+//    problem.ab = {11, 11, 11};
+//    problem.as = {11, 15};
+//    problem.au = {25};
+//    problem.b  = {17, 19, 21};
+//    problem.cb = {2, 2, 2};
+//    problem.cs = {2, 2};
+//    problem.cu = {2};
+//
+////    problem.Gb = {8, 7, 6};
+////    problem.Gs = {6, 5};
+////    problem.Gu = {4};
+////
+////    problem.Bb = {9, 8, 7};
+////    problem.Bs = {{1, 2}, {2, 3}, {3, 4}};
+////    problem.Bu = {5, 5, 5};
+////
+////    problem.Eb = {1, 2, 3};
+////    problem.Es = {1, 3};
+////    problem.Eu = {9};
+////
+////    problem.ab = {18, 17, 16};
+////    problem.as = {13, 17};
+////    problem.au = {28};
+////    problem.b  = {17, 18, 19};
+////    problem.cb = {2, 4, 6};
+////    problem.cs = {2, 6};
+////    problem.cu = {18};
+//
+//    std::cout << problem << std::endl;
+//    solver(problem, solution);
+//
+////    std::cout << solution.xb << std::endl;
+////    std::cout << solution.xs << std::endl;
+////    std::cout << solution.xu << std::endl;
+////    std::cout << solution.y  << std::endl;
+////    std::cout << solution.zb << std::endl;
+////    std::cout << solution.zs << std::endl;
+////    std::cout << solution.zu << std::endl;
+//    return true;
+//}
+//
+//TEST_CASE("Testing SaddlePointSolver...")
+//{
+//    testSaddlePointSolver1();
+//    testSaddlePointSolver2();
+//    testSaddlePointSolver3();
+//    testSaddlePointSolver4();
+//}
 
 
 

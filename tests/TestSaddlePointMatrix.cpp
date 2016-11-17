@@ -95,9 +95,9 @@ TEST_CASE("Testing SaddlePointVector...")
 {
     SaddlePointVector vector;
 
-    vector.a = {1, 2, 3};
-    vector.b = {6, 7};
-    vector.c = {3, 2, 1};
+    vector.x = {1, 2, 3};
+    vector.y = {6, 7};
+    vector.z = {3, 2, 1};
 
     REQUIRE(vector.valid());
 
@@ -116,7 +116,7 @@ TEST_CASE("Testing SaddlePointVector...")
 
 	SUBCASE("checking conversion when c is empty")
 	{
-		vector.c = {};
+		vector.z = {};
 
 		REQUIRE(vector.valid());
 
@@ -133,7 +133,7 @@ TEST_CASE("Testing SaddlePointVector...")
 
 	SUBCASE("checking valid() when a and c have incompatible dimensions")
 	{
-		vector.c = {1, 2};
+		vector.z = {1, 2};
 		CHECK_FALSE(vector.valid());
 	}
 }
@@ -261,13 +261,13 @@ TEST_CASE("Testing SaddlePointVectorCanonical...")
 {
     SaddlePointVectorCanonical vector;
 
-    vector.ab = {1, 2, 3};
-    vector.as = {4, 5};
-    vector.au = {6};
-    vector.b  = {7, 8};
-    vector.cb = {9, 8, 7};
-    vector.cs = {6, 5};
-    vector.cu = {4};
+    vector.xb = {1, 2, 3};
+    vector.xs = {4, 5};
+    vector.xu = {6};
+    vector.y  = {7, 8};
+    vector.zb = {9, 8, 7};
+    vector.zs = {6, 5};
+    vector.zu = {4};
 
     REQUIRE(vector.valid());
 
@@ -286,7 +286,7 @@ TEST_CASE("Testing SaddlePointVectorCanonical...")
 
 	SUBCASE("checking conversion when au and cu are empty")
 	{
-		vector.au = vector.cu = {};
+		vector.xu = vector.zu = {};
 
 		REQUIRE(vector.valid());
 
@@ -303,8 +303,8 @@ TEST_CASE("Testing SaddlePointVectorCanonical...")
 
 	SUBCASE("checking conversion when as, au, cs and cu are empty")
 	{
-		vector.as = vector.cs = {};
-		vector.au = vector.cu = {};
+		vector.xs = vector.zs = {};
+		vector.xu = vector.zu = {};
 
 		REQUIRE(vector.valid());
 
@@ -321,19 +321,19 @@ TEST_CASE("Testing SaddlePointVectorCanonical...")
 
 	SUBCASE("checking valid() when ab and cb have incompatible dimensions")
 	{
-		vector.ab = {};
+		vector.xb = {};
 		CHECK_FALSE(vector.valid());
 	}
 
 	SUBCASE("checking valid() when as and cs have incompatible dimensions")
 	{
-		vector.as = {};
+		vector.xs = {};
 		CHECK_FALSE(vector.valid());
 	}
 
 	SUBCASE("checking valid() when au and cu have incompatible dimensions")
 	{
-		vector.au = {};
+		vector.xu = {};
 		CHECK_FALSE(vector.valid());
 	}
 }
