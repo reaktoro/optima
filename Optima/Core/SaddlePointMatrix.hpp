@@ -17,9 +17,6 @@
 
 #pragma once
 
-// C++ includes
-#include <iostream>
-
 // Optima includes
 #include <Optima/Math/Matrix.hpp>
 
