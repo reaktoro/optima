@@ -220,6 +220,15 @@ struct SaddlePointVector : public Eigen::MatrixBase<SaddlePointVector>
     /// The saddle-point vector `z`.
     Vector z;
 
+    /// The alias `a` to vector `x`.
+    Vector &a = x;
+
+    /// The alias `b` to vector `y`.
+    Vector &b = y;
+
+    /// The alias `c` to vector `z`.
+    Vector &c = z;
+
     EIGEN_DENSE_PUBLIC_INTERFACE(SaddlePointVector)
 
     auto rows() const -> Index { return x.rows() + y.rows() + z.rows(); }
@@ -465,6 +474,14 @@ struct SaddlePointVectorCanonical : public Eigen::MatrixBase<SaddlePointVectorCa
     /// The canonical saddle point vector `z = [zb, zs, zu]`.
     Vector zb, zs, zu;
 
+    /// The alias `a = [ab, as, au]` to vector `x = [xb, xs, xu]`.
+    Vector &ab = xb, &as = xs, &au = xu;
+
+    /// The alias `b` to vector `y`.
+    Vector &b = y;
+
+    /// The alias `c = [cb, cs, cu]` to vector `z = [zb, zs, zu]`.
+    Vector &cb = zb, &cs = zs, &cu = zu;
 
     EIGEN_DENSE_PUBLIC_INTERFACE(SaddlePointVectorCanonical)
 

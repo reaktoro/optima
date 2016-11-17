@@ -26,25 +26,25 @@
 
 namespace Optima {
 
-auto solver(const SaddlePointProblemCanonical& problem, SaddlePointSolutionCanonical& solution) -> void
+auto solver(const SaddlePointProblemCanonical& problem, SaddlePointVectorCanonical& solution) -> void
 {
     // Auxiliary alias to problem data members
-    const auto& Gb   = problem.Gb;
-    const auto& Gs   = problem.Gs;
-    const auto& Gu   = problem.Gu;
-    const auto& Bb   = problem.Bb;
-    const auto& Bs   = problem.Bs;
-    const auto& Bu   = problem.Bu;
-    const auto& Eb   = problem.Eb;
-    const auto& Es   = problem.Es;
-    const auto& Eu   = problem.Eu;
-    const auto& ab   = problem.ab;
-    const auto& as   = problem.as;
-    const auto& au   = problem.au;
-    const auto& b    = problem.b;
-    const auto& cb   = problem.cb;
-    const auto& cs   = problem.cs;
-    const auto& cu   = problem.cu;
+    const auto& Gb = problem.lhs.Gb;
+    const auto& Gs = problem.lhs.Gs;
+    const auto& Gu = problem.lhs.Gu;
+    const auto& Bb = problem.lhs.Bb;
+    const auto& Bs = problem.lhs.Bs;
+    const auto& Bu = problem.lhs.Bu;
+    const auto& Eb = problem.lhs.Eb;
+    const auto& Es = problem.lhs.Es;
+    const auto& Eu = problem.lhs.Eu;
+    const auto& ab = problem.rhs.ab;
+    const auto& as = problem.rhs.as;
+    const auto& au = problem.rhs.au;
+    const auto& b  = problem.rhs.b;
+    const auto& cb = problem.rhs.cb;
+    const auto& cs = problem.rhs.cs;
+    const auto& cu = problem.rhs.cu;
 
     // Auxiliary alias to solution data members
     auto& xb = solution.xb;

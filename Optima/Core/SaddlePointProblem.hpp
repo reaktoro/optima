@@ -18,58 +18,28 @@
 #pragma once
 
 // Optima includes
-#include <Optima/Math/Matrix.hpp>
+#include <Optima/Core/SaddlePointMatrix.hpp>
 
 namespace Optima {
 
 /// A type used to describe a saddle point problem.
 struct SaddlePointProblem
 {
-	/// The diagonal matrix `H` in the coefficient matrix.
-    Vector H;
+	/// The left-hand side coefficient matrix of the saddle point problem.
+	SaddlePointMatrix lhs;
 
-	/// The matrix `A` in the coefficient matrix.
-    Matrix A;
-
-    /// The diagonal matrix `X` in the coefficient matrix.
-    Vector X;
-
-    /// The diagonal matrix `Z` in the coefficient matrix.
-    Vector Z;
-
-    /// The right-hand side vector `a`.
-    Vector a;
-
-    /// The right-hand side vector `b`.
-    Vector b;
-
-    /// The right-hand side vector `c`.
-    Vector c;
+	/// The right-hand side vector of the saddle point problem.
+	SaddlePointVector rhs;
 };
 
 /// A type used to describe a saddle point problem.
 struct SaddlePointProblemCanonical
 {
-	/// The diagonal matrix `G = diag(Gb, Gs, Gu)` in the coefficient matrix.
-    Vector Gb, Gs, Gu;
+	/// The left-hand side coefficient matrix of the canonical saddle point problem.
+	SaddlePointMatrixCanonical lhs;
 
-	/// The diagonal matrix `Bb` in the canonical coefficient matrix.
-    Vector Bb;
-
-	/// The matrix `B = [Bb Bs Bu]` in the canonical coefficient matrix.
-    Matrix Bs, Bu;
-
-    /// The diagonal matrix `E = diag(Eb, Es, Eu)` in the coefficient matrix.
-    Vector Eb, Es, Eu;
-
-    /// The right-hand side vector `a = [ab, as, au]` of the canonical problem.
-    Vector ab, as, au;
-
-    /// The right-hand side vector `b` of the canonical problem.
-    Vector b;
-
-    /// The right-hand side vector `c = [cb, cs, cu]` of the canonical problem.
-    Vector cb, cs, cu;
+	/// The right-hand side vector of the canonical saddle point problem.
+	SaddlePointVectorCanonical rhs;
 
     /// The regularizer matrix of `A` so that `R*A = [Ib As Au]*Q`.
     Matrix R;

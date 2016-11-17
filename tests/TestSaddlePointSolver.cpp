@@ -24,41 +24,29 @@ using namespace Optima;
 TEST_CASE("Testing SaddlePointSolver - Case 1")
 {
     SaddlePointProblemCanonical problem;
-    SaddlePointSolutionCanonical solution;
+    SaddlePointVectorCanonical sol;
 
-    problem.Gb = {9, 8, 7};
-    problem.Gs = {};
-    problem.Gu = {};
+    problem.lhs.Gb = {9, 8, 7};
+    problem.lhs.Gs = {};
+    problem.lhs.Gu = {};
+    problem.lhs.Bb = {1, 1, 1};
+    problem.lhs.Bs = {};
+    problem.lhs.Bu = {};
+    problem.lhs.Eb = {1, 1, 1};
+    problem.lhs.Es = {};
+    problem.lhs.Eu = {};
 
-    problem.Bb = {1, 1, 1};
-    problem.Bs = {};
-    problem.Bu = {};
+    problem.rhs.ab = {11, 10, 9};
+    problem.rhs.as = {};
+    problem.rhs.au = {};
+    problem.rhs.b  = {1, 1, 1};
+    problem.rhs.cb = {2, 2, 2};
+    problem.rhs.cs = {};
+    problem.rhs.cu = {};
 
-    problem.Eb = {1, 1, 1};
-    problem.Es = {};
-    problem.Eu = {};
+    solver(problem, sol);
 
-    problem.ab = {11, 10, 9};
-    problem.as = {};
-    problem.au = {};
-    problem.b  = {1, 1, 1};
-    problem.cb = {2, 2, 2};
-    problem.cs = {};
-    problem.cu = {};
-
-    solver(problem, solution);
-
-    Vector expected = ones(6);
-
-//    CHECK(expected.isApprox(solution));
-
-//    std::cout << solution.xb << std::endl;
-//    std::cout << solution.xs << std::endl;
-//    std::cout << solution.xu << std::endl;
-//    std::cout << solution.y  << std::endl;
-//    std::cout << solution.zb << std::endl;
-//    std::cout << solution.zs << std::endl;
-//    std::cout << solution.zu << std::endl;
+    CHECK(sol.isApprox(ones(sol.rows())));
 }
 
 //auto testSaddlePointSolver2() -> bool

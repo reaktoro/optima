@@ -18,11 +18,11 @@
 #pragma once
 
 // Optima includes
+#include <Optima/Core/SaddlePointMatrix.hpp>
 #include <Optima/Core/SaddlePointProblem.hpp>
-#include <Optima/Core/SaddlePointSolution.hpp>
 
 namespace Optima {
 
-auto solver(const SaddlePointProblemCanonical& problem, SaddlePointSolutionCanonical& solution) -> void;
+auto solver(const SaddlePointProblemCanonical& problem, SaddlePointVectorCanonical& solution) -> void;
 
 } // namespace Optima

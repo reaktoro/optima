@@ -39,7 +39,6 @@
 //#include <Optima/Core/Utils.hpp>
 #include <Optima/Core/SaddlePointMatrix.hpp>
 #include <Optima/Core/SaddlePointProblem.hpp>
-#include <Optima/Core/SaddlePointSolution.hpp>
 #include <Optima/Core/SaddlePointSolver.hpp>
 #include <Optima/Math/LU.hpp>
 #include <Optima/Math/Matrix.hpp>
