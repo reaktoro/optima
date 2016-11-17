@@ -39,73 +39,73 @@ namespace internal {
 template<>
 struct traits<Optima::SaddlePointMatrix>
 {
-	typedef Eigen::Dense StorageKind;
-	typedef Eigen::MatrixXpr XprKind;
-	typedef Optima::Matrix::Scalar Scalar;
-	typedef Optima::Matrix::Index Index;
-	typedef Optima::Matrix::PlainObject PlainObject;
-	enum {
-		Flags = Eigen::ColMajor,
-		RowsAtCompileTime = Optima::Matrix::RowsAtCompileTime,
-		ColsAtCompileTime = Optima::Matrix::ColsAtCompileTime,
-		MaxRowsAtCompileTime = Optima::Matrix::MaxRowsAtCompileTime,
-		MaxColsAtCompileTime = Optima::Matrix::MaxColsAtCompileTime,
-		CoeffReadCost = Optima::Matrix::CoeffReadCost
-	};
+    typedef Eigen::Dense StorageKind;
+    typedef Eigen::MatrixXpr XprKind;
+    typedef Optima::Matrix::Scalar Scalar;
+    typedef Optima::Matrix::Index Index;
+    typedef Optima::Matrix::PlainObject PlainObject;
+    enum {
+        Flags = Eigen::ColMajor,
+        RowsAtCompileTime = Optima::Matrix::RowsAtCompileTime,
+        ColsAtCompileTime = Optima::Matrix::ColsAtCompileTime,
+        MaxRowsAtCompileTime = Optima::Matrix::MaxRowsAtCompileTime,
+        MaxColsAtCompileTime = Optima::Matrix::MaxColsAtCompileTime,
+        CoeffReadCost = Optima::Matrix::CoeffReadCost
+    };
 };
 
 template<>
 struct traits<Optima::SaddlePointVector>
 {
-	typedef Eigen::Dense StorageKind;
-	typedef Eigen::MatrixXpr XprKind;
-	typedef Optima::Vector::Scalar Scalar;
-	typedef Optima::Vector::Index Index;
-	typedef Optima::Vector::PlainObject PlainObject;
-	enum {
-		Flags = Eigen::ColMajor,
-		RowsAtCompileTime = Optima::Vector::RowsAtCompileTime,
-		ColsAtCompileTime = 1,
-		MaxRowsAtCompileTime = Optima::Vector::MaxRowsAtCompileTime,
-		MaxColsAtCompileTime = 1,
-		CoeffReadCost = Optima::Vector::CoeffReadCost
-	};
+    typedef Eigen::Dense StorageKind;
+    typedef Eigen::MatrixXpr XprKind;
+    typedef Optima::Vector::Scalar Scalar;
+    typedef Optima::Vector::Index Index;
+    typedef Optima::Vector::PlainObject PlainObject;
+    enum {
+        Flags = Eigen::ColMajor,
+        RowsAtCompileTime = Optima::Vector::RowsAtCompileTime,
+        ColsAtCompileTime = 1,
+        MaxRowsAtCompileTime = Optima::Vector::MaxRowsAtCompileTime,
+        MaxColsAtCompileTime = 1,
+        CoeffReadCost = Optima::Vector::CoeffReadCost
+    };
 };
 
 template<>
 struct traits<Optima::SaddlePointMatrixCanonical>
 {
-	typedef Eigen::Dense StorageKind;
-	typedef Eigen::MatrixXpr XprKind;
-	typedef Optima::Matrix::Scalar Scalar;
-	typedef Optima::Matrix::Index Index;
-	typedef Optima::Matrix::PlainObject PlainObject;
-	enum {
-		Flags = Eigen::ColMajor,
-		RowsAtCompileTime = Optima::Matrix::RowsAtCompileTime,
-		ColsAtCompileTime = Optima::Matrix::ColsAtCompileTime,
-		MaxRowsAtCompileTime = Optima::Matrix::MaxRowsAtCompileTime,
-		MaxColsAtCompileTime = Optima::Matrix::MaxColsAtCompileTime,
-		CoeffReadCost = Optima::Matrix::CoeffReadCost
-	};
+    typedef Eigen::Dense StorageKind;
+    typedef Eigen::MatrixXpr XprKind;
+    typedef Optima::Matrix::Scalar Scalar;
+    typedef Optima::Matrix::Index Index;
+    typedef Optima::Matrix::PlainObject PlainObject;
+    enum {
+        Flags = Eigen::ColMajor,
+        RowsAtCompileTime = Optima::Matrix::RowsAtCompileTime,
+        ColsAtCompileTime = Optima::Matrix::ColsAtCompileTime,
+        MaxRowsAtCompileTime = Optima::Matrix::MaxRowsAtCompileTime,
+        MaxColsAtCompileTime = Optima::Matrix::MaxColsAtCompileTime,
+        CoeffReadCost = Optima::Matrix::CoeffReadCost
+    };
 };
 
 template<>
 struct traits<Optima::SaddlePointVectorCanonical>
 {
-	typedef Eigen::Dense StorageKind;
-	typedef Eigen::MatrixXpr XprKind;
-	typedef Optima::Vector::Scalar Scalar;
-	typedef Optima::Vector::Index Index;
-	typedef Optima::Vector::PlainObject PlainObject;
-	enum {
-		Flags = Eigen::ColMajor,
-		RowsAtCompileTime = Optima::Vector::RowsAtCompileTime,
-		ColsAtCompileTime = 1,
-		MaxRowsAtCompileTime = Optima::Vector::MaxRowsAtCompileTime,
-		MaxColsAtCompileTime = 1,
-		CoeffReadCost = Optima::Vector::CoeffReadCost
-	};
+    typedef Eigen::Dense StorageKind;
+    typedef Eigen::MatrixXpr XprKind;
+    typedef Optima::Vector::Scalar Scalar;
+    typedef Optima::Vector::Index Index;
+    typedef Optima::Vector::PlainObject PlainObject;
+    enum {
+        Flags = Eigen::ColMajor,
+        RowsAtCompileTime = Optima::Vector::RowsAtCompileTime,
+        ColsAtCompileTime = 1,
+        MaxRowsAtCompileTime = Optima::Vector::MaxRowsAtCompileTime,
+        MaxColsAtCompileTime = 1,
+        CoeffReadCost = Optima::Vector::CoeffReadCost
+    };
 };
 
 } // namespace internal
@@ -116,10 +116,10 @@ namespace Optima {
 /// A type used to describe a saddle point coefficient matrix.
 struct SaddlePointMatrix : public Eigen::MatrixBase<SaddlePointMatrix>
 {
-	/// The diagonal matrix `H` in the coefficient matrix.
+    /// The diagonal matrix `H` in the coefficient matrix.
     Vector H;
 
-	/// The matrix `A` in the coefficient matrix.
+    /// The matrix `A` in the coefficient matrix.
     Matrix A;
 
     /// The diagonal matrix `X` in the coefficient matrix.
@@ -134,47 +134,81 @@ struct SaddlePointMatrix : public Eigen::MatrixBase<SaddlePointMatrix>
     auto cols() const -> Index { return rows(); }
 
     auto coeff(Index row, Index col) const -> Scalar
-	{
-    	const Index n = H.rows();
-    	const Index m = A.rows();
+    {
+        const Index n = H.rows();
+        const Index m = A.rows();
+        const Index p = Z.rows();
 
-    	if(row < n && col < n)
-    		return row == col ? H[row] : 0.0;
-    	if(row < n && col < n + m)
-    		return -A(col - n, row);
-    	if(row < n)
-    		return row == col - n - m ? -1.0 : 0.0;
-    	if(row < n + m)
-    		return col < n ? A(row - n, col) : 0.0;
-    	if(col < n) return row - n - m == col ? Z[col] : 0.0;
-    	if(col < n + m) return 0.0;
-    	return row == col ? X[col - n - m] : 0.0;
-	}
+        // Checking top rows [H -tr(A) -I]
+        if(row < n)
+        {
+            // Block: H
+            if(col < n) return row == col ? H[row] : 0.0;
+
+            // Block: -tr(A)
+            if(col < n + m) return -A(col - n, row);
+
+            // Block: -I
+            if(p > 0) return row == col - n - m ? -1.0 : 0.0;
+        }
+
+        // Checking middle rows [A 0 0]
+        if(row < n + m)
+        {
+            // Block: A
+            if(col < n) return A(row - n, col);
+
+            // Block: 0
+            return 0.0;
+        }
+
+        // Checking bottom rows [Z 0 X]
+        if(p > 0)
+        {
+            row -= n + m;
+            // Block: Z
+            if(col < n) return col == row ? Z[col] : 0.0;
+
+            // Block: 0
+            if(col < n + m) return 0.0;
+
+            // Block: X
+            return row == col - n - m ? X[row] : 0.0;
+        }
+
+        return 0.0;
+    }
 
     auto operator()(Index row, Index col) const -> Scalar { return coeff(row, col); }
 
     operator PlainObject() const
     {
-        const auto n = H.rows();
-        const auto m = A.rows();
-        const auto t = 2*n + m;
-    	PlainObject res = zeros(t, t);
+        assert(valid());
+        const Index n = H.rows();
+        const Index m = A.rows();
+        const Index p = Z.rows();
+        const Index t = n + m + p;
+        PlainObject res = zeros(t, t);
         res.topLeftCorner(n, n).diagonal() = H;
-        res.topRightCorner(n, n).diagonal() = -ones(n);
         res.middleRows(n, m).leftCols(n) = A;
         res.middleCols(n, m).topRows(n) = -tr(A);
-        res.bottomLeftCorner(n, n).diagonal() = Z;
-        res.bottomRightCorner(n, n).diagonal() = X;
-    	return res;
+        if(p > 0)
+        {
+            res.topRightCorner(n, n).diagonal() = -ones(n);
+            res.bottomLeftCorner(n, n).diagonal() = Z;
+            res.bottomRightCorner(n, n).diagonal() = X;
+        }
+        return res;
     }
 
     /// Return `true` if this SaddlePointMatrix instance is valid.
     auto valid() const -> bool
-	{
-    	return H.rows() == A.cols() &&
-    		   X.rows() == Z.rows() &&
-			  (X.rows() == H.rows() || X.rows() == 0);
-	}
+    {
+        if(H.rows() != A.cols()) return false;
+        if(Z.rows() && Z.rows() != H.rows()) return false;
+        if(Z.rows() != X.rows()) return false;
+        return true;
+    }
 };
 
 /// A type used to describe a saddle point right-hand side vector.
@@ -196,46 +230,49 @@ struct SaddlePointVector : public Eigen::MatrixBase<SaddlePointVector>
     auto cols() const -> Index { return 1; }
 
     auto coeff(Index row) const -> Scalar
-	{
-    	const Index n = a.rows();
-    	const Index m = b.rows();
-    	eigen_assert(row >= 0 && row < size());
-    	if(row < n) return a.operator[](row);
-    	if(row < n + m) return b[row - n];
-    	return c[row - n - m];
-	}
+    {
+        const Index n = a.rows();
+        const Index m = b.rows();
+        eigen_assert(row >= 0 && row < size());
+        if(row < n) return a.operator[](row);
+        if(row < n + m) return b[row - n];
+        return c[row - n - m];
+    }
 
     auto operator()(Index row) const -> Scalar { return coeff(row); }
 
     operator PlainObject() const
     {
-    	const Index n = a.rows();
-    	const Index m = b.rows();
-    	const Index t = 2*n + m;
-    	PlainObject res(t);
-    	res.topRows(n) = a;
-    	res.middleRows(n, m) = b;
-    	res.bottomRows(n) = c;
-    	return res;
+        assert(valid());
+        const Index n = a.rows();
+        const Index m = b.rows();
+        const Index p = c.rows();
+        const Index t = n + m + p;
+        PlainObject res(t);
+        res.topRows(n) = a;
+        res.middleRows(n, m) = b;
+        res.bottomRows(p) = c;
+        return res;
     }
 
     /// Return `true` if this SaddlePointVector instance is valid.
     auto valid() const -> bool
-	{
-    	return a.rows() == c.rows() || c.rows() == 0;
-	}
+    {
+        if(c.rows() && c.rows() != a.rows()) return false;
+        return true;
+    }
 };
 
 /// A type used to describe a canonical saddle point coefficient matrix.
 struct SaddlePointMatrixCanonical : public Eigen::MatrixBase<SaddlePointMatrixCanonical>
 {
-	/// The diagonal matrix `G = diag(Gb, Gs, Gu)` in the coefficient matrix.
+    /// The diagonal matrix `G = diag(Gb, Gs, Gu)` in the coefficient matrix.
     Vector Gb, Gs, Gu;
 
-	/// The diagonal matrix `Bb` in the canonical coefficient matrix.
+    /// The diagonal matrix `Bb` in the canonical coefficient matrix.
     Vector Bb;
 
-	/// The matrix `B = [Bb Bs Bu]` in the canonical coefficient matrix.
+    /// The matrix `B = [Bb Bs Bu]` in the canonical coefficient matrix.
     Matrix Bs, Bu;
 
     /// The diagonal matrix `E = diag(Eb, Es, Eu)` in the coefficient matrix.
@@ -243,132 +280,174 @@ struct SaddlePointMatrixCanonical : public Eigen::MatrixBase<SaddlePointMatrixCa
 
     EIGEN_DENSE_PUBLIC_INTERFACE(SaddlePointMatrixCanonical)
 
-	auto rows() const -> Index
-	{
-    	const Index nb = Gb.rows();
-    	const Index ns = Gs.rows();
-    	const Index nu = Gu.rows();
-    	const Index n  = nb + ns + nu;
-    	const Index m  = Bb.rows();
-    	return 2*n + m;
-	}
+    auto rows() const -> Index
+    {
+        const Index nb = Gb.rows();
+        const Index ns = Gs.rows();
+        const Index nu = Gu.rows();
+        const Index m  = Bb.rows();
+        const Index pb = Eb.rows();
+        const Index ps = Es.rows();
+        const Index pu = Eu.rows();
+        const Index n  = nb + ns + nu;
+        const Index p  = pb + ps + pu;
+        return n + m + p;
+    }
 
-	auto cols() const -> Index { return rows(); }
+    auto cols() const -> Index { return rows(); }
 
-	auto coeff(Index row, Index col) const -> Scalar
-	{
-    	const Index nb = Gb.rows();
-    	const Index ns = Gs.rows();
-    	const Index nu = Gu.rows();
-    	const Index n  = nb + ns + nu;
-    	const Index m  = Bb.rows();
+    auto coeff(Index row, Index col) const -> Scalar
+    {
+        const Index nb = Gb.rows();
+        const Index ns = Gs.rows();
+        const Index nu = Gu.rows();
+        const Index m  = Bb.rows();
+        const Index pb = Eb.rows();
+        const Index ps = Es.rows();
+        const Index pu = Eu.rows();
+        const Index n  = nb + ns + nu;
+        const Index p  = pb + ps + pu;
 
-		if(row < n && col < n) // Block: G
-		{
-			if(row < nb) return row == col ? Gb[row] : 0.0;
-			if(row < nb + ns) return row == col ? Gs[row - nb] : 0.0;
-			return row == col ? Gu[row - nb - ns] : 0.0;
-		}
-		if(row < n && col < n + m)  // Block: tr(B)
-		{
-			col -= n;
-			if(row < nb) return row == col ? Bb[row] : 0.0;
-			if(row < nb + ns) return Bs(col, row - nb);
-			return Bu(col, row - nb - ns);
-		}
-		if(row < n)  // Block: E(top-right)
-		{
-			col -= n + m;
-			if(row < nb) return row == col ? Eb[row] : 0.0;
-			if(row < nb + ns) return row == col ? Es[row - nb] : 0.0;
-			return row == col ? Eu[row - nb - ns] : 0.0;
-		}
-		if(row < n + m) // Block: B
-		{
-			row -= n;
-			if(col < nb) return col == row ? Bb[row] : 0.0;
-			if(col < nb + ns) return Bs(row, col - nb);
-			if(col < n) return Bu(row, col - nb - ns);
-			return 0.0;
-		}
-		if(col < n) // Block: E(bottom-left)
-		{
-			row -= n + m;
-			if(col < nb) return row == col ? Eb[col] : 0.0;
-			if(col < nb + ns) return row == col ? Es[col - nb] : 0.0;
-			return row == col ? Eu[row - nb - ns] : 0.0;
-		}
-		if(row == col) // Block: E(bottom-right)
-		{
-			row -= n + m;
-			if(row < nb) return Eb[row];
-			if(row < nb + ns) return Es[row - nb];
-			return Eu[row - nb - ns];
-		}
-		return 0.0;
-	}
+        // Block: [G tr(B) E]
+        if(row < n)
+        {
+            // Block: G
+            if(col < n)
+            {
+                if(row < nb) return row == col ? Gb[row] : 0.0;
+                if(row < nb + ns) return row == col ? Gs[row - nb] : 0.0;
+                return row == col ? Gu[row - nb - ns] : 0.0;
+            }
 
-	auto operator()(Index row, Index col) const -> Scalar { return coeff(row, col); }
+            // Block: tr(B)
+            if(col < n + m)
+            {
+                col -= n;
+                if(row < nb) return row == col ? Bb[row] : 0.0;
+                if(row < nb + ns) return Bs(col, row - nb);
+                return Bu(col, row - nb - ns);
+            }
 
-	operator PlainObject() const
-	{
-    	const Index nb = Gb.rows();
-    	const Index ns = Gs.rows();
-    	const Index nu = Gu.rows();
-    	const Index n  = nb + ns + nu;
-    	const Index m  = Bb.rows();
-		const Index t  = 2*n + m;
+            // Block: E
+            if(col < n + m + p)
+            {
+                col -= n + m;
+                if(row < nb) return row == col ? Eb[row] : 0.0;
+                if(row < nb + ns) return row == col ? Es[row - nb] : 0.0;
+                return row == col ? Eu[row - nb - ns] : 0.0;
+            }
+        }
+        // Block: [B 0 0]
+        if(row < n + m)
+        {
+            // Block: B
+            if(col < n)
+            {
+                row -= n;
+                if(col < nb) return col == row ? Bb[row] : 0.0;
+                if(col < nb + ns) return Bs(row, col - nb);
+                if(col < n) return Bu(row, col - nb - ns);
+            }
 
-		PlainObject res = zeros(t, t);
+            // Block: 0
+            return 0.0;
+        }
+        // Block: [E 0 E]
+        if(row < n + m + p)
+        {
+            // Block E
+            if(col < n)
+            {
+                row -= n + m;
+                if(col != row) return 0.0;
+                if(col < nb) return Eb[col];
+                if(col < nb + ns) return Es[col - nb];
+                return Eu[row - nb - ns];
+            }
+            // Block 0
+            if(col < n + m)
+                return 0.0;
+            // Block: E
+            if(col < n + m + p)
+            {
+                row -= n + m;
+                col -= n + m;
+                if(row != col) return 0.0;
+                if(row < nb) return Eb[row];
+                if(row < nb + ns) return Es[row - nb];
+                return Eu[row - nb - ns];
+            }
+        }
 
-		auto G = res.topLeftCorner(n, n).diagonal();
-		auto B = res.middleRows(n, m);
-		auto BT = res.middleCols(n, m);
-		auto ETR = res.topRightCorner(n, n).diagonal();
-		auto EBL = res.bottomLeftCorner(n, n).diagonal();
-		auto EBR = res.bottomRightCorner(n, n).diagonal();
+        return 0.0;
+    }
 
-		if(nb) G.topRows(nb) = Gb;
-	    if(ns) G.middleRows(nb, ns) = Gs;
-	    if(nu) G.bottomRows(nu) = Gu;
+    auto operator()(Index row, Index col) const -> Scalar { return coeff(row, col); }
 
-	    if(nb) ETR.topRows(nb) = Eb;
-	    if(ns) ETR.middleRows(nb, ns) = Es;
-	    if(nu) ETR.bottomRows(nu) = Eu;
+    operator PlainObject() const
+    {
+        assert(valid());
 
-	    if(nb) EBL.topRows(nb) = Eb;
-	    if(ns) EBL.middleRows(nb, ns) = Es;
-	    if(nu) EBL.bottomRows(nu) = Eu;
+        const Index nb = Gb.rows();
+        const Index ns = Gs.rows();
+        const Index nu = Gu.rows();
+        const Index m  = Bb.rows();
+        const Index pb = Eb.rows();
+        const Index ps = Es.rows();
+        const Index pu = Eu.rows();
+        const Index n  = nb + ns + nu;
+        const Index p  = pb + ps + pu;
+        const Index t  = n + m + p;
 
-	    if(nb) EBR.topRows(nb) = Eb;
-	    if(ns) EBR.middleRows(nb, ns) = Es;
-	    if(nu) EBR.bottomRows(nu) = Eu;
+        PlainObject res = zeros(t, t);
 
-	    if(nb) B.leftCols(nb) = diag(Bb);
-	    if(ns) B.middleCols(nb, ns) = Bs;
-	    if(nu) B.rightCols(nu) = Bu;
+        auto G = res.topLeftCorner(n, n).diagonal();
+        auto B = res.middleRows(n, m);
+        auto BT = res.middleCols(n, m);
+        auto ETR = res.topRightCorner(n, n).diagonal();
+        auto EBL = res.bottomLeftCorner(n, n).diagonal();
+        auto EBR = res.bottomRightCorner(n, n).diagonal();
 
-	    if(nb) BT.topRows(nb).diagonal() = Bb;
-	    if(ns) BT.middleRows(nb, ns) = tr(Bs);
-	    if(nu) BT.bottomRows(nu) = tr(Bu);
+        if(nb) G.topRows(nb) = Gb;
+        if(ns) G.middleRows(nb, ns) = Gs;
+        if(nu) G.bottomRows(nu) = Gu;
 
-	    return res;
-	}
+        if(pb) ETR.topRows(nb) = Eb;
+        if(ps) ETR.middleRows(nb, ns) = Es;
+        if(pu) ETR.bottomRows(nu) = Eu;
+
+        if(pb) EBL.topRows(nb) = Eb;
+        if(ps) EBL.middleRows(nb, ns) = Es;
+        if(pu) EBL.bottomRows(nu) = Eu;
+
+        if(pb) EBR.topRows(nb) = Eb;
+        if(ps) EBR.middleRows(nb, ns) = Es;
+        if(pu) EBR.bottomRows(nu) = Eu;
+
+        if(nb) B.leftCols(nb) = diag(Bb);
+        if(ns) B.middleCols(nb, ns) = Bs;
+        if(nu) B.rightCols(nu) = Bu;
+
+        if(nb) BT.topRows(nb).diagonal() = Bb;
+        if(ns) BT.middleRows(nb, ns) = tr(Bs);
+        if(nu) BT.bottomRows(nu) = tr(Bu);
+
+        return res;
+    }
 
     /// Return `true` if this SaddlePointMatrixCanonical instance is valid.
     auto valid() const -> bool
-	{
-    	return Gb.rows() == Bb.rows() &&
-     		   Gs.rows() == Bs.cols() &&
-    		   Gu.rows() == Bu.cols() &&
-    		   Bs.rows() == Bb.rows() &&
-			   Bu.rows() == Bb.rows() &&
-			   Es.rows() == Eb.rows() &&
-			   Eu.rows() == Eb.rows() &&
-			  (Eb.rows() == Gb.rows() || Eb.rows() == 0) &&
-			  (Es.rows() == Gs.rows() || Es.rows() == 0) &&
-			  (Eu.rows() == Gu.rows() || Eu.rows() == 0);
-	}
+    {
+        if(Gb.rows() != Bb.rows()) return false;
+        if(Bs.rows() && Bs.rows() != Bb.rows()) return false;
+        if(Bu.rows() && Bu.rows() != Bb.rows()) return false;
+        if(Bs.rows() && Bs.cols() != Gs.rows()) return false;
+        if(Bu.rows() && Bu.cols() != Gu.rows()) return false;
+        if(Eb.rows() && Eb.rows() != Gb.rows()) return false;
+        if(Es.rows() && Es.rows() != Gs.rows()) return false;
+        if(Eu.rows() && Eu.rows() != Gu.rows()) return false;
+        return true;
+    }
 };
 
 /// A type used to describe a canonical saddle point right-hand side vector.
@@ -386,83 +465,103 @@ struct SaddlePointVectorCanonical : public Eigen::MatrixBase<SaddlePointVectorCa
 
     EIGEN_DENSE_PUBLIC_INTERFACE(SaddlePointVectorCanonical)
 
-	auto rows() const -> Index
-	{
-    	const Index nb = ab.rows();
-    	const Index ns = as.rows();
-    	const Index nu = au.rows();
-    	const Index n  = nb + ns + nu;
-    	const Index m  = b.rows();
-    	return 2*n + m;
-	}
+    auto rows() const -> Index
+    {
+        const Index nb = ab.rows();
+        const Index ns = as.rows();
+        const Index nu = au.rows();
+        const Index m  = b.rows();
+        const Index pb = cb.rows();
+        const Index ps = cs.rows();
+        const Index pu = cu.rows();
+        const Index n  = nb + ns + nu;
+        const Index p  = pb + ps + pu;
+        return n + m + p;
+    }
 
-	auto size() const -> Index { return rows(); }
-	auto cols() const -> Index { return 1; }
+    auto size() const -> Index { return rows(); }
+    auto cols() const -> Index { return 1; }
 
-	auto coeff(Index row) const -> Scalar
-	{
-    	const Index nb = ab.rows();
-    	const Index ns = as.rows();
-    	const Index nu = au.rows();
-    	const Index n  = nb + ns + nu;
-    	const Index m  = b.rows();
+    auto coeff(Index row) const -> Scalar
+    {
+        const Index nb = ab.rows();
+        const Index ns = as.rows();
+        const Index nu = au.rows();
+        const Index m  = b.rows();
+        const Index pb = cb.rows();
+        const Index ps = cs.rows();
+        const Index pu = cu.rows();
+        const Index n  = nb + ns + nu;
+        const Index p  = pb + ps + pu;
 
-		if(row < n) // Block: a
-		{
-			if(row < nb) return ab[row];
-			if(row < nb + ns) return as[row - nb];
-			return au[row - nb - ns];
-		}
-		if(row < n + m)  // Block: b
-		{
-			row -= n;
-			return b[row];
-		}
-		else // Block: c
-		{
-			row -= n + m;
-			if(row < nb) return cb[row];
-			if(row < nb + ns) return cs[row - nb];
-			return cu[row - nb - ns];
-		}
-	}
+        // Block: a
+        if(row < n)
+        {
+            if(row < nb) return ab[row];
+            if(row < nb + ns) return as[row - nb];
+            return au[row - nb - ns];
+        }
+        // Block: b
+        if(row < n + m)
+        {
+            row -= n;
+            return b[row];
+        }
+        // Block: c
+        if(row < n + m + p)
+        {
+            row -= n + m;
+            if(row < nb) return cb[row];
+            if(row < nb + ns) return cs[row - nb];
+            return cu[row - nb - ns];
+        }
 
-	auto operator()(Index row) const -> Scalar { return coeff(row); }
+        return 0.0;
+    }
 
-	operator PlainObject() const
-	{
-    	const Index nb = ab.rows();
-    	const Index ns = as.rows();
-    	const Index nu = au.rows();
-    	const Index n  = nb + ns + nu;
-    	const Index m  = b.rows();
-		const Index t  = 2*n + m;
+    auto operator()(Index row) const -> Scalar { return coeff(row); }
 
-		PlainObject res(t);
+    operator PlainObject() const
+    {
+        assert(valid());
 
-		auto a = res.topRows(n);
-		auto c = res.bottomRows(n);
+        const Index nb = ab.rows();
+        const Index ns = as.rows();
+        const Index nu = au.rows();
+        const Index m  = b.rows();
+        const Index pb = cb.rows();
+        const Index ps = cs.rows();
+        const Index pu = cu.rows();
+        const Index n  = nb + ns + nu;
+        const Index p  = pb + ps + pu;
+        const Index t  = n + m + p;
 
-		if(nb) a.topRows(nb) = ab;
-	    if(ns) a.middleRows(nb, ns) = as;
-	    if(nu) a.bottomRows(nu) = au;
+        PlainObject res(t);
 
-		res.middleRows(n, m) = b;
+        auto a = res.topRows(n);
+        auto c = res.bottomRows(n);
 
-		if(nb) c.topRows(nb) = cb;
-	    if(ns) c.middleRows(nb, ns) = cs;
-	    if(nu) c.bottomRows(nu) = cu;
+        if(nb) a.topRows(nb) = ab;
+        if(ns) a.middleRows(nb, ns) = as;
+        if(nu) a.bottomRows(nu) = au;
 
-	    return res;
-	}
+        res.middleRows(n, m) = b;
+
+        if(pb) c.topRows(nb) = cb;
+        if(ps) c.middleRows(nb, ns) = cs;
+        if(pu) c.bottomRows(nu) = cu;
+
+        return res;
+    }
 
     /// Return `true` if this SaddlePointMatrixCanonical instance is valid.
     auto valid() const -> bool
-	{
-    	return (ab.rows() == cb.rows() || cb.rows() == 0) &&
-     		   (as.rows() == cs.rows() || cs.rows() == 0) &&
-    		   (au.rows() == cu.rows() || cu.rows() == 0);
-	}
+    {
+        if(ab.rows() != cb.rows()) return false;
+        if(as.rows() != cs.rows()) return false;
+        if(au.rows() != cu.rows()) return false;
+        return true;
+    }
 };
 
 } // namespace Optima
