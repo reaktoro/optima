@@ -57,9 +57,9 @@ struct traits<MatrixRowsView<Derived, Indices>>
 	enum {
 		Flags = Eigen::ColMajor,
 		RowsAtCompileTime = Derived::RowsAtCompileTime,
-		ColsAtCompileTime = Derived::RowsAtCompileTime,
+		ColsAtCompileTime = Derived::ColsAtCompileTime,
 		MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
-		MaxColsAtCompileTime = Derived::MaxRowsAtCompileTime,
+		MaxColsAtCompileTime = Derived::MaxColsAtCompileTime,
 		CoeffReadCost = Derived::CoeffReadCost
 	};
 };
@@ -74,9 +74,9 @@ struct traits<MatrixRowsViewConst<Derived, Indices>>
 	enum {
 		Flags = Eigen::ColMajor,
 		RowsAtCompileTime = Derived::RowsAtCompileTime,
-		ColsAtCompileTime = Derived::RowsAtCompileTime,
+		ColsAtCompileTime = Derived::ColsAtCompileTime,
 		MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
-		MaxColsAtCompileTime = Derived::MaxRowsAtCompileTime,
+		MaxColsAtCompileTime = Derived::MaxColsAtCompileTime,
 		CoeffReadCost = Derived::CoeffReadCost
 	};
 };
@@ -91,9 +91,9 @@ struct traits<MatrixColsView<Derived, Indices>>
 	enum {
 		Flags = Eigen::ColMajor,
 		RowsAtCompileTime = Derived::RowsAtCompileTime,
-		ColsAtCompileTime = Derived::RowsAtCompileTime,
+		ColsAtCompileTime = Derived::ColsAtCompileTime,
 		MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
-		MaxColsAtCompileTime = Derived::MaxRowsAtCompileTime,
+		MaxColsAtCompileTime = Derived::MaxColsAtCompileTime,
 		CoeffReadCost = Derived::CoeffReadCost
 	};
 };
@@ -108,9 +108,9 @@ struct traits<MatrixColsViewConst<Derived, Indices>>
 	enum {
 		Flags = Eigen::ColMajor,
 		RowsAtCompileTime = Derived::RowsAtCompileTime,
-		ColsAtCompileTime = Derived::RowsAtCompileTime,
+		ColsAtCompileTime = Derived::ColsAtCompileTime,
 		MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
-		MaxColsAtCompileTime = Derived::MaxRowsAtCompileTime,
+		MaxColsAtCompileTime = Derived::MaxColsAtCompileTime,
 		CoeffReadCost = Derived::CoeffReadCost
 	};
 };
@@ -125,9 +125,9 @@ struct traits<MatrixSubView<Derived, Indices>>
 	enum {
 		Flags = Eigen::ColMajor,
 		RowsAtCompileTime = Derived::RowsAtCompileTime,
-		ColsAtCompileTime = Derived::RowsAtCompileTime,
+		ColsAtCompileTime = Derived::ColsAtCompileTime,
 		MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
-		MaxColsAtCompileTime = Derived::MaxRowsAtCompileTime,
+		MaxColsAtCompileTime = Derived::MaxColsAtCompileTime,
 		CoeffReadCost = Derived::CoeffReadCost
 	};
 };
@@ -142,9 +142,9 @@ struct traits<MatrixSubViewConst<Derived, Indices>>
 	enum {
 		Flags = Eigen::ColMajor,
 		RowsAtCompileTime = Derived::RowsAtCompileTime,
-		ColsAtCompileTime = Derived::RowsAtCompileTime,
+		ColsAtCompileTime = Derived::ColsAtCompileTime,
 		MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
-		MaxColsAtCompileTime = Derived::MaxRowsAtCompileTime,
+		MaxColsAtCompileTime = Derived::MaxColsAtCompileTime,
 		CoeffReadCost = Derived::CoeffReadCost
 	};
 };
