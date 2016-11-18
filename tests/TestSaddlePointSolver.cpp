@@ -21,6 +21,42 @@
 #include <Optima/Optima.hpp>
 using namespace Optima;
 
+namespace aux {
+
+auto saddlePointProblemCanonical(Index nb, Index ns, Index nu, Index p) -> SaddlePointProblemCanonical
+{
+	Index n = nb + ns + nu;
+	Index m = nb;
+
+	SaddlePointProblemCanonical problem;
+    problem.lhs.Gb = Vector::Random(nb);
+    problem.lhs.Gs = Vector::Random(ns);
+    problem.lhs.Gu = Vector::Random(nu);
+    problem.lhs.Bb = Vector::Random(nb);
+    problem.lhs.Bs = Matrix::Random(nb, ns);
+    problem.lhs.Bu = Matrix::Random(nb, nu);
+    problem.lhs.Eb = Vector::Random(p ? nb : 0);
+    problem.lhs.Es = Vector::Random(p ? ns : 0);
+    problem.lhs.Eu = Vector::Random(p ? nu : 0);
+
+    Vector rhs = problem.lhs * ones(problem.lhs.rows());
+
+    problem.rhs.ab = rhs.topRows(n).topRows(nb);
+    problem.rhs.as = rhs.topRows(n).middleRows(nb, ns);
+    problem.rhs.au = rhs.topRows(n).bottomRows(nu);
+    problem.rhs.b  = rhs.middleRows(n, m);
+    problem.rhs.cb = rhs.bottomRows(n).topRows(nb);
+    problem.rhs.cs = rhs.bottomRows(n).middleRows(nb, ns);
+    problem.rhs.cu = rhs.bottomRows(n).bottomRows(nu);
+
+    REQUIRE(problem.lhs.valid());
+	REQUIRE(problem.rhs.valid());
+
+	return problem;
+}
+
+} // namespace aux
+
 TEST_CASE("Testing SaddlePointSolver - Case 1")
 {
     SaddlePointProblemCanonical problem;
@@ -43,6 +79,39 @@ TEST_CASE("Testing SaddlePointSolver - Case 1")
     problem.rhs.cb = {2, 2, 2};
     problem.rhs.cs = {};
     problem.rhs.cu = {};
+
+    solver(problem, sol);
+
+    CHECK(sol.isApprox(ones(sol.rows())));
+}
+
+TEST_CASE("Testing SaddlePointSolver - Case 2")
+{
+    Index np = 10;
+    Index ns = 35;
+    Index nu = 5;
+    Index p  = 1;
+
+    SaddlePointVectorCanonical sol;
+    SaddlePointProblemCanonical problem =
+		aux::saddlePointProblemCanonical(np, ns, nu, p);
+
+    solver(problem, sol);
+
+    CHECK(sol.isApprox(ones(sol.rows())));
+}
+
+TEST_CASE("Testing SaddlePointSolver - Case 3")
+{
+    SaddlePointVectorCanonical sol;
+    SaddlePointProblemCanonical problem;
+
+    Index np = 10;
+    Index ns = 35;
+    Index nu = 0;
+    Index p  = 0;
+
+    problem = aux::saddlePointProblemCanonical(np, ns, nu, p);
 
     solver(problem, sol);
 
