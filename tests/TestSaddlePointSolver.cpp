@@ -1,4 +1,4 @@
-// Optima is a C++ library for numerical solution of linear and nonlinear programing problems.
+// Optima is a C++ library for numerical sol of linear and nonlinear programing problems.
 //
 // Copyright (C) 2014-2016 Allan Leal
 //
@@ -118,148 +118,120 @@ TEST_CASE("Testing SaddlePointSolver - Case 3")
     CHECK(sol.isApprox(ones(sol.rows())));
 }
 
-//auto testSaddlePointSolver2() -> bool
-//{
-//    SaddlePointProblemCanonical problem;
-//    SaddlePointSolutionCanonical solution;
-//
-//    problem.Gb = {5};
-//    problem.Gs = {5};
-//    problem.Gu = {};
-//
-//    problem.Bb = {2};
-//    problem.Bs = {2};
-//    problem.Bu = {};
-//
-//    problem.Eb = {1};
-//    problem.Es = {1};
-//    problem.Eu = {};
-//
-//    problem.ab = {8};
-//    problem.as = {8};
-//    problem.au = {};
-//    problem.b  = {4};
-//    problem.cb = {2};
-//    problem.cs = {2};
-//    problem.cu = {};
-//
-//    solver(problem, solution);
-//
-////    std::cout << solution.xb << std::endl;
-////    std::cout << solution.xs << std::endl;
-////    std::cout << solution.xu << std::endl;
-////    std::cout << solution.y  << std::endl;
-////    std::cout << solution.zb << std::endl;
-////    std::cout << solution.zs << std::endl;
-////    std::cout << solution.zu << std::endl;
-//
-//    return true;
-//}
-//
-//auto testSaddlePointSolver3() -> bool
-//{
-//    SaddlePointProblemCanonical problem;
-//    SaddlePointSolutionCanonical solution;
-//
-//    problem.Gb = {5};
-//    problem.Gs = {};
-//    problem.Gu = {1};
-//
-//    problem.Bb = {2};
-//    problem.Bs = {};
-//    problem.Bu = {2};
-//
-//    problem.Eb = {1};
-//    problem.Es = {};
-//    problem.Eu = {6};
-//
-//    problem.ab = {8};
-//    problem.as = {};
-//    problem.au = {9};
-//    problem.b  = {4};
-//    problem.cb = {2};
-//    problem.cs = {};
-//    problem.cu = {12};
-//
-//    solver(problem, solution);
-//
-////    std::cout << solution.xb << std::endl;
-////    std::cout << solution.xs << std::endl;
-////    std::cout << solution.xu << std::endl;
-////    std::cout << solution.y  << std::endl;
-////    std::cout << solution.zb << std::endl;
-////    std::cout << solution.zs << std::endl;
-////    std::cout << solution.zu << std::endl;
-//    //*/
-//
-//    return true;
-//}
-//
-//auto testSaddlePointSolver4() -> bool
-//{
-//    SaddlePointProblemCanonical problem;
-//    SaddlePointSolutionCanonical solution;
-//
-//    problem.Gb = {1, 2, 3};
-//    problem.Gs = {4, 5};
-//    problem.Gu = {6};
-//
-//    problem.Bb = {9, 8, 7};
-//    problem.Bs = {{1, 2}, {2, 3}, {3, 4}};
-//    problem.Bu = {5, 6, 7};
-//
-//    problem.Eb = {1, 1, 1};
-//    problem.Es = {1, 1};
-//    problem.Eu = {1};
-//
-//    problem.ab = {11, 11, 11};
-//    problem.as = {11, 15};
-//    problem.au = {25};
-//    problem.b  = {17, 19, 21};
-//    problem.cb = {2, 2, 2};
-//    problem.cs = {2, 2};
-//    problem.cu = {2};
-//
-////    problem.Gb = {8, 7, 6};
-////    problem.Gs = {6, 5};
-////    problem.Gu = {4};
-////
-////    problem.Bb = {9, 8, 7};
-////    problem.Bs = {{1, 2}, {2, 3}, {3, 4}};
-////    problem.Bu = {5, 5, 5};
-////
-////    problem.Eb = {1, 2, 3};
-////    problem.Es = {1, 3};
-////    problem.Eu = {9};
-////
-////    problem.ab = {18, 17, 16};
-////    problem.as = {13, 17};
-////    problem.au = {28};
-////    problem.b  = {17, 18, 19};
-////    problem.cb = {2, 4, 6};
-////    problem.cs = {2, 6};
-////    problem.cu = {18};
-//
-//    std::cout << problem << std::endl;
-//    solver(problem, solution);
-//
-////    std::cout << solution.xb << std::endl;
-////    std::cout << solution.xs << std::endl;
-////    std::cout << solution.xu << std::endl;
-////    std::cout << solution.y  << std::endl;
-////    std::cout << solution.zb << std::endl;
-////    std::cout << solution.zs << std::endl;
-////    std::cout << solution.zu << std::endl;
-//    return true;
-//}
-//
-//TEST_CASE("Testing SaddlePointSolver...")
-//{
-//    testSaddlePointSolver1();
-//    testSaddlePointSolver2();
-//    testSaddlePointSolver3();
-//    testSaddlePointSolver4();
-//}
+TEST_CASE("Testing SaddlePointSolver - Case 4")
+{
+    SaddlePointVectorCanonical sol;
+    SaddlePointProblemCanonical problem;
 
+    Index np = 10;
+    Index ns = 0;
+    Index nu = 0;
+    Index p  = 0;
 
+    problem = aux::saddlePointProblemCanonical(np, ns, nu, p);
 
+    solver(problem, sol);
+
+    CHECK(sol.isApprox(ones(sol.rows())));
+}
+
+TEST_CASE("Testing SaddlePointSolver - Case 4")
+{
+    SaddlePointVectorCanonical sol;
+    SaddlePointProblemCanonical problem;
+
+    Index np = 10;
+    Index ns = 0;
+    Index nu = 0;
+    Index p  = 1;
+
+    problem = aux::saddlePointProblemCanonical(np, ns, nu, p);
+
+    solver(problem, sol);
+
+    CHECK(sol.isApprox(ones(sol.rows())));
+}
+
+TEST_CASE("Testing SaddlePointSolver - Case 5")
+{
+    SaddlePointProblemCanonical problem;
+    SaddlePointVectorCanonical sol;
+
+    problem.lhs.Gb = {5};
+    problem.lhs.Gs = {5};
+    problem.lhs.Gu = {};
+    problem.lhs.Bb = {2};
+    problem.lhs.Bs = {2};
+    problem.lhs.Bu = {};
+    problem.lhs.Eb = {1};
+    problem.lhs.Es = {1};
+    problem.lhs.Eu = {};
+
+    problem.rhs.ab = {8};
+    problem.rhs.as = {8};
+    problem.rhs.au = {};
+    problem.rhs.b  = {4};
+    problem.rhs.cb = {2};
+    problem.rhs.cs = {2};
+    problem.rhs.cu = {};
+
+    solver(problem, sol);
+
+    CHECK(sol.isApprox(ones(sol.rows())));
+}
+
+TEST_CASE("Testing SaddlePointSolver - Case 6")
+{
+    SaddlePointProblemCanonical problem;
+    SaddlePointVectorCanonical sol;
+
+    problem.lhs.Gb = {5};
+    problem.lhs.Gs = {};
+    problem.lhs.Gu = {1};
+    problem.lhs.Bb = {2};
+    problem.lhs.Bs = {};
+    problem.lhs.Bu = {2};
+    problem.lhs.Eb = {1};
+    problem.lhs.Es = {};
+    problem.lhs.Eu = {6};
+
+    problem.rhs.ab = {8};
+    problem.rhs.as = {};
+    problem.rhs.au = {9};
+    problem.rhs.b  = {4};
+    problem.rhs.cb = {2};
+    problem.rhs.cs = {};
+    problem.rhs.cu = {12};
+
+    solver(problem, sol);
+
+    CHECK(sol.isApprox(ones(sol.rows())));
+}
+
+TEST_CASE("Testing SaddlePointSolver - Case 7")
+{
+    SaddlePointProblemCanonical problem;
+    SaddlePointVectorCanonical sol;
+
+    problem.lhs.Gb = {1, 2, 3};
+    problem.lhs.Gs = {4, 5};
+    problem.lhs.Gu = {6};
+    problem.lhs.Bb = {9, 8, 7};
+    problem.lhs.Bs = {{1, 2}, {2, 3}, {3, 4}};
+    problem.lhs.Bu = {5, 6, 7};
+    problem.lhs.Eb = {1, 1, 1};
+    problem.lhs.Es = {1, 1};
+    problem.lhs.Eu = {1};
+
+    problem.rhs.ab = {11, 11, 11};
+    problem.rhs.as = {11, 15};
+    problem.rhs.au = {25};
+    problem.rhs.b  = {17, 19, 21};
+    problem.rhs.cb = {2, 2, 2};
+    problem.rhs.cs = {2, 2};
+    problem.rhs.cu = {2};
+
+    solver(problem, sol);
+
+    CHECK(sol.isApprox(ones(sol.rows())));
+}
