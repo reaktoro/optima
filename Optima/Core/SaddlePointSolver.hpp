@@ -17,12 +17,47 @@
 
 #pragma once
 
+// C++ includes
+#include <memory>
+
 // Optima includes
 #include <Optima/Core/SaddlePointMatrix.hpp>
 #include <Optima/Core/SaddlePointProblem.hpp>
 
 namespace Optima {
 
-auto solver(const SaddlePointProblemCanonical& problem, SaddlePointVectorCanonical& solution) -> void;
+class SaddlePointSolver
+{
+public:
+    /// Construct a default SaddlePointSolver instance.
+    SaddlePointSolver();
+
+    /// Construct a copy of a SaddlePointSolver instance.
+    SaddlePointSolver(const SaddlePointSolver& other);
+
+    /// Destroy this SaddlePointSolver instance.
+    virtual ~SaddlePointSolver();
+
+    /// Assign a SaddlePointSolver instance to this.
+    auto operator=(SaddlePointSolver other) -> SaddlePointSolver&;
+
+    /// Set `true` to indicate that matrix `A` is a constant at every call to `solve`.
+    auto constantA(bool isconst) -> void;
+
+    /// Solve a saddle point problem.
+    /// @param problem The saddle point problem.
+    /// @param[in,out] solution The solution of the saddle point problem.
+    auto solve(const SaddlePointProblem& problem, SaddlePointVector& solution) -> void;
+
+    /// Solve a saddle point problem.
+    /// @param problem The saddle point problem in canonical form.
+    /// @param[in,out] solution The solution of the saddle point problem in canonical form.
+    auto solve(const SaddlePointProblemCanonical& problem, SaddlePointVectorCanonical& solution) -> void;
+
+private:
+    struct Impl;
+
+    std::unique_ptr<Impl> pimpl;
+};
 
 } // namespace Optima

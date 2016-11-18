@@ -80,7 +80,8 @@ TEST_CASE("Testing SaddlePointSolver - Case 1")
     problem.rhs.cs = {};
     problem.rhs.cu = {};
 
-    solver(problem, sol);
+    SaddlePointSolver solver;
+    solver.solve(problem, sol);
 
     CHECK(sol.isApprox(ones(sol.rows())));
 }
@@ -96,7 +97,8 @@ TEST_CASE("Testing SaddlePointSolver - Case 2")
     SaddlePointProblemCanonical problem =
 		aux::saddlePointProblemCanonical(np, ns, nu, p);
 
-    solver(problem, sol);
+    SaddlePointSolver solver;
+    solver.solve(problem, sol);
 
     CHECK(sol.isApprox(ones(sol.rows())));
 }
@@ -113,7 +115,8 @@ TEST_CASE("Testing SaddlePointSolver - Case 3")
 
     problem = aux::saddlePointProblemCanonical(np, ns, nu, p);
 
-    solver(problem, sol);
+    SaddlePointSolver solver;
+    solver.solve(problem, sol);
 
     CHECK(sol.isApprox(ones(sol.rows())));
 }
@@ -130,7 +133,8 @@ TEST_CASE("Testing SaddlePointSolver - Case 4")
 
     problem = aux::saddlePointProblemCanonical(np, ns, nu, p);
 
-    solver(problem, sol);
+    SaddlePointSolver solver;
+    solver.solve(problem, sol);
 
     CHECK(sol.isApprox(ones(sol.rows())));
 }
@@ -147,7 +151,8 @@ TEST_CASE("Testing SaddlePointSolver - Case 4")
 
     problem = aux::saddlePointProblemCanonical(np, ns, nu, p);
 
-    solver(problem, sol);
+    SaddlePointSolver solver;
+    solver.solve(problem, sol);
 
     CHECK(sol.isApprox(ones(sol.rows())));
 }
@@ -175,7 +180,8 @@ TEST_CASE("Testing SaddlePointSolver - Case 5")
     problem.rhs.cs = {2};
     problem.rhs.cu = {};
 
-    solver(problem, sol);
+    SaddlePointSolver solver;
+    solver.solve(problem, sol);
 
     CHECK(sol.isApprox(ones(sol.rows())));
 }
@@ -203,7 +209,8 @@ TEST_CASE("Testing SaddlePointSolver - Case 6")
     problem.rhs.cs = {};
     problem.rhs.cu = {12};
 
-    solver(problem, sol);
+    SaddlePointSolver solver;
+    solver.solve(problem, sol);
 
     CHECK(sol.isApprox(ones(sol.rows())));
 }
@@ -231,7 +238,8 @@ TEST_CASE("Testing SaddlePointSolver - Case 7")
     problem.rhs.cs = {2, 2};
     problem.rhs.cu = {2};
 
-    solver(problem, sol);
+    SaddlePointSolver solver;
+    solver.solve(problem, sol);
 
     CHECK(sol.isApprox(ones(sol.rows())));
 }
