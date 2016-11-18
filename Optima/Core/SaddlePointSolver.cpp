@@ -17,10 +17,6 @@
 
 #include "SaddlePointSolver.hpp"
 
-
-// todo remove
-#include <iostream>
-
 // Eigen includes
 #include <Optima/Math/Eigen/LU>
 
@@ -46,7 +42,7 @@ struct SaddlePointSolver::Impl
     Vector r;
     Vector invGsEs;
     Vector invEuGu;
-    Vector invEu_cu;
+    Vector invEucu;
 
     auto solve(const SaddlePointProblemCanonical& problem, SaddlePointVectorCanonical& solution) -> void
     {
@@ -89,7 +85,7 @@ struct SaddlePointSolver::Impl
         if(ns) invGsEs = Gs; if(ps) invGsEs -= Es; invGsEs = inv(invGsEs);
         if(pu) invEuGu = Eu; if(nu) invEuGu -= Gu; invEuGu = inv(invEuGu);
 
-        if(nu) invEu_cu = cu; if(pu) invEu_cu.array() /= Eu.array();
+        if(nu) invEucu = cu; if(pu) invEucu.array() /= Eu.array();
 
         if(nb) Lb = Gb; if(pb) Lb -= Eb; Lb.array() /= Bb.array();
         if(ns) Ts = diag(-Lb) * Bs;
@@ -99,9 +95,9 @@ struct SaddlePointSolver::Impl
         if(nu) Lu = Tu * diag(invEuGu);
         if(nb) Ub = Tb; if(nu) Ub -= Lu * tr(Bu);
 
-        if(nb) ub = b; if(nu) ub -= Bu * invEu_cu;
+        if(nb) ub = b; if(nu) ub -= Bu * invEucu;
         if(ns) us = as; if(ps) us -= cs;
-        if(nu) uu = au - Gu % invEu_cu;
+        if(nu) uu = au - Gu % invEucu;
         if(nb) vb = ab; if(pb) vb -= cb;
 
         // Compute the solution
