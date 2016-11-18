@@ -292,6 +292,37 @@ struct SaddlePointMatrixCanonical : public Eigen::MatrixBase<SaddlePointMatrixCa
 
     EIGEN_DENSE_PUBLIC_INTERFACE(SaddlePointMatrixCanonical)
 
+	SaddlePointMatrixCanonical() = default;
+    SaddlePointMatrixCanonical(const SaddlePointMatrixCanonical& other)  = default;
+
+    auto operator=(const SaddlePointMatrixCanonical& other) -> SaddlePointMatrixCanonical&
+	{
+    	Gb = other.Gb;
+    	Gs = other.Gs;
+    	Gu = other.Gu;
+    	Bb = other.Bb;
+    	Bs = other.Bs;
+    	Bu = other.Bu;
+    	Eb = other.Eb;
+    	Es = other.Es;
+    	Eu = other.Eu;
+    	return *this;
+	}
+
+    auto operator=(SaddlePointMatrixCanonical&& other) -> SaddlePointMatrixCanonical&
+	{
+    	Gb = std::move(other.Gb);
+    	Gs = std::move(other.Gs);
+    	Gu = std::move(other.Gu);
+    	Bb = std::move(other.Bb);
+    	Bs = std::move(other.Bs);
+    	Bu = std::move(other.Bu);
+    	Eb = std::move(other.Eb);
+    	Es = std::move(other.Es);
+    	Eu = std::move(other.Eu);
+    	return *this;
+	}
+
     auto rows() const -> Index
     {
         const Index nb = Gb.rows();
@@ -485,6 +516,33 @@ struct SaddlePointVectorCanonical : public Eigen::MatrixBase<SaddlePointVectorCa
 
     EIGEN_DENSE_PUBLIC_INTERFACE(SaddlePointVectorCanonical)
 
+	SaddlePointVectorCanonical() = default;
+    SaddlePointVectorCanonical(const SaddlePointVectorCanonical& other)  = default;
+
+    auto operator=(const SaddlePointVectorCanonical& other) -> SaddlePointVectorCanonical&
+	{
+    	xb = other.xb;
+    	xs = other.xs;
+    	xu = other.xu;
+    	y  = other.y;
+    	zs = other.zs;
+    	zu = other.zu;
+    	zb = other.zb;
+    	return *this;
+	}
+
+    auto operator=(SaddlePointVectorCanonical&& other) -> SaddlePointVectorCanonical&
+	{
+    	xb = std::move(other.xb);
+    	xs = std::move(other.xs);
+    	xu = std::move(other.xu);
+    	y  = std::move(other.y );
+    	zb = std::move(other.zb);
+    	zs = std::move(other.zs);
+    	zu = std::move(other.zu);
+    	return *this;
+	}
+
     auto rows() const -> Index
     {
         const Index nb = xb.rows();
@@ -545,7 +603,10 @@ struct SaddlePointVectorCanonical : public Eigen::MatrixBase<SaddlePointVectorCa
     	return coeff(row);
 	}
 
-    auto operator()(Index row) const -> Scalar { return coeff(row); }
+	auto operator()(Index row) const -> Scalar
+	{
+		return coeff(row);
+	}
 
     operator PlainObject() const
     {

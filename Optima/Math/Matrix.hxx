@@ -29,14 +29,19 @@ inline auto ones(Index rows) -> decltype(Vector::Ones(rows))
     return Vector::Ones(rows);
 }
 
+inline auto constants(Index rows, double val) -> decltype(Vector::Constant(rows, val))
+{
+    return Vector::Constant(rows, val);
+}
+
 inline auto random(Index rows) -> decltype(Vector::Random(rows))
 {
     return Vector::Random(rows);
 }
 
-inline auto constants(Index rows, double val) -> decltype(Vector::Constant(rows, val))
+inline auto linspace(Index rows, double start, double stop) -> decltype(Vector::LinSpaced(rows, start, stop))
 {
-    return Vector::Constant(rows, val);
+    return Vector::LinSpaced(rows, start, stop);
 }
 
 inline auto unit(Index rows, Index i) -> decltype(Vector::Unit(rows, i))

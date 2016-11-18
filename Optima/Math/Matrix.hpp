@@ -404,6 +404,13 @@ auto ones(Index rows) -> decltype(Vector::Ones(rows));
 /// @return The expression of a vector with random entries equal to one
 auto random(Index rows) -> decltype(Vector::Random(rows));
 
+/// Return a linearly spaced vector
+/// @param rows The number of rows
+/// @param start The start of the sequence
+/// @param stop The stop of the sequence
+/// @return The expression of a vector with linearly spaced entries
+auto linspace(Index rows, double start, double stop) -> decltype(Vector::LinSpaced(rows, start, stop));
+
 /// Return an expression of a unit vector
 /// @param rows The number of rows
 /// @param i The index at which the component is one
