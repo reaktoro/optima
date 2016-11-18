@@ -17,6 +17,9 @@
 
 #pragma once
 
+// C++ includes
+#include <tuple>
+
 // Optima includes
 #include <Optima/Common/Index.hpp>
 #include <Optima/Math/Matrix.hpp>
@@ -77,5 +80,12 @@ auto dot3p(const Vector& x, const Vector& y, double s) -> double;
 
 /// Return the residual of the equation `A*x - b` with triple-precision.
 auto residual3p(const Matrix& A, const Vector& x, const Vector& b) -> Vector;
+
+/// Calculates the rational number that approximates a given real number.
+/// The algorithm is based on Farey sequence as shown
+/// [here](http://www.johndcook.com/blog/2010/10/20/best-rational-approximation/).
+/// @param x The real number.
+/// @param n The maximum denominator.
+auto rationalize(double x, unsigned n) -> std::tuple<long, long>;
 
 } // namespace Optima

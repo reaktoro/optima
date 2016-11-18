@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-
 // Eigen includes
 #include <Optima/Math/Eigen/QR>
 
@@ -177,6 +176,45 @@ auto residual3p(const Matrix& A, const Vector& x, const Vector& b) -> Vector
     for(int k = 0; k < m; ++k)
         r[k] = dot3p(A.row(k), x, -b[k]);
     return r;
+}
+
+/// This methods expects
+auto farey(double x, unsigned n) -> std::tuple<long, long>
+{
+    long a = 0, b = 1;
+    long c = 1, d = 1;
+    while(b <= n and d <= n)
+    {
+        double mediant = double(a+c)/(b+d);
+        if(x == mediant) {
+            if(b + d <= n) return std::make_tuple(a+c, b+d);
+            if(d > b) return std::make_tuple(c, d);
+            return std::make_tuple(a, b);
+        }
+        if(x > mediant) {
+            a = a+c;
+            b = b+d;
+        }
+        else {
+            c = a+c;
+            d = b+d;
+        }
+    }
+
+    return (b > n) ? std::make_tuple(c, d) : std::make_tuple(a, b);
+}
+
+auto rationalize(double x, unsigned n) -> std::tuple<long, long>
+{
+    long a, b, sign = (x >= 0) ? +1 : -1;
+    if(std::abs(x) > 1.0) {
+        std::tie(a, b) = farey(1.0/std::abs(x), n);
+        return std::make_tuple(sign*b, a);
+    }
+    else {
+        std::tie(a, b) = farey(std::abs(x), n);
+        return std::make_tuple(sign*a, b);
+    }
 }
 
 } // namespace Optima
