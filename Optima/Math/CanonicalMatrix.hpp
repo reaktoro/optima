@@ -60,53 +60,91 @@ namespace Optima {
 /// @f]
 /// where @f$ Q @f$ is a permutation matrix, and @f$ R @f$ is the
 /// *canonicalizer matrix* of @f$ A @f$.
-struct CanonicalMatrix : public Eigen::MatrixBase<CanonicalMatrix>
+class CanonicalMatrix : public Eigen::MatrixBase<CanonicalMatrix>
 {
-    /// The matrix @f$ S @f$.
-    Matrix S;
-
-    /// The rank of the original matrix.
-    Index rank;
-
-    /// The permutation matrix @f$ P @f$.
-    PermutationMatrix P;
-
-    /// The permutation matrix @f$ Q @f$.
-    PermutationMatrix Q;
-
-    /// The canonicalizer matrix @f$ R @f$.
-    Matrix R;
-
-    /// The inverse of the canonicalizer matrix @f$ R @f$.
-    Matrix invR;
-
+public:
     EIGEN_DENSE_PUBLIC_INTERFACE(CanonicalMatrix)
 
-	auto rows() const -> Index { return rank; }
-	auto cols() const -> Index { return Q.cols(); }
+    /// Construct a default CanonicalMatrix instance.
+    CanonicalMatrix();
 
+    /// Construct a CanonicalMatrix instance with given matrix.
+    CanonicalMatrix(const Matrix& A);
+
+    /// Return the `S` matrix of the canonical representation.
+    auto S() const -> const Matrix&;
+
+    /// Return the `R` canonicalizer matrix of the canonicalization.
+    auto R() const -> const Matrix&;
+
+    /// Return the inverse of the `R` matrix of the canonicalization.
+    auto Rinv() const -> const Matrix&;
+
+    /// Return the `P` permutation matrix of the canonicalization.
+    auto P() const -> const PermutationMatrix&;
+
+    /// Return the `Q` permutation matrix of the canonicalization.
+    auto Q() const -> const PermutationMatrix&;
+
+    /// Return the rank of the original matrix.
+    auto rank() const -> Index;
+
+    /// Return the indices of the linearly independent rows of the original matrix.
+    auto ili() const -> Indices;
+
+    /// Return the indices of the basic components.
+    auto ibasic() const -> Indices;
+
+    /// Return the indices of the non-basic components.
+    auto inonbasic() const -> Indices;
+
+    /// Return the number of rows of the canonical matrix.
+	auto rows() const -> Index { return m_rank; }
+
+    /// Return the number of columns of the canonical matrix.
+	auto cols() const -> Index { return m_Q.cols(); }
+
+	/// Return an entry of the canonical matrix.
 	auto coeff(Index row, Index col) const -> Scalar
 	{
 		const Index m = rows();
 		const Index n = cols();
 		eigen_assert(row < m && col < n);
 		if(col < m) return row == col ? 1.0 : 0.0;
-		return S(row, col - m);
+		return m_S(row, col - m);
 	}
 
+	/// Return an entry of the canonical matrix.
 	auto operator()(Index row, Index col) const -> Scalar { return coeff(row, col); }
 
+	/// Convert this CanonicalMatrix instance to a Matrix instance.
 	operator PlainObject() const
 	{
 		const Index m = rows();
 		const Index n = cols();
 		PlainObject res(m, n);
-		res << identity(m, m), S;
+		res << identity(m, m), m_S;
 		return res;
 	}
-};
 
-/// Return the canonical representation of a matrix.
-auto canonicalize(const Matrix& A) -> CanonicalMatrix;
+private:
+    /// The matrix @f$ S @f$.
+    Matrix m_S;
+
+    /// The rank of the original matrix.
+    Index m_rank;
+
+    /// The permutation matrix @f$ P @f$.
+    PermutationMatrix m_P;
+
+    /// The permutation matrix @f$ Q @f$.
+    PermutationMatrix m_Q;
+
+    /// The canonicalizer matrix @f$ R @f$.
+    Matrix m_R;
+
+    /// The inverse of the canonicalizer matrix @f$ R @f$.
+    Matrix m_Rinv;
+};
 
 } // namespace Optima

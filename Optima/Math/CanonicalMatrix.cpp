@@ -23,11 +23,11 @@
 
 namespace Optima {
 
-auto canonicalize(const Matrix& A) -> CanonicalMatrix
-{
-	// The canonical form of A
-	CanonicalMatrix res;
+CanonicalMatrix::CanonicalMatrix()
+{}
 
+CanonicalMatrix::CanonicalMatrix(const Matrix& A)
+{
 	// The number of rows and columns of A
 	const Index m = A.rows();
 	const Index n = A.cols();
@@ -47,30 +47,77 @@ auto canonicalize(const Matrix& A) -> CanonicalMatrix
 	const auto Ubb = lu.matrixLU().topLeftCorner(r, r).triangularView<Eigen::Upper>();
 	const auto Ubn = lu.matrixLU().topRightCorner(r, n - r);
 
-	// Set the rank of matrix A
-	res.rank = r;
+	// Initialize the rank of matrix A
+	m_rank = r;
 
 	// Set the permutation matrices P and Q
-	res.P = lu.permutationP();
-	res.Q = lu.permutationQ();
+	m_P = lu.permutationP();
+	m_Q = lu.permutationQ();
 
 	// Calculate the regularizer matrix R
-	res.R = res.P;
-	res.R.conservativeResize(r, m);
-	res.R = Lbb.solve(res.R);
-	res.R = Ubb.solve(res.R);
+	m_R = m_P;
+	m_R.conservativeResize(r, m);
+	m_R = Lbb.solve(m_R);
+	m_R = Ubb.solve(m_R);
 
 	// Calculate the inverse of the regularizer matrix R
-	res.invR = res.P.transpose();
-	res.invR.conservativeResize(m, r);
-	res.invR = res.invR * Lbb;
-	res.invR = res.invR * Ubb;
+	m_Rinv = m_P.transpose();
+	m_Rinv.conservativeResize(m, r);
+	m_Rinv = m_Rinv * Lbb;
+	m_Rinv = m_Rinv * Ubb;
 
 	// Calculate matrix S
-	res.S = Ubn;
-	res.S = Ubb.solve(res.S);
+	m_S = Ubn;
+	m_S = Ubb.solve(m_S);
+}
 
-	return res;
+auto CanonicalMatrix::S() const -> const Matrix&
+{
+	return m_S;
+}
+
+auto CanonicalMatrix::R() const -> const Matrix&
+{
+	return m_R;
+}
+
+auto CanonicalMatrix::Rinv() const -> const Matrix&
+{
+	return m_Rinv;
+}
+
+auto CanonicalMatrix::P() const -> const PermutationMatrix&
+{
+	return m_P;
+}
+
+auto CanonicalMatrix::Q() const -> const PermutationMatrix&
+{
+	return m_Q;
+}
+
+auto CanonicalMatrix::rank() const -> Index
+{
+	return m_rank;
+}
+
+auto CanonicalMatrix::ili() const -> Indices
+{
+	PermutationMatrix Ptr = m_P.transpose();
+	auto begin = Ptr.indices().data();
+	return Indices(begin, begin + m_rank);
+}
+
+auto CanonicalMatrix::ibasic() const -> Indices
+{
+	auto begin = m_Q.indices().data();
+	return Indices(begin, begin + m_rank);
+}
+
+auto CanonicalMatrix::inonbasic() const -> Indices
+{
+	auto begin = m_Q.indices().data();
+	return Indices(begin + m_rank, begin + rows());
 }
 
 } // namespace Optima

@@ -28,12 +28,16 @@ TEST_CASE("Testing CanonicalMatrix")
 
 	Matrix A = random(m, n);
 
-	CanonicalMatrix C = canonicalize(A);
+	CanonicalMatrix C(A);
 
-	const Index r = C.rank;
+	const Index r = C.rank();
 
-	CHECK((C.invR * C.R).isApprox(identity(r, r)));
-	CHECK((C.R * A * C.Q - C).norm() == approx(0.0));
+	const auto& R = C.R();
+	const auto& Rinv = C.Rinv();
+	const auto& Q = C.Q();
+
+	CHECK((Rinv * R).isApprox(identity(r, r)));
+	CHECK((R * A * Q - C).norm() == approx(0.0));
 }
 
 TEST_CASE("Testing CanonicalMatrix with two linearly dependent rows")
@@ -45,11 +49,15 @@ TEST_CASE("Testing CanonicalMatrix with two linearly dependent rows")
 	A.row(2) = A.row(0) + 2*A.row(1);
 	A.row(3) = A.row(1) - 2*A.row(2);
 
-	CanonicalMatrix C = canonicalize(A);
+	CanonicalMatrix C(A);
 
-	const Index r = C.rank;
+	const Index r = C.rank();
 
-	CHECK((C.R * C.invR).isApprox(identity(r, r)));
-	CHECK((C.R * A * C.Q - C).norm() == approx(0.0));
+	const auto& R = C.R();
+	const auto& Rinv = C.Rinv();
+	const auto& Q = C.Q();
+
+	CHECK((R * Rinv).isApprox(identity(r, r)));
+	CHECK((R * A * Q - C).norm() == approx(0.0));
 }
 
