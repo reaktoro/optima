@@ -106,6 +106,7 @@ struct CanonicalMatrix : public Eigen::MatrixBase<CanonicalMatrix>
 	}
 };
 
+/// Return the canonical representation of a matrix.
 auto canonicalize(const Matrix& A) -> CanonicalMatrix;
 
 } // namespace Optima

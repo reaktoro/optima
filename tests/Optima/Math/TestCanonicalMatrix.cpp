@@ -1,4 +1,4 @@
-// Optima is a C++ library for numerical sol of linear and nonlinear programing problems.
+// Optima is a C++ library for numerical solution of linear and nonlinear programing problems.
 //
 // Copyright (C) 2014-2016 Allan Leal
 //
@@ -21,7 +21,35 @@
 #include <Optima/Optima.hpp>
 using namespace Optima;
 
-TEST_CASE("Testing SaddlePointUtils")
+TEST_CASE("Testing CanonicalMatrix")
 {
+	const Index m = 4;
+	const Index n = 10;
 
+	Matrix A = random(m, n);
+
+	CanonicalMatrix C = canonicalize(A);
+
+	const Index r = C.rank;
+
+	CHECK((C.invR * C.R).isApprox(identity(r, r)));
+	CHECK((C.R * A * C.Q - C).norm() == approx(0.0));
 }
+
+TEST_CASE("Testing CanonicalMatrix with two linearly dependent rows")
+{
+	const Index m = 4;
+	const Index n = 10;
+
+	Matrix A = random(m, n);
+	A.row(2) = A.row(0) + 2*A.row(1);
+	A.row(3) = A.row(1) - 2*A.row(2);
+
+	CanonicalMatrix C = canonicalize(A);
+
+	const Index r = C.rank;
+
+	CHECK((C.R * C.invR).isApprox(identity(r, r)));
+	CHECK((C.R * A * C.Q - C).norm() == approx(0.0));
+}
+
