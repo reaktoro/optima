@@ -17,14 +17,8 @@
 
 #include "SaddlePointUtils.hpp"
 
-// Eigen includes
-#include <Optima/Math/Eigen/LU>
-
 namespace Optima {
 
-auto canonicalize(const Matrix& A, CanonicalMatrix& C) -> void
-{
-    A.fullPivLu()
-}
+
 
 } // namespace Optima

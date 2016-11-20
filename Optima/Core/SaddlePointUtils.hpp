@@ -22,28 +22,5 @@
 
 namespace Optima {
 
-/// A type used to describe a matrix @f$ A @f$ in canonical form.
-/// The canonical form of a matrix @f$ A @f$ is represented as:
-/// @f[
-/// C = RA=\begin{bmatrix}I_{\mathrm{b}} & C_{\mathrm{n}}\end{bmatrix}Q,
-/// @f]
-/// where @f$ Q @f$ is a permutation matrix, and @f$ R @f$ is the
-/// *canonicalizer matrix* of @f$ A @f$.
-struct CanonicalMatrix
-{
-    /// The matrix @f$ C_{\mathrm{n}} @f$.
-    Matrix Cn;
-
-    /// The permutation matrix @f$ Q @f$.
-    PermutationMatrix Q;
-
-    /// The canonicalizer matrix @f$ R @f$.
-    Matrix R;
-
-    /// The inverse of the canonicalizer matrix @f$ R @f$.
-    Matrix invR;
-};
-
-auto canonicalize(const Matrix& A, CanonicalMatrix& C) -> void;
 
 } // namespace Optima
