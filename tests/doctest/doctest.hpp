@@ -20,4 +20,4 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest/doctest.h"
 
-
+inline auto approx(double value) -> doctest::Approx { return doctest::Approx(value); }
