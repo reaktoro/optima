@@ -56,28 +56,23 @@ auto CanonicalMatrix::Q() const -> const PermutationMatrix&
 	return m_Q;
 }
 
-auto CanonicalMatrix::rank() const -> Index
-{
-	return m_rank;
-}
-
 auto CanonicalMatrix::ili() const -> Indices
 {
 	PermutationMatrix Ptr = m_P.transpose();
 	auto begin = Ptr.indices().data();
-	return Indices(begin, begin + m_rank);
+	return Indices(begin, begin + rows());
 }
 
 auto CanonicalMatrix::ibasic() const -> Indices
 {
 	auto begin = m_Q.indices().data();
-	return Indices(begin, begin + m_rank);
+	return Indices(begin, begin + rows());
 }
 
 auto CanonicalMatrix::inonbasic() const -> Indices
 {
 	auto begin = m_Q.indices().data();
-	return Indices(begin + m_rank, begin + rows());
+	return Indices(begin + rows(), begin + cols());
 }
 
 auto CanonicalMatrix::compute(const Matrix& A) -> void
@@ -101,9 +96,6 @@ auto CanonicalMatrix::compute(const Matrix& A) -> void
 	const auto Ubb = lu.matrixLU().topLeftCorner(r, r).triangularView<Eigen::Upper>();
 	const auto Ubn = lu.matrixLU().topRightCorner(r, n - r);
 
-	// Initialize the rank of matrix A
-	m_rank = r;
-
 	// Set the permutation matrices P and Q
 	m_P = lu.permutationP();
 	m_Q = lu.permutationQ();
@@ -123,27 +115,17 @@ auto CanonicalMatrix::compute(const Matrix& A) -> void
 	// Calculate matrix S
 	m_S = Ubn;
 	m_S = Ubb.solve(m_S);
-}
 
-auto CanonicalMatrix::update(const Vector& weights) -> void
-{
-//	const auto& Q = m_Q.indices();
-//	for(Index i = 0; i < rows(); ++i)
-//	{
-//		const double wbasic = weights[Q[i]];
-//		for(Index j = m_rank; j < cols(); ++j)
-//		{
-//			const double wnonbasic = m_S(i, j - m_rank) * weights[Q[j]];
-//			if(std::abs(wnonbasic) < std::abs(wnonbasic))
-//				swap(i, j);
-//		}
-//	}
+	// Initialize the permutation matrices Kb and Kn
+	m_Kb.setIdentity(r);
+	m_Kn.setIdentity(n - r);
 }
 
 auto CanonicalMatrix::swap(Index ib, Index in) -> void
 {
 	// Auxiliary references
-	auto& Q = m_Q;
+	auto& M = m_M;
+	auto& Q = m_Q.indices();
 	auto& S = m_S;
 	auto& R = m_R;
 	auto& Rinv = m_Rinv;
@@ -175,7 +157,60 @@ auto CanonicalMatrix::swap(Index ib, Index in) -> void
 	S(ib, in) = aux;
 
 	// Update the permutation matrix Q
-	std::swap(Q.indices()[ib], Q.indices()[m + in]);
+	std::swap(Q[ib], Q[m + in]);
+}
+
+auto CanonicalMatrix::update(const Vector& w) -> void
+{
+	// Auxiliary variables
+	const Index m = rows();
+	const Index n = cols();
+
+	// Auxiliary references to member data
+	auto& Q = m_Q.indices();
+	auto& S = m_S;
+	auto& R = m_R;
+	auto& Rinv = m_Rinv;
+	auto& Kb = m_Kb;
+	auto& Kn = m_Kn;
+
+	// The indices and weights of the non-basic components
+	auto inonbasic = Q.bottomRows(n - m);
+	auto wn = Optima::rows(w, inonbasic);
+
+	// Swap basic and non-basic components when the latter has higher weight
+	Index j;
+	for(Index i = 0; i < m; ++i)
+	{
+		const double wi = std::abs(w[Q[i]]);
+		const double wj = abs(wn % tr(S.row(i))).maxCoeff(&j);
+		if(wi < wj)
+			swap(i, j);
+	}
+
+	// Sort the basic components in descend order of weights
+	std::sort(Kb.indices().data(), Kb.indices().data() + m,
+		[&](Index l, Index r) { return std::abs(w[Q[l]]) > std::abs(w[Q[r]]); });
+
+	// Sort the non-basic components in descend order of weights
+	std::sort(Kn.indices().data(), Kn.indices().data() + n - m,
+		[&](Index l, Index r) { return std::abs(w[Q[m + l]]) > std::abs(w[Q[m + r]]); });
+
+	// Rearrange the rows of S based on the new order of basic components
+	Kb.applyThisOnTheLeft(S);
+
+	// Rearrange the columns of S based on the new order of non-basic components
+	Kn.applyThisOnTheRight(S);
+
+	// Rearrange the rows of R based on the new order of basic components
+	Kb.applyThisOnTheLeft(R);
+
+	// Rearrange the columns of inv(R) based on the new order of basic components
+	Kb.transpose().applyThisOnTheRight(Rinv);
+
+	// Rearrange the permutation matrix Q based on the new order of basic and non-basic components
+	Q.topRows(m).noalias() = Kb * Q.topRows(m);
+	Q.bottomRows(n - m).noalias() = Kn * Q.bottomRows(n - m);
 }
 
 } // namespace Optima

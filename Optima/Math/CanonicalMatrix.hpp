@@ -86,9 +86,6 @@ public:
     /// Return the `Q` permutation matrix of the canonicalization.
     auto Q() const -> const PermutationMatrix&;
 
-    /// Return the rank of the original matrix.
-    auto rank() const -> Index;
-
     /// Return the indices of the linearly independent rows of the original matrix.
     auto ili() const -> Indices;
 
@@ -99,7 +96,7 @@ public:
     auto inonbasic() const -> Indices;
 
     /// Return the number of rows of the canonical matrix.
-	auto rows() const -> Index { return m_rank; }
+	auto rows() const -> Index { return m_S.rows(); }
 
     /// Return the number of columns of the canonical matrix.
 	auto cols() const -> Index { return m_Q.cols(); }
@@ -130,9 +127,6 @@ public:
 	/// Compute the canonical matrix of the given matrix.
 	auto compute(const Matrix& A) -> void;
 
-	/// Update the canonical matrix with given weights.
-	auto update(const Vector& weights) -> void;
-
 	/// Swap a basic component by a non-basic component.
 	/// Let `m` and `n` denote the number of rows and columns of
 	/// the canonical matrix. The index of the basic component, `ib`,
@@ -142,12 +136,12 @@ public:
 	/// @param in The index of the non-basic component.
 	auto swap(Index ib, Index in) -> void;
 
+	/// Update the canonical matrix with given weights.
+	auto update(const Vector& weights) -> void;
+
 private:
     /// The matrix @f$ S @f$.
     Matrix m_S;
-
-    /// The rank of the original matrix.
-    Index m_rank;
 
     /// The permutation matrix @f$ P @f$.
     PermutationMatrix m_P;
@@ -162,7 +156,13 @@ private:
     Matrix m_Rinv;
 
     /// The matrix M used in the swap operation.
-    Vector M;
+    Vector m_M;
+
+    /// The permutation matrix `Kb` used in the weighted update method
+    PermutationMatrix m_Kb;
+
+    /// The permutation matrix `Kn` used in the weighted update method
+	PermutationMatrix m_Kn;
 };
 
 } // namespace Optima
