@@ -36,8 +36,18 @@ TEST_CASE("Testing CanonicalMatrix")
 	const auto& Rinv = C.Rinv();
 	const auto& Q = C.Q();
 
-	CHECK((Rinv * R).isApprox(identity(r, r)));
+	CHECK((R * Rinv).isApprox(identity(r, r)));
 	CHECK((R * A * Q - C).norm() == approx(0.0));
+
+	for(Index i = 0; i < r; ++i)
+	{
+		for(Index j = 0; j < n - r; ++j)
+		{
+			C.swap(i, j);
+			CHECK((R * Rinv).isApprox(identity(r, r)));
+			CHECK((R * A * Q - C).norm() == approx(0.0));
+		}
+	}
 }
 
 TEST_CASE("Testing CanonicalMatrix with two linearly dependent rows")
@@ -59,5 +69,15 @@ TEST_CASE("Testing CanonicalMatrix with two linearly dependent rows")
 
 	CHECK((R * Rinv).isApprox(identity(r, r)));
 	CHECK((R * A * Q - C).norm() == approx(0.0));
+
+	for(Index i = 0; i < r; ++i)
+	{
+		for(Index j = 0; j < n - r; ++j)
+		{
+			C.swap(i, j);
+			CHECK((R * Rinv).isApprox(identity(r, r)));
+			CHECK((R * A * Q - C).norm() == approx(0.0));
+		}
+	}
 }
 

@@ -127,6 +127,21 @@ public:
 		return res;
 	}
 
+	/// Compute the canonical matrix of the given matrix.
+	auto compute(const Matrix& A) -> void;
+
+	/// Update the canonical matrix with given weights.
+	auto update(const Vector& weights) -> void;
+
+	/// Swap a basic component by a non-basic component.
+	/// Let `m` and `n` denote the number of rows and columns of
+	/// the canonical matrix. The index of the basic component, `ib`,
+	/// must be between zero and `m`, and the index of the non-basic
+	/// component, `in`, must be between zero and `n - m`.
+	/// @param ib The index of the basic component.
+	/// @param in The index of the non-basic component.
+	auto swap(Index ib, Index in) -> void;
+
 private:
     /// The matrix @f$ S @f$.
     Matrix m_S;
@@ -145,6 +160,9 @@ private:
 
     /// The inverse of the canonicalizer matrix @f$ R @f$.
     Matrix m_Rinv;
+
+    /// The matrix M used in the swap operation.
+    Vector M;
 };
 
 } // namespace Optima
