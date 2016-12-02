@@ -55,7 +55,7 @@ struct traits<MatrixRowsView<Derived, Indices>>
 	typedef typename Derived::Scalar Scalar;
 	typedef typename Derived::Index Index;
 	enum {
-		Flags = Eigen::ColMajor,
+		Flags = Eigen::ColMajor | EvalBeforeNestingBit | EvalBeforeAssigningBit,
 		RowsAtCompileTime = Derived::RowsAtCompileTime,
 		ColsAtCompileTime = Derived::ColsAtCompileTime,
 		MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
@@ -72,7 +72,7 @@ struct traits<MatrixRowsViewConst<Derived, Indices>>
 	typedef typename Derived::Scalar Scalar;
 	typedef typename Derived::Index Index;
 	enum {
-		Flags = Eigen::ColMajor,
+		Flags = Eigen::ColMajor | EvalBeforeNestingBit | EvalBeforeAssigningBit,
 		RowsAtCompileTime = Derived::RowsAtCompileTime,
 		ColsAtCompileTime = Derived::ColsAtCompileTime,
 		MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
@@ -89,7 +89,7 @@ struct traits<MatrixColsView<Derived, Indices>>
 	typedef typename Derived::Scalar Scalar;
 	typedef typename Derived::Index Index;
 	enum {
-		Flags = Eigen::ColMajor,
+		Flags = Eigen::ColMajor | EvalBeforeNestingBit | EvalBeforeAssigningBit,
 		RowsAtCompileTime = Derived::RowsAtCompileTime,
 		ColsAtCompileTime = Derived::ColsAtCompileTime,
 		MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
@@ -106,7 +106,7 @@ struct traits<MatrixColsViewConst<Derived, Indices>>
 	typedef typename Derived::Scalar Scalar;
 	typedef typename Derived::Index Index;
 	enum {
-		Flags = Eigen::ColMajor,
+		Flags = Eigen::ColMajor | EvalBeforeNestingBit | EvalBeforeAssigningBit,
 		RowsAtCompileTime = Derived::RowsAtCompileTime,
 		ColsAtCompileTime = Derived::ColsAtCompileTime,
 		MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
@@ -123,7 +123,7 @@ struct traits<MatrixSubView<Derived, Indices>>
 	typedef typename Derived::Scalar Scalar;
 	typedef typename Derived::Index Index;
 	enum {
-		Flags = Eigen::ColMajor,
+		Flags = Eigen::ColMajor | EvalBeforeNestingBit | EvalBeforeAssigningBit,
 		RowsAtCompileTime = Derived::RowsAtCompileTime,
 		ColsAtCompileTime = Derived::ColsAtCompileTime,
 		MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
@@ -140,7 +140,7 @@ struct traits<MatrixSubViewConst<Derived, Indices>>
 	typedef typename Derived::Scalar Scalar;
 	typedef typename Derived::Index Index;
 	enum {
-		Flags = Eigen::ColMajor,
+		Flags = Eigen::ColMajor | EvalBeforeNestingBit | EvalBeforeAssigningBit,
 		RowsAtCompileTime = Derived::RowsAtCompileTime,
 		ColsAtCompileTime = Derived::ColsAtCompileTime,
 		MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
