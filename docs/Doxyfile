@@ -44,14 +44,14 @@ PROJECT_NUMBER         =
 # for a project that appears at the top of each page and should give viewer a
 # quick idea about the purpose of the project. Keep the description short.
 
-PROJECT_BRIEF          = "A unified framework for modeling chemically reactive systems"
+PROJECT_BRIEF          = "A C++ library for numerical solution of linear and nonlinear programing problems."
 
 # With the PROJECT_LOGO tag one can specify a logo or an icon that is included
 # in the documentation. The maximum height of the logo should not exceed 55
 # pixels and the maximum width should not exceed 200 pixels. Doxygen will copy
 # the logo to the output directory.
 
-PROJECT_LOGO           = @CMAKE_SOURCE_DIR@/resources/icons/reaktoro.svg
+PROJECT_LOGO           = 
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) path
 # into which the generated documentation will be written. If a relative path is
@@ -230,6 +230,14 @@ TAB_SIZE               = 4
 
 ALIASES                =
 
+ALIASES += bold{1}="**\1**"
+ALIASES += emph{1}="*\1*"
+ALIASES += eq{1}="@f$\1@f$"
+ALIASES += eqc{1}="@f[\1@f]"
+ALIASES += sub{1}="<sub>\1</sub>"
+ALIASES += sup{1}="<sup>\1</sup>"
+ALIASES += supcite{1}="<sup>\cite \1</sup>"
+
 # This tag can be used to specify a number of word-keyword mappings (TCL only).
 # A mapping has the form "name=value". For example adding "class=itcl::class"
 # will allow you to use the command class in the itcl::class meaning.
@@ -341,7 +349,7 @@ IDL_PROPERTY_SUPPORT   = YES
 # all members of a group must be documented explicitly.
 # The default value is: NO.
 
-DISTRIBUTE_GROUP_DOC   = YES
+DISTRIBUTE_GROUP_DOC   = NO
 
 # Set the SUBGROUPING tag to YES to allow class member groups of the same type
 # (for instance a group of public functions) to be put as a subgroup of that
@@ -677,7 +685,7 @@ FILE_VERSION_FILTER    =
 # DoxygenLayout.xml, doxygen will parse it automatically even if the LAYOUT_FILE
 # tag is left empty.
 
-LAYOUT_FILE            = @CMAKE_CURRENT_SOURCE_DIR@/doxygen/layout.xml
+LAYOUT_FILE            = @CMAKE_CURRENT_SOURCE_DIR@/doxystrap/layout.xml
 
 # The CITE_BIB_FILES tag can be used to specify one or more bib files containing
 # the reference definitions. This must be a list of .bib files. The .bib
@@ -687,7 +695,7 @@ LAYOUT_FILE            = @CMAKE_CURRENT_SOURCE_DIR@/doxygen/layout.xml
 # LATEX_BIB_STYLE. To use this feature you need bibtex and perl available in the
 # search path. See also \cite for info how to create references.
 
-CITE_BIB_FILES         =
+CITE_BIB_FILES         = @CMAKE_SOURCE_DIR@/docs/bib/references.bib
 
 #---------------------------------------------------------------------------
 # Configuration options related to warning and progress messages
@@ -758,7 +766,8 @@ WARN_LOGFILE           =
 # spaces.
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = "@CMAKE_SOURCE_DIR@/Optima"
+INPUT                  += "@CMAKE_SOURCE_DIR@/Optima"
+INPUT                  += "@CMAKE_CURRENT_SOURCE_DIR@/markdown"
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
@@ -793,7 +802,7 @@ RECURSIVE              = YES
 # Note that relative paths are relative to the directory from which doxygen is
 # run.
 
-EXCLUDE                = "@CMAKE_SOURCE_DIR@/Optima/Eigen"
+EXCLUDE                = "@CMAKE_SOURCE_DIR@/Optima/Math/Eigen"
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
@@ -809,7 +818,8 @@ EXCLUDE_SYMLINKS       = NO
 # Note that the wildcards are matched against the file with absolute path, so to
 # exclude all test directories for example use the pattern */test/*
 
-EXCLUDE_PATTERNS       =
+EXCLUDE_PATTERNS       += Eigen 
+EXCLUDE_PATTERNS       += kwd
 
 # The EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names
 # (namespaces, classes, functions, etc.) that should be excluded from the
@@ -820,7 +830,7 @@ EXCLUDE_PATTERNS       =
 # Note that the wildcards are matched against the file with absolute path, so to
 # exclude all test directories use the pattern */test/*
 
-EXCLUDE_SYMBOLS        =
+EXCLUDE_SYMBOLS        += Eigen
 
 # The EXAMPLE_PATH tag can be used to specify one or more files or directories
 # that contain example code fragments that are included (see the \include
@@ -1069,7 +1079,7 @@ HTML_FILE_EXTENSION    = .html
 # of the possible markers and block names see the documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_HEADER            = @CMAKE_CURRENT_SOURCE_DIR@/doxygen/header.html
+HTML_HEADER            = @CMAKE_CURRENT_SOURCE_DIR@/doxystrap/header.html
 
 # The HTML_FOOTER tag can be used to specify a user-defined HTML footer for each
 # generated HTML page. If the tag is left blank doxygen will generate a standard
@@ -1079,7 +1089,7 @@ HTML_HEADER            = @CMAKE_CURRENT_SOURCE_DIR@/doxygen/header.html
 # that doxygen normally uses.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_FOOTER            = @CMAKE_CURRENT_SOURCE_DIR@/doxygen/footer.html
+HTML_FOOTER            = @CMAKE_CURRENT_SOURCE_DIR@/doxystrap/footer.html
 
 # The HTML_STYLESHEET tag can be used to specify a user-defined cascading style
 # sheet that is used by each HTML page. It can be used to fine-tune the look of
@@ -1091,7 +1101,7 @@ HTML_FOOTER            = @CMAKE_CURRENT_SOURCE_DIR@/doxygen/footer.html
 # obsolete.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_STYLESHEET        = @CMAKE_CURRENT_SOURCE_DIR@/doxygen/doxystrap.css
+HTML_STYLESHEET        = @CMAKE_CURRENT_SOURCE_DIR@/doxystrap/doxystrap.css
 
 # The HTML_EXTRA_STYLESHEET tag can be used to specify additional user-defined
 # cascading style sheets that are included after the standard style sheets
@@ -1104,7 +1114,7 @@ HTML_STYLESHEET        = @CMAKE_CURRENT_SOURCE_DIR@/doxygen/doxystrap.css
 # list). For an example see the documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_STYLESHEET  = @CMAKE_CURRENT_SOURCE_DIR@/doxygen/doxystrap-extra.css
+HTML_EXTRA_STYLESHEET  = @CMAKE_CURRENT_SOURCE_DIR@/doxystrap/doxystrap-extra.css
 
 # The HTML_EXTRA_FILES tag can be used to specify one or more extra images or
 # other source files which should be copied to the HTML output directory. Note
@@ -1114,7 +1124,7 @@ HTML_EXTRA_STYLESHEET  = @CMAKE_CURRENT_SOURCE_DIR@/doxygen/doxystrap-extra.css
 # files will be copied as-is; there are no commands or markers available.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_FILES       = @CMAKE_CURRENT_SOURCE_DIR@/doxygen/doxystrap.js
+HTML_EXTRA_FILES       = @CMAKE_CURRENT_SOURCE_DIR@/doxystrap/doxystrap.js
 
 # The HTML_COLORSTYLE_HUE tag controls the color of the HTML output. Doxygen
 # will adjust the colors in the style sheet and background images according to
