@@ -40,15 +40,6 @@ struct SaddlePointProblemCanonical
 
 	/// The right-hand side vector of the canonical saddle point problem.
 	SaddlePointVectorCanonical rhs;
-
-    /// The regularizer matrix of `A` so that `R*A = [Ib As Au]*Q`.
-    Matrix R;
-
-    /// The inverse of the regularizer matrix `R`.
-    Matrix invR;
-
-    /// The permutation matrix `Q` in `R*A = [Ib As Au]*Q`.
-    PermutationMatrix Q;
 };
 
 } // namespace Optima

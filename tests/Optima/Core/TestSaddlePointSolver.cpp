@@ -41,13 +41,13 @@ auto saddlePointProblemCanonical(Index nb, Index ns, Index nu, Index p) -> Saddl
 
     Vector rhs = problem.lhs * ones(problem.lhs.rows());
 
-    problem.rhs.ab = rhs.topRows(n).topRows(nb);
-    problem.rhs.as = rhs.topRows(n).middleRows(nb, ns);
-    problem.rhs.au = rhs.topRows(n).bottomRows(nu);
-    problem.rhs.b  = rhs.middleRows(n, m);
-    problem.rhs.cb = rhs.bottomRows(n).topRows(nb);
-    problem.rhs.cs = rhs.bottomRows(n).middleRows(nb, ns);
-    problem.rhs.cu = rhs.bottomRows(n).bottomRows(nu);
+    problem.rhs.db = rhs.topRows(n).topRows(nb);
+    problem.rhs.ds = rhs.topRows(n).middleRows(nb, ns);
+    problem.rhs.du = rhs.topRows(n).bottomRows(nu);
+    problem.rhs.e  = rhs.middleRows(n, m);
+    problem.rhs.fb = rhs.bottomRows(n).topRows(nb);
+    problem.rhs.fs = rhs.bottomRows(n).middleRows(nb, ns);
+    problem.rhs.fu = rhs.bottomRows(n).bottomRows(nu);
 
     REQUIRE(problem.lhs.valid());
 	REQUIRE(problem.rhs.valid());
@@ -72,13 +72,13 @@ TEST_CASE("Testing SaddlePointSolver - Case 1")
     problem.lhs.Es = {};
     problem.lhs.Eu = {};
 
-    problem.rhs.ab = {11, 10, 9};
-    problem.rhs.as = {};
-    problem.rhs.au = {};
-    problem.rhs.b  = {1, 1, 1};
-    problem.rhs.cb = {2, 2, 2};
-    problem.rhs.cs = {};
-    problem.rhs.cu = {};
+    problem.rhs.db = {11, 10, 9};
+    problem.rhs.ds = {};
+    problem.rhs.du = {};
+    problem.rhs.e  = {1, 1, 1};
+    problem.rhs.fb = {2, 2, 2};
+    problem.rhs.fs = {};
+    problem.rhs.fu = {};
 
     SaddlePointSolver solver;
     solver.solve(problem, sol);
@@ -172,13 +172,13 @@ TEST_CASE("Testing SaddlePointSolver - Case 5")
     problem.lhs.Es = {1};
     problem.lhs.Eu = {};
 
-    problem.rhs.ab = {8};
-    problem.rhs.as = {8};
-    problem.rhs.au = {};
-    problem.rhs.b  = {4};
-    problem.rhs.cb = {2};
-    problem.rhs.cs = {2};
-    problem.rhs.cu = {};
+    problem.rhs.db = {8};
+    problem.rhs.ds = {8};
+    problem.rhs.du = {};
+    problem.rhs.e  = {4};
+    problem.rhs.fb = {2};
+    problem.rhs.fs = {2};
+    problem.rhs.fu = {};
 
     SaddlePointSolver solver;
     solver.solve(problem, sol);
@@ -201,13 +201,13 @@ TEST_CASE("Testing SaddlePointSolver - Case 6")
     problem.lhs.Es = {};
     problem.lhs.Eu = {6};
 
-    problem.rhs.ab = {8};
-    problem.rhs.as = {};
-    problem.rhs.au = {9};
-    problem.rhs.b  = {4};
-    problem.rhs.cb = {2};
-    problem.rhs.cs = {};
-    problem.rhs.cu = {12};
+    problem.rhs.db = {8};
+    problem.rhs.ds = {};
+    problem.rhs.du = {9};
+    problem.rhs.e  = {4};
+    problem.rhs.fb = {2};
+    problem.rhs.fs = {};
+    problem.rhs.fu = {12};
 
     SaddlePointSolver solver;
     solver.solve(problem, sol);
@@ -230,13 +230,13 @@ TEST_CASE("Testing SaddlePointSolver - Case 7")
     problem.lhs.Es = {1, 1};
     problem.lhs.Eu = {1};
 
-    problem.rhs.ab = {11, 11, 11};
-    problem.rhs.as = {11, 15};
-    problem.rhs.au = {25};
-    problem.rhs.b  = {17, 19, 21};
-    problem.rhs.cb = {2, 2, 2};
-    problem.rhs.cs = {2, 2};
-    problem.rhs.cu = {2};
+    problem.rhs.db = {11, 11, 11};
+    problem.rhs.ds = {11, 15};
+    problem.rhs.du = {25};
+    problem.rhs.e  = {17, 19, 21};
+    problem.rhs.fb = {2, 2, 2};
+    problem.rhs.fs = {2, 2};
+    problem.rhs.fu = {2};
 
     SaddlePointSolver solver;
     solver.solve(problem, sol);

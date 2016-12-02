@@ -496,23 +496,23 @@ struct SaddlePointMatrixCanonical : public Eigen::MatrixBase<SaddlePointMatrixCa
 /// A type used to describe a canonical saddle point right-hand side vector.
 struct SaddlePointVectorCanonical : public Eigen::MatrixBase<SaddlePointVectorCanonical>
 {
-    /// The canonical saddle point vector `x = [xb, xs, xu]`.
-    Vector xb, xs, xu;
+    /// The canonical saddle point vector `u = [ub, us, uu]`.
+    Vector ub, us, uu;
 
-    /// The canonical saddle point vector `y`.
-    Vector y;
+    /// The canonical saddle point vector `v`.
+    Vector v;
 
-    /// The canonical saddle point vector `z = [zb, zs, zu]`.
-    Vector zb, zs, zu;
+    /// The canonical saddle point vector `w = [wb, ws, wu]`.
+    Vector wb, ws, wu;
 
-    /// The alias `a = [ab, as, au]` to vector `x = [xb, xs, xu]`.
-    Vector &ab = xb, &as = xs, &au = xu;
+    /// The alias `d = [db, ds, du]` to vector `u = [ub, us, uu]`.
+    Vector &db = ub, &ds = us, &du = uu;
 
-    /// The alias `b` to vector `y`.
-    Vector &b = y;
+    /// The alias `e` to vector `v`.
+    Vector &e = v;
 
-    /// The alias `c = [cb, cs, cu]` to vector `z = [zb, zs, zu]`.
-    Vector &cb = zb, &cs = zs, &cu = zu;
+    /// The alias `f = [fb, fs, fu]` to vector `w = [wb, ws, wu]`.
+    Vector &fb = wb, &fs = ws, &fu = wu;
 
     EIGEN_DENSE_PUBLIC_INTERFACE(SaddlePointVectorCanonical)
 
@@ -521,37 +521,37 @@ struct SaddlePointVectorCanonical : public Eigen::MatrixBase<SaddlePointVectorCa
 
     auto operator=(const SaddlePointVectorCanonical& other) -> SaddlePointVectorCanonical&
 	{
-    	xb = other.xb;
-    	xs = other.xs;
-    	xu = other.xu;
-    	y  = other.y;
-    	zs = other.zs;
-    	zu = other.zu;
-    	zb = other.zb;
+    	ub = other.ub;
+    	us = other.us;
+    	uu = other.uu;
+    	v  = other.v;
+    	ws = other.ws;
+    	wu = other.wu;
+    	wb = other.wb;
     	return *this;
 	}
 
     auto operator=(SaddlePointVectorCanonical&& other) -> SaddlePointVectorCanonical&
 	{
-    	xb = std::move(other.xb);
-    	xs = std::move(other.xs);
-    	xu = std::move(other.xu);
-    	y  = std::move(other.y );
-    	zb = std::move(other.zb);
-    	zs = std::move(other.zs);
-    	zu = std::move(other.zu);
+    	ub = std::move(other.ub);
+    	us = std::move(other.us);
+    	uu = std::move(other.uu);
+    	v  = std::move(other.v );
+    	wb = std::move(other.wb);
+    	ws = std::move(other.ws);
+    	wu = std::move(other.wu);
     	return *this;
 	}
 
     auto rows() const -> Index
     {
-        const Index nb = xb.rows();
-        const Index ns = xs.rows();
-        const Index nu = xu.rows();
-        const Index m  = y.rows();
-        const Index pb = zb.rows();
-        const Index ps = zs.rows();
-        const Index pu = zu.rows();
+        const Index nb = ub.rows();
+        const Index ns = us.rows();
+        const Index nu = uu.rows();
+        const Index m  = v.rows();
+        const Index pb = wb.rows();
+        const Index ps = ws.rows();
+        const Index pu = wu.rows();
         const Index n  = nb + ns + nu;
         const Index p  = pb + ps + pu;
         return n + m + p;
@@ -562,36 +562,36 @@ struct SaddlePointVectorCanonical : public Eigen::MatrixBase<SaddlePointVectorCa
 
     auto coeff(Index row) const -> Scalar
     {
-        const Index nb = xb.rows();
-        const Index ns = xs.rows();
-        const Index nu = xu.rows();
-        const Index m  = y.rows();
-        const Index pb = zb.rows();
-        const Index ps = zs.rows();
-        const Index pu = zu.rows();
+        const Index nb = ub.rows();
+        const Index ns = us.rows();
+        const Index nu = uu.rows();
+        const Index m  = v.rows();
+        const Index pb = wb.rows();
+        const Index ps = ws.rows();
+        const Index pu = wu.rows();
         const Index n  = nb + ns + nu;
         const Index p  = pb + ps + pu;
 
         // Block: a
         if(row < n)
         {
-            if(row < nb) return xb[row];
-            if(row < nb + ns) return xs[row - nb];
-            return xu[row - nb - ns];
+            if(row < nb) return ub[row];
+            if(row < nb + ns) return us[row - nb];
+            return uu[row - nb - ns];
         }
         // Block: b
         if(row < n + m)
         {
             row -= n;
-            return y[row];
+            return v[row];
         }
         // Block: c
         if(row < n + m + p)
         {
             row -= n + m;
-            if(row < nb) return zb[row];
-            if(row < nb + ns) return zs[row - nb];
-            return zu[row - nb - ns];
+            if(row < nb) return wb[row];
+            if(row < nb + ns) return ws[row - nb];
+            return wu[row - nb - ns];
         }
 
         return 0.0;
@@ -612,13 +612,13 @@ struct SaddlePointVectorCanonical : public Eigen::MatrixBase<SaddlePointVectorCa
     {
         assert(valid());
 
-        const Index nb = xb.rows();
-        const Index ns = xs.rows();
-        const Index nu = xu.rows();
-        const Index m  = y.rows();
-        const Index pb = zb.rows();
-        const Index ps = zs.rows();
-        const Index pu = zu.rows();
+        const Index nb = ub.rows();
+        const Index ns = us.rows();
+        const Index nu = uu.rows();
+        const Index m  = v.rows();
+        const Index pb = wb.rows();
+        const Index ps = ws.rows();
+        const Index pu = wu.rows();
         const Index n  = nb + ns + nu;
         const Index p  = pb + ps + pu;
         const Index t  = n + m + p;
@@ -628,15 +628,15 @@ struct SaddlePointVectorCanonical : public Eigen::MatrixBase<SaddlePointVectorCa
         auto a = res.topRows(n);
         auto c = res.bottomRows(n);
 
-        if(nb) a.topRows(nb) = xb;
-        if(ns) a.middleRows(nb, ns) = xs;
-        if(nu) a.bottomRows(nu) = xu;
+        if(nb) a.topRows(nb) = ub;
+        if(ns) a.middleRows(nb, ns) = us;
+        if(nu) a.bottomRows(nu) = uu;
 
-        res.middleRows(n, m) = y;
+        res.middleRows(n, m) = v;
 
-        if(pb) c.topRows(nb) = zb;
-        if(ps) c.middleRows(nb, ns) = zs;
-        if(pu) c.bottomRows(nu) = zu;
+        if(pb) c.topRows(nb) = wb;
+        if(ps) c.middleRows(nb, ns) = ws;
+        if(pu) c.bottomRows(nu) = wu;
 
         return res;
     }
@@ -644,9 +644,9 @@ struct SaddlePointVectorCanonical : public Eigen::MatrixBase<SaddlePointVectorCa
     /// Return `true` if this SaddlePointMatrixCanonical instance is valid.
     auto valid() const -> bool
     {
-        if(xb.rows() != zb.rows()) return false;
-        if(xs.rows() != zs.rows()) return false;
-        if(xu.rows() != zu.rows()) return false;
+        if(ub.rows() != wb.rows()) return false;
+        if(us.rows() != ws.rows()) return false;
+        if(uu.rows() != wu.rows()) return false;
         return true;
     }
 };
