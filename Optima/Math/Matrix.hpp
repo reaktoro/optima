@@ -55,7 +55,7 @@ struct traits<MatrixRowsView<Derived, Indices>>
 	typedef typename Derived::Scalar Scalar;
 	typedef typename Derived::Index Index;
 	enum {
-		Flags = Eigen::ColMajor | EvalBeforeNestingBit | EvalBeforeAssigningBit,
+		Flags = Eigen::ColMajor,
 		RowsAtCompileTime = Derived::RowsAtCompileTime,
 		ColsAtCompileTime = Derived::ColsAtCompileTime,
 		MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
@@ -72,7 +72,7 @@ struct traits<MatrixRowsViewConst<Derived, Indices>>
 	typedef typename Derived::Scalar Scalar;
 	typedef typename Derived::Index Index;
 	enum {
-		Flags = Eigen::ColMajor | EvalBeforeNestingBit | EvalBeforeAssigningBit,
+		Flags = Eigen::ColMajor,
 		RowsAtCompileTime = Derived::RowsAtCompileTime,
 		ColsAtCompileTime = Derived::ColsAtCompileTime,
 		MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
@@ -89,7 +89,7 @@ struct traits<MatrixColsView<Derived, Indices>>
 	typedef typename Derived::Scalar Scalar;
 	typedef typename Derived::Index Index;
 	enum {
-		Flags = Eigen::ColMajor | EvalBeforeNestingBit | EvalBeforeAssigningBit,
+		Flags = Eigen::ColMajor,
 		RowsAtCompileTime = Derived::RowsAtCompileTime,
 		ColsAtCompileTime = Derived::ColsAtCompileTime,
 		MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
@@ -106,7 +106,7 @@ struct traits<MatrixColsViewConst<Derived, Indices>>
 	typedef typename Derived::Scalar Scalar;
 	typedef typename Derived::Index Index;
 	enum {
-		Flags = Eigen::ColMajor | EvalBeforeNestingBit | EvalBeforeAssigningBit,
+		Flags = Eigen::ColMajor,
 		RowsAtCompileTime = Derived::RowsAtCompileTime,
 		ColsAtCompileTime = Derived::ColsAtCompileTime,
 		MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
@@ -123,7 +123,7 @@ struct traits<MatrixSubView<Derived, Indices>>
 	typedef typename Derived::Scalar Scalar;
 	typedef typename Derived::Index Index;
 	enum {
-		Flags = Eigen::ColMajor | EvalBeforeNestingBit | EvalBeforeAssigningBit,
+		Flags = Eigen::ColMajor,
 		RowsAtCompileTime = Derived::RowsAtCompileTime,
 		ColsAtCompileTime = Derived::ColsAtCompileTime,
 		MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
@@ -140,7 +140,7 @@ struct traits<MatrixSubViewConst<Derived, Indices>>
 	typedef typename Derived::Scalar Scalar;
 	typedef typename Derived::Index Index;
 	enum {
-		Flags = Eigen::ColMajor | EvalBeforeNestingBit | EvalBeforeAssigningBit,
+		Flags = Eigen::ColMajor,
 		RowsAtCompileTime = Derived::RowsAtCompileTime,
 		ColsAtCompileTime = Derived::ColsAtCompileTime,
 		MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
@@ -160,8 +160,7 @@ public:
     EIGEN_DENSE_PUBLIC_INTERFACE(MatrixRowsView)
 
     MatrixRowsView(MatrixBase<Derived>& mat, const Indices& irows)
-      : m_mat(mat), m_irows(irows)
-    {}
+    : m_mat(mat.derived()), m_irows(irows) {}
 
     template<typename DerivedOther>
     auto operator=(const MatrixBase<DerivedOther>& other) -> MatrixRowsView&
@@ -175,6 +174,8 @@ public:
     auto rows() const -> Index { return m_irows.size(); }
     auto cols() const -> Index { return m_mat.cols(); }
 
+    auto coeff(Index row) -> Scalar& { return m_mat(m_irows[row], 0); }
+    auto coeff(Index row) const -> Scalar { return m_mat(m_irows[row], 0); }
     auto coeff(Index row, Index col) -> Scalar& { return m_mat(m_irows[row], col); }
     auto coeff(Index row, Index col) const -> Scalar { return m_mat(m_irows[row], col); }
     auto operator()(Index row, Index col) -> Scalar& { return coeff(row, col); }
@@ -190,7 +191,7 @@ public:
     }
 
 private:
-    MatrixBase<Derived>& m_mat;
+    Derived& m_mat;
     Indices m_irows;
 };
 
@@ -203,12 +204,13 @@ public:
     EIGEN_DENSE_PUBLIC_INTERFACE(MatrixRowsViewConst)
 
     MatrixRowsViewConst(const MatrixBase<Derived>& mat, const Indices& irows)
-      : m_mat(mat), m_irows(irows)
+      : m_mat(mat.derived()), m_irows(irows)
     {}
 
     auto rows() const -> Index { return m_irows.size(); }
     auto cols() const -> Index { return m_mat.cols(); }
 
+    auto coeff(Index row) const -> Scalar { return m_mat(m_irows[row], 0); }
     auto coeff(Index row, Index col) const -> Scalar { return m_mat(m_irows[row], col); }
     auto operator()(Index row, Index col) const -> Scalar { return coeff(row, col); }
 
@@ -222,7 +224,7 @@ public:
     }
 
 private:
-    const MatrixBase<Derived>& m_mat;
+    const Derived& m_mat;
     Indices m_irows;
 };
 
@@ -235,7 +237,7 @@ public:
     EIGEN_DENSE_PUBLIC_INTERFACE(MatrixColsView)
 
     MatrixColsView(MatrixBase<Derived>& mat, const Indices& icols)
-      : m_mat(mat), m_icols(icols)
+      : m_mat(mat.derived()), m_icols(icols)
     {}
 
     template<typename DerivedOther>
@@ -265,7 +267,7 @@ public:
     }
 
 private:
-    MatrixBase<Derived>& m_mat;
+    Derived& m_mat;
     Indices m_icols;
 };
 
@@ -278,7 +280,7 @@ public:
     EIGEN_DENSE_PUBLIC_INTERFACE(MatrixColsViewConst)
 
     MatrixColsViewConst(const MatrixBase<Derived>& mat, const Indices& icols)
-      : m_mat(mat), m_icols(icols)
+      : m_mat(mat.derived()), m_icols(icols)
     {}
 
     auto rows() const -> Index { return m_mat.rows(); }
@@ -297,7 +299,7 @@ public:
     }
 
 private:
-    const MatrixBase<Derived>& m_mat;
+    const Derived& m_mat;
     Indices m_icols;
 };
 
@@ -310,7 +312,7 @@ public:
     EIGEN_DENSE_PUBLIC_INTERFACE(MatrixSubView)
 
     MatrixSubView(MatrixBase<Derived>& mat, const Indices& irows, const Indices& icols)
-      : m_mat(mat), m_irows(irows), m_icols(icols)
+      : m_mat(mat.derived()), m_irows(irows), m_icols(icols)
     {}
 
     template<typename DerivedOther>
@@ -340,7 +342,7 @@ public:
     }
 
 private:
-    MatrixBase<Derived>& m_mat;
+    Derived& m_mat;
     Indices m_irows, m_icols;
 };
 
@@ -353,7 +355,7 @@ public:
     EIGEN_DENSE_PUBLIC_INTERFACE(MatrixSubViewConst)
 
     MatrixSubViewConst(const MatrixBase<Derived>& mat, const Indices& irows, const Indices& icols)
-      : m_mat(mat), m_irows(irows), m_icols(icols)
+      : m_mat(mat.derived()), m_irows(irows), m_icols(icols)
     {}
 
     auto rows() const -> Index { return m_irows.size(); }
@@ -372,7 +374,7 @@ public:
     }
 
 private:
-    const MatrixBase<Derived>& m_mat;
+    const Derived& m_mat;
     Indices m_irows, m_icols;
 };
 
