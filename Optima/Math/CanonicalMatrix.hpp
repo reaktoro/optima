@@ -23,7 +23,7 @@
 namespace Optima {
 
 // Forward declarations
-struct CanonicalMatrix;
+class CanonicalMatrix;
 
 } // namespace Optima
 
@@ -104,9 +104,8 @@ public:
 	/// Return an entry of the canonical matrix.
 	auto coeff(Index row, Index col) const -> Scalar
 	{
+		eigen_assert(row < rows() && col < cols());
 		const Index m = rows();
-		const Index n = cols();
-		eigen_assert(row < m && col < n);
 		if(col < m) return row == col ? 1.0 : 0.0;
 		return m_S(row, col - m);
 	}
