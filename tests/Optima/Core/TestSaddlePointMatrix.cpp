@@ -261,13 +261,13 @@ TEST_CASE("Testing SaddlePointVectorCanonical...")
 {
     SaddlePointVectorCanonical vector;
 
-    vector.ub = {1, 2, 3};
-    vector.us = {4, 5};
-    vector.uu = {6};
-    vector.v  = {7, 8};
-    vector.wb = {9, 8, 7};
-    vector.ws = {6, 5};
-    vector.wu = {4};
+    vector.xb = {1, 2, 3};
+    vector.xs = {4, 5};
+    vector.xu = {6};
+    vector.y  = {7, 8};
+    vector.zb = {9, 8, 7};
+    vector.zs = {6, 5};
+    vector.zu = {4};
 
     REQUIRE(vector.valid());
 
@@ -284,9 +284,9 @@ TEST_CASE("Testing SaddlePointVectorCanonical...")
 		CHECK(V.isApprox(Vector(vector)));
 	}
 
-	SUBCASE("checking conversion when au and cu are empty")
+	SUBCASE("checking conversion when xu and zu are empty")
 	{
-		vector.uu = vector.wu = {};
+		vector.xu = vector.zu = {};
 
 		REQUIRE(vector.valid());
 
@@ -301,10 +301,10 @@ TEST_CASE("Testing SaddlePointVectorCanonical...")
 		CHECK(V.isApprox(Vector(vector)));
 	}
 
-	SUBCASE("checking conversion when as, au, cs and cu are empty")
+	SUBCASE("checking conversion when xs, xu, zs and zu are empty")
 	{
-		vector.us = vector.ws = {};
-		vector.uu = vector.wu = {};
+		vector.xs = vector.zs = {};
+		vector.xu = vector.zu = {};
 
 		REQUIRE(vector.valid());
 
@@ -319,21 +319,21 @@ TEST_CASE("Testing SaddlePointVectorCanonical...")
 		CHECK(V.isApprox(Vector(vector)));
 	}
 
-	SUBCASE("checking valid() when ab and cb have incompatible dimensions")
+	SUBCASE("checking valid() when xb and zb have incompatible dimensions")
 	{
-		vector.ub = {};
+		vector.xb = {};
 		CHECK_FALSE(vector.valid());
 	}
 
-	SUBCASE("checking valid() when as and cs have incompatible dimensions")
+	SUBCASE("checking valid() when xs and zs have incompatible dimensions")
 	{
-		vector.us = {};
+		vector.xs = {};
 		CHECK_FALSE(vector.valid());
 	}
 
-	SUBCASE("checking valid() when au and cu have incompatible dimensions")
+	SUBCASE("checking valid() when xu and zu have incompatible dimensions")
 	{
-		vector.uu = {};
+		vector.xu = {};
 		CHECK_FALSE(vector.valid());
 	}
 }

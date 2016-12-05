@@ -58,22 +58,22 @@ struct SaddlePointSolverDiagonal
         const auto& Eb = problem.lhs.Eb;
         const auto& Es = problem.lhs.Es;
         const auto& Eu = problem.lhs.Eu;
-        const auto& ab = problem.rhs.db;
-        const auto& as = problem.rhs.ds;
-        const auto& au = problem.rhs.du;
-        const auto& b  = problem.rhs.e;
-        const auto& cb = problem.rhs.fb;
-        const auto& cs = problem.rhs.fs;
-        const auto& cu = problem.rhs.fu;
+        const auto& ab = problem.rhs.rb;
+        const auto& as = problem.rhs.rs;
+        const auto& au = problem.rhs.ru;
+        const auto& b  = problem.rhs.s;
+        const auto& cb = problem.rhs.tb;
+        const auto& cs = problem.rhs.ts;
+        const auto& cu = problem.rhs.tu;
 
         // Auxiliary alias to solution data members
-        auto& xb = solution.ub;
-        auto& xs = solution.us;
-        auto& xu = solution.uu;
-        auto& y  = solution.v;
-        auto& zb = solution.wb;
-        auto& zs = solution.ws;
-        auto& zu = solution.wu;
+        auto& xb = solution.xb;
+        auto& xs = solution.xs;
+        auto& xu = solution.xu;
+        auto& y  = solution.y;
+        auto& zb = solution.zb;
+        auto& zs = solution.zs;
+        auto& zu = solution.zu;
 
         // Auxiliary variables
         const Index nb = Gb.rows();
@@ -141,105 +141,119 @@ struct SaddlePointSolver::Impl
         CanonicalMatrix C;
         C.compute(A);
         C.update(X);
-
         const Matrix& S = C.S();
         const Matrix& R = C.R();
         const Indices& ibasic = C.ibasic();
         const Indices& inonbasic = C.inonbasic();
 
-        const Vector Xb = rows(X, ibasic);
-        const Vector Zb = rows(Z, ibasic);
-        const Vector Hb = rows(H, ibasic);
-        const Vector ab = rows(a, ibasic);
-        const Vector cb = rows(c, ibasic);
-
-        auto Xn = rows(X, inonbasic);
-        auto Zn = rows(Z, inonbasic);
-        auto Hn = rows(H, inonbasic);
-        auto an = rows(a, inonbasic);
-        auto cn = rows(c, inonbasic);
-
         const Vector G =  X % H % X;
         const Vector E = -X % Z;
-        const Vector d =  X % a;
-        const Vector f = -c;
+        const Vector r =  X % a;
+        const Vector t = -c;
 
-        auto Gn = rows(G, inonbasic);
         Indices istable, iunstable;
         istable.reserve(n);
         iunstable.reserve(n);
 
-        for(Index i = 0; i < n - m; ++i)
+        for(Index i = 0; i < inonbasic.size(); ++i)
         {
             const double j = inonbasic[i];
-            const double Gj = std::abs(X[j] * H[j] * X[j]);
-            const double Ej = std::abs(X[j] * Z[j]);
-            if(Gj > Ej) istable.push_back(i);
+            if(std::abs(G[j]) > std::abs(E[j]))
+                istable.push_back(i);
             else iunstable.push_back(i);
         }
 
-        const Matrix Bn = S * diag(Xn);
-
-        const Vector Xs = rows(X, istable);
-        const Vector Zs = rows(Z, istable);
-        const Vector Hs = rows(H, istable);
-        const Vector Xu = rows(X, iunstable);
-        const Vector Zu = rows(Z, iunstable);
-        const Vector Hu = rows(H, iunstable);
-
         SaddlePointProblemCanonical cproblem;
+        auto& Gb = cproblem.lhs.Gb;
+        auto& Gs = cproblem.lhs.Gs;
+        auto& Gu = cproblem.lhs.Gu;
+        auto& Bb = cproblem.lhs.Bb;
+        auto& Bs = cproblem.lhs.Bs;
+        auto& Bu = cproblem.lhs.Bu;
+        auto& Eb = cproblem.lhs.Eb;
+        auto& Es = cproblem.lhs.Es;
+        auto& Eu = cproblem.lhs.Eu;
+        auto& rb = cproblem.rhs.rb;
+        auto& rs = cproblem.rhs.rs;
+        auto& ru = cproblem.rhs.ru;
+        auto&  s = cproblem.rhs.s ;
+        auto& tb = cproblem.rhs.tb;
+        auto& ts = cproblem.rhs.ts;
+        auto& tu = cproblem.rhs.tu;
 
-        {Index i = 0; for(Index j : ibasic)
-        {
-            cproblem.lhs.Bb[i] = X[j];
-            cproblem.lhs.Gb[i] = G[j];
-            cproblem.lhs.Eb[i] = E[j];
-            cproblem.rhs.db[i] = d[j];
-            cproblem.rhs.fb[i] = f[j];
-            ++i;
-        }}
+        auto Xb = rows(X, ibasic);
+        auto Xn = rows(X, inonbasic);
 
-        {Index i = 0; for(Index j : istable)
-        {
-            cproblem.lhs.Bs.col(i) = Bn.col(j);
-            cproblem.lhs.Gs[i]     = G[inonbasic[j]];
-            cproblem.lhs.Es[i]     = E[inonbasic[j]];
-            cproblem.rhs.ds[i]     = d[inonbasic[j]];
-            cproblem.rhs.fs[i]     = f[inonbasic[j]];
-            ++i;
-        }}
+        auto Zb = rows(Z, ibasic);
+        auto Zn = rows(Z, inonbasic);
 
-        {Index i = 0; for(Index j : iunstable)
-        {
-            cproblem.lhs.Bu.col(i) = Bn.col(j);
-            cproblem.lhs.Gu[i]     = G[inonbasic[j]];
-            cproblem.lhs.Eu[i]     = E[inonbasic[j]];
-            cproblem.rhs.du[i]     = d[inonbasic[j]];
-            cproblem.rhs.fu[i]     = f[inonbasic[j]];
-            ++i;
-        }}
+        auto Xs = rows(Xn, istable);
+        auto Xu = rows(Xn, iunstable);
 
-        cproblem.rhs.e.noalias()  = R * b;
+        auto Zs = rows(Zn, istable);
+        auto Zu = rows(Zn, iunstable);
+
+        auto Ss = cols(S, istable);
+        auto Su = cols(S, iunstable);
+
+        Gb.noalias() = rows(G, ibasic);
+        Gs.noalias() = rows(rows(G, inonbasic), istable);
+        Gu.noalias() = rows(rows(G, inonbasic), iunstable);
+
+        Bb.noalias() = Xb;
+
+        Bs.conservativeResize(ibasic.size(), istable.size());
+        Bu.conservativeResize(ibasic.size(), iunstable.size());
+
+        for(Index i = 0; i < istable.size(); ++i)
+            Bs.col(i) = S.col(istable[i]) * Xn[istable[i]];
+        for(Index i = 0; i < iunstable.size(); ++i)
+            Bu.col(i) = S.col(iunstable[i]) * Xn[iunstable[i]];
+
+        Eb.noalias() = rows(E, ibasic);
+        Es.noalias() = rows(rows(E, inonbasic), istable);
+        Eu.noalias() = rows(rows(E, inonbasic), iunstable);
+
+        rb = rows(r, ibasic);
+        rs = rows(rows(r, inonbasic), istable);
+        ru = rows(rows(r, inonbasic), iunstable);
+        s  = R * b;
+        tb = rows(t, ibasic);
+        ts = rows(rows(t, inonbasic), istable);
+        tu = rows(rows(t, inonbasic), iunstable);
 
         SaddlePointVectorCanonical csolution;
 
+        Vector tmp(cproblem.lhs.rows());
+        Vector dx(n), dy(m), dz(n);
+        dx << inv(Xb), inv(Xs), inv(Xu);
+        dy = -tr(C.Rinv()) * ones(m);
+        dz << inv(Zb), inv(Zs), inv(Zu);
+        tmp << dx, dy, dz;
+
         solve(cproblem, csolution);
 
-        auto& xb = rows(solution.x, ibasic);
-        auto& xs = rows(solution.x, istable);
-        auto& xu = rows(solution.x, iunstable);
-        auto& y  = solution.y;
-        auto& zb = rows(solution.z, ibasic);
-        auto& zs = rows(solution.z, istable);
-        auto& zu = rows(solution.z, iunstable);
+        solution.x.resize(n);
+        solution.y.resize(m);
+        solution.z.resize(n);
 
-        xb =  Xb % csolution.ub;
-        xs =  Xs % csolution.us;
-        xu =  Xu % csolution.uu;
-        y  = -tr(R) * csolution.v;
-        zb =  Zb % csolution.wb;
-        zs =  Zs % csolution.ws;
-        zu =  Zu % csolution.wu;
+        auto xb = rows(solution.x, ibasic);
+        auto xn = rows(solution.x, inonbasic);
+        auto xs = rows(xn, istable);
+        auto xu = rows(xn, iunstable);
+        auto& y = solution.y;
+        auto zb = rows(solution.z, ibasic);
+        auto zn = rows(solution.z, inonbasic);
+        auto zs = rows(zn, istable);
+        auto zu = rows(zn, iunstable);
+
+        xb =  Xb % csolution.xb;
+        xs =  Xs % csolution.xs;
+        xu =  Xu % csolution.xu;
+        y.noalias()  = -tr(R) * csolution.y;
+        zb = Zb % csolution.zb;
+        zs = Zs % csolution.zs;
+        zu = Zu % csolution.zu;
     }
 };
 
@@ -267,7 +281,7 @@ auto SaddlePointSolver::constantA(bool isconst) -> void
 
 auto SaddlePointSolver::solve(const SaddlePointProblem& problem, SaddlePointVector& solution) -> void
 {
-    assert(0 && "Not implemented yet!");
+    pimpl->solve(problem, solution);
 }
 
 auto SaddlePointSolver::solve(const SaddlePointProblemCanonical& problem, SaddlePointVectorCanonical& solution) -> void
