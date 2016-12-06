@@ -19,4 +19,77 @@
 
 namespace Optima {
 
+HessianBlock::HessianBlock()
+: m_dim(0), m_mode(Zero)
+{}
+
+HessianBlock::~HessianBlock()
+{}
+
+auto HessianBlock::zero(Index dim) -> void
+{
+    m_dim = dim;
+    m_mode = Zero;
+}
+
+auto HessianBlock::diagonal() -> Vector&
+{
+    m_mode = Diagonal;
+    return m_diagonal;
+}
+
+auto HessianBlock::diagonal() const -> const Vector&
+{
+    return m_diagonal;
+}
+
+auto HessianBlock::dense() -> Matrix&
+{
+    m_mode = Dense;
+    return m_dense;
+}
+
+auto HessianBlock::dense() const -> const Matrix&
+{
+    return m_dense;
+}
+
+auto HessianBlock::eigenvalues() -> Vector&
+{
+    m_mode = EigenDecomposition;
+    return m_eigenvalues;
+}
+
+auto HessianBlock::eigenvalues() const -> const Vector&
+{
+    return m_eigenvalues;
+}
+
+auto HessianBlock::eigenvectors() -> Matrix&
+{
+    m_mode = EigenDecomposition;
+    return m_eigenvectors;
+}
+
+auto HessianBlock::eigenvectors() const -> const Matrix&
+{
+    return m_eigenvectors;
+}
+
+auto HessianBlock::eigenvectorsinv() -> Matrix&
+{
+    m_mode = EigenDecomposition;
+    return m_eigenvectorsinv;
+}
+
+auto HessianBlock::eigenvectorsinv() const -> const Matrix&
+{
+    return m_eigenvectorsinv;
+}
+
+auto HessianBlock::mode() const -> Mode
+{
+    return m_mode;
+}
+
 } // namespace Optima
