@@ -22,6 +22,7 @@
 #include <Optima/Common/Outputter.hpp>
 #include <Optima/Common/SetUtils.hpp>
 #include <Optima/Common/Timing.hpp>
+#include <Optima/Core/HessianMatrix.hpp>
 #include <Optima/Core/SaddlePointMatrix.hpp>
 #include <Optima/Core/SaddlePointProblem.hpp>
 #include <Optima/Core/SaddlePointSolver.hpp>

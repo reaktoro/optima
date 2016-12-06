@@ -85,8 +85,8 @@ public:
     /// Used to represent an eigen decomposition of a Hessian block matrix.
     /// The eigen decomposition of a Hessian block matrix, \eq{H_i}, is a special decomposition
     /// denoted by \eq{H_i = V_i \Lambda_i V_{i}^{-1}}, where \eq{V_i} is the matrix whose columns
-    /// correspond to the *eigenvectors* of \eq{H_i}, and \eq{\Lambda_i} is a diagonal matrix
-    /// whose diagonal indices correspond to the *eigenvalues* of \eq{H_i}.
+    /// correspond to the *eigenvectors* of \eq{H_i}, and \eq{\Lambda_i} is a diagonal matrix whose
+    /// diagonal indices correspond to the *eigenvalues* of \eq{H_i}.
     struct EigenDecomposition
     {
         /// The matrix \eq{V_i} in the eigen decomposition.
@@ -184,6 +184,9 @@ class HessianMatrix : public Eigen::MatrixBase<HessianMatrix>
 public:
     EIGEN_DENSE_PUBLIC_INTERFACE(HessianMatrix)
 
+    /// Alias to nested HessianBlock type EigenDecomposition.
+    using EigenDecomposition = HessianBlock::EigenDecomposition;
+
     /// Construct a default HessianMatrix instance.
     HessianMatrix();
 
@@ -207,6 +210,13 @@ public:
 
     /// Return a const reference to the dense Hessian matrix.
     auto dense() const -> const Matrix&;
+
+    /// Return a reference to the eigendecomposition of this Hessian block matrix.
+    /// @param dim The dimension of the Hessian matrix.
+    auto eigendecomposition(Index dim) -> EigenDecomposition&;
+
+    /// Return a const reference to the eigendecomposition of this Hessian block matrix.
+    auto eigendecomposition() const -> const EigenDecomposition&;
 
     /// Return a reference to a block matrix on the diagonal of the Hessian matrix.
     /// @param iblock The index of the block matrix.

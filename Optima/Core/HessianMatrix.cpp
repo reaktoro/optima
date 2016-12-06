@@ -65,7 +65,7 @@ auto HessianBlock::dense(Index dim) -> Matrix&
 {
     m_dim = dim;
     m_mode = Dense;
-    m_diagonal.resize(dim, dim);
+    m_dense.resize(dim, dim);
     return m_dense;
 }
 
@@ -159,6 +159,17 @@ auto HessianMatrix::dense(Index dim) -> Matrix&
 auto HessianMatrix::dense() const -> const Matrix&
 {
     return m_blocks.front().dense();
+}
+
+auto HessianMatrix::eigendecomposition(Index dim) -> EigenDecomposition&
+{
+    m_blocks.resize(1);
+    return m_blocks.front().eigendecomposition(dim);
+}
+
+auto HessianMatrix::eigendecomposition() const -> const EigenDecomposition&
+{
+    return m_blocks.front().eigendecomposition();
 }
 
 auto HessianMatrix::blocks(Index numblocks) -> std::vector<HessianBlock>&
