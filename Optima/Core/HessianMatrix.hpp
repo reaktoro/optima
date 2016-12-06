@@ -53,31 +53,50 @@ struct traits<Optima::HessianMatrix>
 
 namespace Optima {
 
-class HessianBlock
+/// Used to represent a square block matrix, \eq{H_i}, on the diagonal of the Hessian matrix, \eq{H}.
+class HessianBlock : public Eigen::MatrixBase<HessianBlock>
 {
 public:
-    /// Return a reference to the matrix representing a dense Hessian block matrix.
-    /// @note This method should be used together with @ref setModeDense.
-    auto dense() -> Matrix&;
+    /// Used to represent the possible modes for a Hessian block matrix.
+    enum Mode
+    {
+        Zero, Diagonal, Dense, EigenDecomposition
+    };
 
-    /// Return a const reference to the matrix representing a dense Hessian block matrix.
-    /// @note This method should be used together with @ref setModeDense.
-    auto dense() const -> const Matrix&;
+    EIGEN_DENSE_PUBLIC_INTERFACE(HessianBlock)
+
+    /// Construct a default HessianBlock instance.
+    HessianBlock();
+
+    /// Destroy this HessianBlock instance.
+    virtual ~HessianBlock();
+
+    /// Set the Hessian block matrix to a zero matrix mode.
+    /// @note After calling this method, a call to method @ref mode will return HessianBlock::Zero.
+    /// @param dim The dimension of the square zero matrix.
+    auto zero(Index dim) -> void;
 
     /// Return a reference to the diagonal entries of a diagonal Hessian block matrix.
-    /// @note This method should be used together with @ref setModeDiagonal.
+    /// This method also sets the Hessian block matrix to a diagonal matrix mode.
+    /// @note After calling this method, a call to method @ref mode will return HessianBlock::Diagonal.
     auto diagonal() -> Vector&;
 
     /// Return a const reference to the diagonal entries of a diagonal Hessian block matrix.
-    /// @note This method should be used together with @ref setModeDiagonal.
     auto diagonal() const -> const Vector&;
+
+    /// Return a reference to the matrix representing the dense Hessian block matrix.
+    /// @note After calling this method, a call to method @ref mode will return HessianBlock::Dense.
+    auto dense() -> Matrix&;
+
+    /// Return a const reference to the matrix representing the dense Hessian block matrix.
+    auto dense() const -> const Matrix&;
 
     /// Return a reference to the eigenvalues of this Hessian block matrix.
     /// This method returns a reference to the entries in the diagonal matrix \eq{\Lambda_i}.
     /// These are the eigenvalues of the Hessian block matrix \eq{H_i}, whose
     /// eigendecomposition is denoted by \eq{H_i = V_i \Lambda_i V_{i}^{-1}}, with \eq{V_i}
     /// denoting the matrix whose columns are the eigenvectors of \eq{H_i}.
-    /// @note This method should be used together with @ref setModeEigenDecomposition.
+    /// @note After calling this method, a call to method @ref mode will return HessianBlock::EigenDecomposition.
     auto eigenvalues() -> Vector&;
 
     /// Return a const reference to the eigenvalues of this Hessian block matrix.
@@ -85,7 +104,6 @@ public:
     /// These are the eigenvalues of the Hessian block matrix \eq{H_i}, whose
     /// eigendecomposition is denoted by \eq{H_i = V_i \Lambda_i V_{i}^{-1}}, with \eq{V_i}
     /// denoting the matrix whose columns are the eigenvectors of \eq{H_i}.
-    /// @note This method should be used together with @ref setModeEigenDecomposition.
     auto eigenvalues() const -> const Vector&;
 
     /// Return a reference to the eigenvectors of this Hessian block matrix.
@@ -93,7 +111,7 @@ public:
     /// This is the matrix whose columns are the eigenvectors of this Hessian block matrix, \eq{H_i},
     /// which is used to represent the eigendecomposition \eq{H_i = V_i \Lambda_i V_{i}^{-1}},
     /// where \eq{\Lambda_i} denotes a diagonal matrix with the eigenvalues of \eq{H_i}.
-    /// @note This method should be used together with @ref setModeEigenDecomposition.
+    /// @note After calling this method, a call to method @ref mode will return HessianBlock::EigenDecomposition.
     auto eigenvectors() -> Matrix&;
 
     /// Return a const reference to the eigenvectors of this Hessian block matrix.
@@ -101,25 +119,44 @@ public:
     /// This is the matrix whose columns are the eigenvectors of this Hessian block matrix, \eq{H_i},
     /// which is used to represent the eigendecomposition \eq{H_i = V_i \Lambda_i V_{i}^{-1}},
     /// where \eq{\Lambda_i} denotes a diagonal matrix with the eigenvalues of \eq{H_i}.
-    /// @note This method should be used together with @ref setModeEigenDecomposition.
     auto eigenvectors() const -> const Matrix&;
 
-    /// Return a reference to the eigenvectors of this Hessian block matrix.
+    /// Return a reference to the inverse of the eigenvectors of this Hessian block matrix.
     /// This method returns a const reference to the matrix \eq{V_{i}^{-1}}, the inverse of the
     /// matrix of eigenvectors, \eq{V_i}, of this Hessian block matrix.
-    /// @note This method should be used together with @ref setModeEigenDecomposition.
+    /// @note After calling this method, a call to method @ref mode will return HessianBlock::EigenDecomposition.
     auto eigenvectorsinv() -> Matrix&;
 
-    /// Return a const reference to the eigenvectors of this Hessian block matrix.
+    /// Return a const reference to the inverse of the eigenvectors of this Hessian block matrix.
     /// This method returns a const reference to the matrix \eq{V_{i}^{-1}}, the inverse of the
     /// matrix of eigenvectors, \eq{V_i}, of this Hessian block matrix.
-    /// @note This method should be used together with @ref setModeEigenDecomposition.
     auto eigenvectorsinv() const -> const Matrix&;
 
     /// Return the mode of the Hessian matrix.
     auto mode() const -> Mode;
 
+    /// Return the number of rows in the Hessian block matrix.
+    auto rows() const -> Index;
+
+    /// Return the number of columns in the Hessian block matrix.
+    auto columns() const -> Index;
+
+    /// Return an entry of the Hessian block matrix.
+    auto coeff(Index i, Index j) const -> Scalar;
+
+    /// Return an entry of the block diagonal matrix.
+    auto operator()(Index i, Index j) const -> Scalar { return coeff(i, j); }
+
+    /// Convert this HessianBlock instance to a Matrix instance.
+    operator PlainObject() const;
+
 private:
+    /// The dimension of this square Hessian block matrix (only used when zero mode is active).
+    Index m_dim;
+
+    /// The current mode of this Hessian block matrix.
+    Mode m_mode;
+
     /// The diagonal vector of this diagonal Hessian block matrix (if diagonal mode active).
     Vector m_diagonal;
 
@@ -141,11 +178,6 @@ class HessianMatrix : public Eigen::MatrixBase<HessianMatrix>
 {
 public:
     EIGEN_DENSE_PUBLIC_INTERFACE(HessianMatrix)
-
-    /// The possible modes of the Hessian matrix.
-    enum Mode {
-        Zero, Diagonal, Dense, BlockDiagonal, EigenDecomposition
-    };
 
     /// Construct a default HessianMatrix instance.
     HessianMatrix();
