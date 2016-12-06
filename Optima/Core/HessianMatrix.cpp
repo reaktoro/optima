@@ -15,18 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#pragma once
+#include "HessianMatrix.hpp"
 
-#include <Optima/Common/Exception.hpp>
-#include <Optima/Common/Index.hpp>
-#include <Optima/Common/Outputter.hpp>
-#include <Optima/Common/SetUtils.hpp>
-#include <Optima/Common/Timing.hpp>
-#include <Optima/Core/SaddlePointMatrix.hpp>
-#include <Optima/Core/SaddlePointProblem.hpp>
-#include <Optima/Core/SaddlePointSolver.hpp>
-#include <Optima/Core/SaddlePointUtils.hpp>
-#include <Optima/Math/BlockDiagonalMatrix.hpp>
-#include <Optima/Math/CanonicalMatrix.hpp>
-#include <Optima/Math/Matrix.hpp>
-#include <Optima/Math/Utils.hpp>
+namespace Optima {
+
+} // namespace Optima
