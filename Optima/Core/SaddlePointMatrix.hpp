@@ -38,16 +38,14 @@ struct traits<Optima::SaddlePointMatrix>
 {
     typedef Eigen::Dense StorageKind;
     typedef Eigen::MatrixXpr XprKind;
+    typedef Optima::Matrix::StorageIndex StorageIndex;
     typedef Optima::Matrix::Scalar Scalar;
-    typedef Optima::Matrix::Index Index;
-    typedef Optima::Matrix::PlainObject PlainObject;
     enum {
         Flags = Eigen::ColMajor,
         RowsAtCompileTime = Optima::Matrix::RowsAtCompileTime,
         ColsAtCompileTime = Optima::Matrix::ColsAtCompileTime,
         MaxRowsAtCompileTime = Optima::Matrix::MaxRowsAtCompileTime,
         MaxColsAtCompileTime = Optima::Matrix::MaxColsAtCompileTime,
-        CoeffReadCost = Optima::Matrix::CoeffReadCost
     };
 };
 
@@ -56,16 +54,14 @@ struct traits<Optima::SaddlePointVector>
 {
     typedef Eigen::Dense StorageKind;
     typedef Eigen::MatrixXpr XprKind;
+    typedef Optima::Vector::StorageIndex StorageIndex;
     typedef Optima::Vector::Scalar Scalar;
-    typedef Optima::Vector::Index Index;
-    typedef Optima::Vector::PlainObject PlainObject;
     enum {
         Flags = Eigen::ColMajor,
         RowsAtCompileTime = Optima::Vector::RowsAtCompileTime,
         ColsAtCompileTime = Optima::Vector::ColsAtCompileTime,
         MaxRowsAtCompileTime = Optima::Vector::MaxRowsAtCompileTime,
         MaxColsAtCompileTime = Optima::Vector::MaxColsAtCompileTime,
-        CoeffReadCost = Optima::Vector::CoeffReadCost
     };
 };
 
@@ -74,16 +70,14 @@ struct traits<Optima::SaddlePointMatrixCanonical>
 {
     typedef Eigen::Dense StorageKind;
     typedef Eigen::MatrixXpr XprKind;
+    typedef Optima::Matrix::StorageIndex StorageIndex;
     typedef Optima::Matrix::Scalar Scalar;
-    typedef Optima::Matrix::Index Index;
-    typedef Optima::Matrix::PlainObject PlainObject;
     enum {
         Flags = Eigen::ColMajor,
         RowsAtCompileTime = Optima::Matrix::RowsAtCompileTime,
         ColsAtCompileTime = Optima::Matrix::ColsAtCompileTime,
         MaxRowsAtCompileTime = Optima::Matrix::MaxRowsAtCompileTime,
         MaxColsAtCompileTime = Optima::Matrix::MaxColsAtCompileTime,
-        CoeffReadCost = Optima::Matrix::CoeffReadCost
     };
 };
 
@@ -92,16 +86,14 @@ struct traits<Optima::SaddlePointVectorCanonical>
 {
     typedef Eigen::Dense StorageKind;
     typedef Eigen::MatrixXpr XprKind;
+    typedef Optima::Vector::StorageIndex StorageIndex;
     typedef Optima::Vector::Scalar Scalar;
-    typedef Optima::Vector::Index Index;
-    typedef Optima::Vector::PlainObject PlainObject;
     enum {
         Flags = Eigen::ColMajor,
         RowsAtCompileTime = Optima::Vector::RowsAtCompileTime,
         ColsAtCompileTime = Optima::Vector::ColsAtCompileTime,
         MaxRowsAtCompileTime = Optima::Vector::MaxRowsAtCompileTime,
         MaxColsAtCompileTime = Optima::Vector::MaxColsAtCompileTime,
-        CoeffReadCost = Optima::Vector::CoeffReadCost
     };
 };
 
@@ -126,6 +118,7 @@ struct SaddlePointMatrix : public Eigen::MatrixBase<SaddlePointMatrix>
     Vector Z;
 
     EIGEN_DENSE_PUBLIC_INTERFACE(SaddlePointMatrix)
+    typedef SaddlePointMatrix NestedExpression;
 
     auto rows() const -> Index { return H.rows() + A.rows() + X.rows(); }
     auto cols() const -> Index { return rows(); }
@@ -175,8 +168,6 @@ struct SaddlePointMatrix : public Eigen::MatrixBase<SaddlePointMatrix>
 
         return 0.0;
     }
-
-    auto operator()(Index row, Index col) const -> Scalar { return coeff(row, col); }
 
     operator PlainObject() const
     {
@@ -230,6 +221,7 @@ struct SaddlePointVector : public Eigen::MatrixBase<SaddlePointVector>
     Vector &c = z;
 
     EIGEN_DENSE_PUBLIC_INTERFACE(SaddlePointVector)
+    typedef SaddlePointVector NestedExpression;
 
     auto rows() const -> Index { return x.rows() + y.rows() + z.rows(); }
     auto size() const -> Index { return rows(); }
@@ -250,8 +242,6 @@ struct SaddlePointVector : public Eigen::MatrixBase<SaddlePointVector>
     	eigen_assert(col == 0);
     	return coeff(row);
 	}
-
-    auto operator()(Index row) const -> Scalar { return coeff(row); }
 
     operator PlainObject() const
     {
@@ -291,6 +281,7 @@ struct SaddlePointMatrixCanonical : public Eigen::MatrixBase<SaddlePointMatrixCa
     Vector Eb, Es, Eu;
 
     EIGEN_DENSE_PUBLIC_INTERFACE(SaddlePointMatrixCanonical)
+    typedef SaddlePointMatrixCanonical NestedExpression;
 
 	SaddlePointMatrixCanonical() = default;
     SaddlePointMatrixCanonical(const SaddlePointMatrixCanonical& other)  = default;
@@ -425,8 +416,6 @@ struct SaddlePointMatrixCanonical : public Eigen::MatrixBase<SaddlePointMatrixCa
         return 0.0;
     }
 
-    auto operator()(Index row, Index col) const -> Scalar { return coeff(row, col); }
-
     operator PlainObject() const
     {
         assert(valid());
@@ -445,8 +434,8 @@ struct SaddlePointMatrixCanonical : public Eigen::MatrixBase<SaddlePointMatrixCa
         PlainObject res = zeros(t, t);
 
         auto G = res.topLeftCorner(n, n).diagonal();
-        auto B = res.middleRows(n, m);
-        auto BT = res.middleCols(n, m);
+        auto B = res.middleRows(n, m).leftCols(n);
+        auto BT = res.middleCols(n, m).topRows(n);
         auto ETR = res.topRightCorner(n, n).diagonal();
         auto EBL = res.bottomLeftCorner(n, n).diagonal();
         auto EBR = res.bottomRightCorner(n, n).diagonal();
@@ -515,6 +504,7 @@ struct SaddlePointVectorCanonical : public Eigen::MatrixBase<SaddlePointVectorCa
     Vector &tb = zb, &ts = zs, &tu = zu;
 
     EIGEN_DENSE_PUBLIC_INTERFACE(SaddlePointVectorCanonical)
+    typedef SaddlePointVectorCanonical NestedExpression;
 
 	SaddlePointVectorCanonical() = default;
     SaddlePointVectorCanonical(const SaddlePointVectorCanonical& other)  = default;
@@ -603,11 +593,6 @@ struct SaddlePointVectorCanonical : public Eigen::MatrixBase<SaddlePointVectorCa
     	return coeff(row);
 	}
 
-	auto operator()(Index row) const -> Scalar
-	{
-		return coeff(row);
-	}
-
     operator PlainObject() const
     {
         assert(valid());
@@ -652,3 +637,86 @@ struct SaddlePointVectorCanonical : public Eigen::MatrixBase<SaddlePointVectorCa
 };
 
 } // namespace Optima
+
+
+namespace Eigen {
+namespace internal {
+
+template<>
+struct evaluator<Optima::SaddlePointMatrix> : evaluator_base<Optima::SaddlePointMatrix>
+{
+    typedef Optima::SaddlePointMatrix XprType;
+    typedef Optima::Matrix::Scalar Scalar;
+    enum
+    {
+        CoeffReadCost = evaluator<Optima::Matrix>::CoeffReadCost,
+        Flags = Eigen::ColMajor
+    };
+
+    evaluator(const Optima::SaddlePointMatrix& view)
+    : m_mat(view) {}
+
+    auto coeff(Index row, Index col) const -> Scalar { return m_mat.coeff(row, col); }
+
+    const Optima::SaddlePointMatrix& m_mat;
+};
+
+template<>
+struct evaluator<Optima::SaddlePointVector> : evaluator_base<Optima::SaddlePointVector>
+{
+    typedef Optima::SaddlePointVector XprType;
+    typedef Optima::Matrix::Scalar Scalar;
+    enum
+    {
+        CoeffReadCost = evaluator<Optima::Matrix>::CoeffReadCost,
+        Flags = Eigen::ColMajor
+    };
+
+    evaluator(const Optima::SaddlePointVector& view)
+    : m_mat(view) {}
+
+    auto coeff(Index row, Index col) const -> Scalar { return m_mat.coeff(row, col); }
+
+    const Optima::SaddlePointVector& m_mat;
+};
+
+template<>
+struct evaluator<Optima::SaddlePointMatrixCanonical> : evaluator_base<Optima::SaddlePointMatrixCanonical>
+{
+    typedef Optima::SaddlePointMatrixCanonical XprType;
+    typedef Optima::Matrix::Scalar Scalar;
+    enum
+    {
+        CoeffReadCost = evaluator<Optima::Matrix>::CoeffReadCost,
+        Flags = Eigen::ColMajor
+    };
+
+    evaluator(const Optima::SaddlePointMatrixCanonical& view)
+    : m_mat(view) {}
+
+    auto coeff(Index row, Index col) const -> Scalar { return m_mat.coeff(row, col); }
+
+    const Optima::SaddlePointMatrixCanonical& m_mat;
+};
+
+template<>
+struct evaluator<Optima::SaddlePointVectorCanonical> : evaluator_base<Optima::SaddlePointVectorCanonical>
+{
+    typedef Optima::SaddlePointVectorCanonical XprType;
+    typedef Optima::Matrix::Scalar Scalar;
+    enum
+    {
+        CoeffReadCost = evaluator<Optima::Matrix>::CoeffReadCost,
+        Flags = Eigen::ColMajor
+    };
+
+    evaluator(const Optima::SaddlePointVectorCanonical& view)
+    : m_mat(view) {}
+
+    auto coeff(Index row, Index col) const -> Scalar { return m_mat.coeff(row, col); }
+
+    const Optima::SaddlePointVectorCanonical& m_mat;
+};
+
+} // namespace internal
+} // namespace Eigen

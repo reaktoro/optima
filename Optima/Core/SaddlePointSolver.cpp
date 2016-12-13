@@ -21,6 +21,7 @@
 #include <Optima/Common/Exception.hpp>
 #include <Optima/Math/CanonicalMatrix.hpp>
 #include <Optima/Math/Eigen/LU>
+#include <Optima/Math/Eigen/Cholesky>
 
 namespace Optima {
 
@@ -193,9 +194,6 @@ struct SaddlePointSolver::Impl
         auto Zs = rows(Zn, istable);
         auto Zu = rows(Zn, iunstable);
 
-        auto Ss = cols(S, istable);
-        auto Su = cols(S, iunstable);
-
         Gb.noalias() = rows(G, ibasic);
         Gs.noalias() = rows(rows(G, inonbasic), istable);
         Gu.noalias() = rows(rows(G, inonbasic), iunstable);
@@ -287,6 +285,158 @@ auto SaddlePointSolver::solve(const SaddlePointProblem& problem, SaddlePointVect
 auto SaddlePointSolver::solve(const SaddlePointProblemCanonical& problem, SaddlePointVectorCanonical& solution) -> void
 {
     pimpl->solve(problem, solution);
+}
+
+auto solve(SaddlePointProblemCanonical& problem, SaddlePointVectorCanonical& solution) -> void
+{
+    auto& Gb = problem.lhs.Gb;
+    auto& Gs = problem.lhs.Gs;
+    auto& Gu = problem.lhs.Gu;
+    auto& Bb = problem.lhs.Bb;
+    auto& Bs = problem.lhs.Bs;
+    auto& Bu = problem.lhs.Bu;
+    auto& Eb = problem.lhs.Eb;
+    auto& Es = problem.lhs.Es;
+    auto& Eu = problem.lhs.Eu;
+    auto& rb = problem.rhs.rb;
+    auto& rs = problem.rhs.rs;
+    auto& ru = problem.rhs.ru;
+    auto&  s = problem.rhs.s ;
+    auto& tb = problem.rhs.tb;
+    auto& ts = problem.rhs.ts;
+    auto& tu = problem.rhs.tu;
+
+    // Auxiliary alias to solution data members
+    auto& xb = solution.xb;
+    auto& xs = solution.xs;
+    auto& xu = solution.xu;
+    auto& y  = solution.y;
+    auto& zb = solution.zb;
+    auto& zs = solution.zs;
+    auto& zu = solution.zu;
+
+    rb.noalias() -= tb;
+    rs.noalias() -= ts;
+    ru.noalias() -= Gu % (tu/Eu);
+
+    Gb.noalias() -= Eb;
+    Gs.noalias() -= Es;
+    Gu.noalias() -= Eu;
+
+    tb.noalias() = tb/Eb;
+    ts.noalias() = ts/Es;
+    tu.noalias() = tu/Eu;
+
+    s.noalias() -= Bu * tu;
+
+    Bs.noalias() = diag(inv(Bb)) * Bs;
+    Bu.noalias() = diag(inv(Bb)) * Bu;
+
+    s.noalias() = s/Bb;
+
+    Matrix lhs;
+    lhs  = diag(inv(Gb));
+    lhs += Bs*diag(inv(Gs))*tr(Bs);
+    lhs += Bu*diag(inv(Gu))*tr(Bu);
+
+    Vector rhs;
+    rhs  = s;
+    rhs += Bs*diag(inv(Gs))*tr(Bs)*rb;
+    rhs += Bu*diag(inv(Gu))*tr(Bu)*rb;
+    rhs -= Bs*(rs/Gs);
+    rhs -= Bu*(ru/Gu);
+
+    xb = lhs.ldlt().solve(rhs);
+    y  = rb - xb;
+    xb = xb/Gb;
+    xs = (rs - tr(Bs)*y)/Gs;
+    zu = (tr(Bu)*y - ru)/Gu;
+    y  = y/Bb;
+    zb = tb - xb;
+    zs = ts - xs;
+    xu = tu - zu;
+}
+
+auto solve2(SaddlePointProblemCanonical& problem, SaddlePointVectorCanonical& solution) -> void
+{
+    auto& Gb = problem.lhs.Gb;
+    auto& Gs = problem.lhs.Gs;
+    auto& Gu = problem.lhs.Gu;
+    auto& Bb = problem.lhs.Bb;
+    auto& Bs = problem.lhs.Bs;
+    auto& Bu = problem.lhs.Bu;
+    auto& Eb = problem.lhs.Eb;
+    auto& Es = problem.lhs.Es;
+    auto& Eu = problem.lhs.Eu;
+    auto& rb = problem.rhs.rb;
+    auto& rs = problem.rhs.rs;
+    auto& ru = problem.rhs.ru;
+    auto&  s = problem.rhs.s ;
+    auto& tb = problem.rhs.tb;
+    auto& ts = problem.rhs.ts;
+    auto& tu = problem.rhs.tu;
+
+    // Auxiliary alias to solution data members
+    auto& xb = solution.xb;
+    auto& xs = solution.xs;
+    auto& xu = solution.xu;
+    auto& y  = solution.y;
+    auto& zb = solution.zb;
+    auto& zs = solution.zs;
+    auto& zu = solution.zu;
+
+    rb -= tb;
+    rs -= ts;
+    ru -= Gu % (tu/Eu);
+
+    Gb -= Eb;
+    Gs -= Es;
+    Gu -= Eu;
+
+    tb.noalias() = tb/Eb;
+    ts.noalias() = ts/Es;
+    tu.noalias() = tu/Eu;
+
+    Eb.noalias() = inv(Eb);
+    Es.noalias() = inv(Es);
+    Eu.noalias() = inv(Eu);
+
+    s  -= Bu * tu;
+
+    Bb.noalias() = inv(Bb);
+
+    Bs = diag(Bb) * Bs; // check with .noalias()
+    Bu = diag(Bb) * Bu; // check with .noalias()
+
+    s = Bb % s; // check with .noalias()
+
+    Gs = inv(Gs); // check with .noalias()
+    Gu = inv(Gu); // check with .noalias()
+
+    rs = Gs % rs; // check with .noalias()
+    ru = Gu % ru; // check with .noalias()
+
+    Matrix lhs;
+    lhs  = diag(Gb);
+    lhs += Bs*diag(Gs)*tr(Bs);
+    lhs += Bu*diag(Gu)*tr(Bu);
+
+    Vector rhs;
+    rhs  = s;
+    rhs += Bs*diag(Gs)*tr(Bs)*rb;
+    rhs += Bu*diag(Gu)*tr(Bu)*rb;
+    rhs -= Bs*rs;
+    rhs -= Bu*ru;
+    rhs.noalias() = Gb % rhs;
+
+    xb = lhs.ldlt().solve(rhs);
+    y  = rb - Gb % xb;
+    xs = rs - diag(Gs)*tr(Bs)*y;
+    zu = diag(Gu)*tr(Bu)*y - ru;
+    y  = Bb % y;
+    zb = tb - xb;
+    zs = ts - xs;
+    xu = tu - zu;
 }
 
 } // namespace Optima

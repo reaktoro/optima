@@ -36,16 +36,14 @@ struct traits<Optima::HessianMatrix>
 {
     typedef Eigen::Dense StorageKind;
     typedef Eigen::MatrixXpr XprKind;
+    typedef Optima::Matrix::StorageIndex StorageIndex;
     typedef Optima::Matrix::Scalar Scalar;
-    typedef Optima::Matrix::Index Index;
-    typedef Optima::Matrix::PlainObject PlainObject;
     enum {
         Flags = Eigen::ColMajor,
         RowsAtCompileTime = Optima::Matrix::RowsAtCompileTime,
         ColsAtCompileTime = Optima::Matrix::ColsAtCompileTime,
         MaxRowsAtCompileTime = Optima::Matrix::MaxRowsAtCompileTime,
         MaxColsAtCompileTime = Optima::Matrix::MaxColsAtCompileTime,
-        CoeffReadCost = Optima::Matrix::CoeffReadCost
     };
 };
 
@@ -54,16 +52,14 @@ struct traits<Optima::HessianBlock>
 {
     typedef Eigen::Dense StorageKind;
     typedef Eigen::MatrixXpr XprKind;
+    typedef Optima::Matrix::StorageIndex StorageIndex;
     typedef Optima::Matrix::Scalar Scalar;
-    typedef Optima::Matrix::Index Index;
-    typedef Optima::Matrix::PlainObject PlainObject;
     enum {
         Flags = Eigen::ColMajor,
         RowsAtCompileTime = Optima::Matrix::RowsAtCompileTime,
         ColsAtCompileTime = Optima::Matrix::ColsAtCompileTime,
         MaxRowsAtCompileTime = Optima::Matrix::MaxRowsAtCompileTime,
         MaxColsAtCompileTime = Optima::Matrix::MaxColsAtCompileTime,
-        CoeffReadCost = Optima::Matrix::CoeffReadCost
     };
 };
 
@@ -106,6 +102,7 @@ public:
     };
 
     EIGEN_DENSE_PUBLIC_INTERFACE(HessianBlock)
+    typedef HessianBlock NestedExpression;
 
     /// Construct a default HessianBlock instance.
     HessianBlock();
@@ -183,6 +180,7 @@ class HessianMatrix : public Eigen::MatrixBase<HessianMatrix>
 {
 public:
     EIGEN_DENSE_PUBLIC_INTERFACE(HessianMatrix)
+    typedef HessianMatrix NestedExpression;
 
     /// Alias to nested HessianBlock type EigenDecomposition.
     using EigenDecomposition = HessianBlock::EigenDecomposition;
@@ -255,3 +253,47 @@ private:
 };
 
 } // namespace Optima
+
+namespace Eigen {
+namespace internal {
+
+template<>
+struct evaluator<Optima::HessianMatrix> : evaluator_base<Optima::HessianMatrix>
+{
+    typedef Optima::HessianMatrix XprType;
+    typedef Optima::Matrix::Scalar Scalar;
+    enum
+    {
+        CoeffReadCost = evaluator<Optima::Matrix>::CoeffReadCost,
+        Flags = Eigen::ColMajor
+    };
+
+    evaluator(const Optima::HessianMatrix& view)
+    : m_mat(view) {}
+
+    auto coeff(Index row, Index col) const -> Scalar { return m_mat.coeff(row, col); }
+
+    const Optima::HessianMatrix& m_mat;
+};
+
+template<>
+struct evaluator<Optima::HessianBlock> : evaluator_base<Optima::HessianBlock>
+{
+    typedef Optima::HessianBlock XprType;
+    typedef Optima::Matrix::Scalar Scalar;
+    enum
+    {
+        CoeffReadCost = evaluator<Optima::Matrix>::CoeffReadCost,
+        Flags = Eigen::ColMajor
+    };
+
+    evaluator(const Optima::HessianBlock& view)
+    : m_mat(view) {}
+
+    auto coeff(Index row, Index col) const -> Scalar { return m_mat.coeff(row, col); }
+
+    const Optima::HessianBlock& m_mat;
+};
+
+} // namespace internal
+} // namespace Eigen

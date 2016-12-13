@@ -35,16 +35,14 @@ struct traits<Optima::BlockDiagonalMatrix>
 {
     typedef Eigen::Dense StorageKind;
     typedef Eigen::MatrixXpr XprKind;
+    typedef Optima::Matrix::StorageIndex StorageIndex;
     typedef Optima::Matrix::Scalar Scalar;
-    typedef Optima::Matrix::Index Index;
-    typedef Optima::Matrix::PlainObject PlainObject;
     enum {
         Flags = Eigen::ColMajor,
         RowsAtCompileTime = Optima::Matrix::RowsAtCompileTime,
         ColsAtCompileTime = Optima::Matrix::ColsAtCompileTime,
         MaxRowsAtCompileTime = Optima::Matrix::MaxRowsAtCompileTime,
         MaxColsAtCompileTime = Optima::Matrix::MaxColsAtCompileTime,
-        CoeffReadCost = Optima::Matrix::CoeffReadCost
     };
 };
 
@@ -135,9 +133,6 @@ public:
         return 0.0;
     }
 
-    /// Return an entry of the block diagonal matrix.
-    auto operator()(Index i, Index j) const -> Scalar { return coeff(i, j); }
-
     /// Convert this BlockDiagonalMatrix instance to a Matrix instance.
     operator PlainObject() const
     {
@@ -163,3 +158,28 @@ private:
 };
 
 } // namespace Optima
+
+namespace Eigen {
+namespace internal {
+
+template<>
+struct evaluator<Optima::BlockDiagonalMatrix> : evaluator_base<Optima::BlockDiagonalMatrix>
+{
+    typedef Optima::BlockDiagonalMatrix XprType;
+    typedef Optima::Matrix::Scalar Scalar;
+    enum
+    {
+        CoeffReadCost = evaluator<Optima::Matrix>::CoeffReadCost,
+        Flags = Eigen::ColMajor
+    };
+
+    evaluator(const Optima::BlockDiagonalMatrix& view)
+    : m_mat(view) {}
+
+    auto coeff(Index row, Index col) const -> Scalar { return m_mat.coeff(row, col); }
+
+    const Optima::BlockDiagonalMatrix& m_mat;
+};
+
+} // namespace internal
+} // namespace Eigen

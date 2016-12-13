@@ -121,7 +121,7 @@ HessianBlock::operator PlainObject() const
     {
     case Diagonal: return diag(m_diagonal);
     case Dense: return m_dense;
-    case EigenDecomp: return Matrix(m_eigen);
+    case EigenDecomp: return m_eigen;
     default: return zeros(m_dim, m_dim);
     }
 }

@@ -60,4 +60,6 @@ private:
     std::unique_ptr<Impl> pimpl;
 };
 
+auto solve(SaddlePointProblemCanonical& problem, SaddlePointVectorCanonical& solution) -> void;
+
 } // namespace Optima

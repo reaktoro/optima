@@ -26,7 +26,7 @@ Matrix(const std::initializer_list<Scalar>& list)
 }
 
 Matrix(const std::initializer_list<std::initializer_list<Scalar>>& list)
-: Matrix(list.size(), list.size() ? list.begin()->size() : 0)
+: Matrix(list.size(), list.size() ? list.begin()->size() : 1)
 {
     Index i = 0, j = 0;
     for(const auto& row : list)
@@ -37,4 +37,15 @@ Matrix(const std::initializer_list<std::initializer_list<Scalar>>& list)
         }
         j = 0; ++i;
     }
+}
+
+auto operator=(const std::initializer_list<Scalar>& list) -> Matrix&
+{
+    (*this).resize(list.size(), 1);
+    Index i = 0;
+    for(const auto& entry : list)
+    {
+        (*this).data()[i] = entry; ++i;
+    }
+    return *this;
 }

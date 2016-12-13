@@ -50,103 +50,223 @@ namespace internal {
 template<typename Derived, typename Indices>
 struct traits<MatrixRowsView<Derived, Indices>>
 {
-	typedef Eigen::Dense StorageKind;
-	typedef Eigen::MatrixXpr XprKind;
-	typedef typename Derived::Scalar Scalar;
-	typedef typename Derived::Index Index;
-	enum {
-		Flags = Eigen::ColMajor,
-		RowsAtCompileTime = Derived::RowsAtCompileTime,
-		ColsAtCompileTime = Derived::ColsAtCompileTime,
-		MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
-		MaxColsAtCompileTime = Derived::MaxColsAtCompileTime,
-		CoeffReadCost = Derived::CoeffReadCost
-	};
+    typedef Eigen::Dense StorageKind;
+    typedef Eigen::MatrixXpr XprKind;
+    typedef typename Derived::StorageIndex StorageIndex;
+    typedef typename Derived::Scalar Scalar;
+    enum {
+        Flags = Eigen::ColMajor | LvalueBit,
+        RowsAtCompileTime = Derived::RowsAtCompileTime,
+        ColsAtCompileTime = Derived::ColsAtCompileTime,
+        MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
+        MaxColsAtCompileTime = Derived::MaxColsAtCompileTime,
+    };
 };
 
 template<typename Derived, typename Indices>
 struct traits<MatrixRowsViewConst<Derived, Indices>>
 {
-	typedef Eigen::Dense StorageKind;
-	typedef Eigen::MatrixXpr XprKind;
-	typedef typename Derived::Scalar Scalar;
-	typedef typename Derived::Index Index;
-	enum {
-		Flags = Eigen::ColMajor,
-		RowsAtCompileTime = Derived::RowsAtCompileTime,
-		ColsAtCompileTime = Derived::ColsAtCompileTime,
-		MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
-		MaxColsAtCompileTime = Derived::MaxColsAtCompileTime,
-		CoeffReadCost = Derived::CoeffReadCost
-	};
+    typedef Eigen::Dense StorageKind;
+    typedef Eigen::MatrixXpr XprKind;
+    typedef typename Derived::StorageIndex StorageIndex;
+    typedef typename Derived::Scalar Scalar;
+    enum {
+        Flags = Eigen::ColMajor,
+        RowsAtCompileTime = Derived::RowsAtCompileTime,
+        ColsAtCompileTime = Derived::ColsAtCompileTime,
+        MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
+        MaxColsAtCompileTime = Derived::MaxColsAtCompileTime,
+    };
 };
 
 template<typename Derived, typename Indices>
 struct traits<MatrixColsView<Derived, Indices>>
 {
-	typedef Eigen::Dense StorageKind;
-	typedef Eigen::MatrixXpr XprKind;
-	typedef typename Derived::Scalar Scalar;
-	typedef typename Derived::Index Index;
-	enum {
-		Flags = Eigen::ColMajor,
-		RowsAtCompileTime = Derived::RowsAtCompileTime,
-		ColsAtCompileTime = Derived::ColsAtCompileTime,
-		MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
-		MaxColsAtCompileTime = Derived::MaxColsAtCompileTime,
-		CoeffReadCost = Derived::CoeffReadCost
-	};
+    typedef Eigen::Dense StorageKind;
+    typedef Eigen::MatrixXpr XprKind;
+    typedef typename Derived::StorageIndex StorageIndex;
+    typedef typename Derived::Scalar Scalar;
+    enum {
+        Flags = Eigen::ColMajor | LvalueBit,
+        RowsAtCompileTime = Derived::RowsAtCompileTime,
+        ColsAtCompileTime = Derived::ColsAtCompileTime,
+        MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
+        MaxColsAtCompileTime = Derived::MaxColsAtCompileTime,
+    };
 };
 
 template<typename Derived, typename Indices>
 struct traits<MatrixColsViewConst<Derived, Indices>>
 {
-	typedef Eigen::Dense StorageKind;
-	typedef Eigen::MatrixXpr XprKind;
-	typedef typename Derived::Scalar Scalar;
-	typedef typename Derived::Index Index;
-	enum {
-		Flags = Eigen::ColMajor,
-		RowsAtCompileTime = Derived::RowsAtCompileTime,
-		ColsAtCompileTime = Derived::ColsAtCompileTime,
-		MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
-		MaxColsAtCompileTime = Derived::MaxColsAtCompileTime,
-		CoeffReadCost = Derived::CoeffReadCost
-	};
+    typedef Eigen::Dense StorageKind;
+    typedef Eigen::MatrixXpr XprKind;
+    typedef typename Derived::StorageIndex StorageIndex;
+    typedef typename Derived::Scalar Scalar;
+    enum {
+        Flags = Eigen::ColMajor,
+        RowsAtCompileTime = Derived::RowsAtCompileTime,
+        ColsAtCompileTime = Derived::ColsAtCompileTime,
+        MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
+        MaxColsAtCompileTime = Derived::MaxColsAtCompileTime,
+    };
 };
 
 template<typename Derived, typename Indices>
 struct traits<MatrixSubView<Derived, Indices>>
 {
-	typedef Eigen::Dense StorageKind;
-	typedef Eigen::MatrixXpr XprKind;
-	typedef typename Derived::Scalar Scalar;
-	typedef typename Derived::Index Index;
-	enum {
-		Flags = Eigen::ColMajor,
-		RowsAtCompileTime = Derived::RowsAtCompileTime,
-		ColsAtCompileTime = Derived::ColsAtCompileTime,
-		MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
-		MaxColsAtCompileTime = Derived::MaxColsAtCompileTime,
-		CoeffReadCost = Derived::CoeffReadCost
-	};
+    typedef Eigen::Dense StorageKind;
+    typedef Eigen::MatrixXpr XprKind;
+    typedef typename Derived::StorageIndex StorageIndex;
+    typedef typename Derived::Scalar Scalar;
+    enum {
+        Flags = Eigen::ColMajor | LvalueBit,
+        RowsAtCompileTime = Derived::RowsAtCompileTime,
+        ColsAtCompileTime = Derived::ColsAtCompileTime,
+        MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
+        MaxColsAtCompileTime = Derived::MaxColsAtCompileTime,
+    };
 };
 
 template<typename Derived, typename Indices>
 struct traits<MatrixSubViewConst<Derived, Indices>>
 {
-	typedef Eigen::Dense StorageKind;
-	typedef Eigen::MatrixXpr XprKind;
-	typedef typename Derived::Scalar Scalar;
-	typedef typename Derived::Index Index;
-	enum {
-		Flags = Eigen::ColMajor,
-		RowsAtCompileTime = Derived::RowsAtCompileTime,
-		ColsAtCompileTime = Derived::ColsAtCompileTime,
-		MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
-		MaxColsAtCompileTime = Derived::MaxColsAtCompileTime,
-		CoeffReadCost = Derived::CoeffReadCost
-	};
+    typedef Eigen::Dense StorageKind;
+    typedef Eigen::MatrixXpr XprKind;
+    typedef typename Derived::StorageIndex StorageIndex;
+    typedef typename Derived::Scalar Scalar;
+    enum {
+        Flags = Eigen::ColMajor,
+        RowsAtCompileTime = Derived::RowsAtCompileTime,
+        ColsAtCompileTime = Derived::ColsAtCompileTime,
+        MaxRowsAtCompileTime = Derived::MaxRowsAtCompileTime,
+        MaxColsAtCompileTime = Derived::MaxColsAtCompileTime,
+    };
+};
+
+template<typename ArgType, typename Indices>
+struct evaluator<MatrixRowsView<ArgType, Indices>> : evaluator_base<MatrixRowsView<ArgType, Indices>>
+{
+    typedef MatrixRowsView<ArgType, Indices> XprType;
+    typedef typename ArgType::Scalar Scalar;
+    enum
+    {
+        CoeffReadCost = evaluator<ArgType>::CoeffReadCost,
+        Flags = Eigen::ColMajor | LinearAccessBit,
+    };
+
+    evaluator(const MatrixRowsView<ArgType, Indices>& view)
+    : m_view(view) {}
+
+    auto coeffRef(Index row) -> Scalar& { return m_view.coeffRef(row); }
+    auto coeffRef(Index row, Index col) -> Scalar& { return m_view.coeffRef(row, col); }
+
+    auto coeff(Index row) const -> const Scalar& { return m_view.coeff(row); }
+    auto coeff(Index row, Index col) const -> const Scalar& { return m_view.coeff(row, col); }
+
+    MatrixRowsView<ArgType, Indices> m_view;
+};
+
+template<typename ArgType, typename Indices>
+struct evaluator<MatrixRowsViewConst<ArgType, Indices>> : evaluator_base<MatrixRowsViewConst<ArgType, Indices>>
+{
+    typedef MatrixRowsViewConst<ArgType, Indices> XprType;
+    typedef typename ArgType::Scalar Scalar;
+    enum
+    {
+        CoeffReadCost = evaluator<ArgType>::CoeffReadCost,
+        Flags = Eigen::ColMajor | LinearAccessBit,
+    };
+
+    evaluator(const MatrixRowsViewConst<ArgType, Indices>& view)
+    : m_view(view) {}
+
+    auto coeff(Index row) const -> const Scalar& { return m_view.coeff(row); }
+    auto coeff(Index row, Index col) const -> const Scalar& { return m_view.coeff(row, col); }
+
+    MatrixRowsViewConst<ArgType, Indices> m_view;
+};
+
+template<typename ArgType, typename Indices>
+struct evaluator<MatrixColsView<ArgType, Indices>> : evaluator_base<MatrixColsView<ArgType, Indices>>
+{
+    typedef MatrixColsView<ArgType, Indices> XprType;
+    typedef typename ArgType::Scalar Scalar;
+    enum
+    {
+        CoeffReadCost = evaluator<ArgType>::CoeffReadCost,
+        Flags = Eigen::ColMajor | LinearAccessBit,
+    };
+
+    evaluator(const MatrixColsView<ArgType, Indices>& view)
+    : m_view(view) {}
+
+    auto coeffRef(Index col) -> Scalar& { return m_view.coeffRef(col); }
+    auto coeffRef(Index row, Index col) -> Scalar& { return m_view.coeffRef(row, col); }
+
+    auto coeff(Index col) const -> const Scalar& { return m_view.coeff(col); }
+    auto coeff(Index row, Index col) const -> const Scalar& { return m_view.coeff(row, col); }
+
+    MatrixColsView<ArgType, Indices> m_view;
+};
+
+template<typename ArgType, typename Indices>
+struct evaluator<MatrixColsViewConst<ArgType, Indices>> : evaluator_base<MatrixColsViewConst<ArgType, Indices>>
+{
+    typedef MatrixColsViewConst<ArgType, Indices> XprType;
+    typedef typename ArgType::Scalar Scalar;
+    enum
+    {
+        CoeffReadCost = evaluator<ArgType>::CoeffReadCost,
+        Flags = Eigen::ColMajor | LinearAccessBit,
+    };
+
+    evaluator(const MatrixColsViewConst<ArgType, Indices>& view)
+    : m_view(view) {}
+
+    auto coeff(Index col) const -> const Scalar& { return m_view.coeff(col); }
+    auto coeff(Index row, Index col) const -> const Scalar& { return m_view.coeff(row, col); }
+
+    MatrixColsViewConst<ArgType, Indices> m_view;
+};
+
+template<typename ArgType, typename Indices>
+struct evaluator<MatrixSubView<ArgType, Indices>> : evaluator_base<MatrixSubView<ArgType, Indices>>
+{
+    typedef MatrixSubView<ArgType, Indices> XprType;
+    typedef typename ArgType::Scalar Scalar;
+    enum
+    {
+        CoeffReadCost = evaluator<ArgType>::CoeffReadCost,
+        Flags = Eigen::ColMajor | LinearAccessBit,
+    };
+
+    evaluator(const MatrixSubView<ArgType, Indices>& view)
+    : m_view(view) {}
+
+    auto coeffRef(Index row, Index col) -> Scalar& { return m_view.coeffRef(row, col); }
+
+    auto coeff(Index row, Index col) const -> const Scalar& { return m_view.coeff(row, col); }
+
+    MatrixSubView<ArgType, Indices> m_view;
+};
+
+template<typename ArgType, typename Indices>
+struct evaluator<MatrixSubViewConst<ArgType, Indices>> : evaluator_base<MatrixSubViewConst<ArgType, Indices>>
+{
+    typedef MatrixSubViewConst<ArgType, Indices> XprType;
+    typedef typename ArgType::Scalar Scalar;
+    enum
+    {
+        CoeffReadCost = evaluator<ArgType>::CoeffReadCost,
+        Flags = Eigen::ColMajor | LinearAccessBit,
+    };
+
+    evaluator(const MatrixSubViewConst<ArgType, Indices>& view)
+    : m_view(view) {}
+
+    auto coeff(Index row, Index col) const -> const Scalar& { return m_view.coeff(row, col); }
+
+    MatrixSubViewConst<ArgType, Indices> m_view;
 };
 
 } // namespace internal
@@ -162,24 +282,23 @@ public:
     MatrixRowsView(MatrixBase<Derived>& mat, const Indices& irows)
     : m_mat(mat.derived()), m_irows(irows) {}
 
+    auto rows() const -> Index { return m_irows.size(); }
+    auto cols() const -> Index { return m_mat.cols(); }
+
+    auto coeffRef(Index row) -> Scalar& { return m_mat(m_irows[row], 0); }
+    auto coeffRef(Index row, Index col) -> Scalar& { return m_mat(m_irows[row], col); }
+
+    auto coeff(Index row) const -> const Scalar& { return m_mat(m_irows[row], 0); }
+    auto coeff(Index row, Index col) const -> const Scalar& { return m_mat(m_irows[row], col); }
+
     template<typename DerivedOther>
     auto operator=(const MatrixBase<DerivedOther>& other) -> MatrixRowsView&
 	{
     	for(Index i = 0; i < rows(); ++i)
 			for(Index j = 0; j < cols(); ++j)
-				coeff(i, j) = other(i, j);
+			    coeffRef(i, j) = other(i, j);
     	return *this;
 	}
-
-    auto rows() const -> Index { return m_irows.size(); }
-    auto cols() const -> Index { return m_mat.cols(); }
-
-    auto coeff(Index row) -> Scalar& { return m_mat(m_irows[row], 0); }
-    auto coeff(Index row) const -> Scalar { return m_mat(m_irows[row], 0); }
-    auto coeff(Index row, Index col) -> Scalar& { return m_mat(m_irows[row], col); }
-    auto coeff(Index row, Index col) const -> Scalar { return m_mat(m_irows[row], col); }
-    auto operator()(Index row, Index col) -> Scalar& { return coeff(row, col); }
-    auto operator()(Index row, Index col) const -> Scalar { return coeff(row, col); }
 
     operator PlainObject() const
     {
@@ -192,7 +311,7 @@ public:
 
 private:
     Derived& m_mat;
-    Indices m_irows;
+    const Indices& m_irows;
 };
 
 template<typename Derived, typename Indices>
@@ -210,9 +329,8 @@ public:
     auto rows() const -> Index { return m_irows.size(); }
     auto cols() const -> Index { return m_mat.cols(); }
 
-    auto coeff(Index row) const -> Scalar { return m_mat(m_irows[row], 0); }
-    auto coeff(Index row, Index col) const -> Scalar { return m_mat(m_irows[row], col); }
-    auto operator()(Index row, Index col) const -> Scalar { return coeff(row, col); }
+    auto coeff(Index row) const -> const Scalar& { return m_mat(m_irows[row], 0); }
+    auto coeff(Index row, Index col) const -> const Scalar& { return m_mat(m_irows[row], col); }
 
     operator PlainObject() const
     {
@@ -225,7 +343,7 @@ public:
 
 private:
     const Derived& m_mat;
-    Indices m_irows;
+    const Indices& m_irows;
 };
 
 template<typename Derived, typename Indices>
@@ -245,17 +363,18 @@ public:
 	{
     	for(Index i = 0; i < rows(); ++i)
 			for(Index j = 0; j < cols(); ++j)
-				coeff(i, j) = other(i, j);
+				coeffRef(i, j) = other(i, j);
     	return *this;
 	}
 
     auto rows() const -> Index { return m_mat.rows(); }
     auto cols() const -> Index { return m_icols.size(); }
 
-    auto coeff(Index row, Index col) -> Scalar& { return m_mat(row, m_icols[col]); }
-    auto coeff(Index row, Index col) const -> Scalar { return m_mat(row, m_icols[col]); }
-    auto operator()(Index row, Index col) -> Scalar& { return coeff(row, col); }
-    auto operator()(Index row, Index col) const -> Scalar { return coeff(row, col); }
+    auto coeffRef(Index col) -> Scalar& { return m_mat(0, m_icols[col]); }
+    auto coeffRef(Index row, Index col) -> Scalar& { return m_mat(row, m_icols[col]); }
+
+    auto coeff(Index col) -> const Scalar& { return m_mat(0, m_icols[col]); }
+    auto coeff(Index row, Index col) const -> const Scalar& { return m_mat(row, m_icols[col]); }
 
     operator PlainObject() const
     {
@@ -268,7 +387,7 @@ public:
 
 private:
     Derived& m_mat;
-    Indices m_icols;
+    const Indices& m_icols;
 };
 
 template<typename Derived, typename Indices>
@@ -286,8 +405,8 @@ public:
     auto rows() const -> Index { return m_mat.rows(); }
     auto cols() const -> Index { return m_icols.size(); }
 
-    auto coeff(Index row, Index col) const -> Scalar { return m_mat(row, m_icols[col]); }
-    auto operator()(Index row, Index col) const -> Scalar { return coeff(row, col); }
+    auto coeff(Index col) const -> const Scalar& { return m_mat(0, m_icols[col]); }
+    auto coeff(Index row, Index col) const -> const Scalar& { return m_mat(row, m_icols[col]); }
 
     operator PlainObject() const
     {
@@ -300,7 +419,7 @@ public:
 
 private:
     const Derived& m_mat;
-    Indices m_icols;
+    const Indices& m_icols;
 };
 
 template<typename Derived, typename Indices>
@@ -327,10 +446,9 @@ public:
     auto rows() const -> Index { return m_irows.size(); }
     auto cols() const -> Index { return m_icols.size(); }
 
-    auto coeff(Index row, Index col) -> Scalar& { return m_mat(m_irows[row], m_icols[col]); }
-    auto coeff(Index row, Index col) const -> Scalar { return m_mat(m_irows[row], m_icols[col]); }
-    auto operator()(Index row, Index col) -> Scalar& { return coeff(row, col); }
-    auto operator()(Index row, Index col) const -> Scalar { return coeff(row, col); }
+    auto coeffRef(Index row, Index col) -> Scalar& { return m_mat(m_irows[row], m_icols[col]); }
+
+    auto coeff(Index row, Index col) const -> const Scalar& { return m_mat(m_irows[row], m_icols[col]); }
 
     operator PlainObject() const
     {
@@ -343,7 +461,8 @@ public:
 
 private:
     Derived& m_mat;
-    Indices m_irows, m_icols;
+    const Indices& m_irows;
+    const Indices& m_icols;
 };
 
 template<typename Derived, typename Indices>
@@ -361,8 +480,7 @@ public:
     auto rows() const -> Index { return m_irows.size(); }
     auto cols() const -> Index { return m_icols.size(); }
 
-    auto coeff(Index row, Index col) const -> Scalar { return m_mat(m_irows[row], m_icols[col]); }
-    auto operator()(Index row, Index col) const -> Scalar { return coeff(row, col); }
+    auto coeff(Index row, Index col) const -> const Scalar& { return m_mat(m_irows[row], m_icols[col]); }
 
     operator PlainObject() const
     {
@@ -375,7 +493,8 @@ public:
 
 private:
     const Derived& m_mat;
-    Indices m_irows, m_icols;
+    const Indices& m_irows;
+    const Indices& m_icols;
 };
 
 } // namespace Eigen
