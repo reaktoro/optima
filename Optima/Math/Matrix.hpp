@@ -188,7 +188,7 @@ struct evaluator<MatrixRowsViewConst<ArgType, Indices>> : evaluator_base<MatrixR
     auto coeff(Index row) const -> CoeffReturnType { return m_view.coeff(row); }
     auto coeff(Index row, Index col) const -> CoeffReturnType { return m_view.coeff(row, col); }
 
-    const MatrixRowsViewConst<ArgType, Indices>& m_view;
+    MatrixRowsViewConst<ArgType, Indices> m_view;
 };
 
 template<typename ArgType, typename Indices>
@@ -233,7 +233,7 @@ struct evaluator<MatrixColsViewConst<ArgType, Indices>> : evaluator_base<MatrixC
     auto coeff(Index col) const -> CoeffReturnType { return m_view.coeff(col); }
     auto coeff(Index row, Index col) const -> CoeffReturnType { return m_view.coeff(row, col); }
 
-    const MatrixColsViewConst<ArgType, Indices>& m_view;
+    MatrixColsViewConst<ArgType, Indices> m_view;
 };
 
 template<typename ArgType, typename Indices>
@@ -275,7 +275,7 @@ struct evaluator<MatrixSubViewConst<ArgType, Indices>> : evaluator_base<MatrixSu
 
     auto coeff(Index row, Index col) const -> CoeffReturnType { return m_view.coeff(row, col); }
 
-    const MatrixSubViewConst<ArgType, Indices>& m_view;
+    MatrixSubViewConst<ArgType, Indices> m_view;
 };
 
 } // namespace internal
@@ -320,6 +320,7 @@ public:
     			res(i, j) = coeff(i, j);
     	return res;
     }
+
 
 private:
     typedef typename Eigen::internal::ref_selector<Derived>::non_const_type DerivedNested;
