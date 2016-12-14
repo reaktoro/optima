@@ -153,7 +153,7 @@ TEST_CASE("Testing the solution of a canonical saddle point problem: Case 2")
     SaddlePointProblemCanonical problem =
 		util::saddlePointProblemCanonical(np, ns, nu, p);
 
-    SUBCASE("Using solver class")
+//    SUBCASE("Using solver class")
     {
         auto cproblem = problem;
         SaddlePointSolver solver;
@@ -162,9 +162,11 @@ TEST_CASE("Testing the solution of a canonical saddle point problem: Case 2")
         auto actual = sol.convert();
         auto expected = ones(actual.rows());
         CHECK(actual.isApprox(expected));
+
+        std::cout << "Error 1: " << norm(actual - expected) << std::endl;
     }
 
-    SUBCASE("Using solve method")
+//    SUBCASE("Using solve method")
     {
         auto cproblem = problem;
 
@@ -173,6 +175,8 @@ TEST_CASE("Testing the solution of a canonical saddle point problem: Case 2")
         auto actual = sol.convert();
         auto expected = ones(actual.rows());
         CHECK(actual.isApprox(expected));
+
+        std::cout << "Error 2: " << norm(actual - expected) << std::endl;
     }
 }
 

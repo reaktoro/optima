@@ -332,27 +332,27 @@ auto solve(SaddlePointProblemCanonical& problem, SaddlePointVectorCanonical& sol
 
     s.noalias() = s/Bb;
 
-    Matrix lhs;
-    lhs  = diag(inv(Gb));
-    lhs += Bs*diag(inv(Gs))*tr(Bs);
-    lhs += Bu*diag(inv(Gu))*tr(Bu);
+    Matrix lhs = diag(inv(Gb));
+    lhs.noalias() += Bs*diag(inv(Gs))*tr(Bs);
+    lhs.noalias() += Bu*diag(inv(Gu))*tr(Bu);
 
-    Vector rhs;
-    rhs  = s;
-    rhs += Bs*diag(inv(Gs))*tr(Bs)*rb;
-    rhs += Bu*diag(inv(Gu))*tr(Bu)*rb;
-    rhs -= Bs*(rs/Gs);
-    rhs -= Bu*(ru/Gu);
+    Vector rhs = s;
+    rhs.noalias() += Bs*diag(inv(Gs))*tr(Bs)*rb;
+    rhs.noalias() += Bu*diag(inv(Gu))*tr(Bu)*rb;
+    rhs.noalias() -= Bs*(rs/Gs);
+    rhs.noalias() -= Bu*(ru/Gu);
 
-    xb = lhs.ldlt().solve(rhs);
-    y  = rb - xb;
-    xb = xb/Gb;
-    xs = (rs - tr(Bs)*y)/Gs;
-    zu = (tr(Bu)*y - ru)/Gu;
-    y  = y/Bb;
-    zb = tb - xb;
-    zs = ts - xs;
-    xu = tu - zu;
+    Eigen::LDLT<Matrix> ldlt(lhs);
+
+    xb.noalias() = ldlt.solve(rhs);
+    y .noalias() = rb - xb;
+    xb.noalias() = xb/Gb;
+    xs.noalias() = (rs - tr(Bs)*y)/Gs;
+    zu.noalias() = (tr(Bu)*y - ru)/Gu;
+    y .noalias() = y/Bb;
+    zb.noalias() = tb - xb;
+    zs.noalias() = ts - xs;
+    xu.noalias() = tu - zu;
 }
 
 auto solve2(SaddlePointProblemCanonical& problem, SaddlePointVectorCanonical& solution) -> void
