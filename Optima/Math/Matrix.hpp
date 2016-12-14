@@ -322,7 +322,8 @@ public:
     }
 
 private:
-    Derived& m_mat;
+    typedef typename Eigen::internal::ref_selector<Derived>::non_const_type DerivedNested;
+    DerivedNested m_mat;
     const Indices& m_irows;
 };
 
@@ -357,7 +358,8 @@ public:
     }
 
 private:
-    const Derived& m_mat;
+    typedef typename Eigen::internal::ref_selector<Derived>::type DerivedNested;
+    DerivedNested m_mat;
     const Indices& m_irows;
 };
 
@@ -404,7 +406,8 @@ public:
     }
 
 private:
-    Derived& m_mat;
+    typedef typename Eigen::internal::ref_selector<Derived>::non_const_type DerivedNested;
+    DerivedNested m_mat;
     const Indices& m_icols;
 };
 
@@ -439,7 +442,8 @@ public:
     }
 
 private:
-    const Derived& m_mat;
+    typedef typename Eigen::internal::ref_selector<Derived>::type DerivedNested;
+    DerivedNested m_mat;
     const Indices& m_icols;
 };
 
@@ -481,7 +485,8 @@ public:
     }
 
 private:
-    Derived& m_mat;
+    typedef typename Eigen::internal::ref_selector<Derived>::non_const_type DerivedNested;
+    DerivedNested m_mat;
     const Indices& m_irows;
     const Indices& m_icols;
 };
@@ -514,7 +519,8 @@ public:
     }
 
 private:
-    const Derived& m_mat;
+    typedef typename Eigen::internal::ref_selector<Derived>::type DerivedNested;
+    DerivedNested m_mat;
     const Indices& m_irows;
     const Indices& m_icols;
 };
