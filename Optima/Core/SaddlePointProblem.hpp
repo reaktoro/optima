@@ -19,6 +19,7 @@
 
 // Optima includes
 #include <Optima/Core/SaddlePointMatrix.hpp>
+#include <Optima/Math/Canonicalizer.hpp>
 
 namespace Optima {
 

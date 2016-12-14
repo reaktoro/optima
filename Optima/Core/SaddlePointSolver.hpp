@@ -44,6 +44,10 @@ public:
     /// Set `true` to indicate that matrix `A` is a constant at every call to `solve`.
     auto constantA(bool isconst) -> void;
 
+    auto decompose(const SaddlePointMatrix& lhs) -> void;
+
+    auto solve(const SaddlePointVector& rhs, SaddlePointVector& sol) -> void;
+
     /// Solve a saddle point problem.
     /// @param problem The saddle point problem.
     /// @param[in,out] solution The solution of the saddle point problem.

@@ -117,7 +117,118 @@ struct SaddlePointSolverDiagonal
 
 struct SaddlePointSolver::Impl
 {
+    /// The coefficient matrix of the saddle point problem in canonical form.
+    SaddlePointMatrixCanonical lhs;
+
+    /// The right-hand side vector of the saddle point problem in canonical form.
+    SaddlePointVectorCanonical rhs;
+
+    /// The canonicalizer of the coefficient matrix A.
+    Canonicalizer canonicalizer;
+
+    /// The indices of the basic variables.
+    Indices ibasic;
+
+    /// The indices of the non-basic variables.
+    Indices inonbasic;
+
+    /// The indices of the stable variables among the non-basic variables.
+    Indices istable;
+
+    /// The indices of the unstable variables among the non-basic variables.
+    Indices iunstable;
+
+    /// The auxiliary data to calculate the scaling of the saddle point problem.
+    Vector G, E, X, r, t;
+
     SaddlePointSolverDiagonal spsd;
+
+    auto canonicalize(const SaddlePointMatrix& mat) -> void
+    {
+        // Alias to members of the saddle point matrix
+        const auto& Z = mat.Z;
+        const auto& H = mat.H;
+        const auto& A = mat.A;
+
+        // Update vector X
+        X.noalias() = mat.X;
+
+        // Compute the canonical form of matrix A
+        canonicalizer.compute(A);
+
+        // Select basic variables by priorityzing those with largest X values
+        canonicalizer.update(X);
+
+        // Extract the S matrix, where `R*A*Q = [I S]`
+        const auto& S = canonicalizer.S();
+
+        // Update the indices of basic and non-basic variables
+        ibasic = canonicalizer.ibasic();
+        inonbasic = canonicalizer.inonbasic();
+
+        // Update the indices of stable and unstable non-basic variables
+        istable.reserve(inonbasic.size());
+        iunstable.reserve(inonbasic.size());
+        istable.clear();
+        iunstable.clear();
+        for(Index i = 0; i < inonbasic.size(); ++i)
+        {
+            const double j = inonbasic[i];
+            const double Xj = X[j];
+            const double Zj = Z[j];
+            if(std::abs(Xj) > std::abs(Zj))
+                istable.push_back(i);
+            else iunstable.push_back(i);
+        }
+
+        // Assemble the matrix G in the canonical saddle point matrix
+        G.noalias() =  X % H % X;
+        lhs.Gb.noalias() = rows(G, ibasic);
+        lhs.Gs.noalias() = rows(rows(G, inonbasic), istable);
+        lhs.Gu.noalias() = rows(rows(G, inonbasic), iunstable);
+
+        // Assemble the matrix B in the canonical saddle point matrix
+        auto Xb = rows(X, ibasic);
+        auto Xn = rows(X, inonbasic);
+        lhs.Bb.noalias() = Xb;
+        lhs.Bs.conservativeResize(ibasic.size(), istable.size());
+        lhs.Bu.conservativeResize(ibasic.size(), iunstable.size());
+        for(Index i = 0; i < istable.size(); ++i)
+            lhs.Bs.col(i) = S.col(istable[i]) * Xn[istable[i]];
+        for(Index i = 0; i < iunstable.size(); ++i)
+            lhs.Bu.col(i) = S.col(iunstable[i]) * Xn[iunstable[i]];
+
+        // Assemble the matrix E in the canonical saddle point matrix
+        E.noalias() = -X % Z;
+        lhs.Eb.noalias() = rows(E, ibasic);
+        lhs.Es.noalias() = rows(rows(E, inonbasic), istable);
+        lhs.Eu.noalias() = rows(rows(E, inonbasic), iunstable);
+    }
+
+    auto decompose(const SaddlePointMatrix& lhs) -> void
+    {
+    }
+
+    auto solve(const SaddlePointVector& _rhs, SaddlePointVector& _sol) -> void
+    {
+        const auto& a = _rhs.x;
+        const auto& b = _rhs.y;
+        const auto& c = _rhs.z;
+
+        r.noalias() =  X % a;
+        t.noalias() = -c;
+
+        // Extract the R matrix, where `R*A*Q = [I S]`
+        const auto& R = canonicalizer.R();
+
+        rhs.xb = rows(r, ibasic);
+        rhs.xs = rows(rows(r, inonbasic), istable);
+        rhs.xu = rows(rows(r, inonbasic), iunstable);
+        rhs.y  = R * b;
+        rhs.zb = rows(t, ibasic);
+        rhs.zs = rows(rows(t, inonbasic), istable);
+        rhs.zu = rows(rows(t, inonbasic), iunstable);
+    }
 
     auto solve(const SaddlePointProblemCanonical& problem, SaddlePointVectorCanonical& solution) -> void
     {
@@ -222,11 +333,6 @@ struct SaddlePointSolver::Impl
 
         SaddlePointVectorCanonical csolution;
 
-        Vector dx(n), dy(m), dz(n);
-        dx << inv(Xb), inv(Xs), inv(Xu);
-        dy = -tr(C.Rinv()) * ones(m);
-        dz << inv(Zb), inv(Zs), inv(Zu);
-
         solve(cproblem, csolution);
 
         solution.x.resize(n);
@@ -273,6 +379,16 @@ auto SaddlePointSolver::operator=(SaddlePointSolver other) -> SaddlePointSolver&
 auto SaddlePointSolver::constantA(bool isconst) -> void
 {
 //    pimpl->constA = isconst; TODO implement this functionality
+}
+
+auto SaddlePointSolver::decompose(const SaddlePointMatrix& lhs) -> void
+{
+    pimpl->decompose(rhs, sol);
+}
+
+auto SaddlePointSolver::solve(const SaddlePointVector& rhs, SaddlePointVector& sol) -> void
+{
+    pimpl->solve(rhs, sol);
 }
 
 auto SaddlePointSolver::solve(const SaddlePointProblem& problem, SaddlePointVector& solution) -> void
