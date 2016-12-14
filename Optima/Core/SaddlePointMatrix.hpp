@@ -56,15 +56,6 @@ struct SaddlePointVector
     /// The saddle-point vector `z`.
     Vector z;
 
-    /// The alias `a` to vector `x`.
-    Vector &a = x;
-
-    /// The alias `b` to vector `y`.
-    Vector &b = y;
-
-    /// The alias `c` to vector `z`.
-    Vector &c = z;
-
     /// Convert this SaddlePointVector instance into a Vector instance.
     auto convert() const -> Vector;
 

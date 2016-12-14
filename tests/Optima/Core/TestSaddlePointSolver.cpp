@@ -38,9 +38,9 @@ auto saddlePointProblem(Index m, Index n) -> SaddlePointProblem
     Matrix lhs = problem.lhs.convert();
     Vector rhs = lhs * ones(lhs.rows());
 
-    problem.rhs.a = rhs.head(n);
-    problem.rhs.b = rhs.segment(n, m);
-    problem.rhs.c = rhs.tail(n);
+    problem.rhs.x = rhs.head(n);
+    problem.rhs.y = rhs.segment(n, m);
+    problem.rhs.z = rhs.tail(n);
 
     REQUIRE(problem.lhs.valid());
     REQUIRE(problem.rhs.valid());

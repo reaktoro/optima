@@ -135,9 +135,9 @@ struct SaddlePointSolver::Impl
         const auto& Z = problem.lhs.Z;
         const auto& H = problem.lhs.H;
         const auto& A = problem.lhs.A;
-        const auto& a = problem.rhs.a;
-        const auto& b = problem.rhs.b;
-        const auto& c = problem.rhs.c;
+        const auto& a = problem.rhs.x;
+        const auto& b = problem.rhs.y;
+        const auto& c = problem.rhs.z;
 
         CanonicalMatrix C;
         C.compute(A);
