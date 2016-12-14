@@ -59,13 +59,13 @@ struct SaddlePointSolverDiagonal
         const auto& Eb = problem.lhs.Eb;
         const auto& Es = problem.lhs.Es;
         const auto& Eu = problem.lhs.Eu;
-        const auto& ab = problem.rhs.rb;
-        const auto& as = problem.rhs.rs;
-        const auto& au = problem.rhs.ru;
-        const auto& b  = problem.rhs.s;
-        const auto& cb = problem.rhs.tb;
-        const auto& cs = problem.rhs.ts;
-        const auto& cu = problem.rhs.tu;
+        const auto& ab = problem.rhs.xb;
+        const auto& as = problem.rhs.xs;
+        const auto& au = problem.rhs.xu;
+        const auto& b  = problem.rhs.y;
+        const auto& cb = problem.rhs.zb;
+        const auto& cs = problem.rhs.zs;
+        const auto& cu = problem.rhs.zu;
 
         // Auxiliary alias to solution data members
         auto& xb = solution.xb;
@@ -174,13 +174,13 @@ struct SaddlePointSolver::Impl
         auto& Eb = cproblem.lhs.Eb;
         auto& Es = cproblem.lhs.Es;
         auto& Eu = cproblem.lhs.Eu;
-        auto& rb = cproblem.rhs.rb;
-        auto& rs = cproblem.rhs.rs;
-        auto& ru = cproblem.rhs.ru;
-        auto&  s = cproblem.rhs.s ;
-        auto& tb = cproblem.rhs.tb;
-        auto& ts = cproblem.rhs.ts;
-        auto& tu = cproblem.rhs.tu;
+        auto& rb = cproblem.rhs.xb;
+        auto& rs = cproblem.rhs.xs;
+        auto& ru = cproblem.rhs.xu;
+        auto&  s = cproblem.rhs.y ;
+        auto& tb = cproblem.rhs.zb;
+        auto& ts = cproblem.rhs.zs;
+        auto& tu = cproblem.rhs.zu;
 
         auto Xb = rows(X, ibasic);
         auto Xn = rows(X, inonbasic);
@@ -222,12 +222,10 @@ struct SaddlePointSolver::Impl
 
         SaddlePointVectorCanonical csolution;
 
-        Vector tmp(cproblem.lhs.rows());
         Vector dx(n), dy(m), dz(n);
         dx << inv(Xb), inv(Xs), inv(Xu);
         dy = -tr(C.Rinv()) * ones(m);
         dz << inv(Zb), inv(Zs), inv(Zu);
-        tmp << dx, dy, dz;
 
         solve(cproblem, csolution);
 
@@ -298,13 +296,13 @@ auto solve(SaddlePointProblemCanonical& problem, SaddlePointVectorCanonical& sol
     auto& Eb = problem.lhs.Eb;
     auto& Es = problem.lhs.Es;
     auto& Eu = problem.lhs.Eu;
-    auto& rb = problem.rhs.rb;
-    auto& rs = problem.rhs.rs;
-    auto& ru = problem.rhs.ru;
-    auto&  s = problem.rhs.s ;
-    auto& tb = problem.rhs.tb;
-    auto& ts = problem.rhs.ts;
-    auto& tu = problem.rhs.tu;
+    auto& rb = problem.rhs.xb;
+    auto& rs = problem.rhs.xs;
+    auto& ru = problem.rhs.xu;
+    auto&  s = problem.rhs.y ;
+    auto& tb = problem.rhs.zb;
+    auto& ts = problem.rhs.zs;
+    auto& tu = problem.rhs.zu;
 
     // Auxiliary alias to solution data members
     auto& xb = solution.xb;
@@ -368,13 +366,13 @@ auto solve2(SaddlePointProblemCanonical& problem, SaddlePointVectorCanonical& so
     auto& Eb = problem.lhs.Eb;
     auto& Es = problem.lhs.Es;
     auto& Eu = problem.lhs.Eu;
-    auto& rb = problem.rhs.rb;
-    auto& rs = problem.rhs.rs;
-    auto& ru = problem.rhs.ru;
-    auto&  s = problem.rhs.s ;
-    auto& tb = problem.rhs.tb;
-    auto& ts = problem.rhs.ts;
-    auto& tu = problem.rhs.tu;
+    auto& rb = problem.rhs.xb;
+    auto& rs = problem.rhs.xs;
+    auto& ru = problem.rhs.xu;
+    auto&  s = problem.rhs.y ;
+    auto& tb = problem.rhs.zb;
+    auto& ts = problem.rhs.zs;
+    auto& tu = problem.rhs.zu;
 
     // Auxiliary alias to solution data members
     auto& xb = solution.xb;

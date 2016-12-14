@@ -32,9 +32,6 @@ TEST_CASE("Testing SaddlePointMatrix...")
 
     REQUIRE(matrix.valid());
 
-    REQUIRE(matrix.rows() == 8);
-    REQUIRE(matrix.cols() == 8);
-
     Matrix M = {
 		{1,  0,  0, -1, -3, -1,  0,  0},
 		{0,  2,  0, -2, -4,  0, -1,  0},
@@ -47,11 +44,8 @@ TEST_CASE("Testing SaddlePointMatrix...")
 
 	SUBCASE("checking conversion to a Matrix instance")
 	{
-		// Check `coeff` method implementation
-		CHECK(M.isApprox(matrix));
-
 		// Check conversion to a Matrix instance
-		CHECK(M.isApprox(Matrix(matrix)));
+		CHECK(M.isApprox(matrix.convert()));
 	}
 
 	SUBCASE("checking conversion when both X and Z are empty")
@@ -60,16 +54,10 @@ TEST_CASE("Testing SaddlePointMatrix...")
 
 		REQUIRE(matrix.valid());
 
-		REQUIRE(matrix.rows() == 5);
-		REQUIRE(matrix.cols() == 5);
-
 		M.conservativeResize(5, 5);
 
-		// Check `coeff` method implementation
-		CHECK(M.isApprox(matrix));
-
 		// Check conversion to a Matrix instance
-		CHECK(M.isApprox(Matrix(matrix)));
+		CHECK(M.isApprox(matrix.convert()));
 	}
 
 	SUBCASE("checking valid() when X and Z have incompatible dimensions")
@@ -101,17 +89,12 @@ TEST_CASE("Testing SaddlePointVector...")
 
     REQUIRE(vector.valid());
 
-    REQUIRE(vector.rows() == 8);
-
     Vector V = {1, 2, 3, 6, 7, 3, 2, 1};
 
 	SUBCASE("checking conversion to a Vector instance")
 	{
-		// Check `coeff` method implementation
-		CHECK(V.isApprox(vector));
-
-		// Check conversion to a Matrix instance
-		CHECK(V.isApprox(Vector(vector)));
+		// Check conversion to a Vector instance
+		CHECK(V.isApprox(vector.convert()));
 	}
 
 	SUBCASE("checking conversion when c is empty")
@@ -120,15 +103,10 @@ TEST_CASE("Testing SaddlePointVector...")
 
 		REQUIRE(vector.valid());
 
-		REQUIRE(vector.rows() == 5);
-
 		V.conservativeResize(5);
 
-		// Check `coeff` method implementation
-		CHECK(V.isApprox(vector));
-
 		// Check conversion to a Matrix instance
-		CHECK(V.isApprox(Vector(vector)));
+		CHECK(V.isApprox(vector.convert()));
 	}
 
 	SUBCASE("checking valid() when a and c have incompatible dimensions")
@@ -173,16 +151,10 @@ TEST_CASE("Testing SaddlePointMatrixCanonical...")
 
     REQUIRE(matrix.valid());
 
-	CHECK(matrix.rows() == 15);
-	CHECK(matrix.cols() == 15);
-
 	SUBCASE("checking conversion to a Matrix instance")
 	{
-		// Check `coeff` method implementation
-		REQUIRE(M.isApprox(matrix));
-
 		// Check conversion to a Matrix instance
-		CHECK(M.isApprox(Matrix(matrix)));
+		CHECK(M.isApprox(matrix.convert()));
 	}
 
 	SUBCASE("checking conversion when E is empty")
@@ -191,16 +163,10 @@ TEST_CASE("Testing SaddlePointMatrixCanonical...")
 
 		REQUIRE(matrix.valid());
 
-		CHECK(matrix.rows() == 9);
-		CHECK(matrix.cols() == 9);
-
 		M.conservativeResize(9, 9);
 
-		// Check `coeff` method implementation
-		CHECK(M.isApprox(matrix));
-
 		// Check conversion to a Matrix instance
-		CHECK(M.isApprox(Matrix(matrix)));
+		CHECK(M.isApprox(matrix.convert()));
 	}
 
 	SUBCASE("checking convertion when Gu, Bu, Eu are empty")
@@ -224,11 +190,8 @@ TEST_CASE("Testing SaddlePointMatrixCanonical...")
 	        {0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 4, 0},
 	        {0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 5}};
 
-		// Check `coeff` method implementation
-		CHECK(M.isApprox(matrix));
-
 		// Check conversion to a Matrix instance
-		CHECK(M.isApprox(Matrix(matrix)));
+		CHECK(M.isApprox(matrix.convert()));
 	}
 
 	SUBCASE("checking convertion when Gs, Gu, Bs, Bu, Es, Eu are empty")
@@ -249,11 +212,8 @@ TEST_CASE("Testing SaddlePointMatrixCanonical...")
 		    {0, 2, 0, 0, 0, 0, 0, 2, 0},
 		    {0, 0, 3, 0, 0, 0, 0, 0, 3}};
 
-		// Check `coeff` method implementation
-		CHECK(M.isApprox(matrix));
-
 		// Check conversion to a Matrix instance
-		CHECK(M.isApprox(Matrix(matrix)));
+		CHECK(M.isApprox(matrix.convert()));
 	}
 }
 
@@ -271,17 +231,12 @@ TEST_CASE("Testing SaddlePointVectorCanonical...")
 
     REQUIRE(vector.valid());
 
-    REQUIRE(vector.rows() == 14);
-
     Vector V = {1, 2, 3, 4, 5, 6, 7, 8, 9, 8, 7, 6, 5, 4};
 
 	SUBCASE("checking conversion to a Vector instance")
 	{
-		// Check `coeff` method implementation
-		CHECK(V.isApprox(vector));
-
 		// Check conversion to a Matrix instance
-		CHECK(V.isApprox(Vector(vector)));
+		CHECK(V.isApprox(vector.convert()));
 	}
 
 	SUBCASE("checking conversion when xu and zu are empty")
@@ -290,15 +245,10 @@ TEST_CASE("Testing SaddlePointVectorCanonical...")
 
 		REQUIRE(vector.valid());
 
-		REQUIRE(vector.rows() == 12);
-
 		Vector V = {1, 2, 3, 4, 5, 7, 8, 9, 8, 7, 6, 5};
 
-		// Check `coeff` method implementation
-		CHECK(V.isApprox(vector));
-
 		// Check conversion to a Matrix instance
-		CHECK(V.isApprox(Vector(vector)));
+		CHECK(V.isApprox(vector.convert()));
 	}
 
 	SUBCASE("checking conversion when xs, xu, zs and zu are empty")
@@ -308,15 +258,10 @@ TEST_CASE("Testing SaddlePointVectorCanonical...")
 
 		REQUIRE(vector.valid());
 
-		REQUIRE(vector.rows() == 8);
-
 		Vector V = {1, 2, 3, 7, 8, 9, 8, 7};
 
-		// Check `coeff` method implementation
-		CHECK(V.isApprox(vector));
-
 		// Check conversion to a Matrix instance
-		CHECK(V.isApprox(Vector(vector)));
+		CHECK(V.isApprox(vector.convert()));
 	}
 
 	SUBCASE("checking valid() when xb and zb have incompatible dimensions")

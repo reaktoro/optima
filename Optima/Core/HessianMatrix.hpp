@@ -22,54 +22,8 @@
 
 namespace Optima {
 
-// Forward declarations
-class HessianMatrix;
-class HessianBlock;
-
-} // namespace Optima
-
-namespace Eigen {
-namespace internal {
-
-template<>
-struct traits<Optima::HessianMatrix>
-{
-    typedef Eigen::Dense StorageKind;
-    typedef Eigen::MatrixXpr XprKind;
-    typedef Optima::Matrix::StorageIndex StorageIndex;
-    typedef Optima::Matrix::Scalar Scalar;
-    enum {
-        Flags = Eigen::ColMajor,
-        RowsAtCompileTime = Optima::Matrix::RowsAtCompileTime,
-        ColsAtCompileTime = Optima::Matrix::ColsAtCompileTime,
-        MaxRowsAtCompileTime = Optima::Matrix::MaxRowsAtCompileTime,
-        MaxColsAtCompileTime = Optima::Matrix::MaxColsAtCompileTime,
-    };
-};
-
-template<>
-struct traits<Optima::HessianBlock>
-{
-    typedef Eigen::Dense StorageKind;
-    typedef Eigen::MatrixXpr XprKind;
-    typedef Optima::Matrix::StorageIndex StorageIndex;
-    typedef Optima::Matrix::Scalar Scalar;
-    enum {
-        Flags = Eigen::ColMajor,
-        RowsAtCompileTime = Optima::Matrix::RowsAtCompileTime,
-        ColsAtCompileTime = Optima::Matrix::ColsAtCompileTime,
-        MaxRowsAtCompileTime = Optima::Matrix::MaxRowsAtCompileTime,
-        MaxColsAtCompileTime = Optima::Matrix::MaxColsAtCompileTime,
-    };
-};
-
-} // namespace internal
-} // namespace Eigen
-
-namespace Optima {
-
 /// Used to represent a square block matrix, \eq{H_i}, on the diagonal of the Hessian matrix, \eq{H}.
-class HessianBlock : public Eigen::MatrixBase<HessianBlock>
+class HessianBlock
 {
 public:
     /// Used to represent the possible modes for a Hessian block matrix.
@@ -94,15 +48,9 @@ public:
         /// The matrix \eq{V_{i}^{-1}} in the eigen decomposition.
         Matrix eigenvectorsinv;
 
-        /// Return the value of the original matrix at (i, j).
-        auto coeff(Index i, Index j) const -> double;
-
         /// Convert this EigenDecomposition instance into a Matrix instance.
-        operator Matrix() const;
+        auto convert() const -> Matrix;
     };
-
-    EIGEN_DENSE_PUBLIC_INTERFACE(HessianBlock)
-    typedef HessianBlock NestedExpression;
 
     /// Construct a default HessianBlock instance.
     HessianBlock();
@@ -143,20 +91,11 @@ public:
     /// Return the mode of the Hessian matrix.
     auto mode() const -> Mode;
 
-    /// Return the number of rows in the Hessian block matrix.
-    auto rows() const -> Index;
-
-    /// Return the number of columns in the Hessian block matrix.
-    auto cols() const -> Index;
-
-    /// Return an entry of the Hessian block matrix.
-    auto coeff(Index i, Index j) const -> Scalar;
-
-    /// Return an entry of the block diagonal matrix.
-    auto operator()(Index i, Index j) const -> Scalar { return coeff(i, j); }
+    /// Return the dimension of the Hessian block matrix.
+    auto dim() const -> Index;
 
     /// Convert this HessianBlock instance to a Matrix instance.
-    operator PlainObject() const;
+    auto convert() const -> Matrix;
 
 private:
     /// The dimension of this square Hessian block matrix (only used when zero mode is active).
@@ -176,12 +115,9 @@ private:
 };
 
 /// Used to represent a Hessian matrix in various forms.
-class HessianMatrix : public Eigen::MatrixBase<HessianMatrix>
+class HessianMatrix
 {
 public:
-    EIGEN_DENSE_PUBLIC_INTERFACE(HessianMatrix)
-    typedef HessianMatrix NestedExpression;
-
     /// Alias to nested HessianBlock type EigenDecomposition.
     using EigenDecomposition = HessianBlock::EigenDecomposition;
 
@@ -231,20 +167,11 @@ public:
     /// Return a const reference to the Hessian block matrices on the diagonal of the Hessian matrix.
     auto blocks() const -> const std::vector<HessianBlock>&;
 
-    /// Return the number of rows of the Hessian matrix.
-    auto rows() const -> Index;
-
-    /// Return the number of columns of the Hessian matrix.
-    auto cols() const -> Index;
-
-    /// Return an entry of the block diagonal matrix.
-    auto coeff(Index i, Index j) const -> Scalar;
-
-    /// Return an entry of the Hessian matrix.
-    auto operator()(Index i, Index j) const -> Scalar { return coeff(i, j); }
+    /// Return the dimension of the Hessian matrix.
+    auto dim() const -> Index;
 
     /// Convert this HessianMatrix instance to a Matrix instance.
-    operator PlainObject() const;
+    auto convert() const -> Matrix;
 
 private:
     /// The Hessian block matrices on the diagonal of the Hessian matrix.
@@ -253,47 +180,3 @@ private:
 };
 
 } // namespace Optima
-
-namespace Eigen {
-namespace internal {
-
-template<>
-struct evaluator<Optima::HessianMatrix> : evaluator_base<Optima::HessianMatrix>
-{
-    typedef Optima::HessianMatrix XprType;
-    typedef Optima::Matrix::Scalar Scalar;
-    enum
-    {
-        CoeffReadCost = evaluator<Optima::Matrix>::CoeffReadCost,
-        Flags = Eigen::ColMajor
-    };
-
-    evaluator(const Optima::HessianMatrix& view)
-    : m_mat(view) {}
-
-    auto coeff(Index row, Index col) const -> Scalar { return m_mat.coeff(row, col); }
-
-    const Optima::HessianMatrix& m_mat;
-};
-
-template<>
-struct evaluator<Optima::HessianBlock> : evaluator_base<Optima::HessianBlock>
-{
-    typedef Optima::HessianBlock XprType;
-    typedef Optima::Matrix::Scalar Scalar;
-    enum
-    {
-        CoeffReadCost = evaluator<Optima::Matrix>::CoeffReadCost,
-        Flags = Eigen::ColMajor
-    };
-
-    evaluator(const Optima::HessianBlock& view)
-    : m_mat(view) {}
-
-    auto coeff(Index row, Index col) const -> Scalar { return m_mat.coeff(row, col); }
-
-    const Optima::HessianBlock& m_mat;
-};
-
-} // namespace internal
-} // namespace Eigen

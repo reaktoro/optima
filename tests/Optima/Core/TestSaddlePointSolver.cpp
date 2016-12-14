@@ -35,7 +35,8 @@ auto saddlePointProblem(Index m, Index n) -> SaddlePointProblem
     problem.lhs.X = random(n);
     problem.lhs.Z = random(n);
 
-    Vector rhs = problem.lhs * ones(problem.lhs.rows());
+    Matrix lhs = problem.lhs.convert();
+    Vector rhs = lhs * ones(lhs.rows());
 
     problem.rhs.a = rhs.head(n);
     problem.rhs.b = rhs.segment(n, m);
@@ -75,15 +76,16 @@ auto saddlePointProblemCanonical(Index nb, Index ns, Index nu, Index p) -> Saddl
     problem.lhs.Es *= 1e-20;
     problem.lhs.Eu *= 1e-20;
 
-    Vector rhs = problem.lhs * ones(problem.lhs.rows());
+    Matrix lhs = problem.lhs.convert();
+    Vector rhs = lhs * ones(lhs.rows());
 
-    problem.rhs.rb = rhs.topRows(n).topRows(nb);
-    problem.rhs.rs = rhs.topRows(n).middleRows(nb, ns);
-    problem.rhs.ru = rhs.topRows(n).bottomRows(nu);
-    problem.rhs.s  = rhs.middleRows(n, m);
-    problem.rhs.tb = rhs.bottomRows(n).topRows(nb);
-    problem.rhs.ts = rhs.bottomRows(n).middleRows(nb, ns);
-    problem.rhs.tu = rhs.bottomRows(n).bottomRows(nu);
+    problem.rhs.xb = rhs.topRows(n).topRows(nb);
+    problem.rhs.xs = rhs.topRows(n).middleRows(nb, ns);
+    problem.rhs.xu = rhs.topRows(n).bottomRows(nu);
+    problem.rhs.y  = rhs.middleRows(n, m);
+    problem.rhs.zb = rhs.bottomRows(n).topRows(nb);
+    problem.rhs.zs = rhs.bottomRows(n).middleRows(nb, ns);
+    problem.rhs.zu = rhs.bottomRows(n).bottomRows(nu);
 
     REQUIRE(problem.lhs.valid());
 	REQUIRE(problem.rhs.valid());
@@ -104,7 +106,9 @@ TEST_CASE("Testing the solution of a general saddle point problem: Case 1")
     SaddlePointSolver solver;
     solver.solve(problem, sol);
 
-    CHECK(sol.isApprox(ones(sol.rows())));
+    auto actual = sol.convert();
+    auto expected = ones(actual.rows());
+    CHECK(actual.isApprox(expected));
 }
 
 TEST_CASE("Testing the solution of a canonical saddle point problem: Case 1")
@@ -122,26 +126,24 @@ TEST_CASE("Testing the solution of a canonical saddle point problem: Case 1")
     problem.lhs.Es = {};
     problem.lhs.Eu = {};
 
-    problem.rhs.rb = {11, 10, 9};
-    problem.rhs.rs = {};
-    problem.rhs.ru = {};
-    problem.rhs.s  = {1, 1, 1};
-    problem.rhs.tb = {2, 2, 2};
-    problem.rhs.ts = {};
-    problem.rhs.tu = {};
+    problem.rhs.xb = {11, 10, 9};
+    problem.rhs.xs = {};
+    problem.rhs.xu = {};
+    problem.rhs.y  = {1, 1, 1};
+    problem.rhs.zb = {2, 2, 2};
+    problem.rhs.zs = {};
+    problem.rhs.zu = {};
 
     SaddlePointSolver solver;
     solver.solve(problem, sol);
 
-    CHECK(sol.isApprox(ones(sol.rows())));
+    auto actual = sol.convert();
+    auto expected = ones(actual.rows());
+    CHECK(actual.isApprox(expected));
 }
 
 TEST_CASE("Testing the solution of a canonical saddle point problem: Case 2")
 {
-//    Index np = 2;
-//    Index ns = 3;
-//    Index nu = 2;
-//    Index p  = 1;
     Index np = 10;
     Index ns = 35;
     Index nu = 70;
@@ -151,26 +153,26 @@ TEST_CASE("Testing the solution of a canonical saddle point problem: Case 2")
     SaddlePointProblemCanonical problem =
 		util::saddlePointProblemCanonical(np, ns, nu, p);
 
-//    SUBCASE("Using solver class")
+    SUBCASE("Using solver class")
     {
         auto cproblem = problem;
         SaddlePointSolver solver;
         solver.solve(cproblem, sol);
 
-        CHECK(sol.isApprox(ones(sol.rows())));
-
-        std::cout << "Error 1: " << norm(sol - ones(sol.rows())) << std::endl;
+        auto actual = sol.convert();
+        auto expected = ones(actual.rows());
+        CHECK(actual.isApprox(expected));
     }
 
-//    SUBCASE("Using solve method")
+    SUBCASE("Using solve method")
     {
         auto cproblem = problem;
 
         solve(cproblem, sol);
 
-        CHECK(sol.isApprox(ones(sol.rows())));
-
-        std::cout << "Error 2: " << norm(sol - ones(sol.rows())) << std::endl;
+        auto actual = sol.convert();
+        auto expected = ones(actual.rows());
+        CHECK(actual.isApprox(expected));
     }
 }
 
@@ -189,7 +191,9 @@ TEST_CASE("Testing the solution of a canonical saddle point problem: Case 3")
     SaddlePointSolver solver;
     solver.solve(problem, sol);
 
-    CHECK(sol.isApprox(ones(sol.rows())));
+    auto actual = sol.convert();
+    auto expected = ones(actual.rows());
+    CHECK(actual.isApprox(expected));
 }
 
 TEST_CASE("Testing the solution of a canonical saddle point problem: Case 4")
@@ -207,7 +211,9 @@ TEST_CASE("Testing the solution of a canonical saddle point problem: Case 4")
     SaddlePointSolver solver;
     solver.solve(problem, sol);
 
-    CHECK(sol.isApprox(ones(sol.rows())));
+    auto actual = sol.convert();
+    auto expected = ones(actual.rows());
+    CHECK(actual.isApprox(expected));
 }
 
 TEST_CASE("Testing the solution of a canonical saddle point problem: Case 4")
@@ -225,7 +231,9 @@ TEST_CASE("Testing the solution of a canonical saddle point problem: Case 4")
     SaddlePointSolver solver;
     solver.solve(problem, sol);
 
-    CHECK(sol.isApprox(ones(sol.rows())));
+    auto actual = sol.convert();
+    auto expected = ones(actual.rows());
+    CHECK(actual.isApprox(expected));
 }
 
 TEST_CASE("Testing the solution of a canonical saddle point problem: Case 5")
@@ -243,18 +251,20 @@ TEST_CASE("Testing the solution of a canonical saddle point problem: Case 5")
     problem.lhs.Es = {1};
     problem.lhs.Eu = {};
 
-    problem.rhs.rb = {8};
-    problem.rhs.rs = {8};
-    problem.rhs.ru = {};
-    problem.rhs.s  = {4};
-    problem.rhs.tb = {2};
-    problem.rhs.ts = {2};
-    problem.rhs.tu = {};
+    problem.rhs.xb = {8};
+    problem.rhs.xs = {8};
+    problem.rhs.xu = {};
+    problem.rhs.y  = {4};
+    problem.rhs.zb = {2};
+    problem.rhs.zs = {2};
+    problem.rhs.zu = {};
 
     SaddlePointSolver solver;
     solver.solve(problem, sol);
 
-    CHECK(sol.isApprox(ones(sol.rows())));
+    auto actual = sol.convert();
+    auto expected = ones(actual.rows());
+    CHECK(actual.isApprox(expected));
 }
 
 TEST_CASE("Testing the solution of a canonical saddle point problem: Case 6")
@@ -272,18 +282,20 @@ TEST_CASE("Testing the solution of a canonical saddle point problem: Case 6")
     problem.lhs.Es = {};
     problem.lhs.Eu = {6};
 
-    problem.rhs.rb = {8};
-    problem.rhs.rs = {};
-    problem.rhs.ru = {9};
-    problem.rhs.s  = {4};
-    problem.rhs.tb = {2};
-    problem.rhs.ts = {};
-    problem.rhs.tu = {12};
+    problem.rhs.xb = {8};
+    problem.rhs.xs = {};
+    problem.rhs.xu = {9};
+    problem.rhs.y  = {4};
+    problem.rhs.zb = {2};
+    problem.rhs.zs = {};
+    problem.rhs.zu = {12};
 
     SaddlePointSolver solver;
     solver.solve(problem, sol);
 
-    CHECK(sol.isApprox(ones(sol.rows())));
+    auto actual = sol.convert();
+    auto expected = ones(actual.rows());
+    CHECK(actual.isApprox(expected));
 }
 
 TEST_CASE("Testing the solution of a canonical saddle point problem: Case 7")
@@ -301,16 +313,18 @@ TEST_CASE("Testing the solution of a canonical saddle point problem: Case 7")
     problem.lhs.Es = {1, 1};
     problem.lhs.Eu = {1};
 
-    problem.rhs.rb = {11, 11, 11};
-    problem.rhs.rs = {11, 15};
-    problem.rhs.ru = {25};
-    problem.rhs.s  = {17, 19, 21};
-    problem.rhs.tb = {2, 2, 2};
-    problem.rhs.ts = {2, 2};
-    problem.rhs.tu = {2};
+    problem.rhs.xb = {11, 11, 11};
+    problem.rhs.xs = {11, 15};
+    problem.rhs.xu = {25};
+    problem.rhs.y  = {17, 19, 21};
+    problem.rhs.zb = {2, 2, 2};
+    problem.rhs.zs = {2, 2};
+    problem.rhs.zu = {2};
 
     SaddlePointSolver solver;
     solver.solve(problem, sol);
 
-    CHECK(sol.isApprox(ones(sol.rows())));
+    auto actual = sol.convert();
+    auto expected = ones(actual.rows());
+    CHECK(actual.isApprox(expected));
 }

@@ -19,15 +19,7 @@
 
 namespace Optima {
 
-auto HessianBlock::EigenDecomposition::coeff(Index i, Index j) const -> double
-{
-    const auto& V = eigenvectors;
-    const auto& L = eigenvalues;
-    const auto& Vinv = eigenvectorsinv;
-    return V.row(i) * diag(L) * Vinv.col(j);
-}
-
-HessianBlock::EigenDecomposition::operator Matrix() const
+auto HessianBlock::EigenDecomposition::convert() const -> Matrix
 {
     const auto& V = eigenvectors;
     const auto& L = eigenvalues;
@@ -94,34 +86,18 @@ auto HessianBlock::mode() const -> Mode
     return m_mode;
 }
 
-auto HessianBlock::rows() const -> Index
+auto HessianBlock::dim() const -> Index
 {
     return m_dim;
 }
 
-auto HessianBlock::cols() const -> Index
-{
-    return m_dim;
-}
-
-auto HessianBlock::coeff(Index i, Index j) const -> Scalar
-{
-    switch(m_mode)
-    {
-    case Diagonal: return i == j ? m_diagonal[i] : 0.0;
-    case Dense: return m_dense(i, j);
-    case EigenDecomp: return m_eigen.coeff(i, j);
-    default: return 0.0;
-    }
-}
-
-HessianBlock::operator PlainObject() const
+auto HessianBlock::convert() const -> Matrix
 {
     switch(m_mode)
     {
     case Diagonal: return diag(m_diagonal);
     case Dense: return m_dense;
-    case EigenDecomp: return m_eigen;
+    case EigenDecomp: return m_eigen.convert();
     default: return zeros(m_dim, m_dim);
     }
 }
@@ -193,53 +169,24 @@ auto HessianMatrix::block(Index iblock) const -> const HessianBlock&
     return m_blocks[iblock];
 }
 
-auto HessianMatrix::rows() const -> Index
+auto HessianMatrix::dim() const -> Index
 {
     Index sum = 0;
     for(const auto& block : m_blocks)
-        sum += block.rows();
+        sum += block.dim();
     return sum;
 }
 
-auto HessianMatrix::cols() const -> Index
+auto HessianMatrix::convert() const -> Matrix
 {
-    return rows();
-}
-
-auto HessianMatrix::coeff(Index i, Index j) const -> Scalar
-{
-    eigen_assert(i < rows() && j < cols());
     const Index nblocks = blocks().size();
-    Index irow = 0, icol = 0;
-    for(Index iblock = 0; iblock < nblocks; ++iblock)
-    {
-        const Index nrows = block(iblock).rows();
-        const Index ncols = block(iblock).cols();
-        if(i < irow + nrows)
-        {
-            if(icol <= j && j < icol + ncols)
-                return block(iblock)(i - irow, j - icol);
-            else return 0.0;
-        }
-        irow += nrows;
-        icol += ncols;
-    }
-    return 0.0;
-}
-
-HessianMatrix::operator PlainObject() const
-{
-    Index dim = rows();
-    const Index nblocks = blocks().size();
-    PlainObject res = zeros(dim, dim);
-    Index irow = 0, icol = 0;
+    Matrix res = zeros(dim(), dim());
+    Index irow = 0;
     for(Index i = 0; i < nblocks; ++i)
     {
-        const Index nrows = block(i).rows();
-        const Index ncols = block(i).cols();
-        res.block(irow, icol, nrows, ncols) = block(i);
-        irow += nrows;
-        icol += ncols;
+        const Index bdim = block(i).dim();
+        res.block(irow, irow, bdim, bdim) = block(i).convert();
+        irow += bdim;
     }
     return res;
 }
