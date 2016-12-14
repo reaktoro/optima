@@ -28,6 +28,6 @@
 #include <Optima/Core/SaddlePointSolver.hpp>
 #include <Optima/Core/SaddlePointUtils.hpp>
 #include <Optima/Math/BlockDiagonalMatrix.hpp>
-#include <Optima/Math/CanonicalMatrix.hpp>
+#include <Optima/Math/Canonicalizer.hpp>
 #include <Optima/Math/Matrix.hpp>
 #include <Optima/Math/Utils.hpp>

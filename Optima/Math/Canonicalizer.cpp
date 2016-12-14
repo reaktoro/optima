@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include "CanonicalMatrix.hpp"
+#include "Canonicalizer.hpp"
 
 // Eigen includes
 #include <Optima/Common/Exception.hpp>
@@ -23,59 +23,69 @@
 
 namespace Optima {
 
-CanonicalMatrix::CanonicalMatrix()
+Canonicalizer::Canonicalizer()
 {}
 
-CanonicalMatrix::CanonicalMatrix(const Matrix& A)
+Canonicalizer::Canonicalizer(const Matrix& A)
 {
 	compute(A);
 }
 
-auto CanonicalMatrix::S() const -> const Matrix&
+auto Canonicalizer::rows() const -> Index
+{
+    return m_S.rows();
+}
+
+auto Canonicalizer::cols() const -> Index
+{
+    return m_Q.rows();
+}
+
+auto Canonicalizer::S() const -> const Matrix&
 {
 	return m_S;
 }
 
-auto CanonicalMatrix::R() const -> const Matrix&
+auto Canonicalizer::R() const -> const Matrix&
 {
 	return m_R;
 }
 
-auto CanonicalMatrix::Rinv() const -> const Matrix&
+auto Canonicalizer::Rinv() const -> const Matrix&
 {
 	return m_Rinv;
 }
 
-auto CanonicalMatrix::P() const -> const PermutationMatrix&
+auto Canonicalizer::P() const -> const PermutationMatrix&
 {
 	return m_P;
 }
 
-auto CanonicalMatrix::Q() const -> const PermutationMatrix&
+auto Canonicalizer::Q() const -> const PermutationMatrix&
 {
 	return m_Q;
 }
 
-auto CanonicalMatrix::ili() const -> Indices
+auto Canonicalizer::ili() const -> Indices
 {
 	PermutationMatrix Ptr = m_P.transpose();
 	auto begin = Ptr.indices().data();
 	return Indices(begin, begin + rows());
 }
 
-auto CanonicalMatrix::ibasic() const -> Indices
+auto Canonicalizer::ibasic() const -> Indices
 {
 	auto begin = m_Q.indices().data();
 	return Indices(begin, begin + rows());
 }
 
-auto CanonicalMatrix::inonbasic() const -> Indices
+auto Canonicalizer::inonbasic() const -> Indices
 {
 	auto begin = m_Q.indices().data();
 	return Indices(begin + rows(), begin + cols());
 }
 
-auto CanonicalMatrix::compute(const Matrix& A) -> void
+auto Canonicalizer::compute(const Matrix& A) -> void
 {
 	// The number of rows and columns of A
 	const Index m = A.rows();
@@ -121,7 +131,7 @@ auto CanonicalMatrix::compute(const Matrix& A) -> void
 	m_Kn.setIdentity(n - r);
 }
 
-auto CanonicalMatrix::swap(Index ib, Index in) -> void
+auto Canonicalizer::swap(Index ib, Index in) -> void
 {
 	// Auxiliary references
 	auto& M = m_M;
@@ -160,7 +170,7 @@ auto CanonicalMatrix::swap(Index ib, Index in) -> void
 	std::swap(Q[ib], Q[m + in]);
 }
 
-auto CanonicalMatrix::update(const Vector& w) -> void
+auto Canonicalizer::update(const Vector& w) -> void
 {
 	// Auxiliary variables
 	const Index m = rows();
@@ -211,6 +221,15 @@ auto CanonicalMatrix::update(const Vector& w) -> void
 	// Rearrange the permutation matrix Q based on the new order of basic and non-basic components
 	Q.topRows(m).noalias() = Kb * Q.topRows(m);
 	Q.bottomRows(n - m).noalias() = Kn * Q.bottomRows(n - m);
+}
+
+auto Canonicalizer::matrix() const -> Matrix
+{
+    const Index m = rows();
+    const Index n = cols();
+    Matrix res(m, n);
+    res << identity(m, m), S();
+    return res;
 }
 
 } // namespace Optima

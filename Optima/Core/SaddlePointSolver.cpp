@@ -19,7 +19,7 @@
 
 // Optima includes
 #include <Optima/Common/Exception.hpp>
-#include <Optima/Math/CanonicalMatrix.hpp>
+#include <Optima/Math/Canonicalizer.hpp>
 #include <Optima/Math/Eigen/LU>
 #include <Optima/Math/Eigen/Cholesky>
 
@@ -139,7 +139,7 @@ struct SaddlePointSolver::Impl
         const auto& b = problem.rhs.y;
         const auto& c = problem.rhs.z;
 
-        CanonicalMatrix C;
+        Canonicalizer C;
         C.compute(A);
         C.update(X);
         const Matrix& S = C.S();

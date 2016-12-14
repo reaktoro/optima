@@ -40,6 +40,14 @@ struct SaddlePointProblemCanonical
 
 	/// The right-hand side vector of the canonical saddle point problem.
 	SaddlePointVectorCanonical rhs;
+
+	/// Compute the canonical form of a given SaddlePointProblem.
+	/// @param problem The SaddlePointProblem for which the canonical form is calculated.
+	auto compute(const SaddlePointProblem& problem) -> void;
+
+	/// Update the existing canonical form with given priority weights.
+	/// @param weights The priority, as a positive weight, of each variable to become a basic variable.
+	auto update(const Vector& weights) -> void;
 };
 
 } // namespace Optima

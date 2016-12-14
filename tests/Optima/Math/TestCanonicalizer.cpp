@@ -21,36 +21,39 @@
 #include <Optima/Optima.hpp>
 using namespace Optima;
 
-TEST_CASE("Testing CanonicalMatrix")
+#define CHECK_CANONICAL_FORM                         \
+{                                                    \
+    const auto& R    = canonicalizer.R();            \
+    const auto& Rinv = canonicalizer.Rinv();         \
+    const auto& Q    = canonicalizer.Q();            \
+    const auto& C    = canonicalizer.matrix();       \
+    CHECK((R * Rinv).isApprox(identity(r, r)));      \
+    CHECK((R * A * Q - C).norm() == approx(0.0));    \
+}                                                    \
+
+TEST_CASE("Testing Canonicalizer")
 {
 	const Index m = 4;
 	const Index n = 10;
 
 	Matrix A = random(m, n);
 
-	CanonicalMatrix C(A);
+	Canonicalizer canonicalizer(A);
+	const Index r = canonicalizer.rows();
 
-	const Index r = C.rows();
-
-	const auto& R = C.R();
-	const auto& Rinv = C.Rinv();
-	const auto& Q = C.Q();
-
-	CHECK((R * Rinv).isApprox(identity(r, r)));
-	CHECK((R * A * Q - C).norm() == approx(0.0));
+	CHECK_CANONICAL_FORM
 
 	for(Index i = 0; i < r; ++i)
 	{
 		for(Index j = 0; j < n - r; ++j)
 		{
-			C.swap(i, j);
-			CHECK((R * Rinv).isApprox(identity(r, r)));
-			CHECK((R * A * Q - C).norm() == approx(0.0));
+			canonicalizer.swap(i, j);
+			CHECK_CANONICAL_FORM
 		}
 	}
 }
 
-TEST_CASE("Testing CanonicalMatrix with two linearly dependent rows")
+TEST_CASE("Testing Canonicalizer with two linearly dependent rows")
 {
 	const Index m = 4;
 	const Index n = 10;
@@ -59,29 +62,22 @@ TEST_CASE("Testing CanonicalMatrix with two linearly dependent rows")
 	A.row(2) = A.row(0) + 2*A.row(1);
 	A.row(3) = A.row(1) - 2*A.row(2);
 
-	CanonicalMatrix C(A);
+	Canonicalizer canonicalizer(A);
+    const Index r = canonicalizer.rows();
 
-	const Index r = C.rows();
-
-	const auto& R = C.R();
-	const auto& Rinv = C.Rinv();
-	const auto& Q = C.Q();
-
-	CHECK((R * Rinv).isApprox(identity(r, r)));
-	CHECK((R * A * Q - C).norm() == approx(0.0));
+	CHECK_CANONICAL_FORM
 
 	for(Index i = 0; i < r; ++i)
 	{
 		for(Index j = 0; j < n - r; ++j)
 		{
-			C.swap(i, j);
-			CHECK((R * Rinv).isApprox(identity(r, r)));
-			CHECK((R * A * Q - C).norm() == approx(0.0));
+			canonicalizer.swap(i, j);
+			CHECK_CANONICAL_FORM
 		}
 	}
 }
 
-TEST_CASE("Testing the update method of the CanonicalMatrix class")
+TEST_CASE("Testing the update method of the Canonicalizer class")
 {
 	const Matrix A = {
 		{2,  1,  1,  1,  0,  0},
@@ -90,39 +86,33 @@ TEST_CASE("Testing the update method of the CanonicalMatrix class")
 		{0,  1, -1, -1,  0, -2}
 	};
 
-	CanonicalMatrix C(A);
-
-	const auto& R = C.R();
-	const auto& Rinv = C.Rinv();
-	const auto& Q = C.Q();
-
-	const Index r = C.rows();
+	Canonicalizer canonicalizer(A);
+    const Index r = canonicalizer.rows();
 
 	CHECK(r == 3);
-	CHECK((R * Rinv).isApprox(identity(r, r)));
-	CHECK((R * A * Q - C).norm() == approx(0.0));
+	CHECK_CANONICAL_FORM
 
 	Vector w = {55.1, 1.e-4, 1.e-10, 0.1, 0.5, 1e-2};
 
-	C.update(w);
+	canonicalizer.update(w);
 
-	CHECK((R * Rinv).isApprox(identity(r, r)));
-	CHECK((R * A * Q - C).norm() == approx(0.0));
+	CHECK_CANONICAL_FORM
 
 	Eigen::VectorXi expectedQ = {0, 4, 3, 5, 1, 2};
+	Eigen::VectorXi actualQ = canonicalizer.Q().indices();
 
-	CHECK(expectedQ.isApprox(Q.indices()));
+	CHECK(expectedQ.isApprox(actualQ));
 
 	w = {55.1, 1.e-4, 1.e-10, 0.3, 0.1, 0.8};
 
-	C.update(w);
+	canonicalizer.update(w);
 
-	CHECK((R * Rinv).isApprox(identity(r, r)));
-	CHECK((R * A * Q - C).norm() == approx(0.0));
+	CHECK_CANONICAL_FORM
 
 	expectedQ = {0, 5, 3, 4, 1, 2};
+	actualQ = canonicalizer.Q().indices();
 
-	CHECK(expectedQ.isApprox(Q.indices()));
+	CHECK(expectedQ.isApprox(actualQ));
 
 //	std::cout << "C = \n" << C << std::endl;
 //	std::cout << "Q = \n" << Q.indices() << std::endl;
@@ -131,7 +121,7 @@ TEST_CASE("Testing the update method of the CanonicalMatrix class")
 //		"H2O", "H+", "OH-", "HCO3-", "CO2", "CO3--"
 //	};
 //
-//	const auto& S = C.S();
+//	const auto& S = canonicalizer.S();
 //	std::cout << "C = \n" << C << std::endl;
 //	std::cout << "R * A * Q = \n" << R * A * Q << std::endl;
 //	std::cout << "Q = \n" << Q.indices() << std::endl;
