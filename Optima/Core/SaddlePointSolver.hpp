@@ -41,22 +41,23 @@ public:
     /// Assign a SaddlePointSolver instance to this.
     auto operator=(SaddlePointSolver other) -> SaddlePointSolver&;
 
-    /// Set `true` to indicate that matrix `A` is a constant at every call to `solve`.
-    auto constantA(bool isconst) -> void;
+    /// Canonicalize the coefficient matrix \eq{A} of the saddle point problem.
+    /// @note This method should be called before the @ref decompose method. However, it does not
+    /// need to be called again if matrix \eq{A} of the saddle point problem is the same as in the
+    /// last call to @ref canonicalize.
+    /// @param lhs The coefficient matrix of the saddle point problem.
+    auto canonicalize(const SaddlePointMatrix& lhs) -> void;
 
+    /// Decompose the coefficient matrix of the saddle point problem.
+    /// @note This method should be called before the @ref solve method and after @ref canonicalize.
+    /// @param lhs The coefficient matrix of the saddle point problem.
     auto decompose(const SaddlePointMatrix& lhs) -> void;
 
-    auto solve(const SaddlePointVector& rhs, SaddlePointVector& sol) -> void;
-
-    /// Solve a saddle point problem.
-    /// @param problem The saddle point problem.
-    /// @param[in,out] solution The solution of the saddle point problem.
-    auto solve(const SaddlePointProblem& problem, SaddlePointVector& solution) -> void;
-
-    /// Solve a saddle point problem.
-    /// @param problem The saddle point problem in canonical form.
-    /// @param[in,out] solution The solution of the saddle point problem in canonical form.
-    auto solve(const SaddlePointProblemCanonical& problem, SaddlePointVectorCanonical& solution) -> void;
+    /// Solve the saddle point problem.
+    /// @note This method expects that a call to method @ref decompose has already been performed.
+    /// @param rhs The right-hand side vector of the saddle point problem.
+    /// @return The solution of the saddle point problem.
+    auto solve(const SaddlePointVector& rhs) -> SaddlePointVector;
 
 private:
     struct Impl;
