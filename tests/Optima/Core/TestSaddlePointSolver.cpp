@@ -22,315 +22,107 @@
 #include <Optima/Math/Eigen/LU>
 using namespace Optima;
 
-namespace util {
-
-/// Return a random SaddlePointProblem instance.
-/// @param m The number of rows in matrix A
-/// @param n The number of columns in matrix A
-auto saddlePointProblem(Index m, Index n) -> SaddlePointProblem
+TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian")
 {
-    SaddlePointProblem problem;
-    problem.lhs.H = random(n);
-    problem.lhs.A = random(m, n);
-    problem.lhs.X = random(n);
-    problem.lhs.Z = random(n);
+    Index m = 10;
+    Index n = 50;
+    Index t = 2*n + m;
 
-    Matrix lhs = problem.lhs.convert();
-    Vector rhs = lhs * ones(lhs.rows());
-
-    problem.rhs.x = rhs.head(n);
-    problem.rhs.y = rhs.segment(n, m);
-    problem.rhs.z = rhs.tail(n);
-
-    REQUIRE(problem.lhs.valid());
-    REQUIRE(problem.rhs.valid());
-
-    return problem;
-}
-
-/// Return a random SaddlePointProblemCanonical instance.
-/// @param nb The number of columns in matrix Bb
-/// @param ns The number of columns in matrix Bs
-/// @param nu The number of columns in matrix Bu
-/// @param p  A number than if equal to zero means E is empty, otherwise E is a random diagonal matrix.
-auto saddlePointProblemCanonical(Index nb, Index ns, Index nu, Index p) -> SaddlePointProblemCanonical
-{
-	Index n = nb + ns + nu;
-	Index m = nb;
-
-	SaddlePointProblemCanonical problem;
-    problem.lhs.Gb = abs(random(nb));
-    problem.lhs.Gs = abs(random(ns));
-    problem.lhs.Gu = abs(random(nu));
-    problem.lhs.Bb = random(nb);
-    problem.lhs.Bs = random(nb, ns);
-    problem.lhs.Bu = random(nb, nu);
-    problem.lhs.Eb = random(p ? nb : 0);
-    problem.lhs.Es = random(p ? ns : 0);
-    problem.lhs.Eu = random(p ? nu : 0);
-
-    problem.lhs.Gb *= 100;
-    problem.lhs.Bb *= 100;
-
-    problem.lhs.Eb *= 1e-20;
-    problem.lhs.Es *= 1e-20;
-    problem.lhs.Eu *= 1e-20;
-
-    Matrix lhs = problem.lhs.convert();
-    Vector rhs = lhs * ones(lhs.rows());
-
-    problem.rhs.xb = rhs.topRows(n).topRows(nb);
-    problem.rhs.xs = rhs.topRows(n).middleRows(nb, ns);
-    problem.rhs.xu = rhs.topRows(n).bottomRows(nu);
-    problem.rhs.y  = rhs.middleRows(n, m);
-    problem.rhs.zb = rhs.bottomRows(n).topRows(nb);
-    problem.rhs.zs = rhs.bottomRows(n).middleRows(nb, ns);
-    problem.rhs.zu = rhs.bottomRows(n).bottomRows(nu);
-
-    REQUIRE(problem.lhs.valid());
-	REQUIRE(problem.rhs.valid());
-
-	return problem;
-}
-
-} // namespace util
-
-TEST_CASE("Testing the solution of a general saddle point problem: Case 1")
-{
-    Index m = 3;
-    Index n = 6;
-
-    SaddlePointVector sol;
-    SaddlePointProblem problem = util::saddlePointProblem(m, n);
+    SaddlePointMatrix lhs;
+    lhs.A = random(m, n);
+    lhs.X = abs(random(n));
+    lhs.Z = abs(random(n));
 
     SaddlePointSolver solver;
-    solver.canonicalize(problem.lhs);
-    solver.decompose(problem.lhs);
-    sol = solver.solve(problem.rhs);
-
-    auto actual = sol.convert();
-    auto expected = ones(actual.rows());
-    CHECK(actual.isApprox(expected));
-}
-
-//TEST_CASE("Testing the solution of a canonical saddle point problem: Case 1")
-//{
-//    SaddlePointProblemCanonical problem;
-//    SaddlePointVectorCanonical sol;
-//
-//    problem.lhs.Gb = {9, 8, 7};
-//    problem.lhs.Gs = {};
-//    problem.lhs.Gu = {};
-//    problem.lhs.Bb = {1, 1, 1};
-//    problem.lhs.Bs = {};
-//    problem.lhs.Bu = {};
-//    problem.lhs.Eb = {1, 1, 1};
-//    problem.lhs.Es = {};
-//    problem.lhs.Eu = {};
-//
-//    problem.rhs.xb = {11, 10, 9};
-//    problem.rhs.xs = {};
-//    problem.rhs.xu = {};
-//    problem.rhs.y  = {1, 1, 1};
-//    problem.rhs.zb = {2, 2, 2};
-//    problem.rhs.zs = {};
-//    problem.rhs.zu = {};
-//
-//    SaddlePointSolver solver;
-//    solver.solve(problem, sol);
-//
-//    auto actual = sol.convert();
-//    auto expected = ones(actual.rows());
-//    CHECK(actual.isApprox(expected));
-//}
-//
-TEST_CASE("Testing the solution of a canonical saddle point problem: Case 2")
-{
-    Index np = 10;
-    Index ns = 35;
-    Index nu = 70;
-    Index p  = 1;
-
-    SaddlePointVectorCanonical sol;
-    SaddlePointProblemCanonical problem =
-		util::saddlePointProblemCanonical(np, ns, nu, p);
-
-//    SUBCASE("Using solver class")
-//    {
-//        auto cproblem = problem;
-//        SaddlePointSolver solver;
-//        solver.solve(cproblem, sol);
-//
-//        auto actual = sol.convert();
-//        auto expected = ones(actual.rows());
-//        CHECK(actual.isApprox(expected));
-//
-//        std::cout << "Error 1: " << norm(actual - expected) << std::endl;
-//    }
-
-//    SUBCASE("Using solve method")
+    solver.canonicalize(lhs);
+    SUBCASE("Hessian matrix is zero.")
     {
-        auto cproblem = problem;
+        lhs.H = zeros(n);
 
-        solve(cproblem, sol);
+        std::cout << "------------------------------" << std::endl;
+        std::cout << "Case 1: Hessian matrix is zero" << std::endl;
+        std::cout << "------------------------------" << std::endl;
 
-        auto actual = sol.convert();
-        auto expected = ones(actual.rows());
-        CHECK(actual.isApprox(expected));
+        std::cout << std::left << std::setw(5) << "k";
+        std::cout << std::left << std::setw(15) << "Error";
+        std::cout << std::left << std::setw(15) << "Error (LU)";
+        std::cout << std::endl;
+        for(Index k = 0; k < 10; ++k)
+        {
+            lhs.X.head(n - m) *= 1e-5;
+            lhs.Z.head(n - m) *= 10.0;
 
-        std::cout << "Error 2: " << norm(actual - expected) << std::endl;
+            Matrix A = lhs.convert();
+            Vector b = A * ones(t);
+            Vector x = A.lu().solve(b);
+
+            SaddlePointVector rhs;
+            rhs.x = b.head(n);
+            rhs.y = b.segment(n, m);
+            rhs.z = b.tail(n);
+
+            REQUIRE(lhs.valid());
+            REQUIRE(rhs.valid());
+
+            SaddlePointVector sol;
+            solver.decompose(lhs);
+            sol = solver.solve(rhs);
+
+            auto actual = sol.convert();
+            auto expected = ones(t);
+
+            CHECK(actual.isApprox(x));
+
+            std::cout << std::left << std::setw(5) << k;
+            std::cout << std::left << std::setw(15) << norm(actual - expected);
+            std::cout << std::left << std::setw(15) << norm(x - expected);
+            std::cout << std::endl;
+        }
+    }
+
+    SUBCASE("Hessian matrix is not zero.")
+    {
+        lhs.H = random(n);
+
+        std::cout << "----------------------------------" << std::endl;
+        std::cout << "Case 2: Hessian matrix is not zero" << std::endl;
+        std::cout << "----------------------------------" << std::endl;
+
+        std::cout << std::left << std::setw(5) << "k";
+        std::cout << std::left << std::setw(15) << "Error";
+        std::cout << std::left << std::setw(15) << "Error (LU)";
+        std::cout << std::endl;
+        for(Index k = 0; k < 10; ++k)
+        {
+            lhs.X.head(n - m) *= 1e-5;
+            lhs.Z.head(n - m) *= 10.0;
+
+            Matrix A = lhs.convert();
+            Vector b = A * ones(t);
+            Vector x = A.lu().solve(b);
+
+            SaddlePointVector rhs;
+            rhs.x = b.head(n);
+            rhs.y = b.segment(n, m);
+            rhs.z = b.tail(n);
+
+            REQUIRE(lhs.valid());
+            REQUIRE(rhs.valid());
+
+            SaddlePointVector sol;
+            solver.decompose(lhs);
+            sol = solver.solve(rhs);
+
+            auto actual = sol.convert();
+            auto expected = ones(t);
+
+            CHECK(actual.isApprox(x));
+
+            std::cout << std::left << std::setw(5) << k;
+            std::cout << std::left << std::setw(15) << norm(actual - expected);
+            std::cout << std::left << std::setw(15) << norm(x - expected);
+            std::cout << std::endl;
+        }
     }
 }
-//
-//TEST_CASE("Testing the solution of a canonical saddle point problem: Case 3")
-//{
-//    SaddlePointVectorCanonical sol;
-//    SaddlePointProblemCanonical problem;
-//
-//    Index np = 10;
-//    Index ns = 35;
-//    Index nu = 0;
-//    Index p  = 0;
-//
-//    problem = util::saddlePointProblemCanonical(np, ns, nu, p);
-//
-//    SaddlePointSolver solver;
-//    solver.solve(problem, sol);
-//
-//    auto actual = sol.convert();
-//    auto expected = ones(actual.rows());
-//    CHECK(actual.isApprox(expected));
-//}
-//
-//TEST_CASE("Testing the solution of a canonical saddle point problem: Case 4")
-//{
-//    SaddlePointVectorCanonical sol;
-//    SaddlePointProblemCanonical problem;
-//
-//    Index np = 10;
-//    Index ns = 0;
-//    Index nu = 0;
-//    Index p  = 0;
-//
-//    problem = util::saddlePointProblemCanonical(np, ns, nu, p);
-//
-//    SaddlePointSolver solver;
-//    solver.solve(problem, sol);
-//
-//    auto actual = sol.convert();
-//    auto expected = ones(actual.rows());
-//    CHECK(actual.isApprox(expected));
-//}
-//
-//TEST_CASE("Testing the solution of a canonical saddle point problem: Case 4")
-//{
-//    SaddlePointVectorCanonical sol;
-//    SaddlePointProblemCanonical problem;
-//
-//    Index np = 10;
-//    Index ns = 0;
-//    Index nu = 0;
-//    Index p  = 1;
-//
-//    problem = util::saddlePointProblemCanonical(np, ns, nu, p);
-//
-//    SaddlePointSolver solver;
-//    solver.solve(problem, sol);
-//
-//    auto actual = sol.convert();
-//    auto expected = ones(actual.rows());
-//    CHECK(actual.isApprox(expected));
-//}
-//
-//TEST_CASE("Testing the solution of a canonical saddle point problem: Case 5")
-//{
-//    SaddlePointProblemCanonical problem;
-//    SaddlePointVectorCanonical sol;
-//
-//    problem.lhs.Gb = {5};
-//    problem.lhs.Gs = {5};
-//    problem.lhs.Gu = {};
-//    problem.lhs.Bb = {2};
-//    problem.lhs.Bs = {2};
-//    problem.lhs.Bu = {};
-//    problem.lhs.Eb = {1};
-//    problem.lhs.Es = {1};
-//    problem.lhs.Eu = {};
-//
-//    problem.rhs.xb = {8};
-//    problem.rhs.xs = {8};
-//    problem.rhs.xu = {};
-//    problem.rhs.y  = {4};
-//    problem.rhs.zb = {2};
-//    problem.rhs.zs = {2};
-//    problem.rhs.zu = {};
-//
-//    SaddlePointSolver solver;
-//    solver.solve(problem, sol);
-//
-//    auto actual = sol.convert();
-//    auto expected = ones(actual.rows());
-//    CHECK(actual.isApprox(expected));
-//}
-//
-//TEST_CASE("Testing the solution of a canonical saddle point problem: Case 6")
-//{
-//    SaddlePointProblemCanonical problem;
-//    SaddlePointVectorCanonical sol;
-//
-//    problem.lhs.Gb = {5};
-//    problem.lhs.Gs = {};
-//    problem.lhs.Gu = {1};
-//    problem.lhs.Bb = {2};
-//    problem.lhs.Bs = {};
-//    problem.lhs.Bu = {2};
-//    problem.lhs.Eb = {1};
-//    problem.lhs.Es = {};
-//    problem.lhs.Eu = {6};
-//
-//    problem.rhs.xb = {8};
-//    problem.rhs.xs = {};
-//    problem.rhs.xu = {9};
-//    problem.rhs.y  = {4};
-//    problem.rhs.zb = {2};
-//    problem.rhs.zs = {};
-//    problem.rhs.zu = {12};
-//
-//    SaddlePointSolver solver;
-//    solver.solve(problem, sol);
-//
-//    auto actual = sol.convert();
-//    auto expected = ones(actual.rows());
-//    CHECK(actual.isApprox(expected));
-//}
-//
-//TEST_CASE("Testing the solution of a canonical saddle point problem: Case 7")
-//{
-//    SaddlePointProblemCanonical problem;
-//    SaddlePointVectorCanonical sol;
-//
-//    problem.lhs.Gb = {1, 2, 3};
-//    problem.lhs.Gs = {4, 5};
-//    problem.lhs.Gu = {6};
-//    problem.lhs.Bb = {9, 8, 7};
-//    problem.lhs.Bs = {{1, 2}, {2, 3}, {3, 4}};
-//    problem.lhs.Bu = {5, 6, 7};
-//    problem.lhs.Eb = {1, 1, 1};
-//    problem.lhs.Es = {1, 1};
-//    problem.lhs.Eu = {1};
-//
-//    problem.rhs.xb = {11, 11, 11};
-//    problem.rhs.xs = {11, 15};
-//    problem.rhs.xu = {25};
-//    problem.rhs.y  = {17, 19, 21};
-//    problem.rhs.zb = {2, 2, 2};
-//    problem.rhs.zs = {2, 2};
-//    problem.rhs.zu = {2};
-//
-//    SaddlePointSolver solver;
-//    solver.solve(problem, sol);
-//
-//    auto actual = sol.convert();
-//    auto expected = ones(actual.rows());
-//    CHECK(actual.isApprox(expected));
-//}
+
