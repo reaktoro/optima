@@ -23,6 +23,34 @@
 
 namespace Optima {
 
+template<typename Derived, typename Indices>
+auto reorderRows(Eigen::MatrixBase<Derived>& matrix, Indices& order) -> void
+{
+    const Index m = matrix.rows();
+    Index i = 0;
+    while(i < m) {
+        if(i != order[i]) {
+            matrix.row(i).swap(matrix.row(order[i]));
+            std::swap(order[i], order[order[i]]);
+        }
+        else ++i;
+    }
+}
+
+template<typename Derived, typename Indices>
+auto reorderCols(Eigen::MatrixBase<Derived>& matrix, Indices& order) -> void
+{
+    const Index n = matrix.cols();
+    Index i = 0;
+    while(i < n) {
+        if(i != order[i]) {
+            matrix.col(i).swap(matrix.col(order[i]));
+            std::swap(order[i], order[order[i]]);
+        }
+        else ++i;
+    }
+}
+
 Canonicalizer::Canonicalizer()
 {}
 
@@ -181,11 +209,10 @@ auto Canonicalizer::update(const Vector& w) -> void
 	auto& S = m_S;
 	auto& R = m_R;
 	auto& Rinv = m_Rinv;
-	auto& Kb = m_Kb;
-	auto& Kn = m_Kn;
 
 	// The indices and weights of the non-basic components
-	auto inonbasic = Q.bottomRows(n - m);
+	auto ibasic = Q.head(m);
+	auto inonbasic = Q.tail(n - m);
 	auto wn = Optima::rows(w, inonbasic);
 
 	// Swap basic and non-basic components when the latter has higher weight
@@ -198,29 +225,40 @@ auto Canonicalizer::update(const Vector& w) -> void
 			swap(i, j);
 	}
 
+    Eigen::VectorXi row_swaps = Eigen::VectorXi::LinSpaced(m, 0, m);
+    Eigen::VectorXi col_swaps = Eigen::VectorXi::LinSpaced(n - m, 0, n - m);
+
 	// Sort the basic components in descend order of weights
-	std::sort(Kb.indices().data(), Kb.indices().data() + m,
-		[&](Index l, Index r) { return std::abs(w[Q[l]]) > std::abs(w[Q[r]]); });
+	std::sort(row_swaps.data(), row_swaps.data() + row_swaps.rows(),
+		[&](Index l, Index r) { return std::abs(w[ibasic[l]]) > std::abs(w[ibasic[r]]); });
 
 	// Sort the non-basic components in descend order of weights
-	std::sort(Kn.indices().data(), Kn.indices().data() + n - m,
-		[&](Index l, Index r) { return std::abs(w[Q[m + l]]) > std::abs(w[Q[m + r]]); });
+	std::sort(col_swaps.data(), col_swaps.data() + col_swaps.rows(),
+		[&](Index l, Index r) { return std::abs(w[inonbasic[l]]) > std::abs(w[inonbasic[r]]); });
 
 	// Rearrange the rows of S based on the new order of basic components
-	Kb.applyThisOnTheLeft(S);
+    {Index i = 0;
+    while(i < m) {
+        if(i != row_swaps[i]) {
+            S.row(i).swap(S.row(row_swaps[i]));
+            R.row(i).swap(R.row(row_swaps[i]));
+            Rinv.col(i).swap(Rinv.col(row_swaps[i]));
+            std::swap(ibasic[i], ibasic[row_swaps[i]]);
+            std::swap(row_swaps[i], row_swaps[row_swaps[i]]);
+        }
+        else ++i;
+    }}
 
 	// Rearrange the columns of S based on the new order of non-basic components
-	Kn.applyThisOnTheRight(S);
-
-	// Rearrange the rows of R based on the new order of basic components
-	Kb.applyThisOnTheLeft(R);
-
-	// Rearrange the columns of inv(R) based on the new order of basic components
-	Kb.transpose().applyThisOnTheRight(Rinv);
-
-	// Rearrange the permutation matrix Q based on the new order of basic and non-basic components
-	Q.topRows(m).noalias() = Kb * Q.topRows(m);
-	Q.bottomRows(n - m).noalias() = Kn * Q.bottomRows(n - m);
+    {Index j = 0;
+    while(j < n - m) {
+        if(j != col_swaps[j]) {
+            S.col(j).swap(S.col(col_swaps[j]));
+            std::swap(inonbasic[j], inonbasic[col_swaps[j]]);
+            std::swap(col_swaps[j], col_swaps[col_swaps[j]]);
+        }
+        else ++j;
+    }}
 }
 
 auto Canonicalizer::matrix() const -> Matrix
