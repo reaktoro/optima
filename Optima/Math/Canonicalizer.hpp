@@ -17,6 +17,9 @@
 
 #pragma once
 
+// C++ includes
+#include <memory>
+
 // Optima includes
 #include <Optima/Math/Matrix.hpp>
 
@@ -35,26 +38,35 @@ public:
     /// Construct a Canonicalizer instance with given matrix.
     Canonicalizer(const Matrix& A);
 
+    /// Construct a copy of a Canonicalizer instance.
+    Canonicalizer(const Canonicalizer& other);
+
+    /// Destroy this Canonicalizer instance.
+    virtual ~Canonicalizer();
+
+    /// Assign a Canonicalizer instance to this.
+    auto operator=(Canonicalizer other) -> Canonicalizer&;
+
     /// Return the number of rows of the canonical form.
     auto rows() const -> Index;
 
     /// Return the number of columns of the canonical form.
     auto cols() const -> Index;
 
-    /// Return the `S` matrix of the canonical representation.
+    /// Return the matrix \eq{S} of the canonicalization.
     auto S() const -> const Matrix&;
 
-    /// Return the `R` canonicalizer matrix of the canonicalization.
+    /// Return the canonicalizer matrix \eq{R}.
     auto R() const -> const Matrix&;
 
-    /// Return the inverse of the `R` matrix of the canonicalization.
+    /// Return the inverse of the canonicalizer matrix \eq{R^{-1}}.
     auto Rinv() const -> const Matrix&;
 
-    /// Return the `P` permutation matrix of the canonicalization.
-    auto P() const -> const PermutationMatrix&;
-
-    /// Return the `Q` permutation matrix of the canonicalization.
+    /// Return the permutation matrix \eq{Q} of the canonicalization.
     auto Q() const -> const PermutationMatrix&;
+
+    /// Return the canonicalized matrix \eq{C = RAQ = [I\quad S]}`.
+    auto C() const -> Matrix;
 
     /// Return the indices of the linearly independent rows of the original matrix.
     auto ili() const -> Indices;
@@ -81,33 +93,10 @@ public:
     /// @param weights The priority, as a positive weight, of each variable to become a basic variable.
 	auto update(const Vector& weights) -> void;
 
-	/// Return the canonicalized matrix `C = [I S]`.
-	auto matrix() const -> Matrix;
-
 private:
-    /// The matrix `S` in the canonical form `C = [I S]`.
-    Matrix m_S;
+	struct Impl;
 
-    /// The permutation matrix `P`.
-    PermutationMatrix m_P;
-
-    /// The permutation matrix `Q`.
-    PermutationMatrix m_Q;
-
-    /// The canonicalizer matrix `R`.
-    Matrix m_R;
-
-    /// The inverse of the canonicalizer matrix `R`.
-    Matrix m_Rinv;
-
-    /// The matrix `M` used in the swap operation.
-    Vector m_M;
-
-    /// The permutation matrix `Kb` used in the weighted update method.
-    PermutationMatrix m_Kb;
-
-    /// The permutation matrix `Kn` used in the weighted update method.
-	PermutationMatrix m_Kn;
+	std::unique_ptr<Impl> pimpl;
 };
 
 } // namespace Optima

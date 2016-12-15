@@ -23,98 +23,116 @@
 
 namespace Optima {
 
-template<typename Derived, typename Indices>
-auto reorderRows(Eigen::MatrixBase<Derived>& matrix, Indices& order) -> void
+struct Canonicalizer::Impl
 {
-    const Index m = matrix.rows();
-    Index i = 0;
-    while(i < m) {
-        if(i != order[i]) {
-            matrix.row(i).swap(matrix.row(order[i]));
-            std::swap(order[i], order[order[i]]);
-        }
-        else ++i;
-    }
-}
+    /// The matrix `S` in the canonical form `C = [I S]`.
+    Matrix S;
 
-template<typename Derived, typename Indices>
-auto reorderCols(Eigen::MatrixBase<Derived>& matrix, Indices& order) -> void
-{
-    const Index n = matrix.cols();
-    Index i = 0;
-    while(i < n) {
-        if(i != order[i]) {
-            matrix.col(i).swap(matrix.col(order[i]));
-            std::swap(order[i], order[order[i]]);
-        }
-        else ++i;
-    }
-}
+    /// The permutation matrix `P`.
+    PermutationMatrix P;
+
+    /// The permutation matrix `Q`.
+    PermutationMatrix Q;
+
+    /// The canonicalizer matrix `R`.
+    Matrix R;
+
+    /// The inverse of the canonicalizer matrix `R`.
+    Matrix Rinv;
+
+    /// The matrix `M` used in the swap operation.
+    Vector M;
+
+    /// The permutation matrix `Kb` used in the weighted update method.
+    Indices bswaps;
+
+    /// The permutation matrix `Kn` used in the weighted update method.
+    Indices nswaps;
+};
 
 Canonicalizer::Canonicalizer()
+: pimpl(new Impl())
 {}
 
 Canonicalizer::Canonicalizer(const Matrix& A)
+: pimpl(new Impl())
 {
 	compute(A);
 }
 
+Canonicalizer::Canonicalizer(const Canonicalizer& other)
+: pimpl(new Impl(*other.pimpl))
+{}
+
+Canonicalizer::~Canonicalizer()
+{}
+
+auto Canonicalizer::operator=(Canonicalizer other) -> Canonicalizer&
+{
+    pimpl = std::move(other.pimpl);
+    return *this;
+}
+
 auto Canonicalizer::rows() const -> Index
 {
-    return m_S.rows();
+    return S().rows();
 }
 
 auto Canonicalizer::cols() const -> Index
 {
-    return m_Q.rows();
+    return Q().rows();
 }
 
 auto Canonicalizer::S() const -> const Matrix&
 {
-	return m_S;
+	return pimpl->S;
 }
 
 auto Canonicalizer::R() const -> const Matrix&
 {
-	return m_R;
+	return pimpl->R;
 }
 
 auto Canonicalizer::Rinv() const -> const Matrix&
 {
-	return m_Rinv;
-}
-
-auto Canonicalizer::P() const -> const PermutationMatrix&
-{
-	return m_P;
+	return pimpl->Rinv;
 }
 
 auto Canonicalizer::Q() const -> const PermutationMatrix&
 {
-	return m_Q;
+	return pimpl->Q;
 }
 
 auto Canonicalizer::ili() const -> Indices
 {
-	PermutationMatrix Ptr = m_P.transpose();
+	PermutationMatrix Ptr = pimpl->P.transpose();
 	auto begin = Ptr.indices().data();
 	return Indices(begin, begin + rows());
 }
 
 auto Canonicalizer::ibasic() const -> Indices
 {
-	auto begin = m_Q.indices().data();
+	auto begin = Q().indices().data();
 	return Indices(begin, begin + rows());
 }
 
 auto Canonicalizer::inonbasic() const -> Indices
 {
-	auto begin = m_Q.indices().data();
+	auto begin = Q().indices().data();
 	return Indices(begin + rows(), begin + cols());
 }
 
 auto Canonicalizer::compute(const Matrix& A) -> void
 {
+    // Alias to implementation members
+    auto& P      = pimpl->P;
+    auto& Q      = pimpl->Q;
+    auto& S      = pimpl->S;
+    auto& R      = pimpl->R;
+    auto& Rinv   = pimpl->Rinv;
+    auto& bswaps = pimpl->bswaps;
+    auto& nswaps = pimpl->nswaps;
+
 	// The number of rows and columns of A
 	const Index m = A.rows();
 	const Index n = A.cols();
@@ -135,38 +153,38 @@ auto Canonicalizer::compute(const Matrix& A) -> void
 	const auto Ubn = lu.matrixLU().topRightCorner(r, n - r);
 
 	// Set the permutation matrices P and Q
-	m_P = lu.permutationP();
-	m_Q = lu.permutationQ();
+	P = lu.permutationP();
+	Q = lu.permutationQ();
 
 	// Calculate the regularizer matrix R
-	m_R = m_P;
-	m_R.conservativeResize(r, m);
-	m_R = Lbb.solve(m_R);
-	m_R = Ubb.solve(m_R);
+	R = P;
+	R.conservativeResize(r, m);
+	R = Lbb.solve(R);
+	R = Ubb.solve(R);
 
 	// Calculate the inverse of the regularizer matrix R
-	m_Rinv = m_P.transpose();
-	m_Rinv.conservativeResize(m, r);
-	m_Rinv = m_Rinv * Lbb;
-	m_Rinv = m_Rinv * Ubb;
+	Rinv = P.transpose();
+	Rinv.conservativeResize(m, r);
+	Rinv = Rinv * Lbb;
+	Rinv = Rinv * Ubb;
 
 	// Calculate matrix S
-	m_S = Ubn;
-	m_S = Ubb.solve(m_S);
+	S = Ubn;
+	S = Ubb.solve(S);
 
-	// Initialize the permutation matrices Kb and Kn
-	m_Kb.setIdentity(r);
-	m_Kn.setIdentity(n - r);
+	// Initialize the vectors of basic and non-basic swaps
+	bswaps = indices(r);
+	nswaps = indices(n - r);
 }
 
 auto Canonicalizer::swap(Index ib, Index in) -> void
 {
-	// Auxiliary references
-	auto& M = m_M;
-	auto& Q = m_Q.indices();
-	auto& S = m_S;
-	auto& R = m_R;
-	auto& Rinv = m_Rinv;
+	// Alias to implementation members
+	auto& M    = pimpl->M;
+	auto& Q    = pimpl->Q.indices();
+	auto& S    = pimpl->S;
+	auto& R    = pimpl->R;
+	auto& Rinv = pimpl->Rinv;
 
 	// Check if S(ib, in) is different than zero
 	Assert(S(ib, in), "Could not swap basic and non-basic components.",
@@ -200,68 +218,69 @@ auto Canonicalizer::swap(Index ib, Index in) -> void
 
 auto Canonicalizer::update(const Vector& w) -> void
 {
+	// Auxiliary references to member data
+	auto& Q      = pimpl->Q;
+	auto& S      = pimpl->S;
+	auto& R      = pimpl->R;
+	auto& Rinv   = pimpl->Rinv;
+    auto& bswaps = pimpl->bswaps;
+    auto& nswaps = pimpl->nswaps;
+
 	// Auxiliary variables
 	const Index m = rows();
 	const Index n = cols();
 
-	// Auxiliary references to member data
-	auto& Q = m_Q.indices();
-	auto& S = m_S;
-	auto& R = m_R;
-	auto& Rinv = m_Rinv;
+	// The indices of the basic and non-basic variables
+	auto ibasic = Q.indices().head(m);
+	auto inonbasic = Q.indices().tail(n - m);
 
-	// The indices and weights of the non-basic components
-	auto ibasic = Q.head(m);
-	auto inonbasic = Q.tail(n - m);
+	// The weights of the non-basic components
 	auto wn = Optima::rows(w, inonbasic);
 
 	// Swap basic and non-basic components when the latter has higher weight
-	Index j;
 	for(Index i = 0; i < m; ++i)
 	{
-		const double wi = std::abs(w[Q[i]]);
+        Index j;
+		const double wi = std::abs(w[ibasic[i]]);
 		const double wj = abs(wn % tr(S.row(i))).maxCoeff(&j);
 		if(wi < wj)
 			swap(i, j);
 	}
 
-    Eigen::VectorXi row_swaps = Eigen::VectorXi::LinSpaced(m, 0, m);
-    Eigen::VectorXi col_swaps = Eigen::VectorXi::LinSpaced(n - m, 0, n - m);
-
 	// Sort the basic components in descend order of weights
-	std::sort(row_swaps.data(), row_swaps.data() + row_swaps.rows(),
+	std::sort(bswaps.data(), bswaps.data() + bswaps.size(),
 		[&](Index l, Index r) { return std::abs(w[ibasic[l]]) > std::abs(w[ibasic[r]]); });
 
 	// Sort the non-basic components in descend order of weights
-	std::sort(col_swaps.data(), col_swaps.data() + col_swaps.rows(),
+	std::sort(nswaps.data(), nswaps.data() + nswaps.size(),
 		[&](Index l, Index r) { return std::abs(w[inonbasic[l]]) > std::abs(w[inonbasic[r]]); });
 
 	// Rearrange the rows of S based on the new order of basic components
-    {Index i = 0;
+    Index i = 0;
     while(i < m) {
-        if(i != row_swaps[i]) {
-            S.row(i).swap(S.row(row_swaps[i]));
-            R.row(i).swap(R.row(row_swaps[i]));
-            Rinv.col(i).swap(Rinv.col(row_swaps[i]));
-            std::swap(ibasic[i], ibasic[row_swaps[i]]);
-            std::swap(row_swaps[i], row_swaps[row_swaps[i]]);
+        if(i != bswaps[i]) {
+            S.row(i).swap(S.row(bswaps[i]));
+            R.row(i).swap(R.row(bswaps[i]));
+            Rinv.col(i).swap(Rinv.col(bswaps[i]));
+            std::swap(ibasic[i], ibasic[bswaps[i]]);
+            std::swap(bswaps[i], bswaps[bswaps[i]]);
         }
         else ++i;
-    }}
+    }
 
 	// Rearrange the columns of S based on the new order of non-basic components
-    {Index j = 0;
+    Index j = 0;
     while(j < n - m) {
-        if(j != col_swaps[j]) {
-            S.col(j).swap(S.col(col_swaps[j]));
-            std::swap(inonbasic[j], inonbasic[col_swaps[j]]);
-            std::swap(col_swaps[j], col_swaps[col_swaps[j]]);
+        if(j != nswaps[j]) {
+            S.col(j).swap(S.col(nswaps[j]));
+            std::swap(inonbasic[j], inonbasic[nswaps[j]]);
+            std::swap(nswaps[j], nswaps[nswaps[j]]);
         }
         else ++j;
-    }}
+    }
 }
 
-auto Canonicalizer::matrix() const -> Matrix
+auto Canonicalizer::C() const -> Matrix
 {
     const Index m = rows();
     const Index n = cols();

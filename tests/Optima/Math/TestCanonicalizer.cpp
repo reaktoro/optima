@@ -26,7 +26,7 @@ using namespace Optima;
     const auto& R    = canonicalizer.R();            \
     const auto& Rinv = canonicalizer.Rinv();         \
     const auto& Q    = canonicalizer.Q();            \
-    const auto& C    = canonicalizer.matrix();       \
+    const auto& C    = canonicalizer.C();            \
     CHECK((R * Rinv).isApprox(identity(r, r)));      \
     CHECK((R * A * Q - C).norm() == approx(0.0));    \
 }                                                    \
