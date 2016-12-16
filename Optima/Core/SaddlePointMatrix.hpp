@@ -67,16 +67,31 @@ struct SaddlePointVector
 struct SaddlePointMatrixCanonical
 {
     /// The diagonal matrix `G = diag(Gb, Gs, Gu)` in the coefficient matrix.
-    Vector Gb, Gs, Gu;
+    Vector G;
 
     /// The diagonal matrix `Bb` in the canonical coefficient matrix.
     Vector Bb;
 
-    /// The matrix `B = [Bb Bs Bu]` in the canonical coefficient matrix.
-    Matrix Bs, Bu;
+    /// The matrix `Bn` in `B = [Bb Bn]` in the canonical coefficient matrix.
+    Matrix Bn;
 
     /// The diagonal matrix `E = diag(Eb, Es, Eu)` in the coefficient matrix.
-    Vector Eb, Es, Eu;
+    Vector E;
+
+    /// The indices of the variables describing their ordering in the canonical form.
+    Indices ordering;
+
+    /// The number of basic variables.
+    Index nb;
+
+    /// The number of non-basic variables.
+    Index nn;
+
+    /// The number of stable non-basic variables.
+    Index ns;
+
+    /// The number of unstable non-basic variables.
+    Index nu;
 
     /// Convert this SaddlePointMatrixCanonical instance into a Matrix instance.
     auto convert() const -> Matrix;
@@ -85,23 +100,49 @@ struct SaddlePointMatrixCanonical
     auto valid() const -> bool;
 };
 
-/// A type used to describe a canonical saddle point right-hand side vector.
-struct SaddlePointVectorCanonical
-{
-    /// The canonical saddle point vector `x = [xb, xs, xu]`.
-    Vector xb, xs, xu;
-
-    /// The canonical saddle point vector `y`.
-    Vector y;
-
-    /// The canonical saddle point vector `z = [zb, zs, zu]`.
-    Vector zb, zs, zu;
-
-    /// Convert this SaddlePointVectorCanonical instance into a Vector instance.
-    auto convert() const -> Vector;
-
-    /// Return `true` if this SaddlePointVectorCanonical instance is valid.
-    auto valid() const -> bool;
-};
-
 } // namespace Optima
+
+//
+//he coefficient matrix of a saddle point problem.
+//class SaddlePointMatrix
+//{
+//public:
+//    /// The Hessian matrix \eq{H} in the saddle point matrix.
+//    HessianMatrix H;
+//
+//    /// The Jacobian matrix \eq{A} in the saddle point matrix.
+//    Matrix A;
+//
+//    /// The diagonal matrix \eq{X} in the saddle point matrix.
+//    Vector X;
+//
+//    /// The diagonal matrix \eq{Z} in the saddle point matrix.
+//    Vector Z;
+//
+//public:
+//    /// Construct a default SaddlePointMatrix instance.
+//    SaddlePointMatrix();
+//
+//    /// Convert this SaddlePointMatrix instance into a Matrix instance.
+//    auto convert() const -> Matrix;
+//
+//    /// Return `true` if this SaddlePointMatrix instance is valid.
+//    auto valid() const -> bool;
+//
+//private:
+//    /// The scaled Hessian matrix `G` partitioned in order of basic, stable, and unstable variables.
+//    HessianMatrix G;
+//
+//    /// The scaled diagonal matrix \eq{E = -XZ} partitioned in order of basic, stable, and unstable variables.
+//    Vector E;
+//
+//    /// The diagonal matrix `Bb` in `B = [Bb Bs Bu]`, where `B = RAQX`, with `R` and `Q` obtained from canonicalization.
+//    Vector Bb;
+//
+//    /// The matrix `Bn = [Bs Bu]` in `B = [Bb Bs Bu]`, where `B = RAQX`, with `R` and `Q` obtained from canonicalization.
+//    Matrix Bn;
+//
+//    /// The canonicalizer of the Jacobian matrix `A` used to compute `B` and to determine basic and non-basic variables.
+//    Canonicalizer canonicalizer;
+//};
+

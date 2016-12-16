@@ -110,6 +110,12 @@ auto Canonicalizer::ili() const -> Indices
 	return Indices(begin, begin + rows());
 }
 
+auto Canonicalizer::ordering() const -> Indices
+{
+	auto begin = Q().indices().data();
+	return Indices(begin, begin + cols());
+}
+
 auto Canonicalizer::ibasic() const -> Indices
 {
 	auto begin = Q().indices().data();

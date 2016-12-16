@@ -24,13 +24,43 @@
 namespace Optima {
 
 /// A type used to describe a saddle point problem.
-struct SaddlePointProblem
+class SaddlePointProblem
 {
-	/// The left-hand side coefficient matrix of the saddle point problem.
-	SaddlePointMatrix lhs;
+public:
+    /// Construct a default SaddlePointProblem instance.
+    SaddlePointProblem();
 
-	/// The right-hand side vector of the saddle point problem.
-	SaddlePointVector rhs;
+    /// Canonicalize the Jacobian matrix \eq{A} of the saddle point problem.
+    auto canonicalize(const SaddlePointMatrix& lhs) -> void;
+
+    /// Update the left-hand side coefficient matrix of the saddle point problem.
+    auto lhs(const SaddlePointMatrix& lhs) -> void;
+
+    /// Update the right-hand side vector of the saddle point problem.
+    auto rhs(const SaddlePointVector& rhs) -> void;
+
+    /// Return the left-hand side coefficient matrix of the saddle point problem in canonical and scaled form.
+    auto clhs() const -> const SaddlePointMatrixCanonical&;
+
+    /// Return the right-hand side vector of the saddle point problem in canonical and scaled form.
+    auto crhs() const -> const SaddlePointVector&;
+
+    /// Return the indices of the basic variables.
+    auto ibasic() const -> const Indices&;
+
+    /// Return the indices of the non-basic variables.
+    auto inonbasic() const -> const Indices&;
+
+    /// Return the indices of the non-basic stable variables.
+    auto istable() const -> const Indices&;
+
+    /// Return the indices of the non-basic unstable variables.
+    auto iunstable() const -> const Indices&;
+
+private:
+    struct Impl;
+
+    std::unique_ptr<Impl> pimpl;
 };
 
 /// A type used to describe a saddle point problem.

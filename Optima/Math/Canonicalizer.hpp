@@ -68,6 +68,9 @@ public:
     /// Return the canonicalized matrix \eq{C = RAQ = [I\quad S]}`.
     auto C() const -> Matrix;
 
+    /// Return the indices of the variables describing its ordering after canonicalization.
+    auto ordering() const -> Indices;
+
     /// Return the indices of the linearly independent rows of the original matrix.
     auto ili() const -> Indices;
 

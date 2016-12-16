@@ -18,6 +18,104 @@
 #include "SaddlePointProblem.hpp"
 
 namespace Optima {
+
+struct SaddlePointProblem::Impl
+{
+    /// The left-hand side coefficient matrix of the saddle point problem in canonical and scaled form.
+    SaddlePointMatrixCanonical clhs;
+
+    /// The right-hand side vector of the saddle point problem in canonical and scaled form.
+    SaddlePointVector crhs;
+
+    /// The canonicalizer of the Jacobian matrix `A`.
+    Canonicalizer canonicalizer;
+
+    /// The auxiliary data to calculate the scaling of the saddle point problem.
+    Vector X, Z;
+
+    /// Canonicalize the Jacobian matrix `A` of the saddle point problem.
+    auto canonicalize(const SaddlePointMatrix& lhs) -> void
+    {
+        // Compute the canonical form of matrix A
+        canonicalizer.compute(lhs.A);
+    }
+
+    /// Update the left-hand side coefficient matrix of the saddle point problem.
+    auto lhs(const SaddlePointMatrix& lhs) -> void
+    {
+        // Alias to members of the saddle point matrix
+        const auto& H = lhs.H;
+
+        // Alias to members of the canonical saddle point matrix
+        auto& G        = clhs.G;
+        auto& Bb       = clhs.Bb;
+        auto& Bn       = clhs.Bn;
+        auto& E        = clhs.E;
+        auto& ordering = clhs.ordering;
+        auto& nb       = clhs.nb;
+        auto& nn       = clhs.nn;
+        auto& ns       = clhs.ns;
+        auto& nu       = clhs.nu;
+
+        // Update vectors X and Z
+        X.noalias() = lhs.X;
+        Z.noalias() = lhs.Z;
+
+        // Compute the scaled matrices G and E
+        G.noalias() =  X % H % X;
+        E.noalias() = -X % Z;
+
+        // Update the canonical form by selecting basic variables with largest X values
+        canonicalizer.update(X);
+
+        // Extract the S matrix, where `R*A*Q = [I S]`
+        const auto& S = canonicalizer.S();
+
+        // Update the indices of basic and non-basic variables
+        ordering = canonicalizer.ordering();
+        nb = canonicalizer.rows();
+        nn = canonicalizer.cols() - nb;
+
+        // Update the indices of stable and unstable non-basic variables
+        for(Index i = 0; i < nn; ++i)
+        {
+            const double j = ordering[nb + i];
+            const double Xj = X[j];
+            const double Zj = Z[j];
+            if(std::abs(Xj) <= std::abs(Zj))
+                std::swap(ordering[nb + i], ordering[nb + i]);
+        }
+
+        // Create a view to the basic and non-basic entries of X
+        auto Xb = rows(X, ibasic);
+        auto Xn = rows(X, inonbasic);
+
+        // Assemble the matrix G in the canonical saddle point matrix
+        Gb.noalias() = rows(G, ibasic);
+        Gs.noalias() = rows(rows(G, inonbasic), istable);
+        Gu.noalias() = rows(rows(G, inonbasic), iunstable);
+
+        // Assemble the matrix B in the canonical saddle point matrix
+        Bb.noalias() = Xb;
+        Bs.conservativeResize(ibasic.size(), istable.size());
+        Bu.conservativeResize(ibasic.size(), iunstable.size());
+        for(Index i = 0; i < istable.size(); ++i)
+            Bs.col(i).noalias() = S.col(istable[i]) * Xn[istable[i]];
+        for(Index i = 0; i < iunstable.size(); ++i)
+            Bu.col(i).noalias() = S.col(iunstable[i]) * Xn[iunstable[i]];
+
+        // Assemble the matrix E in the canonical saddle point matrix
+        Eb.noalias() = rows(E, ibasic);
+        Es.noalias() = rows(rows(E, inonbasic), istable);
+        Eu.noalias() = rows(rows(E, inonbasic), iunstable);
+    }
+
+    /// Update the right-hand side vector of the saddle point problem.
+    auto rhs(const SaddlePointVector& rhs) -> void;
+
+};
+
+
 //
 //auto SaddlePointProblemCanonical::compute(const SaddlePointProblem& problem) -> void
 //{
