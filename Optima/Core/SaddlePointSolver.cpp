@@ -108,7 +108,6 @@ struct SaddlePointSolver::Impl
 
         // Extract the S matrix, where `R*A*Q = [I S]`
         const auto& S = canonicalizer.S();
-        const auto& C = canonicalizer.C();
 
         // Update the indices of basic and non-basic variables
         ibasic = canonicalizer.ibasic();
