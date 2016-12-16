@@ -35,6 +35,9 @@ TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian"
 
     SaddlePointSolver solver;
     solver.canonicalize(lhs);
+
+    SaddlePointVector sol;
+
     SUBCASE("Hessian matrix is zero.")
     {
         lhs.H = zeros(n);
@@ -64,9 +67,8 @@ TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian"
             REQUIRE(lhs.valid());
             REQUIRE(rhs.valid());
 
-            SaddlePointVector sol;
             solver.decompose(lhs);
-            sol = solver.solve(rhs);
+            solver.solve(rhs, sol);
 
             auto actual = sol.convert();
             auto expected = ones(t);
@@ -109,9 +111,8 @@ TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian"
             REQUIRE(lhs.valid());
             REQUIRE(rhs.valid());
 
-            SaddlePointVector sol;
             solver.decompose(lhs);
-            sol = solver.solve(rhs);
+            solver.solve(rhs, sol);
 
             auto actual = sol.convert();
             auto expected = ones(t);

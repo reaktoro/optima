@@ -57,7 +57,7 @@ public:
     /// @note This method expects that a call to method @ref decompose has already been performed.
     /// @param rhs The right-hand side vector of the saddle point problem.
     /// @return The solution of the saddle point problem.
-    auto solve(const SaddlePointVector& rhs) -> SaddlePointVector;
+    auto solve(const SaddlePointVector& rhs, SaddlePointVector& sol) -> void;
 
 private:
     struct Impl;

@@ -166,7 +166,7 @@ struct SaddlePointSolver::Impl
         ldlt.compute(lhsxb);
     }
 
-    auto solve(const SaddlePointVector& rhs) -> SaddlePointVector
+    auto solve(const SaddlePointVector& rhs, SaddlePointVector& sol) -> void
     {
         // Alias to members of the saddle point vector
         const auto& a = rhs.x;
@@ -255,18 +255,18 @@ struct SaddlePointSolver::Impl
         czs.noalias() = tsp - cxs;
         cxu.noalias() = tup - czu;
 
-        SaddlePointVector solution;
-        solution.x.resize(n);
-        solution.y.resize(m);
-        solution.z.resize(n);
+        // Resize the solution vector
+        sol.x.resize(n);
+        sol.y.resize(m);
+        sol.z.resize(n);
 
-        auto xb = rows(solution.x, ibasic);
-        auto xn = rows(solution.x, inonbasic);
+        auto xb = rows(sol.x, ibasic);
+        auto xn = rows(sol.x, inonbasic);
         auto xs = rows(xn, istable);
         auto xu = rows(xn, iunstable);
-        auto& y = solution.y;
-        auto zb = rows(solution.z, ibasic);
-        auto zn = rows(solution.z, inonbasic);
+        auto& y = sol.y;
+        auto zb = rows(sol.z, ibasic);
+        auto zn = rows(sol.z, inonbasic);
         auto zs = rows(zn, istable);
         auto zu = rows(zn, iunstable);
 
@@ -287,8 +287,6 @@ struct SaddlePointSolver::Impl
         zb.noalias() =  Zb % czb;
         zs.noalias() =  Zs % czs;
         zu.noalias() =  Zu % czu;
-
-        return solution;
     }
 };
 
@@ -319,9 +317,9 @@ auto SaddlePointSolver::decompose(const SaddlePointMatrix& lhs) -> void
     pimpl->decompose(lhs);
 }
 
-auto SaddlePointSolver::solve(const SaddlePointVector& rhs) -> SaddlePointVector
+auto SaddlePointSolver::solve(const SaddlePointVector& rhs, SaddlePointVector& sol) -> void
 {
-    return pimpl->solve(rhs);
+    return pimpl->solve(rhs, sol);
 }
 
 } // namespace Optima
