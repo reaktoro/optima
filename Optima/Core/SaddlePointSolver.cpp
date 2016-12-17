@@ -115,7 +115,7 @@ struct SaddlePointSolver::Impl
 
         // Assemble the B matrix of the canonical saddle point problem, where `B = CX = [Xb SXn]`
         Bb.noalias() = Xb;
-        Bn.noalias() = S * Xn;
+        Bn.noalias() = S * diag(Xn);
 
         // Iterate over all non-basic variables and stop when Xn[i] < Zn[i]
         for(ns = 0; ns < nn; ++ns)
