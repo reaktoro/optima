@@ -26,128 +26,169 @@ namespace Optima {
 
 struct SaddlePointSolver::Impl
 {
-    /// The coefficient matrix of the saddle point problem in canonical form.
+    /// The left-hand side coefficient matrix of the saddle point problem in canonical and scaled form.
     SaddlePointMatrixCanonical clhs;
 
-    /// The right-hand side vector of the saddle point problem in canonical form.
-    SaddlePointVectorCanonical crhs;
+    /// The right-hand side vector of the saddle point problem in canonical and scaled form.
+    SaddlePointVector crhs;
 
-    /// The solution of the saddle point problem in canonical form.
-    SaddlePointVectorCanonical csol;
-
-    /// The canonicalizer of the coefficient matrix A.
+    /// The canonicalizer of the Jacobian matrix `A`.
     Canonicalizer canonicalizer;
 
-    /// The indices of the basic variables.
-    Indices ibasic;
-
-    /// The indices of the non-basic variables.
-    Indices inonbasic;
-
-    /// The indices of the stable variables among the non-basic variables.
-    Indices istable;
-
-    /// The indices of the unstable variables among the non-basic variables.
-    Indices iunstable;
-
     /// The auxiliary data to calculate the scaling of the saddle point problem.
-    Vector G, E, X, Z, r, t;
+    Vector X, Z;
+
+    /// The threshold parameter used to detect unstable variables.
+    double epsilon = 1e-15;
 
     /// The coefficient matrix of the linear system used to compute `xb`
-    Matrix lhsxb;
+    Matrix lhs_xb;
 
     /// The right-hand side vector of the linear system used to compute `xb`
-    Vector rhsxb;
+    Vector rhs_xb;
 
-    /// The LDLT solver applied to `lhsxb` to compute `xb`
+    /// The LDLT solver applied to `lhs_xb` to compute `xb`
     Eigen::LDLT<Matrix> ldlt;
 
     /// Canonicalize the coefficient matrix \eq{A} of the saddle point problem.
     auto canonicalize(const SaddlePointMatrix& lhs) -> void
     {
-        // Alias to members of the saddle point matrix
-        const auto& A = lhs.A;
-
         // Compute the canonical form of matrix A
-        canonicalizer.compute(A);
-
-        // Reserve memory to index related members
-        ibasic.reserve(A.rows());
-        inonbasic.reserve(A.cols());
-        istable.reserve(A.cols());
-        iunstable.reserve(A.cols());
+        canonicalizer.compute(lhs.A);
     }
 
-    /// Decompose the coefficient matrix of the saddle point problem.
-    auto decompose(const SaddlePointMatrix& lhs) -> void
+    /// Update the scaled form of the left-hand side canonical saddle point matrix.
+    auto scale(const SaddlePointMatrix& lhs) -> void
     {
+        // Alias to members of the canonical saddle point matrix
+        auto& G  = clhs.G;
+        auto& E  = clhs.E;
+        auto& Bb = clhs.Bb;
+        auto& Bn = clhs.Bn;
+        auto& nb = clhs.nb;
+        auto& nn = clhs.nn;
+        auto& ns = clhs.ns;
+        auto& nu = clhs.nu;
+
+        // Alias to permutation matrix Q of the canonical form `C = RAQ = [I S]`.
+        const auto& Q = canonicalizer.Q();
+
+        // Alias to matrix S of the canonical form `C = RAQ = [I S]`.
+        const auto& S = canonicalizer.S();
+
         // Alias to members of the saddle point matrix
         const auto& H = lhs.H;
 
-        // Alias to members of the canonical saddle point matrix
-        auto& Gb = clhs.Gb;
-        auto& Gs = clhs.Gs;
-        auto& Gu = clhs.Gu;
-        auto& Bb = clhs.Bb;
-        auto& Bs = clhs.Bs;
-        auto& Bu = clhs.Bu;
-        auto& Eb = clhs.Eb;
-        auto& Es = clhs.Es;
-        auto& Eu = clhs.Eu;
-
-        // Update vectors X and Z
+        // Update member vectors X and Z
         X.noalias() = lhs.X;
         Z.noalias() = lhs.Z;
+
+        // Update the canonical form and the ordering of the variables with current X values
+        canonicalizer.update(X);
+
+        // The number of rows and columns of the canonical form of A
+        const Index m = canonicalizer.rows();
+        const Index n = canonicalizer.cols();
+
+        // Set the number of basic and non-basic variables of the canonical saddle point problem
+        nb = m;
+        nn = n - nb;
 
         // Compute the scaled matrices G and E
         G.noalias() =  X % H % X;
         E.noalias() = -X % Z;
 
-        // Update the canonical form by selecting basic variables with largest X values
-        canonicalizer.update(X);
+        // Permute the rows of X and Z according to the ordering of the permutation matrix Q
+        Q.transpose().applyThisOnTheLeft(X);
+        Q.transpose().applyThisOnTheLeft(Z);
 
-        // Extract the S matrix, where `R*A*Q = [I S]`
-        const auto& S = canonicalizer.S();
+        // Create views to the basic and non-basic parts of X, now ordered as X = [Xb Xn]
+        auto Xb = X.head(nb);
+        auto Xn = X.tail(nn);
 
-        // Update the indices of basic and non-basic variables
-        ibasic = canonicalizer.ibasic();
-        inonbasic = canonicalizer.inonbasic();
+        // Create a view to the non-basic part of Z, now ordered as Z = [Zb Zn]
+        auto Zn = Z.tail(nn);
 
-        // Update the indices of stable and unstable non-basic variables
-        istable.clear();
-        iunstable.clear();
-        for(Index i = 0; i < inonbasic.size(); ++i)
-        {
-            const double j = inonbasic[i];
-            const double Xj = X[j];
-            const double Zj = Z[j];
-            if(std::abs(Xj) > std::abs(Zj))
-                istable.push_back(i);
-            else iunstable.push_back(i);
-        }
+        // Permute the rows of G and E according to the ordering of the permutation matrix Q
+        Q.transpose().applyThisOnTheLeft(G); // Q.transpose() * G * Q; // in the dense case!
+        Q.transpose().applyThisOnTheLeft(E);
 
-        // Create a view to the basic and non-basic entries of X
-        auto Xb = rows(X, ibasic);
-        auto Xn = rows(X, inonbasic);
-
-        // Assemble the matrix G in the canonical saddle point matrix
-        Gb.noalias() = rows(G, ibasic);
-        Gs.noalias() = rows(rows(G, inonbasic), istable);
-        Gu.noalias() = rows(rows(G, inonbasic), iunstable);
-
-        // Assemble the matrix B in the canonical saddle point matrix
+        // Assemble the B matrix of the canonical saddle point problem, where `B = CX = [Xb SXn]`
         Bb.noalias() = Xb;
-        Bs.conservativeResize(ibasic.size(), istable.size());
-        Bu.conservativeResize(ibasic.size(), iunstable.size());
-        for(Index i = 0; i < istable.size(); ++i)
-            Bs.col(i).noalias() = S.col(istable[i]) * Xn[istable[i]];
-        for(Index i = 0; i < iunstable.size(); ++i)
-            Bu.col(i).noalias() = S.col(iunstable[i]) * Xn[iunstable[i]];
+        Bn.noalias() = S * Xn;
 
-        // Assemble the matrix E in the canonical saddle point matrix
-        Eb.noalias() = rows(E, ibasic);
-        Es.noalias() = rows(rows(E, inonbasic), istable);
-        Eu.noalias() = rows(rows(E, inonbasic), iunstable);
+        // Iterate over all non-basic variables and stop when Xn[i] < Zn[i]
+        for(ns = 0; ns < nn; ++ns)
+            if(std::abs(Xn[ns]) < std::abs(Zn[ns]))
+                break;
+
+        // Set the number of non-basic unstable variables
+        nu = nn - ns;
+
+        // TODO Update basic, non-basic, stable and unstable matrix/vector views here
+    }
+
+    /// Update the scaled form of the right-hand side canonical saddle point vector.
+    auto scale(const SaddlePointVector& rhs) -> void
+    {
+        // Alias to members of the saddle point vector.
+        const auto& a = rhs.x;
+        const auto& b = rhs.y;
+        const auto& c = rhs.z;
+
+        // Alias to permutation matrix Q of the canonical form `C = RAQ = [I S]`.
+        const auto& Q = canonicalizer.Q();
+
+        // Alias to canonicalizer matrix R of the canonical form `C = RAQ = [I S]`.
+        const auto& R = canonicalizer.R();
+
+        // Alias to members of the canonical saddle point vector.
+        auto& r = crhs.x;
+        auto& s = crhs.y;
+        auto& t = crhs.z;
+
+        // Calculate the right-hand side vector of the canonical saddle point problem
+        r.noalias() =  a;
+        s.noalias() =  R*b;
+        t.noalias() = -c;
+
+        // Permute the rows of r and t according to the ordering of the permutation matrix Q.
+        Q.transpose().applyThisOnTheLeft(r);
+        Q.transpose().applyThisOnTheLeft(t);
+
+        // Finalize the computation of vector r as `r = Xa`, noting that X has ordering `X = [Xb Xn]`.
+        r.noalias() = X % r;
+
+        // TODO Update basic, non-basic, stable and unstable matrix/vector views here
+    }
+
+    /// Decompose the coefficient matrix of the saddle point problem.
+    auto decompose(const SaddlePointMatrix& lhs) -> void
+    {
+        // Alias to members of the canonical saddle point matrix
+        const auto& G  = clhs.G;
+        const auto& E  = clhs.E;
+        const auto& Bb = clhs.Bb;
+        const auto& Bn = clhs.Bn;
+        const auto& nb = clhs.nb;
+        const auto& nn = clhs.nn;
+        const auto& ns = clhs.ns;
+        const auto& nu = clhs.nu;
+
+        // Scale the given saddle point matrix to update its canonical form `clhs`
+        scale(lhs);
+
+        // Create views to the basic, non-basic, stable, and unstable blocks of matrices G, E, and B.
+        auto Gb =  G.head(nb);
+        auto Gn =  G.tail(nn);
+        auto Gs = Gn.head(ns);
+        auto Gu = Gn.tail(nu);
+        auto Eb =  E.head(nb);
+        auto En =  E.tail(nn);
+        auto Es = En.head(ns);
+        auto Eu = En.tail(nu);
+        auto Bs = Bn.leftCols(ns);
+        auto Bu = Bn.rightCols(nu);
 
         // Define auxiliary light-weight matrix expressions
         auto GbEb = Gb - Eb;
@@ -157,69 +198,79 @@ struct SaddlePointSolver::Impl
         auto BbBu = diag(inv(Bb)) * Bu;
 
         // Assemble the left-hand side matrix of the linear system to compute `xb`
-        lhsxb = diag(inv(GbEb));
-        lhsxb += BbBs*diag(inv(GsEs))*tr(BbBs);
-        lhsxb += BbBu*diag(inv(GuEu))*tr(BbBu);
+        lhs_xb = diag(inv(GbEb));
+        lhs_xb += BbBs*diag(inv(GsEs))*tr(BbBs);
+        lhs_xb += BbBu*diag(inv(GuEu))*tr(BbBu);
 
-        // Compute the LDLT decomposition of `lhsxb`.
-        ldlt.compute(lhsxb);
+        // Compute the LDLT decomposition of `lhs_xb`.
+        ldlt.compute(lhs_xb);
     }
 
     auto solve(const SaddlePointVector& rhs, SaddlePointVector& sol) -> void
     {
-        // Alias to members of the saddle point vector
-        const auto& a = rhs.x;
-        const auto& b = rhs.y;
-        const auto& c = rhs.z;
-
         // Alias to members of the canonical saddle point matrix
-        auto& Gb = clhs.Gb;
-        auto& Gs = clhs.Gs;
-        auto& Gu = clhs.Gu;
-        auto& Bb = clhs.Bb;
-        auto& Bs = clhs.Bs;
-        auto& Bu = clhs.Bu;
-        auto& Eb = clhs.Eb;
-        auto& Es = clhs.Es;
-        auto& Eu = clhs.Eu;
+        const auto& G  = clhs.G;
+        const auto& E  = clhs.E;
+        const auto& Bb = clhs.Bb;
+        const auto& Bn = clhs.Bn;
+        const auto& nb = clhs.nb;
+        const auto& nn = clhs.nn;
+        const auto& ns = clhs.ns;
+        const auto& nu = clhs.nu;
 
-        // Alias to members of the canonical saddle point vector
-        auto& rb = crhs.xb;
-        auto& rs = crhs.xs;
-        auto& ru = crhs.xu;
-        auto&  s = crhs.y ;
-        auto& tb = crhs.zb;
-        auto& ts = crhs.zs;
-        auto& tu = crhs.zu;
+        // Alias to members of the canonical saddle point vector.
+        const auto& r = crhs.x;
+        const auto& s = crhs.y;
+        const auto& t = crhs.z;
 
-        // Alias to members of the canonical solution vector
-        auto& cxb = csol.xb;
-        auto& cxs = csol.xs;
-        auto& cxu = csol.xu;
-        auto& cy  = csol.y;
-        auto& czb = csol.zb;
-        auto& czs = csol.zs;
-        auto& czu = csol.zu;
+        // Scale the given saddle point vector to update its canonical form `crhs`
+        scale(rhs);
 
-        // Get the R matrix, where `R*A*Q = [I S]`
-        const auto& R = canonicalizer.R();
+        // Create views to the basic, non-basic, stable, and unstable blocks of matrices G, E, X, and B.
+        auto Gb =  G.head(nb);
+        auto Gn =  G.tail(nn);
+        auto Gs = Gn.head(ns);
+        auto Gu = Gn.tail(nu);
+        auto Eb =  E.head(nb);
+        auto En =  E.tail(nn);
+        auto Es = En.head(ns);
+        auto Eu = En.tail(nu);
+        auto Bs = Bn.leftCols(ns);
+        auto Bu = Bn.rightCols(nu);
 
-        // The number of rows and columns of the canonical matrix A
+        // Create views to the basic, non-basic, stable, and unstable blocks of vectors r and t.
+        auto rb =  r.head(nb);
+        auto rn =  r.tail(nn);
+        auto rs = rn.head(ns);
+        auto ru = rn.tail(nu);
+        auto tb =  t.head(nb);
+        auto tn =  t.tail(nn);
+        auto ts = tn.head(ns);
+        auto tu = tn.tail(nu);
+
+        // Alias to members of the saddle point solution vector
+        auto& x = sol.x;
+        auto& y = sol.y;
+        auto& z = sol.z;
+
+        // The number of rows and columns of the canonical form of A
         const Index m = canonicalizer.rows();
         const Index n = canonicalizer.cols();
 
-        // Update scaled right-hand side vectors r and t
-        r.noalias() =  X % a;
-        t.noalias() = -c;
+        // Resize the saddle point solution vector
+        x.resize(n);
+        y.resize(m);
+        z.resize(n);
 
-        // Assemble the canonical right-hand side saddle point vector
-        rb.noalias() = rows(r, ibasic);
-        rs.noalias() = rows(rows(r, inonbasic), istable);
-        ru.noalias() = rows(rows(r, inonbasic), iunstable);
-         s.noalias() = R * b;
-        tb.noalias() = rows(t, ibasic);
-        ts.noalias() = rows(rows(t, inonbasic), istable);
-        tu.noalias() = rows(rows(t, inonbasic), iunstable);
+        // Create views to the basic, non-basic, stable, and unstable blocks of vectors x, y, z.
+        auto xb =  x.head(nb);
+        auto xn =  x.tail(nn);
+        auto xs = xn.head(ns);
+        auto xu = xn.tail(nu);
+        auto zb =  z.head(nb);
+        auto zn =  z.tail(nn);
+        auto zs = zn.head(ns);
+        auto zu = zn.tail(nu);
 
         // Define auxiliary light-weight matrix expressions
         auto rbp  = rb - tb;
@@ -237,55 +288,51 @@ struct SaddlePointSolver::Impl
         auto GuEu = Gu - Eu;
 
         // Assemble the right-hand side vector of the linear system to compute `xb`
-        rhsxb = spp;
-        rhsxb.noalias() += Bsp*diag(inv(GsEs))*tr(Bsp)*rbp;
-        rhsxb.noalias() += Bup*diag(inv(GuEu))*tr(Bup)*rbp;
-        rhsxb.noalias() -= Bsp*(rsp/GsEs);
-        rhsxb.noalias() -= Bup*(rup/GuEu);
+        rhs_xb = spp;
+        rhs_xb.noalias() += Bsp*diag(inv(GsEs))*tr(Bsp)*rbp;
+        rhs_xb.noalias() += Bup*diag(inv(GuEu))*tr(Bup)*rbp;
+        rhs_xb.noalias() -= Bsp*(rsp/GsEs);
+        rhs_xb.noalias() -= Bup*(rup/GuEu);
 
         // Compute the canonical variables x, y, z
-        cxb.noalias() = ldlt.solve(rhsxb);
-         cy.noalias() = rbp - cxb;
-        cxb.noalias() = cxb/GbEb;
-        cxs.noalias() = (rsp - tr(Bsp)*cy)/GsEs;
-        czu.noalias() = (tr(Bup)*cy - rup)/GuEu;
-         cy.noalias() = cy/Bb;
-        czb.noalias() = tbp - cxb;
-        czs.noalias() = tsp - cxs;
-        cxu.noalias() = tup - czu;
+        xb.noalias() = ldlt.solve(rhs_xb);
+         y.noalias() = rbp - xb;
+        xb.noalias() = xb/GbEb;
+        xs.noalias() = (rsp - tr(Bsp)*y)/GsEs;
+        zu.noalias() = (tr(Bup)*y - rup)/GuEu;
+         y.noalias() = y/Bb;
+        zb.noalias() = tbp - xb;
+        zs.noalias() = tsp - xs;
+        xu.noalias() = tup - zu;
 
-        // Resize the solution vector
-        sol.x.resize(n);
-        sol.y.resize(m);
-        sol.z.resize(n);
+        // Alias to canonicalizer matrix R of the canonical form `C = RAQ = [I S]`.
+        const auto& R = canonicalizer.R();
 
-        auto xb = rows(sol.x, ibasic);
-        auto xn = rows(sol.x, inonbasic);
-        auto xs = rows(xn, istable);
-        auto xu = rows(xn, iunstable);
-        auto& y = sol.y;
-        auto zb = rows(sol.z, ibasic);
-        auto zn = rows(sol.z, inonbasic);
-        auto zs = rows(zn, istable);
-        auto zu = rows(zn, iunstable);
+        // Create views to the basic, non-basic, stable, and unstable blocks of matrices X and Z.
+        auto Xb =  X.head(nb);
+        auto Xn =  X.tail(nn);
+        auto Xs = Xn.head(ns);
+        auto Xu = Xn.tail(nu);
+        auto Zb =  Z.head(nb);
+        auto Zn =  Z.tail(nn);
+        auto Zs = Zn.head(ns);
+        auto Zu = Zn.tail(nu);
 
-        auto Xb = rows(X, ibasic);
-        auto Xn = rows(X, inonbasic);
-        auto Xs = rows(Xn, istable);
-        auto Xu = rows(Xn, iunstable);
+        // Finalize the computation of the original variables x, y, z.
+        xb.noalias() =  Xb % xb;
+        xs.noalias() =  Xs % xs;
+        xu.noalias() =  Xu % xu;
+         y = -tr(R) * y;
+        zb.noalias() =  Zb % zb;
+        zs.noalias() =  Zs % zs;
+        zu.noalias() =  Zu % zu;
 
-        auto Zb = rows(Z, ibasic);
-        auto Zn = rows(Z, inonbasic);
-        auto Zs = rows(Zn, istable);
-        auto Zu = rows(Zn, iunstable);
+        // Alias to permutation matrix Q of the canonical form `C = RAQ = [I S]`.
+        const auto& Q = canonicalizer.Q();
 
-        xb.noalias() =  Xb % cxb;
-        xs.noalias() =  Xs % cxs;
-        xu.noalias() =  Xu % cxu;
-         y.noalias() = -tr(R) * cy;
-        zb.noalias() =  Zb % czb;
-        zs.noalias() =  Zs % czs;
-        zu.noalias() =  Zu % czu;
+        // Permute back the variables x and z to their original ordering
+        Q.applyThisOnTheLeft(x);
+        Q.applyThisOnTheLeft(z);
     }
 };
 

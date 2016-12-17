@@ -33,6 +33,9 @@ struct SaddlePointProblem::Impl
     /// The auxiliary data to calculate the scaling of the saddle point problem.
     Vector X, Z;
 
+    /// The threshold parameter used to detect unstable variables.
+    double eps = 1e-15;
+
     /// Canonicalize the Jacobian matrix `A` of the saddle point problem.
     auto canonicalize(const SaddlePointMatrix& lhs) -> void
     {
@@ -47,67 +50,61 @@ struct SaddlePointProblem::Impl
         const auto& H = lhs.H;
 
         // Alias to members of the canonical saddle point matrix
-        auto& G        = clhs.G;
-        auto& Bb       = clhs.Bb;
-        auto& Bn       = clhs.Bn;
-        auto& E        = clhs.E;
-        auto& ordering = clhs.ordering;
-        auto& nb       = clhs.nb;
-        auto& nn       = clhs.nn;
-        auto& ns       = clhs.ns;
-        auto& nu       = clhs.nu;
+        auto& G  = clhs.G;
+        auto& Bb = clhs.Bb;
+        auto& Bn = clhs.Bn;
+        auto& E  = clhs.E;
+        auto& nb = clhs.nb;
+        auto& nn = clhs.nn;
+        auto& ns = clhs.ns;
+        auto& nu = clhs.nu;
 
         // Update vectors X and Z
         X.noalias() = lhs.X;
         Z.noalias() = lhs.Z;
 
+        // Update the canonical form and the variables order with currect X values
+        canonicalizer.update(X);
+
+        // The number of rows and columns of the canonical form of A
+        const Index m = canonicalizer.rows();
+        const Index n = canonicalizer.cols();
+
+        // Set the number of basic and non-basic variables
+        nb = m;
+        nn = n - nb;
+
         // Compute the scaled matrices G and E
         G.noalias() =  X % H % X;
         E.noalias() = -X % Z;
 
-        // Update the canonical form by selecting basic variables with largest X values
-        canonicalizer.update(X);
-
-        // Extract the S matrix, where `R*A*Q = [I S]`
+        // Get the updated ordering of the variables
+        const auto& Q = canonicalizer.Q();
         const auto& S = canonicalizer.S();
 
-        // Update the indices of basic and non-basic variables
-        ordering = canonicalizer.ordering();
-        nb = canonicalizer.rows();
-        nn = canonicalizer.cols() - nb;
+//        G.noalias() = Q.transpose() * G * Q; dense case
+        X.noalias() = X * Q;
+        Z.noalias() = Z * Q;
 
-        // Update the indices of stable and unstable non-basic variables
-        for(Index i = 0; i < nn; ++i)
-        {
-            const double j = ordering[nb + i];
-            const double Xj = X[j];
-            const double Zj = Z[j];
-            if(std::abs(Xj) <= std::abs(Zj))
-                std::swap(ordering[nb + i], ordering[nb + i]);
-        }
+        auto Xb = X.head(nb);
+        auto Xn = X.tail(nn);
 
-        // Create a view to the basic and non-basic entries of X
-        auto Xb = rows(X, ibasic);
-        auto Xn = rows(X, inonbasic);
-
-        // Assemble the matrix G in the canonical saddle point matrix
-        Gb.noalias() = rows(G, ibasic);
-        Gs.noalias() = rows(rows(G, inonbasic), istable);
-        Gu.noalias() = rows(rows(G, inonbasic), iunstable);
-
-        // Assemble the matrix B in the canonical saddle point matrix
+        G.noalias()  = G * Q;
+        E.noalias()  = E * Q;
         Bb.noalias() = Xb;
-        Bs.conservativeResize(ibasic.size(), istable.size());
-        Bu.conservativeResize(ibasic.size(), iunstable.size());
-        for(Index i = 0; i < istable.size(); ++i)
-            Bs.col(i).noalias() = S.col(istable[i]) * Xn[istable[i]];
-        for(Index i = 0; i < iunstable.size(); ++i)
-            Bu.col(i).noalias() = S.col(iunstable[i]) * Xn[iunstable[i]];
+        Bn.noalias() = S * Xn;
 
-        // Assemble the matrix E in the canonical saddle point matrix
-        Eb.noalias() = rows(E, ibasic);
-        Es.noalias() = rows(rows(E, inonbasic), istable);
-        Eu.noalias() = rows(rows(E, inonbasic), iunstable);
+        // Find the number of non-basic stable variables.
+        const double minXb = std::abs(Xb.minCoeff());
+        const double threshold = eps * minXb;
+
+        // Iterate over all non-basic variables and determine the first that is considered "too small"
+        for(ns = 0; ns < nn; ++ns)
+            if(std::abs(Xn[ns]) < threshold)
+                break;
+
+        // Set the number of non-basic unstable variables
+        nu = nn - ns;
     }
 
     /// Update the right-hand side vector of the saddle point problem.

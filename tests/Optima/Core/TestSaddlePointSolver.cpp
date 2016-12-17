@@ -24,8 +24,8 @@ using namespace Optima;
 
 TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian")
 {
-    Index m = 10;
-    Index n = 50;
+    Index m = 2;
+    Index n = 3;
     Index t = 2*n + m;
 
     SaddlePointMatrix lhs;
@@ -37,6 +37,9 @@ TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian"
     solver.canonicalize(lhs);
 
     SaddlePointVector sol;
+
+    const Vector expected = linspace(t, 1, t);
+//    const Vector expected = ones(t);
 
     SUBCASE("Hessian matrix is zero.")
     {
@@ -56,7 +59,7 @@ TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian"
             lhs.Z.head(n - m) *= 10.0;
 
             Matrix A = lhs.convert();
-            Vector b = A * ones(t);
+            Vector b = A * expected;
             Vector x = A.lu().solve(b);
 
             SaddlePointVector rhs;
@@ -71,7 +74,6 @@ TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian"
             solver.solve(rhs, sol);
 
             auto actual = sol.convert();
-            auto expected = ones(t);
 
             CHECK(actual.isApprox(x));
 
@@ -100,7 +102,7 @@ TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian"
             lhs.Z.head(n - m) *= 10.0;
 
             Matrix A = lhs.convert();
-            Vector b = A * ones(t);
+            Vector b = A * expected;
             Vector x = A.lu().solve(b);
 
             SaddlePointVector rhs;
@@ -115,7 +117,6 @@ TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian"
             solver.solve(rhs, sol);
 
             auto actual = sol.convert();
-            auto expected = ones(t);
 
             CHECK(actual.isApprox(x));
 

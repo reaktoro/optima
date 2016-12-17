@@ -78,9 +78,6 @@ struct SaddlePointMatrixCanonical
     /// The diagonal matrix `E = diag(Eb, Es, Eu)` in the coefficient matrix.
     Vector E;
 
-    /// The indices of the variables describing their ordering in the canonical form.
-    Indices ordering;
-
     /// The number of basic variables.
     Index nb;
 

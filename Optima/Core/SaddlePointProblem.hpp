@@ -70,7 +70,7 @@ struct SaddlePointProblemCanonical
 	SaddlePointMatrixCanonical lhs;
 
 	/// The right-hand side vector of the canonical saddle point problem.
-	SaddlePointVectorCanonical rhs;
+	SaddlePointVector rhs;
 
 	/// Compute the canonical form of a given SaddlePointProblem.
 	/// @param problem The SaddlePointProblem for which the canonical form is calculated.
