@@ -244,7 +244,7 @@ auto Canonicalizer::update(const Vector& w) -> void
 	auto wn = Optima::rows(w, inonbasic);
 
 	// Swap basic and non-basic components when the latter has higher weight
-	for(Index i = 0; i < m; ++i)
+	if(n > m) for(Index i = 0; i < m; ++i)
 	{
         Index j;
 		const double wi = std::abs(w[ibasic[i]]);
