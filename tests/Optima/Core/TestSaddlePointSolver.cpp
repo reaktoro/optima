@@ -24,8 +24,8 @@ using namespace Optima;
 
 TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian")
 {
-    Index m = 10;
-    Index n = 50;
+    Index m = 2;
+    Index n = 3;
     Index t = 2*n + m;
 
     SaddlePointMatrix lhs;
@@ -34,11 +34,14 @@ TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian"
     lhs.Z = abs(random(n));
 
     SaddlePointSolver solver;
+    solver.fixed({0}, {0});
     solver.canonicalize(lhs);
 
     SaddlePointVector sol;
 
-    const Vector expected = linspace(t, 1, t);
+    Vector expected = linspace(t, 1, t);
+    expected[0] = 0;
+    expected[n + m] = 0;
 
     SUBCASE("Hessian matrix is zero.")
     {
@@ -59,6 +62,11 @@ TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian"
 
             Matrix A = lhs.convert();
             Vector b = A * expected;
+            A.row(0).fill(0.0);
+            A.col(0).fill(0.0);
+            A(0,0) = 1.0;
+            b[0] = 0.0;
+
             Vector x = A.lu().solve(b);
 
             SaddlePointVector rhs;

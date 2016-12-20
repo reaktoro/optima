@@ -41,6 +41,11 @@ public:
     /// Assign a SaddlePointSolver instance to this.
     auto operator=(SaddlePointSolver other) -> SaddlePointSolver&;
 
+    /// Set the indices and the values of the fixed \eq{x} variables.
+    /// @param ifixed The indices of the fixed variables.
+    /// @param xfixed The values of the fixed variables.
+    auto fixed(const Indices& ifixed, const Vector& xfixed) -> void;
+
     /// Canonicalize the coefficient matrix \eq{A} of the saddle point problem.
     /// @note This method should be called before the @ref decompose method. However, it does not
     /// need to be called again if matrix \eq{A} of the saddle point problem is the same as in the

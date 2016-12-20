@@ -38,6 +38,15 @@ struct SaddlePointSolver::Impl
     /// The auxiliary data to calculate the scaling of the saddle point problem.
     Vector X, Z;
 
+    /// The weights for the update of the canonical form.
+    Vector W;
+
+    /// The indices of the fixed variables.
+    Indices ifixed;
+
+    /// The values of the fixed variables.
+    Vector xfixed;
+
     /// The threshold parameter used to detect unstable variables.
     double epsilon = 1e-15;
 
@@ -83,16 +92,26 @@ struct SaddlePointSolver::Impl
         X.noalias() = lhs.X;
         Z.noalias() = lhs.Z;
 
+        // Update the weights for the updating of the canonical form.
+        W.noalias() = X;
+
+        // Prevent fixed variables from becoming basic variables by setting their
+        // weights to zero. They will be moved to the end of the variable list.
+        rows(W, ifixed).fill(0.0);
+
         // Update the canonical form and the ordering of the variables with current X values
-        canonicalizer.update(X);
+        canonicalizer.update(W);
 
         // The number of rows and columns of the canonical form of A
         const Index m = canonicalizer.rows();
         const Index n = canonicalizer.cols();
 
+        // The number of fixed variables
+        const Index nf = ifixed.size();
+
         // Set the number of basic and non-basic variables of the canonical saddle point problem
         nb = m;
-        nn = n - nb;
+        nn = n - nf - nb;
 
         // Compute the scaled matrices G and E
         G.noalias() =  X % H % X;
@@ -102,20 +121,23 @@ struct SaddlePointSolver::Impl
         Q.transpose().applyThisOnTheLeft(X);
         Q.transpose().applyThisOnTheLeft(Z);
 
-        // Create views to the basic and non-basic parts of X, now ordered as X = [Xb Xn]
+        // Create views to the basic and non-basic parts of X, now ordered as X = [Xb Xn Xf]
         auto Xb = X.head(nb);
-        auto Xn = X.tail(nn);
+        auto Xn = X.segment(nb, nn);
 
-        // Create a view to the non-basic part of Z, now ordered as Z = [Zb Zn]
-        auto Zn = Z.tail(nn);
+        // Create a view to the non-basic part of Z, now ordered as Z = [Zb Zn Zf]
+        auto Zn = Z.segment(nb, nn);
 
         // Permute the rows of G and E according to the ordering of the permutation matrix Q
         Q.transpose().applyThisOnTheLeft(G); // Q.transpose() * G * Q; // in the dense case!
         Q.transpose().applyThisOnTheLeft(E);
 
+        // Create a view to the Sn matrix in `S = [Sn Sf]`
+        auto Sn = S.leftCols(nn);
+
         // Assemble the B matrix of the canonical saddle point problem, where `B = CX = [Xb SXn]`
         Bb.noalias() = Xb;
-        Bn.noalias() = S * diag(Xn);
+        Bn.noalias() = Sn * diag(Xn);
 
         // Iterate over all non-basic variables and stop when Xn[i] < Zn[i]
         for(ns = 0; ns < nn; ++ns)
@@ -180,11 +202,11 @@ struct SaddlePointSolver::Impl
 
         // Create views to the basic, non-basic, stable, and unstable blocks of matrices G, E, and B.
         auto Gb =  G.head(nb);
-        auto Gn =  G.tail(nn);
+        auto Gn =  G.segment(nb, nn);
         auto Gs = Gn.head(ns);
         auto Gu = Gn.tail(nu);
         auto Eb =  E.head(nb);
-        auto En =  E.tail(nn);
+        auto En =  E.segment(nb, nn);
         auto Es = En.head(ns);
         auto Eu = En.tail(nu);
         auto Bs = Bn.leftCols(ns);
@@ -228,11 +250,11 @@ struct SaddlePointSolver::Impl
 
         // Create views to the basic, non-basic, stable, and unstable blocks of matrices G, E, X, and B.
         auto Gb =  G.head(nb);
-        auto Gn =  G.tail(nn);
+        auto Gn =  G.segment(nb, nn);
         auto Gs = Gn.head(ns);
         auto Gu = Gn.tail(nu);
         auto Eb =  E.head(nb);
-        auto En =  E.tail(nn);
+        auto En =  E.segment(nb, nn);
         auto Es = En.head(ns);
         auto Eu = En.tail(nu);
         auto Bs = Bn.leftCols(ns);
@@ -240,11 +262,11 @@ struct SaddlePointSolver::Impl
 
         // Create views to the basic, non-basic, stable, and unstable blocks of vectors r and t.
         auto rb =  r.head(nb);
-        auto rn =  r.tail(nn);
+        auto rn =  r.segment(nb, nn);
         auto rs = rn.head(ns);
         auto ru = rn.tail(nu);
         auto tb =  t.head(nb);
-        auto tn =  t.tail(nn);
+        auto tn =  t.segment(nb, nn);
         auto ts = tn.head(ns);
         auto tu = tn.tail(nu);
 
@@ -264,11 +286,11 @@ struct SaddlePointSolver::Impl
 
         // Create views to the basic, non-basic, stable, and unstable blocks of vectors x, y, z.
         auto xb =  x.head(nb);
-        auto xn =  x.tail(nn);
+        auto xn =  x.segment(nb, nn);
         auto xs = xn.head(ns);
         auto xu = xn.tail(nu);
         auto zb =  z.head(nb);
-        auto zn =  z.tail(nn);
+        auto zn =  z.segment(nb, nn);
         auto zs = zn.head(ns);
         auto zu = zn.tail(nu);
 
@@ -310,11 +332,11 @@ struct SaddlePointSolver::Impl
 
         // Create views to the basic, non-basic, stable, and unstable blocks of matrices X and Z.
         auto Xb =  X.head(nb);
-        auto Xn =  X.tail(nn);
+        auto Xn =  X.segment(nb, nn);
         auto Xs = Xn.head(ns);
         auto Xu = Xn.tail(nu);
         auto Zb =  Z.head(nb);
-        auto Zn =  Z.tail(nn);
+        auto Zn =  Z.segment(nb, nn);
         auto Zs = Zn.head(ns);
         auto Zu = Zn.tail(nu);
 
@@ -333,6 +355,13 @@ struct SaddlePointSolver::Impl
         // Permute back the variables x and z to their original ordering
         Q.applyThisOnTheLeft(x);
         Q.applyThisOnTheLeft(z);
+
+        // Set the values of the fixed x variables
+        for(Index i = 0; i < ifixed.size(); ++i)
+        {
+            x[ifixed[i]] = xfixed[i];
+            z[ifixed[i]] = 0.0;
+        }
     }
 };
 
@@ -351,6 +380,12 @@ auto SaddlePointSolver::operator=(SaddlePointSolver other) -> SaddlePointSolver&
 {
     pimpl = std::move(other.pimpl);
     return *this;
+}
+
+auto SaddlePointSolver::fixed(const Indices& ifixed, const Vector& xfixed) -> void
+{
+    pimpl->ifixed = ifixed;
+    pimpl->xfixed = xfixed;
 }
 
 auto SaddlePointSolver::canonicalize(const SaddlePointMatrix& lhs) -> void
