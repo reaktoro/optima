@@ -24,8 +24,8 @@ using namespace Optima;
 
 TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian")
 {
-    Index m = 2;
-    Index n = 3;
+    Index m = 10;
+    Index n = 15;
     Index t = 2*n + m;
 
     SaddlePointMatrix lhs;
@@ -33,14 +33,15 @@ TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian"
     lhs.X = abs(random(n));
     lhs.Z = abs(random(n));
 
+
     SaddlePointSolver solver;
-    solver.fixed({0}, {0});
+    solver.fixed({0}, {2});
     solver.canonicalize(lhs);
 
     SaddlePointVector sol;
 
     Vector expected = linspace(t, 1, t);
-    expected[0] = 0;
+    expected[0] = 2;
     expected[n + m] = 0;
 
     SUBCASE("Hessian matrix is zero.")
@@ -61,55 +62,14 @@ TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian"
             lhs.Z.head(n - m) *= 10.0;
 
             Matrix A = lhs.convert();
-            Vector b = A * expected;
             A.row(0).fill(0.0);
-            A.col(0).fill(0.0);
             A(0,0) = 1.0;
-            b[0] = 0.0;
+            A(0,0) = 1.0;
+            A(n+m,0) = 0.0; // Z
+            A(n+m,n+m) = 1.0; // X
 
-            Vector x = A.lu().solve(b);
-
-            SaddlePointVector rhs;
-            rhs.x = b.head(n);
-            rhs.y = b.segment(n, m);
-            rhs.z = b.tail(n);
-
-            REQUIRE(lhs.valid());
-            REQUIRE(rhs.valid());
-
-            solver.decompose(lhs);
-            solver.solve(rhs, sol);
-
-            auto actual = sol.convert();
-
-            CHECK(actual.isApprox(x));
-
-            std::cout << std::left << std::setw(5) << k;
-            std::cout << std::left << std::setw(15) << norm(actual - expected);
-            std::cout << std::left << std::setw(15) << norm(x - expected);
-            std::cout << std::endl;
-        }
-    }
-
-    SUBCASE("Hessian matrix is not zero.")
-    {
-        lhs.H = random(n);
-
-        std::cout << "----------------------------------" << std::endl;
-        std::cout << "Case 2: Hessian matrix is not zero" << std::endl;
-        std::cout << "----------------------------------" << std::endl;
-
-        std::cout << std::left << std::setw(5) << "k";
-        std::cout << std::left << std::setw(15) << "Error";
-        std::cout << std::left << std::setw(15) << "Error (LU)";
-        std::cout << std::endl;
-        for(Index k = 0; k < 10; ++k)
-        {
-            lhs.X.head(n - m) *= 1e-5;
-            lhs.Z.head(n - m) *= 10.0;
-
-            Matrix A = lhs.convert();
             Vector b = A * expected;
+
             Vector x = A.lu().solve(b);
 
             SaddlePointVector rhs;
@@ -133,5 +93,48 @@ TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian"
             std::cout << std::endl;
         }
     }
+
+//    SUBCASE("Hessian matrix is not zero.")
+//    {
+//        lhs.H = random(n);
+//
+//        std::cout << "----------------------------------" << std::endl;
+//        std::cout << "Case 2: Hessian matrix is not zero" << std::endl;
+//        std::cout << "----------------------------------" << std::endl;
+//
+//        std::cout << std::left << std::setw(5) << "k";
+//        std::cout << std::left << std::setw(15) << "Error";
+//        std::cout << std::left << std::setw(15) << "Error (LU)";
+//        std::cout << std::endl;
+//        for(Index k = 0; k < 10; ++k)
+//        {
+//            lhs.X.head(n - m) *= 1e-5;
+//            lhs.Z.head(n - m) *= 10.0;
+//
+//            Matrix A = lhs.convert();
+//            Vector b = A * expected;
+//            Vector x = A.lu().solve(b);
+//
+//            SaddlePointVector rhs;
+//            rhs.x = b.head(n);
+//            rhs.y = b.segment(n, m);
+//            rhs.z = b.tail(n);
+//
+//            REQUIRE(lhs.valid());
+//            REQUIRE(rhs.valid());
+//
+//            solver.decompose(lhs);
+//            solver.solve(rhs, sol);
+//
+//            auto actual = sol.convert();
+//
+//            CHECK(actual.isApprox(x));
+//
+//            std::cout << std::left << std::setw(5) << k;
+//            std::cout << std::left << std::setw(15) << norm(actual - expected);
+//            std::cout << std::left << std::setw(15) << norm(x - expected);
+//            std::cout << std::endl;
+//        }
+//    }
 }
 

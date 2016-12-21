@@ -26,6 +26,7 @@ namespace Optima {
 
 struct SaddlePointSolver::Impl
 {
+    Matrix A; // todo remove this
     /// The left-hand side coefficient matrix of the saddle point problem in canonical and scaled form.
     SaddlePointMatrixCanonical clhs;
 
@@ -64,6 +65,8 @@ struct SaddlePointSolver::Impl
     {
         // Compute the canonical form of matrix A
         canonicalizer.compute(lhs.A);
+
+        A = lhs.A;
     }
 
     /// Update the scaled form of the left-hand side canonical saddle point matrix.
@@ -169,14 +172,26 @@ struct SaddlePointSolver::Impl
         auto& s = crhs.y;
         auto& t = crhs.z;
 
+        const Index nf = ifixed.size();
+        const auto& S = canonicalizer.S();
+
+        auto Sf = S.rightCols(nf);
+
         // Calculate the right-hand side vector of the canonical saddle point problem
         r.noalias() =  a;
         s.noalias() =  R*b;
+//        s.noalias() =  b;
+//        s.noalias() -=  cols(A, ifixed) * rows(a, ifixed);
+//        s =  R*s;
         t.noalias() = -c;
 
         // Permute the rows of r and t according to the ordering of the permutation matrix Q.
         Q.transpose().applyThisOnTheLeft(r);
         Q.transpose().applyThisOnTheLeft(t);
+
+        auto af = r.tail(nf);
+
+        s.noalias() -= Sf*af;
 
         // Finalize the computation of vector r as `r = Xa`, noting that X has ordering `X = [Xb Xn]`.
         r.noalias() = X % r;
