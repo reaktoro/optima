@@ -92,9 +92,17 @@ public:
 	/// @param in The index of the non-basic component.
 	auto swap(Index ib, Index in) -> void;
 
-	/// Update the existing canonical form with given priority weights.
-    /// @param weights The priority, as a positive weight, of each variable to become a basic variable.
+	/// Update the existing canonical form with given priority weights for the columns.
+	/// This method will reorder the columns of the canonical form according to their
+	/// priority weights. Columns with higher weights have higher priority to be selected as
+	/// basic columns (i.e., columns corresponding to basic variables). The non-basic variables
+	/// are sorted in descend order with respect to their weights.
+    /// @param weights The priority weights of the variables.
 	auto update(const Vector& weights) -> void;
+
+	/// @copydoc update
+    /// @param ifixed The indices of the columns corresponding to be fixed variables.
+	auto update(const Vector& weights, const Indices& ifixed) -> void;
 
 private:
 	struct Impl;

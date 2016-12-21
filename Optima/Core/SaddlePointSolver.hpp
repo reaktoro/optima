@@ -26,6 +26,23 @@
 
 namespace Optima {
 
+/// Used to indicate the result details of a saddle point problem calculation.
+struct SaddlePointResult
+{
+    /// True if the saddle point problem was successfully calculated.
+    bool success = true;
+
+    /// The elapsed time in seconds to perform a saddle point problem operation.
+    double time = 0.0;
+
+    /// Accumulate the result of several saddle point problem operations.
+    auto operator+=(const SaddlePointResult& other) -> SaddlePointResult&;
+
+    /// Accumulate the result of several saddle point problem operations.
+    auto operator+(SaddlePointResult other) -> SaddlePointResult;
+};
+
+/// Used to solve saddle point problems.
 class SaddlePointSolver
 {
 public:
@@ -41,28 +58,24 @@ public:
     /// Assign a SaddlePointSolver instance to this.
     auto operator=(SaddlePointSolver other) -> SaddlePointSolver&;
 
-    /// Set the indices and the values of the fixed \eq{x} variables.
-    /// @param ifixed The indices of the fixed variables.
-    /// @param xfixed The values of the fixed variables.
-    auto fixed(const Indices& ifixed, const Vector& xfixed) -> void;
-
     /// Canonicalize the coefficient matrix \eq{A} of the saddle point problem.
     /// @note This method should be called before the @ref decompose method. However, it does not
     /// need to be called again if matrix \eq{A} of the saddle point problem is the same as in the
     /// last call to @ref canonicalize.
     /// @param lhs The coefficient matrix of the saddle point problem.
-    auto canonicalize(const SaddlePointMatrix& lhs) -> void;
+    auto canonicalize(const SaddlePointMatrix& lhs) -> SaddlePointResult;
 
     /// Decompose the coefficient matrix of the saddle point problem.
     /// @note This method should be called before the @ref solve method and after @ref canonicalize.
     /// @param lhs The coefficient matrix of the saddle point problem.
-    auto decompose(const SaddlePointMatrix& lhs) -> void;
+    /// @param weights The optional priority weights used in the canonicalization to choose basic variables.
+    auto decompose(const SaddlePointMatrix& lhs, const Vector& weights = {}) -> SaddlePointResult;
 
     /// Solve the saddle point problem.
     /// @note This method expects that a call to method @ref decompose has already been performed.
     /// @param rhs The right-hand side vector of the saddle point problem.
     /// @param sol The solution of the saddle point problem.
-    auto solve(const SaddlePointVector& rhs, SaddlePointVector& sol) -> void;
+    auto solve(const SaddlePointVector& rhs, SaddlePointVector& sol) -> SaddlePointResult;
 
 private:
     struct Impl;

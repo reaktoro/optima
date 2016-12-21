@@ -40,6 +40,9 @@ struct Canonicalizer::Impl
     /// The inverse of the canonicalizer matrix `R`.
     Matrix Rinv;
 
+    /// The priority weights used to update the canonical form.
+    Vector w;
+
     /// The matrix `M` used in the swap operation.
     Vector M;
 
@@ -101,6 +104,15 @@ auto Canonicalizer::Rinv() const -> const Matrix&
 auto Canonicalizer::Q() const -> const PermutationMatrix&
 {
 	return pimpl->Q;
+}
+
+auto Canonicalizer::C() const -> Matrix
+{
+    const Index m = rows();
+    const Index n = cols();
+    Matrix res(m, n);
+    res << identity(m, m), S();
+    return res;
 }
 
 auto Canonicalizer::ili() const -> Indices
@@ -222,29 +234,44 @@ auto Canonicalizer::swap(Index ib, Index in) -> void
 	std::swap(Q[ib], Q[m + in]);
 }
 
-auto Canonicalizer::update(const Vector& w) -> void
+auto Canonicalizer::update(const Vector& weights) -> void
+{
+    update(weights, {});
+}
+
+auto Canonicalizer::update(const Vector& weights, const Indices& ifixed) -> void
 {
 	// Auxiliary references to member data
 	auto& Q      = pimpl->Q;
 	auto& S      = pimpl->S;
 	auto& R      = pimpl->R;
 	auto& Rinv   = pimpl->Rinv;
+	auto& w      = pimpl->w;
     auto& bswaps = pimpl->bswaps;
     auto& nswaps = pimpl->nswaps;
 
 	// Auxiliary variables
-	const Index m = rows();
-	const Index n = cols();
+	const Index m  = rows();
+	const Index n  = cols();
+	const Index nb = m;
+	const Index nn = n - nb;
+	const Index nf = ifixed.size();
 
 	// The indices of the basic and non-basic variables
-	auto ibasic = Q.indices().head(m);
-	auto inonbasic = Q.indices().tail(n - m);
+	auto ibasic = Q.indices().head(nb);
+	auto inonbasic = Q.indices().tail(nn);
+
+    // Update the internal weights to update the canonical form of A.
+    if(w.rows()) w.noalias() = abs(weights); else w = ones(n);
+
+    // Set weights of fixed variables to zero to prevent them from becoming basic variables
+    Optima::rows(w, ifixed).fill(0.0);
 
 	// The weights of the non-basic components
 	auto wn = Optima::rows(w, inonbasic);
 
 	// Swap basic and non-basic components when the latter has higher weight
-	if(n > m) for(Index i = 0; i < m; ++i)
+	if(nn > 0) for(Index i = 0; i < nb; ++i)
 	{
         Index j;
 		const double wi = std::abs(w[ibasic[i]]);
@@ -252,6 +279,9 @@ auto Canonicalizer::update(const Vector& w) -> void
 		if(wi < wj)
 			swap(i, j);
 	}
+
+    // Set weights of fixed variables to decreasing negative values to move them to the back of the list
+    Optima::rows(w, ifixed) = -linspace(nf, 1, nf);
 
 	// Sort the basic components in descend order of weights
 	std::sort(bswaps.data(), bswaps.data() + bswaps.size(),
@@ -263,7 +293,7 @@ auto Canonicalizer::update(const Vector& w) -> void
 
 	// Rearrange the rows of S based on the new order of basic components
     Index i = 0;
-    while(i < m) {
+    while(i < nb) {
         if(i != bswaps[i]) {
             S.row(i).swap(S.row(bswaps[i]));
             R.row(i).swap(R.row(bswaps[i]));
@@ -276,7 +306,7 @@ auto Canonicalizer::update(const Vector& w) -> void
 
 	// Rearrange the columns of S based on the new order of non-basic components
     Index j = 0;
-    while(j < n - m) {
+    while(j < nn) {
         if(j != nswaps[j]) {
             S.col(j).swap(S.col(nswaps[j]));
             std::swap(inonbasic[j], inonbasic[nswaps[j]]);
@@ -284,15 +314,6 @@ auto Canonicalizer::update(const Vector& w) -> void
         }
         else ++j;
     }
-}
-
-auto Canonicalizer::C() const -> Matrix
-{
-    const Index m = rows();
-    const Index n = cols();
-    Matrix res(m, n);
-    res << identity(m, m), S();
-    return res;
 }
 
 } // namespace Optima

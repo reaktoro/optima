@@ -17,6 +17,8 @@
 
 #pragma once
 
+#define EIGEN_RUNTIME_NO_MALLOC
+
 #define EIGEN_MATRIX_PLUGIN "Optima/Math/EigenMatrixPlugin.hpp"
 
 // Eigen includes
@@ -200,16 +202,14 @@ struct evaluator<MatrixColsView<ArgType, Indices>> : evaluator_base<MatrixColsVi
     enum
     {
         CoeffReadCost = evaluator<ArgType>::CoeffReadCost,
-        Flags = Eigen::ColMajor | LinearAccessBit,
+        Flags = Eigen::ColMajor,
     };
 
     evaluator(const MatrixColsView<ArgType, Indices>& view)
     : m_view(view) {}
 
-    auto coeffRef(Index col) -> Scalar& { return m_view.coeffRef(col); }
     auto coeffRef(Index row, Index col) -> Scalar& { return m_view.coeffRef(row, col); }
 
-    auto coeff(Index col) const -> CoeffReturnType { return m_view.coeff(col); }
     auto coeff(Index row, Index col) const -> CoeffReturnType { return m_view.coeff(row, col); }
 
     MatrixColsView<ArgType, Indices> m_view;
@@ -224,13 +224,12 @@ struct evaluator<MatrixColsViewConst<ArgType, Indices>> : evaluator_base<MatrixC
     enum
     {
         CoeffReadCost = evaluator<ArgType>::CoeffReadCost,
-        Flags = Eigen::ColMajor | LinearAccessBit,
+        Flags = Eigen::ColMajor,
     };
 
     evaluator(const MatrixColsViewConst<ArgType, Indices>& view)
     : m_view(view) {}
 
-    auto coeff(Index col) const -> CoeffReturnType { return m_view.coeff(col); }
     auto coeff(Index row, Index col) const -> CoeffReturnType { return m_view.coeff(row, col); }
 
     MatrixColsViewConst<ArgType, Indices> m_view;
@@ -388,13 +387,10 @@ public:
     auto rows() const -> Index { return m_mat.rows(); }
     auto cols() const -> Index { return m_icols.size(); }
 
-    auto coeffRef(Index col) -> Scalar& { return m_mat.coeffRef(0, m_icols[col]); }
     auto coeffRef(Index row, Index col) -> Scalar& { return m_mat.coeffRef(row, m_icols[col]); }
 
-    auto coeffRef(Index col) const -> const Scalar& { return m_mat.coeffRef(0, m_icols[col]); }
     auto coeffRef(Index row, Index col) const -> const Scalar& { return m_mat.coeffRef(row, m_icols[col]); }
 
-    auto coeff(Index col) const -> CoeffReturnType { return m_mat.coeff(0, m_icols[col]); }
     auto coeff(Index row, Index col) const -> CoeffReturnType { return m_mat.coeff(row, m_icols[col]); }
 
     operator PlainObject() const
