@@ -17,8 +17,6 @@
 
 #pragma once
 
-#define EIGEN_RUNTIME_NO_MALLOC
-
 #define EIGEN_MATRIX_PLUGIN "Optima/Math/EigenMatrixPlugin.hpp"
 
 // Eigen includes
