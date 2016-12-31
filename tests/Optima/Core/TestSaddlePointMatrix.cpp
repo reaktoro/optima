@@ -29,20 +29,28 @@ TEST_CASE("Testing SaddlePointMatrix...")
     mat.A = {{1, 2, 3}, {3, 4, 5}};
 
     Matrix M = {
-		{1,  0,  0, -1, -3, -1,  0,  0},
-		{0,  2,  0, -2, -4,  0, -1,  0},
-		{0,  0,  3, -3, -5,  0,  0, -1},
-		{1,  2,  3,  0,  0,  0,  0,  0},
-		{3,  4,  5,  0,  0,  0,  0,  0},
-		{5,  0,  0,  0,  0,  3,  0,  0},
-		{0,  6,  0,  0,  0,  0,  2,  0},
-		{0,  0,  7,  0,  0,  0,  0,  1}};
+		{1,  0,  0, 1, 3},
+		{0,  2,  0, 2, 4},
+		{0,  0,  3, 3, 5},
+		{1,  2,  3, 0, 0},
+		{3,  4,  5, 0, 0}
+    };
 
-	SUBCASE("checking conversion to a Matrix instance")
-	{
-		// Check conversion to a Matrix instance
-		CHECK(M.isApprox(mat.matrix()));
-	}
+    // Check conversion to a Matrix instance
+    CHECK(M.isApprox(mat.matrix()));
+
+    SUBCASE("Testing conversion when some variables are fixed")
+    {
+        mat.fixed = {1};
+        M.row(1).fill(0.0);
+        M(1, 1) = 1.0;
+
+        // Check conversion to a Matrix instance
+        CHECK(M.isApprox(mat.matrix()));
+
+        std::cout << "mat = \n" << mat.matrix() << std::endl;
+        std::cout << "M = \n" << M << std::endl;
+    }
 }
 
 TEST_CASE("Testing SaddlePointVector...")
@@ -52,11 +60,8 @@ TEST_CASE("Testing SaddlePointVector...")
     vec.x = {1, 2, 3};
     vec.y = {6, 7};
 
-    Vector V = {1, 2, 3, 6, 7, 3, 2, 1};
+    Vector V = {1, 2, 3, 6, 7};
 
-	SUBCASE("checking conversion to a Vector instance")
-	{
-		// Check conversion to a Vector instance
-		CHECK(V.isApprox(vec.vector()));
-	}
+    // Check conversion to a Vector instance
+    CHECK(V.isApprox(vec.vector()));
 }
