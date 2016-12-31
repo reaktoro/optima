@@ -21,25 +21,52 @@
 #include <memory>
 
 // Optima includes
+#include <Optima/Common/Timing.hpp>
 #include <Optima/Core/SaddlePointMatrix.hpp>
 #include <Optima/Core/SaddlePointProblem.hpp>
 
 namespace Optima {
 
 /// Used to indicate the result details of a saddle point problem calculation.
-struct SaddlePointResult
+class SaddlePointResult
 {
-    /// True if the saddle point problem was successfully calculated.
-    bool success = true;
+public:
+    /// Construct a default SaddlePointResult instance.
+    SaddlePointResult();
 
-    /// The elapsed time in seconds to perform a saddle point problem operation.
-    double time = 0.0;
+    /// Set the success of the calculation.
+    auto success(bool value) -> void;
+
+    /// Return `true` if the calculation was successful.
+    auto success() const -> bool;
+
+    /// Return the elapsed time in seconds of the calculation.
+    auto time() const -> double;
+
+    /// Start the stopwatch.
+    auto start() -> SaddlePointResult&;
+
+    /// Stop the stopwatch.
+    auto stop() -> SaddlePointResult&;
 
     /// Accumulate the result of several saddle point problem operations.
     auto operator+=(const SaddlePointResult& other) -> SaddlePointResult&;
 
     /// Accumulate the result of several saddle point problem operations.
     auto operator+(SaddlePointResult other) -> SaddlePointResult;
+
+private:
+    /// True if the calculation was successful.
+    bool m_success;
+
+    /// The elapsed time in seconds of the calculation.
+    double m_time;
+
+    /// The time at which start method was called.
+    Time m_start;
+
+    /// The time at which stop method was called.
+    Time m_stop;
 };
 
 /// Used to solve saddle point problems.
