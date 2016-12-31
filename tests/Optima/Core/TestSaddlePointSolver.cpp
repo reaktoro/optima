@@ -22,9 +22,7 @@
 #include <Optima/Math/Eigen/LU>
 using namespace Optima;
 
-namespace util {
-
-} // namespace util
+Index samples = 10;
 
 TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian")
 {
@@ -43,43 +41,63 @@ TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian"
 
     SaddlePointVector actualsol;
 
-    SaddlePointSolver solver;
-    auto res1 = solver.canonicalize(lhs);
-    auto res2 = solver.decompose(lhs);
-    auto res3 = solver.solve(rhs, actualsol);
+    SaddlePointResult res1, res2, res3, res;
 
-    SaddlePointResult res = res1 + res2 + res3;
+    for(Index i = 0; i < samples; ++i)
+    {
+        SaddlePointSolver solver;
+        res1 += solver.canonicalize(lhs);
+        res2 += solver.decompose(lhs);
+        res3 += solver.solve(rhs, actualsol);
 
-    CHECK(sol.x.isApprox(actualsol.x));
-    CHECK(sol.y.isApprox(actualsol.y));
+        res += res1 + res2 + res3;
+
+        CHECK(sol.x.isApprox(actualsol.x));
+        CHECK(sol.y.isApprox(actualsol.y));
+    }
+
+    double timesps1 = res1.time()/samples;
+    double timesps2 = res2.time()/samples;
+    double timesps3 = res3.time()/samples;
+    double timesps  = res.time()/samples;
 
     Matrix A = lhs.matrix();
     Vector b = rhs.vector();
     Vector x = sol.vector();
 
-    Time begin = time();
-    Eigen::PartialPivLU<Matrix> lu(A);
-    double timelu1 = elapsed(begin);
-    Vector actualx = lu.solve(b);
-    double timelu2 = elapsed(begin) - timelu1;
-    double timelu  = timelu1 + timelu2;
+    double timelu1 = 0.0, timelu2 = 0.0, timelu = 0.0;
+    Vector actualx;
+
+    for(Index i = 0; i < samples; ++i)
+    {
+        Time begin = time();
+        Eigen::PartialPivLU<Matrix> lu(A);
+        timelu1 += elapsed(begin);
+        begin = time();
+        actualx = lu.solve(b);
+        timelu2 += elapsed(begin);
+        timelu  += timelu1 + timelu2;
+    }
+
+    timelu1 /= samples; timelu2 /= samples; timelu /= samples;
 
     std::cout << std::endl;
     std::cout << "Error(SaddlePointSolver): " << norminf(actualsol.vector() - sol.vector()) << std::endl;
     std::cout << "Error(PartialPivLU):      " << norminf(actualx - x) << std::endl;
     std::cout << std::endl;
-    std::cout << "Time(SaddlePointSolver::canonicalize): " << res1.time << std::endl;
-    std::cout << "Time(SaddlePointSolver::decompose):    " << res2.time << std::endl;
-    std::cout << "Time(SaddlePointSolver::solve):        " << res3.time << std::endl;
-    std::cout << "Time(SaddlePointSolver::all):          " << res.time << std::endl;
+    std::cout << "Time(SaddlePointSolver::canonicalize): " << timesps1 << std::endl;
+    std::cout << "Time(SaddlePointSolver::decompose):    " << timesps2 << std::endl;
+    std::cout << "Time(SaddlePointSolver::solve):        " << timesps3 << std::endl;
+    std::cout << "Time(SaddlePointSolver::all):          " << timesps  << std::endl;
     std::cout << std::endl;
     std::cout << "Time(PartialPivLU::decompose): " << timelu1 << std::endl;
     std::cout << "Time(PartialPivLU::solve):     " << timelu2 << std::endl;
     std::cout << std::endl;
-    std::cout << "Speedup(canonicalize+decompose): " << timelu1/(res1.time + res2.time) << std::endl;
-    std::cout << "Speedup(decompose):              " << timelu1/res2.time << std::endl;
-    std::cout << "Speedup(solve):                  " << timelu2/res3.time << std::endl;
-    std::cout << "Speedup(total):                  " << timelu/res.time << std::endl;
+    std::cout << "Speedup(canonicalize+decompose): " << timelu1/(timesps1 + timesps2) << std::endl;
+    std::cout << "Speedup(decompose):              " << timelu1/timesps2 << std::endl;
+    std::cout << "Speedup(solve):                  " << timelu2/timesps3 << std::endl;
+    std::cout << "Speedup(decompose+solve):        " << timelu/(timesps2 + timesps3) << std::endl;
+//    std::cout << "Speedup(total):                  " << timelu/timesps << std::endl;
 }
 
 //
@@ -92,10 +110,10 @@ TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian"
 //    SaddlePointMatrix lhs;
 //    lhs.A = random(m, n);
 //
-//    Indices ifixed = {0};
+//    Indices fixed = {0};
 //
 //    SaddlePointSolver solver;
-//    solver.fix(ifixed);
+//    solver.fix(fixed);
 //    solver.canonicalize(lhs);
 //
 //    SaddlePointVector sol;
@@ -103,7 +121,7 @@ TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian"
 //    sol.y = zeros(m);
 //
 //    Vector expected = linspace(t, 1, t);
-//    for(Index i : ifixed)
+//    for(Index i : fixed)
 //        expected[i] = expected[i+n+m] = 0.0;
 ////    rows(expected, ignored).fill(0.0);
 //
@@ -124,7 +142,7 @@ TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian"
 //            lhs.X.head(n - m) *= 1e-5;
 //            lhs.Z.head(n - m) *= 10.0;
 //
-//            Matrix A = convert(lhs, ifixed);
+//            Matrix A = convert(lhs, fixed);
 //            Vector b = A * expected;
 //            Vector x = A.lu().solve(b);
 //
