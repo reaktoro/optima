@@ -28,6 +28,9 @@ auto SaddlePointMatrix::matrix() const -> Matrix
     res.topLeftCorner(n, n).diagonal() = H;
     res.topRightCorner(n, m)           = tr(A);
     res.bottomLeftCorner(m, n)         = A;
+    rows(res, fixed).fill(0.0);
+    for(Index i : fixed)
+        res(i, i) = 1.0;
     return res;
 }
 
