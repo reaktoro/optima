@@ -138,7 +138,7 @@ struct SaddlePointSolver::Impl
         update(lhs, weights);
 
         // Alias to the matrices of the canonicalization process
-        const auto& Q = canonicalizer.Q();
+        const auto& Q = canonicalizer.Q().indices();
         const auto& S = canonicalizer.S();
 
         // Create auxiliary matrix views
@@ -150,7 +150,7 @@ struct SaddlePointSolver::Impl
         auto Sn = S.leftCols(nn);
 
         // Set `H` as the diagonal Hessian according to current canonical ordering
-        H.noalias() = rows(lhs.H, Q.indices());
+        H.noalias() = rows(lhs.H, Q);
 
         // Compute the auxiliary matrices Bb and Bn
         Bn.noalias() = Sn * diag(inv(Hn));
@@ -166,7 +166,6 @@ struct SaddlePointSolver::Impl
         return res.stop();
     }
 
-
     auto solve(const SaddlePointVector& rhs, SaddlePointVector& sol) -> SaddlePointResult
     {
         // The result of this method call
@@ -176,8 +175,12 @@ struct SaddlePointSolver::Impl
         auto& x = sol.x;
         auto& y = sol.y;
 
+        // Resize solution vectors x and y if needed
+        x.resize(n);
+        y.resize(m);
+
         // Alias to the matrices of the canonicalization process
-        const auto& Q = canonicalizer.Q();
+        const auto& Q = canonicalizer.Q().indices();
         const auto& R = canonicalizer.R();
         const auto& S = canonicalizer.S();
 
@@ -189,56 +192,38 @@ struct SaddlePointSolver::Impl
         auto Sn = S.leftCols(nn);
         auto Sf = S.rightCols(nf);
 
-        // Initialize vectors a and b
-        a = rhs.x;
-        b = rhs.y;
-
-        // Create views of the vector a = [ab an af] and b = [bb bz]
+        // Create auxiliary sub-vector views
         auto ab = a.head(nb);
         auto an = a.segment(nb, nn);
         auto af = a.tail(nf);
         auto bb = b.head(nb);
-
-        // Resize solution vectors x and y if needed
-        x.resize(n);
-        y.resize(m);
-
-        // Create views of the vector x = [xb xn xf] and y = [yb yz]
-        auto xb = x.head(nb);
-        auto xn = x.segment(nb, nn);
-        auto xf = x.tail(nf);
         auto yb = y.head(nb);
 
         // Reorder vector a in the canonical order
-        Q.transpose().applyThisOnTheLeft(a);
+        a.noalias() = rows(rhs.x, Q);
 
-//        Eigen::internal::set_is_malloc_allowed(false);
         // Apply the regularizer matrix to b
-        bb = R*b;
+        bb.noalias() = R*rhs.y;
 
         // Compute the saddle point problem solution
-        an.noalias() -= tr(Sn)*ab;
+        yb.noalias()  = ab;
+        an.noalias() -= tr(Sn)*yb;
         bb.noalias() -= Sf*af;
         bb.noalias() -= Bn*an;
-        yb.noalias() = ab;
-        xn.noalias() = an;
-        xf.noalias() = af;
-        xb.noalias() = lu.solve(bb);
-        xn.noalias() += Tb*xb;
-        xn.noalias()  = diag(inv(Hn))*xn;
-        yb.noalias() -= diag(Hb)*xb;
-
-//        Eigen::internal::set_is_malloc_allowed(true);
+        ab.noalias()  = lu.solve(bb);
+        an.noalias() += Tb*ab;
+        an.noalias()  = diag(inv(Hn))*an;
+        bb.noalias()  = yb;
+        bb.noalias() -= diag(Hb)*ab;
 
         // Compute the y vector without canonicalization
-        y = tr(R)*yb;
+        y.noalias() = tr(R)*bb;
 
         // Permute back the variables x to their original ordering
-        Q.applyThisOnTheLeft(x);
+        rows(x, Q).noalias() = a;
 
         return res.stop();
     }
-
 };
 
 SaddlePointSolver::SaddlePointSolver()
