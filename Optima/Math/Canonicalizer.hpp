@@ -101,8 +101,8 @@ public:
 	auto update(const Vector& weights) -> void;
 
 	/// @copydoc update
-    /// @param ifixed The indices of the columns corresponding to be fixed variables.
-	auto update(const Vector& weights, const Indices& ifixed) -> void;
+    /// @param fixed The indices of the columns corresponding to be fixed variables.
+	auto update(const Vector& weights, const Indices& fixed) -> void;
 
 private:
 	struct Impl;

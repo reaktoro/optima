@@ -239,7 +239,7 @@ auto Canonicalizer::update(const Vector& weights) -> void
     update(weights, {});
 }
 
-auto Canonicalizer::update(const Vector& weights, const Indices& ifixed) -> void
+auto Canonicalizer::update(const Vector& weights, const Indices& fixed) -> void
 {
 	// Auxiliary references to member data
 	auto& Q      = pimpl->Q;
@@ -255,7 +255,7 @@ auto Canonicalizer::update(const Vector& weights, const Indices& ifixed) -> void
 	const Index n  = cols();
 	const Index nb = m;
 	const Index nn = n - nb;
-	const Index nf = ifixed.size();
+	const Index nf = fixed.size();
 
 	// The indices of the basic and non-basic variables
 	auto ibasic = Q.indices().head(nb);
@@ -265,7 +265,7 @@ auto Canonicalizer::update(const Vector& weights, const Indices& ifixed) -> void
     if(w.rows()) w.noalias() = abs(weights); else w = ones(n);
 
     // Set weights of fixed variables to zero to prevent them from becoming basic variables
-    Optima::rows(w, ifixed).fill(0.0);
+    Optima::rows(w, fixed).fill(0.0);
 
 	// The weights of the non-basic components
 	auto wn = Optima::rows(w, inonbasic);
@@ -281,7 +281,7 @@ auto Canonicalizer::update(const Vector& weights, const Indices& ifixed) -> void
 	}
 
     // Set weights of fixed variables to decreasing negative values to move them to the back of the list
-    Optima::rows(w, ifixed) = -linspace(nf, 1, nf);
+    Optima::rows(w, fixed) = -linspace(nf, 1, nf);
 
 	// Sort the basic components in descend order of weights
 	std::sort(bswaps.data(), bswaps.data() + bswaps.size(),
