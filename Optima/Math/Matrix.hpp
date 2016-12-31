@@ -524,11 +524,17 @@ private:
 
 namespace Optima {
 
-/// Define an alias to the vector type of the Eigen library
+/// Alias to the vector type of the Eigen library.
 using Vector = Eigen::VectorXd;
 
-/// Define an alias to the matrix type of the Eigen library
+/// Alias to the matrix type of the Eigen library.
 using Matrix = Eigen::MatrixXd;
+
+/// Alias to a reference to a vector type of the Eigen library.
+using VectorRef = Eigen::Ref<Eigen::VectorXd>;
+
+/// Alias to a reference to a matrix type of the Eigen library.
+using MatrixRef = Eigen::Ref<Eigen::MatrixXd>;
 
 /// Define an alias to a permutation matrix type of the Eigen library
 using PermutationMatrix = Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic>;
