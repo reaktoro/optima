@@ -31,7 +31,12 @@ namespace Optima {
 /// \begin{bmatrix}H & A^{T}\\ A & 0 \end{bmatrix}\begin{bmatrix}x\\ y \end{bmatrix}=\begin{bmatrix}a\\ b \end{bmatrix},
 /// \f]
 /// where \eq{H} is the *Hessian matrix* of an objective function and \eq{A} is
-/// the *Jacobian matrix* of a constraint function.
+/// the *Jacobian matrix* of a constraint function. If the saddle point problem has fixed variables,
+/// then the saddle point matrix has the following representation:
+/// \f[
+/// \begin{bmatrix}H_{\mathrm{x}} & 0 & A_{\mathrm{x}}^{T}\\ 0 & I_{\mathrm{f}} & 0\\ A_{\mathrm{x}} & A_{\mathrm{f}} & 0 \end{bmatrix}\begin{bmatrix}x_{\mathrm{x}}\\ x_{\mathrm{f}}\\ y \end{bmatrix}=\begin{bmatrix}a_{\mathrm{x}}\\ a_{\mathrm{f}}\\ b \end{bmatrix},
+/// \f]
+/// where the subscripts \eq{\mathrm{x}} and \eq{\mathrm{f}} correspond to free and fixed variables, respectively.
 struct SaddlePointMatrix
 {
     /// The Hessian matrix \eq{H} in the saddle point matrix.
@@ -41,13 +46,7 @@ struct SaddlePointMatrix
     Matrix A;
 
     /// The indices of the fixed variables.
-    /// The saddle point matrix has the following representation when some variables in \eq{x} are fixed:
-    /// \f[
-    /// \begin{bmatrix}H_{\mathrm{x}} & 0 & A_{\mathrm{x}}^{T}\\ 0 & I_{\mathrm{f}} & 0\\ A_{\mathrm{x}} & A_{\mathrm{f}} & 0 \end{bmatrix}\begin{bmatrix}x_{\mathrm{x}}\\ x_{\mathrm{f}}\\ y \end{bmatrix}=\begin{bmatrix}a_{\mathrm{x}}\\ a_{\mathrm{f}}\\ b \end{bmatrix},
-    /// \f]
-    /// where the subscripts \eq{\mathrm{x}} and \eq{\mathrm{f}} correspond to free and fixed
-    /// variables, respectively.
-    Indices ifixed;
+    Indices fixed;
 
     /// Convert this SaddlePointMatrix instance into a Matrix instance.
     auto matrix() const -> Matrix;
