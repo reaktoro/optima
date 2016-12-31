@@ -267,7 +267,7 @@ auto Canonicalizer::update(const Vector& weights, const Indices& fixed) -> void
 	auto inonbasic = Q.indices().tail(nn);
 
     // Update the internal weights to update the canonical form of A.
-    if(w.rows()) w.noalias() = abs(weights); else w = ones(n);
+    if(weights.rows()) w.noalias() = abs(weights); else w = ones(n);
 
     // Set weights of fixed variables to zero to prevent them from becoming basic variables
     Optima::rows(w, fixed).fill(0.0);
