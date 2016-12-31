@@ -20,11 +20,15 @@
 // Eigen includes
 #include <Optima/Common/Exception.hpp>
 #include <Optima/Math/Eigen/LU>
+using namespace Eigen;
 
 namespace Optima {
 
 struct Canonicalizer::Impl
 {
+    /// The full-pivoting LU decomposition of A so that P*A*Q = L*U;
+    Eigen::FullPivLU<Matrix> lu;
+
     /// The matrix `S` in the canonical form `C = [I S]`.
     Matrix S;
 
@@ -147,6 +151,7 @@ auto Canonicalizer::compute(const Matrix& A) -> void
     auto& Q      = pimpl->Q;
     auto& S      = pimpl->S;
     auto& R      = pimpl->R;
+    auto& lu     = pimpl->lu;
     auto& Rinv   = pimpl->Rinv;
     auto& bswaps = pimpl->bswaps;
     auto& nswaps = pimpl->nswaps;
@@ -160,7 +165,7 @@ auto Canonicalizer::compute(const Matrix& A) -> void
 		"The given matrix has more rows than columns.");
 
 	// Compute the full-pivoting LU of A so that P*A*Q = L*U
-	Eigen::FullPivLU<Matrix> lu(A);
+	lu.compute(A);
 
 	// Get the rank of matrix A
 	const Index r = lu.rank();
