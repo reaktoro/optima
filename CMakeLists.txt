@@ -7,6 +7,9 @@ project(Optima)
 # Set the cmake module path of the project
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
+# Include the cotire module to help in the speedup of compilation times
+include(cotire)
+
 # Include this module to enable testing with CTest and dashboard submissions to CDash
 include(CTest)
 

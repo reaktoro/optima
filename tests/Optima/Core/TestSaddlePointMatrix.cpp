@@ -17,8 +17,11 @@
 
 #include <doctest/doctest.hpp>
 
+// C++ includes
+#include <iostream>
+
 // Optima includes
-#include <Optima/Optima.hpp>
+#include <Optima/Core/SaddlePointMatrix.hpp>
 using namespace Optima;
 
 TEST_CASE("Testing SaddlePointMatrix...")

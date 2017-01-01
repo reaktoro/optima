@@ -18,7 +18,7 @@
 #include <doctest/doctest.hpp>
 
 // Optima includes
-#include <Optima/Optima.hpp>
+#include <Optima/Math/Matrix.hpp>
 using namespace Optima;
 
 TEST_CASE("Testing Matrix")

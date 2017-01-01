@@ -18,8 +18,6 @@
 #include <doctest/doctest.hpp>
 
 // Optima includes
-#include <Optima/Optima.hpp>
-using namespace Optima;
 
 TEST_CASE("Testing SaddlePointUtils")
 {

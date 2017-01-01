@@ -15,6 +15,13 @@ set(OPTIMA_STATIC_LIB ${PROJECT_NAME}${SUFFIX_STATIC_LIBS})
 # Compile Optima into object files
 add_library(OptimaObject OBJECT ${HEADER_FILES} ${SOURCE_FILES})
 
+# Let cotire also consider the Eigen library in its attempt to speedup compilation times
+set_target_properties(OptimaObject PROPERTIES
+   COTIRE_PREFIX_HEADER_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/Optima/Math/Eigen")
+
+# Apply cotire to the library target
+cotire(OptimaObject)
+
 # Check if a shared library for Optima must be built
 if(BUILD_SHARED_LIBS)
     add_library(OptimaShared SHARED $<TARGET_OBJECTS:OptimaObject>)

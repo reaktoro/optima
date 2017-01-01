@@ -22,10 +22,12 @@
 
 // Optima includes
 #include <Optima/Common/Timing.hpp>
-#include <Optima/Core/SaddlePointMatrix.hpp>
-#include <Optima/Core/SaddlePointProblem.hpp>
 
 namespace Optima {
+
+// Forward declarations
+struct SaddlePointMatrix;
+struct SaddlePointVector;
 
 /// Used to indicate the result details of a saddle point problem calculation.
 class SaddlePointResult

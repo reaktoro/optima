@@ -19,8 +19,9 @@
 
 // Optima includes
 #include <Optima/Common/Exception.hpp>
+#include <Optima/Core/SaddlePointMatrix.hpp>
 #include <Optima/Math/Canonicalizer.hpp>
-#include <Optima/Math/Eigen/src/LU/PartialPivLU.h>
+#include <Optima/Math/EigenExtern.hpp>
 using namespace Eigen;
 
 namespace Optima {

@@ -18,7 +18,7 @@
 #include <doctest/doctest.hpp>
 
 // Optima includes
-#include <Optima/Optima.hpp>
+#include <Optima/Math/Canonicalizer.hpp>
 using namespace Optima;
 
 #define CHECK_CANONICAL_FORM                         \

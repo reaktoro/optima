@@ -19,7 +19,7 @@
 
 // Eigen includes
 #include <Optima/Common/Exception.hpp>
-#include <Optima/Math/Eigen/LU>
+#include <Optima/Math/EigenExtern.hpp>
 using namespace Eigen;
 
 namespace Optima {

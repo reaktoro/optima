@@ -17,8 +17,12 @@
 
 #include <doctest/doctest.hpp>
 
+// C++ includes
+#include <iostream>
+
 // Optima includes
-#include <Optima/Optima.hpp>
+#include <Optima/Core/SaddlePointMatrix.hpp>
+#include <Optima/Core/SaddlePointSolver.hpp>
 #include <Optima/Math/Eigen/LU>
 using namespace Optima;
 

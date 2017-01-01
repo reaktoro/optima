@@ -18,7 +18,7 @@
 #include <doctest/doctest.hpp>
 
 // Optima includes
-#include <Optima/Optima.hpp>
+#include <Optima/Math/BlockDiagonalMatrix.hpp>
 using namespace Optima;
 
 TEST_CASE("Testing BlockDiagonalMatrix - square matrix")

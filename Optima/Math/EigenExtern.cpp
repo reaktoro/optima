@@ -15,32 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include <doctest/doctest.hpp>
+#include <Optima/Math/Eigen/Dense>
 
-// Optima includes
-#include <Optima/Core/HessianMatrix.hpp>
-using namespace Optima;
-
-TEST_CASE("Testing HessianMatrix when in Zero mode")
-{
-    HessianMatrix H;
-    H.zero(10);
-
-    CHECK(zeros(10, 10).isApprox(H.convert()));
-}
-
-TEST_CASE("Testing HessianMatrix when in Diagonal mode")
-{
-    HessianMatrix H;
-    H.diagonal(10).fill(1.0);
-
-    CHECK(identity(10, 10).isApprox(H.convert()));
-}
-
-TEST_CASE("Testing HessianMatrix when in Dense mode")
-{
-    HessianMatrix H;
-    H.dense(10).fill(1.0);
-
-    CHECK(ones(10, 10).isApprox(H.convert()));
-}
+template class Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic>;
+template class Eigen::FullPivLU<Eigen::MatrixXd>;
+template class Eigen::PartialPivLU<Eigen::MatrixXd>;
