@@ -117,10 +117,13 @@ struct SaddlePointSolver::Impl
     }
 
     /// Update the canonical form of the coefficient matrix \eq{A} of the saddle point problem.
-    auto update(const SaddlePointMatrix& lhs, const Vector& weights) -> void
+    auto update(const SaddlePointMatrix& lhs) -> void
     {
+        // Update the priority weights for the update of the canonical form
+        w.noalias() = inv(lhs.H);
+
         // Update the canonical form and the ordering of the variables
-        canonicalizer.update(weights, lhs.fixed);
+        canonicalizer.update(w, lhs.fixed);
 
         // Update the number of fixed, basic, and non-basic variables
         nf = lhs.fixed.size();
@@ -129,13 +132,13 @@ struct SaddlePointSolver::Impl
     }
 
     /// Decompose the coefficient matrix of the saddle point problem.
-    auto decompose(const SaddlePointMatrix& lhs, const Vector& weights) -> SaddlePointResult
+    auto decompose(const SaddlePointMatrix& lhs) -> SaddlePointResult
     {
         // The result of this method call
         SaddlePointResult res;
 
         // Update the canonical form of the coefficient matrix A
-        update(lhs, weights);
+        update(lhs);
 
         // Alias to the matrices of the canonicalization process
         const auto& Q = canonicalizer.Q().indices();
@@ -248,9 +251,9 @@ auto SaddlePointSolver::canonicalize(const SaddlePointMatrix& lhs) -> SaddlePoin
     return pimpl->canonicalize(lhs);
 }
 
-auto SaddlePointSolver::decompose(const SaddlePointMatrix& lhs, const Vector& weights) -> SaddlePointResult
+auto SaddlePointSolver::decompose(const SaddlePointMatrix& lhs) -> SaddlePointResult
 {
-    return pimpl->decompose(lhs, weights);
+    return pimpl->decompose(lhs);
 }
 
 auto SaddlePointSolver::solve(const SaddlePointVector& rhs, SaddlePointVector& sol) -> SaddlePointResult

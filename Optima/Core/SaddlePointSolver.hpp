@@ -95,8 +95,7 @@ public:
     /// Decompose the coefficient matrix of the saddle point problem.
     /// @note This method should be called before the @ref solve method and after @ref canonicalize.
     /// @param lhs The coefficient matrix of the saddle point problem.
-    /// @param weights The optional priority weights used in the canonicalization to choose basic variables.
-    auto decompose(const SaddlePointMatrix& lhs, const Vector& weights = {}) -> SaddlePointResult;
+    auto decompose(const SaddlePointMatrix& lhs) -> SaddlePointResult;
 
     /// Solve the saddle point problem.
     /// @note This method expects that a call to method @ref decompose has already been performed.
