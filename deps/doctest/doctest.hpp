@@ -1,4 +1,4 @@
-// Optima is a C++ library for numerical solution of linear and nonlinear programing problems.
+// Eigenx is a extension of the Eigen library that aims to have simpler syntax and faster build times.
 //
 // Copyright (C) 2014-2017 Allan Leal
 //
