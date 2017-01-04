@@ -35,10 +35,13 @@ struct SaddlePointSolver::Impl
     MatrixXd B, T, M;
 
     /// Auxiliary vectors used in the decompose and solve methods.
-    VectorXd H, a, b, w;
+    VectorXd H, a, b;
 
     /// The LU solver aplied to the matrix Mb of dimension nb-by-nb to calculate Lb and Ub.
     Eigen::PartialPivLU<MatrixXd> lu;
+
+    /// The priority weights for the selection of basic variables.
+    VectorXd w;
 
     /// The number of rows and columns in A
     Index m, n;
