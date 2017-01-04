@@ -19,6 +19,7 @@
 
 // Optima includes
 #include <Optima/Common/Index.hpp>
+#include <Optima/Common/Optional.hpp>
 #include <Optima/Math/Matrix.hpp>
 
 namespace Optima {
@@ -35,19 +36,36 @@ namespace Optima {
 /// \begin{bmatrix}H_{\mathrm{x}} & 0 & A_{\mathrm{x}}^{T}\\ 0 & I_{\mathrm{f}} & 0\\ A_{\mathrm{x}} & A_{\mathrm{f}} & 0 \end{bmatrix}\begin{bmatrix}x_{\mathrm{x}}\\ x_{\mathrm{f}}\\ y \end{bmatrix}=\begin{bmatrix}a_{\mathrm{x}}\\ a_{\mathrm{f}}\\ b \end{bmatrix},
 /// \f]
 /// where the subscripts \eq{\mathrm{x}} and \eq{\mathrm{f}} correspond to free and fixed variables, respectively.
-struct SaddlePointMatrix
+class SaddlePointMatrix
 {
-    /// The Hessian matrix \eq{H} in the saddle point matrix.
-    VectorXd H;
+public:
+    /// Construct a SaddlePointMatrix instance with given Hessian and Jacobian matrices.
+    SaddlePointMatrix(ConstMatrixRef H, ConstMatrixRef A);
 
-    /// The Jacobian matrix \eq{A} in the saddle point matrix.
-    MatrixXd A;
+    /// Construct a SaddlePointMatrix instance with given Hessian and Jacobian matrices, and indices of fixed variables.
+    SaddlePointMatrix(ConstMatrixRef H, ConstMatrixRef A, const Indices& fixed);
 
-    /// The indices of the fixed variables.
-    Indices fixed;
+    /// Return the Hessian matrix *H*.
+    auto hessian() const -> ConstMatrixRef;
+
+    /// Return the Jacobian matrix *A*.
+    auto jacobian() const -> ConstMatrixRef;
+
+    /// Return the indices of the fixed variables.
+    auto fixed() const -> const Indices&;
 
     /// Convert this SaddlePointMatrix instance into a Matrix instance.
     auto matrix() const -> MatrixXd;
+
+private:
+    /// The Hessian matrix \eq{H} in the saddle point matrix.
+    ConstMatrixRef m_H;
+
+    /// The Jacobian matrix \eq{A} in the saddle point matrix.
+    ConstMatrixRef m_A;
+
+    /// The indices of the fixed variables.
+    Optional<Indices> m_fixed;
 };
 
 /// A type used to describe a saddle point right-hand side vector.

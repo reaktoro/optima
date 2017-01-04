@@ -23,11 +23,11 @@
 //namespace Optima {
 //
 //// Forward declarations
-//struct SaddlePointMatrix;
+//class SaddlePointMatrix;
 //struct SaddlePointVector;
 //
 //using
-//struct SaddlePointMatrixDiagonal
+//class SaddlePointMatrixDiagonal
 //{
 //    VectorXd H;
 //

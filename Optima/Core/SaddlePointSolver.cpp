@@ -95,9 +95,12 @@ struct SaddlePointSolver::Impl
         // The result of this method call
         SaddlePointResult res;
 
+        // Get the Jacobian matrix
+        auto A = lhs.jacobian();
+
         // Set the number of rows and columns in A
-        m = lhs.A.rows();
-        n = lhs.A.cols();
+        m = A.rows();
+        n = A.cols();
         t = m + n;
 
         // Allocate auxiliary memory
@@ -105,7 +108,7 @@ struct SaddlePointSolver::Impl
         vec.resize(t);
 
         // Compute the canonical form of matrix A
-        canonicalizer.compute(lhs.A);
+        canonicalizer.compute(A);
 
         return res.stop();
     }
@@ -113,14 +116,20 @@ struct SaddlePointSolver::Impl
     /// Update the canonical form of the coefficient matrix *A* of the saddle point problem.
     auto update(const SaddlePointMatrix& lhs) -> void
     {
+        // Get the Hessian matrix
+        auto H = lhs.hessian();
+
+        // Get the indices of fixed variables
+        const Indices& fixed = lhs.fixed();
+
         // Update the priority weights for the update of the canonical form
-        w.noalias() = inv(lhs.H);
+        w.noalias() = inv(H.diagonal());
 
         // Update the canonical form and the ordering of the variables
-        canonicalizer.update(w, lhs.fixed);
+        canonicalizer.update(w, fixed);
 
         // Update the number of fixed, basic, and non-basic variables
-        nf = lhs.fixed.size();
+        nf = fixed.size();
         nb = canonicalizer.rows();
         nn = n - nb - nf;
     }
@@ -151,7 +160,7 @@ struct SaddlePointSolver::Impl
         auto Sn = S.leftCols(nn);
 
         // Set `H` as the diagonal Hessian according to current canonical ordering
-        H.noalias() = rows(lhs.H, Q);
+        H.noalias() = rows(lhs.hessian().diagonal(), Q);
 
         // Compute the auxiliary matrices Bb and Bn
         Bn.noalias() = Sn * diag(inv(Hn));

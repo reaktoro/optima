@@ -27,7 +27,7 @@
 namespace Optima {
 
 // Forward declarations
-struct SaddlePointMatrix;
+class SaddlePointMatrix;
 struct SaddlePointVector;
 
 /// Used to solve saddle point problems.

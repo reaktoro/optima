@@ -29,10 +29,16 @@ using VectorXd = Eigen::VectorXd;
 using MatrixXd = Eigen::MatrixXd;
 
 /// Alias to a reference to a vector type of the Eigen library.
-using VectorRef = Eigen::Ref<Eigen::VectorXd>;
+using VectorRef = Eigen::Ref<VectorXd>;
 
 /// Alias to a reference to a matrix type of the Eigen library.
-using MatrixRef = Eigen::Ref<Eigen::MatrixXd>;
+using MatrixRef = Eigen::Ref<MatrixXd>;
+
+/// Alias to a const reference to a vector type of the Eigen library.
+using ConstVectorRef = Eigen::Ref<const VectorXd>;
+
+/// Alias to a const reference to a matrix type of the Eigen library.
+using ConstMatrixRef = Eigen::Ref<const MatrixXd>;
 
 /// Define an alias to a permutation matrix type of the Eigen library
 using PermutationMatrix = Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic>;
