@@ -23,15 +23,15 @@ using namespace Optima;
 
 TEST_CASE("Testing SaddlePointMatrix...")
 {
-    SaddlePointMatrix mat;
+    MatrixXd H = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};
+    MatrixXd A = {{1, 2, 3}, {3, 4, 5}};
 
-    mat.H = {1, 2, 3};
-    mat.A = {{1, 2, 3}, {3, 4, 5}};
+    SaddlePointMatrix mat(H, A);
 
     MatrixXd M = {
-		{1,  0,  0, 1, 3},
-		{0,  2,  0, 2, 4},
-		{0,  0,  3, 3, 5},
+		{1,  2,  3, 1, 3},
+		{4,  5,  6, 2, 4},
+		{7,  8,  9, 3, 5},
 		{1,  2,  3, 0, 0},
 		{3,  4,  5, 0, 0}
     };
@@ -41,7 +41,10 @@ TEST_CASE("Testing SaddlePointMatrix...")
 
     SUBCASE("Testing conversion when some variables are fixed")
     {
-        mat.fixed = {1};
+        Indices fixed = {1};
+
+        SaddlePointMatrix mat(H, A, fixed);
+
         M.row(1).fill(0.0);
         M(1, 1) = 1.0;
 

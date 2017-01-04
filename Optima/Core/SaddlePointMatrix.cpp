@@ -53,9 +53,9 @@ auto SaddlePointMatrix::matrix() const -> MatrixXd
     const Index m = A.rows();
     const Index t = n + m;
     MatrixXd res = zeros(t, t);
-    res.topLeftCorner(n, n).diagonal() = H;
-    res.topRightCorner(n, m)           = tr(A);
-    res.bottomLeftCorner(m, n)         = A;
+    res.topLeftCorner(n, n)    = H;
+    res.topRightCorner(n, m)   = tr(A);
+    res.bottomLeftCorner(m, n) = A;
     rows(res, fixed()).fill(0.0);
     for(Index i : fixed())
         res(i, i) = 1.0;

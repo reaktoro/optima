@@ -37,9 +37,11 @@ TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian"
     Index m = 10;
     Index n = 60;
 
-    SaddlePointMatrix lhs;
-    lhs.A = random(m, n);
-    lhs.H = random(n);
+    MatrixXd A = random(m, n);
+    MatrixXd H = zeros(n, n);
+    H.diagonal() = random(n);
+
+    SaddlePointMatrix lhs(H, A);
 
     SaddlePointVector sol;
     sol.x = linspace(n, 1, n);
@@ -69,7 +71,7 @@ TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian"
     double timesps3 = res3.time()/samples;
     double timesps  = res.time()/samples;
 
-    MatrixXd A = lhs.matrix();
+    MatrixXd M = lhs.matrix();
     VectorXd b = rhs.vector();
     VectorXd x = sol.vector();
 
@@ -79,7 +81,7 @@ TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian"
     for(Index i = 0; i < samples; ++i)
     {
         Time begin = time();
-        PartialPivLU<MatrixXd> lu(A);
+        PartialPivLU<MatrixXd> lu(M);
         timelu1 += elapsed(begin);
         begin = time();
         actualx = lu.solve(b);
