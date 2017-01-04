@@ -26,30 +26,70 @@ using namespace Eigen;
 
 namespace Optima {
 
+using VectorBlock = decltype(VectorXd().segment(0,0));
+using MatrixBlock = decltype(MatrixXd().block(0,0,0,0));
+
+struct CanonicalSaddlePointMatrixDiagonal
+{
+    /// The basic and non-basic partition of the Hessian matrix in diagonal form.
+    VectorBlock Hb, Hn;
+
+    /// The non-basic and fixed partition of the canonical matrix S.
+    MatrixBlock Sn, Sf;
+};
+
+struct CanonicalSaddlePointMatrixDense
+{
+    /// The basic and non-basic partition of the Hessian matrix in dense form.
+    MatrixBlock Hbb, Hnn, Hnb, Hbn;
+
+    /// The non-basic and fixed partition of the canonical matrix S.
+    MatrixBlock Sn, Sf;
+};
+
+struct CanonicalSaddlePointVector
+{
+    /// The basic, non-basic, and fixed partition of the right-hand side vector *a*.
+    VectorBlock ab, an, af;
+
+    /// The basic partition of the right-hand side vector *b*.
+    VectorBlock bb;
+};
+
+struct CanonicalSaddlePointSolution
+{
+    /// The basic, non-basic, and fixed partition of the solution vector *x*.
+    VectorBlock xb, xn, xf;
+
+    /// The basic partition of the solution vector *y*.
+    VectorBlock yb;
+};
+
 struct SaddlePointSolver::Impl
 {
-    /// The canonicalizer of the Jacobian matrix `A`.
+    /// The canonicalizer of the Jacobian matrix *A*.
     Canonicalizer canonicalizer;
 
-    /// Auxiliary matrices used in the decompose and solve methods.
-    MatrixXd B, T, M;
-
-    /// Auxiliary vectors used in the decompose and solve methods.
-    VectorXd H, a, b;
-
-    /// The LU solver aplied to the matrix Mb of dimension nb-by-nb to calculate Lb and Ub.
-    Eigen::PartialPivLU<MatrixXd> lu;
-
-    /// The priority weights for the selection of basic variables.
-    VectorXd w;
-
-    /// The number of rows and columns in A
-    Index m, n;
+    /// The number of rows and columns in the Jacobian matrix *A*
+    Index m, n, t;
 
     /// The number of basic, non-basic, and fixed variables.
     Index nb, nn, nf;
 
-    /// Canonicalize the coefficient matrix \eq{A} of the saddle point problem.
+    /// The priority weights for the selection of basic variables.
+    VectorXd w;
+
+    MatrixXd mat;
+
+    VectorXd vec;
+
+    /// The LU solver used to calculate *xb* when the Hessian matrix is in diagonal form.
+    Eigen::PartialPivLU<MatrixXd> luxb;
+
+    /// The LU solver used to calculate *xn* when the Hessian matrix is in dense form.
+    Eigen::PartialPivLU<MatrixXd> luxn;
+
+    /// Canonicalize the coefficient matrix *A* of the saddle point problem.
     auto canonicalize(const SaddlePointMatrix& lhs) -> SaddlePointResult
     {
         // The result of this method call
@@ -58,14 +98,11 @@ struct SaddlePointSolver::Impl
         // Set the number of rows and columns in A
         m = lhs.A.rows();
         n = lhs.A.cols();
+        t = m + n;
 
         // Allocate auxiliary memory
-        H.resize(n);
-        B.resize(m, n);
-        T.resize(n, m);
-        M.resize(m, m);
-        a.resize(n);
-        b.resize(m);
+        mat.resize(t, t);
+        vec.resize(t);
 
         // Compute the canonical form of matrix A
         canonicalizer.compute(lhs.A);
@@ -73,7 +110,7 @@ struct SaddlePointSolver::Impl
         return res.stop();
     }
 
-    /// Update the canonical form of the coefficient matrix \eq{A} of the saddle point problem.
+    /// Update the canonical form of the coefficient matrix *A* of the saddle point problem.
     auto update(const SaddlePointMatrix& lhs) -> void
     {
         // Update the priority weights for the update of the canonical form
@@ -102,6 +139,10 @@ struct SaddlePointSolver::Impl
         const auto& S = canonicalizer.S();
 
         // Create auxiliary matrix views
+        auto H  = mat.topLeftCorner(n, n).diagonal();
+        auto B  = mat.bottomLeftCorner(m, n);
+        auto T  = mat.topRightCorner(n, m);
+        auto M  = mat.bottomRightCorner(m, m);
         auto Hb = H.head(nb);
         auto Hn = H.segment(nb, nn);
         auto Bn = B.topLeftCorner(nb, nn);
@@ -121,7 +162,7 @@ struct SaddlePointSolver::Impl
         Mb.noalias() += identity(nb, nb);
 
         // Compute the LU decomposition of `Mb`.
-        lu.compute(Mb);
+        luxb.compute(Mb);
 
         return res.stop();
     }
@@ -145,6 +186,9 @@ struct SaddlePointSolver::Impl
         const auto& S = canonicalizer.S();
 
         // Create auxiliary sub-matrix views
+        auto H  = mat.topLeftCorner(n, n).diagonal();
+        auto B  = mat.bottomLeftCorner(m, n);
+        auto T  = mat.topRightCorner(n, m);
         auto Hb = H.head(nb);
         auto Hn = H.segment(nb, nn);
         auto Bn = B.topLeftCorner(nb, nn);
@@ -153,6 +197,8 @@ struct SaddlePointSolver::Impl
         auto Sf = S.rightCols(nf);
 
         // Create auxiliary sub-vector views
+        auto a  = vec.head(n);
+        auto b  = vec.tail(m);
         auto ab = a.head(nb);
         auto an = a.segment(nb, nn);
         auto af = a.tail(nf);
@@ -170,7 +216,7 @@ struct SaddlePointSolver::Impl
         an.noalias() -= tr(Sn)*yb;
         bb.noalias() -= Sf*af;
         bb.noalias() -= Bn*an;
-        ab.noalias()  = lu.solve(bb);
+        ab.noalias()  = luxb.solve(bb);
         an.noalias() += Tb*ab;
         an.noalias()  = diag(inv(Hn))*an;
         bb.noalias()  = yb;

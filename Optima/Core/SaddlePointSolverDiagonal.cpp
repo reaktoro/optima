@@ -15,7 +15,7 @@
 //// You should have received a copy of the GNU General Public License
 //// along with this program. If not, see <http://www.gnu.org/licenses/>.
 //
-//#include "SaddlePointSolverDiagonal.hpp"
+//#include "SaddlePointSolver.hpp"
 //
 //// Optima includes
 //#include <Optima/Common/Exception.hpp>
@@ -26,25 +26,73 @@
 //
 //namespace Optima {
 //
-//struct SaddlePointSolverDiagonal::Impl
+//using VectorBlock = decltype(VectorXd().segment(0,0));
+//using MatrixBlock = decltype(MatrixXd().block(0,0,0,0));
+//
+//struct CanonicalSaddlePointMatrixDiagonal
+//{
+//    /// The basic and non-basic partition of the Hessian matrix in diagonal form.
+//    VectorBlock Hb, Hn;
+//
+//    /// The non-basic and fixed partition of the canonical matrix S.
+//    MatrixBlock Sn, Sf;
+//};
+//
+//struct CanonicalSaddlePointMatrixDense
+//{
+//    /// The basic and non-basic partition of the Hessian matrix in dense form.
+//    MatrixBlock Hbb, Hnn, Hnb, Hbn;
+//
+//    /// The non-basic and fixed partition of the canonical matrix S.
+//    MatrixBlock Sn, Sf;
+//};
+//
+//struct CanonicalSaddlePointVector
+//{
+//    /// The basic, non-basic, and fixed partition of the right-hand side vector *a*.
+//    VectorBlock ab, an, af;
+//
+//    /// The basic partition of the right-hand side vector *b*.
+//    VectorBlock bb;
+//};
+//
+//struct CanonicalSaddlePointSolution
+//{
+//    /// The basic, non-basic, and fixed partition of the solution vector *x*.
+//    VectorBlock xb, xn, xf;
+//
+//    /// The basic partition of the solution vector *y*.
+//    VectorBlock yb;
+//};
+//
+//struct SaddlePointSolver::Impl
 //{
 //    /// The canonicalizer of the Jacobian matrix `A`.
 //    Canonicalizer canonicalizer;
-//
-//    /// Auxiliary matrices used in the decompose and solve methods.
-//    MatrixXd B, T, M;
-//
-//    /// Auxiliary vectors used in the decompose and solve methods.
-//    VectorXd H, a, b, w;
-//
-//    /// The LU solver aplied to the matrix Mb of dimension nb-by-nb to calculate Lb and Ub.
-//    Eigen::PartialPivLU<MatrixXd> lu;
 //
 //    /// The number of rows and columns in A
 //    Index m, n;
 //
 //    /// The number of basic, non-basic, and fixed variables.
 //    Index nb, nn, nf;
+//
+//    /// The priority weights for the selection of basic variables.
+//    VectorXd w;
+//
+//    /// Auxiliary matrices used in the decompose and solve methods.
+//    MatrixXd B, T, M;
+//
+//    /// Auxiliary vectors used in the decompose and solve methods.
+//    VectorXd H, a, b;
+//
+//    /// The basic and non-basic partition of the Hessian matrix in diagonal form.
+//    VectorXd Hb, Hn;
+//
+//    /// The basic and non-basic partition of the Hessian matrix in dense form.
+//    MatrixXd Hbb, Hnn, Hnb, Hbn;
+//
+//    /// The LU solver aplied to the matrix Mb of dimension nb-by-nb to calculate Lb and Ub.
+//    Eigen::PartialPivLU<MatrixXd> lu;
 //
 //    /// Canonicalize the coefficient matrix \eq{A} of the saddle point problem.
 //    auto canonicalize(const SaddlePointMatrix& lhs) -> SaddlePointResult
@@ -183,34 +231,34 @@
 //    }
 //};
 //
-//SaddlePointSolverDiagonal::SaddlePointSolverDiagonal()
+//SaddlePointSolver::SaddlePointSolver()
 //: pimpl(new Impl())
 //{}
 //
-//SaddlePointSolverDiagonal::SaddlePointSolverDiagonal(const SaddlePointSolverDiagonal& other)
+//SaddlePointSolver::SaddlePointSolver(const SaddlePointSolver& other)
 //: pimpl(new Impl(*other.pimpl))
 //{}
 //
-//SaddlePointSolverDiagonal::~SaddlePointSolverDiagonal()
+//SaddlePointSolver::~SaddlePointSolver()
 //{}
 //
-//auto SaddlePointSolverDiagonal::operator=(SaddlePointSolverDiagonal other) -> SaddlePointSolverDiagonal&
+//auto SaddlePointSolver::operator=(SaddlePointSolver other) -> SaddlePointSolver&
 //{
 //    pimpl = std::move(other.pimpl);
 //    return *this;
 //}
 //
-//auto SaddlePointSolverDiagonal::canonicalize(const SaddlePointMatrix& lhs) -> SaddlePointResult
+//auto SaddlePointSolver::canonicalize(const SaddlePointMatrix& lhs) -> SaddlePointResult
 //{
 //    return pimpl->canonicalize(lhs);
 //}
 //
-//auto SaddlePointSolverDiagonal::decompose(const SaddlePointMatrix& lhs) -> SaddlePointResult
+//auto SaddlePointSolver::decompose(const SaddlePointMatrix& lhs) -> SaddlePointResult
 //{
 //    return pimpl->decompose(lhs);
 //}
 //
-//auto SaddlePointSolverDiagonal::solve(const SaddlePointVector& rhs, SaddlePointVector& sol) -> SaddlePointResult
+//auto SaddlePointSolver::solve(const SaddlePointVector& rhs, SaddlePointVector& sol) -> SaddlePointResult
 //{
 //    return pimpl->solve(rhs, sol);
 //}
