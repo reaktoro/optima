@@ -26,53 +26,6 @@ using namespace Eigen;
 
 namespace Optima {
 
-SaddlePointResult::SaddlePointResult()
-: m_success(true), m_time(0.0), m_start(Optima::time()), m_stop(m_start)
-{}
-
-auto SaddlePointResult::success(bool value) -> void
-{
-    m_success = value;
-}
-
-auto SaddlePointResult::success() const -> bool
-{
-    return m_success;
-}
-
-auto SaddlePointResult::time() const -> double
-{
-    return m_time;
-}
-
-auto SaddlePointResult::start() -> SaddlePointResult&
-{
-    m_time = 0.0;
-    m_start = Optima::time();
-    return *this;
-}
-
-auto SaddlePointResult::stop() -> SaddlePointResult&
-{
-    m_stop = Optima::time();
-    m_time = elapsed(m_stop, m_start);
-    return *this;
-}
-
-auto SaddlePointResult::operator+=(const SaddlePointResult& other) -> SaddlePointResult&
-{
-    m_success = m_success && other.m_success;
-    m_time += other.m_time;
-    return *this;
-}
-
-auto SaddlePointResult::operator+(SaddlePointResult other) -> SaddlePointResult
-{
-    other.m_success = m_success && other.m_success;
-    other.m_time += m_time;
-    return other;
-}
-
 struct SaddlePointSolver::Impl
 {
     /// The canonicalizer of the Jacobian matrix `A`.
