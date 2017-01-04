@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include <Optima/Math/Eigen/Dense>
+// Eigenx includes
+#include <Eigenx/LU.hpp>
 
-template class Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic>;
 template class Eigen::FullPivLU<Eigen::MatrixXd>;
 template class Eigen::PartialPivLU<Eigen::MatrixXd>;

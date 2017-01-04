@@ -18,6 +18,7 @@
 #pragma once
 
 // Optima includes
+#include <Optima/Common/Index.hpp>
 #include <Optima/Math/Matrix.hpp>
 
 namespace Optima {
@@ -41,17 +42,17 @@ public:
 
     /// Return a reference to the diagonal of the Hessian matrix with given dimension.
     /// @param dim The dimension of the Hessian matrix.
-    auto diagonal(Index dim) -> Vector&;
+    auto diagonal(Index dim) -> VectorXd&;
 
     /// Return a const reference to the diagonal entries of the diagonal Hessian matrix.
-    auto diagonal() const -> const Vector&;
+    auto diagonal() const -> const VectorXd&;
 
     /// Return a reference to the dense Hessian matrix with given dimension.
     /// @param dim The dimension of the dense Hessian matrix.
-    auto dense(Index dim) -> Matrix&;
+    auto dense(Index dim) -> MatrixXd&;
 
     /// Return a const reference to the dense Hessian matrix.
-    auto dense() const -> const Matrix&;
+    auto dense() const -> const MatrixXd&;
 
     /// Return the mode of the Hessian matrix.
     auto mode() const -> Mode;
@@ -60,7 +61,7 @@ public:
     auto dim() const -> Index;
 
     /// Convert this HessianMatrix instance to a Matrix instance.
-    auto convert() const -> Matrix;
+    auto convert() const -> MatrixXd;
 
 private:
     /// The dimension of the Hessian matrix.
@@ -70,10 +71,10 @@ private:
     Mode m_mode;
 
     /// The diagonal vector of this diagonal Hessian matrix (if diagonal mode active).
-    Vector m_diagonal;
+    VectorXd m_diagonal;
 
     /// The matrix representing a dense Hessian matrix (if dense mode active).
-    Matrix m_dense;
+    MatrixXd m_dense;
 };
 
 } // namespace Optima

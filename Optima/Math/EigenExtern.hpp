@@ -17,6 +17,8 @@
 
 #pragma once
 
-extern template class Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic>;
+// Eigenx includes
+#include <Eigenx/LU.hpp>
+
 extern template class Eigen::FullPivLU<Eigen::MatrixXd>;
 extern template class Eigen::PartialPivLU<Eigen::MatrixXd>;

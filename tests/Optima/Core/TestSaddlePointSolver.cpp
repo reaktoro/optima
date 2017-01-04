@@ -20,10 +20,14 @@
 // C++ includes
 #include <iostream>
 
+// Eigenx includes
+#include <Eigenx/Core.hpp>
+#include <Eigenx/LU.hpp>
+using namespace Eigen;
+
 // Optima includes
 #include <Optima/Core/SaddlePointMatrix.hpp>
 #include <Optima/Core/SaddlePointSolver.hpp>
-#include <Optima/Math/Eigen/LU>
 using namespace Optima;
 
 Index samples = 10;
@@ -65,17 +69,17 @@ TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian"
     double timesps3 = res3.time()/samples;
     double timesps  = res.time()/samples;
 
-    Matrix A = lhs.matrix();
-    Vector b = rhs.vector();
-    Vector x = sol.vector();
+    MatrixXd A = lhs.matrix();
+    VectorXd b = rhs.vector();
+    VectorXd x = sol.vector();
 
     double timelu1 = 0.0, timelu2 = 0.0, timelu = 0.0;
-    Vector actualx;
+    VectorXd actualx;
 
     for(Index i = 0; i < samples; ++i)
     {
         Time begin = time();
-        Eigen::PartialPivLU<Matrix> lu(A);
+        PartialPivLU<MatrixXd> lu(A);
         timelu1 += elapsed(begin);
         begin = time();
         actualx = lu.solve(b);

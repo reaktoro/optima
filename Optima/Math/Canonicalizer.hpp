@@ -21,6 +21,7 @@
 #include <memory>
 
 // Optima includes
+#include <Optima/Common/Index.hpp>
 #include <Optima/Math/Matrix.hpp>
 
 namespace Optima {
@@ -36,7 +37,7 @@ public:
     Canonicalizer();
 
     /// Construct a Canonicalizer instance with given matrix.
-    Canonicalizer(const Matrix& A);
+    Canonicalizer(const MatrixXd& A);
 
     /// Construct a copy of a Canonicalizer instance.
     Canonicalizer(const Canonicalizer& other);
@@ -54,19 +55,19 @@ public:
     auto cols() const -> Index;
 
     /// Return the matrix \eq{S} of the canonicalization.
-    auto S() const -> const Matrix&;
+    auto S() const -> const MatrixXd&;
 
     /// Return the canonicalizer matrix \eq{R}.
-    auto R() const -> const Matrix&;
+    auto R() const -> const MatrixXd&;
 
     /// Return the inverse of the canonicalizer matrix \eq{R^{-1}}.
-    auto Rinv() const -> const Matrix&;
+    auto Rinv() const -> const MatrixXd&;
 
     /// Return the permutation matrix \eq{Q} of the canonicalization.
     auto Q() const -> const PermutationMatrix&;
 
     /// Return the canonicalized matrix \eq{C = RAQ = [I\quad S]}`.
-    auto C() const -> Matrix;
+    auto C() const -> MatrixXd;
 
     /// Return the indices of the variables describing its ordering after canonicalization.
     auto ordering() const -> Indices;
@@ -81,7 +82,7 @@ public:
     auto inonbasic() const -> Indices;
 
 	/// Compute the canonical matrix of the given matrix.
-	auto compute(const Matrix& A) -> void;
+	auto compute(const MatrixXd& A) -> void;
 
 	/// Swap a basic component by a non-basic component.
 	/// Let `m` and `n` denote the number of rows and columns of
@@ -98,11 +99,11 @@ public:
 	/// basic columns (i.e., columns corresponding to basic variables). The non-basic variables
 	/// are sorted in descend order with respect to their weights.
     /// @param weights The priority weights of the variables.
-	auto update(const Vector& weights) -> void;
+	auto update(const VectorXd& weights) -> void;
 
 	/// @copydoc update
     /// @param fixed The indices of the columns corresponding to be fixed variables.
-	auto update(const Vector& weights, const Indices& fixed) -> void;
+	auto update(const VectorXd& weights, const Indices& fixed) -> void;
 
 private:
 	struct Impl;

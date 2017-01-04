@@ -27,10 +27,10 @@ namespace Optima {
 struct Canonicalizer::Impl
 {
     /// The full-pivoting LU decomposition of A so that P*A*Q = L*U;
-    Eigen::FullPivLU<Matrix> lu;
+    Eigen::FullPivLU<MatrixXd> lu;
 
     /// The matrix `S` in the canonical form `C = [I S]`.
-    Matrix S;
+    MatrixXd S;
 
     /// The permutation matrix `P`.
     PermutationMatrix P;
@@ -39,16 +39,16 @@ struct Canonicalizer::Impl
     PermutationMatrix Q;
 
     /// The canonicalizer matrix `R`.
-    Matrix R;
+    MatrixXd R;
 
     /// The inverse of the canonicalizer matrix `R`.
-    Matrix Rinv;
+    MatrixXd Rinv;
 
     /// The priority weights used to update the canonical form.
-    Vector w;
+    VectorXd w;
 
     /// The matrix `M` used in the swap operation.
-    Vector M;
+    VectorXd M;
 
     /// The permutation matrix `Kb` used in the weighted update method.
     Indices bswaps;
@@ -61,7 +61,7 @@ Canonicalizer::Canonicalizer()
 : pimpl(new Impl())
 {}
 
-Canonicalizer::Canonicalizer(const Matrix& A)
+Canonicalizer::Canonicalizer(const MatrixXd& A)
 : pimpl(new Impl())
 {
 	compute(A);
@@ -90,17 +90,17 @@ auto Canonicalizer::cols() const -> Index
     return Q().rows();
 }
 
-auto Canonicalizer::S() const -> const Matrix&
+auto Canonicalizer::S() const -> const MatrixXd&
 {
 	return pimpl->S;
 }
 
-auto Canonicalizer::R() const -> const Matrix&
+auto Canonicalizer::R() const -> const MatrixXd&
 {
 	return pimpl->R;
 }
 
-auto Canonicalizer::Rinv() const -> const Matrix&
+auto Canonicalizer::Rinv() const -> const MatrixXd&
 {
 	return pimpl->Rinv;
 }
@@ -110,11 +110,11 @@ auto Canonicalizer::Q() const -> const PermutationMatrix&
 	return pimpl->Q;
 }
 
-auto Canonicalizer::C() const -> Matrix
+auto Canonicalizer::C() const -> MatrixXd
 {
     const Index m = rows();
     const Index n = cols();
-    Matrix res(m, n);
+    MatrixXd res(m, n);
     res << identity(m, m), S();
     return res;
 }
@@ -144,7 +144,7 @@ auto Canonicalizer::inonbasic() const -> Indices
 	return Indices(begin + rows(), begin + cols());
 }
 
-auto Canonicalizer::compute(const Matrix& A) -> void
+auto Canonicalizer::compute(const MatrixXd& A) -> void
 {
     // Alias to implementation members
     auto& P      = pimpl->P;
@@ -239,12 +239,12 @@ auto Canonicalizer::swap(Index ib, Index in) -> void
 	std::swap(Q[ib], Q[m + in]);
 }
 
-auto Canonicalizer::update(const Vector& weights) -> void
+auto Canonicalizer::update(const VectorXd& weights) -> void
 {
     update(weights, {});
 }
 
-auto Canonicalizer::update(const Vector& weights, const Indices& fixed) -> void
+auto Canonicalizer::update(const VectorXd& weights, const Indices& fixed) -> void
 {
 	// Auxiliary references to member data
 	auto& Q      = pimpl->Q;
@@ -270,10 +270,10 @@ auto Canonicalizer::update(const Vector& weights, const Indices& fixed) -> void
     if(weights.rows()) w.noalias() = abs(weights); else w = ones(n);
 
     // Set weights of fixed variables to zero to prevent them from becoming basic variables
-    Optima::rows(w, fixed).fill(0.0);
+    Eigen::rows(w, fixed).fill(0.0);
 
 	// The weights of the non-basic components
-	auto wn = Optima::rows(w, inonbasic);
+	auto wn = Eigen::rows(w, inonbasic);
 
 	// Swap basic and non-basic components when the latter has higher weight
 	if(nn > 0) for(Index i = 0; i < nb; ++i)
@@ -286,7 +286,7 @@ auto Canonicalizer::update(const Vector& weights, const Indices& fixed) -> void
 	}
 
     // Set weights of fixed variables to decreasing negative values to move them to the back of the list
-    Optima::rows(w, fixed) = -linspace(nf, 1, nf);
+    Eigen::rows(w, fixed) = -VectorXd::LinSpaced(nf, 1, nf);
 
 	// Sort the basic components in descend order of weights
 	std::sort(bswaps.data(), bswaps.data() + bswaps.size(),

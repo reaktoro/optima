@@ -23,7 +23,7 @@
 namespace Optima {
 
 /// Define a type that represents an index
-using Index = std::size_t;
+using Index = std::ptrdiff_t;
 
 /// Define a type that represents a collection of indices
 using Indices = std::vector<Index>;

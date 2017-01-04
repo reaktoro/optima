@@ -79,13 +79,13 @@ struct SaddlePointSolver::Impl
     Canonicalizer canonicalizer;
 
     /// Auxiliary matrices used in the decompose and solve methods.
-    Matrix B, T, M;
+    MatrixXd B, T, M;
 
     /// Auxiliary vectors used in the decompose and solve methods.
-    Vector H, a, b, w;
+    VectorXd H, a, b, w;
 
     /// The LU solver aplied to the matrix Mb of dimension nb-by-nb to calculate Lb and Ub.
-    PartialPivLU<Matrix> lu;
+    Eigen::PartialPivLU<MatrixXd> lu;
 
     /// The number of rows and columns in A
     Index m, n;

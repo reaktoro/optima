@@ -35,14 +35,14 @@ struct traits<Optima::BlockDiagonalMatrix>
 {
     typedef Eigen::Dense StorageKind;
     typedef Eigen::MatrixXpr XprKind;
-    typedef Optima::Matrix::StorageIndex StorageIndex;
-    typedef Optima::Matrix::Scalar Scalar;
+    typedef Optima::MatrixXd::StorageIndex StorageIndex;
+    typedef Optima::MatrixXd::Scalar Scalar;
     enum {
         Flags = Eigen::ColMajor,
-        RowsAtCompileTime = Optima::Matrix::RowsAtCompileTime,
-        ColsAtCompileTime = Optima::Matrix::ColsAtCompileTime,
-        MaxRowsAtCompileTime = Optima::Matrix::MaxRowsAtCompileTime,
-        MaxColsAtCompileTime = Optima::Matrix::MaxColsAtCompileTime,
+        RowsAtCompileTime = Optima::MatrixXd::RowsAtCompileTime,
+        ColsAtCompileTime = Optima::MatrixXd::ColsAtCompileTime,
+        MaxRowsAtCompileTime = Optima::MatrixXd::MaxRowsAtCompileTime,
+        MaxColsAtCompileTime = Optima::MatrixXd::MaxColsAtCompileTime,
     };
 };
 
@@ -71,23 +71,23 @@ public:
 
     /// Return a reference to a block matrix on the diagonal.
     /// @param i The index of the block matrix.
-    auto block(Index i) -> Matrix& { return m_blocks[i]; }
+    auto block(Index i) -> MatrixXd& { return m_blocks[i]; }
 
     /// Return a const reference to a block matrix on the diagonal.
     /// @param i The index of the block matrix.
-    auto block(Index i) const -> const Matrix& { return m_blocks[i]; }
+    auto block(Index i) const -> const MatrixXd& { return m_blocks[i]; }
 
     /// Return a reference to the block matrices on the diagonal.
-    auto blocks() -> std::vector<Matrix>& { return m_blocks; }
+    auto blocks() -> std::vector<MatrixXd>& { return m_blocks; }
 
     /// Return a const reference to the block matrices on the diagonal.
-    auto blocks() const -> const std::vector<Matrix>& { return m_blocks; }
+    auto blocks() const -> const std::vector<MatrixXd>& { return m_blocks; }
 
     /// Return the number of rows of the block diagonal matrix.
     auto rows() const -> Index
     {
         Index sum = 0;
-        for(const Matrix& block : blocks())
+        for(const MatrixXd& block : blocks())
             sum += block.rows();
         return sum;
     }
@@ -96,7 +96,7 @@ public:
     auto cols() const -> Index
     {
         Index sum = 0;
-        for(const Matrix& block : blocks())
+        for(const MatrixXd& block : blocks())
             sum += block.cols();
         return sum;
     }
@@ -139,7 +139,7 @@ public:
         const Index m = rows();
         const Index n = cols();
         const Index nblocks = blocks().size();
-        PlainObject res = zeros(m, n);
+        PlainObject res = PlainObject::Zero(m, n);
         Index irow = 0, icol = 0;
         for(Index i = 0; i < nblocks; ++i)
         {
@@ -154,7 +154,7 @@ public:
 
 private:
     /// The block matrices on the block diagonal matrix.
-    std::vector<Matrix> m_blocks;
+    std::vector<MatrixXd> m_blocks;
 };
 
 } // namespace Optima
@@ -166,10 +166,10 @@ template<>
 struct evaluator<Optima::BlockDiagonalMatrix> : evaluator_base<Optima::BlockDiagonalMatrix>
 {
     typedef Optima::BlockDiagonalMatrix XprType;
-    typedef Optima::Matrix::Scalar Scalar;
+    typedef Optima::MatrixXd::Scalar Scalar;
     enum
     {
-        CoeffReadCost = evaluator<Optima::Matrix>::CoeffReadCost,
+        CoeffReadCost = evaluator<Optima::MatrixXd>::CoeffReadCost,
         Flags = Eigen::ColMajor
     };
 

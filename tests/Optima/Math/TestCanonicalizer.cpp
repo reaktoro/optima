@@ -18,25 +18,27 @@
 #include <doctest/doctest.hpp>
 
 // Optima includes
+#include <Optima/Common/Index.hpp>
 #include <Optima/Math/Canonicalizer.hpp>
+using namespace Eigen;
 using namespace Optima;
 
-#define CHECK_CANONICAL_FORM                         \
-{                                                    \
-    const auto& R    = canonicalizer.R();            \
-    const auto& Rinv = canonicalizer.Rinv();         \
-    const auto& Q    = canonicalizer.Q();            \
-    const auto& C    = canonicalizer.C();            \
-    CHECK((R * Rinv).isApprox(identity(r, r)));      \
-    CHECK((R * A * Q - C).norm() == approx(0.0));    \
-}                                                    \
+#define CHECK_CANONICAL_FORM                           \
+{                                                      \
+    const auto& R    = canonicalizer.R();              \
+    const auto& Rinv = canonicalizer.Rinv();           \
+    const auto& Q    = canonicalizer.Q();              \
+    const auto& C    = canonicalizer.C();              \
+    CHECK((R * Rinv).isApprox(identity(r, r)));        \
+    CHECK((R * A * Q - C).norm() == approx(0.0));      \
+}                                                      \
 
 TEST_CASE("Testing Canonicalizer")
 {
 	const Index m = 4;
 	const Index n = 10;
 
-	Matrix A = random(m, n);
+	MatrixXd A = random(m, n);
 
 	Canonicalizer canonicalizer(A);
 	const Index r = canonicalizer.rows();
@@ -58,7 +60,7 @@ TEST_CASE("Testing Canonicalizer with two linearly dependent rows")
 	const Index m = 4;
 	const Index n = 10;
 
-	Matrix A = random(m, n);
+	MatrixXd A = random(m, n);
 	A.row(2) = A.row(0) + 2*A.row(1);
 	A.row(3) = A.row(1) - 2*A.row(2);
 
@@ -79,7 +81,7 @@ TEST_CASE("Testing Canonicalizer with two linearly dependent rows")
 
 TEST_CASE("Testing the update method of the Canonicalizer class")
 {
-	const Matrix A = {
+	const MatrixXd A = {
 		{2,  1,  1,  1,  0,  0},
 		{1,  0,  1,  3,  2,  3},
 		{0,  0,  0,  1,  1,  1},
@@ -92,7 +94,7 @@ TEST_CASE("Testing the update method of the Canonicalizer class")
 	CHECK(r == 3);
 	CHECK_CANONICAL_FORM
 
-	Vector w = {55.1, 1.e-4, 1.e-10, 0.1, 0.5, 1e-2};
+	VectorXd w = {55.1, 1.e-4, 1.e-10, 0.1, 0.5, 1e-2};
 
 	canonicalizer.update(w);
 

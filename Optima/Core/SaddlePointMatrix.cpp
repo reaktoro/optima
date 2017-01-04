@@ -17,14 +17,17 @@
 
 #include "SaddlePointMatrix.hpp"
 
+// Eigenx includes
+using namespace Eigen;
+
 namespace Optima {
 
-auto SaddlePointMatrix::matrix() const -> Matrix
+auto SaddlePointMatrix::matrix() const -> MatrixXd
 {
     const Index n = H.rows();
     const Index m = A.rows();
     const Index t = n + m;
-    Matrix res = zeros(t, t);
+    MatrixXd res = zeros(t, t);
     res.topLeftCorner(n, n).diagonal() = H;
     res.topRightCorner(n, m)           = tr(A);
     res.bottomLeftCorner(m, n)         = A;
@@ -34,21 +37,21 @@ auto SaddlePointMatrix::matrix() const -> Matrix
     return res;
 }
 
-auto SaddlePointVector::vector() const -> Vector
+auto SaddlePointVector::vector() const -> VectorXd
 {
     const Index n = x.rows();
     const Index m = y.rows();
     const Index t = n + m;
-    Vector res(t);
+    VectorXd res(t);
     res << x, y;
     return res;
 }
 
 auto operator*(const SaddlePointMatrix& mat, const SaddlePointVector& vec) -> SaddlePointVector
 {
-    const Matrix A = mat.matrix();
-    const Vector x = vec.vector();
-    const Vector b = A*x;
+    const MatrixXd A = mat.matrix();
+    const VectorXd x = vec.vector();
+    const VectorXd b = A*x;
     SaddlePointVector res;
     res.x = b.head(mat.A.cols());
     res.y = b.tail(mat.A.rows());

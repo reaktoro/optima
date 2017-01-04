@@ -18,6 +18,7 @@
 #include <doctest/doctest.hpp>
 
 // Optima includes
+#include <Optima/Common/Index.hpp>
 #include <Optima/Math/BlockDiagonalMatrix.hpp>
 using namespace Optima;
 
@@ -25,7 +26,7 @@ TEST_CASE("Testing BlockDiagonalMatrix - square matrix")
 {
     const Index numblocks = 3;
 
-	Matrix M = {
+	MatrixXd M = {
 	    {1, 2, 3, 0, 0, 0},
 	    {2, 3, 4, 0, 0, 0},
 	    {3, 4, 5, 0, 0, 0},
@@ -40,14 +41,14 @@ TEST_CASE("Testing BlockDiagonalMatrix - square matrix")
 	A.block(2) = M.block(5, 5, 1, 1);
 
 	CHECK(A.isApprox(M));
-	CHECK(M.isApprox(Matrix(A)));
+	CHECK(M.isApprox(MatrixXd(A)));
 }
 
 TEST_CASE("Testing BlockDiagonalMatrix - rectangular matrix m < n")
 {
     const Index numblocks = 2;
 
-	Matrix M = {
+	MatrixXd M = {
 	    {1, 2, 3, 0, 0, 0},
 	    {2, 3, 4, 0, 0, 0},
 	    {3, 4, 5, 0, 0, 0},
@@ -60,14 +61,14 @@ TEST_CASE("Testing BlockDiagonalMatrix - rectangular matrix m < n")
 	A.block(1) = M.block(3, 3, 2, 3);
 
 	CHECK(A.isApprox(M));
-	CHECK(M.isApprox(Matrix(A)));
+	CHECK(M.isApprox(MatrixXd(A)));
 }
 
 TEST_CASE("Testing BlockDiagonalMatrix - rectangular matrix m < n")
 {
     const Index numblocks = 2;
 
-    Matrix M = {
+    MatrixXd M = {
         {1, 2, 3, 0, 0},
         {2, 3, 4, 0, 0},
         {3, 4, 5, 0, 0},
@@ -81,6 +82,6 @@ TEST_CASE("Testing BlockDiagonalMatrix - rectangular matrix m < n")
 	A.block(1) = M.block(3, 3, 3, 2);
 
 	CHECK(A.isApprox(M));
-	CHECK(M.isApprox(Matrix(A)));
+	CHECK(M.isApprox(MatrixXd(A)));
 }
 

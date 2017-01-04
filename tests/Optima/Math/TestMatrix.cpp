@@ -18,12 +18,13 @@
 #include <doctest/doctest.hpp>
 
 // Optima includes
+#include <Optima/Common/Index.hpp>
 #include <Optima/Math/Matrix.hpp>
 using namespace Optima;
 
 TEST_CASE("Testing Matrix")
 {
-    Matrix A = random(10,10);
+    MatrixXd A = Eigen::random(10,10);
     Indices irows1 = {1, 2};
     Indices irows2 = {1};
     auto B = rows(A, irows1);
@@ -46,7 +47,7 @@ TEST_CASE("Testing Matrix")
 
 TEST_CASE("Testing const Matrix")
 {
-    const Matrix A = random(10,10);
+    const MatrixXd A = Eigen::random(10,10);
     Indices irows1 = {1, 2};
     Indices irows2 = {1};
     auto B = rows(A, irows1);

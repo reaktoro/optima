@@ -19,9 +19,9 @@
 
 namespace Optima {
 
-auto inverseShermanMorrison(const Matrix& invA, const Vector& D) -> Matrix
+auto inverseShermanMorrison(const MatrixXd& invA, const VectorXd& D) -> MatrixXd
 {
-    Matrix invM = invA;
+    MatrixXd invM = invA;
     for(unsigned i = 0; i < D.rows(); ++i)
         invM = invM - (D[i]/(1 + D[i]*invM(i, i)))*invM.col(i)*invM.row(i);
     return invM;

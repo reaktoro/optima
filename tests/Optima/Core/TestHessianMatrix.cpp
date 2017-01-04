@@ -17,6 +17,10 @@
 
 #include <doctest/doctest.hpp>
 
+// Eigenx includes
+#include <Eigenx/Core.hpp>
+using namespace Eigen;
+
 // Optima includes
 #include <Optima/Core/HessianMatrix.hpp>
 using namespace Optima;

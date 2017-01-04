@@ -17,10 +17,8 @@
 
 #pragma once
 
-// C++ includes
-#include <map>
-
 // Optima includes
+#include <Optima/Common/Index.hpp>
 #include <Optima/Math/Matrix.hpp>
 
 namespace Optima {
@@ -40,29 +38,29 @@ namespace Optima {
 struct SaddlePointMatrix
 {
     /// The Hessian matrix \eq{H} in the saddle point matrix.
-    Vector H;
+    VectorXd H;
 
     /// The Jacobian matrix \eq{A} in the saddle point matrix.
-    Matrix A;
+    MatrixXd A;
 
     /// The indices of the fixed variables.
     Indices fixed;
 
     /// Convert this SaddlePointMatrix instance into a Matrix instance.
-    auto matrix() const -> Matrix;
+    auto matrix() const -> MatrixXd;
 };
 
 /// A type used to describe a saddle point right-hand side vector.
 struct SaddlePointVector
 {
     /// The saddle-point vector `x`.
-    Vector x;
+    VectorXd x;
 
     /// The saddle-point vector `y`.
-    Vector y;
+    VectorXd y;
 
     /// Convert this SaddlePointVector instance into a Vector instance.
-    auto vector() const -> Vector;
+    auto vector() const -> VectorXd;
 };
 
 /// Return the multiplication of a saddle point matrix and a saddle point vector.

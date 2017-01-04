@@ -17,9 +17,6 @@
 
 #include <doctest/doctest.hpp>
 
-// C++ includes
-#include <iostream>
-
 // Optima includes
 #include <Optima/Core/SaddlePointMatrix.hpp>
 using namespace Optima;
@@ -31,7 +28,7 @@ TEST_CASE("Testing SaddlePointMatrix...")
     mat.H = {1, 2, 3};
     mat.A = {{1, 2, 3}, {3, 4, 5}};
 
-    Matrix M = {
+    MatrixXd M = {
 		{1,  0,  0, 1, 3},
 		{0,  2,  0, 2, 4},
 		{0,  0,  3, 3, 5},
@@ -50,9 +47,6 @@ TEST_CASE("Testing SaddlePointMatrix...")
 
         // Check conversion to a Matrix instance
         CHECK(M.isApprox(mat.matrix()));
-
-        std::cout << "mat = \n" << mat.matrix() << std::endl;
-        std::cout << "M = \n" << M << std::endl;
     }
 }
 
@@ -63,7 +57,7 @@ TEST_CASE("Testing SaddlePointVector...")
     vec.x = {1, 2, 3};
     vec.y = {6, 7};
 
-    Vector V = {1, 2, 3, 6, 7};
+    VectorXd V = {1, 2, 3, 6, 7};
 
     // Check conversion to a Vector instance
     CHECK(V.isApprox(vec.vector()));

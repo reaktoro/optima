@@ -17,6 +17,9 @@
 
 #include "HessianMatrix.hpp"
 
+// Eigenx includes
+using namespace Eigen;
+
 namespace Optima {
 
 HessianMatrix::HessianMatrix()
@@ -32,7 +35,7 @@ auto HessianMatrix::zero(Index dim) -> void
     m_mode = Zero;
 }
 
-auto HessianMatrix::diagonal(Index dim) -> Vector&
+auto HessianMatrix::diagonal(Index dim) -> VectorXd&
 {
     m_dim = dim;
     m_mode = Diagonal;
@@ -40,12 +43,12 @@ auto HessianMatrix::diagonal(Index dim) -> Vector&
     return m_diagonal;
 }
 
-auto HessianMatrix::diagonal() const -> const Vector&
+auto HessianMatrix::diagonal() const -> const VectorXd&
 {
     return m_diagonal;
 }
 
-auto HessianMatrix::dense(Index dim) -> Matrix&
+auto HessianMatrix::dense(Index dim) -> MatrixXd&
 {
     m_dim = dim;
     m_mode = Dense;
@@ -53,7 +56,7 @@ auto HessianMatrix::dense(Index dim) -> Matrix&
     return m_dense;
 }
 
-auto HessianMatrix::dense() const -> const Matrix&
+auto HessianMatrix::dense() const -> const MatrixXd&
 {
     return m_dense;
 }
@@ -68,7 +71,7 @@ auto HessianMatrix::dim() const -> Index
     return m_dim;
 }
 
-auto HessianMatrix::convert() const -> Matrix
+auto HessianMatrix::convert() const -> MatrixXd
 {
     switch(m_mode)
     {
