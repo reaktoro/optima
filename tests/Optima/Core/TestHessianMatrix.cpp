@@ -30,7 +30,7 @@ TEST_CASE("Testing HessianMatrix when in Diagonal mode")
     VectorXd diag = ones(10);
     HessianMatrix H(diag);
 
-    CHECK(identity(10, 10).isApprox(H.convert()));
+    CHECK(identity(10, 10).isApprox(H.matrix()));
 }
 
 TEST_CASE("Testing HessianMatrix when in Dense mode")
@@ -38,5 +38,5 @@ TEST_CASE("Testing HessianMatrix when in Dense mode")
     MatrixXd dense = random(10, 10);
     HessianMatrix H(dense);
 
-    CHECK(dense.isApprox(H.convert()));
+    CHECK(dense.isApprox(H.matrix()));
 }

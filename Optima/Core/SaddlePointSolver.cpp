@@ -126,7 +126,7 @@ struct SaddlePointSolver::Impl
         const Indices& fixed = lhs.fixed();
 
         // Update the priority weights for the update of the canonical form
-        w.noalias() = inv(H.diagonal.value());
+        w.noalias() = inv(H.diagonal());
 
         // Update the canonical form and the ordering of the variables
         canonicalizer.update(w, fixed);
@@ -163,7 +163,7 @@ struct SaddlePointSolver::Impl
         auto Sn = S.leftCols(nn);
 
         // Set `H` as the diagonal Hessian according to current canonical ordering
-        H.noalias() = rows(lhs.hessian().diagonal.value(), Q);
+        H.noalias() = rows(lhs.hessian().diagonal(), Q);
 
         // Compute the auxiliary matrices Bb and Bn
         Bn.noalias() = Sn * diag(inv(Hn));

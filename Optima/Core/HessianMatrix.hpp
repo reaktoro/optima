@@ -28,87 +28,41 @@ namespace Optima {
 class HessianMatrix
 {
 public:
-    HessianMatrix(const VectorXd& diagonal) : diagonal(diagonal) {}
+    /// Construct a HessianMatrix instance with diagonal form.
+    /// @param vec The vector representing the diagonal entries of the Hessian matrix.
+    HessianMatrix(const VectorXd& vec) : m_diagonal(vec) {}
 
-    HessianMatrix(const MatrixXd& dense) : dense(dense) {}
+    /// Construct a HessianMatrix instance with dense form.
+    /// @param mat The matrix representing the entries of the Hessian matrix.
+    HessianMatrix(const MatrixXd& mat) : m_dense(mat) {}
 
-    /// Convert this HessianMatrix instance to a Matrix instance.
-    auto convert() const -> MatrixXd;
+    /// Return the dimension of the HessianMatrix instance.
+    auto dim() const -> Index { return isdiagonal() ? diagonal().rows() : dense().rows(); }
 
-    Optional<VectorXd> diagonal;
+    /// Return `true` if the HessianMatrix instance is in diagonal form.
+    auto isdiagonal() const -> bool { return m_diagonal; }
 
-    Optional<MatrixXd> dense;
+    /// Return `true` if the HessianMatrix instance is in dense form.
+    auto isdense() const -> bool { return m_dense; }
 
-//    HessianMatrix(Optional<SparseMatrix> sparse);
-//    Optional<SparseMatrix> sparse;
+    /// Return `true` if the HessianMatrix instance is in diagonal form.
+    auto diagonal() const -> const VectorXd& { return m_diagonal.value(); }
+
+    /// Return `true` if the HessianMatrix instance is in dense form.
+    auto dense() const -> const MatrixXd& { return m_dense.value(); }
+
+    /// Convert this HessianMatrix instance into a Matrix instance.
+    auto matrix() const -> MatrixXd { return isdiagonal() ? MatrixXd(diag(diagonal())) : dense(); }
+
+private:
+    /// The Hessian matrix as a diagonal matrix.
+    Optional<VectorXd> m_diagonal;
+
+    /// The Hessian matrix as a dense matrix.
+    Optional<MatrixXd> m_dense;
 };
 
-///// Used to represent a Hessian matrix in various forms.
-//class HessianMatrix
-//{
-//public:
-//    /// Used to represent the possible modes for a Hessian matrix.
-//    enum Mode { Zero, Diagonal, Dense, EigenDecomp };
-//
-//    /// Construct a default HessianMatrix instance.
-//    HessianMatrix();
-//
-//    /// Construct a HessianMatrix instance with a given diagonal matrix.
-//    HessianMatrix(const VectorXd& vec);
-//
-//    /// Construct a HessianMatrix instance with a given dense matrix.
-//    HessianMatrix(const MatrixXd& mat);
-//
-//    template<typename Derived>
-//    HessianMatrix(const Eigen::MatrixBase<Derived>& expr)
-//    {
-//        if(Derived::ColsAtCompileTime == 1)
-//            diagonal(expr.rows()) = expr;
-//        else dense(expr.rows()) = expr;
-//    }
-//
-//    /// Destroy this HessianMatrix instance.
-//    virtual ~HessianMatrix();
-//
-//    /// Set the Hessian matrix to a zero square matrix.
-//    /// @param dim The dimension of the Hessian matrix.
-//    auto zero(Index dim) -> void;
-//
-//    /// Return a reference to the diagonal of the Hessian matrix with given dimension.
-//    /// @param dim The dimension of the Hessian matrix.
-//    auto diagonal(Index dim) -> VectorXd&;
-//
-//    /// Return a const reference to the diagonal entries of the diagonal Hessian matrix.
-//    auto diagonal() const -> const VectorXd&;
-//
-//    /// Return a reference to the dense Hessian matrix with given dimension.
-//    /// @param dim The dimension of the dense Hessian matrix.
-//    auto dense(Index dim) -> MatrixXd&;
-//
-//    /// Return a const reference to the dense Hessian matrix.
-//    auto dense() const -> const MatrixXd&;
-//
-//    /// Return the mode of the Hessian matrix.
-//    auto mode() const -> Mode;
-//
-//    /// Return the dimension of the Hessian matrix.
-//    auto dim() const -> Index;
-//
-//    /// Convert this HessianMatrix instance to a Matrix instance.
-//    auto convert() const -> MatrixXd;
-//
-//private:
-//    /// The dimension of the Hessian matrix.
-//    Index m_dim;
-//
-//    /// The current mode of this Hessian matrix.
-//    Mode m_mode;
-//
-//    /// The diagonal vector of this diagonal Hessian matrix (if diagonal mode active).
-//    VectorXd m_diagonal;
-//
-//    /// The matrix representing a dense Hessian matrix (if dense mode active).
-//    MatrixXd m_dense;
-//};
+/// Assign a HessianMatrix instance into a Matrix instance.
+auto operator<<(MatrixRef mat, const HessianMatrix& hessian) -> MatrixRef;
 
 } // namespace Optima
