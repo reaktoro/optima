@@ -20,9 +20,13 @@
 // Optima includes
 #include <Optima/Common/Index.hpp>
 #include <Optima/Common/Optional.hpp>
+#include <Optima/Core/HessianMatrix.hpp>
 #include <Optima/Math/Matrix.hpp>
 
 namespace Optima {
+
+// Forward declarations
+//class HessianMatrix;
 
 /// Used to represent the coefficient matrix in a saddle point problem.
 /// A saddle point matrix is defined as a matrix with the following structure:
@@ -40,16 +44,16 @@ class SaddlePointMatrix
 {
 public:
     /// Construct a SaddlePointMatrix instance with given Hessian and Jacobian matrices.
-    SaddlePointMatrix(ConstMatrixRef H, ConstMatrixRef A);
+    SaddlePointMatrix(const HessianMatrix& H, const MatrixXd& A);
 
     /// Construct a SaddlePointMatrix instance with given Hessian and Jacobian matrices, and indices of fixed variables.
-    SaddlePointMatrix(ConstMatrixRef H, ConstMatrixRef A, const Indices& fixed);
+    SaddlePointMatrix(const HessianMatrix& H, const MatrixXd& A, const Indices& fixed);
 
     /// Return the Hessian matrix *H*.
-    auto hessian() const -> ConstMatrixRef;
+    auto hessian() const -> const HessianMatrix&;
 
     /// Return the Jacobian matrix *A*.
-    auto jacobian() const -> ConstMatrixRef;
+    auto jacobian() const -> const MatrixXd&;
 
     /// Return the indices of the fixed variables.
     auto fixed() const -> const Indices&;
@@ -59,10 +63,10 @@ public:
 
 private:
     /// The Hessian matrix \eq{H} in the saddle point matrix.
-    ConstMatrixRef m_H;
+    HessianMatrix m_H;
 
     /// The Jacobian matrix \eq{A} in the saddle point matrix.
-    ConstMatrixRef m_A;
+    const MatrixXd& m_A;
 
     /// The indices of the fixed variables.
     Optional<Indices> m_fixed;

@@ -28,6 +28,9 @@ using VectorXd = Eigen::VectorXd;
 /// Alias to the matrix type of the Eigen library.
 using MatrixXd = Eigen::MatrixXd;
 
+/// Alias to the sparse matrix type of the Eigen library.
+//using SparseMatrix = Eigen::SparseMatrix;
+
 /// Alias to a reference to a vector type of the Eigen library.
 using VectorRef = Eigen::Ref<VectorXd>;
 

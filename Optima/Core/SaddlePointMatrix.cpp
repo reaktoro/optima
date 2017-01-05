@@ -17,25 +17,28 @@
 
 #include "SaddlePointMatrix.hpp"
 
+// Optima includes
+#include <Optima/Core/HessianMatrix.hpp>
+
 // Eigenx includes
 using namespace Eigen;
 
 namespace Optima {
 
-SaddlePointMatrix::SaddlePointMatrix(ConstMatrixRef H, ConstMatrixRef A)
+SaddlePointMatrix::SaddlePointMatrix(const HessianMatrix& H, const MatrixXd& A)
 : m_H(H), m_A(A)
 {}
 
-SaddlePointMatrix::SaddlePointMatrix(ConstMatrixRef H, ConstMatrixRef A, const Indices& fixed)
+SaddlePointMatrix::SaddlePointMatrix(const HessianMatrix& H, const MatrixXd& A, const Indices& fixed)
 : m_H(H), m_A(A), m_fixed(fixed)
 {}
 
-auto SaddlePointMatrix::hessian() const -> ConstMatrixRef
+auto SaddlePointMatrix::hessian() const -> const HessianMatrix&
 {
     return m_H;
 }
 
-auto SaddlePointMatrix::jacobian() const -> ConstMatrixRef
+auto SaddlePointMatrix::jacobian() const -> const MatrixXd&
 {
     return m_A;
 }
@@ -49,11 +52,13 @@ auto SaddlePointMatrix::matrix() const -> MatrixXd
 {
     const auto& H = hessian();
     const auto& A = jacobian();
-    const Index n = H.rows();
+    const Index n = A.cols();
     const Index m = A.rows();
     const Index t = n + m;
     MatrixXd res = zeros(t, t);
-    res.topLeftCorner(n, n)    = H;
+    if(H.diagonal)
+        res.topLeftCorner(n, n).diagonal() = H.diagonal.value();
+    else res.topLeftCorner(n, n) = H.dense.value();
     res.topRightCorner(n, m)   = tr(A);
     res.bottomLeftCorner(m, n) = A;
     rows(res, fixed()).fill(0.0);

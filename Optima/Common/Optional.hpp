@@ -31,13 +31,16 @@ public:
     Optional(const Value& value) : initialized(true), dummy(), ref(value) {}
 
     /// Construct a Optional instance with given value.
-    Optional(const Optional& other) : initialized(other.initialized), dummy(), ref(other.ref) {}
+    Optional(const Optional& other) : initialized(other.initialized), dummy(), ref(other.initialized ? other.ref : dummy) {}
 
     /// Return the value that the Optional instance holds.
-    auto value() const -> const Value& { return ref; }
+    auto value() const -> const Value& { return initialized ? ref : dummy; }
 
     /// Return `true` if the Optional instance is empty.
     auto empty() const -> bool { return !initialized; }
+
+    /// Convert this Optional instance into a `bool`
+    operator bool() const { return initialized; }
 
 private:
     /// The boolean flag that indicates if the Optional instance was initialized with a value.

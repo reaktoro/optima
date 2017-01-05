@@ -19,6 +19,7 @@
 
 // Optima includes
 #include <Optima/Common/Exception.hpp>
+#include <Optima/Core/HessianMatrix.hpp>
 #include <Optima/Core/SaddlePointMatrix.hpp>
 #include <Optima/Math/Canonicalizer.hpp>
 #include <Optima/Math/EigenExtern.hpp>
@@ -79,8 +80,10 @@ struct SaddlePointSolver::Impl
     /// The priority weights for the selection of basic variables.
     VectorXd w;
 
+    /// The matrix used as a workspace for the decompose and solve methods.
     MatrixXd mat;
 
+    /// The vector used as a workspace for the decompose and solve methods.
     VectorXd vec;
 
     /// The LU solver used to calculate *xb* when the Hessian matrix is in diagonal form.
@@ -96,7 +99,7 @@ struct SaddlePointSolver::Impl
         SaddlePointResult res;
 
         // Get the Jacobian matrix
-        auto A = lhs.jacobian();
+        const MatrixXd& A = lhs.jacobian();
 
         // Set the number of rows and columns in A
         m = A.rows();
@@ -114,16 +117,16 @@ struct SaddlePointSolver::Impl
     }
 
     /// Update the canonical form of the coefficient matrix *A* of the saddle point problem.
-    auto update(const SaddlePointMatrix& lhs) -> void
+    auto updateCanonicalForm(const SaddlePointMatrix& lhs) -> void
     {
         // Get the Hessian matrix
-        auto H = lhs.hessian();
+        const HessianMatrix& H = lhs.hessian();
 
         // Get the indices of fixed variables
         const Indices& fixed = lhs.fixed();
 
         // Update the priority weights for the update of the canonical form
-        w.noalias() = inv(H.diagonal());
+        w.noalias() = inv(H.diagonal.value());
 
         // Update the canonical form and the ordering of the variables
         canonicalizer.update(w, fixed);
@@ -141,7 +144,7 @@ struct SaddlePointSolver::Impl
         SaddlePointResult res;
 
         // Update the canonical form of the coefficient matrix A
-        update(lhs);
+        updateCanonicalForm(lhs);
 
         // Alias to the matrices of the canonicalization process
         const auto& Q = canonicalizer.Q().indices();
@@ -160,7 +163,7 @@ struct SaddlePointSolver::Impl
         auto Sn = S.leftCols(nn);
 
         // Set `H` as the diagonal Hessian according to current canonical ordering
-        H.noalias() = rows(lhs.hessian().diagonal(), Q);
+        H.noalias() = rows(lhs.hessian().diagonal.value(), Q);
 
         // Compute the auxiliary matrices Bb and Bn
         Bn.noalias() = Sn * diag(inv(Hn));

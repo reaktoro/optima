@@ -25,26 +25,18 @@ using namespace Eigen;
 #include <Optima/Core/HessianMatrix.hpp>
 using namespace Optima;
 
-TEST_CASE("Testing HessianMatrix when in Zero mode")
-{
-    HessianMatrix H;
-    H.zero(10);
-
-    CHECK(zeros(10, 10).isApprox(H.convert()));
-}
-
 TEST_CASE("Testing HessianMatrix when in Diagonal mode")
 {
-    HessianMatrix H;
-    H.diagonal(10).fill(1.0);
+    VectorXd diag = ones(10);
+    HessianMatrix H(diag);
 
     CHECK(identity(10, 10).isApprox(H.convert()));
 }
 
 TEST_CASE("Testing HessianMatrix when in Dense mode")
 {
-    HessianMatrix H;
-    H.dense(10).fill(1.0);
+    MatrixXd dense = random(10, 10);
+    HessianMatrix H(dense);
 
-    CHECK(ones(10, 10).isApprox(H.convert()));
+    CHECK(dense.isApprox(H.convert()));
 }

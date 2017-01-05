@@ -26,6 +26,7 @@
 using namespace Eigen;
 
 // Optima includes
+#include <Optima/Core/HessianMatrix.hpp>
 #include <Optima/Core/SaddlePointMatrix.hpp>
 #include <Optima/Core/SaddlePointSolver.hpp>
 using namespace Optima;
@@ -38,8 +39,7 @@ TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian"
     Index n = 60;
 
     MatrixXd A = random(m, n);
-    MatrixXd H = zeros(n, n);
-    H.diagonal() = random(n);
+    VectorXd H = random(n);
 
     SaddlePointMatrix lhs(H, A);
 
