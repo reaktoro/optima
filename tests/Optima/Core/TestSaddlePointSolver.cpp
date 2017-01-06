@@ -70,152 +70,178 @@ TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian"
     double timesps1 = res1.time()/samples;
     double timesps2 = res2.time()/samples;
     double timesps3 = res3.time()/samples;
-    double timesps  = res.time()/samples;
+    double timesps  = timesps1 + timesps2 + timesps3;
 
-    double timelu1 = 0.0, timelu2 = 0.0, timelu = 0.0;
-    VectorXd slu;
+    double time_partiallu1 = 0.0, time_partiallu2 = 0.0, time_partiallu = 0.0;
+    double time_fulllu1 = 0.0, time_fulllu2 = 0.0, time_fulllu = 0.0;
+
+    VectorXd s_partiallu(n + m);
+    VectorXd s_fulllu(n + m);
+
+    Time begin;
 
     for(Index i = 0; i < samples; ++i)
     {
-        Time begin = time();
-        PartialPivLU<MatrixXd> lu(M);
-        timelu1 += elapsed(begin);
+        PartialPivLU<MatrixXd> partiallu(M);
+        FullPivLU<MatrixXd> fulllu(M);
+
         begin = time();
-        slu = lu.solve(r);
-        timelu2 += elapsed(begin);
-        timelu  += timelu1 + timelu2;
+        partiallu.compute(M);
+        time_partiallu1 += elapsed(begin);
+
+        begin = time();
+        fulllu.compute(M);
+        time_fulllu1 += elapsed(begin);
+
+        begin = time();
+        s_partiallu.noalias() = partiallu.solve(r);
+        time_partiallu2 += elapsed(begin);
+
+        begin = time();
+        s_fulllu.noalias() = fulllu.solve(r);
+        time_fulllu2 += elapsed(begin);
     }
 
-    timelu1 /= samples; timelu2 /= samples; timelu /= samples;
+    time_partiallu1 /= samples; time_partiallu2 /= samples; time_partiallu = time_partiallu1 + time_partiallu2;
+    time_fulllu1 /= samples; time_fulllu2 /= samples; time_fulllu = time_fulllu1 + time_fulllu2;
 
     std::cout << std::endl;
-    std::cout << "Error(SaddlePointSolver): " << norminf(s - expected) << std::endl;
-    std::cout << "Error(PartialPivLU):      " << norminf(slu - expected) << std::endl;
+    std::cout << "=============================================================" << std::endl;
+    std::cout << "Saddle Point Solver Analysis: Diagonal Hessian" << std::endl;
+    std::cout << "-------------------------------------------------------------" << std::endl;
+    std::cout << "Error(SaddlePointSolver):              " << norminf(s - expected) << std::endl;
+    std::cout << "Error(PartialPivLU):                   " << norminf(s_partiallu - expected) << std::endl;
+    std::cout << "Error(FullPivLU):                      " << norminf(s_fulllu - expected) << std::endl;
     std::cout << std::endl;
     std::cout << "Time(SaddlePointSolver::canonicalize): " << timesps1 << std::endl;
     std::cout << "Time(SaddlePointSolver::decompose):    " << timesps2 << std::endl;
     std::cout << "Time(SaddlePointSolver::solve):        " << timesps3 << std::endl;
     std::cout << "Time(SaddlePointSolver::all):          " << timesps  << std::endl;
     std::cout << std::endl;
-    std::cout << "Time(PartialPivLU::decompose): " << timelu1 << std::endl;
-    std::cout << "Time(PartialPivLU::solve):     " << timelu2 << std::endl;
+    std::cout << "Time(PartialPivLU::decompose):         " << time_partiallu1 << std::endl;
+    std::cout << "Time(PartialPivLU::solve):             " << time_partiallu2 << std::endl;
     std::cout << std::endl;
-    std::cout << "Speedup(canonicalize+decompose): " << timelu1/(timesps1 + timesps2) << std::endl;
-    std::cout << "Speedup(decompose):              " << timelu1/timesps2 << std::endl;
-    std::cout << "Speedup(solve):                  " << timelu2/timesps3 << std::endl;
-    std::cout << "Speedup(decompose+solve):        " << timelu/(timesps2 + timesps3) << std::endl;
-//    std::cout << "Speedup(total):                  " << timelu/timesps << std::endl;
+    std::cout << "Time(FullPivLU::decompose):            " << time_fulllu1 << std::endl;
+    std::cout << "Time(FullPivLU::solve):                " << time_fulllu2 << std::endl;
+    std::cout << std::endl;
+    std::cout << "Speedup(PartialPivLU): " << std::endl;
+    std::cout << "Speedup(canonicalize+decompose):       " << time_partiallu1/(timesps1 + timesps2) << std::endl;
+    std::cout << "Speedup(decompose):                    " << time_partiallu1/timesps2 << std::endl;
+    std::cout << "Speedup(solve):                        " << time_partiallu2/timesps3 << std::endl;
+    std::cout << "Speedup(decompose+solve):              " << time_partiallu/(timesps2 + timesps3) << std::endl;
+    std::cout << std::endl;
+    std::cout << "Speedup(FullPivLU): " << std::endl;
+    std::cout << "Speedup(canonicalize+decompose):       " << time_fulllu1/(timesps1 + timesps2) << std::endl;
+    std::cout << "Speedup(decompose):                    " << time_fulllu1/timesps2 << std::endl;
+    std::cout << "Speedup(solve):                        " << time_fulllu2/timesps3 << std::endl;
+    std::cout << "Speedup(decompose+solve):              " << time_fulllu/(timesps2 + timesps3) << std::endl;
+    std::cout << "=============================================================" << std::endl;
 }
 
-//
-//TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian")
-//{
-//    Index m = 2;
-//    Index n = 4;
-//    Index t = 2*n + m;
-//
-//    SaddlePointMatrix lhs;
-//    lhs.A = random(m, n);
-//
-//    Indices fixed = {0};
-//
-//    SaddlePointSolver solver;
-//    solver.fix(fixed);
-//    solver.canonicalize(lhs);
-//
-//    SaddlePointVector sol;
-//    sol.x = zeros(n);
-//    sol.y = zeros(m);
-//
-//    Vector expected = linspace(t, 1, t);
-//    for(Index i : fixed)
-//        expected[i] = expected[i+n+m] = 0.0;
-////    rows(expected, ignored).fill(0.0);
-//
-//    SUBCASE("Hessian matrix is zero.")
-//    {
-//        lhs.H = zeros(n);
-//
-//        std::cout << "------------------------------" << std::endl;
-//        std::cout << "Case 1: Hessian matrix is zero" << std::endl;
-//        std::cout << "------------------------------" << std::endl;
-//
-//        std::cout << std::left << std::setw(5) << "k";
-//        std::cout << std::left << std::setw(15) << "Error";
-//        std::cout << std::left << std::setw(15) << "Error (LU)";
-//        std::cout << std::endl;
-//        for(Index k = 0; k < 10; ++k)
-//        {
-//            lhs.X.head(n - m) *= 1e-5;
-//            lhs.Z.head(n - m) *= 10.0;
-//
-//            Matrix A = convert(lhs, fixed);
-//            Vector b = A * expected;
-//            Vector x = A.lu().solve(b);
-//
-//            SaddlePointVector rhs;
-//            rhs.x = b.head(n);
-//            rhs.y = b.segment(n, m);
-//            rhs.z = b.tail(n);
-//
-//            REQUIRE(lhs.valid());
-//            REQUIRE(rhs.valid());
-//
-//            solver.decompose(lhs);
-//            solver.solve(rhs, sol);
-//
-//            auto actual = sol.convert();
-//
-//            CHECK(actual.isApprox(x));
-//
-//            std::cout << std::left << std::setw(5) << k;
-//            std::cout << std::left << std::setw(15) << norm(actual - expected);
-//            std::cout << std::left << std::setw(15) << norm(x - expected);
-//            std::cout << std::endl;
-//        }
-//    }
+TEST_CASE("Testing the solution of a saddle point problem with dense Hessian")
+{
+    Index m = 10;
+    Index n = 60;
+    Index t = m + n;
 
-//    SUBCASE("Hessian matrix is not zero.")
-//    {
-//        lhs.H = random(n);
-//
-//        std::cout << "----------------------------------" << std::endl;
-//        std::cout << "Case 2: Hessian matrix is not zero" << std::endl;
-//        std::cout << "----------------------------------" << std::endl;
-//
-//        std::cout << std::left << std::setw(5) << "k";
-//        std::cout << std::left << std::setw(15) << "Error";
-//        std::cout << std::left << std::setw(15) << "Error (LU)";
-//        std::cout << std::endl;
-//        for(Index k = 0; k < 10; ++k)
-//        {
-//            lhs.X.head(n - m) *= 1e-5;
-//            lhs.Z.head(n - m) *= 10.0;
-//
-//            Matrix A = lhs.convert();
-//            Vector b = A * expected;
-//            Vector x = A.lu().solve(b);
-//
-//            SaddlePointVector rhs;
-//            rhs.x = b.head(n);
-//            rhs.y = b.segment(n, m);
-//            rhs.z = b.tail(n);
-//
-//            REQUIRE(lhs.valid());
-//            REQUIRE(rhs.valid());
-//
-//            solver.decompose(lhs);
-//            solver.solve(rhs, sol);
-//
-//            auto actual = sol.convert();
-//
-//            CHECK(actual.isApprox(x));
-//
-//            std::cout << std::left << std::setw(5) << k;
-//            std::cout << std::left << std::setw(15) << norm(actual - expected);
-//            std::cout << std::left << std::setw(15) << norm(x - expected);
-//            std::cout << std::endl;
-//        }
-//    }
-//}
+    VectorXd expected = linspace(t, 1, t);
+
+    MatrixXd A = random(m, n);
+    MatrixXd H = random(n, n);
+    H.diagonal().head(m)   *= 1e-2;
+    H.diagonal().tail(n-m) *= 1e+5;
+
+    SaddlePointMatrix lhs(H, A);
+
+    MatrixXd M = lhs.matrix();
+    VectorXd r = M * expected;
+    VectorXd s(t);
+
+    SaddlePointVector rhs(r, n, m);
+    SaddlePointSolution sol(s, n, m);
+
+    SaddlePointResult res1, res2, res3, res;
+
+    for(Index i = 0; i < samples; ++i)
+    {
+        SaddlePointSolver solver;
+        res1 += solver.canonicalize(lhs);
+        res2 += solver.decompose(lhs);
+        res3 += solver.solve(rhs, sol);
+
+        res += res1 + res2 + res3;
+
+        CHECK(s.isApprox(expected));
+    }
+
+    double timesps1 = res1.time()/samples;
+    double timesps2 = res2.time()/samples;
+    double timesps3 = res3.time()/samples;
+    double timesps  = timesps1 + timesps2 + timesps3;
+
+    double time_partiallu1 = 0.0, time_partiallu2 = 0.0, time_partiallu = 0.0;
+    double time_fulllu1 = 0.0, time_fulllu2 = 0.0, time_fulllu = 0.0;
+
+    VectorXd s_partiallu(n + m);
+    VectorXd s_fulllu(n + m);
+
+    Time begin;
+
+    for(Index i = 0; i < samples; ++i)
+    {
+        PartialPivLU<MatrixXd> partiallu(M);
+        FullPivLU<MatrixXd> fulllu(M);
+
+        begin = time();
+        partiallu.compute(M);
+        time_partiallu1 += elapsed(begin);
+
+        begin = time();
+        fulllu.compute(M);
+        time_fulllu1 += elapsed(begin);
+
+        begin = time();
+        s_partiallu.noalias() = partiallu.solve(r);
+        time_partiallu2 += elapsed(begin);
+
+        begin = time();
+        s_fulllu.noalias() = fulllu.solve(r);
+        time_fulllu2 += elapsed(begin);
+    }
+
+    time_partiallu1 /= samples; time_partiallu2 /= samples; time_partiallu = time_partiallu1 + time_partiallu2;
+    time_fulllu1 /= samples; time_fulllu2 /= samples; time_fulllu = time_fulllu1 + time_fulllu2;
+
+    std::cout << std::endl;
+    std::cout << "=============================================================" << std::endl;
+    std::cout << "Saddle Point Solver Analysis: Dense Hessian" << std::endl;
+    std::cout << "-------------------------------------------------------------" << std::endl;
+    std::cout << "Error(SaddlePointSolver):              " << norminf(s - expected) << std::endl;
+    std::cout << "Error(PartialPivLU):                   " << norminf(s_partiallu - expected) << std::endl;
+    std::cout << "Error(FullPivLU):                      " << norminf(s_fulllu - expected) << std::endl;
+    std::cout << std::endl;
+    std::cout << "Time(SaddlePointSolver::canonicalize): " << timesps1 << std::endl;
+    std::cout << "Time(SaddlePointSolver::decompose):    " << timesps2 << std::endl;
+    std::cout << "Time(SaddlePointSolver::solve):        " << timesps3 << std::endl;
+    std::cout << "Time(SaddlePointSolver::all):          " << timesps  << std::endl;
+    std::cout << std::endl;
+    std::cout << "Time(PartialPivLU::decompose):         " << time_partiallu1 << std::endl;
+    std::cout << "Time(PartialPivLU::solve):             " << time_partiallu2 << std::endl;
+    std::cout << std::endl;
+    std::cout << "Time(FullPivLU::decompose):            " << time_fulllu1 << std::endl;
+    std::cout << "Time(FullPivLU::solve):                " << time_fulllu2 << std::endl;
+    std::cout << std::endl;
+    std::cout << "Speedup(PartialPivLU): " << std::endl;
+    std::cout << "Speedup(canonicalize+decompose):       " << time_partiallu1/(timesps1 + timesps2) << std::endl;
+    std::cout << "Speedup(decompose):                    " << time_partiallu1/timesps2 << std::endl;
+    std::cout << "Speedup(solve):                        " << time_partiallu2/timesps3 << std::endl;
+    std::cout << "Speedup(decompose+solve):              " << time_partiallu/(timesps2 + timesps3) << std::endl;
+    std::cout << std::endl;
+    std::cout << "Speedup(FullPivLU): " << std::endl;
+    std::cout << "Speedup(canonicalize+decompose):       " << time_fulllu1/(timesps1 + timesps2) << std::endl;
+    std::cout << "Speedup(decompose):                    " << time_fulllu1/timesps2 << std::endl;
+    std::cout << "Speedup(solve):                        " << time_fulllu2/timesps3 << std::endl;
+    std::cout << "Speedup(decompose+solve):              " << time_fulllu/(timesps2 + timesps3) << std::endl;
+    std::cout << "=============================================================" << std::endl;
+}
 

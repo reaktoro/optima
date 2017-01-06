@@ -89,7 +89,8 @@ struct SaddlePointSolver::Impl
         const Indices& fixed = lhs.fixed();
 
         // Update the priority weights for the update of the canonical form
-        w.noalias() = inv(H.diagonal());
+        if(H.isdiagonal()) w.noalias() = inv(H.diagonal());
+                      else w.noalias() = inv(H.dense().diagonal());
 
         // Update the canonical form and the ordering of the variables
         canonicalizer.update(w, fixed);
@@ -258,7 +259,7 @@ struct SaddlePointSolver::Impl
         auto an = a.segment(nb, nn);
         auto af = a.tail(nf);
         auto bb = b.head(nb);
-
+        auto xb = x.head(nb);
         auto xn = x.segment(nb, nn);
         auto yb = y.head(nb);
 
@@ -266,20 +267,15 @@ struct SaddlePointSolver::Impl
         a.noalias() = rows(rhs.a(), Q);
 
         // Apply the regularizer matrix to b
-        bb.noalias()  = R*rhs.b();
-        bb.noalias() -= Sbf*af;
+        bb.noalias() = R*rhs.b() - Sbf*af;
 
         // Compute the saddle point problem solution
-        yb.noalias() = ab;
-        yb.noalias() -= Hbb*bb;
-        xn.noalias() = an;
-        xn.noalias() -= Hnb*bb;
-        xn.noalias() -= tr(Sbn)*ab;
-        an.noalias() = luxn.solve(xn);
-        bb.noalias() = ab;
-        ab.noalias() = bb - Sbn*an;
-        bb.noalias() -= Hbb*ab;
-        bb.noalias() -= Hbn*an;
+        yb.noalias()  = ab - Hbb*bb;
+        xn.noalias()  = an - Hnb*bb - tr(Sbn)*yb;
+        an.noalias()  = luxn.solve(xn);
+        xb.noalias()  = ab;
+        ab.noalias()  = bb - Sbn*an;
+        bb.noalias()  = xb - Hbb*ab - Hbn*an;
 
         // Compute the y vector without canonicalization
         y.noalias() = tr(R)*bb;
