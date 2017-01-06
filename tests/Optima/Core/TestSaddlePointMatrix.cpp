@@ -20,6 +20,7 @@
 // Optima includes
 #include <Optima/Core/HessianMatrix.hpp>
 #include <Optima/Core/SaddlePointMatrix.hpp>
+using namespace Eigen;
 using namespace Optima;
 
 TEST_CASE("Testing SaddlePointMatrix...")
@@ -56,13 +57,14 @@ TEST_CASE("Testing SaddlePointMatrix...")
 
 TEST_CASE("Testing SaddlePointVector...")
 {
-    SaddlePointVector vec;
+    Index n = 5;
+    Index m = 3;
+    Index t = n + m;
 
-    vec.x = {1, 2, 3};
-    vec.y = {6, 7};
+    VectorXd r = linspace(t, 1, t);
 
-    VectorXd V = {1, 2, 3, 6, 7};
+    SaddlePointVector vec(r, n, m);
 
-    // Check conversion to a Vector instance
-    CHECK(V.isApprox(vec.vector()));
+    CHECK(r.head(n).isApprox(vec.a()));
+    CHECK(r.tail(m).isApprox(vec.b()));
 }

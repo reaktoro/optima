@@ -25,20 +25,25 @@ using namespace Eigen;
 
 namespace Optima {
 
-SaddlePointMatrix::SaddlePointMatrix(const HessianMatrix& H, const MatrixXd& A)
+SaddlePointMatrix::SaddlePointMatrix(const HessianMatrix& H, const ConstMatrixRef& A)
 : m_H(H), m_A(A)
 {}
 
-SaddlePointMatrix::SaddlePointMatrix(const HessianMatrix& H, const MatrixXd& A, const Indices& fixed)
+SaddlePointMatrix::SaddlePointMatrix(const HessianMatrix& H, const ConstMatrixRef& A, const Indices& fixed)
 : m_H(H), m_A(A), m_fixed(fixed)
 {}
 
-auto SaddlePointMatrix::hessian() const -> const HessianMatrix&
+auto SaddlePointMatrix::dim() const -> Index
+{
+    return m_A.rows() + m_A.cols();
+}
+
+auto SaddlePointMatrix::H() const -> HessianMatrix
 {
     return m_H;
 }
 
-auto SaddlePointMatrix::jacobian() const -> const MatrixXd&
+auto SaddlePointMatrix::A() const -> ConstMatrixRef
 {
     return m_A;
 }
@@ -50,40 +55,26 @@ auto SaddlePointMatrix::fixed() const -> const Indices&
 
 auto SaddlePointMatrix::matrix() const -> MatrixXd
 {
-    const auto& H = hessian();
-    const auto& A = jacobian();
+    const Index t = dim();
+    MatrixXd res = zeros(t, t);
+    res << *this;
+    return res;
+}
+
+auto operator<<(MatrixRef mat, const SaddlePointMatrix& lhs) -> MatrixRef
+{
+    const auto& H = lhs.H();
+    const auto& A = lhs.A();
+    const auto& fixed = lhs.fixed();
     const Index n = A.cols();
     const Index m = A.rows();
-    const Index t = n + m;
-    MatrixXd res = zeros(t, t);
-    res.topLeftCorner(n, n) << H;
-    res.topRightCorner(n, m) = tr(A);
-    res.bottomLeftCorner(m, n) = A;
-    rows(res, fixed()).fill(0.0);
-    for(Index i : fixed())
-        res(i, i) = 1.0;
-    return res;
-}
-
-auto SaddlePointVector::vector() const -> VectorXd
-{
-    const Index n = x.rows();
-    const Index m = y.rows();
-    const Index t = n + m;
-    VectorXd res(t);
-    res << x, y;
-    return res;
-}
-
-auto operator*(const SaddlePointMatrix& mat, const SaddlePointVector& vec) -> SaddlePointVector
-{
-    const MatrixXd A = mat.matrix();
-    const VectorXd x = vec.vector();
-    const VectorXd b = A*x;
-    SaddlePointVector res;
-    res.x = b.head(mat.jacobian().cols());
-    res.y = b.tail(mat.jacobian().rows());
-    return res;
+    mat.topLeftCorner(n, n) << H;
+    mat.topRightCorner(n, m) = tr(A);
+    mat.bottomLeftCorner(m, n) = A;
+    rows(mat, fixed).fill(0.0);
+    for(Index i : fixed)
+        mat(i, i) = 1.0;
+    return mat;
 }
 
 } // namespace Optima

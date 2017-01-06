@@ -99,7 +99,7 @@ struct SaddlePointSolver::Impl
         SaddlePointResult res;
 
         // Get the Jacobian matrix
-        const MatrixXd& A = lhs.jacobian();
+        auto A = lhs.A();
 
         // Set the number of rows and columns in A
         m = A.rows();
@@ -120,7 +120,7 @@ struct SaddlePointSolver::Impl
     auto updateCanonicalForm(const SaddlePointMatrix& lhs) -> void
     {
         // Get the Hessian matrix
-        const HessianMatrix& H = lhs.hessian();
+        auto H = lhs.H();
 
         // Get the indices of fixed variables
         const Indices& fixed = lhs.fixed();
@@ -163,7 +163,7 @@ struct SaddlePointSolver::Impl
         auto Sn = S.leftCols(nn);
 
         // Set `H` as the diagonal Hessian according to current canonical ordering
-        H.noalias() = rows(lhs.hessian().diagonal(), Q);
+        H.noalias() = rows(lhs.H().diagonal(), Q);
 
         // Compute the auxiliary matrices Bb and Bn
         Bn.noalias() = Sn * diag(inv(Hn));
@@ -179,18 +179,14 @@ struct SaddlePointSolver::Impl
         return res.stop();
     }
 
-    auto solve(const SaddlePointVector& rhs, SaddlePointVector& sol) -> SaddlePointResult
+    auto solve(const SaddlePointVector& rhs, SaddlePointSolution& sol) -> SaddlePointResult
     {
         // The result of this method call
         SaddlePointResult res;
 
         // Alias to members of the saddle point vector solution.
-        auto& x = sol.x;
-        auto& y = sol.y;
-
-        // Resize solution vectors x and y if needed
-        x.resize(n);
-        y.resize(m);
+        auto x = sol.x();
+        auto y = sol.y();
 
         // Alias to the matrices of the canonicalization process
         const auto& Q = canonicalizer.Q().indices();
@@ -218,10 +214,10 @@ struct SaddlePointSolver::Impl
         auto yb = y.head(nb);
 
         // Reorder vector a in the canonical order
-        a.noalias() = rows(rhs.x, Q);
+        a.noalias() = rows(rhs.a(), Q);
 
         // Apply the regularizer matrix to b
-        bb.noalias() = R*rhs.y;
+        bb.noalias() = R*rhs.b();
 
         // Compute the saddle point problem solution
         yb.noalias()  = ab;
@@ -239,6 +235,17 @@ struct SaddlePointSolver::Impl
 
         // Permute back the variables x to their original ordering
         rows(x, Q).noalias() = a;
+
+        return res.stop();
+    }
+
+    auto solve(const SaddlePointMatrix& lhs, const SaddlePointVector& rhs, SaddlePointSolution& sol) -> SaddlePointResult
+    {
+        // The result of this method call
+        SaddlePointResult res;
+
+
+
 
         return res.stop();
     }
@@ -271,9 +278,14 @@ auto SaddlePointSolver::decompose(const SaddlePointMatrix& lhs) -> SaddlePointRe
     return pimpl->decompose(lhs);
 }
 
-auto SaddlePointSolver::solve(const SaddlePointVector& rhs, SaddlePointVector& sol) -> SaddlePointResult
+auto SaddlePointSolver::solve(const SaddlePointVector& rhs, SaddlePointSolution& sol) -> SaddlePointResult
 {
     return pimpl->solve(rhs, sol);
+}
+
+auto SaddlePointSolver::solve(const SaddlePointMatrix& lhs, const SaddlePointVector& rhs, SaddlePointSolution& sol) -> SaddlePointResult
+{
+    return pimpl->solve(lhs, rhs, sol);
 }
 
 } // namespace Optima

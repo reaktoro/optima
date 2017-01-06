@@ -37,19 +37,21 @@ TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian"
 {
     Index m = 10;
     Index n = 60;
+    Index t = m + n;
+
+    VectorXd expected = linspace(t, 1, t);
 
     MatrixXd A = random(m, n);
     VectorXd H = random(n);
 
     SaddlePointMatrix lhs(H, A);
 
-    SaddlePointVector sol;
-    sol.x = linspace(n, 1, n);
-    sol.y = linspace(m, 1, m);
+    MatrixXd M = lhs.matrix();
+    VectorXd r = M * expected;
+    VectorXd s(t);
 
-    SaddlePointVector rhs = lhs * sol;
-
-    SaddlePointVector actualsol;
+    SaddlePointVector rhs(r, n, m);
+    SaddlePointSolution sol(s, n, m);
 
     SaddlePointResult res1, res2, res3, res;
 
@@ -58,12 +60,11 @@ TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian"
         SaddlePointSolver solver;
         res1 += solver.canonicalize(lhs);
         res2 += solver.decompose(lhs);
-        res3 += solver.solve(rhs, actualsol);
+        res3 += solver.solve(rhs, sol);
 
         res += res1 + res2 + res3;
 
-        CHECK(sol.x.isApprox(actualsol.x));
-        CHECK(sol.y.isApprox(actualsol.y));
+        CHECK(s.isApprox(expected));
     }
 
     double timesps1 = res1.time()/samples;
@@ -71,12 +72,8 @@ TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian"
     double timesps3 = res3.time()/samples;
     double timesps  = res.time()/samples;
 
-    MatrixXd M = lhs.matrix();
-    VectorXd b = rhs.vector();
-    VectorXd x = sol.vector();
-
     double timelu1 = 0.0, timelu2 = 0.0, timelu = 0.0;
-    VectorXd actualx;
+    VectorXd slu;
 
     for(Index i = 0; i < samples; ++i)
     {
@@ -84,7 +81,7 @@ TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian"
         PartialPivLU<MatrixXd> lu(M);
         timelu1 += elapsed(begin);
         begin = time();
-        actualx = lu.solve(b);
+        slu = lu.solve(r);
         timelu2 += elapsed(begin);
         timelu  += timelu1 + timelu2;
     }
@@ -92,8 +89,8 @@ TEST_CASE("Testing the solution of a saddle point problem with diagonal Hessian"
     timelu1 /= samples; timelu2 /= samples; timelu /= samples;
 
     std::cout << std::endl;
-    std::cout << "Error(SaddlePointSolver): " << norminf(actualsol.vector() - sol.vector()) << std::endl;
-    std::cout << "Error(PartialPivLU):      " << norminf(actualx - x) << std::endl;
+    std::cout << "Error(SaddlePointSolver): " << norminf(s - expected) << std::endl;
+    std::cout << "Error(PartialPivLU):      " << norminf(slu - expected) << std::endl;
     std::cout << std::endl;
     std::cout << "Time(SaddlePointSolver::canonicalize): " << timesps1 << std::endl;
     std::cout << "Time(SaddlePointSolver::decompose):    " << timesps2 << std::endl;
