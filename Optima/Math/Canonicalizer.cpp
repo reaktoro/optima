@@ -267,7 +267,7 @@ auto Canonicalizer::update(const VectorXd& weights, const Indices& fixed) -> voi
 	auto inonbasic = Q.indices().tail(nn);
 
     // Update the internal weights to update the canonical form of A.
-    if(weights.rows()) w.noalias() = abs(weights); else w = ones(n);
+    w.noalias() = abs(weights);
 
     // Set weights of fixed variables to zero to prevent them from becoming basic variables
     Eigen::rows(w, fixed).fill(0.0);
