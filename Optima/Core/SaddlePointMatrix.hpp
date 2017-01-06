@@ -41,10 +41,10 @@ class SaddlePointMatrix
 {
 public:
     /// Construct a SaddlePointMatrix instance with given Hessian and Jacobian matrices.
-    SaddlePointMatrix(const HessianMatrix& H, const ConstMatrixRef& A);
+    SaddlePointMatrix(HessianMatrix H, ConstMatrixRef A);
 
     /// Construct a SaddlePointMatrix instance with given Hessian and Jacobian matrices, and indices of fixed variables.
-    SaddlePointMatrix(const HessianMatrix& H, const ConstMatrixRef& A, const Indices& fixed);
+    SaddlePointMatrix(HessianMatrix H, ConstMatrixRef A, const Indices& fixed);
 
     /// Return the dimension of the saddle point mathrm.
     auto dim() const -> Index;
