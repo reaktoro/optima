@@ -22,24 +22,28 @@ set(OPTIMA_VERSION_MINOR "1")
 set(OPTIMA_VERSION_MICRO "0")
 set(OPTIMA_VERSION "${OPTIMA_VERSION_MAJOR}.${OPTIMA_VERSION_MINOR}.${OPTIMA_VERSION_MICRO}")
 
-# Define which components of Optima to build
-option(BUILD_ALL         "Build everything." OFF)
-option(BUILD_DEMOS       "Build demos." OFF)
-option(BUILD_DOCS        "Build documentation." OFF)
-option(BUILD_PYTHON      "Build the python wrappers and python package reaktoro." OFF)
-option(BUILD_TESTS       "Build tests." OFF)
+# Define which Optima targets to build
+option(BUILD_ALL    "Build everything." OFF)
+option(BUILD_DEMOS  "Build demos." OFF)
+option(BUILD_DOCS   "Build documentation." OFF)
+option(BUILD_PYTHON "Build the python wrappers." OFF)
+option(BUILD_TESTS  "Build tests." OFF)
 
-# Set the CTest option BUILD_TESTING to the value of BUILD_TESTS
-set(BUILD_TESTING BUILD_TEST)
+# Option to conveniently permit build in debug mode
+option(DEBUG "Build in debug mode." OFF)
+
+# Set debug mode if DEBUG is ON
+if(DEBUG)
+    set(CMAKE_BUILD_TYPE Debug)
+endif()
 
 # Modify the BUILD_XXX variables accordingly to BUILD_ALL
 if(BUILD_ALL MATCHES ON)
-    set(BUILD_DEMOS       ON)
-    set(BUILD_DOCS        ON)
-    set(BUILD_PYTHON      ON)
-    set(BUILD_TESTS       ON)
+    set(BUILD_DEMOS  ON)
+    set(BUILD_DOCS   ON)
+    set(BUILD_PYTHON ON)
+    set(BUILD_TESTS  ON)
 endif()
-
 
 # Find python interpreter if needed
 if(BUILD_PYTHON)
