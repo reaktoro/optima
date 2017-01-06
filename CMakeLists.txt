@@ -37,6 +37,14 @@ if(DEBUG)
     set(CMAKE_BUILD_TYPE Debug)
 endif()
 
+# Option to allow or not Eigen to allocate memory at runtime
+option(EIGEN_RUNTIME_NO_MALLOC "Allow or not Eigen to allocate memory at runtime" OFF)
+
+# Define EIGEN_RUNTIME_NO_MALLOC if Eigen is not allowed to allocate memmory at runtime
+if(EIGEN_RUNTIME_NO_MALLOC)
+    add_definitions(-DEIGEN_RUNTIME_NO_MALLOC)
+endif()
+
 # Modify the BUILD_XXX variables accordingly to BUILD_ALL
 if(BUILD_ALL MATCHES ON)
     set(BUILD_DEMOS  ON)
