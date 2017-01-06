@@ -28,6 +28,9 @@ namespace Optima {
 class HessianMatrix
 {
 public:
+    /// Used to represent the different modes of a Hessian matrix.
+    enum Mode { Dense, Diagonal, Sparse };
+
     /// Construct a HessianMatrix instance with diagonal form.
     /// @param vec The vector representing the diagonal entries of the Hessian matrix.
     HessianMatrix(const VectorXd& vec) : m_diagonal(vec) {}
@@ -50,6 +53,9 @@ public:
 
     /// Return `true` if the HessianMatrix instance is in dense form.
     auto dense() const -> const MatrixXd& { return m_dense.value(); }
+
+    /// Return the mode of the HessianMatrix instance.
+    auto mode() const -> Mode { return isdiagonal() ? Diagonal : Dense; }
 
     /// Convert this HessianMatrix instance into a Matrix instance.
     auto matrix() const -> MatrixXd { return isdiagonal() ? MatrixXd(diag(diagonal())) : dense(); }

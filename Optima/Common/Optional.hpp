@@ -27,11 +27,11 @@ public:
     /// Construct a default Optional instance.
     Optional() : initialized(false), dummy(), ref(dummy) {}
 
-    /// Construct a Optional instance with given value.
-    Optional(const Value& value) : initialized(true), dummy(), ref(value) {}
+    /// Construct a Optional instance as copy of another instance.
+    Optional(const Optional& other) : initialized(other.initialized), dummy(), ref(other.initialized ? other.ref : dummy) {}
 
     /// Construct a Optional instance with given value.
-    Optional(const Optional& other) : initialized(other.initialized), dummy(), ref(other.initialized ? other.ref : dummy) {}
+    Optional(const Value& value) : initialized(true), dummy(), ref(value) {}
 
     /// Return the value that the Optional instance holds.
     auto value() const -> const Value& { return initialized ? ref : dummy; }

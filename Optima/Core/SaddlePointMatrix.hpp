@@ -122,6 +122,9 @@ public:
     /// @param m The dimension of vector *y*.
     SaddlePointSolution(VectorRef s, Index n, Index m) : m_x(s.head(n)), m_y(s.tail(m)) {}
 
+    /// Assign this SaddlePointSolution instance with a ConstVectorRef instance.
+    auto operator=(ConstVectorRef vec) -> SaddlePointSolution& { m_x.noalias() = vec.head(m_x.rows()); m_y.noalias() = vec.tail(m_y.rows()); return *this; }
+
     /// Return the dimension of the saddle point solution vector.
     auto dim() const -> Index { return m_x.rows() + m_y.rows(); }
 
@@ -142,8 +145,65 @@ private:
     VectorRef m_y;
 };
 
-/// Assign a SaddlePointMatrix instance into a MatrixRef instance.
+/// Used to represent a saddle point matrix in canonical form.
+struct CanonicalSaddlePointMatrix
+{
+    /// The basic partition of the the Hessian matrix.
+    ConstMatrixRef Hbb;
+
+    /// The non-basic partition of the the Hessian matrix.
+    ConstMatrixRef Hnn;
+
+    /// The basic/non-basic partition of the the Hessian matrix.
+    ConstMatrixRef Hbn;
+
+    /// The non-basic/basic partition of the the Hessian matrix.
+    ConstMatrixRef Hnb;
+
+    /// The non-basic partition of the Jacobian matrix in canonical form.
+    ConstMatrixRef Sn;
+
+    /// The fixed partition of the Jacobian matrix in canonical form.
+    ConstMatrixRef Sf;
+};
+
+/// Used to represent a saddle point right-hand side vector in canonical form.
+struct CanonicalSaddlePointVector
+{
+    /// The basic partition of the right-hand side vector *a*.
+    ConstVectorRef ab;
+
+    /// The non-basic partition of the right-hand side vector *a*.
+    ConstVectorRef an;
+
+    /// The fixed partition of the right-hand side vector *a*.
+    ConstVectorRef af;
+
+    /// The basic partition of the right-hand side vector *b*.
+    ConstVectorRef bb;
+};
+
+/// Used to represent a saddle point solution vector in canonical form.
+struct CanonicalSaddlePointSolution
+{
+    /// The basic partition of the solution vector *x*.
+    VectorRef xb;
+
+    /// The non-basic partition of the solution vector *x*.
+    VectorRef xn;
+
+    /// The fixed partition of the solution vector *x*.
+    VectorRef xf;
+
+    /// The basic partition of the solution vector *y*.
+    VectorRef yb;
+};
+
+/// Assign a MatrixRef instance with a SaddlePointMatrix instance.
 auto operator<<(MatrixRef mat, const SaddlePointMatrix& lhs) -> MatrixRef;
+
+/// Assign a VectorRef instance with a SaddlePointVector instance.
+auto operator<<(VectorRef vec, const SaddlePointVector& rhs) -> VectorRef;
 
 } // namespace Optima
 

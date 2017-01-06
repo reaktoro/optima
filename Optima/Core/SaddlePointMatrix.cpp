@@ -77,4 +77,15 @@ auto operator<<(MatrixRef mat, const SaddlePointMatrix& lhs) -> MatrixRef
     return mat;
 }
 
+auto operator<<(VectorRef vec, const SaddlePointVector& rhs) -> VectorRef
+{
+    const auto& a = rhs.a();
+    const auto& b = rhs.b();
+    const Index n = a.cols();
+    const Index m = b.rows();
+    vec.head(n).noalias() = a;
+    vec.tail(m).noalias() = b;
+    return vec;
+}
+
 } // namespace Optima
