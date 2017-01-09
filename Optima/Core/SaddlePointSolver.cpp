@@ -57,6 +57,12 @@ struct SaddlePointSolver::Impl
     /// The LU solver used to calculate *xn* when the Hessian matrix is in dense form.
     Eigen::PartialPivLU<MatrixXd> luxn;
 
+    /// The partial LU solver used to calculate both *x* and *y* simultaneously.
+    Eigen::PartialPivLU<MatrixXd> luxy_partial;
+
+    /// The full LU solver used to calculate both *x* and *y* simultaneously.
+    Eigen::FullPivLU<MatrixXd> luxy_full;
+
     /// The mode of the Hessian matrix decomposed last time
     HessianMatrix::Mode hessian_mode;
 
@@ -105,8 +111,8 @@ struct SaddlePointSolver::Impl
         nn = n - nb - nf;
     }
 
-    /// Decompose the coefficient matrix of the saddle point problem with diagonal Hessian matrix.
-    auto decomposeDiagonal(const SaddlePointMatrix& lhs) -> void
+    /// Decompose the coefficient matrix of the saddle point problem using a partial pivoting LU method.
+    auto decomposePartialPivLU(const SaddlePointMatrix& lhs) -> void
     {
         // Update the canonical form of the Jacobian matrix A
         updateCanonicalForm(lhs);
@@ -142,45 +148,8 @@ struct SaddlePointSolver::Impl
         luxb.compute(Mbb);
     }
 
-    /// Decompose the coefficient matrix of the saddle point problem with dense Hessian matrix.
-    auto decomposeDense(const SaddlePointMatrix& lhs) -> void
-    {
-        // Update the canonical form of the Jacobian matrix A
-        updateCanonicalForm(lhs);
-
-        // Alias to the matrices of the canonicalization process
-        const auto& Q = canonicalizer.Q().indices();
-        const auto& S = canonicalizer.S();
-
-        // Create auxiliary matrix views
-        auto H  = mat.topLeftCorner(n, n);
-        auto B  = mat.bottomLeftCorner(m, n);
-        auto Htl = H.topLeftCorner(nb + nn, nb + nn);
-        auto Hbb = Htl.topLeftCorner(nb, nb);
-        auto Hbn = Htl.topRightCorner(nb, nn);
-        auto Hnb = Htl.bottomLeftCorner(nn, nb);
-        auto Hnn = Htl.bottomRightCorner(nn, nn);
-        auto Bbn = B.topLeftCorner(nb, nn);
-        auto Mnn = Hnn;
-        auto Sbn = S.leftCols(nn);
-
-        // Set `H` as the diagonal Hessian according to current canonical ordering
-        H.noalias() = submatrix(lhs.H().dense(), Q, Q);
-
-        // Calculate auxiliary matrix Bbn
-        Bbn.noalias()  = Hbb * Sbn;
-        Bbn.noalias() -= Hbn;
-
-        // Calculate coefficient matrix Mnn for the xn equation.
-        Mnn.noalias() += tr(Sbn) * Bbn;
-        Mnn.noalias() -= Hnb * Sbn;
-
-        // Compute the LU decomposition of Mnn.
-        luxn.compute(Mnn);
-    }
-
-    /// Solve the saddle point problem with diagonal Hessian matrix.
-    auto solveDiagonal(const SaddlePointVector& rhs, SaddlePointSolution& sol) -> void
+    /// Solve the saddle point problem using a partial pivoting LU method.
+    auto solvePartialPivLU(const SaddlePointVector& rhs, SaddlePointSolution& sol) -> void
     {
         // Alias to members of the saddle point vector solution.
         auto x = sol.x();
@@ -235,8 +204,138 @@ struct SaddlePointSolver::Impl
         rows(x, Q).noalias() = a;
     }
 
-    /// Solve the saddle point problem with dense Hessian matrix.
-    auto solveDense(const SaddlePointVector& rhs, SaddlePointSolution& sol) -> void
+    /// Decompose the coefficient matrix of the saddle point problem using a rangespace diagonal method.
+    auto decomposeRangespaceDiagonal(const SaddlePointMatrix& lhs) -> void
+    {
+        // Update the canonical form of the Jacobian matrix A
+        updateCanonicalForm(lhs);
+
+        // Alias to the matrices of the canonicalization process
+        const auto& Q = canonicalizer.Q().indices();
+        const auto& S = canonicalizer.S();
+
+        // Create auxiliary matrix views
+        auto H  = mat.topLeftCorner(n, n).diagonal();
+        auto B  = mat.bottomLeftCorner(m, n);
+        auto T  = mat.topRightCorner(n, m);
+        auto M  = mat.bottomRightCorner(m, m);
+        auto Hb = H.head(nb);
+        auto Hn = H.segment(nb, nn);
+        auto Bbn = B.topLeftCorner(nb, nn);
+        auto Tnb = T.topLeftCorner(nn, nb);
+        auto Mbb = M.topLeftCorner(nb, nb);
+        auto Sbn = S.leftCols(nn);
+
+        // Set `H` as the diagonal Hessian according to current canonical ordering
+        H.noalias() = rows(lhs.H().diagonal(), Q);
+
+        // Compute the auxiliary matrices Bb and Bbn
+        Bbn.noalias() = Sbn * diag(inv(Hn));
+        Tnb.noalias() = tr(Sbn) * diag(Hb);
+
+        // Compute the matrix Mbb for the xb equation
+        Mbb.noalias()  = Bbn * Tnb;
+        Mbb.noalias() += identity(nb, nb);
+
+        // Compute the LU decomposition of Mbb.
+        luxb.compute(Mbb);
+    }
+
+    /// Solve the saddle point problem using a rangespace diagonal method.
+    auto solveRangespaceDiagonal(const SaddlePointVector& rhs, SaddlePointSolution& sol) -> void
+    {
+        // Alias to members of the saddle point vector solution.
+        auto x = sol.x();
+        auto y = sol.y();
+
+        // Alias to the matrices of the canonicalization process
+        const auto& Q = canonicalizer.Q().indices();
+        const auto& S = canonicalizer.S();
+        const auto& R = canonicalizer.R();
+
+        // Create auxiliary sub-matrix views
+        auto H   = mat.topLeftCorner(n, n).diagonal();
+        auto B   = mat.bottomLeftCorner(m, n);
+        auto T   = mat.topRightCorner(n, m);
+        auto Hb  = H.head(nb);
+        auto Hn  = H.segment(nb, nn);
+        auto Bbn = B.topLeftCorner(nb, nn);
+        auto Tnb = T.topLeftCorner(nn, nb);
+        auto Sbn = S.leftCols(nn);
+        auto Sbf = S.rightCols(nf);
+
+        // Create auxiliary sub-vector views
+        auto a  = vec.head(n);
+        auto b  = vec.tail(m);
+        auto ab = a.head(nb);
+        auto an = a.segment(nb, nn);
+        auto af = a.tail(nf);
+        auto bb = b.head(nb);
+        auto yb = y.head(nb);
+
+        // Reorder vector a in the canonical order
+        a.noalias() = rows(rhs.a(), Q);
+
+        // Apply the regularizer matrix to b
+        bb.noalias() = R*rhs.b();
+
+        // Compute the saddle point problem solution
+        yb.noalias()  = ab;
+        an.noalias() -= tr(Sbn)*yb;
+        bb.noalias() -= Sbf*af;
+        bb.noalias() -= Bbn*an;
+        ab.noalias()  = luxb.solve(bb);
+        an.noalias() += Tnb*ab;
+        an.noalias()  = diag(inv(Hn))*an;
+        bb.noalias()  = yb;
+        bb.noalias() -= diag(Hb)*ab;
+
+        // Compute the y vector without canonicalization
+        y.noalias() = tr(R)*bb;
+
+        // Permute back the variables x to their original ordering
+        rows(x, Q).noalias() = a;
+    }
+
+    /// Decompose the coefficient matrix of the saddle point problem using a nullspace method.
+    auto decomposeNullspace(const SaddlePointMatrix& lhs) -> void
+    {
+        // Update the canonical form of the Jacobian matrix A
+        updateCanonicalForm(lhs);
+
+        // Alias to the matrices of the canonicalization process
+        const auto& Q = canonicalizer.Q().indices();
+        const auto& S = canonicalizer.S();
+
+        // Create auxiliary matrix views
+        auto H  = mat.topLeftCorner(n, n);
+        auto B  = mat.bottomLeftCorner(m, n);
+        auto Htl = H.topLeftCorner(nb + nn, nb + nn);
+        auto Hbb = Htl.topLeftCorner(nb, nb);
+        auto Hbn = Htl.topRightCorner(nb, nn);
+        auto Hnb = Htl.bottomLeftCorner(nn, nb);
+        auto Hnn = Htl.bottomRightCorner(nn, nn);
+        auto Bbn = B.topLeftCorner(nb, nn);
+        auto Mnn = Hnn;
+        auto Sbn = S.leftCols(nn);
+
+        // Set `H` as the diagonal Hessian according to current canonical ordering
+        H.noalias() = submatrix(lhs.H().dense(), Q, Q);
+
+        // Calculate auxiliary matrix Bbn
+        Bbn.noalias()  = Hbb * Sbn;
+        Bbn.noalias() -= Hbn;
+
+        // Calculate coefficient matrix Mnn for the xn equation.
+        Mnn.noalias() += tr(Sbn) * Bbn;
+        Mnn.noalias() -= Hnb * Sbn;
+
+        // Compute the LU decomposition of Mnn.
+        luxn.compute(Mnn);
+    }
+
+    /// Solve the saddle point problem using a nullspace method.
+    auto solveNullspace(const SaddlePointVector& rhs, SaddlePointSolution& sol) -> void
     {
         // Alias to members of the saddle point vector solution.
         auto x = sol.x();
@@ -299,8 +398,8 @@ struct SaddlePointSolver::Impl
 
         // Perform the decomposition according to the mode of the Hessian matrix
         switch(hessian_mode) {
-        case HessianMatrix::Diagonal: decomposeDiagonal(lhs); break;
-                             default: decomposeDense(lhs); break; }
+        case HessianMatrix::Diagonal: decomposeRangespaceDiagonal(lhs); break;
+                             default: decomposeNullspace(lhs); break; }
 
         return res.stop();
     }
@@ -312,9 +411,11 @@ struct SaddlePointSolver::Impl
         SaddlePointResult res;
 
         // Perform the solution according to the mode of the Hessian matrix
-        switch(hessian_mode) {
-        case HessianMatrix::Diagonal: solveDiagonal(rhs, sol); break;
-                             default: solveDense(rhs, sol); break; }
+        switch(method) {
+        case SaddlePointMethod::PartialPivLU:
+        case SaddlePointMethod::RangespaceDiagonal:
+            solveRangespaceDiagonal(rhs, sol); break;
+                             default: solveNullspace(rhs, sol); break; }
 
         return res.stop();
     }
