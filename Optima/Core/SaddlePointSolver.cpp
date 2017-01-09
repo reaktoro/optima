@@ -21,6 +21,7 @@
 #include <Optima/Common/Exception.hpp>
 #include <Optima/Core/HessianMatrix.hpp>
 #include <Optima/Core/SaddlePointMatrix.hpp>
+#include <Optima/Core/SaddlePointResult.hpp>
 #include <Optima/Math/Canonicalizer.hpp>
 #include <Optima/Math/EigenExtern.hpp>
 using namespace Eigen;
@@ -31,6 +32,9 @@ struct SaddlePointSolver::Impl
 {
     /// The canonicalizer of the Jacobian matrix *A*.
     Canonicalizer canonicalizer;
+
+    /// The method used to solve the saddle point problems
+    SaddlePointMethod method = SaddlePointMethod::PartialPivLU;
 
     /// The number of rows and columns in the Jacobian matrix *A*
     Index m, n;
@@ -349,6 +353,44 @@ auto SaddlePointSolver::operator=(SaddlePointSolver other) -> SaddlePointSolver&
 {
     pimpl = std::move(other.pimpl);
     return *this;
+}
+
+auto SaddlePointSolver::setMethod(SaddlePointMethod method) -> void
+{
+    pimpl->method = method;
+}
+
+auto SaddlePointSolver::setMethodPartialPivLU() -> void
+{
+    setMethod(SaddlePointMethod::PartialPivLU);
+}
+
+auto SaddlePointSolver::setMethodFullPivLU() -> void
+{
+    setMethod(SaddlePointMethod::FullPivLU);
+}
+
+auto SaddlePointSolver::setMethodRangespaceDiagonal() -> void
+{
+    setMethod(SaddlePointMethod::RangespaceDiagonal);
+}
+
+auto SaddlePointSolver::setMethodNullspace() -> void
+{
+    setMethod(SaddlePointMethod::Nullspace);
+}
+
+auto SaddlePointSolver::setMethodMoreEfficient(Index n, Index m) -> void
+{
+}
+
+auto SaddlePointSolver::setMethodMoreAccurate(const SaddlePointMatrix& lhs, const SaddlePointVector& rhs) -> void
+{
+}
+
+auto SaddlePointSolver::method() const -> SaddlePointMethod
+{
+    return pimpl->method;
 }
 
 auto SaddlePointSolver::canonicalize(const SaddlePointMatrix& lhs) -> SaddlePointResult
