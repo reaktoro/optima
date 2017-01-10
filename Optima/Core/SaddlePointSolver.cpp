@@ -162,8 +162,18 @@ struct SaddlePointSolver::Impl
         const auto& S = canonicalizer.S();
         const auto& R = canonicalizer.R();
 
+        // Create a view to the basic and non-basic rows of Q (ignoring the fixed variables)
+        auto Qbn = Q.head(nb + nn);
+        auto Sbf = S.rightCols(nf);
+
         // Create auxiliary sub-matrix views
-        auto H   = mat.topLeftCorner(n, n).diagonal();
+        auto a = vec.head(nb + nn);
+        auto b = vec.tail(nb);
+
+        auto af = r.head(nb + nn);
+        a.noalias() = rows(rhs.a(), Qbn);
+        b.noalias() = R * rhs.b() - Sbf * af;
+
         auto B   = mat.bottomLeftCorner(m, n);
         auto T   = mat.topRightCorner(n, m);
         auto Hb  = H.head(nb);
@@ -171,11 +181,8 @@ struct SaddlePointSolver::Impl
         auto Bbn = B.topLeftCorner(nb, nn);
         auto Tnb = T.topLeftCorner(nn, nb);
         auto Sbn = S.leftCols(nn);
-        auto Sbf = S.rightCols(nf);
 
         // Create auxiliary sub-vector views
-        auto a  = vec.head(n);
-        auto b  = vec.tail(m);
         auto ab = a.head(nb);
         auto an = a.segment(nb, nn);
         auto af = a.tail(nf);
