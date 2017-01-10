@@ -111,8 +111,8 @@ struct SaddlePointSolver::Impl
         nn = n - nb - nf;
     }
 
-    /// Decompose the coefficient matrix of the saddle point problem using a partial pivoting LU method.
-    auto decomposePartialPivLU(const SaddlePointMatrix& lhs) -> void
+    /// Decompose the coefficient matrix of the saddle point problem using a LU decomposition method.
+    auto decomposeLU(const SaddlePointMatrix& lhs) -> void
     {
         // Update the canonical form of the Jacobian matrix A
         updateCanonicalForm(lhs);
@@ -121,35 +121,37 @@ struct SaddlePointSolver::Impl
         const auto& Q = canonicalizer.Q().indices();
         const auto& S = canonicalizer.S();
 
-        // Create auxiliary matrix views
-        auto H  = mat.topLeftCorner(n, n).diagonal();
-        auto B  = mat.bottomLeftCorner(m, n);
-        auto T  = mat.topRightCorner(n, m);
-        auto M  = mat.bottomRightCorner(m, m);
-        auto Hb = H.head(nb);
-        auto Hn = H.segment(nb, nn);
-        auto Bbn = B.topLeftCorner(nb, nn);
-        auto Tnb = T.topLeftCorner(nn, nb);
-        auto Mbb = M.topLeftCorner(nb, nb);
+        // Create a view to the non-basic columns of S (ignoring the fixed variables)
         auto Sbn = S.leftCols(nn);
 
-        // Set `H` as the diagonal Hessian according to current canonical ordering
-        H.noalias() = rows(lhs.H().diagonal(), Q);
+        // Create a view to the basic and non-basic rows of Q (ignoring the fixed variables)
+        auto Qbn = Q.head(nb + nn);
 
-        // Compute the auxiliary matrices Bb and Bbn
-        Bbn.noalias() = Sbn * diag(inv(Hn));
-        Tnb.noalias() = tr(Sbn) * diag(Hb);
+        // Create a view to the M block of the auxiliary matrix mat where the canonical saddle point matrix is defined
+        auto M = mat.topLeftCorner(2*nb + nn, 2*nb + nn);
 
-        // Compute the matrix Mbb for the xb equation
-        Mbb.noalias()  = Bbn * Tnb;
-        Mbb.noalias() += identity(nb, nb);
+        // Create a view to the H block of the canonical saddle point matrix
+        auto H = M.topLeftCorner(nb + nn, nb + nn);
 
-        // Compute the LU decomposition of Mbb.
-        luxb.compute(Mbb);
+        // Set the Ibb blocks in the canonical saddle point matrix
+        M.bottomLeftCorner(nb, nb).setIdentity(nb, nb);
+        M.topRightCorner(nb, nb).setIdentity(nb, nb);
+
+        // Set the Sbn and tr(Sbn) blocks in the canonical saddle point matrix
+        M.bottomRows(nb).middleCols(nb, nn) = Sbn;
+        M.rightCols(nb).middleRows(nb, nn)  = tr(Sbn);
+
+        // Set the H block of the canonical saddle point matrix
+        if(lhs.H().isdense()) H.noalias() = submatrix(lhs.H().dense(), Qbn, Qbn);
+        else H = diag(rows(lhs.H().diagonal(), Qbn));
+
+        // Compute the LU decomposition of M.
+        if(method == SaddlePointMethod::PartialPivLU) luxy_partial.compute(M);
+        else luxy_full.compute(M);
     }
 
-    /// Solve the saddle point problem using a partial pivoting LU method.
-    auto solvePartialPivLU(const SaddlePointVector& rhs, SaddlePointSolution& sol) -> void
+    /// Solve the saddle point problem using a LU decomposition method.
+    auto solveLU(const SaddlePointVector& rhs, SaddlePointSolution& sol) -> void
     {
         // Alias to members of the saddle point vector solution.
         auto x = sol.x();
