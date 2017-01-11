@@ -141,6 +141,13 @@ else()
     add_subdirectory(tests EXCLUDE_FROM_ALL)
 endif()
 
+# Build the benchmarks
+if(BUILD_BENCH)
+    add_subdirectory(bench)
+else()
+    add_subdirectory(bench EXCLUDE_FROM_ALL)
+endif()
+
 # Add target "demos" for manual building of demos, as `make demos`, if BUILD_DEMOS is OFF
 add_custom_target(demos
     COMMAND ${CMAKE_MAKE_PROGRAM}
@@ -150,3 +157,8 @@ add_custom_target(demos
 add_custom_target(tests
     COMMAND ${CMAKE_MAKE_PROGRAM}
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/tests")
+
+# Add target "bench" for manual building of benchmarks, as `make bench`, if BUILD_BENCH is OFF
+add_custom_target(bench
+    COMMAND ${CMAKE_MAKE_PROGRAM}
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bench")
