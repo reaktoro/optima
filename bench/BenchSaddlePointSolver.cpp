@@ -41,7 +41,7 @@ void benchMethodRangespaceDiagonal()
     VectorXd expected = linspace(t, 1, t);
 
     MatrixXd A = random(m, n);
-    VectorXd H = random(n);
+    MatrixXd H = diag(random(n));
 
     SaddlePointMatrix lhs(H, A);
 

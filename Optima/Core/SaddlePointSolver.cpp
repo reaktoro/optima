@@ -63,9 +63,6 @@ struct SaddlePointSolver::Impl
     /// The full LU solver used to calculate both *x* and *y* simultaneously.
     Eigen::FullPivLU<MatrixXd> luxy_full;
 
-    /// The mode of the Hessian matrix decomposed last time
-    HessianMatrix::Mode hessian_mode;
-
     /// Canonicalize the coefficient matrix *A* of the saddle point problem.
     auto canonicalize(const SaddlePointMatrix& lhs) -> SaddlePointResult
     {
@@ -99,8 +96,7 @@ struct SaddlePointSolver::Impl
         const Indices& fixed = lhs.fixed();
 
         // Update the priority weights for the update of the canonical form
-        if(H.isdiagonal()) w.noalias() = inv(H.diagonal());
-                      else w.noalias() = inv(H.dense().diagonal());
+        w.noalias() = inv(H.diagonal());
 
         // Update the canonical form and the ordering of the variables
         canonicalizer.update(w, fixed);
@@ -145,8 +141,7 @@ struct SaddlePointSolver::Impl
         M.bottomRightCorner(nb, nb).setZero();
 
         // Set the H block of the canonical saddle point matrix
-        if(lhs.H().isdense()) H.noalias() = submatrix(lhs.H().dense(), Qbn, Qbn);
-        else H = diag(rows(lhs.H().diagonal(), Qbn));
+        H.noalias() = submatrix(lhs.H(), Qbn, Qbn);
 
         // Compute the LU decomposition of M.
         if(method == SaddlePointMethod::PartialPivLU)
@@ -321,7 +316,7 @@ struct SaddlePointSolver::Impl
         auto Sbn = S.leftCols(nn);
 
         // Set `H` as the diagonal Hessian according to current canonical ordering
-        H.noalias() = submatrix(lhs.H().dense(), Q, Q);
+        H.noalias() = submatrix(lhs.H(), Q, Q);
 
         // Calculate auxiliary matrix Bbn
         Bbn.noalias()  = Hbb * Sbn;
@@ -394,9 +389,6 @@ struct SaddlePointSolver::Impl
         // The result of this method call
         SaddlePointResult res;
 
-        // Set the mode of the Hessian matrix
-        hessian_mode = lhs.H().mode();
-
         // Perform the decomposition according to the chosen method
         switch(method)
         {
@@ -404,12 +396,9 @@ struct SaddlePointSolver::Impl
         case SaddlePointMethod::FullPivLU:
             decomposeLU(lhs); break;
         case SaddlePointMethod::RangespaceDiagonal:
-            if(hessian_mode == HessianMatrix::Diagonal) // todo: This should result in a Warning message!
-            {
-                decomposeRangespaceDiagonal(lhs);
-                break;
-            }
-        default: decomposeNullspace(lhs);
+            decomposeRangespaceDiagonal(lhs); break;
+        default:
+            decomposeNullspace(lhs); break;
         }
 
         return res.stop();
@@ -428,12 +417,9 @@ struct SaddlePointSolver::Impl
         case SaddlePointMethod::FullPivLU:
             solveLU(rhs, sol); break;
         case SaddlePointMethod::RangespaceDiagonal:
-            if(hessian_mode == HessianMatrix::Diagonal) // todo: This should result in a Warning message!
-            {
-                solveRangespaceDiagonal(rhs, sol);
-                break;
-            }
-        default: solveNullspace(rhs, sol);
+            solveRangespaceDiagonal(rhs, sol); break;
+        default:
+            solveNullspace(rhs, sol); break;
         }
 
         return res.stop();

@@ -41,7 +41,7 @@ TEST_CASE("Testing SaddlePointSolver with RangespaceDiagonal method.")
     VectorXd expected = linspace(t, 1, t);
 
     MatrixXd A = random(m, n);
-    VectorXd H = random(n);
+    MatrixXd H = diag(random(n));
 
     SaddlePointMatrix lhs(H, A);
 
@@ -71,8 +71,6 @@ TEST_CASE("Testing SaddlePointSolver with Nullspace method.")
 
     MatrixXd A = random(m, n);
     MatrixXd H = random(n, n);
-    H.diagonal().head(m)   *= 1e-2;
-    H.diagonal().tail(n-m) *= 1e+5;
 
     SaddlePointMatrix lhs(H, A);
 
@@ -81,18 +79,6 @@ TEST_CASE("Testing SaddlePointSolver with Nullspace method.")
 
     SaddlePointVector rhs(r, n, m);
     SaddlePointSolution sol(s, n, m);
-
-//    SUBCASE("When method is SaddlePointMethod::RangespaceDiagonal")
-//    {
-//        H = diag(H.diagonal());
-//        SaddlePointSolver solver;
-//        solver.setMethodNullspace();
-//        solver.canonicalize(lhs);
-//        solver.decompose(lhs);
-//        solver.solve(rhs, sol);
-//        CHECK_EQ(solver.method(), SaddlePointMethod::Nullspace);
-//        CHECK(s.isApprox(expected));
-//    }
 
     SUBCASE("When method is SaddlePointMethod::Nullspace")
     {

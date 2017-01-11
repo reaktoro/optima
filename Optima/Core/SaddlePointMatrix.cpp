@@ -25,11 +25,11 @@ using namespace Eigen;
 
 namespace Optima {
 
-SaddlePointMatrix::SaddlePointMatrix(HessianMatrix H, ConstMatrixRef A)
+SaddlePointMatrix::SaddlePointMatrix(ConstMatrixRef H, ConstMatrixRef A)
 : m_H(H), m_A(A)
 {}
 
-SaddlePointMatrix::SaddlePointMatrix(HessianMatrix H, ConstMatrixRef A, const Indices& fixed)
+SaddlePointMatrix::SaddlePointMatrix(ConstMatrixRef H, ConstMatrixRef A, const Indices& fixed)
 : m_H(H), m_A(A), m_fixed(fixed)
 {}
 
@@ -38,7 +38,7 @@ auto SaddlePointMatrix::dim() const -> Index
     return m_A.rows() + m_A.cols();
 }
 
-auto SaddlePointMatrix::H() const -> HessianMatrix
+auto SaddlePointMatrix::H() const -> ConstMatrixRef
 {
     return m_H;
 }
