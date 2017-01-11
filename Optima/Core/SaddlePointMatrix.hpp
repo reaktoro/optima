@@ -145,60 +145,6 @@ private:
     VectorRef m_y;
 };
 
-/// Used to represent a saddle point matrix in canonical form.
-struct CanonicalSaddlePointMatrix
-{
-    /// The basic partition of the the Hessian matrix.
-    ConstMatrixRef Hbb;
-
-    /// The non-basic partition of the the Hessian matrix.
-    ConstMatrixRef Hnn;
-
-    /// The basic/non-basic partition of the the Hessian matrix.
-    ConstMatrixRef Hbn;
-
-    /// The non-basic/basic partition of the the Hessian matrix.
-    ConstMatrixRef Hnb;
-
-    /// The non-basic partition of the Jacobian matrix in canonical form.
-    ConstMatrixRef Sn;
-
-    /// The fixed partition of the Jacobian matrix in canonical form.
-    ConstMatrixRef Sf;
-};
-
-/// Used to represent a saddle point right-hand side vector in canonical form.
-struct CanonicalSaddlePointVector
-{
-    /// The basic partition of the right-hand side vector *a*.
-    ConstVectorRef ab;
-
-    /// The non-basic partition of the right-hand side vector *a*.
-    ConstVectorRef an;
-
-    /// The fixed partition of the right-hand side vector *a*.
-    ConstVectorRef af;
-
-    /// The basic partition of the right-hand side vector *b*.
-    ConstVectorRef bb;
-};
-
-/// Used to represent a saddle point solution vector in canonical form.
-struct CanonicalSaddlePointSolution
-{
-    /// The basic partition of the solution vector *x*.
-    VectorRef xb;
-
-    /// The non-basic partition of the solution vector *x*.
-    VectorRef xn;
-
-    /// The fixed partition of the solution vector *x*.
-    VectorRef xf;
-
-    /// The basic partition of the solution vector *y*.
-    VectorRef yb;
-};
-
 /// Assign a MatrixRef instance with a SaddlePointMatrix instance.
 auto operator<<(MatrixRef mat, const SaddlePointMatrix& lhs) -> MatrixRef;
 
