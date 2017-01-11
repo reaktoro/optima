@@ -141,13 +141,18 @@ struct SaddlePointSolver::Impl
         M.bottomRows(nb).middleCols(nb, nn) = Sbn;
         M.rightCols(nb).middleRows(nb, nn)  = tr(Sbn);
 
+        // Set the zero block of M on the bottom-right corner
+        M.bottomRightCorner(nb, nb).setZero();
+
         // Set the H block of the canonical saddle point matrix
         if(lhs.H().isdense()) H.noalias() = submatrix(lhs.H().dense(), Qbn, Qbn);
         else H = diag(rows(lhs.H().diagonal(), Qbn));
 
         // Compute the LU decomposition of M.
-        if(method == SaddlePointMethod::PartialPivLU) luxy_partial.compute(M);
-        else luxy_full.compute(M);
+        if(method == SaddlePointMethod::PartialPivLU)
+            luxy_partial.compute(M);
+        else
+            luxy_full.compute(M);
     }
 
     /// Solve the saddle point problem using a LU decomposition method.
@@ -162,55 +167,42 @@ struct SaddlePointSolver::Impl
         const auto& S = canonicalizer.S();
         const auto& R = canonicalizer.R();
 
-        // Create a view to the basic and non-basic rows of Q (ignoring the fixed variables)
-        auto Qbn = Q.head(nb + nn);
+        // Create a view to the columns of S corresponding to fixed variables where S = [Sbn Sbf]
         auto Sbf = S.rightCols(nf);
 
-        // Create auxiliary sub-matrix views
-        auto a = vec.head(nb + nn);
-        auto b = vec.tail(nb);
+        // Create views to the subvectors of Q = [Qb Qn Qf] = [Qbn Qf]
+        auto Qbn = Q.head(nb + nn);
+        auto Qf  = Q.tail(nf);
 
-        auto af = r.head(nb + nn);
-        a.noalias() = rows(rhs.a(), Qbn);
-        b.noalias() = R * rhs.b() - Sbf * af;
+        // The view in vec corresponding to the values of a for fixed variables
+        auto af = vec.tail(nf);
 
-        auto B   = mat.bottomLeftCorner(m, n);
-        auto T   = mat.topRightCorner(n, m);
-        auto Hb  = H.head(nb);
-        auto Hn  = H.segment(nb, nn);
-        auto Bbn = B.topLeftCorner(nb, nn);
-        auto Tnb = T.topLeftCorner(nn, nb);
-        auto Sbn = S.leftCols(nn);
+        // The right-hand side vector of the linear equation
+        auto r = vec.head(2*nb + nn);
 
-        // Create auxiliary sub-vector views
-        auto ab = a.head(nb);
-        auto an = a.segment(nb, nn);
-        auto af = a.tail(nf);
-        auto bb = b.head(nb);
-        auto yb = y.head(nb);
+        // Create views to the subvectors of r = [ab an bb] = [abn bb]
+        auto abn = r.head(nb + nn);
+        auto  bb = r.tail(nb);
 
-        // Reorder vector a in the canonical order
-        a.noalias() = rows(rhs.a(), Q);
+        // Set the vectors abn and af using the indices in Qbn and Qf
+        abn.noalias() = rows(rhs.a(), Qbn);
+         af.noalias() = rows(rhs.a(), Qf);
 
-        // Apply the regularizer matrix to b
-        bb.noalias() = R*rhs.b();
+        // Set the vector bb
+        bb.noalias() = R * rhs.b() - Sbf * af;
 
-        // Compute the saddle point problem solution
-        yb.noalias()  = ab;
-        an.noalias() -= tr(Sbn)*yb;
-        bb.noalias() -= Sbf*af;
-        bb.noalias() -= Bbn*an;
-        ab.noalias()  = luxb.solve(bb);
-        an.noalias() += Tnb*ab;
-        an.noalias()  = diag(inv(Hn))*an;
-        bb.noalias()  = yb;
-        bb.noalias() -= diag(Hb)*ab;
+        // Compute the LU decomposition of M.
+        if(method == SaddlePointMethod::PartialPivLU)
+            r.noalias() = luxy_partial.solve(r);
+        else
+            r.noalias() = luxy_full.solve(r);
 
         // Compute the y vector without canonicalization
         y.noalias() = tr(R)*bb;
 
         // Permute back the variables x to their original ordering
-        rows(x, Q).noalias() = a;
+        rows(x, Qbn).noalias() = abn;
+        rows(x,  Qf).noalias() = af;
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a rangespace diagonal method.
@@ -405,10 +397,20 @@ struct SaddlePointSolver::Impl
         // Set the mode of the Hessian matrix
         hessian_mode = lhs.H().mode();
 
-        // Perform the decomposition according to the mode of the Hessian matrix
-        switch(hessian_mode) {
-        case HessianMatrix::Diagonal: decomposeRangespaceDiagonal(lhs); break;
-                             default: decomposeNullspace(lhs); break; }
+        // Perform the decomposition according to the chosen method
+        switch(method)
+        {
+        case SaddlePointMethod::PartialPivLU:
+        case SaddlePointMethod::FullPivLU:
+            decomposeLU(lhs); break;
+        case SaddlePointMethod::RangespaceDiagonal:
+            if(hessian_mode == HessianMatrix::Diagonal) // todo: This should result in a Warning message!
+            {
+                decomposeRangespaceDiagonal(lhs);
+                break;
+            }
+        default: decomposeNullspace(lhs);
+        }
 
         return res.stop();
     }
@@ -419,12 +421,20 @@ struct SaddlePointSolver::Impl
         // The result of this method call
         SaddlePointResult res;
 
-        // Perform the solution according to the mode of the Hessian matrix
-        switch(method) {
+        // Perform the solution according to the chosen method
+        switch(method)
+        {
         case SaddlePointMethod::PartialPivLU:
+        case SaddlePointMethod::FullPivLU:
+            solveLU(rhs, sol); break;
         case SaddlePointMethod::RangespaceDiagonal:
-            solveRangespaceDiagonal(rhs, sol); break;
-                             default: solveNullspace(rhs, sol); break; }
+            if(hessian_mode == HessianMatrix::Diagonal) // todo: This should result in a Warning message!
+            {
+                solveRangespaceDiagonal(rhs, sol);
+                break;
+            }
+        default: solveNullspace(rhs, sol);
+        }
 
         return res.stop();
     }
