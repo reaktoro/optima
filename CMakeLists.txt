@@ -28,6 +28,7 @@ option(BUILD_DEMOS  "Build demos." OFF)
 option(BUILD_DOCS   "Build documentation." OFF)
 option(BUILD_PYTHON "Build the python wrappers." OFF)
 option(BUILD_TESTS  "Build tests." OFF)
+option(BUILD_BENCH  "Build benchmarks." OFF)
 
 # Option to conveniently permit build in debug mode
 option(DEBUG "Build in debug mode." OFF)
