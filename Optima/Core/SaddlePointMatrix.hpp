@@ -20,7 +20,6 @@
 // Optima includes
 #include <Optima/Common/Index.hpp>
 #include <Optima/Common/Optional.hpp>
-#include <Optima/Core/HessianMatrix.hpp>
 #include <Optima/Math/Matrix.hpp>
 
 namespace Optima {

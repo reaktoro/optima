@@ -18,7 +18,6 @@
 #include <doctest/doctest.hpp>
 
 // Optima includes
-#include <Optima/Core/HessianMatrix.hpp>
 #include <Optima/Core/SaddlePointMatrix.hpp>
 using namespace Eigen;
 using namespace Optima;

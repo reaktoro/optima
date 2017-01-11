@@ -15,28 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include <doctest/doctest.hpp>
+#include "OptimumParams.hpp"
 
-// Eigenx includes
-#include <Eigenx/Core.hpp>
-using namespace Eigen;
+namespace Optima {
 
-// Optima includes
-#include <Optima/Core/HessianMatrix.hpp>
-using namespace Optima;
-
-TEST_CASE("Testing HessianMatrix when in Diagonal mode")
-{
-    VectorXd diag = ones(10);
-    HessianMatrix H(diag);
-
-    CHECK(identity(10, 10).isApprox(H.matrix()));
-}
-
-TEST_CASE("Testing HessianMatrix when in Dense mode")
-{
-    MatrixXd dense = random(10, 10);
-    HessianMatrix H(dense);
-
-    CHECK(dense.isApprox(H.matrix()));
-}
+} // namespace Optima

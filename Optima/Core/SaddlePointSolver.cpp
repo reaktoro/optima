@@ -19,7 +19,6 @@
 
 // Optima includes
 #include <Optima/Common/Exception.hpp>
-#include <Optima/Core/HessianMatrix.hpp>
 #include <Optima/Core/SaddlePointMatrix.hpp>
 #include <Optima/Core/SaddlePointResult.hpp>
 #include <Optima/Math/Canonicalizer.hpp>

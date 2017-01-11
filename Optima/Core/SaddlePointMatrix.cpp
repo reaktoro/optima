@@ -17,9 +17,6 @@
 
 #include "SaddlePointMatrix.hpp"
 
-// Optima includes
-#include <Optima/Core/HessianMatrix.hpp>
-
 // Eigenx includes
 using namespace Eigen;
 

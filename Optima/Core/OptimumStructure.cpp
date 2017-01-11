@@ -15,21 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include "HessianMatrix.hpp"
-
-// C++ includes
-#include <cassert>
-
-// Eigenx includes
-using namespace Eigen;
+#include "OptimumParams.hpp"
 
 namespace Optima {
-
-auto operator<<(MatrixRef mat, const HessianMatrix& hessian) -> MatrixRef
-{
-    if(hessian.isdiagonal()) mat = diag(hessian.diagonal());
-    else mat.noalias() = hessian.dense();
-    return mat;
-}
 
 } // namespace Optima
