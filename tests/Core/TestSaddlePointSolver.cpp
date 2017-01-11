@@ -45,8 +45,7 @@ TEST_CASE("Testing SaddlePointSolver with RangespaceDiagonal method.")
 
     SaddlePointMatrix lhs(H, A);
 
-    MatrixXd M = lhs.matrix();
-    VectorXd r = M * expected;
+    VectorXd r = lhs * expected;
     VectorXd s(t);
 
     SaddlePointVector rhs(r, n, m);
@@ -77,8 +76,7 @@ TEST_CASE("Testing SaddlePointSolver with Nullspace method.")
 
     SaddlePointMatrix lhs(H, A);
 
-    MatrixXd M = lhs.matrix();
-    VectorXd r = M * expected;
+    VectorXd r = lhs * expected;
     VectorXd s(t);
 
     SaddlePointVector rhs(r, n, m);

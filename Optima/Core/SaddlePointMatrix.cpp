@@ -88,4 +88,9 @@ auto operator<<(VectorRef vec, const SaddlePointVector& rhs) -> VectorRef
     return vec;
 }
 
+auto operator*(const SaddlePointMatrix& lhs, ConstVectorRef rhs) -> VectorXd
+{
+    return lhs.matrix() * rhs;
+}
+
 } // namespace Optima

@@ -205,5 +205,8 @@ auto operator<<(MatrixRef mat, const SaddlePointMatrix& lhs) -> MatrixRef;
 /// Assign a VectorRef instance with a SaddlePointVector instance.
 auto operator<<(VectorRef vec, const SaddlePointVector& rhs) -> VectorRef;
 
+/// Return the multiplication of a SaddlePointMatrix by a vector.
+auto operator*(const SaddlePointMatrix& lhs, ConstVectorRef rhs) -> VectorXd;
+
 } // namespace Optima
 
