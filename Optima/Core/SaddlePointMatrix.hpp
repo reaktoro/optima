@@ -40,19 +40,19 @@ class SaddlePointMatrix
 {
 public:
     /// Construct a SaddlePointMatrix instance with given Hessian and Jacobian matrices.
-    SaddlePointMatrix(ConstMatrixRef H, ConstMatrixRef A);
+    SaddlePointMatrix(MatrixXdConstRef H, MatrixXdConstRef A);
 
     /// Construct a SaddlePointMatrix instance with given Hessian and Jacobian matrices, and indices of fixed variables.
-    SaddlePointMatrix(ConstMatrixRef H, ConstMatrixRef A, const Indices& fixed);
+    SaddlePointMatrix(MatrixXdConstRef H, MatrixXdConstRef A, const Indices& fixed);
 
     /// Return the dimension of the saddle point mathrm.
     auto dim() const -> Index;
 
     /// Return the Hessian matrix *H*.
-    auto H() const -> ConstMatrixRef;
+    auto H() const -> MatrixXdConstRef;
 
     /// Return the Jacobian matrix *A*.
-    auto A() const -> ConstMatrixRef;
+    auto A() const -> MatrixXdConstRef;
 
     /// Return the indices of the fixed variables.
     auto fixed() const -> const Indices&;
@@ -62,10 +62,10 @@ public:
 
 private:
     /// The Hessian matrix \eq{H} in the saddle point matrix.
-    ConstMatrixRef m_H;
+    MatrixXdConstRef m_H;
 
     /// The Jacobian matrix \eq{A} in the saddle point matrix.
-    ConstMatrixRef m_A;
+    MatrixXdConstRef m_A;
 
     /// The indices of the fixed variables.
     Optional<Indices> m_fixed;
@@ -78,32 +78,32 @@ public:
     /// Construct a SaddlePointVector instance with given *a* and *b* vectors.
     /// @param a The saddle point right-hand side vector *a*.
     /// @param b The saddle point right-hand side vector *b*.
-    SaddlePointVector(ConstVectorRef a, ConstVectorRef b) : m_a(a), m_b(b) {}
+    SaddlePointVector(VectorXdConstRef a, VectorXdConstRef b) : m_a(a), m_b(b) {}
 
     /// Construct a SaddlePointVector instance with given right-hand side vector.
     /// @param r The right-hand side vector *r* = [*a* *b*].
     /// @param n The dimension of vector *a*.
     /// @param m The dimension of vector *b*.
-    SaddlePointVector(ConstVectorRef r, Index n, Index m) : m_a(r.head(n)), m_b(r.tail(m)) {}
+    SaddlePointVector(VectorXdConstRef r, Index n, Index m) : m_a(r.head(n)), m_b(r.tail(m)) {}
 
     /// Return the dimension of the saddle point vector.
     auto dim() const -> Index { return m_a.rows() + m_b.rows(); }
 
     /// Return the solution vector *a*.
-    auto a() const -> ConstVectorRef { return m_a; }
+    auto a() const -> VectorXdConstRef { return m_a; }
 
     /// Return the solution vector *b*.
-    auto b() const -> ConstVectorRef { return m_b; }
+    auto b() const -> VectorXdConstRef { return m_b; }
 
     /// Convert this SaddlePointVector instance into a Vector instance.
     auto vector() const -> VectorXd { VectorXd res(dim()); res << m_a, m_b; return res; }
 
 private:
     /// The saddle-point solution vector *a*.
-    ConstVectorRef m_a;
+    VectorXdConstRef m_a;
 
     /// The saddle-point solution vector *b*.
-    ConstVectorRef m_b;
+    VectorXdConstRef m_b;
 };
 
 /// A type used to describe a saddle point solution vector.
@@ -113,45 +113,45 @@ public:
     /// Construct a SaddlePointSolution instance with given *x* and *y* vectors.
     /// @param x The saddle point solution vector *x*.
     /// @param y The saddle point solution vector *y*.
-    SaddlePointSolution(VectorRef x, VectorRef y) : m_x(x), m_y(y) {}
+    SaddlePointSolution(VectorXdRef x, VectorXdRef y) : m_x(x), m_y(y) {}
 
     /// Construct a SaddlePointSolution instance with given solution vector.
     /// @param s The solution vector *s* = [*x* *y*].
     /// @param n The dimension of vector *x*.
     /// @param m The dimension of vector *y*.
-    SaddlePointSolution(VectorRef s, Index n, Index m) : m_x(s.head(n)), m_y(s.tail(m)) {}
+    SaddlePointSolution(VectorXdRef s, Index n, Index m) : m_x(s.head(n)), m_y(s.tail(m)) {}
 
-    /// Assign this SaddlePointSolution instance with a ConstVectorRef instance.
-    auto operator=(ConstVectorRef vec) -> SaddlePointSolution& { m_x.noalias() = vec.head(m_x.rows()); m_y.noalias() = vec.tail(m_y.rows()); return *this; }
+    /// Assign this SaddlePointSolution instance with a VectorXdConstRef instance.
+    auto operator=(VectorXdConstRef vec) -> SaddlePointSolution& { m_x.noalias() = vec.head(m_x.rows()); m_y.noalias() = vec.tail(m_y.rows()); return *this; }
 
     /// Return the dimension of the saddle point solution vector.
     auto dim() const -> Index { return m_x.rows() + m_y.rows(); }
 
     /// Return the solution vector *x*.
-    auto x() -> VectorRef { return m_x; }
+    auto x() -> VectorXdRef { return m_x; }
 
     /// Return the solution vector *y*.
-    auto y() -> VectorRef { return m_y; }
+    auto y() -> VectorXdRef { return m_y; }
 
     /// Convert this SaddlePointSolution instance into a Vector instance.
     auto vector() const -> VectorXd { VectorXd res(dim()); res << m_x, m_y; return res; }
 
 private:
     /// The saddle-point solution vector *x*.
-    VectorRef m_x;
+    VectorXdRef m_x;
 
     /// The saddle-point solution vector *y*.
-    VectorRef m_y;
+    VectorXdRef m_y;
 };
 
-/// Assign a MatrixRef instance with a SaddlePointMatrix instance.
-auto operator<<(MatrixRef mat, const SaddlePointMatrix& lhs) -> MatrixRef;
+/// Assign a MatrixXdRef instance with a SaddlePointMatrix instance.
+auto operator<<(MatrixXdRef mat, const SaddlePointMatrix& lhs) -> MatrixXdRef;
 
-/// Assign a VectorRef instance with a SaddlePointVector instance.
-auto operator<<(VectorRef vec, const SaddlePointVector& rhs) -> VectorRef;
+/// Assign a VectorXdRef instance with a SaddlePointVector instance.
+auto operator<<(VectorXdRef vec, const SaddlePointVector& rhs) -> VectorXdRef;
 
 /// Return the multiplication of a SaddlePointMatrix by a vector.
-auto operator*(const SaddlePointMatrix& lhs, ConstVectorRef rhs) -> VectorXd;
+auto operator*(const SaddlePointMatrix& lhs, VectorXdConstRef rhs) -> VectorXd;
 
 } // namespace Optima
 

@@ -38,17 +38,29 @@ struct SaddlePointSolver::Impl
     /// The number of rows and columns in the Jacobian matrix *A*
     Index m, n;
 
-    /// The number of basic, non-basic, and fixed variables.
-    Index nb, nn, nf;
+    /// The number of basic and non-basic.
+    Index nb, nn;
+
+    /// The number of free and fixed variables.
+    Index nx, nf;
+
+    /// The number of free and fixed basic variables.
+    Index nbx, nbf;
+
+    /// The number of free and fixed non-basic variables.
+    Index nnx, nnf;
 
     /// The priority weights for the selection of basic variables.
-    VectorXd w;
+    VectorXd weights;
 
     /// The matrix used as a workspace for the decompose and solve methods.
     MatrixXd mat;
 
     /// The vector used as a workspace for the decompose and solve methods.
     VectorXd vec;
+
+    /// The ordering of the variables as (free-basic, free-non-basic, fixed-basic, fixed-non-basic)
+    VectorXi iordering;
 
     /// The LU solver used to calculate *xb* when the Hessian matrix is in diagonal form.
     Eigen::PartialPivLU<MatrixXd> luxb;
@@ -75,9 +87,30 @@ struct SaddlePointSolver::Impl
         // Allocate auxiliary memory
         mat.resize(n + m, n + m);
         vec.resize(n + m);
+        iordering.resize(n);
 
         // Compute the canonical form of matrix A
         canonicalizer.compute(A);
+
+        // Set the number of basic and non-basic variables
+        nb = canonicalizer.numBasicVariables();
+        nn = canonicalizer.numNonBasicVariables();
+
+        /// Set the number of free and fixed variables
+        nx = n;
+        nf = 0;
+
+        // Set the number of free and fixed basic variables
+        nbx = nb;
+        nbf = 0;
+
+        // Set the number of free and fixed non-basic variables
+        nnx = nn;
+        nnf = 0;
+
+        // Update the ordering of the variables
+        iordering.head(nb) = canonicalizer.ibasic();
+        iordering.tail(nn) = canonicalizer.inonbasic();
 
         return res.stop();
     }
@@ -85,26 +118,40 @@ struct SaddlePointSolver::Impl
     /// Update the canonical form of the coefficient matrix *A* of the saddle point problem.
     auto updateCanonicalForm(const SaddlePointMatrix& lhs) -> void
     {
-        // Get the Hessian matrix
-        auto H = lhs.H();
-
-        // Get the indices of fixed variables
-        const Indices& fixed = lhs.fixed();
-
         // Update the priority weights for the update of the canonical form
-        w.noalias() = inv(H.diagonal());
+        weights.noalias() = inv(lhs.H().diagonal());
 
-        // Set the weights of the fixed variables
-        //      // Set weights of fixed variables to decreasing negative values to move them to the back of the list
-        //      Eigen::rows(w, fixed) = -VectorXd::LinSpaced(nf, 1, nf);
+        // Set the priority weights of the fixed variables to decreasing negative values
+        rows(weights, lhs.fixed()) = -linspace(nf, 1, nf);
 
         // Update the canonical form and the ordering of the variables
-        canonicalizer.update(w, fixed);
+        canonicalizer.update(weights);
 
-        // Update the number of fixed, basic, and non-basic variables
-        nf = fixed.size();
-        nb = canonicalizer.rows();
-        nn = n - nb - nf;
+        // Get the updated indices of basic and non-basic variables
+        auto ibasic = canonicalizer.ibasic();
+        auto inonbasic = canonicalizer.inonbasic();
+
+        // Find the number of fixed basic variables (those with weights below or equal to zero)
+        nbf = 0; while(nbf < nb && weights[ibasic[nb - nbf - 1]] <= 0.0) ++nbf;
+
+        // Find the number of fixed non-basic variables (those with weights below or equal to zero)
+        nnf = 0; while(nnf < nn && weights[inonbasic[nn - nnf - 1]] <= 0.0) ++nnf;
+
+        // Update the number of free basic and free non-basic variables
+        nbx = nb - nbf;
+        nnx = nn - nnf;
+
+        // Update the number of fixed and free variables
+        nf = lhs.fixed().size();
+        nx = n - nf;
+
+        // Update the ordering of the free variables
+        iordering.head(nx).head(nbx) = canonicalizer.ibasic().head(nbx);
+        iordering.head(nx).tail(nnx) = canonicalizer.inonbasic().head(nnx);
+
+        // Update the ordering of the fixed variables
+        iordering.tail(nf).head(nbf) = canonicalizer.ibasic().tail(nbf);
+        iordering.tail(nf).tail(nnf) = canonicalizer.inonbasic().tail(nnf);
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a LU decomposition method.
@@ -114,34 +161,30 @@ struct SaddlePointSolver::Impl
         updateCanonicalForm(lhs);
 
         // Alias to the matrices of the canonicalization process
-        const auto& Q = canonicalizer.Q().indices();
         const auto& S = canonicalizer.S();
 
-        // Create a view to the non-basic columns of S (ignoring the fixed variables)
-        auto Sbn = S.leftCols(nn);
+        // The rows and columns of `S` corresponding to free basic and free non-basic variables
+        auto Sx = S.topLeftCorner(nbx, nnx);
 
-        // Create a view to the basic and non-basic rows of Q (ignoring the fixed variables)
-        auto Qbn = Q.head(nb + nn);
+        // The indices of the free variables
+        auto ivx = iordering.head(nx);
 
-        // Create a view to the M block of the auxiliary matrix mat where the canonical saddle point matrix is defined
-        auto M = mat.topLeftCorner(2*nb + nn, 2*nb + nn);
-
-        // Create a view to the H block of the canonical saddle point matrix
-        auto H = M.topLeftCorner(nb + nn, nb + nn);
+        // Create a view to the M block of the auxiliary matrix `mat` where the canonical saddle point matrix is defined
+        auto M = mat.topLeftCorner(2*nbx + nnx, 2*nbx + nnx);
 
         // Set the Ibb blocks in the canonical saddle point matrix
-        M.bottomLeftCorner(nb, nb).setIdentity(nb, nb);
-        M.topRightCorner(nb, nb).setIdentity(nb, nb);
+        M.bottomLeftCorner(nbx, nbx).setIdentity(nbx, nbx);
+        M.topRightCorner(nbx, nbx).setIdentity(nbx, nbx);
 
-        // Set the Sbn and tr(Sbn) blocks in the canonical saddle point matrix
-        M.bottomRows(nb).middleCols(nb, nn) = Sbn;
-        M.rightCols(nb).middleRows(nb, nn)  = tr(Sbn);
+        // Set the Sx and tr(Sx) blocks in the canonical saddle point matrix
+        M.bottomRows(nbx).middleCols(nbx, nnx) = Sx;
+        M.rightCols(nbx).middleRows(nbx, nnx)  = tr(Sx);
 
         // Set the zero block of M on the bottom-right corner
-        M.bottomRightCorner(nb, nb).setZero();
+        M.bottomRightCorner(nbx, nbx).setZero();
 
         // Set the H block of the canonical saddle point matrix
-        H.noalias() = submatrix(lhs.H(), Qbn, Qbn);
+        M.topLeftCorner(nbx + nnx, nbx + nnx) = submatrix(lhs.H(), ivx, ivx);
 
         // Compute the LU decomposition of M.
         if(method == SaddlePointMethod::PartialPivLU)
@@ -157,34 +200,44 @@ struct SaddlePointSolver::Impl
         auto x = sol.x();
         auto y = sol.y();
 
+        // Alias to members of the saddle point right-hand side vector.
+        auto a = rhs.a();
+        auto b = rhs.b();
+
         // Alias to the matrices of the canonicalization process
-        const auto& Q = canonicalizer.Q().indices();
         const auto& S = canonicalizer.S();
         const auto& R = canonicalizer.R();
 
-        // Create a view to the columns of S corresponding to fixed variables where S = [Sbn Sbf]
-        auto Sbf = S.rightCols(nf);
+        // The columns of matrix `S` corresponding to fixed non-basic variables
+        auto Snf = S.rightCols(nnf);
 
-        // Create views to the subvectors of Q = [Qb Qn Qf] = [Qbn Qf]
-        auto Qbn = Q.head(nb + nn);
-        auto Qf  = Q.tail(nf);
+        // The rows of matrix `R` corresponding to free basic variables
+        auto Rx = R.topRows(nx);
 
-        // The view in vec corresponding to the values of a for fixed variables
+        // The indices of the free and fixed variables
+        auto ivx = iordering.head(nx);
+        auto ivf = iordering.tail(nf);
+
+        // The view in `vec` corresponding to values of `a` for fixed variables.
         auto af = vec.tail(nf);
 
-        // The right-hand side vector of the linear equation
-        auto r = vec.head(2*nb + nn);
+        // The view in `af` corresponding to fixed basic and fixed non-basic variables.
+        auto abf = af.head(nbf);
+        auto anf = af.tail(nnf);
 
-        // Create views to the subvectors of r = [ab an bb] = [abn bb]
-        auto abn = r.head(nb + nn);
-        auto  bb = r.tail(nb);
+        // The view in `vec` corresponding to the right-hand side vector of the linear equation
+        auto r = vec.head(nx + nbx);
 
-        // Set the vectors abn and af using the indices in Qbn and Qf
-        abn.noalias() = rows(rhs.a(), Qbn);
-         af.noalias() = rows(rhs.a(), Qf);
+        // The view in `r` corresponding to the values of `a` and `b` for the free variables.
+        auto ax = r.head(nx);
+        auto bx = r.tail(nbx);
 
-        // Set the vector bb
-        bb.noalias() = R * rhs.b() - Sbf * af;
+        // Set the vectors `ax` and `af`
+        ax.noalias() = rows(a, ivx);
+        af.noalias() = rows(a, ivf);
+
+        // Set the vector `bx`
+        bx.noalias() = Rx*b - abf - Snf*anf;
 
         // Compute the LU decomposition of M.
         if(method == SaddlePointMethod::PartialPivLU)
@@ -192,12 +245,12 @@ struct SaddlePointSolver::Impl
         else
             r.noalias() = luxy_full.solve(r);
 
-        // Compute the y vector without canonicalization
-        y.noalias() = tr(R)*bb;
+        // Compute the `y` vector without canonicalization
+        y.noalias() = tr(Rx)*bx;
 
         // Permute back the variables x to their original ordering
-        rows(x, Qbn).noalias() = abn;
-        rows(x,  Qf).noalias() = af;
+        rows(x, ivx).noalias() = ax;
+        rows(x, ivf).noalias() = af;
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a rangespace diagonal method.
@@ -207,34 +260,38 @@ struct SaddlePointSolver::Impl
         updateCanonicalForm(lhs);
 
         // Alias to the matrices of the canonicalization process
-        const auto& Q = canonicalizer.Q().indices();
         const auto& S = canonicalizer.S();
 
+        // The rows and columns of `S` corresponding to free basic and free non-basic variables
+        auto Sx = S.topLeftCorner(nbx, nnx);
+
+        // The indices of the free variables
+        auto ivx = iordering.head(nx);
+
         // Create auxiliary matrix views
-        auto H  = mat.topLeftCorner(n, n).diagonal();
-        auto B  = mat.bottomLeftCorner(m, n);
-        auto T  = mat.topRightCorner(n, m);
-        auto M  = mat.bottomRightCorner(m, m);
-        auto Hb = H.head(nb);
-        auto Hn = H.segment(nb, nn);
-        auto Bbn = B.topLeftCorner(nb, nn);
-        auto Tnb = T.topLeftCorner(nn, nb);
-        auto Mbb = M.topLeftCorner(nb, nb);
-        auto Sbn = S.leftCols(nn);
+        auto Hx  = mat.diagonal().head(nx);
+        auto Hbx = Hx.head(nbx);
+        auto Hnx = Hx.tail(nnx);
+        auto B   = mat.bottomLeftCorner(m, n);
+        auto T   = mat.topRightCorner(n, m);
+        auto M   = mat.bottomRightCorner(m, m);
+        auto Bx  = B.topLeftCorner(nbx, nnx);
+        auto Tx  = T.topLeftCorner(nnx, nbx);
+        auto Mx  = M.topLeftCorner(nbx, nbx);
 
         // Set `H` as the diagonal Hessian according to current canonical ordering
-        H.noalias() = rows(lhs.H().diagonal(), Q);
+        Hx.noalias() = rows(lhs.H().diagonal(), ivx);
 
         // Compute the auxiliary matrices Bb and Bbn
-        Bbn.noalias() = Sbn * diag(inv(Hn));
-        Tnb.noalias() = tr(Sbn) * diag(Hb);
+        Bx.noalias() = Sx * diag(inv(Hnx));
+        Tx.noalias() = tr(Sx) * diag(Hbx);
 
         // Compute the matrix Mbb for the xb equation
-        Mbb.noalias()  = Bbn * Tnb;
-        Mbb.noalias() += identity(nb, nb);
+        Mx.noalias()  = Bx * Tx;
+        Mx.noalias() += identity(nbx, nbx);
 
-        // Compute the LU decomposition of Mbb.
-        luxb.compute(Mbb);
+        // Compute the LU decomposition of Mx.
+        luxb.compute(Mx);
     }
 
     /// Solve the saddle point problem using a rangespace diagonal method.
@@ -244,53 +301,75 @@ struct SaddlePointSolver::Impl
         auto x = sol.x();
         auto y = sol.y();
 
+        // Alias to members of the saddle point right-hand side vector.
+        auto a = rhs.a();
+        auto b = rhs.b();
+
         // Alias to the matrices of the canonicalization process
-        const auto& Q = canonicalizer.Q().indices();
         const auto& S = canonicalizer.S();
         const auto& R = canonicalizer.R();
 
+        // The columns of matrix `S` corresponding to free and fixed non-basic variables
+        auto Sf = S.rightCols(nnf);
+        auto Sx = S.topLeftCorner(nbx, nnx);
+
+        // The rows of matrix `R` corresponding to free basic variables
+        auto Rx = R.topRows(nx);
+
+        // The indices of the free and fixed variables
+        auto ivx = iordering.head(nx);
+        auto ivf = iordering.tail(nf);
+
+        // The view in `vec` corresponding to values of `a` for free and fixed variables.
+        auto ax = vec.head(nx);
+        auto af = vec.tail(nf);
+
+        // The view in `af` corresponding to free basic and free non-basic variables.
+        auto abx = ax.head(nbx);
+        auto anx = ax.tail(nnx);
+
+        // The view in `af` corresponding to fixed basic and fixed non-basic variables.
+        auto abf = af.head(nbf);
+        auto anf = af.tail(nnf);
+
+        // The view in `vec` corresponding to values of `b` for free basic variables.
+        auto bx = vec.segment(nx, nbx);
+
+        // The view in `y` corresponding to values of `y` for free basic variables.
+        auto yx = y.head(nbx);
+
         // Create auxiliary sub-matrix views
-        auto H   = mat.topLeftCorner(n, n).diagonal();
+        auto Hx  = mat.diagonal().head(nx);
         auto B   = mat.bottomLeftCorner(m, n);
         auto T   = mat.topRightCorner(n, m);
-        auto Hb  = H.head(nb);
-        auto Hn  = H.segment(nb, nn);
-        auto Bbn = B.topLeftCorner(nb, nn);
-        auto Tnb = T.topLeftCorner(nn, nb);
-        auto Sbn = S.leftCols(nn);
-        auto Sbf = S.rightCols(nf);
+        auto Hbx = Hx.head(nbx);
+        auto Hnx = Hx.tail(nnx);
+        auto Bx  = B.topLeftCorner(nbx, nnx);
+        auto Tx  = T.topLeftCorner(nnx, nbx);
 
-        // Create auxiliary sub-vector views
-        auto a  = vec.head(n);
-        auto b  = vec.tail(m);
-        auto ab = a.head(nb);
-        auto an = a.segment(nb, nn);
-        auto af = a.tail(nf);
-        auto bb = b.head(nb);
-        auto yb = y.head(nb);
+        // Set vectors `ax` and `af` using values from `a`
+        ax.noalias() = rows(a, ivx);
+        af.noalias() = rows(a, ivf);
 
-        // Reorder vector a in the canonical order
-        a.noalias() = rows(rhs.a(), Q);
-
-        // Apply the regularizer matrix to b
-        bb.noalias() = R*rhs.b();
+        // Set the vector `bx`
+        bx.noalias() = Rx*b - abf - Sf*anf;
 
         // Compute the saddle point problem solution
-        yb.noalias()  = ab;
-        an.noalias() -= tr(Sbn)*yb;
-        bb.noalias() -= Sbf*af;
-        bb.noalias() -= Bbn*an;
-        ab.noalias()  = luxb.solve(bb);
-        an.noalias() += Tnb*ab;
-        an.noalias()  = diag(inv(Hn))*an;
-        bb.noalias()  = yb;
-        bb.noalias() -= diag(Hb)*ab;
+        yx.noalias()   = abx;
+        anx.noalias() -= tr(Sx)*yx;
+        bx.noalias()  -= Bx*anx;
+        abx.noalias()  = luxb.solve(bx);
+        anx.noalias() += Tx*abx;
+        anx.noalias()  = diag(inv(Hnx))*anx;
+        bx.noalias()   = yx;
+        bx.noalias()  -= diag(Hbx)*abx;
 
         // Compute the y vector without canonicalization
-        y.noalias() = tr(R)*bb;
+        y.noalias() = tr(Rx)*bx;
 
-        // Permute back the variables x to their original ordering
-        rows(x, Q).noalias() = a;
+        // Permute back the variables `x` to their original ordering
+        rows(x, ivx).noalias() = ax;
+        rows(x, ivf).noalias() = af;
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a nullspace method.
@@ -300,34 +379,35 @@ struct SaddlePointSolver::Impl
         updateCanonicalForm(lhs);
 
         // Alias to the matrices of the canonicalization process
-        const auto& Q = canonicalizer.Q().indices();
         const auto& S = canonicalizer.S();
 
         // Create auxiliary matrix views
-        auto H  = mat.topLeftCorner(n, n);
-        auto B  = mat.bottomLeftCorner(m, n);
-        auto Htl = H.topLeftCorner(nb + nn, nb + nn);
-        auto Hbb = Htl.topLeftCorner(nb, nb);
-        auto Hbn = Htl.topRightCorner(nb, nn);
-        auto Hnb = Htl.bottomLeftCorner(nn, nb);
-        auto Hnn = Htl.bottomRightCorner(nn, nn);
-        auto Bbn = B.topLeftCorner(nb, nn);
-        auto Mnn = Hnn;
-        auto Sbn = S.leftCols(nn);
+        auto Hx   = mat.topLeftCorner(nx, nx);
+        auto B    = mat.bottomLeftCorner(m, n);
+        auto Hbbx = Hx.topLeftCorner(nbx, nbx);
+        auto Hbnx = Hx.topRightCorner(nbx, nnx);
+        auto Hnbx = Hx.bottomLeftCorner(nnx, nbx);
+        auto Hnnx = Hx.bottomRightCorner(nnx, nnx);
+        auto Bbnx = B.topLeftCorner(nbx, nnx);
+        auto Sbnx = S.topLeftCorner(nbx, nnx);
+        auto Mnnx = Hnnx;
+
+        // The indices of the free variables
+        auto ivx = iordering.head(nx);
 
         // Set `H` as the diagonal Hessian according to current canonical ordering
-        H.noalias() = submatrix(lhs.H(), Q, Q);
+        Hx.noalias() = submatrix(lhs.H(), ivx, ivx);
 
         // Calculate auxiliary matrix Bbn
-        Bbn.noalias()  = Hbb * Sbn;
-        Bbn.noalias() -= Hbn;
+        Bbnx.noalias()  = Hbbx * Sbnx;
+        Bbnx.noalias() -= Hbnx;
 
         // Calculate coefficient matrix Mnn for the xn equation.
-        Mnn.noalias() += tr(Sbn) * Bbn;
-        Mnn.noalias() -= Hnb * Sbn;
+        Mnnx.noalias() += tr(Sbnx) * Bbnx;
+        Mnnx.noalias() -= Hnbx * Sbnx;
 
-        // Compute the LU decomposition of Mnn.
-        luxn.compute(Mnn);
+        // Compute the LU decomposition of Mnnx.
+        luxn.compute(Mnnx);
     }
 
     /// Solve the saddle point problem using a nullspace method.
@@ -337,50 +417,74 @@ struct SaddlePointSolver::Impl
         auto x = sol.x();
         auto y = sol.y();
 
+        // Alias to members of the saddle point right-hand side vector.
+        auto a = rhs.a();
+        auto b = rhs.b();
+
         // Alias to the matrices of the canonicalization process
-        const auto& Q = canonicalizer.Q().indices();
         const auto& S = canonicalizer.S();
         const auto& R = canonicalizer.R();
 
+        // The columns of matrix `S` corresponding to free and fixed non-basic variables
+        auto Sbnx = S.topLeftCorner(nbx, nnx);
+        auto Sbnf = S.rightCols(nnf);
+
+        // The rows of matrix `R` corresponding to free basic variables
+        auto Rx = R.topRows(nx);
+
+        // The indices of the free and fixed variables
+        auto ivx = iordering.head(nx);
+        auto ivf = iordering.tail(nf);
+
+        // The view in `vec` corresponding to values of `a` for free and fixed variables.
+        auto ax = vec.head(nx);
+        auto af = vec.tail(nf);
+
+        // The view in `af` corresponding to free basic and free non-basic variables.
+        auto abx = ax.head(nbx);
+        auto anx = ax.tail(nnx);
+
+        // The view in `af` corresponding to fixed basic and fixed non-basic variables.
+        auto abf = af.head(nbf);
+        auto anf = af.tail(nnf);
+
+        // The view in `vec` corresponding to values of `b` for free basic variables.
+        auto bx = vec.segment(nx, nbx);
+
+        // The view in `y` corresponding to values of `y` for free basic variables.
+        auto yx = y.head(nbx);
+
         // Create auxiliary matrix views
-        auto H   = mat.topLeftCorner(n, n);
-        auto Htl = H.topLeftCorner(nb + nn, nb + nn);
-        auto Hbb = Htl.topLeftCorner(nb, nb);
-        auto Hbn = Htl.topRightCorner(nb, nn);
-        auto Hnb = Htl.bottomLeftCorner(nn, nb);
-        auto Sbn = S.leftCols(nn);
-        auto Sbf = S.rightCols(nf);
+        auto Hx   = mat.topLeftCorner(nx, nx);
+        auto Hbbx = Hx.topLeftCorner(nbx, nbx);
+        auto Hbnx = Hx.topRightCorner(nbx, nnx);
+        auto Hnbx = Hx.bottomLeftCorner(nnx, nbx);
 
-        // Create auxiliary sub-vector views
-        auto a  = vec.head(n);
-        auto b  = vec.tail(m);
-        auto ab = a.head(nb);
-        auto an = a.segment(nb, nn);
-        auto af = a.tail(nf);
-        auto bb = b.head(nb);
-        auto xb = x.head(nb);
-        auto xn = x.segment(nb, nn);
-        auto yb = y.head(nb);
+        // Set vectors `ax` and `af` using values from `a`
+        ax.noalias() = rows(a, ivx);
+        af.noalias() = rows(a, ivf);
 
-        // Reorder vector a in the canonical order
-        a.noalias() = rows(rhs.a(), Q);
+        // Set the vector `bx`
+        bx.noalias() = Rx*b - abf - Sbnf*anf;
 
-        // Apply the regularizer matrix to b
-        bb.noalias() = R*rhs.b() - Sbf*af;
+        auto xx = x.head(nx);
+        auto xbx = xx.head(nb);
+        auto xnx = xx.segment(nb, nn);
 
         // Compute the saddle point problem solution
-        yb.noalias()  = ab - Hbb*bb;
-        xn.noalias()  = an - Hnb*bb - tr(Sbn)*yb;
-        an.noalias()  = luxn.solve(xn);
-        xb.noalias()  = ab;
-        ab.noalias()  = bb - Sbn*an;
-        bb.noalias()  = xb - Hbb*ab - Hbn*an;
+        yx.noalias()  = abx - Hbbx*bx;
+        xnx.noalias() = anx - Hnbx*bx - tr(Sbnx)*yx;
+        anx.noalias() = luxn.solve(xnx);
+        xbx.noalias() = abx;
+        abx.noalias() = bx - Sbnx*anx;
+        bx.noalias()  = xbx - Hbbx*abx - Hbnx*anx;
 
         // Compute the y vector without canonicalization
-        y.noalias() = tr(R)*bb;
+        y.noalias() = tr(Rx)*bx;
 
-        // Permute back the variables x to their original ordering
-        rows(x, Q).noalias() = a;
+        // Permute back the variables `x` to their original ordering
+        rows(x, ivx).noalias() = ax;
+        rows(x, ivf).noalias() = af;
     }
 
     /// Decompose the coefficient matrix of the saddle point problem.

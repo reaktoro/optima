@@ -22,11 +22,11 @@ using namespace Eigen;
 
 namespace Optima {
 
-SaddlePointMatrix::SaddlePointMatrix(ConstMatrixRef H, ConstMatrixRef A)
+SaddlePointMatrix::SaddlePointMatrix(MatrixXdConstRef H, MatrixXdConstRef A)
 : m_H(H), m_A(A)
 {}
 
-SaddlePointMatrix::SaddlePointMatrix(ConstMatrixRef H, ConstMatrixRef A, const Indices& fixed)
+SaddlePointMatrix::SaddlePointMatrix(MatrixXdConstRef H, MatrixXdConstRef A, const Indices& fixed)
 : m_H(H), m_A(A), m_fixed(fixed)
 {}
 
@@ -35,12 +35,12 @@ auto SaddlePointMatrix::dim() const -> Index
     return m_A.rows() + m_A.cols();
 }
 
-auto SaddlePointMatrix::H() const -> ConstMatrixRef
+auto SaddlePointMatrix::H() const -> MatrixXdConstRef
 {
     return m_H;
 }
 
-auto SaddlePointMatrix::A() const -> ConstMatrixRef
+auto SaddlePointMatrix::A() const -> MatrixXdConstRef
 {
     return m_A;
 }
@@ -58,7 +58,7 @@ auto SaddlePointMatrix::matrix() const -> MatrixXd
     return res;
 }
 
-auto operator<<(MatrixRef mat, const SaddlePointMatrix& lhs) -> MatrixRef
+auto operator<<(MatrixXdRef mat, const SaddlePointMatrix& lhs) -> MatrixXdRef
 {
     const auto& H = lhs.H();
     const auto& A = lhs.A();
@@ -74,7 +74,7 @@ auto operator<<(MatrixRef mat, const SaddlePointMatrix& lhs) -> MatrixRef
     return mat;
 }
 
-auto operator<<(VectorRef vec, const SaddlePointVector& rhs) -> VectorRef
+auto operator<<(VectorXdRef vec, const SaddlePointVector& rhs) -> VectorXdRef
 {
     const auto& a = rhs.a();
     const auto& b = rhs.b();
@@ -85,7 +85,7 @@ auto operator<<(VectorRef vec, const SaddlePointVector& rhs) -> VectorRef
     return vec;
 }
 
-auto operator*(const SaddlePointMatrix& lhs, ConstVectorRef rhs) -> VectorXd
+auto operator*(const SaddlePointMatrix& lhs, VectorXdConstRef rhs) -> VectorXd
 {
     return lhs.matrix() * rhs;
 }

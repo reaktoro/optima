@@ -57,7 +57,7 @@ void benchMethodRangespaceDiagonal()
     {
         SaddlePointSolver solver;
         solver.setMethodRangespaceDiagonal();
-        res1 += solver.canonicalize(lhs);
+        res1 += solver.canonicalize(A);
         res2 += solver.decompose(lhs);
         res3 += solver.solve(rhs, sol);
 
@@ -163,7 +163,7 @@ void benchMethodNullspace()
     {
         SaddlePointSolver solver;
         solver.setMethodNullspace();
-        res1 += solver.canonicalize(lhs);
+        res1 += solver.canonicalize(A);
         res2 += solver.decompose(lhs);
         res3 += solver.solve(rhs, sol);
 

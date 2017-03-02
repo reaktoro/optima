@@ -22,28 +22,37 @@
 
 namespace Optima {
 
-/// Alias to the vector type of the Eigen library.
-using VectorXd = Eigen::VectorXd;
+using VectorXd = Eigen::VectorXd; /// Alias to Eigen type Eigen::VectorXd.
+using VectorXi = Eigen::VectorXi; /// Alias to Eigen type Eigen::VectorXi.
 
-/// Alias to the matrix type of the Eigen library.
-using MatrixXd = Eigen::MatrixXd;
+using VectorXdRef = Eigen::Ref<VectorXd>; ///< Alias to Eigen type Eigen::Ref<VectorXd>.
+using VectorXiRef = Eigen::Ref<VectorXi>; ///< Alias to Eigen type Eigen::Ref<VectorXi>.
 
-/// Alias to the sparse matrix type of the Eigen library.
-//using SparseMatrix = Eigen::SparseMatrix;
+using VectorXdConstRef = Eigen::Ref<const VectorXd>; ///< Alias to Eigen type Eigen::Ref<const VectorXd>.
+using VectorXiConstRef = Eigen::Ref<const VectorXi>; ///< Alias to Eigen type Eigen::Ref<const VectorXi>.
 
-/// Alias to a reference to a vector type of the Eigen library.
-using VectorRef = Eigen::Ref<VectorXd>;
+using VectorXdMap = Eigen::Map<VectorXd>; ///< Alias to Eigen type Eigen::Map<VectorXd>.
+using VectorXiMap = Eigen::Map<VectorXi>; ///< Alias to Eigen type Eigen::Map<VectorXi>.
 
-/// Alias to a reference to a matrix type of the Eigen library.
-using MatrixRef = Eigen::Ref<MatrixXd>;
+using VectorXdConstMap = Eigen::Map<const VectorXd>; ///< Alias to Eigen type Eigen::Map<const VectorXd>.
+using VectorXiConstMap = Eigen::Map<const VectorXi>; ///< Alias to Eigen type Eigen::Map<const VectorXi>.
 
-/// Alias to a const reference to a vector type of the Eigen library.
-using ConstVectorRef = Eigen::Ref<const VectorXd>;
+using MatrixXd = Eigen::MatrixXd; /// Alias to Eigen type Eigen::MatrixXd.
+using MatrixXi = Eigen::MatrixXi; /// Alias to Eigen type Eigen::MatrixXi.
 
-/// Alias to a const reference to a matrix type of the Eigen library.
-using ConstMatrixRef = Eigen::Ref<const MatrixXd>;
+using MatrixXdRef = Eigen::Ref<MatrixXd>; ///< Alias to Eigen type Eigen::Ref<MatrixXd>.
+using MatrixXiRef = Eigen::Ref<MatrixXi>; ///< Alias to Eigen type Eigen::Ref<MatrixXi>.
 
-/// Define an alias to a permutation matrix type of the Eigen library
+using MatrixXdConstRef = Eigen::Ref<const MatrixXd>; ///< Alias to Eigen type Eigen::Ref<const MatrixXd>.
+using MatrixXiConstRef = Eigen::Ref<const MatrixXi>; ///< Alias to Eigen type Eigen::Ref<const MatrixXi>.
+
+using MatrixXdMap = Eigen::Map<MatrixXd>; ///< Alias to Eigen type Eigen::Map<MatrixXd>.
+using MatrixXiMap = Eigen::Map<MatrixXi>; ///< Alias to Eigen type Eigen::Map<MatrixXi>.
+
+using MatrixXdConstMap = Eigen::Map<const MatrixXd>; ///< Alias to Eigen type Eigen::Map<const MatrixXd>.
+using MatrixXiConstMap = Eigen::Map<const MatrixXi>; ///< Alias to Eigen type Eigen::Map<const MatrixXi>.
+
+/// Alias to a permutation matrix type of the Eigen library
 using PermutationMatrix = Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic>;
 
 } // namespace Optima

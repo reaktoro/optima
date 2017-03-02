@@ -443,7 +443,7 @@ struct OptimumSolverIpNewton::Impl
 //    }
 //
 //    /// Calculate the sensitivity of the optimal solution with respect to parameters.
-//    auto dxdp(ConstVectorRef dgdp, ConstVectorRef dbdp) -> MatrixXd
+//    auto dxdp(VectorXdConstRef dgdp, VectorXdConstRef dbdp) -> MatrixXd
 //    {
 //        // Initialize the right-hand side of the KKT equations
 //        rhs.rx.noalias() = -dgdp;
@@ -823,7 +823,7 @@ struct OptimumSolverIpNewton::Impl
     }
 
     /// Calculate the sensitivity of the optimal solution with respect to parameters.
-    auto dxdp(ConstVectorRef dgdp, ConstVectorRef dbdp) -> MatrixXd
+    auto dxdp(VectorXdConstRef dgdp, VectorXdConstRef dbdp) -> MatrixXd
     {
 //        // Initialize the right-hand side of the KKT equations
 //        rhs.rx.noalias() = -dgdp;
@@ -878,7 +878,7 @@ auto OptimumSolverIpNewton::solve(const OptimumProblem& problem, OptimumState& s
     return pimpl->solve(problem, state);
 }
 
-auto OptimumSolverIpNewton::dxdp(ConstVectorRef dgdp, ConstVectorRef dbdp) -> VectorXd
+auto OptimumSolverIpNewton::dxdp(VectorXdConstRef dgdp, VectorXdConstRef dbdp) -> VectorXd
 {
     return pimpl->dxdp(dgdp, dbdp);
 }

@@ -48,23 +48,14 @@ public:
     /// Assign a Canonicalizer instance to this.
     auto operator=(Canonicalizer other) -> Canonicalizer&;
 
+    /// Return the number of variables.
+    auto numVariables() const -> Index;
+
     /// Return the number of basic variables.
     auto numBasicVariables() const -> Index;
 
     /// Return the number of non-basic variables.
     auto numNonBasicVariables() const -> Index;
-
-    /// Return the number of free basic variables.
-    auto numFreeBasicVariables() const -> Index;
-
-    /// Return the number of free non-basic variables.
-    auto numFreeNonBasicVariables() const -> Index;
-
-    /// Return the number of fixed basic variables.
-    auto numFixedBasicVariables() const -> Index;
-
-    /// Return the number of fixed non-basic variables.
-    auto numFixedNonBasicVariables() const -> Index;
 
     /// Return the number of rows of the canonical form.
     auto rows() const -> Index;
@@ -85,19 +76,16 @@ public:
     auto C() const -> MatrixXd;
 
     /// Return the indices of the variables describing its ordering after canonicalization.
-    auto ordering() const -> Indices;
+    auto ordering() const -> VectorXiConstRef;
 
     /// Return the indices of the linearly independent rows of the original matrix.
-    auto ili() const -> Indices;
+    auto ili() const -> VectorXi;
 
     /// Return the indices of the basic components.
-    auto ibasic() const -> Indices;
+    auto ibasic() const -> VectorXiConstRef;
 
     /// Return the indices of the non-basic components.
-    auto inonbasic() const -> Indices;
-
-    /// Return the indices of the fixed components.
-    auto ifixed() const -> Indices;
+    auto inonbasic() const -> VectorXiConstRef;
 
 	/// Compute the canonical matrix of the given matrix.
 	auto compute(const MatrixXd& A) -> void;

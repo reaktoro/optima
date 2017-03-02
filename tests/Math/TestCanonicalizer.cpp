@@ -23,15 +23,13 @@
 using namespace Eigen;
 using namespace Optima;
 
-#define CHECK_CANONICAL_FORM                           \
-{                                                      \
-    const auto& R    = canonicalizer.R();              \
-    const auto& Rinv = canonicalizer.Rinv();           \
-    const auto& Q    = canonicalizer.Q();              \
-    const auto& C    = canonicalizer.C();              \
-    CHECK((R * Rinv).isApprox(identity(r, r)));        \
-    CHECK((R * A * Q - C).norm() == approx(0.0));      \
-}                                                      \
+#define CHECK_CANONICAL_FORM                      \
+{                                                 \
+    const auto& R = canonicalizer.R();            \
+    const auto& Q = canonicalizer.Q();            \
+    const auto& C = canonicalizer.C();            \
+    CHECK((R * A * Q - C).norm() == approx(0.0)); \
+}                                                 \
 
 TEST_CASE("Testing Canonicalizer")
 {
@@ -41,7 +39,7 @@ TEST_CASE("Testing Canonicalizer")
 	MatrixXd A = random(m, n);
 
 	Canonicalizer canonicalizer(A);
-	const Index r = canonicalizer.rows();
+	const Index r = canonicalizer.numBasicVariables();
 
 	CHECK_CANONICAL_FORM
 
@@ -65,7 +63,7 @@ TEST_CASE("Testing Canonicalizer with two linearly dependent rows")
 	A.row(3) = A.row(1) - 2*A.row(2);
 
 	Canonicalizer canonicalizer(A);
-    const Index r = canonicalizer.rows();
+    const Index r = canonicalizer.numBasicVariables();
 
 	CHECK_CANONICAL_FORM
 
@@ -89,7 +87,7 @@ TEST_CASE("Testing the update method of the Canonicalizer class")
 	};
 
 	Canonicalizer canonicalizer(A);
-    const Index r = canonicalizer.rows();
+    const Index r = canonicalizer.numBasicVariables();
 
 	CHECK(r == 3);
 	CHECK_CANONICAL_FORM
@@ -130,8 +128,8 @@ TEST_CASE("Testing the update method of the Canonicalizer class")
 //
 //	for(Index i = 0; i < S.cols(); ++i)
 //	{
-//		std::cout << species[Q.indices()[i + S.rows()]] << " = ";
-//		for(Index j = 0; j < S.rows(); ++j)
+//		std::cout << species[Q.indices()[i + S.numBasicVariables()]] << " = ";
+//		for(Index j = 0; j < S.numBasicVariables(); ++j)
 //			if(S(j, i))
 //				std::cout  << " " << S(j, i) << "*" << species[Q.indices()[j]];
 //		std::cout << std::endl;
@@ -152,7 +150,7 @@ TEST_CASE("Testing the update method of the Canonicalizer class with fixed varia
     };
 
     Canonicalizer canonicalizer(A);
-    const Index r = canonicalizer.rows();
+    const Index r = canonicalizer.numBasicVariables();
 
     CHECK(r == 3);
     CHECK_CANONICAL_FORM
@@ -161,7 +159,7 @@ TEST_CASE("Testing the update method of the Canonicalizer class with fixed varia
 
     VectorXd w = {55.1, 1.e-4, 1.e-10, 0.1, 0.5, 1e-2};
 
-    canonicalizer.update(w, ifixed);
+    canonicalizer.update(w);
 
     CHECK_CANONICAL_FORM
 

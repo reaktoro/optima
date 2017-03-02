@@ -50,12 +50,6 @@ struct Canonicalizer::Impl
     /// The permutation matrix `Kn` used in the weighted update method.
 	PermutationMatrix Kn;
 
-	/// The number of free (nbx) and fixed (nbf) basic variables.
-	Index nbx, nbf;
-
-	/// The number of free (nnx) and fixed (nnf) non-basic variables.
-	Index nnx, nnf;
-
     /// Compute the canonical matrix of the given matrix.
 	auto compute(const MatrixXd& A) -> void
 	{
@@ -95,10 +89,10 @@ struct Canonicalizer::Impl
 	    // Initialize the permutation matrices Kb and Kn
 	    Kb.setIdentity(r);
 	    Kn.setIdentity(n - r);
-
-	    // Set the number of basic and non-basic variables (fixed and free)
-	    nbf = 0; nbx = r;
-	    nnf = 0; nnx = n - r;
+//
+//	    // Set the number of basic and non-basic variables (fixed and free)
+//	    nbf = 0; nbx = r;
+//	    nnf = 0; nnx = n - r;
 	}
 
     /// Swap a basic variable by a non-basic variable.
@@ -193,16 +187,16 @@ struct Canonicalizer::Impl
 
 	    // Rearrange the permutation matrix Q based on the new order of non-basic variables
 	    Kn.transpose().applyThisOnTheLeft(inonbasic);
-
-	    // Find the number of fixed basic variables (those with weights below or equal to zero)
-	    nbf = 0; while(nbf < nb && w[ibasic[nb - nbf - 1]] <= 0.0) ++nbf;
-
-	    // Find the number of fixed non-basic variables (those with weights below or equal to zero)
-	    nnf = 0; while(nnf < nn && w[inonbasic[nn - nnf - 1]] <= 0.0) ++nnf;
-
-	    // Set the number of free basic and non-basic variables
-	    nbx = nb - nbf;
-	    nnx = nn - nnf;
+//
+//	    // Find the number of fixed basic variables (those with weights below or equal to zero)
+//	    nbf = 0; while(nbf < nb && w[ibasic[nb - nbf - 1]] <= 0.0) ++nbf;
+//
+//	    // Find the number of fixed non-basic variables (those with weights below or equal to zero)
+//	    nnf = 0; while(nnf < nn && w[inonbasic[nn - nnf - 1]] <= 0.0) ++nnf;
+//
+//	    // Set the number of free basic and non-basic variables
+//	    nbx = nb - nbf;
+//	    nnx = nn - nnf;
 	}
 
 //    /// Update the existing canonical form with given priority weights for the columns.
@@ -291,44 +285,19 @@ auto Canonicalizer::operator=(Canonicalizer other) -> Canonicalizer&
     return *this;
 }
 
+auto Canonicalizer::numVariables() const -> Index
+{
+    return pimpl->lu.cols();
+}
+
 auto Canonicalizer::numBasicVariables() const -> Index
 {
-    return pimpl->nbx + pimpl->nbf;
+    return pimpl->lu.rank();
 }
 
 auto Canonicalizer::numNonBasicVariables() const -> Index
 {
-    return pimpl->nnx + pimpl->nnf;
-}
-
-auto Canonicalizer::numFreeBasicVariables() const -> Index
-{
-    return pimpl->nbx;
-}
-
-auto Canonicalizer::numFreeNonBasicVariables() const -> Index
-{
-    return pimpl->nnx;
-}
-
-auto Canonicalizer::numFixedBasicVariables() const -> Index
-{
-    return pimpl->nbf;
-}
-
-auto Canonicalizer::numFixedNonBasicVariables() const -> Index
-{
-    return pimpl->nnf;
-}
-
-auto Canonicalizer::rows() const -> Index
-{
-    return S().rows();
-}
-
-auto Canonicalizer::cols() const -> Index
-{
-    return Q().rows();
+    return numVariables() - numBasicVariables();
 }
 
 auto Canonicalizer::S() const -> const MatrixXd&
@@ -348,36 +317,32 @@ auto Canonicalizer::Q() const -> const PermutationMatrix&
 
 auto Canonicalizer::C() const -> MatrixXd
 {
-    const Index m = rows();
-    const Index n = cols();
-    MatrixXd res(m, n);
-    res << identity(m, m), S();
+    const Index nb = numBasicVariables();
+    const Index n  = numVariables();
+    MatrixXd res(nb, n);
+    res << identity(nb, nb), S();
     return res;
 }
 
-auto Canonicalizer::ili() const -> Indices
+auto Canonicalizer::ili() const -> VectorXi
 {
 	PermutationMatrix Ptr = pimpl->P.transpose();
-	auto begin = Ptr.indices().data();
-	return Indices(begin, begin + rows());
+	return Ptr.indices();
 }
 
-auto Canonicalizer::ordering() const -> Indices
+auto Canonicalizer::ordering() const -> VectorXiConstRef
 {
-	auto begin = Q().indices().data();
-	return Indices(begin, begin + cols());
+	return Q().indices();
 }
 
-auto Canonicalizer::ibasic() const -> Indices
+auto Canonicalizer::ibasic() const -> VectorXiConstRef
 {
-	auto begin = Q().indices().data();
-	return Indices(begin, begin + rows());
+    return Q().indices().head(numBasicVariables());
 }
 
-auto Canonicalizer::inonbasic() const -> Indices
+auto Canonicalizer::inonbasic() const -> VectorXiConstRef
 {
-	auto begin = Q().indices().data();
-	return Indices(begin + rows(), begin + cols());
+    return Q().indices().tail(numNonBasicVariables());
 }
 
 auto Canonicalizer::compute(const MatrixXd& A) -> void
@@ -392,7 +357,7 @@ auto Canonicalizer::swapBasicVariable(Index ibasic, Index inonbasic) -> void
 
 auto Canonicalizer::update(const VectorXd& weights) -> void
 {
-    pimpl->update(weights, {});
+    pimpl->update(weights);
 }
 
 } // namespace Optima
