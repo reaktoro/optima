@@ -22,6 +22,7 @@
 #include <iostream>
 #include <list>
 #include <sstream>
+#include <vector>
 
 // Optima includes
 #include <Optima/Math/Matrix.hpp>

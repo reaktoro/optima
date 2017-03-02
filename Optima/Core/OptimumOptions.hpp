@@ -17,6 +17,10 @@
 
 #pragma once
 
+// C++ includes
+#include <vector>
+#include <string>
+
 // Optima includes
 #include <Optima/Common/Outputter.hpp>
 

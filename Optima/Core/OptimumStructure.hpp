@@ -18,6 +18,7 @@
 #pragma once
 
 // Optima includes
+#include <Optima/Common/Index.hpp>
 #include <Optima/Math/Matrix.hpp>
 
 namespace Optima {
@@ -38,25 +39,20 @@ struct ObjectiveRequirement
 /// The evaluated state of an objective function.
 struct ObjectiveState
 {
-    /// Construct an ObjectiveState instance with given gradient vector and Hessian matrix.
-    /// @param grad The reference to the vector to store the gradient evalulation.
-    /// @param hessian The reference to the matrix to store the Hessian evalulation.
-    ObjectiveState(VectorRef grad, MatrixRef hessian) : grad(grad), hessian(hessian) {}
+    /// The evaluated value of the objective function.
+    double val;
+
+    /// The evaluated gradient of the objective function.
+    VectorXd grad;
+
+    /// The evaluated Hessian of the objective function.
+    MatrixXd hessian;
+
+    /// The requirements in the evaluation of the objective function.
+    ObjectiveRequirement requires;
 
     /// The boolean flag that indicates if the objective function evaluation failed.
     bool failed = false;
-
-    /// The evaluated value of the objective function.
-    double val = 0.0;
-
-    /// The evaluated gradient of the objective function.
-    VectorRef grad;
-
-    /// The evaluated Hessian of the objective function.
-    MatrixRef hessian;
-
-    /// The requirements in the evaluation of the objective function.
-    ObjectiveRequirement required;
 };
 
 /// The functional signature of an objective function.
@@ -67,14 +63,17 @@ using ObjectiveFunction = std::function<void(ConstVectorRef, ObjectiveState&)>;
 /// The structure of an optimization problem that changes with less frequency.
 struct OptimumStructure
 {
+    /// The number of variables in the optimization problem.
+    Index n;
+
+    /// The objective function of the optimization problem.
+    ObjectiveFunction objective;
+
     /// The coefficient matrix of the linear equality constraint \eq{Ax = a}.
     MatrixXd A;
 
     /// The coefficient matrix of the linear inequality constraint \eq{Bx \geq b}.
     MatrixXd B;
-
-    /// The objective function of the optimization problem.
-    ObjectiveFunction objective;
 };
 
 } // namespace Optima

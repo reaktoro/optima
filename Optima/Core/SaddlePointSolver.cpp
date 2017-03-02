@@ -63,13 +63,10 @@ struct SaddlePointSolver::Impl
     Eigen::FullPivLU<MatrixXd> luxy_full;
 
     /// Canonicalize the coefficient matrix *A* of the saddle point problem.
-    auto canonicalize(const SaddlePointMatrix& lhs) -> SaddlePointResult
+    auto canonicalize(const MatrixXd& A) -> SaddlePointResult
     {
         // The result of this method call
         SaddlePointResult res;
-
-        // Get the Jacobian matrix
-        auto A = lhs.A();
 
         // Set the number of rows and columns in A
         m = A.rows();
@@ -96,6 +93,10 @@ struct SaddlePointSolver::Impl
 
         // Update the priority weights for the update of the canonical form
         w.noalias() = inv(H.diagonal());
+
+        // Set the weights of the fixed variables
+        //      // Set weights of fixed variables to decreasing negative values to move them to the back of the list
+        //      Eigen::rows(w, fixed) = -VectorXd::LinSpaced(nf, 1, nf);
 
         // Update the canonical form and the ordering of the variables
         canonicalizer.update(w, fixed);
@@ -498,9 +499,9 @@ auto SaddlePointSolver::method() const -> SaddlePointMethod
     return pimpl->method;
 }
 
-auto SaddlePointSolver::canonicalize(const SaddlePointMatrix& lhs) -> SaddlePointResult
+auto SaddlePointSolver::canonicalize(const MatrixXd& A) -> SaddlePointResult
 {
-    return pimpl->canonicalize(lhs);
+    return pimpl->canonicalize(A);
 }
 
 auto SaddlePointSolver::decompose(const SaddlePointMatrix& lhs) -> SaddlePointResult

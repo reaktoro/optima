@@ -17,13 +17,21 @@
 
 #pragma once
 
+// C++ includes
+#include <memory>
+
+// Optima includes
+#include <Optima/Math/Matrix.hpp>
+
 namespace Optima {
 
 // Forward declarations
 struct OptimumOptions;
+struct OptimumParams;
 struct OptimumProblem;
 struct OptimumResult;
 struct OptimumState;
+struct OptimumStructure;
 
 /// The class that implements the IpNewton algorithm using an interior-point method.
 class OptimumSolverIpNewton

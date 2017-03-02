@@ -48,6 +48,24 @@ public:
     /// Assign a Canonicalizer instance to this.
     auto operator=(Canonicalizer other) -> Canonicalizer&;
 
+    /// Return the number of basic variables.
+    auto numBasicVariables() const -> Index;
+
+    /// Return the number of non-basic variables.
+    auto numNonBasicVariables() const -> Index;
+
+    /// Return the number of free basic variables.
+    auto numFreeBasicVariables() const -> Index;
+
+    /// Return the number of free non-basic variables.
+    auto numFreeNonBasicVariables() const -> Index;
+
+    /// Return the number of fixed basic variables.
+    auto numFixedBasicVariables() const -> Index;
+
+    /// Return the number of fixed non-basic variables.
+    auto numFixedNonBasicVariables() const -> Index;
+
     /// Return the number of rows of the canonical form.
     auto rows() const -> Index;
 
@@ -59,9 +77,6 @@ public:
 
     /// Return the canonicalizer matrix \eq{R}.
     auto R() const -> const MatrixXd&;
-
-    /// Return the inverse of the canonicalizer matrix \eq{R^{-1}}.
-    auto Rinv() const -> const MatrixXd&;
 
     /// Return the permutation matrix \eq{Q} of the canonicalization.
     auto Q() const -> const PermutationMatrix&;
@@ -81,29 +96,29 @@ public:
     /// Return the indices of the non-basic components.
     auto inonbasic() const -> Indices;
 
+    /// Return the indices of the fixed components.
+    auto ifixed() const -> Indices;
+
 	/// Compute the canonical matrix of the given matrix.
 	auto compute(const MatrixXd& A) -> void;
 
-	/// Swap a basic component by a non-basic component.
-	/// Let `m` and `n` denote the number of rows and columns of
-	/// the canonical matrix. The index of the basic component, `ib`,
-	/// must be between zero and `m`, and the index of the non-basic
-	/// component, `in`, must be between zero and `n - m`.
-	/// @param ib The index of the basic component.
-	/// @param in The index of the non-basic component.
-	auto swap(Index ib, Index in) -> void;
+	/// Swap a basic variable by a non-basic variable.
+	/// @param ibasic The index of the basic variable between 0 and \eq{n_\mathrm{b}}`.
+	/// @param inonbasic The index of the non-basic variable between 0 and \eq{n_\mathrm{n}}`.
+	auto swapBasicVariable(Index ibasic, Index inonbasic) -> void;
 
-	/// Update the existing canonical form with given priority weights for the columns.
-	/// This method will reorder the columns of the canonical form according to their
-	/// priority weights. Columns with higher weights have higher priority to be selected as
-	/// basic columns (i.e., columns corresponding to basic variables). The non-basic variables
-	/// are sorted in descend order with respect to their weights.
+	/// Update the canonical form with given priority weights for the variables.
+	/// This method will update the canonical form by taking into account the given priority
+	/// weights of the variables when selecting the basic variables.
+	/// The basic and non-basic variables will be sorted in descend order with respect to their
+	/// priority weights.
+	/// By choosing non-positive weights for some variables, and positive for all others, the
+	/// variables with non-positive weights can be prevented from becoming basic variables.
+	/// However, there is the possibility of a *degenerate case* in which one or more variables
+	/// with non-positive weights need to be basic variables. This happens when all variables with
+	/// non-zero coefficient in a row of matrix \eq{A} have non-positive weights.
     /// @param weights The priority weights of the variables.
 	auto update(const VectorXd& weights) -> void;
-
-	/// @copydoc update
-    /// @param fixed The indices of the columns corresponding to be fixed variables.
-	auto update(const VectorXd& weights, const Indices& fixed) -> void;
 
 private:
 	struct Impl;
