@@ -118,8 +118,12 @@ struct SaddlePointSolver::Impl
     /// Update the canonical form of the coefficient matrix *A* of the saddle point problem.
     auto updateCanonicalForm(const SaddlePointMatrix& lhs) -> void
     {
+        // Update the number of fixed and free variables
+        nf = lhs.fixed().size();
+        nx = n - nf;
+
         // Update the priority weights for the update of the canonical form
-        weights.noalias() = inv(lhs.H().diagonal());
+        weights.noalias() = abs(inv(lhs.H().diagonal()));
 
         // Set the priority weights of the fixed variables to decreasing negative values
         rows(weights, lhs.fixed()) = -linspace(nf, 1, nf);
@@ -140,10 +144,6 @@ struct SaddlePointSolver::Impl
         // Update the number of free basic and free non-basic variables
         nbx = nb - nbf;
         nnx = nn - nnf;
-
-        // Update the number of fixed and free variables
-        nf = lhs.fixed().size();
-        nx = n - nf;
 
         // Update the ordering of the free variables
         iordering.head(nx).head(nbx) = canonicalizer.ibasic().head(nbx);
@@ -209,10 +209,13 @@ struct SaddlePointSolver::Impl
         const auto& R = canonicalizer.R();
 
         // The columns of matrix `S` corresponding to fixed non-basic variables
-        auto Snf = S.rightCols(nnf);
+        auto Sbnf = S.rightCols(nnf);
+
+        // The columns of identity matrix corresponding to fixed basic variables
+        auto Ibf = identity(nb, nb).rightCols(nbf);
 
         // The rows of matrix `R` corresponding to free basic variables
-        auto Rx = R.topRows(nx);
+        auto Rx = R.topRows(nbx);
 
         // The indices of the free and fixed variables
         auto ivx = iordering.head(nx);
@@ -237,7 +240,7 @@ struct SaddlePointSolver::Impl
         af.noalias() = rows(a, ivf);
 
         // Set the vector `bx`
-        bx.noalias() = Rx*b - abf - Snf*anf;
+        bx.noalias() = Rx*b - Ibf*abf - Sbnf*anf;
 
         // Compute the LU decomposition of M.
         if(method == SaddlePointMethod::PartialPivLU)
@@ -310,11 +313,14 @@ struct SaddlePointSolver::Impl
         const auto& R = canonicalizer.R();
 
         // The columns of matrix `S` corresponding to free and fixed non-basic variables
-        auto Sf = S.rightCols(nnf);
-        auto Sx = S.topLeftCorner(nbx, nnx);
+        auto Sbnx = S.topLeftCorner(nbx, nnx);
+        auto Sbnf = S.rightCols(nnf);
+
+        // The columns of identity matrix corresponding to fixed basic variables
+        auto Ibf = identity(nb, nb).rightCols(nbf);
 
         // The rows of matrix `R` corresponding to free basic variables
-        auto Rx = R.topRows(nx);
+        auto Rx = R.topRows(nbx);
 
         // The indices of the free and fixed variables
         auto ivx = iordering.head(nx);
@@ -333,7 +339,8 @@ struct SaddlePointSolver::Impl
         auto anf = af.tail(nnf);
 
         // The view in `vec` corresponding to values of `b` for free basic variables.
-        auto bx = vec.segment(nx, nbx);
+        auto bb = vec.segment(nx, nb);
+        auto bx = bb.head(nbx);
 
         // The view in `y` corresponding to values of `y` for free basic variables.
         auto yx = y.head(nbx);
@@ -352,11 +359,12 @@ struct SaddlePointSolver::Impl
         af.noalias() = rows(a, ivf);
 
         // Set the vector `bx`
-        bx.noalias() = Rx*b - abf - Sf*anf;
+        bb.noalias() = R*b - Ibf*abf - Sbnf*anf;
+//        bx.noalias() = Rx*b - Ibf*abf - Sbnf*anf;
 
         // Compute the saddle point problem solution
         yx.noalias()   = abx;
-        anx.noalias() -= tr(Sx)*yx;
+        anx.noalias() -= tr(Sbnx)*yx;
         bx.noalias()  -= Bx*anx;
         abx.noalias()  = luxb.solve(bx);
         anx.noalias() += Tx*abx;
@@ -429,8 +437,11 @@ struct SaddlePointSolver::Impl
         auto Sbnx = S.topLeftCorner(nbx, nnx);
         auto Sbnf = S.rightCols(nnf);
 
+        // The columns of identity matrix corresponding to fixed basic variables
+        auto Ibf = identity(nb, nb).rightCols(nbf);
+
         // The rows of matrix `R` corresponding to free basic variables
-        auto Rx = R.topRows(nx);
+        auto Rx = R.topRows(nbx);
 
         // The indices of the free and fixed variables
         auto ivx = iordering.head(nx);
@@ -465,7 +476,7 @@ struct SaddlePointSolver::Impl
         af.noalias() = rows(a, ivf);
 
         // Set the vector `bx`
-        bx.noalias() = Rx*b - abf - Sbnf*anf;
+        bx.noalias() = Rx*b - Ibf*abf - Sbnf*anf;
 
         auto xx = x.head(nx);
         auto xbx = xx.head(nb);

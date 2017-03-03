@@ -51,6 +51,9 @@ struct Canonicalizer::Impl
     /// The permutation matrix `Kn` used in the weighted update method.
 	PermutationMatrix Kn;
 
+	/// The threshold used to compare numbers.
+	double threshold;
+
     /// Compute the canonical matrix of the given matrix.
 	auto compute(const MatrixXd& A) -> void
 	{
@@ -90,14 +93,18 @@ struct Canonicalizer::Impl
 	    // Initialize the permutation matrices Kb and Kn
 	    Kb.setIdentity(r);
 	    Kn.setIdentity(n - r);
+
+	    // Initialize the threshold value
+	    threshold = std::abs(lu.maxPivot()) * lu.threshold();
 	}
 
     /// Swap a basic variable by a non-basic variable.
 	auto swapBasicVariable(Index ib, Index in) -> void
 	{
 	    // Check if S(ib, in) is different than zero
-	    Assert(S(ib, in), "Could not swap basic and non-basic variables.",
-	        "Expecting a non-basic variable with non-zero pivot.");
+	    Assert(std::abs(S(ib, in)) > threshold,
+	        "Could not swap basic and non-basic variables.",
+	            "Expecting a non-basic variable with non-zero pivot.");
 
 	    // Initialize the matrix M
 	    M = S.col(in);
@@ -111,7 +118,7 @@ struct Canonicalizer::Impl
 	    for(Index i = 0; i < m; ++i)
 	        if(i != ib) R.row(i) -= S(i, in) * R.row(ib);
 
-	    // Updadte matrix S
+	    // Update matrix S
 	    S.row(ib) *= aux;
 	    for(Index i = 0; i < m; ++i)
 	        if(i != ib) S.row(i) -= S(i, in) * S.row(ib);
@@ -140,10 +147,10 @@ struct Canonicalizer::Impl
         // Find the non-basic variable with maximum proportional weight with respect to a basic variable
         auto find_nonbasic_candidate = [&](Index i, Index& j)
         {
-            j = 0; double max = -infinity();//w[inonbasic[0]] * std::abs(S(i, 0));
+            j = 0; double max = -infinity();
             double tmp = 0.0;
             for(Index k = 0; k < nn; ++k) {
-                if(S(i, k) == 0.0) continue;
+                if(std::abs(S(i, k)) > threshold) continue;
                 tmp = w[inonbasic[k]] * std::abs(S(i, k));
                 if(tmp > max) {
                     max = tmp;
@@ -153,15 +160,15 @@ struct Canonicalizer::Impl
             return max;
         };
 
-	    // Check if there are basic variables to be swapped with non-basic variables with higher priority
-	    if(nn > 0) for(Index i = 0; i < nb; ++i)
-	    {
-	        Index j;
-	        const double wi = w[ibasic[i]];
-	        const double wj = find_nonbasic_candidate(i, j);
-	        if(wi < wj)
-	            swapBasicVariable(i, j);
-	    }
+        // Check if there are basic variables to be swapped with non-basic variables with higher priority
+        if(nn > 0) for(Index i = 0; i < nb; ++i)
+        {
+            Index j;
+            const double wi = w[ibasic[i]];
+            const double wj = find_nonbasic_candidate(i, j);
+            if(wi < wj)
+                swapBasicVariable(i, j);
+        }
 
         // Sort the basic variables in descend order of weights
         std::sort(Kb.indices().data(), Kb.indices().data() + nb,

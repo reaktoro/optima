@@ -57,12 +57,6 @@ public:
     /// Return the number of non-basic variables.
     auto numNonBasicVariables() const -> Index;
 
-    /// Return the number of rows of the canonical form.
-    auto rows() const -> Index;
-
-    /// Return the number of columns of the canonical form.
-    auto cols() const -> Index;
-
     /// Return the matrix \eq{S} of the canonicalization.
     auto S() const -> const MatrixXd&;
 
