@@ -20,6 +20,7 @@
 // Eigen includes
 #include <Optima/Common/Exception.hpp>
 #include <Optima/Math/EigenExtern.hpp>
+#include <Optima/Math/Utils.hpp>
 using namespace Eigen;
 
 namespace Optima {
@@ -89,10 +90,6 @@ struct Canonicalizer::Impl
 	    // Initialize the permutation matrices Kb and Kn
 	    Kb.setIdentity(r);
 	    Kn.setIdentity(n - r);
-//
-//	    // Set the number of basic and non-basic variables (fixed and free)
-//	    nbf = 0; nbx = r;
-//	    nnf = 0; nnx = n - r;
 	}
 
     /// Swap a basic variable by a non-basic variable.
@@ -140,19 +137,20 @@ struct Canonicalizer::Impl
 	    auto ibasic = Q.indices().head(nb);
 	    auto inonbasic = Q.indices().tail(nn);
 
-	    // Find the non-basic variable with maximum proportional weight with respect to a basic variable
-	    auto find_nonbasic_candidate = [&](Index i, Index& j)
+        // Find the non-basic variable with maximum proportional weight with respect to a basic variable
+        auto find_nonbasic_candidate = [&](Index i, Index& j)
         {
-	        j = 0; double max = w[inonbasic[0]] * std::abs(S(i, 0));
-	        double tmp = 0.0;
-	        for(Index k = 1; k < nn; ++k) {
-	            tmp = w[inonbasic[k]] * std::abs(S(i, k));
-	            if(tmp > max) {
-	                max = tmp;
-	                j = k;
-	            }
-	        }
-	        return max;
+            j = 0; double max = -infinity();//w[inonbasic[0]] * std::abs(S(i, 0));
+            double tmp = 0.0;
+            for(Index k = 0; k < nn; ++k) {
+                if(S(i, k) == 0.0) continue;
+                tmp = w[inonbasic[k]] * std::abs(S(i, k));
+                if(tmp > max) {
+                    max = tmp;
+                    j = k;
+                }
+            }
+            return max;
         };
 
 	    // Check if there are basic variables to be swapped with non-basic variables with higher priority
@@ -165,101 +163,30 @@ struct Canonicalizer::Impl
 	            swapBasicVariable(i, j);
 	    }
 
-	    // Sort the basic variables in descend order of weights
-	    std::sort(Kb.indices().data(), Kb.indices().data() + nb,
-	        [&](Index l, Index r) { return w[ibasic[l]] > w[ibasic[r]]; });
+        // Sort the basic variables in descend order of weights
+        std::sort(Kb.indices().data(), Kb.indices().data() + nb,
+            [&](Index l, Index r) { return w[ibasic[l]] > w[ibasic[r]]; });
 
 	    // Sort the non-basic variables in descend order of weights
 	    std::sort(Kn.indices().data(), Kn.indices().data() + nn,
 	        [&](Index l, Index r) { return w[inonbasic[l]] > w[inonbasic[r]]; });
 
 	    // Rearrange the rows of S based on the new order of basic variables
-	    Kb.applyThisOnTheLeft(S);
+	    Kb.transpose().applyThisOnTheLeft(S);
 
 	    // Rearrange the columns of S based on the new order of non-basic variables
 	    Kn.applyThisOnTheRight(S);
 
 	    // Rearrange the rows of R based on the new order of basic variables
-	    Kb.applyThisOnTheLeft(R);
+	    Kb.transpose().applyThisOnTheLeft(R);
 
 	    // Rearrange the permutation matrix Q based on the new order of basic variables
-	    Kb.applyThisOnTheLeft(ibasic);
+	    Kb.transpose().applyThisOnTheLeft(ibasic);
 
 	    // Rearrange the permutation matrix Q based on the new order of non-basic variables
 	    Kn.transpose().applyThisOnTheLeft(inonbasic);
-//
-//	    // Find the number of fixed basic variables (those with weights below or equal to zero)
-//	    nbf = 0; while(nbf < nb && w[ibasic[nb - nbf - 1]] <= 0.0) ++nbf;
-//
-//	    // Find the number of fixed non-basic variables (those with weights below or equal to zero)
-//	    nnf = 0; while(nnf < nn && w[inonbasic[nn - nnf - 1]] <= 0.0) ++nnf;
-//
-//	    // Set the number of free basic and non-basic variables
-//	    nbx = nb - nbf;
-//	    nnx = nn - nnf;
-	}
 
-//    /// Update the existing canonical form with given priority weights for the columns.
-//	auto update(const VectorXd& weights, const Indices& fixed) -> void
-//	{
-//
-//	    // Auxiliary variables
-//	    const Index m  = S.rows();
-//	    const Index n  = Q.rows();
-//	    const Index nb = m;
-//	    const Index nn = n - nb;
-//	    const Index nf = fixed.size();
-//
-//	    // The indices of the basic and non-basic variables
-//	    auto ibasic = Q.indices().head(nb);
-//	    auto inonbasic = Q.indices().tail(nn);
-//
-//	    // Update the internal weights to update the canonical form of A.
-//	    w.noalias() = abs(weights);
-//
-//	    // Set weights of fixed variables to zero to prevent them from becoming basic variables
-//	    Eigen::rows(w, fixed).fill(0.0);
-//
-//	    // The weights of the non-basic variables
-//	    auto wn = Eigen::rows(w, inonbasic);
-//
-//	    // Swap basic and non-basic variables when the latter has higher weight
-//	    if(nn > 0) for(Index i = 0; i < nb; ++i)
-//	    {
-//	        Index j;
-//	        const double wi = w[ibasic[i]];
-//	        const double wj = abs(wn % tr(S.row(i))).maxCoeff(&j);
-//	        if(wi < wj)
-//	            swapBasicVariable(i, j);
-//	    }
-//
-//	    // Set weights of fixed variables to decreasing negative values to move them to the back of the list
-//	    Eigen::rows(w, fixed) = -VectorXd::LinSpaced(nf, 1, nf);
-//
-//	    // Sort the basic variables in descend order of weights
-//	    std::sort(Kb.indices().data(), Kb.indices().data() + nb,
-//	        [&](Index l, Index r) { return w[ibasic[l]] > w[ibasic[r]]; });
-//
-//	    // Sort the non-basic variables in descend order of weights
-//	    std::sort(Kn.indices().data(), Kn.indices().data() + nn,
-//	        [&](Index l, Index r) { return w[inonbasic[l]] > w[inonbasic[r]]; });
-//
-//	    // Rearrange the rows of S based on the new order of basic variables
-//	    Kb.applyThisOnTheLeft(S);
-//
-//	    // Rearrange the columns of S based on the new order of non-basic variables
-//	    Kn.applyThisOnTheRight(S);
-//
-//	    // Rearrange the rows of R based on the new order of basic variables
-//	    Kb.applyThisOnTheLeft(R);
-//
-//	    // Rearrange the columns of inv(R) based on the new order of basic variables
-//	    Kb.transpose().applyThisOnTheRight(Rinv);
-//
-//	    // Rearrange the permutation matrix Q based on the new order of basic and non-basic variables
-//	    Kb.applyThisOnTheLeft(ibasic);
-//	    Kn.transpose().applyThisOnTheLeft(inonbasic);
-//	}
+	}
 };
 
 Canonicalizer::Canonicalizer()

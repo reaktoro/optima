@@ -23,13 +23,25 @@
 using namespace Eigen;
 using namespace Optima;
 
-#define CHECK_CANONICAL_FORM                      \
-{                                                 \
-    const auto& R = canonicalizer.R();            \
-    const auto& Q = canonicalizer.Q();            \
-    const auto& C = canonicalizer.C();            \
-    CHECK((R * A * Q - C).norm() == approx(0.0)); \
-}                                                 \
+#define CHECK_CANONICAL_FORM                                     \
+{                                                                \
+    const auto& R = canonicalizer.R();                           \
+    const auto& Q = canonicalizer.Q();                           \
+    const auto& C = canonicalizer.C();                           \
+    CHECK((R * A * Q - C).norm() == approx(0.0));                \
+}                                                                \
+
+#define CHECK_CANONICAL_ORDERING                                 \
+{                                                                \
+    const Index n = canonicalizer.numVariables();                \
+    const Index r = canonicalizer.numBasicVariables();           \
+    auto ibasic = canonicalizer.Q().indices().head(r);           \
+    auto inonbasic = canonicalizer.Q().indices().tail(n - r);    \
+    for(Index i = 1; i < ibasic.size(); ++i)                     \
+        CHECK(w[ibasic[i]] <= w[ibasic[i - 1]]);                 \
+    for(Index i = 1; i < inonbasic.size(); ++i)                  \
+        CHECK(w[inonbasic[i]] <= w[inonbasic[i - 1]]);           \
+}                                                                \
 
 TEST_CASE("Testing Canonicalizer")
 {
@@ -38,8 +50,9 @@ TEST_CASE("Testing Canonicalizer")
 
 	MatrixXd A = random(m, n);
 
-	Canonicalizer canonicalizer(A);
-	const Index r = canonicalizer.numBasicVariables();
+    Canonicalizer canonicalizer(A);
+
+    const Index r = canonicalizer.numBasicVariables();
 
 	CHECK_CANONICAL_FORM
 
@@ -62,7 +75,8 @@ TEST_CASE("Testing Canonicalizer with two linearly dependent rows")
 	A.row(2) = A.row(0) + 2*A.row(1);
 	A.row(3) = A.row(1) - 2*A.row(2);
 
-	Canonicalizer canonicalizer(A);
+    Canonicalizer canonicalizer(A);
+
     const Index r = canonicalizer.numBasicVariables();
 
 	CHECK_CANONICAL_FORM
@@ -79,14 +93,17 @@ TEST_CASE("Testing Canonicalizer with two linearly dependent rows")
 
 TEST_CASE("Testing the update method of the Canonicalizer class")
 {
+
 	const MatrixXd A = {
-		{2,  1,  1,  1,  0,  0},
-		{1,  0,  1,  3,  2,  3},
-		{0,  0,  0,  1,  1,  1},
-		{0,  1, -1, -1,  0, -2}
+	//    H2O   H+    OH-   HCO3- CO2   CO3--
+		{ 2,    1,    1,    1,    0,    0 }, // H
+		{ 1,    0,    1,    3,    2,    3 }, // O
+		{ 0,    0,    0,    1,    1,    1 }, // C
+		{ 0,    1,   -1,   -1,    0,   -2 }  // Z
 	};
 
 	Canonicalizer canonicalizer(A);
+
     const Index r = canonicalizer.numBasicVariables();
 
 	CHECK(r == 3);
@@ -97,6 +114,7 @@ TEST_CASE("Testing the update method of the Canonicalizer class")
 	canonicalizer.update(w);
 
 	CHECK_CANONICAL_FORM
+	CHECK_CANONICAL_ORDERING
 
 	Eigen::VectorXi expectedQ = {0, 4, 3, 5, 1, 2};
 	Eigen::VectorXi actualQ = canonicalizer.Q().indices();
@@ -108,48 +126,26 @@ TEST_CASE("Testing the update method of the Canonicalizer class")
 	canonicalizer.update(w);
 
 	CHECK_CANONICAL_FORM
+	CHECK_CANONICAL_ORDERING
 
 	expectedQ = {0, 5, 3, 4, 1, 2};
 	actualQ = canonicalizer.Q().indices();
 
 	CHECK(expectedQ.isApprox(actualQ));
-
-//	std::cout << "C = \n" << C << std::endl;
-//	std::cout << "Q = \n" << Q.indices() << std::endl;
-//
-//	std::vector<std::string> species = {
-//		"H2O", "H+", "OH-", "HCO3-", "CO2", "CO3--"
-//	};
-//
-//	const auto& S = canonicalizer.S();
-//	std::cout << "C = \n" << C << std::endl;
-//	std::cout << "R * A * Q = \n" << R * A * Q << std::endl;
-//	std::cout << "Q = \n" << Q.indices() << std::endl;
-//
-//	for(Index i = 0; i < S.cols(); ++i)
-//	{
-//		std::cout << species[Q.indices()[i + S.numBasicVariables()]] << " = ";
-//		for(Index j = 0; j < S.numBasicVariables(); ++j)
-//			if(S(j, i))
-//				std::cout  << " " << S(j, i) << "*" << species[Q.indices()[j]];
-//		std::cout << std::endl;
-//	}
-//
-//	for(Index i = 0; i < Q.cols(); ++i)
-//		std::cout << species[Q.indices()[i]] << std::endl;
 }
-
 
 TEST_CASE("Testing the update method of the Canonicalizer class with fixed variables")
 {
     const MatrixXd A = {
-        {2,  1,  1,  1,  0,  0},
-        {1,  0,  1,  3,  2,  3},
-        {0,  0,  0,  1,  1,  1},
-        {0,  1, -1, -1,  0, -2}
+    //    H2O   H+    OH-   HCO3- CO2   CO3--
+        { 2,    1,    1,    1,    0,    0 }, // H
+        { 1,    0,    1,    3,    2,    3 }, // O
+        { 0,    0,    0,    1,    1,    1 }, // C
+        { 0,    1,   -1,   -1,    0,   -2 }  // Z
     };
 
     Canonicalizer canonicalizer(A);
+
     const Index r = canonicalizer.numBasicVariables();
 
     CHECK(r == 3);
@@ -157,16 +153,16 @@ TEST_CASE("Testing the update method of the Canonicalizer class with fixed varia
 
     Indices ifixed = {3, 4, 5};
 
-    VectorXd w = {55.1, 1.e-4, 1.e-10, 0.1, 0.5, 1e-2};
+    VectorXd w = {55.1, 1.e-4, 1.e-10, -0.1, -0.5, -1e-2};
 
     canonicalizer.update(w);
 
     CHECK_CANONICAL_FORM
-
-    Eigen::VectorXi expectedQ = {0, 1, 2, 3, 4, 5};
-    Eigen::VectorXi actualQ = canonicalizer.Q().indices();
-
-    CHECK(expectedQ.isApprox(actualQ));
+    CHECK_CANONICAL_ORDERING
+//    Eigen::VectorXi expectedQ = {0, 1, 2, 3, 4, 5};
+//    Eigen::VectorXi actualQ = canonicalizer.Q().indices();
+//
+//    CHECK(expectedQ.isApprox(actualQ));
 //
 //    w = {55.1, 1.e-4, 1.e-10, 0.3, 0.1, 0.8};
 //
