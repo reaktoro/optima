@@ -185,7 +185,6 @@ struct Canonicalizer::Impl
 
 	    // Rearrange the permutation matrix Q based on the new order of non-basic variables
 	    Kn.transpose().applyThisOnTheLeft(inonbasic);
-
 	}
 };
 
