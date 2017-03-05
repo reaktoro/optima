@@ -150,7 +150,7 @@ struct Canonicalizer::Impl
             j = 0; double max = -infinity();
             double tmp = 0.0;
             for(Index k = 0; k < nn; ++k) {
-                if(std::abs(S(i, k)) > threshold) continue;
+                if(std::abs(S(i, k)) <= threshold) continue;
                 tmp = w[inonbasic[k]] * std::abs(S(i, k));
                 if(tmp > max) {
                     max = tmp;
