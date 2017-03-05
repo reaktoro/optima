@@ -17,150 +17,24 @@
 
 #include <doctest/doctest.hpp>
 
-
-
-
-
-
-#include <Optima/Math/Canonicalizer.hpp>
-
-
-
-
-
 // C++ includes
 #include <iostream>
-
-// Eigenx includes
-#include <Eigenx/Core.hpp>
-#include <Eigenx/LU.hpp>
-using namespace Eigen;
 
 // Optima includes
 #include <Optima/Core/SaddlePointMatrix.hpp>
 #include <Optima/Core/SaddlePointResult.hpp>
 #include <Optima/Core/SaddlePointSolver.hpp>
+#include <Optima/Math/Matrix.hpp>
 using namespace Optima;
+using namespace Eigen;
 
-
-
-
-//TEST_CASE("Testing SaddlePointSolver with RangespaceDiagonal method.")
-//{
-//    Index m = 10;
-//    Index n = 60;
-//    Index t = m + n;
-//
-//    VectorXd expected = linspace(t, 1, t);
-//
-//    MatrixXd A = random(m, n);
-//    MatrixXd H = diag(random(n));
-//
-//    SaddlePointMatrix lhs(H, A);
-//
-//    VectorXd r = lhs * expected;
-//    VectorXd s(t);
-//
-//    SaddlePointVector rhs(r, n, m);
-//    SaddlePointSolution sol(s, n, m);
-//
-//    SaddlePointSolver solver;
-//    solver.setMethodRangespaceDiagonal();
-//    solver.canonicalize(A);
-//    solver.decompose(lhs);
-//    solver.solve(rhs, sol);
-//
-//    CHECK_EQ(solver.method(), SaddlePointMethod::RangespaceDiagonal);
-//    CHECK(s.isApprox(expected));
-//}
-//
-//TEST_CASE("Testing SaddlePointSolver with RangespaceDiagonal method and fixed variables.")
-//{
-//    Index m = 10;
-//    Index n = 60;
-//    Index t = m + n;
-//
-//    VectorXd expected = linspace(t, 1, t);
-//
-//    MatrixXd A = random(m, n);
-//    MatrixXd H = diag(random(n));
-//    Indices ifixed = {0, 10, 20, 30, 40, 50};
-//
-//    SaddlePointMatrix lhs(H, A, ifixed);
-//
-//    VectorXd r = lhs * expected;
-//    VectorXd s(t);
-//
-//    SaddlePointVector rhs(r, n, m);
-//    SaddlePointSolution sol(s, n, m);
-//
-//    SaddlePointSolver solver;
-//    solver.setMethodRangespaceDiagonal();
-//    solver.canonicalize(A);
-//    solver.decompose(lhs);
-//    solver.solve(rhs, sol);
-//
-//    CHECK_EQ(solver.method(), SaddlePointMethod::RangespaceDiagonal);
-//    CHECK(s.isApprox(expected));
-//}
-
-TEST_CASE("Testing SaddlePointSolver with RangespaceDiagonal method and fixed variables.")
+void testSaddlePointSolverAux(SaddlePointMatrix lhs, SaddlePointMethod method)
 {
-    Index m = 10;
-    Index n = 60;
-//    Index n = 15;
+    Index m = lhs.A().rows();
+    Index n = lhs.A().cols();
     Index t = m + n;
 
     VectorXd expected = linspace(t, 1, t);
-
-    MatrixXd A = random(m, n);
-    MatrixXd H = diag(random(n));
-
-    Indices ifixed, inofixed;
-    for(Index i = 0; i < n; ++i)
-        if(A(0, i) <= 0) { A(0, i) = 0.0; inofixed.push_back(i); }
-        else ifixed.push_back(i);
-//        if(A(0, i) <= 0) ifixed.push_back(i);
-
-    auto nf = ifixed.size();
-    auto nx = n - nf;
-
-    Canonicalizer canonicalizer(A);
-
-    const auto& R = canonicalizer.R();
-    const auto& Q = canonicalizer.Q();
-    const auto& S = canonicalizer.S();
-
-    std::cout << "R = \n" << R << std::endl;
-    std::cout << "R*A*Q - C = \n" << R*A*Q - canonicalizer.C() << std::endl;
-
-    VectorXd weights = ones(n);
-//    rows(weights, ifixed) = -linspace(ifixed.size(), 1, ifixed.size());
-    rows(weights, ifixed).fill(0.0);
-
-//    std::cout << "A = \n" << A << std::endl;
-//    std::cout << "A(nofixed) = \n" << cols(A, inofixed) << std::endl;
-
-    canonicalizer.update(weights);
-
-    std::cout << "R = \n" << R << std::endl;
-
-    std::cout << "R*A*Q - C = \n" << R*A*Q - canonicalizer.C() << std::endl;
-
-    auto wb = rows(weights, canonicalizer.ibasic());
-    auto wn = rows(weights, canonicalizer.inonbasic());
-
-    std::cout << "wb = \n" << tr(wb) << std::endl;
-    std::cout << "wn = \n" << tr(wn) << std::endl;
-
-    MatrixXd M(m, nx); M << identity(m,m), S.leftCols(nx-m);
-
-    auto lu = M.fullPivLu();
-
-    std::cout << "M = \n" << M << std::endl;
-    std::cout << "rank(M) = " << lu.rank() << std::endl;
-
-    SaddlePointMatrix lhs(H, A, ifixed);
 
     VectorXd r = lhs * expected;
     VectorXd s(t);
@@ -169,67 +43,78 @@ TEST_CASE("Testing SaddlePointSolver with RangespaceDiagonal method and fixed va
     SaddlePointSolution sol(s, n, m);
 
     SaddlePointSolver solver;
-    solver.setMethodRangespaceDiagonal();
-    solver.canonicalize(A);
+    solver.setMethod(method);
+    solver.canonicalize(lhs.A());
     solver.decompose(lhs);
     solver.solve(rhs, sol);
 
-    CHECK_EQ(solver.method(), SaddlePointMethod::RangespaceDiagonal);
+    double error = (lhs.matrix() * s - r).norm()/r.norm();
 
-    double error = (lhs.matrix() * sol.vector() - rhs.vector()).norm()/rhs.vector().norm();
     CHECK(approx(error) == 0.0);
 }
 
-//TEST_CASE("Testing SaddlePointSolver with other methods.")
-//{
-//    Index m = 10;
-//    Index n = 60;
-//    Index t = m + n;
-//
-//    VectorXd expected = linspace(t, 1, t);
-//
-//    MatrixXd A = random(m, n);
-//    MatrixXd H = random(n, n);
-//
-//    SaddlePointMatrix lhs(H, A);
-//
-//    VectorXd r = lhs * expected;
-//    VectorXd s(t);
-//
-//    SaddlePointVector rhs(r, n, m);
-//    SaddlePointSolution sol(s, n, m);
-//
-//    SUBCASE("When method is SaddlePointMethod::Nullspace")
-//    {
-//        SaddlePointSolver solver;
-//        solver.setMethodNullspace();
-//        solver.canonicalize(A);
-//        solver.decompose(lhs);
-//        solver.solve(rhs, sol);
-//        CHECK_EQ(solver.method(), SaddlePointMethod::Nullspace);
-//        CHECK(s.isApprox(expected));
-//    }
-//
-//    SUBCASE("When method is SaddlePointMethod::PartialPivLU")
-//    {
-//        SaddlePointSolver solver;
-//        solver.setMethodPartialPivLU();
-//        solver.canonicalize(A);
-//        solver.decompose(lhs);
-//        solver.solve(rhs, sol);
-//        CHECK_EQ(solver.method(), SaddlePointMethod::PartialPivLU);
-//        CHECK(s.isApprox(expected));
-//    }
-//
-//    SUBCASE("When method is SaddlePointMethod::FullPivLU")
-//    {
-//        SaddlePointSolver solver;
-//        solver.setMethodFullPivLU();
-//        solver.canonicalize(A);
-//        solver.decompose(lhs);
-//        solver.solve(rhs, sol);
-//        CHECK_EQ(solver.method(), SaddlePointMethod::FullPivLU);
-//        CHECK(s.isApprox(expected));
-//    }
-//}
+void testSaddlePointSolver(SaddlePointMatrix lhs)
+{
+//    SUBCASE("When using FullPivLU")
+    {
+        testSaddlePointSolverAux(lhs, SaddlePointMethod::FullPivLU);
+    }
+
+//    SUBCASE("When using PartialPivLU")
+    {
+        testSaddlePointSolverAux(lhs, SaddlePointMethod::PartialPivLU);
+    }
+
+//    SUBCASE("When using Nullspace")
+    {
+        testSaddlePointSolverAux(lhs, SaddlePointMethod::Nullspace);
+    }
+
+//    SUBCASE("When using RangespaceDiagonal")
+    {
+        MatrixXd H = diag(random(lhs.H().rows()));
+        SaddlePointMatrix lhsdiag(H, lhs.A(), lhs.fixed());
+        testSaddlePointSolverAux(lhsdiag, SaddlePointMethod::RangespaceDiagonal);
+    }
+}
+
+TEST_CASE("Testing SaddlePointSolver with other methods.")
+{
+    Index m = 10;
+    Index n = 60;
+
+    MatrixXd A = random(m, n);
+    MatrixXd H = random(n, n);
+
+    SUBCASE("When there are no fixed variables")
+    {
+        SaddlePointMatrix lhs(H, A);
+
+        testSaddlePointSolver(lhs);
+    }
+
+    SUBCASE("When there are fixed variables")
+    {
+        Indices ifixed = {0, 10, 20, 30, 40, 50};
+
+        SaddlePointMatrix lhs(H, A, ifixed);
+
+        testSaddlePointSolver(lhs);
+    }
+
+    SUBCASE("When there are many fixed variables enough to degenerate the problem")
+    {
+        // Modify matrix A so that its first row has zeros for all non-positive entries.
+        // Set the fixed variables as the variables that have such entries positive.
+        // This results in a submatrix for the free variables with the first row zero.
+        Indices ifixed;
+        for(Index i = 0; i < n; ++i)
+            if(A(0, i) <= 0) A(0, i) = 0.0;
+            else ifixed.push_back(i);
+
+        SaddlePointMatrix lhs(H, A, ifixed);
+
+        testSaddlePointSolver(lhs);
+    }
+}
 

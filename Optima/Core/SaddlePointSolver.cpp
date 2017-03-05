@@ -184,7 +184,7 @@ struct SaddlePointSolver::Impl
         M.bottomRightCorner(nbx, nbx).setZero();
 
         // Set the H block of the canonical saddle point matrix
-        M.topLeftCorner(nbx + nnx, nbx + nnx) = submatrix(lhs.H(), ivx, ivx);
+        M.topLeftCorner(nx, nx) = submatrix(lhs.H(), ivx, ivx);
 
         // Compute the LU decomposition of M.
         if(method == SaddlePointMethod::PartialPivLU)
@@ -221,8 +221,13 @@ struct SaddlePointSolver::Impl
         auto ivx = iordering.head(nx);
         auto ivf = iordering.tail(nf);
 
-        // The view in `vec` corresponding to values of `a` for fixed variables.
+        // The view in `vec` corresponding to values of `a` for free and fixed variables.
+        auto ax = vec.head(nx);
         auto af = vec.tail(nf);
+
+        // The view in `vec` corresponding to values of `b` for linerly independent equation.
+        auto bb = vec.segment(nx, nb);
+        auto bx = bb.head(nbx);
 
         // The view in `af` corresponding to fixed basic and fixed non-basic variables.
         auto abf = af.head(nbf);
@@ -231,16 +236,13 @@ struct SaddlePointSolver::Impl
         // The view in `vec` corresponding to the right-hand side vector of the linear equation
         auto r = vec.head(nx + nbx);
 
-        // The view in `r` corresponding to the values of `a` and `b` for the free variables.
-        auto ax = r.head(nx);
-        auto bx = r.tail(nbx);
-
         // Set the vectors `ax` and `af`
         ax.noalias() = rows(a, ivx);
         af.noalias() = rows(a, ivf);
 
         // Set the vector `bx`
-        bx.noalias() = Rx*b - Ibf*abf - Sbnf*anf;
+        bb.noalias() = R*b - Ibf*abf - Sbnf*anf;
+//        bx.noalias() = Rx*b - Ibf*abf - Sbnf*anf;
 
         // Compute the LU decomposition of M.
         if(method == SaddlePointMethod::PartialPivLU)
@@ -460,7 +462,8 @@ struct SaddlePointSolver::Impl
         auto anf = af.tail(nnf);
 
         // The view in `vec` corresponding to values of `b` for free basic variables.
-        auto bx = vec.segment(nx, nbx);
+        auto bb = vec.segment(nx, nb);
+        auto bx = bb.head(nbx);
 
         // The view in `y` corresponding to values of `y` for free basic variables.
         auto yx = y.head(nbx);
@@ -476,11 +479,12 @@ struct SaddlePointSolver::Impl
         af.noalias() = rows(a, ivf);
 
         // Set the vector `bx`
-        bx.noalias() = Rx*b - Ibf*abf - Sbnf*anf;
+        bb.noalias() = R*b - Ibf*abf - Sbnf*anf;
+//        bx.noalias() = Rx*b - Ibf*abf - Sbnf*anf;
 
         auto xx = x.head(nx);
-        auto xbx = xx.head(nb);
-        auto xnx = xx.segment(nb, nn);
+        auto xbx = xx.head(nbx);
+        auto xnx = xx.tail(nnx);
 
         // Compute the saddle point problem solution
         yx.noalias()  = abx - Hbbx*bx;
