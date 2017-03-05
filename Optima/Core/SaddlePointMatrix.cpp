@@ -69,6 +69,7 @@ auto operator<<(MatrixXdRef mat, const SaddlePointMatrix& lhs) -> MatrixXdRef
     mat.topRightCorner(n, m) = tr(A);
     mat.bottomLeftCorner(m, n) = A;
     rows(mat, fixed).fill(0.0);
+    cols(mat, fixed).topRows(n).fill(0.0);
     for(Index i : fixed)
         mat(i, i) = 1.0;
     return mat;
