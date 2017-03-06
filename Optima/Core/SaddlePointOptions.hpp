@@ -63,12 +63,19 @@ struct SaddlePointOptions
     SaddlePointMethod method = SaddlePointMethod::PartialPivLU;
 
     /// The option to rationalize the entries in the canonical form.
-    /// This option should be turned on if accuracy of the calculations is  sensitive to round-off
+    /// This option should be turned on if accuracy of the calculations is sensitive to round-off
     /// errors and the entries in the coefficient matrix \eq{A} of the saddle point problem are
-    /// rational numbers. This method will clean round-off errors after canonicalization operations
-    /// by computing the rational number of each entry in the canonical form.
+    /// rational numbers. If options specify if round-off errors after canonicalization operations
+    /// should be eliminated as much as possible by replacing each entry in the canonical form by
+    /// the nearest rational number. To find the nearest rational number of a floating-point number,
+    /// one has to provide an estimate of the maximum denominator of the entries in \eq{A}.
+    /// @see maxdenominator
     bool rationalize = false;
-};
 
+    /// The value of the maximum denominator to be used in a rationalize operation.
+    /// This option should be used in conjunction with option @ref rationalize.
+    /// @see rationalize
+    double maxdenominator = 1e+6;
+};
 
 } // namespace Optima
