@@ -132,6 +132,10 @@ struct SaddlePointSolver::Impl
         // Update the canonical form and the ordering of the variables
         canonicalizer.update(weights);
 
+        // Check if rationalization of the canonical form should be performed
+        if(options.rationalize)
+            canonicalizer.rationalize(options.maxdenominator);
+
         // Get the updated indices of basic and non-basic variables
         auto ibasic = canonicalizer.ibasic();
         auto inonbasic = canonicalizer.inonbasic();
