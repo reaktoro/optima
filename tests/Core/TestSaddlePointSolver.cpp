@@ -116,5 +116,23 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
 
         testSaddlePointSolver(lhs);
     }
+
+    SUBCASE("When there are linearly dependent rows and many fixed variables enough to degenerate the problem")
+    {
+        // Modify matrix A so that its first row has zeros for all non-positive entries.
+        // Set the fixed variables as the variables that have such entries positive.
+        // This results in a submatrix for the free variables with the first row zero.
+        Indices ifixed;
+        for(Index i = 0; i < n; ++i)
+            if(A(0, i) <= 0) A(0, i) = 0.0;
+            else ifixed.push_back(i);
+
+        // Set the 3rd row of A as the 2nd row
+        A.row(2) = A.row(1);
+
+        SaddlePointMatrix lhs(H, A, ifixed);
+
+        testSaddlePointSolver(lhs);
+    }
 }
 
