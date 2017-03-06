@@ -19,15 +19,26 @@
 
 #include <Optima/Common/Exception.hpp>
 #include <Optima/Common/Index.hpp>
+#include <Optima/Common/Optional.hpp>
 #include <Optima/Common/Outputter.hpp>
+#include <Optima/Common/Result.hpp>
 #include <Optima/Common/SetUtils.hpp>
 #include <Optima/Common/Timing.hpp>
-#include <Optima/Core/HessianMatrix.hpp>
+#include <Optima/Core/OptimumOptions.hpp>
+#include <Optima/Core/OptimumParams.hpp>
+#include <Optima/Core/OptimumProblem.hpp>
+#include <Optima/Core/OptimumResult.hpp>
+#include <Optima/Core/OptimumSolverIpNewton.hpp>
+#include <Optima/Core/OptimumState.hpp>
+#include <Optima/Core/OptimumStructure.hpp>
 #include <Optima/Core/SaddlePointMatrix.hpp>
+#include <Optima/Core/SaddlePointOptions.hpp>
 #include <Optima/Core/SaddlePointProblem.hpp>
+#include <Optima/Core/SaddlePointResult.hpp>
 #include <Optima/Core/SaddlePointSolver.hpp>
 #include <Optima/Core/SaddlePointUtils.hpp>
 #include <Optima/Math/BlockDiagonalMatrix.hpp>
 #include <Optima/Math/Canonicalizer.hpp>
+#include <Optima/Math/EigenExtern.hpp>
 #include <Optima/Math/Matrix.hpp>
 #include <Optima/Math/Utils.hpp>
