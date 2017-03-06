@@ -29,7 +29,7 @@
 using namespace Optima;
 using namespace Eigen;
 
-void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointMethod method)
+void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
 {
     Index m = lhs.A().rows();
     Index n = lhs.A().cols();
@@ -43,9 +43,6 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointMethod method)
     SaddlePointVector rhs(r, n, m);
     SaddlePointSolution sol(s, n, m);
 
-    SaddlePointOptions options;
-    options.method = method;
-
     SaddlePointSolver solver;
     solver.setOptions(options);
     solver.canonicalize(lhs.A());
@@ -57,28 +54,32 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointMethod method)
     CHECK(approx(error) == 0.0);
 }
 
-#define TEST_SADDLE_POINT_SOLVER                                                      \
+#define TEST_SADDLE_POINT_SOLVER(options)                                             \
 {                                                                                     \
     SUBCASE("When using FullPivLU")                                                   \
     {                                                                                 \
-        testSaddlePointSolver(lhs, SaddlePointMethod::FullPivLU);                     \
+        options.method = SaddlePointMethod::FullPivLU;                                \
+        testSaddlePointSolver(lhs, options);                                          \
     }                                                                                 \
                                                                                       \
     SUBCASE("When using PartialPivLU")                                                \
     {                                                                                 \
-        testSaddlePointSolver(lhs, SaddlePointMethod::PartialPivLU);                  \
+        options.method = SaddlePointMethod::PartialPivLU;                             \
+        testSaddlePointSolver(lhs, options);                                          \
     }                                                                                 \
                                                                                       \
     SUBCASE("When using Nullspace")                                                   \
     {                                                                                 \
-        testSaddlePointSolver(lhs, SaddlePointMethod::Nullspace);                     \
+        options.method = SaddlePointMethod::Nullspace;                                \
+        testSaddlePointSolver(lhs, options);                                          \
     }                                                                                 \
                                                                                       \
     SUBCASE("When using RangespaceDiagonal")                                          \
     {                                                                                 \
         MatrixXd H = diag(random(lhs.H().rows()));                                    \
         SaddlePointMatrix lhsdiag(H, lhs.A(), lhs.fixed());                           \
-        testSaddlePointSolver(lhsdiag, SaddlePointMethod::RangespaceDiagonal);        \
+        options.method = SaddlePointMethod::RangespaceDiagonal;                       \
+        testSaddlePointSolver(lhsdiag, options);                                      \
     }                                                                                 \
 }                                                                                     \
 
@@ -90,11 +91,13 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
     MatrixXd A = random(m, n);
     MatrixXd H = random(n, n);
 
+    SaddlePointOptions options;
+
     SUBCASE("When there are no fixed variables")
     {
         SaddlePointMatrix lhs(H, A);
 
-        TEST_SADDLE_POINT_SOLVER;
+        TEST_SADDLE_POINT_SOLVER(options);
     }
 
     SUBCASE("When there are fixed variables")
@@ -103,7 +106,7 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
 
         SaddlePointMatrix lhs(H, A, ifixed);
 
-        TEST_SADDLE_POINT_SOLVER;
+        TEST_SADDLE_POINT_SOLVER(options);
     }
 
     SUBCASE("When there are many fixed variables enough to degenerate the problem")
@@ -118,7 +121,7 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
 
         SaddlePointMatrix lhs(H, A, ifixed);
 
-        TEST_SADDLE_POINT_SOLVER;
+        TEST_SADDLE_POINT_SOLVER(options);
     }
 
     SUBCASE("When there are linearly dependent rows and many fixed variables enough to degenerate the problem")
@@ -136,12 +139,23 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
 
         SaddlePointMatrix lhs(H, A, ifixed);
 
-        TEST_SADDLE_POINT_SOLVER;
+        TEST_SADDLE_POINT_SOLVER(options);
 
         SUBCASE("When A has large entries")
         {
             A *= 1e6;
-            TEST_SADDLE_POINT_SOLVER;
+            TEST_SADDLE_POINT_SOLVER(options);
+        }
+
+        SUBCASE("When A has rational entries")
+        {
+            MatrixXi Anum = random<int>(m, n);
+            MatrixXi Aden = random<int>(m, n);
+            A = Anum.cast<double>()/Aden.cast<double>();
+
+            options.rationalize = true;
+            options.maxdenominator = Aden.maxCoeff() * 10;
+            TEST_SADDLE_POINT_SOLVER(options);
         }
     }
 }

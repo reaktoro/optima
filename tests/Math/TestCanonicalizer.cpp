@@ -175,3 +175,18 @@ TEST_CASE("Testing the update method of the Canonicalizer class with fixed varia
 //
 //    CHECK(expectedQ.isApprox(actualQ));
 }
+
+TEST_CASE("Testing rationalize method.")
+{
+    const Index m = 10;
+    const Index n = 60;
+
+    MatrixXi Anum = random<int>(m, n);
+    MatrixXi Aden = random<int>(m, n);
+    MatrixXd A = Anum.cast<double>()/Aden.cast<double>();
+
+    Canonicalizer canonicalizer(A);
+    canonicalizer.rationalize(Aden.maxCoeff() * 10);
+
+    CHECK_CANONICAL_FORM;
+}
