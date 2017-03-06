@@ -110,6 +110,7 @@ auto inverseShermanMorrison(const MatrixXd& invA, const VectorXd& D) -> MatrixXd
 /// [here](http://www.johndcook.com/blog/2010/10/20/best-rational-approximation/).
 /// @param x The real number.
 /// @param n The maximum denominator.
+/// @return A tuple containing the numerator and denominator.
 auto rationalize(double x, unsigned n) -> std::tuple<long, long>;
 
 } // namespace Optima
