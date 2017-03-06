@@ -84,6 +84,16 @@ public:
 	/// Compute the canonical matrix of the given matrix.
 	auto compute(const MatrixXd& A) -> void;
 
+	/// Rationalize the entries in the canonical form.
+	/// This method should be used if the entries in matrix \eq{A} are rational numbers and
+	/// round-off errors introduced by the canonicalization should be eliminated as much as possible.
+	/// This method will replace all entries in matrices \eq{R} and \eq{S} by the nearest rational
+	/// number. To to this, an estimate for the maximum denominator among all entries in \eq{A}
+	/// is needed. For example, one might know in advance that all entries in \eq{A} are rationals
+	/// with denominators certainly not greater than 1000.
+	/// @param maxdenominator The estimate for the maximum denominator.
+	auto rationalize(Index maxdenominator) -> void;
+
 	/// Swap a basic variable by a non-basic variable.
 	/// @param ibasic The index of the basic variable between 0 and \eq{n_\mathrm{b}}`.
 	/// @param inonbasic The index of the non-basic variable between 0 and \eq{n_\mathrm{n}}`.
