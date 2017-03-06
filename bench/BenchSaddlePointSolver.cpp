@@ -25,6 +25,7 @@ using namespace Eigen;
 
 // Optima includes
 #include <Optima/Core/SaddlePointMatrix.hpp>
+#include <Optima/Core/SaddlePointOptions.hpp>
 #include <Optima/Core/SaddlePointResult.hpp>
 #include <Optima/Core/SaddlePointSolver.hpp>
 using namespace Optima;
@@ -50,13 +51,16 @@ void benchMethodRangespaceDiagonal()
 
     SaddlePointVector rhs(r, n, m);
     SaddlePointSolution sol(s, n, m);
+    SaddlePointOptions options;
 
     SaddlePointResult res1, res2, res3, res;
 
     for(Index i = 0; i < samples; ++i)
     {
+        options.method = SaddlePointMethod::RangespaceDiagonal;
+
         SaddlePointSolver solver;
-        solver.setMethodRangespaceDiagonal();
+        solver.setOptions(options);
         res1 += solver.canonicalize(A);
         res2 += solver.decompose(lhs);
         res3 += solver.solve(rhs, sol);
@@ -156,13 +160,16 @@ void benchMethodNullspace()
 
     SaddlePointVector rhs(r, n, m);
     SaddlePointSolution sol(s, n, m);
+    SaddlePointOptions options;
 
     SaddlePointResult res1, res2, res3, res;
 
     for(Index i = 0; i < samples; ++i)
     {
+        options.method = SaddlePointMethod::Nullspace;
+
         SaddlePointSolver solver;
-        solver.setMethodNullspace();
+        solver.setOptions(options);
         res1 += solver.canonicalize(A);
         res2 += solver.decompose(lhs);
         res3 += solver.solve(rhs, sol);

@@ -27,16 +27,11 @@
 namespace Optima {
 
 // Forward declarations
-class SaddlePointMatrix;
-class SaddlePointVector;
-class SaddlePointSolution;
-class SaddlePointResult;
-
-/// Used to describe the possible methods for solving saddle point problems.
-enum class SaddlePointMethod
-{
-    PartialPivLU, FullPivLU, RangespaceDiagonal, Nullspace
-};
+class  SaddlePointMatrix;
+struct SaddlePointOptions;
+class  SaddlePointResult;
+class  SaddlePointSolution;
+class  SaddlePointVector;
 
 /// Used to solve saddle point problems.
 class SaddlePointSolver
@@ -54,39 +49,8 @@ public:
     /// Assign a SaddlePointSolver instance to this.
     auto operator=(SaddlePointSolver other) -> SaddlePointSolver&;
 
-    /// Set the saddle point method to a given one.
-    auto setMethod(SaddlePointMethod method) -> void;
-
-    /// Set the saddle point method to a *partial pivoting LU decomposition* algorithm.
-    /// This method solves the saddle point problem by applying a partial pivoting
-    /// LU decomposition to the saddle point matrix of dimension \eq{(n+m)\times(n+m)}.
-    /// This method is in general accurate enough, but less accurate than its
-    /// full pivoting counterpart. In general, it is also faster than the other methods
-    /// for problems with small dimensions and when \eq{n} is not too larger than \eq{m}.
-    /// @note This method takes no advantage of the particular structure of the saddle point matrix.
-    auto setMethodPartialPivLU() -> void;
-
-    /// Set the saddle point method to a *full pivoting LU decomposition* algorithm.
-    /// This method solves the saddle point problems by applying a
-    /// full pivoting LU decomposition to the saddle point matrix.
-    /// It is in general very accurate, but also more computationally expensive.
-    /// @note This method takes no advantage of the particular structure of the saddle point matrix.
-    auto setMethodFullPivLU() -> void;
-
-    /// Set the saddle point method to one based on a *rangespace* approach.
-    /// This method reduces the saddle point problem of dimension \eq{n + m} to
-    /// an equivalent one of dimension \eq{m}, where these dimensions are
-    /// related to the dimensions of the Hessian matrix \eq{H}, \eq{n \times n},
-    /// and Jacobian matrix \eq{A}, \eq{m \times n}.
-    /// @warning This method should only be used when the Hessian matrix is a diagonal matrix.
-    auto setMethodRangespaceDiagonal() -> void;
-
-    /// Set the saddle point method to one based on a *nullspace* approach.
-    /// This method reduces the saddle point problem of dimension \eq{n + m} to
-    /// an equivalent one of dimension \eq{n - m}, where \eq{n \times n} is the
-    /// dimension of the Hessian matrix \eq{H} and \eq{m \times n} is the
-    /// dimension of the Jacobian matrix \eq{A}.
-    auto setMethodNullspace() -> void;
+    /// Set the options for the solution of saddle point problems.
+    auto setOptions(const SaddlePointOptions& options) -> void;
 
     /// Set the saddle point method to the one that finishes in less time.
     /// This method solves the same saddle point problem many times for each
@@ -105,8 +69,8 @@ public:
     /// @param rhs The saddle point right-hand side vector of the saddle point problem.
     auto setMethodMoreAccurate(const SaddlePointMatrix& lhs, const SaddlePointVector& rhs) -> void;
 
-    /// Return the current saddle point problem method.
-    auto method() const -> SaddlePointMethod;
+    /// Return the current saddle point options.
+    auto options() const -> const SaddlePointOptions&;
 
     /// Canonicalize the coefficient matrix \eq{A} of the saddle point problem.
     /// @note This method should be called before the @ref decompose method. However, it does not

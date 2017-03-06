@@ -22,6 +22,7 @@
 
 // Optima includes
 #include <Optima/Core/SaddlePointMatrix.hpp>
+#include <Optima/Core/SaddlePointOptions.hpp>
 #include <Optima/Core/SaddlePointResult.hpp>
 #include <Optima/Core/SaddlePointSolver.hpp>
 #include <Optima/Math/Matrix.hpp>
@@ -42,8 +43,11 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointMethod method)
     SaddlePointVector rhs(r, n, m);
     SaddlePointSolution sol(s, n, m);
 
+    SaddlePointOptions options;
+    options.method = method;
+
     SaddlePointSolver solver;
-    solver.setMethod(method);
+    solver.setOptions(options);
     solver.canonicalize(lhs.A());
     solver.decompose(lhs);
     solver.solve(rhs, sol);

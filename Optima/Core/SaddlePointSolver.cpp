@@ -20,6 +20,7 @@
 // Optima includes
 #include <Optima/Common/Exception.hpp>
 #include <Optima/Core/SaddlePointMatrix.hpp>
+#include <Optima/Core/SaddlePointOptions.hpp>
 #include <Optima/Core/SaddlePointResult.hpp>
 #include <Optima/Math/Canonicalizer.hpp>
 #include <Optima/Math/EigenExtern.hpp>
@@ -32,8 +33,8 @@ struct SaddlePointSolver::Impl
     /// The canonicalizer of the Jacobian matrix *A*.
     Canonicalizer canonicalizer;
 
-    /// The method used to solve the saddle point problems
-    SaddlePointMethod method = SaddlePointMethod::PartialPivLU;
+    /// The options used to solve the saddle point problems.
+    SaddlePointOptions options;
 
     /// The number of rows and columns in the Jacobian matrix *A*
     Index m, n;
@@ -187,7 +188,7 @@ struct SaddlePointSolver::Impl
         M.topLeftCorner(nx, nx) = submatrix(lhs.H(), ivx, ivx);
 
         // Compute the LU decomposition of M.
-        if(method == SaddlePointMethod::PartialPivLU)
+        if(options.method == SaddlePointMethod::PartialPivLU)
             luxy_partial.compute(M);
         else
             luxy_full.compute(M);
@@ -245,7 +246,7 @@ struct SaddlePointSolver::Impl
 //        bx.noalias() = Rx*b - Ibf*abf - Sbnf*anf;
 
         // Compute the LU decomposition of M.
-        if(method == SaddlePointMethod::PartialPivLU)
+        if(options.method == SaddlePointMethod::PartialPivLU)
             r.noalias() = luxy_partial.solve(r);
         else
             r.noalias() = luxy_full.solve(r);
@@ -509,7 +510,7 @@ struct SaddlePointSolver::Impl
         SaddlePointResult res;
 
         // Perform the decomposition according to the chosen method
-        switch(method)
+        switch(options.method)
         {
         case SaddlePointMethod::PartialPivLU:
         case SaddlePointMethod::FullPivLU:
@@ -530,7 +531,7 @@ struct SaddlePointSolver::Impl
         SaddlePointResult res;
 
         // Perform the solution according to the chosen method
-        switch(method)
+        switch(options.method)
         {
         case SaddlePointMethod::PartialPivLU:
         case SaddlePointMethod::FullPivLU:
@@ -580,29 +581,9 @@ auto SaddlePointSolver::operator=(SaddlePointSolver other) -> SaddlePointSolver&
     return *this;
 }
 
-auto SaddlePointSolver::setMethod(SaddlePointMethod method) -> void
+auto SaddlePointSolver::setOptions(const SaddlePointOptions& options) -> void
 {
-    pimpl->method = method;
-}
-
-auto SaddlePointSolver::setMethodPartialPivLU() -> void
-{
-    setMethod(SaddlePointMethod::PartialPivLU);
-}
-
-auto SaddlePointSolver::setMethodFullPivLU() -> void
-{
-    setMethod(SaddlePointMethod::FullPivLU);
-}
-
-auto SaddlePointSolver::setMethodRangespaceDiagonal() -> void
-{
-    setMethod(SaddlePointMethod::RangespaceDiagonal);
-}
-
-auto SaddlePointSolver::setMethodNullspace() -> void
-{
-    setMethod(SaddlePointMethod::Nullspace);
+    pimpl->options = options;
 }
 
 auto SaddlePointSolver::setMethodMoreEfficient(Index n, Index m) -> void
@@ -613,9 +594,9 @@ auto SaddlePointSolver::setMethodMoreAccurate(const SaddlePointMatrix& lhs, cons
 {
 }
 
-auto SaddlePointSolver::method() const -> SaddlePointMethod
+auto SaddlePointSolver::options() const -> const SaddlePointOptions&
 {
-    return pimpl->method;
+    return pimpl->options;
 }
 
 auto SaddlePointSolver::canonicalize(const MatrixXd& A) -> SaddlePointResult
