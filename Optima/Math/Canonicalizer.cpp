@@ -17,8 +17,10 @@
 
 #include "Canonicalizer.hpp"
 
-// Eigen includes
-#include <Optima/Common/Exception.hpp>
+// C++ includes
+#include <cassert>
+
+// Optima includes
 #include <Optima/Math/EigenExtern.hpp>
 #include <Optima/Math/Utils.hpp>
 using namespace Eigen;
@@ -62,7 +64,7 @@ struct Canonicalizer::Impl
 	    const Index n = A.cols();
 
 	    // Check if number of columns is greater/equal than number of rows
-	    Assert(n >= m, "Could not canonicalize the given matrix.",
+	    assert(n >= m && "Could not canonicalize the given matrix. "
 	        "The given matrix has more rows than columns.");
 
 	    // Compute the full-pivoting LU of A so that P*A*Q = L*U
@@ -95,15 +97,15 @@ struct Canonicalizer::Impl
 	    Kn.setIdentity(n - r);
 
 	    // Initialize the threshold value
-	    threshold = std::abs(lu.maxPivot()) * lu.threshold();
+	    threshold = std::abs(lu.maxPivot()) * lu.threshold() * std::max(A.rows(), A.cols());
 	}
 
     /// Swap a basic variable by a non-basic variable.
 	auto swapBasicVariable(Index ib, Index in) -> void
 	{
 	    // Check if S(ib, in) is different than zero
-	    Assert(std::abs(S(ib, in)) > threshold,
-	        "Could not swap basic and non-basic variables.",
+	    assert(std::abs(S(ib, in)) > threshold &&
+	        "Could not swap basic and non-basic variables. "
 	            "Expecting a non-basic variable with non-zero pivot.");
 
 	    // Initialize the matrix M
