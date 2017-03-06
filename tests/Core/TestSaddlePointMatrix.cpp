@@ -47,6 +47,7 @@ TEST_CASE("Testing SaddlePointMatrix...")
         SaddlePointMatrix mat(H, A, fixed);
 
         M.row(1).fill(0.0);
+        M.col(1).topRows(3).fill(0.0);
         M(1, 1) = 1.0;
 
         // Check conversion to a Matrix instance
