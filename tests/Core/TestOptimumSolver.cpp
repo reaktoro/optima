@@ -22,7 +22,7 @@
 #include <Optima/Core/OptimumParams.hpp>
 #include <Optima/Core/OptimumProblem.hpp>
 #include <Optima/Core/OptimumResult.hpp>
-#include <Optima/Core/OptimumSolverIpNewton.hpp>
+#include <Optima/Core/OptimumSolver.hpp>
 #include <Optima/Core/OptimumState.hpp>
 #include <Optima/Core/OptimumStructure.hpp>
 #include <Optima/Math/Matrix.hpp>
@@ -51,7 +51,7 @@ TEST_CASE("Testing OptimumSolver")
 
     OptimumState state;
 
-    OptimumSolverIpNewton solver;
+    OptimumSolver solver;
     solver.initialize(structure);
     solver.solve(params, state);
 

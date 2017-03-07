@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include "OptimumSolverIpNewton.hpp"
+#include "OptimumSolver.hpp"
 
 // Optima includes
 #include <Optima/Common/Exception.hpp>
@@ -42,7 +42,7 @@ auto isfinite(const ObjectiveState& f) -> bool
 
 } // namespace
 
-struct OptimumSolverIpNewton::Impl
+struct OptimumSolver::Impl
 {
     /// The structure of the optimization problem
     OptimumStructure structure;
@@ -848,45 +848,45 @@ struct OptimumSolverIpNewton::Impl
     }
 };
 
-OptimumSolverIpNewton::OptimumSolverIpNewton()
+OptimumSolver::OptimumSolver()
 : pimpl(new Impl())
 {}
 
-OptimumSolverIpNewton::OptimumSolverIpNewton(const OptimumSolverIpNewton& other)
+OptimumSolver::OptimumSolver(const OptimumSolver& other)
 : pimpl(new Impl(*other.pimpl))
 {}
 
-OptimumSolverIpNewton::~OptimumSolverIpNewton()
+OptimumSolver::~OptimumSolver()
 {}
 
-auto OptimumSolverIpNewton::operator=(OptimumSolverIpNewton other) -> OptimumSolverIpNewton&
+auto OptimumSolver::operator=(OptimumSolver other) -> OptimumSolver&
 {
     pimpl = std::move(other.pimpl);
     return *this;
 }
 
-auto OptimumSolverIpNewton::setOptions(const OptimumOptions& options) -> void
+auto OptimumSolver::setOptions(const OptimumOptions& options) -> void
 {
     pimpl->options = options;
 }
 
-auto OptimumSolverIpNewton::initialize(const OptimumStructure& structure) -> void
+auto OptimumSolver::initialize(const OptimumStructure& structure) -> void
 {
     pimpl->initialize(structure);
 }
 
-auto OptimumSolverIpNewton::solve(const OptimumParams& params, OptimumState& state) -> OptimumResult
+auto OptimumSolver::solve(const OptimumParams& params, OptimumState& state) -> OptimumResult
 {
     return pimpl->solve(params, state);
 }
 
-auto OptimumSolverIpNewton::solve(const OptimumProblem& problem, OptimumState& state) -> OptimumResult
+auto OptimumSolver::solve(const OptimumProblem& problem, OptimumState& state) -> OptimumResult
 {
     pimpl->initialize(problem);
     return pimpl->solve(problem, state);
 }
 
-auto OptimumSolverIpNewton::dxdp(VectorXdConstRef dgdp, VectorXdConstRef dbdp) -> VectorXd
+auto OptimumSolver::dxdp(VectorXdConstRef dgdp, VectorXdConstRef dbdp) -> VectorXd
 {
     return pimpl->dxdp(dgdp, dbdp);
 }

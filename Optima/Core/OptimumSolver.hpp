@@ -34,20 +34,20 @@ struct OptimumState;
 struct OptimumStructure;
 
 /// The class that implements the IpNewton algorithm using an interior-point method.
-class OptimumSolverIpNewton
+class OptimumSolver
 {
 public:
-    /// Construct a default OptimumSolverIpNewton instance.
-    OptimumSolverIpNewton();
+    /// Construct a default OptimumSolver instance.
+    OptimumSolver();
 
-    /// Construct a copy of an OptimumSolverIpNewton instance.
-    OptimumSolverIpNewton(const OptimumSolverIpNewton& other);
+    /// Construct a copy of an OptimumSolver instance.
+    OptimumSolver(const OptimumSolver& other);
 
-    /// Destroy this OptimumSolverIpNewton instance.
-    virtual ~OptimumSolverIpNewton();
+    /// Destroy this OptimumSolver instance.
+    virtual ~OptimumSolver();
 
-    /// Assign an OptimumSolverIpNewton instance to this.
-    auto operator=(OptimumSolverIpNewton other) -> OptimumSolverIpNewton&;
+    /// Assign an OptimumSolver instance to this.
+    auto operator=(OptimumSolver other) -> OptimumSolver&;
 
     /// Set the options for the optimization calculation.
     auto setOptions(const OptimumOptions& options) -> void;
