@@ -147,6 +147,11 @@ struct Canonicalizer::Impl
     /// Update the existing canonical form with given priority weights for the columns.
 	auto update(const VectorXd& w) -> void
 	{
+	    // Assert there are as many weights as there are variables
+	    assert(w.rows() == lu.cols() &&
+	        "Could not update the canonical form."
+	            "Mismatch number of variables and given priority weights.");
+
 	    // The rank and number of columns of matrix A
 	    const Index r = lu.rank();
 	    const Index n = lu.cols();
