@@ -71,6 +71,15 @@ struct OptimumSolver::Impl
     /// The options for the optimization calculation
     OptimumOptions options;
 
+    /// The indices of the variables describing their order x = [x(stable) x(unstable) x(fixed)].
+    VectorXi iordering;
+
+    /// The number of variables
+    Index n;
+
+    /// The number of stable, unstable, free, and fixed variables
+    Index ns, nu, nx, nf;
+
     /// Initialize the optimization solver with the structure of the problem.
     auto initialize(const OptimumStructure& strct) -> void
     {
@@ -79,6 +88,20 @@ struct OptimumSolver::Impl
 
         // Initialize the saddle point solver
         kkt.canonicalize(structure.A);
+
+        // Initialize the members related to number of variables
+        n  = structure.n;
+        ns = n;
+        nu = 0;
+        nx = n;
+        nf = 0;
+
+        // Allocate memory to x(trial) and H matrix
+        xtrial.resize(n);
+        H.resize(n, n);
+
+        // Allocate memory for the indices of the unstable variables
+        iordering = linspace<int>(n);
     }
 
     auto solve(const OptimumParams& params, OptimumState& state) -> OptimumResult
@@ -90,7 +113,7 @@ struct OptimumSolver::Impl
         OptimumResult result;
 
         // Finish the calculation if the problem has no variable
-        if(structure.n == 0)
+        if(n == 0)
         {
             state = {};
             result.succeeded = true;
@@ -102,8 +125,8 @@ struct OptimumSolver::Impl
         outputter = Outputter();
         outputter.setOptions(options.output);
 
-        // Set the KKT options
-//        kkt.setOptions(options.kkt);
+        // Set the options for the KKT solver
+        kkt.setOptions(options.kkt);
 
         // Define some auxiliary references to variables
         auto& x = state.x;
@@ -113,14 +136,19 @@ struct OptimumSolver::Impl
         // The number of variables and equality constraints
         const auto& A = structure.A;
         const auto& a = params.a;
-        const auto& n = structure.n;
         const auto& m = A.rows();
 
-        SaddlePointMatrix lhs(H, A, params.ifixed);
+        // Initialize the H matrix with zeros
+        H = zeros(n, n);
 
-        SaddlePointVector rhs(rx, ry);
+        nf = params.ifixed.size();
+        nx = n - nf;
 
-        SaddlePointSolution sol(dx, dy);
+        // Allocate memory for the ordering of the variables
+        iordering = linspace<int>(n);
+
+        for(Index i = 0; i < nf; ++i)
+            std::swap(iordering[n - nf + i], iordering[params.ifixed[i]]);
 
         // Define auxiliary references to general options
         const auto tol = options.tolerance;
@@ -148,9 +176,9 @@ struct OptimumSolver::Impl
 //        delta = delta ? delta : mu;
 
         // Ensure the initial guesses for `x` and `y` have adequate dimensions
-        if(x.size() != n) x = Eigen::zeros(n);
-        if(y.size() != m) y = Eigen::zeros(m);
-        if(z.size() != n) z = Eigen::zeros(n);
+        if(x.size() != n) x = zeros(n);
+        if(y.size() != m) y = zeros(m);
+        if(z.size() != n) z = zeros(n);
 
         // Ensure the initial guesses for `x` and `z` are inside the feasible domain
         x = (x.array() > 0.0).select(x, mu);
@@ -186,7 +214,7 @@ struct OptimumSolver::Impl
             outputter.addValues(x);
             outputter.addValues(y);
             outputter.addValues(z);
-            outputter.addValues(Eigen::abs(rx));
+            outputter.addValues(abs(rx));
             outputter.addValue(f.val);
             outputter.addValue(error);
             outputter.addValue(errorf);
@@ -204,7 +232,7 @@ struct OptimumSolver::Impl
             outputter.addValues(x);
             outputter.addValues(y);
             outputter.addValues(z);
-            outputter.addValues(Eigen::abs(rx));
+            outputter.addValues(abs(rx));
             outputter.addValue(f.val);
             outputter.addValue(error);
             outputter.addValue(errorf);
@@ -237,13 +265,10 @@ struct OptimumSolver::Impl
         // The function that initialize the state of some variables
         auto initialize = [&]()
         {
-            // Initialize xtrial
-            xtrial.resize(n);
-
-            H = zeros(n, n);
-
             // Evaluate the objective function
-            f.requires = {};
+            f.requires.val = true;
+            f.requires.grad = true;
+            f.requires.hessian = true;
             structure.objective(x, f);
 
             // Update the residuals of the calculation
@@ -253,16 +278,29 @@ struct OptimumSolver::Impl
         // The function that computes the Newton step
         auto compute_newton_step = [&]()
         {
+            // Sort the variables according to stability
+            std::sort(iordering.data(), iordering.data() + nx,
+                [&](Index l, Index r) { return x[l] > mu; });
+
+            // Count how many stable variables there are
+            nu = 0; while(x[iordering[nx - nu - 1]] > mu) ++nu;
+
+            // Update the number of stable variables
+            ns = nx - nu;
+
+//            auto fixed = iordering.tail(nf + nu);
+
+            // Assemble the matrix H in the KKT equation
             if(f.hessian.size())
                 H.noalias() = f.hessian;
-
             H.diagonal() += x % z;
 
             // Update the decomposition of the KKT matrix with update Hessian matrix
-            kkt.decompose(lhs);
+            kkt.decompose({H, A});
 
             // Compute `dx`, `dy`, `dz` by solving the KKT equation
-            auto res = kkt.solve(rhs, sol);
+//            auto res = kkt.solve(rhs, sol);
+            auto res = kkt.solve({rx, ry}, {dx, dy});
 
             // Update the time spent in linear systems
             result.time_linear_systems += res.time();
