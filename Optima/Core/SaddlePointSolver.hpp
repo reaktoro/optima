@@ -88,7 +88,7 @@ public:
     /// @note This method expects that a call to method @ref decompose has already been performed.
     /// @param rhs The right-hand side vector of the saddle point problem.
     /// @param sol The solution of the saddle point problem.
-    auto solve(const SaddlePointVector& rhs, SaddlePointSolution& sol) -> SaddlePointResult;
+    auto solve(SaddlePointVector rhs, SaddlePointSolution sol) -> SaddlePointResult;
 
     /// Solve the saddle point problem.
     /// @note This method solves the saddle point problem without exploring
@@ -96,7 +96,7 @@ public:
     /// @param lhs The left-hand side matrix of the saddle point problem.
     /// @param rhs The right-hand side vector of the saddle point problem.
     /// @param sol The solution of the saddle point problem.
-    auto solve(const SaddlePointMatrix& lhs, const SaddlePointVector& rhs, SaddlePointSolution& sol) -> SaddlePointResult;
+    auto solve(SaddlePointMatrix lhs, SaddlePointVector rhs, SaddlePointSolution sol) -> SaddlePointResult;
 
 private:
     struct Impl;

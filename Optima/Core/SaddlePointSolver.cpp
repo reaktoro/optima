@@ -613,12 +613,12 @@ auto SaddlePointSolver::decompose(const SaddlePointMatrix& lhs) -> SaddlePointRe
     return pimpl->decompose(lhs);
 }
 
-auto SaddlePointSolver::solve(const SaddlePointVector& rhs, SaddlePointSolution& sol) -> SaddlePointResult
+auto SaddlePointSolver::solve(SaddlePointVector rhs, SaddlePointSolution sol) -> SaddlePointResult
 {
     return pimpl->solve(rhs, sol);
 }
 
-auto SaddlePointSolver::solve(const SaddlePointMatrix& lhs, const SaddlePointVector& rhs, SaddlePointSolution& sol) -> SaddlePointResult
+auto SaddlePointSolver::solve(SaddlePointMatrix lhs, SaddlePointVector rhs, SaddlePointSolution sol) -> SaddlePointResult
 {
     return pimpl->solve(lhs, rhs, sol);
 }
