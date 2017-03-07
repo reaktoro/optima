@@ -39,11 +39,8 @@ namespace Optima {
 class SaddlePointMatrix
 {
 public:
-    /// Construct a SaddlePointMatrix instance with given Hessian and Jacobian matrices.
-    SaddlePointMatrix(MatrixXdConstRef H, MatrixXdConstRef A);
-
     /// Construct a SaddlePointMatrix instance with given Hessian and Jacobian matrices, and indices of fixed variables.
-    SaddlePointMatrix(MatrixXdConstRef H, MatrixXdConstRef A, const Indices& fixed);
+    SaddlePointMatrix(MatrixXdConstRef H, MatrixXdConstRef A, VectorXiConstRef fixed);
 
     /// Return the dimension of the saddle point mathrm.
     auto dim() const -> Index;
@@ -55,7 +52,7 @@ public:
     auto A() const -> MatrixXdConstRef;
 
     /// Return the indices of the fixed variables.
-    auto fixed() const -> const Indices&;
+    auto fixed() const -> VectorXiConstRef;
 
     /// Convert this SaddlePointMatrix instance into a Matrix instance.
     auto matrix() const -> MatrixXd;
@@ -68,7 +65,7 @@ private:
     MatrixXdConstRef m_A;
 
     /// The indices of the fixed variables.
-    Optional<Indices> m_fixed;
+    VectorXiConstRef m_fixed;
 };
 
 /// A type used to describe a saddle point right-hand side vector.

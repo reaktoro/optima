@@ -42,8 +42,9 @@ void benchMethodRangespaceDiagonal()
 
     MatrixXd A = random(m, n);
     MatrixXd H = diag(random(n));
+    VectorXi ifixed;
 
-    SaddlePointMatrix lhs(H, A);
+    SaddlePointMatrix lhs(H, A, ifixed);
 
     MatrixXd M = lhs.matrix();
     VectorXd r = M * expected;
@@ -151,8 +152,9 @@ void benchMethodNullspace()
     MatrixXd H = random(n, n);
     H.diagonal().head(m)   *= 1e-2;
     H.diagonal().tail(n-m) *= 1e+5;
+    VectorXi ifixed;
 
-    SaddlePointMatrix lhs(H, A);
+    SaddlePointMatrix lhs(H, A, ifixed);
 
     MatrixXd M = lhs.matrix();
     VectorXd r = M * expected;

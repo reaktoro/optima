@@ -90,19 +90,20 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
 
     MatrixXd A = random(m, n);
     MatrixXd H = random(n, n);
+    VectorXi ifixed;
 
     SaddlePointOptions options;
 
     SUBCASE("When there are no fixed variables")
     {
-        SaddlePointMatrix lhs(H, A);
+        SaddlePointMatrix lhs(H, A, ifixed);
 
         TEST_SADDLE_POINT_SOLVER(options);
     }
 
     SUBCASE("When there are fixed variables")
     {
-        Indices ifixed = {0, 10, 20, 30, 40, 50};
+        ifixed = {0, 10, 20, 30, 40, 50};
 
         SaddlePointMatrix lhs(H, A, ifixed);
 
@@ -114,11 +115,11 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
         // Modify matrix A so that its first row has zeros for all non-positive entries.
         // Set the fixed variables as the variables that have such entries positive.
         // This results in a submatrix for the free variables with the first row zero.
-        Indices ifixed;
-        for(Index i = 0; i < n; ++i)
-            if(A(0, i) <= 0) A(0, i) = 0.0;
-            else ifixed.push_back(i);
+        ifixed = linspace<int>(n/2);
+        A.row(0).rightCols(n/2).fill(0.0);
 
+        std::cout << "A = \n" << A << std::endl;
+        std::cout << "A(nonfixed) = \n" << A.rightCols(n/2) << std::endl;
         SaddlePointMatrix lhs(H, A, ifixed);
 
         TEST_SADDLE_POINT_SOLVER(options);
@@ -129,10 +130,8 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
         // Modify matrix A so that its first row has zeros for all non-positive entries.
         // Set the fixed variables as the variables that have such entries positive.
         // This results in a submatrix for the free variables with the first row zero.
-        Indices ifixed;
-        for(Index i = 0; i < n; ++i)
-            if(A(0, i) <= 0) A(0, i) = 0.0;
-            else ifixed.push_back(i);
+        ifixed = linspace<int>(n/2);
+        A.row(0).rightCols(n/2).fill(0.0);
 
         // Set the 3rd row of A as the 2nd row
         A.row(2) = A.row(1);

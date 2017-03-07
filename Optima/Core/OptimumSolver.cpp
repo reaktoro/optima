@@ -295,8 +295,10 @@ struct OptimumSolver::Impl
                 H.noalias() = f.hessian;
             H.diagonal() += x % z;
 
+            auto ifixed = iordering.tail(nf + nu);
+
             // Update the decomposition of the KKT matrix with update Hessian matrix
-            kkt.decompose({H, A});
+            kkt.decompose({H, A, ifixed});
 
             // Compute `dx`, `dy`, `dz` by solving the KKT equation
 //            auto res = kkt.solve(rhs, sol);

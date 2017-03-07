@@ -26,8 +26,9 @@ TEST_CASE("Testing SaddlePointMatrix...")
 {
     MatrixXd H = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};
     MatrixXd A = {{1, 2, 3}, {3, 4, 5}};
+    VectorXi ifixed;
 
-    SaddlePointMatrix mat(H, A);
+    SaddlePointMatrix mat(H, A, ifixed);
 
     MatrixXd M = {
 		{1,  2,  3, 1, 3},
@@ -42,9 +43,9 @@ TEST_CASE("Testing SaddlePointMatrix...")
 
     SUBCASE("Testing conversion when some variables are fixed")
     {
-        Indices fixed = {1};
+        ifixed = {1};
 
-        SaddlePointMatrix mat(H, A, fixed);
+        SaddlePointMatrix mat(H, A, ifixed);
 
         M.row(1).fill(0.0);
         M.col(1).topRows(3).fill(0.0);
