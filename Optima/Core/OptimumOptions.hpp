@@ -18,11 +18,12 @@
 #pragma once
 
 // C++ includes
-#include <vector>
 #include <string>
+#include <vector>
 
 // Optima includes
 #include <Optima/Common/Outputter.hpp>
+#include <Optima/Core/SaddlePointOptions.hpp>
 
 namespace Optima {
 
@@ -101,6 +102,9 @@ struct OptimumOptions
 
     /// The step mode for the Newton updates.
     StepMode step = Aggressive;
+
+    /// The options for the solution of the KKT equations.
+    SaddlePointOptions kkt;
 };
 
 } // namespace Optima
