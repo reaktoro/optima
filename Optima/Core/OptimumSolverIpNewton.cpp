@@ -30,6 +30,7 @@
 #include <Optima/Core/SaddlePointResult.hpp>
 #include <Optima/Core/SaddlePointSolver.hpp>
 #include <Optima/Math/Utils.hpp>
+using namespace Eigen;
 
 namespace Optima {
 namespace {
@@ -78,6 +79,378 @@ struct OptimumSolverIpNewton::Impl
 
         // Initialize the saddle point solver
         kkt.canonicalize(structure.A);
+    }
+
+    auto solve(const OptimumParams& params, OptimumState& state) -> OptimumResult
+    {
+        // Start timing the calculation
+        Time begin = time();
+
+        // The result of the calculation
+        OptimumResult result;
+
+        // Finish the calculation if the problem has no variable
+        if(structure.n == 0)
+        {
+            state = {};
+            result.succeeded = true;
+            result.time = elapsed(begin);
+            return result;
+        }
+
+        // Initialize the outputter instance
+        outputter = Outputter();
+        outputter.setOptions(options.output);
+
+        // Set the KKT options
+//        kkt.setOptions(options.kkt);
+
+        // Define some auxiliary references to variables
+        auto& x = state.x;
+        auto& y = state.y;
+        auto& z = state.z;
+
+        // The number of variables and equality constraints
+        const auto& A = structure.A;
+        const auto& a = params.a;
+        const auto& n = structure.n;
+        const auto& m = A.rows();
+
+        SaddlePointMatrix lhs(H, A, params.ifixed);
+
+        SaddlePointVector rhs(rx, ry);
+
+        SaddlePointSolution sol(dx, dy);
+
+        // Define auxiliary references to general options
+        const auto tol = options.tolerance;
+        const auto tolx = options.tolerancex;
+        const auto maxiters = options.max_iterations;
+
+        // Define some auxiliary references to IpNewton parameters
+        const auto mu = options.mu;
+        const auto tau = options.tau;
+
+        // Define some auxiliary references to result variables
+        auto& error = result.error;
+        auto& iterations = result.iterations;
+        auto& succeeded = result.succeeded = false;
+
+        // The regularization parameters delta and gamma
+//        auto gamma = options.regularization.gamma;
+//        auto delta = options.regularization.delta;
+
+        // Set gamma and delta to mu in case they are zero
+        // This provides even further regularization to the problem,
+        // as non-zero gamma and delta prevent unbounded primal and dual
+        // variables x and y respectively.
+//        gamma = gamma ? gamma : mu;
+//        delta = delta ? delta : mu;
+
+        // Ensure the initial guesses for `x` and `y` have adequate dimensions
+        if(x.size() != n) x = Eigen::zeros(n);
+        if(y.size() != m) y = Eigen::zeros(m);
+        if(z.size() != n) z = Eigen::zeros(n);
+
+        // Ensure the initial guesses for `x` and `z` are inside the feasible domain
+        x = (x.array() > 0.0).select(x, mu);
+        z = (z.array() > 0.0).select(z, 1.0);
+
+        // The transpose representation of matrix `A`
+        const auto At = tr(A);
+
+        // The KKT matrix
+//        KktMatrix lhs(f.hessian, A, x, z, gamma, delta);
+
+        // The optimality, feasibility, centrality and total error variables
+        double errorf, errorh, errorc;
+
+        // The function that outputs the header and initial state of the solution
+        auto output_initial_state = [&]()
+        {
+            if(!options.output.active) return;
+
+            outputter.addEntry("Iteration");
+            outputter.addEntries(options.output.xprefix, n, options.output.xnames);
+            outputter.addEntries(options.output.yprefix, m, options.output.ynames);
+            outputter.addEntries(options.output.zprefix, n, options.output.znames);
+            outputter.addEntries("r", n, options.output.xnames);
+            outputter.addEntry("f(x)");
+            outputter.addEntry("Error");
+            outputter.addEntry("Optimality");
+            outputter.addEntry("Feasibility");
+            outputter.addEntry("Centrality");
+
+            outputter.outputHeader();
+            outputter.addValue(iterations);
+            outputter.addValues(x);
+            outputter.addValues(y);
+            outputter.addValues(z);
+            outputter.addValues(Eigen::abs(rx));
+            outputter.addValue(f.val);
+            outputter.addValue(error);
+            outputter.addValue(errorf);
+            outputter.addValue(errorh);
+            outputter.addValue(errorc);
+            outputter.outputState();
+        };
+
+        // The function that outputs the current state of the solution
+        auto output_state = [&]()
+        {
+            if(!options.output.active) return;
+
+            outputter.addValue(iterations);
+            outputter.addValues(x);
+            outputter.addValues(y);
+            outputter.addValues(z);
+            outputter.addValues(Eigen::abs(rx));
+            outputter.addValue(f.val);
+            outputter.addValue(error);
+            outputter.addValue(errorf);
+            outputter.addValue(errorh);
+            outputter.addValue(errorc);
+            outputter.outputState();
+        };
+
+        // Return true if the result of a calculation failed
+        auto failed = [&](bool succeeded)
+        {
+            return !succeeded;
+        };
+
+        // The function that computes the current error norms
+        auto update_residuals = [&]()
+        {
+            // Compute the right-hand side vectors of the KKT equation
+            rx.noalias() = -(f.grad - At*y - z);
+            ry.noalias() = -(A*x - a);
+            rz.noalias() = -(x % z - mu);
+
+            // Calculate the optimality, feasibility and centrality errors
+            errorf = norminf(rx);
+            errorh = norminf(ry);
+            errorc = norminf(rz);
+            error = std::max({errorf, errorh, errorc});
+        };
+
+        // The function that initialize the state of some variables
+        auto initialize = [&]()
+        {
+            // Initialize xtrial
+            xtrial.resize(n);
+
+            H = zeros(n, n);
+
+            // Evaluate the objective function
+            f.requires = {};
+            structure.objective(x, f);
+
+            // Update the residuals of the calculation
+            update_residuals();
+        };
+
+        // The function that computes the Newton step
+        auto compute_newton_step = [&]()
+        {
+            if(f.hessian.size())
+                H.noalias() = f.hessian;
+
+            H.diagonal() += x % z;
+
+            // Update the decomposition of the KKT matrix with update Hessian matrix
+            kkt.decompose(lhs);
+
+            // Compute `dx`, `dy`, `dz` by solving the KKT equation
+            auto res = kkt.solve(rhs, sol);
+
+            // Update the time spent in linear systems
+            result.time_linear_systems += res.time();
+
+//            // Perform emergency Newton step calculation as long as steps contains NaN or INF values
+//            while(!kkt.result().succeeded)
+//            {
+//                // Increase the value of the regularization parameter delta
+//                delta = std::max(delta * 100, 1e-8);
+//
+//                // Return false if the calculation did not succeeded
+//                if(delta > 1e-2) return false;
+//
+//                // Update the residual of the feasibility conditition
+//                rhs.ry -= -delta*delta*y;
+//
+//                // Update the decomposition of the KKT matrix with update Hessian matrix
+//                kkt.decompose(lhs);
+//
+//                // Compute `dx`, `dy`, `dz` by solving the KKT equation
+//                kkt.solve(rhs, sol);
+//
+//                // Update the time spent in linear systems
+//                result.time_linear_systems += kkt.result().time_solve;
+//                result.time_linear_systems += kkt.result().time_decompose;
+//            }
+
+            // Return true if he calculation succeeded
+            return true;
+        };
+
+        // The aggressive mode for updating the iterates
+        auto update_iterates_aggressive = [&]()
+        {
+            // Calculate the current trial iterate for x
+            for(int i = 0; i < n; ++i)
+                xtrial[i] = (x[i] + dx[i] > 0.0) ?
+                    x[i] + dx[i] : x[i]*(1.0 - tau);
+
+            // Evaluate the objective function at the trial iterate
+            f.requires.val = true;
+            f.requires.grad = false;
+            f.requires.hessian = false;
+            structure.objective(xtrial, f);
+
+            // Initialize the step length factor
+            double alpha = fractionToTheBoundary(x, dx, tau);
+
+            // The number of tentatives to find a trial iterate that results in finite objective result
+            unsigned tentatives = 0;
+
+            // Repeat until f(xtrial) is finite
+            while(!isfinite(f) && ++tentatives < 10)
+            {
+                // Calculate a new trial iterate using a smaller step length
+                xtrial = x + alpha * dx;
+
+                // Evaluate the objective function at the trial iterate
+                f.requires.val = true;
+				f.requires.grad = false;
+				f.requires.hessian = false;
+                structure.objective(xtrial, f);
+
+                // Decrease the current step length
+                alpha *= 0.5;
+            }
+
+            // Return false if xtrial could not be found s.t. f(xtrial) is finite
+            if(tentatives == 10)
+                return false;
+
+            // Update the iterate x from xtrial
+            x = xtrial;
+
+            // Update the gradient and Hessian at x
+            f.requires.val = false;
+			f.requires.grad = true;
+			f.requires.hessian = true;
+            structure.objective(x, f);
+
+            // Update the z-Lagrange multipliers
+            for(int i = 0; i < n; ++i)
+                z[i] += (z[i] + dz[i] > 0.0) ?
+                    dz[i] : -tau * z[i];
+
+            // Update the y-Lagrange multipliers
+            y += dy;
+
+            // Return true as found xtrial results in finite f(xtrial)
+            return true;
+        };
+
+        // The conservative mode for updating the iterates
+        auto update_iterates_convervative = [&]()
+        {
+            // Initialize the step length factor
+            double alphax = fractionToTheBoundary(x, dx, tau);
+            double alphaz = fractionToTheBoundary(z, dz, tau);
+            double alpha = alphax;
+
+            // The number of tentatives to find a trial iterate that results in finite objective result
+            unsigned tentatives = 0;
+
+            // Repeat until a suitable xtrial iterate if found such that f(xtrial) is finite
+            for(; tentatives < 10; ++tentatives)
+            {
+                // Calculate the current trial iterate for x
+                xtrial = x + alpha * dx;
+
+                // Evaluate the objective function at the trial iterate
+                f.requires.val = true;
+    			f.requires.grad = false;
+    			f.requires.hessian = false;
+                structure.objective(xtrial, f);
+
+                // Leave the loop if f(xtrial) is finite
+                if(isfinite(f))
+                    break;
+
+                // Decrease alpha in a hope that a shorter step results f(xtrial) finite
+                alpha *= 0.01;
+            }
+
+            // Return false if xtrial could not be found s.t. f(xtrial) is finite
+            if(tentatives == 10)
+                return false;
+
+            // Update the iterate x from xtrial
+            x = xtrial;
+
+            // Update the z-Lagrange multipliers
+            z += alphaz * dz;
+
+            // Update the y-Lagrange multipliers
+            y += dy;
+
+            // Update the gradient and Hessian at x
+            f.requires.val = false;
+			f.requires.grad = true;
+			f.requires.hessian = true;
+            structure.objective(x, f);
+
+            // Return true as found xtrial results in finite f(xtrial)
+            return true;
+        };
+
+        // The function that performs an update in the iterates
+        auto update_iterates = [&]()
+        {
+            switch(options.step)
+            {
+            case Aggressive: return update_iterates_aggressive();
+            default: return update_iterates_convervative();
+            }
+        };
+
+        auto converged = [&]()
+        {
+            // Check if the calculation should stop based on max variation of x
+            if(tolx && max(abs(dx)) < tolx)
+                return true;
+
+            // Check if the calculation should stop based on optimality condititions
+            return error < tol;
+        };
+
+        initialize();
+        output_initial_state();
+
+        for(iterations = 1; iterations <= maxiters && !succeeded; ++iterations)
+        {
+            if(failed(compute_newton_step()))
+                break;
+            if(failed(update_iterates()))
+                break;
+            if((succeeded = converged()))
+                break;
+            update_residuals();
+            output_state();
+        }
+
+        // Output a final header
+        outputter.outputHeader();
+
+        // Finish timing the calculation
+        result.time = elapsed(begin);
+
+        return result;
     }
 
     /// Solve the optimization problem.
@@ -311,8 +684,8 @@ struct OptimumSolverIpNewton::Impl
 //
 //                // Evaluate the objective function at the trial iterate
 //                f.requires.val = true;
-//				f.requires.grad = false;
-//				f.requires.hessian = false;
+//              f.requires.grad = false;
+//              f.requires.hessian = false;
 //                structure.objective(xtrial, f);
 //
 //                // Decrease the current step length
@@ -328,8 +701,8 @@ struct OptimumSolverIpNewton::Impl
 //
 //            // Update the gradient and Hessian at x
 //            f.requires.val = false;
-//			f.requires.grad = true;
-//			f.requires.hessian = true;
+//          f.requires.grad = true;
+//          f.requires.hessian = true;
 //            structure.objective(x, f);
 //
 //            // Update the z-Lagrange multipliers
@@ -363,8 +736,8 @@ struct OptimumSolverIpNewton::Impl
 //
 //                // Evaluate the objective function at the trial iterate
 //                f.requires.val = true;
-//    			f.requires.grad = false;
-//    			f.requires.hessian = false;
+//              f.requires.grad = false;
+//              f.requires.hessian = false;
 //                structure.objective(xtrial, f);
 //
 //                // Leave the loop if f(xtrial) is finite
@@ -390,8 +763,8 @@ struct OptimumSolverIpNewton::Impl
 //
 //            // Update the gradient and Hessian at x
 //            f.requires.val = false;
-//			f.requires.grad = true;
-//			f.requires.hessian = true;
+//          f.requires.grad = true;
+//          f.requires.hessian = true;
 //            structure.objective(x, f);
 //
 //            // Return true as found xtrial results in finite f(xtrial)
@@ -456,371 +829,6 @@ struct OptimumSolverIpNewton::Impl
 //        // Return the calculated sensitivity vector
 //        return dx;
 //    }
-
-    auto solve(const OptimumParams& params, OptimumState& state) -> OptimumResult
-    {
-        // Start timing the calculation
-        Time begin = time();
-
-        // The result of the calculation
-        OptimumResult result;
-
-        // Finish the calculation if the problem has no variable
-        if(structure.n == 0)
-        {
-            state = {};
-            result.succeeded = true;
-            result.time = elapsed(begin);
-            return result;
-        }
-
-        // Initialize the outputter instance
-        outputter = Outputter();
-        outputter.setOptions(options.output);
-
-        // Set the KKT options
-//        kkt.setOptions(options.kkt);
-
-        // Define some auxiliary references to variables
-        auto& x = state.x;
-        auto& y = state.y;
-        auto& z = state.z;
-
-        // The number of variables and equality constraints
-        const auto& A = structure.A;
-        const auto& a = params.a;
-        const auto& n = structure.n;
-        const auto& m = A.rows();
-
-        SaddlePointMatrix lhs(H, A, params.ifixed);
-
-        SaddlePointVector rhs(rx, ry);
-
-        SaddlePointSolution sol(dx, dy);
-
-        // Define auxiliary references to general options
-        const auto tol = options.tolerance;
-        const auto tolx = options.tolerancex;
-        const auto maxiters = options.max_iterations;
-
-        // Define some auxiliary references to IpNewton parameters
-        const auto mu = options.mu;
-        const auto tau = options.tau;
-
-        // Define some auxiliary references to result variables
-        auto& error = result.error;
-        auto& iterations = result.iterations;
-        auto& succeeded = result.succeeded = false;
-
-        // The regularization parameters delta and gamma
-//        auto gamma = options.regularization.gamma;
-//        auto delta = options.regularization.delta;
-
-        // Set gamma and delta to mu in case they are zero
-        // This provides even further regularization to the problem,
-        // as non-zero gamma and delta prevent unbounded primal and dual
-        // variables x and y respectively.
-//        gamma = gamma ? gamma : mu;
-//        delta = delta ? delta : mu;
-
-        // Ensure the initial guesses for `x` and `y` have adequate dimensions
-        if(x.size() != n) x = Eigen::zeros(n);
-        if(y.size() != m) y = Eigen::zeros(m);
-        if(z.size() != n) z = Eigen::zeros(n);
-
-        // Ensure the initial guesses for `x` and `z` are inside the feasible domain
-        x = (x.array() > 0.0).select(x, mu);
-        z = (z.array() > 0.0).select(z, 1.0);
-
-        // The transpose representation of matrix `A`
-        const auto At = tr(A);
-
-        // The KKT matrix
-//        KktMatrix lhs(f.hessian, A, x, z, gamma, delta);
-
-        // The optimality, feasibility, centrality and total error variables
-        double errorf, errorh, errorc;
-
-        // The function that outputs the header and initial state of the solution
-        auto output_initial_state = [&]()
-        {
-            if(!options.output.active) return;
-
-            outputter.addEntry("Iteration");
-            outputter.addEntries(options.output.xprefix, n, options.output.xnames);
-            outputter.addEntries(options.output.yprefix, m, options.output.ynames);
-            outputter.addEntries(options.output.zprefix, n, options.output.znames);
-            outputter.addEntries("r", n, options.output.xnames);
-            outputter.addEntry("f(x)");
-            outputter.addEntry("Error");
-            outputter.addEntry("Optimality");
-            outputter.addEntry("Feasibility");
-            outputter.addEntry("Centrality");
-
-            outputter.outputHeader();
-            outputter.addValue(iterations);
-            outputter.addValues(x);
-            outputter.addValues(y);
-            outputter.addValues(z);
-            outputter.addValues(Eigen::abs(rx));
-            outputter.addValue(f.val);
-            outputter.addValue(error);
-            outputter.addValue(errorf);
-            outputter.addValue(errorh);
-            outputter.addValue(errorc);
-            outputter.outputState();
-        };
-
-        // The function that outputs the current state of the solution
-        auto output_state = [&]()
-        {
-            if(!options.output.active) return;
-
-            outputter.addValue(iterations);
-            outputter.addValues(x);
-            outputter.addValues(y);
-            outputter.addValues(z);
-            outputter.addValues(Eigen::abs(rx));
-            outputter.addValue(f.val);
-            outputter.addValue(error);
-            outputter.addValue(errorf);
-            outputter.addValue(errorh);
-            outputter.addValue(errorc);
-            outputter.outputState();
-        };
-
-        // Return true if the result of a calculation failed
-        auto failed = [&](bool succeeded)
-        {
-            return !succeeded;
-        };
-
-        // The function that computes the current error norms
-        auto update_residuals = [&]()
-        {
-            // Compute the right-hand side vectors of the KKT equation
-            rx.noalias() = -(f.grad - At*y - z);
-            ry.noalias() = -(A*x - a);
-            rz.noalias() = -(x % z - mu);
-
-            // Calculate the optimality, feasibility and centrality errors
-            errorf = norminf(rx);
-            errorh = norminf(ry);
-            errorc = norminf(rz);
-            error = std::max({errorf, errorh, errorc});
-        };
-
-        // The function that initialize the state of some variables
-        auto initialize = [&]()
-        {
-            // Initialize xtrial
-            xtrial.resize(n);
-
-            // Evaluate the objective function
-            f.requires = {};
-            structure.objective(x, f);
-
-            // Update the residuals of the calculation
-            update_residuals();
-        };
-
-        // The function that computes the Newton step
-        auto compute_newton_step = [&]()
-        {
-            // Update the decomposition of the KKT matrix with update Hessian matrix
-            kkt.decompose(lhs);
-
-            // Compute `dx`, `dy`, `dz` by solving the KKT equation
-            auto res = kkt.solve(rhs, sol);
-
-            // Update the time spent in linear systems
-            result.time_linear_systems += res.time();
-
-//            // Perform emergency Newton step calculation as long as steps contains NaN or INF values
-//            while(!kkt.result().succeeded)
-//            {
-//                // Increase the value of the regularization parameter delta
-//                delta = std::max(delta * 100, 1e-8);
-//
-//                // Return false if the calculation did not succeeded
-//                if(delta > 1e-2) return false;
-//
-//                // Update the residual of the feasibility conditition
-//                rhs.ry -= -delta*delta*y;
-//
-//                // Update the decomposition of the KKT matrix with update Hessian matrix
-//                kkt.decompose(lhs);
-//
-//                // Compute `dx`, `dy`, `dz` by solving the KKT equation
-//                kkt.solve(rhs, sol);
-//
-//                // Update the time spent in linear systems
-//                result.time_linear_systems += kkt.result().time_solve;
-//                result.time_linear_systems += kkt.result().time_decompose;
-//            }
-
-            // Return true if he calculation succeeded
-            return true;
-        };
-
-        // The aggressive mode for updating the iterates
-        auto update_iterates_aggressive = [&]()
-        {
-            // Calculate the current trial iterate for x
-            for(int i = 0; i < n; ++i)
-                xtrial[i] = (x[i] + dx[i] > 0.0) ?
-                    x[i] + dx[i] : x[i]*(1.0 - tau);
-
-            // Evaluate the objective function at the trial iterate
-            f.requires.val = true;
-            f.requires.grad = false;
-            f.requires.hessian = false;
-            structure.objective(xtrial, f);
-
-            // Initialize the step length factor
-            double alpha = fractionToTheBoundary(x, dx, tau);
-
-            // The number of tentatives to find a trial iterate that results in finite objective result
-            unsigned tentatives = 0;
-
-            // Repeat until f(xtrial) is finite
-            while(!isfinite(f) && ++tentatives < 10)
-            {
-                // Calculate a new trial iterate using a smaller step length
-                xtrial = x + alpha * dx;
-
-                // Evaluate the objective function at the trial iterate
-                f.requires.val = true;
-				f.requires.grad = false;
-				f.requires.hessian = false;
-                structure.objective(xtrial, f);
-
-                // Decrease the current step length
-                alpha *= 0.5;
-            }
-
-            // Return false if xtrial could not be found s.t. f(xtrial) is finite
-            if(tentatives == 10)
-                return false;
-
-            // Update the iterate x from xtrial
-            x = xtrial;
-
-            // Update the gradient and Hessian at x
-            f.requires.val = false;
-			f.requires.grad = true;
-			f.requires.hessian = true;
-            structure.objective(x, f);
-
-            // Update the z-Lagrange multipliers
-            for(int i = 0; i < n; ++i)
-                z[i] += (z[i] + dz[i] > 0.0) ?
-                    dz[i] : -tau * z[i];
-
-            // Update the y-Lagrange multipliers
-            y += dy;
-
-            // Return true as found xtrial results in finite f(xtrial)
-            return true;
-        };
-
-        // The conservative mode for updating the iterates
-        auto update_iterates_convervative = [&]()
-        {
-            // Initialize the step length factor
-            double alphax = fractionToTheBoundary(x, dx, tau);
-            double alphaz = fractionToTheBoundary(z, dz, tau);
-            double alpha = alphax;
-
-            // The number of tentatives to find a trial iterate that results in finite objective result
-            unsigned tentatives = 0;
-
-            // Repeat until a suitable xtrial iterate if found such that f(xtrial) is finite
-            for(; tentatives < 10; ++tentatives)
-            {
-                // Calculate the current trial iterate for x
-                xtrial = x + alpha * dx;
-
-                // Evaluate the objective function at the trial iterate
-                f.requires.val = true;
-    			f.requires.grad = false;
-    			f.requires.hessian = false;
-                structure.objective(xtrial, f);
-
-                // Leave the loop if f(xtrial) is finite
-                if(isfinite(f))
-                    break;
-
-                // Decrease alpha in a hope that a shorter step results f(xtrial) finite
-                alpha *= 0.01;
-            }
-
-            // Return false if xtrial could not be found s.t. f(xtrial) is finite
-            if(tentatives == 10)
-                return false;
-
-            // Update the iterate x from xtrial
-            x = xtrial;
-
-            // Update the z-Lagrange multipliers
-            z += alphaz * dz;
-
-            // Update the y-Lagrange multipliers
-            y += dy;
-
-            // Update the gradient and Hessian at x
-            f.requires.val = false;
-			f.requires.grad = true;
-			f.requires.hessian = true;
-            structure.objective(x, f);
-
-            // Return true as found xtrial results in finite f(xtrial)
-            return true;
-        };
-
-        // The function that performs an update in the iterates
-        auto update_iterates = [&]()
-        {
-            switch(options.step)
-            {
-            case Aggressive: return update_iterates_aggressive();
-            default: return update_iterates_convervative();
-            }
-        };
-
-        auto converged = [&]()
-        {
-            // Check if the calculation should stop based on max variation of x
-            if(tolx && max(abs(dx)) < tolx)
-                return true;
-
-            // Check if the calculation should stop based on optimality condititions
-            return error < tol;
-        };
-
-        initialize();
-        output_initial_state();
-
-        for(iterations = 1; iterations <= maxiters && !succeeded; ++iterations)
-        {
-            if(failed(compute_newton_step()))
-                break;
-            if(failed(update_iterates()))
-                break;
-            if((succeeded = converged()))
-                break;
-            update_residuals();
-            output_state();
-        }
-
-        // Output a final header
-        outputter.outputHeader();
-
-        // Finish timing the calculation
-        result.time = elapsed(begin);
-
-        return result;
-    }
 
     /// Calculate the sensitivity of the optimal solution with respect to parameters.
     auto dxdp(VectorXdConstRef dgdp, VectorXdConstRef dbdp) -> MatrixXd
