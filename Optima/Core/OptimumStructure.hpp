@@ -60,6 +60,13 @@ struct ObjectiveState
 /// @param f The evaluated state of the objective function.
 using ObjectiveFunction = std::function<void(VectorXdConstRef, ObjectiveState&)>;
 
+// todo Implement this as a class using the pimpl idiom
+// OptimumStructure structure;
+// structure.setNumVariables(10);
+// structure.setNumEqualityConstraints(5);
+// structure.setNumInequalityConstraints(3);
+// structure.setConstraintMatrix(A);
+// structure.setObjective(obj);
 /// The structure of an optimization problem that changes with less frequency.
 struct OptimumStructure
 {
