@@ -47,6 +47,9 @@ struct OptimumSolver::Impl
     /// The structure of the optimization problem
     OptimumStructure structure;
 
+    /// The primal and dual variables
+    VectorXd x, y, z;
+
     /// The solution vectors of the KKT equation
     VectorXd dx, dy, dz;
 
@@ -128,11 +131,6 @@ struct OptimumSolver::Impl
         // Set the options for the KKT solver
         kkt.setOptions(options.kkt);
 
-        // Define some auxiliary references to variables
-        auto& x = state.x;
-        auto& y = state.y;
-        auto& z = state.z;
-
         // The number of variables and equality constraints
         const auto& A = structure.A;
         const auto& a = params.a;
@@ -176,13 +174,14 @@ struct OptimumSolver::Impl
 //        delta = delta ? delta : mu;
 
         // Ensure the initial guesses for `x` and `y` have adequate dimensions
-        if(x.size() != n) x = zeros(n);
-        if(y.size() != m) y = zeros(m);
-        if(z.size() != n) z = zeros(n);
+        if(state.x.size() != n) state.x = zeros(n);
+        if(state.y.size() != m) state.y = zeros(m);
+        if(state.z.size() != n) state.z = zeros(n);
 
         // Ensure the initial guesses for `x` and `z` are inside the feasible domain
-        x = (x.array() > 0.0).select(x, mu);
-        z = (z.array() > 0.0).select(z, 1.0);
+        x.noalias() = (state.x.array() > 0.0).select(state.x, mu);
+        z.noalias() = (state.z.array() > 0.0).select(state.z, 1.0);
+        y.noalias() = state.y;
 
         // The transpose representation of matrix `A`
         const auto At = tr(A);
@@ -288,17 +287,65 @@ struct OptimumSolver::Impl
             // Update the number of stable variables
             ns = nx - nu;
 
-//            auto fixed = iordering.tail(nf + nu);
-
             // Assemble the matrix H in the KKT equation
             if(f.hessian.size())
                 H.noalias() = f.hessian;
             H.diagonal() += x % z;
 
-            auto ifixed = iordering.tail(nf + nu);
+            auto ifixed = iordering.tail(nu + nf);
 
             // Update the decomposition of the KKT matrix with update Hessian matrix
             kkt.decompose({H, A, ifixed});
+
+            auto ivs = iordering.head(ns);
+            auto ivu = iordering.segment(ns, nu);
+            auto ivf = iordering.tail(nf);
+
+//            auto as = dx.head(nx).head(ns);
+//            auto au = dx.head(nx).tail(nu);
+//            auto af = dx.tail(nf);
+
+
+//            auto xs = state.x.head(nx).head(ns);
+//            auto xu = state.x.head(nx).tail(nu);
+//
+//            auto zs = state.z.head(nx).head(ns);
+//            auto zu = state.z.head(nx).tail(nu);
+
+//            auto cs = dz.head(nx).head(ns);
+//            auto cu = dz.head(nx).tail(nu);
+
+//            auto xs = state.x.head(nx).head(ns);
+//            auto xu = state.x.head(nx).tail(nu);
+
+            auto xs = rows(x, ivs);
+            auto xu = rows(x, ivs);
+
+            auto zs = rows(z, ivs);
+            auto zu = rows(z, ivs);
+
+            auto as = rows(rx, ivs);
+            auto au = rows(rx, ivu);
+
+            auto cs = rows(rz, ivs);
+            auto cu = rows(rz, ivu);
+
+            as += cs / xs;
+            au += cu / zu;
+
+            for(Index i = 0; i < ns; ++i)
+            {
+                const Index s = ivs[i];
+                rx[s] += rz[s] / x[s];
+                H(s, s) += z[s] / x[s];
+            }
+
+            for(Index i = 0; i < nu; ++i)
+            {
+                const Index u = ivu[i];
+                rz[u] += rz[u] / z[u];
+                H(u, u) += x[u] / z[u];
+            }
 
             // Compute `dx`, `dy`, `dz` by solving the KKT equation
 //            auto res = kkt.solve(rhs, sol);
