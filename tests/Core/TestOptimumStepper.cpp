@@ -118,7 +118,7 @@ TEST_CASE("Testing OptimumStepper")
     SUBCASE("when the first `m` variables are unstable")
     {
         z.head(m).fill(1.0);
-        x.head(m).fill(1e-16);
+        x.head(m).fill(options.mu);
 
         MatrixXd M = assemble_matrix();
         MatrixXd r = assemble_vector();
@@ -134,7 +134,7 @@ TEST_CASE("Testing OptimumStepper")
     SUBCASE("when the first `m` variables are unstable and Huu has large diagonal entries")
     {
         z.head(m).fill(1.0);
-        x.head(m).fill(1e-16);
+        x.head(m).fill(options.mu);
         H.topLeftCorner(m, m) = 1e16*identity(m, m);
 
         MatrixXd M = assemble_matrix();
@@ -148,4 +148,21 @@ TEST_CASE("Testing OptimumStepper")
         CHECK(norm(res)/norm(r) == approx(0.0));
     }
 
+    SUBCASE("when the saddle point problem corresponds to a linear programming problem")
+    {
+        z.tail(n - m).fill(1.0);
+        z.head(m).fill(options.mu);
+        x = options.mu/z;
+        H = diag(z/x);
+
+        MatrixXd M = assemble_matrix();
+        MatrixXd r = assemble_vector();
+        VectorXd step = compute_step();
+        VectorXd res = M*step - r;
+
+        PRINT_STATE;
+
+        res.tail(n - m).fill(0.0);
+        CHECK(norm(res)/norm(r) == approx(0.0));
+    }
 }
