@@ -76,7 +76,7 @@ struct SaddlePointSolver::Impl
     Eigen::FullPivLU<MatrixXd> luxy_full;
 
     /// Canonicalize the coefficient matrix *A* of the saddle point problem.
-    auto canonicalize(const MatrixXd& A) -> SaddlePointResult
+    auto canonicalize(MatrixXdConstRef A) -> SaddlePointResult
     {
         // The result of this method call
         SaddlePointResult res;
@@ -508,7 +508,7 @@ struct SaddlePointSolver::Impl
     }
 
     /// Decompose the coefficient matrix of the saddle point problem.
-    auto decompose(const SaddlePointMatrix& lhs) -> SaddlePointResult
+    auto decompose(SaddlePointMatrix lhs) -> SaddlePointResult
     {
         // The result of this method call
         SaddlePointResult res;
@@ -603,12 +603,12 @@ auto SaddlePointSolver::options() const -> const SaddlePointOptions&
     return pimpl->options;
 }
 
-auto SaddlePointSolver::canonicalize(const MatrixXd& A) -> SaddlePointResult
+auto SaddlePointSolver::canonicalize(MatrixXdConstRef A) -> SaddlePointResult
 {
     return pimpl->canonicalize(A);
 }
 
-auto SaddlePointSolver::decompose(const SaddlePointMatrix& lhs) -> SaddlePointResult
+auto SaddlePointSolver::decompose(SaddlePointMatrix lhs) -> SaddlePointResult
 {
     return pimpl->decompose(lhs);
 }

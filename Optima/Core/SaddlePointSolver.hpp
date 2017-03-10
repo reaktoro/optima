@@ -77,12 +77,12 @@ public:
     /// need to be called again if matrix \eq{A} of the saddle point problem is the same as in the
     /// last call to @ref canonicalize.
     /// @param A The coefficient matrix \eq{A} of the saddle point problem.
-    auto canonicalize(const MatrixXd& A) -> SaddlePointResult;
+    auto canonicalize(MatrixXdConstRef A) -> SaddlePointResult;
 
     /// Decompose the coefficient matrix of the saddle point problem.
     /// @note This method should be called before the @ref solve method and after @ref canonicalize.
     /// @param lhs The coefficient matrix of the saddle point problem.
-    auto decompose(const SaddlePointMatrix& lhs) -> SaddlePointResult;
+    auto decompose(SaddlePointMatrix lhs) -> SaddlePointResult;
 
     /// Solve the saddle point problem.
     /// @note This method expects that a call to method @ref decompose has already been performed.
