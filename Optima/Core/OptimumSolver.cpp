@@ -25,6 +25,7 @@
 #include <Optima/Core/OptimumProblem.hpp>
 #include <Optima/Core/OptimumResult.hpp>
 #include <Optima/Core/OptimumState.hpp>
+#include <Optima/Core/OptimumStepper.hpp>
 #include <Optima/Core/SaddlePointMatrix.hpp>
 #include <Optima/Core/SaddlePointProblem.hpp>
 #include <Optima/Core/SaddlePointResult.hpp>
@@ -47,20 +48,8 @@ struct OptimumSolver::Impl
     /// The structure of the optimization problem
     OptimumStructure structure;
 
-    /// The primal and dual variables
-    VectorXd x, y, z;
-
-    /// The solution vectors of the KKT equation
-    VectorXd dx, dy, dz;
-
-    /// The right-hand side vectors of the KKT equation
-    VectorXd rx, ry, rz;
-
-    /// The H matrix in the KKT equation.
-    MatrixXd H;
-
-    /// The KKT solver
-    SaddlePointSolver kkt;
+    /// The calculator of the Newton step (dx, dy, dz, dw)
+    OptimumStepper stepper;
 
     /// The evaluation of the objective function.
     ObjectiveState f;
@@ -74,14 +63,17 @@ struct OptimumSolver::Impl
     /// The options for the optimization calculation
     OptimumOptions options;
 
-    /// The indices of the variables describing their order x = [x(stable) x(unstable) x(fixed)].
-    VectorXi iordering;
-
     /// The number of variables
     Index n;
 
-    /// The number of stable, unstable, free, and fixed variables
+    /// The current number of stable, unstable, free, and fixed variables.
     Index ns, nu, nx, nf;
+
+    /// The number of equality constraints.
+    Index m;
+
+    /// The total number of variables (x, y, z, w).
+    Index t;
 
     /// Initialize the optimization solver with the structure of the problem.
     auto initialize(const OptimumStructure& strct) -> void
@@ -89,22 +81,15 @@ struct OptimumSolver::Impl
         // Set the structure member with the given one
         structure = strct;
 
-        // Initialize the saddle point solver
-        kkt.canonicalize(structure.A);
+        // Initialize the stepper solver
+        stepper.initialize(structure);
 
-        // Initialize the members related to number of variables
-        n  = structure.n;
-        ns = n;
-        nu = 0;
-        nx = n;
-        nf = 0;
+        // Initialize the members related to number of variables and constraints
+        n = structure.n;
+        m = structure.A.rows();
 
         // Allocate memory to x(trial) and H matrix
         xtrial.resize(n);
-        H.resize(n, n);
-
-        // Allocate memory for the indices of the unstable variables
-        iordering = linspace<int>(n);
     }
 
     auto solve(const OptimumParams& params, OptimumState& state) -> OptimumResult
@@ -128,25 +113,15 @@ struct OptimumSolver::Impl
         outputter = Outputter();
         outputter.setOptions(options.output);
 
-        // Set the options for the KKT solver
-        kkt.setOptions(options.kkt);
+        // Set the options for the stepper solver
+        stepper.setOptions(options);
 
         // The number of variables and equality constraints
         const auto& A = structure.A;
         const auto& a = params.a;
-        const auto& m = A.rows();
-
-        // Initialize the H matrix with zeros
-        H = zeros(n, n);
 
         nf = params.ifixed.size();
         nx = n - nf;
-
-        // Allocate memory for the ordering of the variables
-        iordering = linspace<int>(n);
-
-        for(Index i = 0; i < nf; ++i)
-            std::swap(iordering[n - nf + i], iordering[params.ifixed[i]]);
 
         // Define auxiliary references to general options
         const auto tol = options.tolerance;
@@ -173,21 +148,22 @@ struct OptimumSolver::Impl
 //        gamma = gamma ? gamma : mu;
 //        delta = delta ? delta : mu;
 
+        auto& x = state.x;
+        auto& y = state.y;
+        auto& z = state.z;
+
         // Ensure the initial guesses for `x` and `y` have adequate dimensions
-        if(state.x.size() != n) state.x = zeros(n);
-        if(state.y.size() != m) state.y = zeros(m);
-        if(state.z.size() != n) state.z = zeros(n);
+        if(x.size() != n) x = zeros(n); // todo maybe x = 1
+        if(y.size() != m) y = zeros(m);
+        if(z.size() != n) z = zeros(n); //      maybe z = mu, so that x*z = mu
 
         // Ensure the initial guesses for `x` and `z` are inside the feasible domain
-        x.noalias() = (state.x.array() > 0.0).select(state.x, mu);
-        z.noalias() = (state.z.array() > 0.0).select(state.z, 1.0);
+        x.noalias() = (x.array() > 0.0).select(x, mu);  // todo maybe x = 1
+        z.noalias() = (z.array() > 0.0).select(z, 1.0); //      maybe z = mu
         y.noalias() = state.y;
 
         // The transpose representation of matrix `A`
         const auto At = tr(A);
-
-        // The KKT matrix
-//        KktMatrix lhs(f.hessian, A, x, z, gamma, delta);
 
         // The optimality, feasibility, centrality and total error variables
         double errorf, errorh, errorc;
@@ -213,7 +189,7 @@ struct OptimumSolver::Impl
             outputter.addValues(x);
             outputter.addValues(y);
             outputter.addValues(z);
-            outputter.addValues(abs(rx));
+            outputter.addValues(abs(stepper.residualOptimality()));
             outputter.addValue(f.val);
             outputter.addValue(error);
             outputter.addValue(errorf);
@@ -231,7 +207,7 @@ struct OptimumSolver::Impl
             outputter.addValues(x);
             outputter.addValues(y);
             outputter.addValues(z);
-            outputter.addValues(abs(rx));
+            outputter.addValues(abs(stepper.residualOptimality()));
             outputter.addValue(f.val);
             outputter.addValue(error);
             outputter.addValue(errorf);
@@ -249,15 +225,10 @@ struct OptimumSolver::Impl
         // The function that computes the current error norms
         auto update_residuals = [&]()
         {
-            // Compute the right-hand side vectors of the KKT equation
-            rx.noalias() = -(f.grad - At*y - z);
-            ry.noalias() = -(A*x - a);
-            rz.noalias() = -(x % z - mu);
-
             // Calculate the optimality, feasibility and centrality errors
-            errorf = norminf(rx);
-            errorh = norminf(ry);
-            errorc = norminf(rz);
+            errorf = norminf(stepper.residualOptimality());
+            errorh = norminf(stepper.residualFeasibility());
+            errorc = norminf(stepper.residualComplementarityLowerBounds());
             error = std::max({errorf, errorh, errorc});
         };
 
@@ -277,85 +248,14 @@ struct OptimumSolver::Impl
         // The function that computes the Newton step
         auto compute_newton_step = [&]()
         {
-            // Sort the variables according to stability
-            std::sort(iordering.data(), iordering.data() + nx,
-                [&](Index l, Index r) { return x[l] > mu; });
-
-            // Count how many stable variables there are
-            nu = 0; while(x[iordering[nx - nu - 1]] > mu) ++nu;
-
-            // Update the number of stable variables
-            ns = nx - nu;
-
-            // Assemble the matrix H in the KKT equation
-            if(f.hessian.size())
-                H.noalias() = f.hessian;
-            H.diagonal() += x % z;
-
-            auto ifixed = iordering.tail(nu + nf);
-
-            // Update the decomposition of the KKT matrix with update Hessian matrix
-            kkt.decompose({H, A, ifixed});
-
-            auto ivs = iordering.head(ns);
-            auto ivu = iordering.segment(ns, nu);
-            auto ivf = iordering.tail(nf);
-
-//            auto as = dx.head(nx).head(ns);
-//            auto au = dx.head(nx).tail(nu);
-//            auto af = dx.tail(nf);
-
-
-//            auto xs = state.x.head(nx).head(ns);
-//            auto xu = state.x.head(nx).tail(nu);
-//
-//            auto zs = state.z.head(nx).head(ns);
-//            auto zu = state.z.head(nx).tail(nu);
-
-//            auto cs = dz.head(nx).head(ns);
-//            auto cu = dz.head(nx).tail(nu);
-
-//            auto xs = state.x.head(nx).head(ns);
-//            auto xu = state.x.head(nx).tail(nu);
-
-            auto xs = rows(x, ivs);
-            auto xu = rows(x, ivs);
-
-            auto zs = rows(z, ivs);
-            auto zu = rows(z, ivs);
-
-            auto as = rows(rx, ivs);
-            auto au = rows(rx, ivu);
-
-            auto cs = rows(rz, ivs);
-            auto cu = rows(rz, ivu);
-
-            as += cs / xs;
-            au += cu / zu;
-
-            for(Index i = 0; i < ns; ++i)
-            {
-                const Index s = ivs[i];
-                rx[s] += rz[s] / x[s];
-                H(s, s) += z[s] / x[s];
-            }
-
-            for(Index i = 0; i < nu; ++i)
-            {
-                const Index u = ivu[i];
-                rz[u] += rz[u] / z[u];
-                H(u, u) += x[u] / z[u];
-            }
-
-            // Compute `dx`, `dy`, `dz` by solving the KKT equation
-//            auto res = kkt.solve(rhs, sol);
-            auto res = kkt.solve({rx, ry}, {dx, dy});
+            stepper.decompose(params, state, f);
+            stepper.solve(params, state, f);
 
             // Update the time spent in linear systems
-            result.time_linear_systems += res.time();
+//            result.time_linear_systems += res.time();
 
 //            // Perform emergency Newton step calculation as long as steps contains NaN or INF values
-//            while(!kkt.result().succeeded)
+//            while(!stepper.result().succeeded)
 //            {
 //                // Increase the value of the regularization parameter delta
 //                delta = std::max(delta * 100, 1e-8);
@@ -367,14 +267,14 @@ struct OptimumSolver::Impl
 //                rhs.ry -= -delta*delta*y;
 //
 //                // Update the decomposition of the KKT matrix with update Hessian matrix
-//                kkt.decompose(lhs);
+//                stepper.decompose(lhs);
 //
 //                // Compute `dx`, `dy`, `dz` by solving the KKT equation
-//                kkt.solve(rhs, sol);
+//                stepper.solve(rhs, sol);
 //
 //                // Update the time spent in linear systems
-//                result.time_linear_systems += kkt.result().time_solve;
-//                result.time_linear_systems += kkt.result().time_decompose;
+//                result.time_linear_systems += stepper.result().time_solve;
+//                result.time_linear_systems += stepper.result().time_decompose;
 //            }
 
             // Return true if he calculation succeeded
@@ -384,6 +284,11 @@ struct OptimumSolver::Impl
         // The aggressive mode for updating the iterates
         auto update_iterates_aggressive = [&]()
         {
+            // Aliases to Newton steps
+            auto dx = stepper.dx();
+            auto dy = stepper.dy();
+            auto dz = stepper.dz();
+
             // Calculate the current trial iterate for x
             for(int i = 0; i < n; ++i)
                 xtrial[i] = (x[i] + dx[i] > 0.0) ?
@@ -445,6 +350,11 @@ struct OptimumSolver::Impl
         // The conservative mode for updating the iterates
         auto update_iterates_convervative = [&]()
         {
+            // Aliases to Newton steps
+            auto dx = stepper.dx();
+            auto dy = stepper.dy();
+            auto dz = stepper.dz();
+
             // Initialize the step length factor
             double alphax = fractionToTheBoundary(x, dx, tau);
             double alphaz = fractionToTheBoundary(z, dz, tau);
@@ -509,8 +419,11 @@ struct OptimumSolver::Impl
         auto converged = [&]()
         {
             // Check if the calculation should stop based on max variation of x
-            if(tolx && max(abs(dx)) < tolx)
+            if(tolx && max(abs(stepper.dx())) < tolx)
                 return true;
+
+            // todo you want to make sure the test for convergence should consider the residual of
+            // unstable variables in a special way!
 
             // Check if the calculation should stop based on optimality condititions
             return error < tol;

@@ -194,6 +194,7 @@ auto OptimumStepper::operator=(OptimumStepper other) -> OptimumStepper&
 auto OptimumStepper::setOptions(const OptimumOptions& options) -> void
 {
     pimpl->options = options;
+    pimpl->kkt.setOptions(options.kkt);
 }
 
 auto OptimumStepper::initialize(const OptimumStructure& structure) -> void
