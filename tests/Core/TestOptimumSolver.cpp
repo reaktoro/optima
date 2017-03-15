@@ -52,17 +52,14 @@ TEST_CASE("Testing OptimumSolver")
     OptimumState state;
 
     OptimumOptions options;
-    options.mu = 1e-14;
+    options.mu = 1e-16;
     options.output.active = true;
-    options.step = StepMode::Conservative;
+//    options.step = StepMode::Conservative;
+//    options.kkt.method = SaddlePointMethod::Nullspace;
     options.kkt.method = SaddlePointMethod::RangespaceDiagonal;
 
     OptimumSolver solver;
     solver.setOptions(options);
     solver.initialize(structure);
     solver.solve(params, state);
-
-    std::cout << "x = \n" << tr(state.x) << std::endl;
-    std::cout << "z = \n" << tr(state.z) << std::endl;
-    std::cout << "y = \n" << tr(state.y) << std::endl;
 }

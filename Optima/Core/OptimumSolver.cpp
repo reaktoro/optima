@@ -172,12 +172,12 @@ struct OptimumSolver::Impl
             if(!options.output.active) return;
 
             outputter.addEntry("Iteration");
+            outputter.addEntry("f(x)");
+            outputter.addEntry("Error");
             outputter.addEntries(options.output.xprefix, n, options.output.xnames);
             outputter.addEntries(options.output.yprefix, m, options.output.ynames);
             outputter.addEntries(options.output.zprefix, n, options.output.znames);
             outputter.addEntries("r", n, options.output.xnames);
-            outputter.addEntry("f(x)");
-            outputter.addEntry("Error");
             outputter.addEntry("Optimality");
             outputter.addEntry("Feasibility");
             outputter.addEntry("Centrality");
@@ -202,12 +202,12 @@ struct OptimumSolver::Impl
             if(!options.output.active) return;
 
             outputter.addValue(iterations);
+            outputter.addValue(f.val);
+            outputter.addValue(error);
             outputter.addValues(x);
             outputter.addValues(y);
             outputter.addValues(z);
             outputter.addValues(abs(stepper.residualOptimality()));
-            outputter.addValue(f.val);
-            outputter.addValue(error);
             outputter.addValue(errorf);
             outputter.addValue(errorh);
             outputter.addValue(errorc);
@@ -242,9 +242,9 @@ struct OptimumSolver::Impl
             structure.objective(x, f);
 
             // Use the initial optimization state to assemble and decompose the KKT equations
-//            stepper.decompose(params, state, f);
-//            stepper.solve(params, state, f);
-            stepper.solve2(params, state, f);
+            stepper.decompose(params, state, f);
+            stepper.solve(params, state, f);
+//            stepper.solve2(params, state, f);
 
             // Update the residuals of the calculation
             update_residuals();
@@ -253,9 +253,9 @@ struct OptimumSolver::Impl
         // The function that computes the Newton step
         auto compute_newton_step = [&]()
         {
-//            stepper.decompose(params, state, f);
-//            stepper.solve(params, state, f);
-            stepper.solve2(params, state, f);
+            stepper.decompose(params, state, f);
+            stepper.solve(params, state, f);
+//            stepper.solve2(params, state, f);
 
             // Update the time spent in linear systems
 //            result.time_linear_systems += res.time();

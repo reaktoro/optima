@@ -91,7 +91,7 @@ struct OptimumStepper::Impl
         t  = 2*n + m;
 
         // Allocate memory for some members
-        H.resize(n, n);
+        H = zeros(n, n);
         residual.resize(t);
         solution.resize(t);
 
@@ -113,7 +113,11 @@ struct OptimumStepper::Impl
 
         // Partition the variables into stable and unstable sets
 //        auto pred = [&](Index i) { return z[i] < 1.0 && x[i] > options.mu; }; // todo maybe it is important to add condition on x < mu too
-        auto pred = [&](Index i) { return true; };
+//        auto pred = [&](Index i) { return z[i] <= x[i] || x[i] > std::sqrt(options.mu) || z[i] < std::sqrt(options.mu); }; // todo maybe it is important to add condition on x < mu too
+//        auto pred = [&](Index i) { return x[i] > std::sqrt(options.mu) || z[i] < std::sqrt(options.mu); }; // todo maybe it is important to add condition on x < mu too
+//        auto pred = [&](Index i) { return true; };
+
+        auto pred = [&](Index i) { return x[i] > z[i]; };
         auto it = std::partition(iordering.data(), iordering.data() + nx, pred);
 
         // Update the number of stable and unstable variables
@@ -124,22 +128,36 @@ struct OptimumStepper::Impl
         assert(ns > 0 && "Could not compute the step."
             "The number of stable variables must be positive.");
 
-        // The indices of the stable variables
-        auto istable = iordering.head(ns);
-
-        // The indices of the fixed variables including unstable variables
-        auto ifixed = iordering.tail(nu + nf);
-
         // Assemble the matrix H in the KKT equation
         if(f.hessian.size())
             H.noalias() = f.hessian;
+        else H.fill(0.0);
 
-        // Add the inv(Z)*X corresponding to stable variables
-        for(Index s : istable)
-            H(s, s) += z[s] / x[s];
+        // Add the inv(X)*Z contribution
+        H.diagonal() += z / x;
+
+        auto ivf = iordering.tail(nf);
 
         // Update the decomposition of the KKT matrix
-        kkt.decompose({H, A, ifixed});
+        kkt.decompose({H, A, ivf});
+
+//        // The indices of the stable variables
+//        auto istable = iordering.head(ns);
+//
+//        // The indices of the fixed variables including unstable variables
+//        auto ifixed = iordering.tail(nu + nf);
+//
+//        // Assemble the matrix H in the KKT equation
+//        if(f.hessian.size())
+//            H.noalias() = f.hessian;
+//        else H.fill(0.0);
+//
+//        // Add the inv(Z)*X corresponding to stable variables
+//        for(Index s : istable)
+//            H(s, s) += z[s] / x[s];
+//
+//        // Update the decomposition of the KKT matrix
+//        kkt.decompose({H, A, ifixed});
     }
 
     /// Solve the KKT matrix equation.
@@ -168,9 +186,14 @@ struct OptimumStepper::Impl
         auto ivu = iordering.segment(ns, nu);
         auto ivf = iordering.tail(nf);
 
-        for(Index s : ivs) a[s] += c[s]/x[s];          // as = as + inv(Xs)*cs
-        for(Index u : ivu) std::swap(a[u], dz[u] = 0); // au = 0
-        for(Index f : ivf) a[f] = params.xfixed[f];    // af = xf
+        auto hessian = [&](Index i, Index j)
+        {
+            return f.hessian.size() ? f.hessian(i,j) : 0.0;
+        };
+
+        for(Index s : ivs) a[s] += c[s]/x[s];
+        for(Index u : ivu) a[u] -= hessian(u,u)*c[u]/z[u];
+        for(Index f : ivf) a[f] = params.xfixed[f];
 
         kkt.solve({a, b}, {dx, dy});
 
@@ -180,10 +203,74 @@ struct OptimumStepper::Impl
             dz[s] = (c[s] - z[s]*dx[s])/x[s];
 
         for(Index u : ivu)
-            dz[u] = -(dz[u] - H(u,u)*c[u]/z[u] + dot(A.col(u), dy))/(1 + H(u,u)*x[u]/z[u]);
+            dz[u] = hessian(u,u)*dx[u] - dot(A.col(u), dy) - a[u];
 
         for(Index u : ivu)
-            dx[u] = (c[u] - x[u]*dz[u])/z[u];
+            dx[u] += c[u]/z[u];
+
+
+
+//        for(Index s : ivs)
+//            dz[s] = (c[s] - z[s]*dx[s])/x[s];
+//
+//        for(Index u : ivu)
+//            dz[u] = -z[u]*(dx[u]/x[u]);
+//
+//        for(Index u : ivu)
+//            dx[u] = (c[u] - x[u]*dz[u])/z[u];
+//
+//        for(Index s : ivs)
+//            dz[s] = (c[s] - z[s]*dx[s])/x[s];
+//
+//        for(Index u : ivu)
+//            dz[u] = -z[u]*dx[u]/x[u];
+//
+//        for(Index u : ivu)
+//            dx[u] = (c[u] - x[u]*dz[u])/z[u];
+
+//        // The indices of the stable and unstable variables
+//        auto ivs = iordering.head(ns);
+//        auto ivu = iordering.segment(ns, nu);
+//        auto ivf = iordering.tail(nf);
+//
+//        for(Index s : ivs) a[s] += c[s]/x[s];          // as = as + inv(Xs)*cs
+//        for(Index u : ivu) std::swap(a[u], dz[u] = 0); // au = 0
+//        for(Index f : ivf) a[f] = params.xfixed[f];    // af = xf
+//
+//        kkt.solve({a, b}, {dx, dy});
+//
+//        dy *= -1.0;
+//
+//        for(Index s : ivs)
+//            dz[s] = (c[s] - z[s]*dx[s])/x[s];
+//
+//        for(Index u : ivu)
+//            dz[u] = -(dz[u] - hessian(u,u)*c[u]/z[u] + dot(A.col(u), dy))/(1 + hessian(u,u)*x[u]/z[u]);
+//
+//        for(Index u : ivu)
+//            dx[u] = (c[u] - x[u]*dz[u])/z[u];
+
+        VectorXd solution_tmp = solution;
+
+        solve2(params, state, f);
+
+        std::cout << "stable  = " << tr(ivs) << std::endl;
+        std::cout << "x       = " << tr(state.x) << std::endl;
+        std::cout << "dx(rs)  = " << tr(solution_tmp.head(n)) << std::endl;
+        std::cout << "dx(lu)  = " << tr(dx) << std::endl;
+        std::cout << "res(dx) = " << tr(abs(solution_tmp.head(n) - dx)) << std::endl;
+        std::cout << std::endl;
+        std::cout << "y       = " << tr(state.y) << std::endl;
+        std::cout << "dy(rs)  = " << tr(solution_tmp.segment(n, m)) << std::endl;
+        std::cout << "dy(lu)  = " << tr(dy) << std::endl;
+        std::cout << "res(dy) = " << tr(abs(solution_tmp.segment(n, m) - dy)) << std::endl;
+        std::cout << std::endl;
+        std::cout << "z       = " << tr(state.z) << std::endl;
+        std::cout << "dz(rs)  = " << tr(solution_tmp.tail(n)) << std::endl;
+        std::cout << "dz(lu)  = " << tr(dz) << std::endl;
+        std::cout << "res(dz) = " << tr(abs(solution_tmp.tail(n) - dz)) << std::endl;
+
+        solution = solution_tmp;
     }
 
     /// Solve the KKT matrix equation.
@@ -194,6 +281,13 @@ struct OptimumStepper::Impl
         const auto& z = state.z;
         const auto& A = structure.A;
         const auto& a = params.a;
+
+//        MatrixXd M = zeros(n+m, n+m);
+//        if(f.hessian.size())
+//            M.topLeftCorner(n, n) = f.hessian;
+//        M.topLeftCorner(n, n).diagonal() += z/x;
+//        M.topRows(n).rightCols(m) = -tr(A);
+//        M.bottomRows(m).leftCols(n) = A;
 
         MatrixXd M = zeros(t, t);
         if(f.hessian.size())
