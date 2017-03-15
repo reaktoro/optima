@@ -51,7 +51,14 @@ TEST_CASE("Testing OptimumSolver")
 
     OptimumState state;
 
+    OptimumOptions options;
+    options.mu = 1e-14;
+    options.output.active = true;
+    options.step = StepMode::Conservative;
+    options.kkt.method = SaddlePointMethod::RangespaceDiagonal;
+
     OptimumSolver solver;
+    solver.setOptions(options);
     solver.initialize(structure);
     solver.solve(params, state);
 

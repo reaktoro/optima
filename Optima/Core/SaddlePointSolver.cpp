@@ -292,6 +292,18 @@ struct SaddlePointSolver::Impl
         // Set `H` as the diagonal Hessian according to current canonical ordering
         Hx.noalias() = rows(lhs.H().diagonal(), ivx);
 
+
+
+        for(Index i = 0; i < nbx; ++i)
+            if(Hbx[i] > 1e+10)
+                Hbx[i] = 0.0;
+
+        for(Index i = 0; i < nnx; ++i)
+            if(Hnx[i] < 1e-10)
+                Hnx[i] = 1e+25;
+
+
+
         // Compute the auxiliary matrices Bb and Bbn
         Bx.noalias() = Sx * diag(inv(Hnx));
         Tx.noalias() = tr(Sx) * diag(Hbx);

@@ -32,17 +32,20 @@ using namespace Optima;
 
 #define PRINT_STATE                                                         \
 {                                                                           \
+    std::cout << std::setprecision(10); \
+    VectorXd s = M.fullPivLu().solve(r);                                    \
     std::cout << "M = \n" << M << std::endl;                                \
-    std::cout << "r    = " << tr(r) << std::endl;                           \
-    std::cout << "s    = " << tr(M.fullPivLu().solve(r)) << std::endl;      \
-    std::cout << "step = " << tr(step) << std::endl;                        \
-    std::cout << "res  = " << tr(res) << std::endl;                         \
+    std::cout << "r         = " << tr(r) << std::endl;                           \
+    std::cout << "s         = " << tr(s) << std::endl;      \
+    std::cout << "step      = " << tr(step) << std::endl;                        \
+    std::cout << "res(s)    = " << tr(M*s - r) << std::endl;                         \
+    std::cout << "res(step) = " << tr(res) << std::endl;                         \
 }                                                                           \
 
 TEST_CASE("Testing OptimumStepper")
 {
-    Index n = 60;
-    Index m = 10;
+    Index n = 6;
+    Index m = 3;
     Index t = 2*n + m;
 
     MatrixXd A = random(m, n);
@@ -96,6 +99,7 @@ TEST_CASE("Testing OptimumStepper")
         f.hessian = H;
 
         OptimumStepper stepper;
+        stepper.setOptions(options);
         stepper.initialize(structure);
         stepper.decompose(params, state, f);
         stepper.solve(params, state, f);
@@ -103,57 +107,78 @@ TEST_CASE("Testing OptimumStepper")
         return VectorXd(stepper.step());
     };
 
-    SUBCASE("when all variables are stable")
-    {
-        MatrixXd M = assemble_matrix();
-        MatrixXd r = assemble_vector();
-        VectorXd step = compute_step();
-        VectorXd res = M*step - r;
-
-        PRINT_STATE;
-
-        CHECK(norm(res)/norm(r) == approx(0.0));
-    }
-
-    SUBCASE("when the first `m` variables are unstable")
-    {
-        z.head(m).fill(1.0);
-        x.head(m).fill(options.mu);
-
-        MatrixXd M = assemble_matrix();
-        MatrixXd r = assemble_vector();
-        VectorXd step = compute_step();
-        VectorXd res = M*step - r;
-
-        PRINT_STATE;
-
-        res.head(m).fill(0.0);
-        CHECK(norm(res)/norm(r) == approx(0.0));
-    }
-
-    SUBCASE("when the first `m` variables are unstable and Huu has large diagonal entries")
-    {
-        z.head(m).fill(1.0);
-        x.head(m).fill(options.mu);
-        H.topLeftCorner(m, m) = 1e16*identity(m, m);
-
-        MatrixXd M = assemble_matrix();
-        MatrixXd r = assemble_vector();
-        VectorXd step = compute_step();
-        VectorXd res = M*step - r;
-
-        PRINT_STATE;
-
-        res.head(m).fill(0.0);
-        CHECK(norm(res)/norm(r) == approx(0.0));
-    }
+//    SUBCASE("when all variables are stable")
+//    {
+//        MatrixXd M = assemble_matrix();
+//        MatrixXd r = assemble_vector();
+//        VectorXd step = compute_step();
+//        VectorXd res = M*step - r;
+//
+//        PRINT_STATE;
+//
+//        CHECK(norm(res)/norm(r) == approx(0.0));
+//    }
+//
+//    SUBCASE("when the first `m` variables are unstable")
+//    {
+//        z.head(m).fill(1.0);
+//        x.head(m).fill(options.mu);
+//
+//        MatrixXd M = assemble_matrix();
+//        MatrixXd r = assemble_vector();
+//        VectorXd step = compute_step();
+//        VectorXd res = M*step - r;
+//
+//        PRINT_STATE;
+//
+//        res.head(m).fill(0.0);
+//        CHECK(norm(res)/norm(r) == approx(0.0));
+//    }
+//
+//    SUBCASE("when the first `m` variables are unstable and Huu has large diagonal entries")
+//    {
+//        z.head(m).fill(1.0);
+//        x.head(m).fill(options.mu);
+//        H.topLeftCorner(m, m) = 1e16*identity(m, m);
+//
+//        MatrixXd M = assemble_matrix();
+//        MatrixXd r = assemble_vector();
+//        VectorXd step = compute_step();
+//        VectorXd res = M*step - r;
+//
+//        PRINT_STATE;
+//
+//        res.head(m).fill(0.0);
+//        CHECK(norm(res)/norm(r) == approx(0.0));
+//    }
+//
+//    SUBCASE("when the saddle point problem corresponds to a linear programming problem")
+//    {
+//        g = abs(g);
+//        z.tail(n - m).fill(1.0);
+//        z.head(m).fill(options.mu);
+//        x = options.mu/z;
+//        H = zeros(n, n);
+//
+//        MatrixXd M = assemble_matrix();
+//        MatrixXd r = assemble_vector();
+//        VectorXd step = compute_step();
+//        VectorXd res = M*step - r;
+//
+//        PRINT_STATE;
+//
+//        res.tail(n - m).fill(0.0);
+//        CHECK(norm(res)/norm(r) == approx(0.0));
+//    }
 
     SUBCASE("when the saddle point problem corresponds to a linear programming problem")
     {
-        z.tail(n - m).fill(1.0);
-        z.head(m).fill(options.mu);
+        g = abs(g);
+        z.fill(options.mu);
         x = options.mu/z;
-        H = diag(z/x);
+        H = zeros(n, n);
+
+        options.kkt.method = SaddlePointMethod::RangespaceDiagonal;
 
         MatrixXd M = assemble_matrix();
         MatrixXd r = assemble_vector();
@@ -165,4 +190,5 @@ TEST_CASE("Testing OptimumStepper")
         res.tail(n - m).fill(0.0);
         CHECK(norm(res)/norm(r) == approx(0.0));
     }
+
 }

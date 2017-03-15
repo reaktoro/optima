@@ -20,6 +20,10 @@
 // C++ includes
 #include <iostream>
 
+// Eigen includes
+#include <Eigenx/LU.hpp>
+using namespace Eigen;
+
 // Optima includes
 #include <Optima/Core/SaddlePointMatrix.hpp>
 #include <Optima/Core/SaddlePointOptions.hpp>
@@ -27,7 +31,6 @@
 #include <Optima/Core/SaddlePointSolver.hpp>
 #include <Optima/Math/Matrix.hpp>
 using namespace Optima;
-using namespace Eigen;
 
 void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
 {
@@ -94,68 +97,105 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
 
     SaddlePointOptions options;
 
-    SUBCASE("When there are no fixed variables")
+//    SUBCASE("When there are no fixed variables")
+//    {
+//        SaddlePointMatrix lhs(H, A, ifixed);
+//
+//        TEST_SADDLE_POINT_SOLVER(options);
+//    }
+//
+//    SUBCASE("When there are fixed variables")
+//    {
+//        ifixed = {0, 10, 20, 30, 40, 50};
+//
+//        SaddlePointMatrix lhs(H, A, ifixed);
+//
+//        TEST_SADDLE_POINT_SOLVER(options);
+//    }
+//
+//    SUBCASE("When there are many fixed variables enough to degenerate the problem")
+//    {
+//        // Modify matrix A so that its first row has zeros for all non-positive entries.
+//        // Set the fixed variables as the variables that have such entries positive.
+//        // This results in a submatrix for the free variables with the first row zero.
+//        ifixed = linspace<int>(n/2);
+//        A.row(0).rightCols(n/2).fill(0.0);
+//
+////        std::cout << "A = \n" << A << std::endl;
+////        std::cout << "A(nonfixed) = \n" << A.rightCols(n/2) << std::endl;
+//        SaddlePointMatrix lhs(H, A, ifixed);
+//
+//        TEST_SADDLE_POINT_SOLVER(options);
+//    }
+//
+//    SUBCASE("When there are linearly dependent rows and many fixed variables enough to degenerate the problem")
+//    {
+//        // Modify matrix A so that its first row has zeros for all non-positive entries.
+//        // Set the fixed variables as the variables that have such entries positive.
+//        // This results in a submatrix for the free variables with the first row zero.
+//        ifixed = linspace<int>(n/2);
+//        A.row(0).rightCols(n/2).fill(0.0);
+//
+//        // Set the 3rd row of A as the 2nd row
+//        A.row(2) = A.row(1);
+//
+//        SaddlePointMatrix lhs(H, A, ifixed);
+//
+//        TEST_SADDLE_POINT_SOLVER(options);
+//
+//        SUBCASE("When A has large entries")
+//        {
+//            A *= 1e6;
+//            TEST_SADDLE_POINT_SOLVER(options);
+//        }
+//
+//        SUBCASE("When A has rational entries")
+//        {
+//            MatrixXi Anum = random<int>(m, n);
+//            MatrixXi Aden = random<int>(m, n);
+//            A = Anum.cast<double>()/Aden.cast<double>();
+//
+//            options.rationalize = true;
+//            options.maxdenominator = Aden.maxCoeff() * 10;
+//            TEST_SADDLE_POINT_SOLVER(options);
+//        }
+//    }
+
+    SUBCASE("When the system corresponds to one from a linear programming problem")
     {
+        ifixed = {};
+
+        H.fill(0.0);
+        H.diagonal().fill(1e-16);
+
+        VectorXd x = ones(n);
+        VectorXd y = zeros(m);
+        VectorXd z = constants(n, 1e-16);
+        VectorXd g = abs(random(n));
+        VectorXd b = random(m);
+        VectorXd r = abs(random(n + m));
+        VectorXd s(n + m);
+
         SaddlePointMatrix lhs(H, A, ifixed);
 
-        TEST_SADDLE_POINT_SOLVER(options);
-    }
+        SaddlePointVector rhs(r, n, m);
+        SaddlePointSolution sol(s, n, m);
 
-    SUBCASE("When there are fixed variables")
-    {
-        ifixed = {0, 10, 20, 30, 40, 50};
+        options.method = SaddlePointMethod::RangespaceDiagonal;
 
-        SaddlePointMatrix lhs(H, A, ifixed);
+        SaddlePointSolver solver;
+        solver.setOptions(options);
+        solver.canonicalize(A);
+        solver.decompose(lhs);
+        solver.solve(rhs, sol);
 
-        TEST_SADDLE_POINT_SOLVER(options);
-    }
+//        s = lhs.matrix().fullPivLu().solve(r);
+//        double error = (lhs.matrix() * s - r).norm()/r.norm();
+        double error = (lhs.matrix() * s - r).norm()/r.norm();
 
-    SUBCASE("When there are many fixed variables enough to degenerate the problem")
-    {
-        // Modify matrix A so that its first row has zeros for all non-positive entries.
-        // Set the fixed variables as the variables that have such entries positive.
-        // This results in a submatrix for the free variables with the first row zero.
-        ifixed = linspace<int>(n/2);
-        A.row(0).rightCols(n/2).fill(0.0);
+        CHECK(approx(error) == 0.0);
 
-        std::cout << "A = \n" << A << std::endl;
-        std::cout << "A(nonfixed) = \n" << A.rightCols(n/2) << std::endl;
-        SaddlePointMatrix lhs(H, A, ifixed);
-
-        TEST_SADDLE_POINT_SOLVER(options);
-    }
-
-    SUBCASE("When there are linearly dependent rows and many fixed variables enough to degenerate the problem")
-    {
-        // Modify matrix A so that its first row has zeros for all non-positive entries.
-        // Set the fixed variables as the variables that have such entries positive.
-        // This results in a submatrix for the free variables with the first row zero.
-        ifixed = linspace<int>(n/2);
-        A.row(0).rightCols(n/2).fill(0.0);
-
-        // Set the 3rd row of A as the 2nd row
-        A.row(2) = A.row(1);
-
-        SaddlePointMatrix lhs(H, A, ifixed);
-
-        TEST_SADDLE_POINT_SOLVER(options);
-
-        SUBCASE("When A has large entries")
-        {
-            A *= 1e6;
-            TEST_SADDLE_POINT_SOLVER(options);
-        }
-
-        SUBCASE("When A has rational entries")
-        {
-            MatrixXi Anum = random<int>(m, n);
-            MatrixXi Aden = random<int>(m, n);
-            A = Anum.cast<double>()/Aden.cast<double>();
-
-            options.rationalize = true;
-            options.maxdenominator = Aden.maxCoeff() * 10;
-            TEST_SADDLE_POINT_SOLVER(options);
-        }
+//        TEST_SADDLE_POINT_SOLVER(options);
     }
 }
 

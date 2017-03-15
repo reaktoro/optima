@@ -17,6 +17,14 @@
 
 #include "OptimumStepper.hpp"
 
+
+
+// Eigenx includes
+#include <Eigenx/LU.hpp> // todo check if necessary later
+
+
+
+
 // Optima includes
 #include <Optima/Core/OptimumOptions.hpp>
 #include <Optima/Core/OptimumStructure.hpp>
@@ -104,12 +112,17 @@ struct OptimumStepper::Impl
         nx = n - nf;
 
         // Partition the variables into stable and unstable sets
-        auto pred = [&](Index i) { return z[i] < 1.0; };
+//        auto pred = [&](Index i) { return z[i] < 1.0 && x[i] > options.mu; }; // todo maybe it is important to add condition on x < mu too
+        auto pred = [&](Index i) { return true; };
         auto it = std::partition(iordering.data(), iordering.data() + nx, pred);
 
         // Update the number of stable and unstable variables
         ns = it - iordering.data();
         nu = nx - ns;
+
+        // Ensure the number of stable variables are positive
+        assert(ns > 0 && "Could not compute the step."
+            "The number of stable variables must be positive.");
 
         // The indices of the stable variables
         auto istable = iordering.head(ns);
@@ -172,6 +185,31 @@ struct OptimumStepper::Impl
         for(Index u : ivu)
             dx[u] = (c[u] - x[u]*dz[u])/z[u];
     }
+
+    /// Solve the KKT matrix equation.
+    auto solve2(const OptimumParams& params, const OptimumState& state, const ObjectiveState& f) -> void
+    {
+        const auto& x = state.x;
+        const auto& y = state.y;
+        const auto& z = state.z;
+        const auto& A = structure.A;
+        const auto& a = params.a;
+
+        MatrixXd M = zeros(t, t);
+        if(f.hessian.size())
+            M.topLeftCorner(n, n) = f.hessian;
+        M.topRows(n).middleCols(n, m) = -tr(A);
+        M.topRightCorner(n, n).diagonal().fill(-1.0);
+        M.middleRows(n, m).leftCols(n) = A;
+        M.bottomLeftCorner(n, n).diagonal() = z;
+        M.bottomRightCorner(n, n).diagonal() = x;
+
+        residual.head(n) = -(f.grad - tr(A)*y - z);
+        residual.segment(n, m) = -(A*x - a);
+        residual.tail(n) = -(x % z - options.mu);
+
+        solution = M.fullPivLu().solve(residual);
+    }
 };
 
 OptimumStepper::OptimumStepper()
@@ -210,6 +248,11 @@ auto OptimumStepper::decompose(const OptimumParams& params, const OptimumState& 
 auto OptimumStepper::solve(const OptimumParams& params, const OptimumState& state, const ObjectiveState& f) -> void
 {
     pimpl->solve(params, state, f);
+}
+
+auto OptimumStepper::solve2(const OptimumParams& params, const OptimumState& state, const ObjectiveState& f) -> void
+{
+    pimpl->solve2(params, state, f);
 }
 
 auto OptimumStepper::step() const -> VectorXdConstRef

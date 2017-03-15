@@ -116,10 +116,6 @@ struct OptimumSolver::Impl
         // Set the options for the stepper solver
         stepper.setOptions(options);
 
-        // The number of variables and equality constraints
-        const auto& A = structure.A;
-        const auto& a = params.a;
-
         nf = params.ifixed.size();
         nx = n - nf;
 
@@ -153,17 +149,19 @@ struct OptimumSolver::Impl
         auto& z = state.z;
 
         // Ensure the initial guesses for `x` and `y` have adequate dimensions
-        if(x.size() != n) x = zeros(n); // todo maybe x = 1
+//        if(x.size() != n) x = zeros(n); // original
+//        if(y.size() != m) y = zeros(m); // original
+//        if(z.size() != n) z = zeros(n); // original
+        if(x.size() != n) x = ones(n);
         if(y.size() != m) y = zeros(m);
-        if(z.size() != n) z = zeros(n); //      maybe z = mu, so that x*z = mu
+        if(z.size() != n) z = constants(n, mu);
 
         // Ensure the initial guesses for `x` and `z` are inside the feasible domain
-        x.noalias() = (x.array() > 0.0).select(x, mu);  // todo maybe x = 1
-        z.noalias() = (z.array() > 0.0).select(z, 1.0); //      maybe z = mu
+//        x.noalias() = (x.array() > 0.0).select(x, mu);  // original
+//        z.noalias() = (z.array() > 0.0).select(z, 1.0); // original
+        x.noalias() = (x.array() > 0.0).select(x, 1.0);
+        z.noalias() = (z.array() > 0.0).select(z, mu);
         y.noalias() = state.y;
-
-        // The transpose representation of matrix `A`
-        const auto At = tr(A);
 
         // The optimality, feasibility, centrality and total error variables
         double errorf, errorh, errorc;
@@ -225,7 +223,9 @@ struct OptimumSolver::Impl
         // The function that computes the current error norms
         auto update_residuals = [&]()
         {
-            // Calculate the optimality, feasibility and centrality errors
+            // todo these errors should probably ignore the residual of unstable variables
+
+            // Update the optimality, feasibility and centrality errors
             errorf = norminf(stepper.residualOptimality());
             errorh = norminf(stepper.residualFeasibility());
             errorc = norminf(stepper.residualComplementarityLowerBounds());
@@ -241,6 +241,11 @@ struct OptimumSolver::Impl
             f.requires.hessian = true;
             structure.objective(x, f);
 
+            // Use the initial optimization state to assemble and decompose the KKT equations
+//            stepper.decompose(params, state, f);
+//            stepper.solve(params, state, f);
+            stepper.solve2(params, state, f);
+
             // Update the residuals of the calculation
             update_residuals();
         };
@@ -248,8 +253,9 @@ struct OptimumSolver::Impl
         // The function that computes the Newton step
         auto compute_newton_step = [&]()
         {
-            stepper.decompose(params, state, f);
-            stepper.solve(params, state, f);
+//            stepper.decompose(params, state, f);
+//            stepper.solve(params, state, f);
+            stepper.solve2(params, state, f);
 
             // Update the time spent in linear systems
 //            result.time_linear_systems += res.time();
@@ -844,7 +850,7 @@ struct OptimumSolver::Impl
         assert(false);
 
         // Return the calculated sensitivity vector
-        return dx;
+        return stepper.dx();
     }
 };
 

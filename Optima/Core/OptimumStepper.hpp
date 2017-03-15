@@ -59,6 +59,7 @@ public:
 
     /// Solve the KKT matrix equation.
     auto solve(const OptimumParams& params, const OptimumState& state, const ObjectiveState& f) -> void;
+    auto solve2(const OptimumParams& params, const OptimumState& state, const ObjectiveState& f) -> void;
 
     /// Return the step vector.
     auto step() const -> VectorXdConstRef;
