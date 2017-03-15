@@ -189,7 +189,7 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
         solver.decompose(lhs);
         solver.solve(rhs, sol);
 
-//        s = lhs.matrix().fullPivLu().solve(r);
+        s = lhs.matrix().fullPivLu().solve(r);
 //        double error = (lhs.matrix() * s - r).norm()/r.norm();
         double error = (lhs.matrix() * s - r).norm()/r.norm();
 

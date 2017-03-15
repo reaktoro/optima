@@ -107,78 +107,58 @@ TEST_CASE("Testing OptimumStepper")
         return VectorXd(stepper.step());
     };
 
-//    SUBCASE("when all variables are stable")
-//    {
-//        MatrixXd M = assemble_matrix();
-//        MatrixXd r = assemble_vector();
-//        VectorXd step = compute_step();
-//        VectorXd res = M*step - r;
-//
-//        PRINT_STATE;
-//
-//        CHECK(norm(res)/norm(r) == approx(0.0));
-//    }
-//
-//    SUBCASE("when the first `m` variables are unstable")
-//    {
-//        z.head(m).fill(1.0);
-//        x.head(m).fill(options.mu);
-//
-//        MatrixXd M = assemble_matrix();
-//        MatrixXd r = assemble_vector();
-//        VectorXd step = compute_step();
-//        VectorXd res = M*step - r;
-//
-//        PRINT_STATE;
-//
-//        res.head(m).fill(0.0);
-//        CHECK(norm(res)/norm(r) == approx(0.0));
-//    }
-//
-//    SUBCASE("when the first `m` variables are unstable and Huu has large diagonal entries")
-//    {
-//        z.head(m).fill(1.0);
-//        x.head(m).fill(options.mu);
-//        H.topLeftCorner(m, m) = 1e16*identity(m, m);
-//
-//        MatrixXd M = assemble_matrix();
-//        MatrixXd r = assemble_vector();
-//        VectorXd step = compute_step();
-//        VectorXd res = M*step - r;
-//
-//        PRINT_STATE;
-//
-//        res.head(m).fill(0.0);
-//        CHECK(norm(res)/norm(r) == approx(0.0));
-//    }
-//
-//    SUBCASE("when the saddle point problem corresponds to a linear programming problem")
-//    {
-//        g = abs(g);
-//        z.tail(n - m).fill(1.0);
-//        z.head(m).fill(options.mu);
-//        x = options.mu/z;
-//        H = zeros(n, n);
-//
-//        MatrixXd M = assemble_matrix();
-//        MatrixXd r = assemble_vector();
-//        VectorXd step = compute_step();
-//        VectorXd res = M*step - r;
-//
-//        PRINT_STATE;
-//
-//        res.tail(n - m).fill(0.0);
-//        CHECK(norm(res)/norm(r) == approx(0.0));
-//    }
+    SUBCASE("when all variables are stable")
+    {
+        MatrixXd M = assemble_matrix();
+        MatrixXd r = assemble_vector();
+        VectorXd step = compute_step();
+        VectorXd res = M*step - r;
+
+        PRINT_STATE;
+
+        CHECK(norm(res)/norm(r) == approx(0.0));
+    }
+
+    SUBCASE("when the first `m` variables are unstable")
+    {
+        z.head(m).fill(1.0);
+        x.head(m).fill(options.mu);
+
+        MatrixXd M = assemble_matrix();
+        MatrixXd r = assemble_vector();
+        VectorXd step = compute_step();
+        VectorXd res = M*step - r;
+
+        PRINT_STATE;
+
+        res.head(m).fill(0.0);
+        CHECK(norm(res)/norm(r) == approx(0.0));
+    }
+
+    SUBCASE("when the first `m` variables are unstable and Huu has large diagonal entries")
+    {
+        z.head(m).fill(1.0);
+        x.head(m).fill(options.mu);
+        H.topLeftCorner(m, m) = 1e16*identity(m, m);
+
+        MatrixXd M = assemble_matrix();
+        MatrixXd r = assemble_vector();
+        VectorXd step = compute_step();
+        VectorXd res = M*step - r;
+
+        PRINT_STATE;
+
+        res.head(m).fill(0.0);
+        CHECK(norm(res)/norm(r) == approx(0.0));
+    }
 
     SUBCASE("when the saddle point problem corresponds to a linear programming problem")
     {
         g = abs(g);
-        z.fill(options.mu);
+        z.tail(n - m).fill(1.0);
+        z.head(m).fill(options.mu);
         x = options.mu/z;
         H = zeros(n, n);
-
-        options.kkt.method = SaddlePointMethod::RangespaceDiagonal;
 
         MatrixXd M = assemble_matrix();
         MatrixXd r = assemble_vector();
@@ -190,5 +170,25 @@ TEST_CASE("Testing OptimumStepper")
         res.tail(n - m).fill(0.0);
         CHECK(norm(res)/norm(r) == approx(0.0));
     }
+
+//    SUBCASE("when the saddle point problem corresponds to a linear programming problem")
+//    {
+//        g = abs(g);
+//        z.fill(options.mu);
+//        x = options.mu/z;
+//        H = zeros(n, n);
+//
+//        options.kkt.method = SaddlePointMethod::RangespaceDiagonal;
+//
+//        MatrixXd M = assemble_matrix();
+//        MatrixXd r = assemble_vector();
+//        VectorXd step = compute_step();
+//        VectorXd res = M*step - r;
+//
+//        PRINT_STATE;
+//
+//        res.tail(n - m).fill(0.0);
+//        CHECK(norm(res)/norm(r) == approx(0.0));
+//    }
 
 }

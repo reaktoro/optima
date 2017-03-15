@@ -294,13 +294,13 @@ struct SaddlePointSolver::Impl
 
 
 
-        for(Index i = 0; i < nbx; ++i)
-            if(Hbx[i] > 1e+10)
-                Hbx[i] = 0.0;
+//        for(Index i = 0; i < nbx; ++i)
+//            if(Hbx[i] > 1e+10)
+//                Hbx[i] = 0.0;
 
-        for(Index i = 0; i < nnx; ++i)
-            if(Hnx[i] < 1e-10)
-                Hnx[i] = 1e+25;
+//        for(Index i = 0; i < nnx; ++i)
+//            if(Hnx[i] < 1e-10)
+//                Hnx[i] = 1e-10;
 
 
 
