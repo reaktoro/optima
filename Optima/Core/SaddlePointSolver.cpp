@@ -51,6 +51,12 @@ struct SaddlePointSolver::Impl
     /// The number of free and fixed non-basic variables.
     Index nnx, nnf;
 
+    /// The number of pivot free basic variables.
+    Index nbx1, nnx1;
+
+    /// The number of non-pivot free non-basic variables.
+    Index nbx2, nnx2;
+
     /// The priority weights for the selection of basic variables.
     VectorXd weights;
 
@@ -62,6 +68,9 @@ struct SaddlePointSolver::Impl
 
     /// The ordering of the variables as (free-basic, free-non-basic, fixed-basic, fixed-non-basic)
     VectorXi iordering;
+
+    /// The ordering of the free pivot variables as (free-basic-pivot, free-basic-nonpivot, free-nonbasic-pivot, free-nonbasic-nonpivot)
+    VectorXi ipivots;
 
     /// The LU solver used to calculate *xb* when the Hessian matrix is in diagonal form.
     Eigen::PartialPivLU<MatrixXd> luxb;
@@ -109,9 +118,20 @@ struct SaddlePointSolver::Impl
         nnx = nn;
         nnf = 0;
 
-        // Update the ordering of the variables
+        // Set the number of pivot free basic variables.
+        nbx1 = nbx;
+        nnx1 = nnx;
+
+        // Set the number of non-pivot free non-basic variables.
+        nbx2 = 0;
+        nnx2 = 0;
+
+        // Initialize the ordering of the variables
         iordering.head(nb) = canonicalizer.ibasic();
         iordering.tail(nn) = canonicalizer.inonbasic();
+
+        // Initialize the ordering of pivot variables
+        ipivots.setLinSpaced(n, 0, n);
 
         return res.stop();
     }
@@ -275,19 +295,62 @@ struct SaddlePointSolver::Impl
         // The rows and columns of `S` corresponding to free basic and free non-basic variables
         auto Sx = S.topLeftCorner(nbx, nnx);
 
-        // The indices of the free variables
-        auto ivx = iordering.head(nx);
-
         // Create auxiliary matrix views
         auto Hx  = mat.diagonal().head(nx);
         auto Hbx = Hx.head(nbx);
         auto Hnx = Hx.tail(nnx);
+
+
+        auto ipb = ipivots.head(nbx);
+        auto ipn = ipivots.segment(nbx, nnx);
+
+        // Update the ordering of the variables in pivot and non-pivot
+        auto predb = [&](Index i) { return std::abs(Hbx[i]) > 1.0; };
+        auto predn = [&](Index i) { return std::abs(Hnx[i]) > norminf(Sx.col(i)); };
+
+        ipb.setLinSpaced(nbx, 0, nbx);
+        ipn.setLinSpaced(nnx, 0, nnx);
+
+        auto itb = std::partition(ipb.data(), ipb.data() + nbx, predb);
+        auto itn = std::partition(ipn.data(), ipn.data() + nnx, predn);
+
+        nbx1 = itb - ipb.data();
+        nbx2 = nbx - nbx1;
+        nnx1 = itn - ipn.data();
+        nnx2 = nnx - nnx1;
+
+        auto ipb1 = Hbx.head(nbx1);
+        auto ipb2 = Hbx.tail(nbx2);
+        auto ipn1 = Hnx.head(nnx1);
+        auto ipn2 = Hnx.tail(nnx2);
+
+        auto Hbx1 = Hbx.head(nbx1);
+        auto Hbx2 = Hbx.tail(nbx2);
+        auto Hnx1 = Hnx.head(nnx1);
+        auto Hnx2 = Hnx.tail(nnx2);
+
+        auto H = lhs.H().diagonal();
+
+        for(Index b1 : ipb1)
+
         auto B   = mat.bottomLeftCorner(m, n);
         auto T   = mat.topRightCorner(n, m);
         auto M   = mat.bottomRightCorner(m, m);
         auto Bx  = B.topLeftCorner(nbx, nnx);
         auto Tx  = T.topLeftCorner(nnx, nbx);
-        auto Mx  = M.topLeftCorner(nbx, nbx);
+
+        auto Mx  = M.topLeftCorner(nbx + nnx2, nbx + nnx2);
+
+        auto TL = Mx.topLeftCorner(nnx2, nnx2);
+        auto TR = Mx.topRightCorner(nnx2, nbx);
+        auto BL = Mx.bottomLeftCorner(nbx, nnx2);
+        auto BR = Mx.bottomRightCorner(nbx, nbx);
+
+        TL.fill(0.0);
+        TL.diagonal() = rows(H, ivn);
+
+        // The indices of the free variables
+        auto ivx = iordering.head(nx);
 
         // Set `H` as the diagonal Hessian according to current canonical ordering
         Hx.noalias() = rows(lhs.H().diagonal(), ivx);
