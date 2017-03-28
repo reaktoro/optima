@@ -88,8 +88,8 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
 
 TEST_CASE("Testing SaddlePointSolver with other methods.")
 {
-    Index m = 10;
-    Index n = 60;
+    Index m = 4;
+    Index n = 10;
 
     MatrixXd A = random(m, n);
     MatrixXd H = random(n, n);
@@ -166,17 +166,16 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
         ifixed = {};
 
         H.fill(0.0);
-        H.diagonal().fill(1e-16);
+        H.diagonal().fill(1e-13); // when all are stable
 
-        VectorXd x = ones(n);
-        VectorXd y = zeros(m);
-        VectorXd z = constants(n, 1e-16);
-        VectorXd g = abs(random(n));
-        VectorXd b = random(m);
-        VectorXd r = abs(random(n + m));
         VectorXd s(n + m);
 
         SaddlePointMatrix lhs(H, A, ifixed);
+
+        VectorXd expected = zeros(n + m);
+        expected.head(m) = linspace(m, 1, m);
+
+        VectorXd r = lhs * expected;
 
         SaddlePointVector rhs(r, n, m);
         SaddlePointSolution sol(s, n, m);
@@ -190,10 +189,89 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
         solver.solve(rhs, sol);
 
         s = lhs.matrix().fullPivLu().solve(r);
-//        double error = (lhs.matrix() * s - r).norm()/r.norm();
         double error = (lhs.matrix() * s - r).norm()/r.norm();
-
         CHECK(approx(error) == 0.0);
+
+        std::cout << "s   = " << tr(s) << std::endl;
+        std::cout << "r   = " << tr(sol.vector()) << std::endl;
+        std::cout << "r-s = " << tr(abs(s - sol.vector())) << std::endl;
+
+//        TEST_SADDLE_POINT_SOLVER(options);
+    }
+
+    SUBCASE("When the system corresponds to one from a linear programming problem")
+    {
+        ifixed = {};
+
+        H.fill(0.0);
+        H.diagonal().fill(1e+13);
+
+        VectorXd s(n + m);
+
+        SaddlePointMatrix lhs(H, A, ifixed);
+
+        VectorXd expected = zeros(n + m);
+        expected.head(m) = linspace(m, 1, m);
+
+        VectorXd r = lhs * expected;
+
+        SaddlePointVector rhs(r, n, m);
+        SaddlePointSolution sol(s, n, m);
+
+        options.method = SaddlePointMethod::RangespaceDiagonal;
+
+        SaddlePointSolver solver;
+        solver.setOptions(options);
+        solver.canonicalize(A);
+        solver.decompose(lhs);
+        solver.solve(rhs, sol);
+
+        s = lhs.matrix().fullPivLu().solve(r);
+        double error = (lhs.matrix() * s - r).norm()/r.norm();
+        CHECK(approx(error) == 0.0);
+
+        std::cout << "s   = " << tr(s) << std::endl;
+        std::cout << "r   = " << tr(sol.vector()) << std::endl;
+        std::cout << "r-s = " << tr(abs(s - sol.vector())) << std::endl;
+
+//        TEST_SADDLE_POINT_SOLVER(options);
+    }
+
+    SUBCASE("When the system corresponds to one from a linear programming problem")
+    {
+        ifixed = {};
+
+        H.fill(0.0);
+        H.diagonal().fill(1e+13);
+        H.diagonal().head(m).fill(1e-13);
+
+        VectorXd s(n + m);
+
+        SaddlePointMatrix lhs(H, A, ifixed);
+
+        VectorXd expected = zeros(n + m);
+        expected.head(m) = linspace(m, 1, m);
+
+        VectorXd r = lhs * expected;
+
+        SaddlePointVector rhs(r, n, m);
+        SaddlePointSolution sol(s, n, m);
+
+        options.method = SaddlePointMethod::RangespaceDiagonal;
+
+        SaddlePointSolver solver;
+        solver.setOptions(options);
+        solver.canonicalize(A);
+        solver.decompose(lhs);
+        solver.solve(rhs, sol);
+
+        s = lhs.matrix().fullPivLu().solve(r);
+        double error = (lhs.matrix() * s - r).norm()/r.norm();
+        CHECK(approx(error) == 0.0);
+
+        std::cout << "s   = " << tr(s) << std::endl;
+        std::cout << "r   = " << tr(sol.vector()) << std::endl;
+        std::cout << "r-s = " << tr(abs(s - sol.vector())) << std::endl;
 
 //        TEST_SADDLE_POINT_SOLVER(options);
     }
