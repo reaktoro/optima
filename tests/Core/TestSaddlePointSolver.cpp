@@ -79,7 +79,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
                                                                                       \
     SUBCASE("When using RangespaceDiagonal")                                          \
     {                                                                                 \
-        MatrixXd H = diag(random(lhs.H().rows()));                                    \
+        MatrixXd H = diag(lhs.H().diagonal());                                        \
         SaddlePointMatrix lhsdiag(H, lhs.A(), lhs.fixed());                           \
         options.method = SaddlePointMethod::RangespaceDiagonal;                       \
         testSaddlePointSolver(lhsdiag, options);                                      \
@@ -88,8 +88,8 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
 
 TEST_CASE("Testing SaddlePointSolver with other methods.")
 {
-    Index m = 4;
-    Index n = 10;
+    Index m = 10;
+    Index n = 60;
 
     MatrixXd A = random(m, n);
     MatrixXd H = random(n, n);
@@ -97,183 +97,103 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
 
     SaddlePointOptions options;
 
-//    SUBCASE("When there are no fixed variables")
-//    {
-//        SaddlePointMatrix lhs(H, A, ifixed);
-//
-//        TEST_SADDLE_POINT_SOLVER(options);
-//    }
-//
-//    SUBCASE("When there are fixed variables")
-//    {
-//        ifixed = {0, 10, 20, 30, 40, 50};
-//
-//        SaddlePointMatrix lhs(H, A, ifixed);
-//
-//        TEST_SADDLE_POINT_SOLVER(options);
-//    }
-//
-//    SUBCASE("When there are many fixed variables enough to degenerate the problem")
-//    {
-//        // Modify matrix A so that its first row has zeros for all non-positive entries.
-//        // Set the fixed variables as the variables that have such entries positive.
-//        // This results in a submatrix for the free variables with the first row zero.
-//        ifixed = linspace<int>(n/2);
-//        A.row(0).rightCols(n/2).fill(0.0);
-//
-////        std::cout << "A = \n" << A << std::endl;
-////        std::cout << "A(nonfixed) = \n" << A.rightCols(n/2) << std::endl;
-//        SaddlePointMatrix lhs(H, A, ifixed);
-//
-//        TEST_SADDLE_POINT_SOLVER(options);
-//    }
-//
-//    SUBCASE("When there are linearly dependent rows and many fixed variables enough to degenerate the problem")
-//    {
-//        // Modify matrix A so that its first row has zeros for all non-positive entries.
-//        // Set the fixed variables as the variables that have such entries positive.
-//        // This results in a submatrix for the free variables with the first row zero.
-//        ifixed = linspace<int>(n/2);
-//        A.row(0).rightCols(n/2).fill(0.0);
-//
-//        // Set the 3rd row of A as the 2nd row
-//        A.row(2) = A.row(1);
-//
-//        SaddlePointMatrix lhs(H, A, ifixed);
-//
-//        TEST_SADDLE_POINT_SOLVER(options);
-//
-//        SUBCASE("When A has large entries")
-//        {
-//            A *= 1e6;
-//            TEST_SADDLE_POINT_SOLVER(options);
-//        }
-//
-//        SUBCASE("When A has rational entries")
-//        {
-//            MatrixXi Anum = random<int>(m, n);
-//            MatrixXi Aden = random<int>(m, n);
-//            A = Anum.cast<double>()/Aden.cast<double>();
-//
-//            options.rationalize = true;
-//            options.maxdenominator = Aden.maxCoeff() * 10;
-//            TEST_SADDLE_POINT_SOLVER(options);
-//        }
-//    }
-
-    SUBCASE("When the system corresponds to one from a linear programming problem")
+    SUBCASE("When there are no fixed variables")
     {
-        ifixed = {};
+        SaddlePointMatrix lhs(H, A, ifixed);
 
-        H.fill(0.0);
-        H.diagonal().fill(1e-13); // when all are stable
+        TEST_SADDLE_POINT_SOLVER(options);
+    }
 
-        VectorXd s(n + m);
+    SUBCASE("When there are fixed variables")
+    {
+        ifixed.setLinSpaced(6, 0, 5);
 
         SaddlePointMatrix lhs(H, A, ifixed);
 
-        VectorXd expected = zeros(n + m);
-        expected.head(m) = linspace(m, 1, m);
+        TEST_SADDLE_POINT_SOLVER(options);
+    }
 
-        VectorXd r = lhs * expected;
+    SUBCASE("When there are many fixed variables enough to degenerate the problem")
+    {
+        // Modify matrix A so that its first row has zeros for all non-positive entries.
+        // Set the fixed variables as the variables that have such entries positive.
+        // This results in a submatrix for the free variables with the first row zero.
+        ifixed = linspace<int>(n/2);
+        A.row(0).rightCols(n/2).fill(0.0);
 
-        SaddlePointVector rhs(r, n, m);
-        SaddlePointSolution sol(s, n, m);
+        SaddlePointMatrix lhs(H, A, ifixed);
 
-        options.method = SaddlePointMethod::RangespaceDiagonal;
+        TEST_SADDLE_POINT_SOLVER(options);
+    }
 
-        SaddlePointSolver solver;
-        solver.setOptions(options);
-        solver.canonicalize(A);
-        solver.decompose(lhs);
-        solver.solve(rhs, sol);
+    SUBCASE("When there are linearly dependent rows and many fixed variables enough to degenerate the problem")
+    {
+        // Modify matrix A so that its first row has zeros for all non-positive entries.
+        // Set the fixed variables as the variables that have such entries positive.
+        // This results in a submatrix for the free variables with the first row zero.
+        ifixed = linspace<int>(n/2);
+        A.row(0).rightCols(n/2).fill(0.0);
 
-        s = lhs.matrix().fullPivLu().solve(r);
-        double error = (lhs.matrix() * s - r).norm()/r.norm();
-        CHECK(approx(error) == 0.0);
+        // Set the 3rd row of A as the 2nd row
+        A.row(2) = A.row(1);
 
-        std::cout << "s   = " << tr(s) << std::endl;
-        std::cout << "r   = " << tr(sol.vector()) << std::endl;
-        std::cout << "r-s = " << tr(abs(s - sol.vector())) << std::endl;
+        SaddlePointMatrix lhs(H, A, ifixed);
 
-//        TEST_SADDLE_POINT_SOLVER(options);
+        TEST_SADDLE_POINT_SOLVER(options);
+
+        SUBCASE("When A has large entries")
+        {
+            A *= 1e6;
+            TEST_SADDLE_POINT_SOLVER(options);
+        }
+
+        SUBCASE("When A has rational entries")
+        {
+            MatrixXi Anum = random<int>(m, n);
+            MatrixXi Aden = random<int>(m, n);
+            A = Anum.cast<double>()/Aden.cast<double>();
+
+            options.rationalize = true;
+            options.maxdenominator = Aden.maxCoeff() * 10;
+            TEST_SADDLE_POINT_SOLVER(options);
+        }
     }
 
     SUBCASE("When the system corresponds to one from a linear programming problem")
     {
-        ifixed = {};
+        SUBCASE("When all variables are stable...")
+        {
+            H.fill(0.0);
+            H.diagonal().fill(1e-13);
+            SaddlePointMatrix lhs(H, A, ifixed);
+            TEST_SADDLE_POINT_SOLVER(options);
+        }
 
-        H.fill(0.0);
-        H.diagonal().fill(1e+13);
+        SUBCASE("When all variables are unstable...")
+        {
+            H.fill(0.0);
+            H.diagonal().fill(1e+13);
+            SaddlePointMatrix lhs(H, A, ifixed);
+            TEST_SADDLE_POINT_SOLVER(options);
+        }
 
-        VectorXd s(n + m);
+        SUBCASE("When `m` variables are stable...")
+        {
+            H.fill(0.0);
+            H.diagonal().fill(1e+13);
+            H.diagonal().head(m).fill(1e-13);
+            SaddlePointMatrix lhs(H, A, ifixed);
+            TEST_SADDLE_POINT_SOLVER(options);
+        }
 
-        SaddlePointMatrix lhs(H, A, ifixed);
-
-        VectorXd expected = zeros(n + m);
-        expected.head(m) = linspace(m, 1, m);
-
-        VectorXd r = lhs * expected;
-
-        SaddlePointVector rhs(r, n, m);
-        SaddlePointSolution sol(s, n, m);
-
-        options.method = SaddlePointMethod::RangespaceDiagonal;
-
-        SaddlePointSolver solver;
-        solver.setOptions(options);
-        solver.canonicalize(A);
-        solver.decompose(lhs);
-        solver.solve(rhs, sol);
-
-        s = lhs.matrix().fullPivLu().solve(r);
-        double error = (lhs.matrix() * s - r).norm()/r.norm();
-        CHECK(approx(error) == 0.0);
-
-        std::cout << "s   = " << tr(s) << std::endl;
-        std::cout << "r   = " << tr(sol.vector()) << std::endl;
-        std::cout << "r-s = " << tr(abs(s - sol.vector())) << std::endl;
-
-//        TEST_SADDLE_POINT_SOLVER(options);
-    }
-
-    SUBCASE("When the system corresponds to one from a linear programming problem")
-    {
-        ifixed = {};
-
-        H.fill(0.0);
-        H.diagonal().fill(1e+13);
-        H.diagonal().head(m).fill(1e-13);
-
-        VectorXd s(n + m);
-
-        SaddlePointMatrix lhs(H, A, ifixed);
-
-        VectorXd expected = zeros(n + m);
-        expected.head(m) = linspace(m, 1, m);
-
-        VectorXd r = lhs * expected;
-
-        SaddlePointVector rhs(r, n, m);
-        SaddlePointSolution sol(s, n, m);
-
-        options.method = SaddlePointMethod::RangespaceDiagonal;
-
-        SaddlePointSolver solver;
-        solver.setOptions(options);
-        solver.canonicalize(A);
-        solver.decompose(lhs);
-        solver.solve(rhs, sol);
-
-        s = lhs.matrix().fullPivLu().solve(r);
-        double error = (lhs.matrix() * s - r).norm()/r.norm();
-        CHECK(approx(error) == 0.0);
-
-        std::cout << "s   = " << tr(s) << std::endl;
-        std::cout << "r   = " << tr(sol.vector()) << std::endl;
-        std::cout << "r-s = " << tr(abs(s - sol.vector())) << std::endl;
-
-//        TEST_SADDLE_POINT_SOLVER(options);
+        SUBCASE("When `m - 1` variables are stable...")
+        {
+            H.fill(0.0);
+            H.diagonal().fill(1e+13);
+            H.diagonal().head(m - 1).fill(1e-13);
+            SaddlePointMatrix lhs(H, A, ifixed);
+            TEST_SADDLE_POINT_SOLVER(options);
+        }
     }
 }
 
