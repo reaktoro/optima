@@ -30,6 +30,7 @@
 #include <Optima/Core/OptimumResult.hpp>
 #include <Optima/Core/OptimumSolver.hpp>
 #include <Optima/Core/OptimumState.hpp>
+#include <Optima/Core/OptimumStepper.hpp>
 #include <Optima/Core/OptimumStructure.hpp>
 #include <Optima/Core/SaddlePointMatrix.hpp>
 #include <Optima/Core/SaddlePointOptions.hpp>
@@ -42,3 +43,26 @@
 #include <Optima/Math/EigenExtern.hpp>
 #include <Optima/Math/Matrix.hpp>
 #include <Optima/Math/Utils.hpp>
+
+#ifdef CLING
+#include <Optima/Common/Exception.cpp>
+#include <Optima/Common/Outputter.cpp>
+#include <Optima/Common/Result.cpp>
+#include <Optima/Common/Timing.cpp>
+#include <Optima/Core/OptimumOptions.cpp>
+#include <Optima/Core/OptimumParams.cpp>
+#include <Optima/Core/OptimumProblem.cpp>
+#include <Optima/Core/OptimumResult.cpp>
+#include <Optima/Core/OptimumSolver.cpp>
+#include <Optima/Core/OptimumStepper.cpp>
+#include <Optima/Core/OptimumStructure.cpp>
+#include <Optima/Core/SaddlePointMatrix.cpp>
+#include <Optima/Core/SaddlePointProblem.cpp>
+#include <Optima/Core/SaddlePointResult.cpp>
+#include <Optima/Core/SaddlePointSolver.cpp>
+#include <Optima/Core/SaddlePointUtils.cpp>
+#include <Optima/Math/BlockDiagonalMatrix.cpp>
+#include <Optima/Math/Canonicalizer.cpp>
+#include <Optima/Math/EigenExtern.cpp>
+#include <Optima/Math/Utils.cpp>
+#endif
