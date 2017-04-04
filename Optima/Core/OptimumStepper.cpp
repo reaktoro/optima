@@ -115,9 +115,9 @@ struct OptimumStepper::Impl
 //        auto pred = [&](Index i) { return z[i] < 1.0 && x[i] > options.mu; }; // todo maybe it is important to add condition on x < mu too
 //        auto pred = [&](Index i) { return z[i] <= x[i] || x[i] > std::sqrt(options.mu) || z[i] < std::sqrt(options.mu); }; // todo maybe it is important to add condition on x < mu too
 //        auto pred = [&](Index i) { return x[i] > std::sqrt(options.mu) || z[i] < std::sqrt(options.mu); }; // todo maybe it is important to add condition on x < mu too
-//        auto pred = [&](Index i) { return true; };
+        auto pred = [&](Index i) { return true; };
 
-        auto pred = [&](Index i) { return x[i] > z[i]; };
+//        auto pred = [&](Index i) { return x[i] > z[i]; };
         auto it = std::partition(iordering.data(), iordering.data() + nx, pred);
 
         // Update the number of stable and unstable variables
@@ -250,6 +250,7 @@ struct OptimumStepper::Impl
 //        for(Index u : ivu)
 //            dx[u] = (c[u] - x[u]*dz[u])/z[u];
 
+        VectorXd residual_tmp = residual;
         VectorXd solution_tmp = solution;
 
         solve2(params, state, f);
@@ -270,6 +271,7 @@ struct OptimumStepper::Impl
         std::cout << "dz(lu)  = " << tr(dz) << std::endl;
         std::cout << "res(dz) = " << tr(abs(solution_tmp.tail(n) - dz)) << std::endl;
 
+        residual = residual_tmp;
         solution = solution_tmp;
     }
 
