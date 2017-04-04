@@ -213,6 +213,12 @@ struct Canonicalizer::Impl
 	    // Rearrange the permutation matrix Q based on the new order of non-basic variables
 	    Kn.transpose().applyThisOnTheLeft(inonbasic);
 	}
+
+	/// Update the order of the variables.
+    auto update(const VectorXi& ordering) -> void
+    {
+        ordering.asPermutation().transpose().applyThisOnTheLeft(Q);
+    }
 };
 
 Canonicalizer::Canonicalizer()
@@ -316,6 +322,11 @@ auto Canonicalizer::swapBasicVariable(Index ibasic, Index inonbasic) -> void
 auto Canonicalizer::update(const VectorXd& weights) -> void
 {
     pimpl->update(weights);
+}
+
+auto Canonicalizer::update(const VectorXi& ordering) -> void
+{
+    pimpl->update(ordering);
 }
 
 } // namespace Optima

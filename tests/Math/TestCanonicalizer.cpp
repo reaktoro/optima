@@ -64,6 +64,28 @@ TEST_CASE("Testing Canonicalizer")
 			CHECK_CANONICAL_FORM
 		}
 	}
+
+	SUBCASE("When the ordering of the variables are changed...")
+	{
+        VectorXi ordering(n);
+        ordering.head(m).setLinSpaced(m, n - 1, n - m);
+        ordering.tail(n - m).setLinSpaced(n - m, 0, n - m);
+
+        canonicalizer.update(ordering);
+
+        ordering.asPermutation().applyThisOnTheRight(A);
+
+        CHECK_CANONICAL_FORM
+
+        SUBCASE("And then an update with weights for basic and non-basic partition...")
+        {
+            VectorXd weights = abs(random(n)) + 1.0;
+
+            canonicalizer.update(weights);
+
+            CHECK_CANONICAL_FORM
+        }
+	}
 }
 
 TEST_CASE("Testing Canonicalizer with two linearly dependent rows")
@@ -176,17 +198,3 @@ TEST_CASE("Testing the update method of the Canonicalizer class with fixed varia
 //    CHECK(expectedQ.isApprox(actualQ));
 }
 
-TEST_CASE("Testing rationalize method.")
-{
-    const Index m = 10;
-    const Index n = 60;
-
-    MatrixXi Anum = random<int>(m, n);
-    MatrixXi Aden = random<int>(m, n);
-    MatrixXd A = Anum.cast<double>()/Aden.cast<double>();
-
-    Canonicalizer canonicalizer(A);
-    canonicalizer.rationalize(Aden.maxCoeff() * 10);
-
-    CHECK_CANONICAL_FORM;
-}

@@ -112,6 +112,9 @@ public:
     /// @param weights The priority weights of the variables.
 	auto update(const VectorXd& weights) -> void;
 
+	/// Update the order of the variables.
+	auto update(const VectorXi& ordering) -> void;
+
 private:
 	struct Impl;
 
