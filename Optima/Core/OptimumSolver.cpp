@@ -149,18 +149,18 @@ struct OptimumSolver::Impl
         auto& z = state.z;
 
         // Ensure the initial guesses for `x` and `y` have adequate dimensions
-//        if(x.size() != n) x = zeros(n); // original
-//        if(y.size() != m) y = zeros(m); // original
-//        if(z.size() != n) z = zeros(n); // original
-        if(x.size() != n) x = ones(n);
-        if(y.size() != m) y = zeros(m);
-        if(z.size() != n) z = constants(n, mu);
+        if(x.size() != n) x = zeros(n); // original
+        if(y.size() != m) y = zeros(m); // original
+        if(z.size() != n) z = zeros(n); // original
+//        if(x.size() != n) x = ones(n);
+//        if(y.size() != m) y = zeros(m);
+//        if(z.size() != n) z = constants(n, mu);
 
         // Ensure the initial guesses for `x` and `z` are inside the feasible domain
-//        x.noalias() = (x.array() > 0.0).select(x, mu);  // original
-//        z.noalias() = (z.array() > 0.0).select(z, 1.0); // original
-        x.noalias() = (x.array() > 0.0).select(x, 1.0);
-        z.noalias() = (z.array() > 0.0).select(z, mu);
+        x.noalias() = (x.array() > 0.0).select(x, mu);  // original
+        z.noalias() = (z.array() > 0.0).select(z, 1.0); // original
+//        x.noalias() = (x.array() > 0.0).select(x, 1.0);
+//        z.noalias() = (z.array() > 0.0).select(z, mu);
         y.noalias() = state.y;
 
         // The optimality, feasibility, centrality and total error variables
