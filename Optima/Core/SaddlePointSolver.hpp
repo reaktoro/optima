@@ -98,6 +98,9 @@ public:
     /// @param sol The solution of the saddle point problem.
     auto solve(SaddlePointMatrix lhs, SaddlePointVector rhs, SaddlePointSolution sol) -> SaddlePointResult;
 
+    /// Update the order of the variables.
+    auto update(const VectorXi& ordering) -> void;
+
 private:
     struct Impl;
 

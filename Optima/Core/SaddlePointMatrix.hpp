@@ -27,20 +27,21 @@ namespace Optima {
 /// Used to represent the coefficient matrix in a saddle point problem.
 /// A saddle point matrix is defined as a matrix with the following structure:
 /// \f[
-/// \begin{bmatrix}H & A^{T}\\ A & 0 \end{bmatrix}\begin{bmatrix}x\\ y \end{bmatrix}=\begin{bmatrix}a\\ b \end{bmatrix},
+/// \begin{bmatrix}H & A\\ A & G \end{bmatrix}\begin{bmatrix}x \\ y \end{bmatrix}=\begin{bmatrix}a \\ b \end{bmatrix},
 /// \f]
-/// where \eq{H} is the *Hessian matrix* of an objective function and \eq{A} is
-/// the *Jacobian matrix* of a constraint function. If the saddle point problem has fixed variables,
-/// then the saddle point matrix has the following representation:
+/// where \eq{H} is the *Hessian matrix* of an objective function, \eq{A} is the *Jacobian matrix*
+/// of a constraint function, and \eq{G} is a negative semi-definite matrix.
+/// If the saddle point problem has fixed variables, then the saddle point matrix has the following
+/// representation:
 /// \f[
-/// \begin{bmatrix}H_{\mathrm{x}} & 0 & A_{\mathrm{x}}^{T}\\ 0 & I_{\mathrm{f}} & 0\\ A_{\mathrm{x}} & A_{\mathrm{f}} & 0 \end{bmatrix}\begin{bmatrix}x_{\mathrm{x}}\\ x_{\mathrm{f}}\\ y \end{bmatrix}=\begin{bmatrix}a_{\mathrm{x}}\\ a_{\mathrm{f}}\\ b \end{bmatrix},
+/// \begin{bmatrix}H_{\mathrm{x}} & 0 & A_{\mathrm{x}}^{T}\\ 0 & I_{\mathrm{f}} & 0\\ A_{\mathrm{x}} & A_{\mathrm{f}} & G \end{bmatrix}\begin{bmatrix}x_{\mathrm{x}}\\ x_{\mathrm{f}}\\ y \end{bmatrix}=\begin{bmatrix}a_{\mathrm{x}}\\ a_{\mathrm{f}}\\ b \end{bmatrix},
 /// \f]
 /// where the subscripts \eq{\mathrm{x}} and \eq{\mathrm{f}} correspond to free and fixed variables, respectively.
 class SaddlePointMatrix
 {
 public:
-    /// Construct a SaddlePointMatrix instance with given Hessian and Jacobian matrices, and indices of fixed variables.
-    SaddlePointMatrix(MatrixXdConstRef H, MatrixXdConstRef A, VectorXiConstRef fixed);
+    /// Construct a SaddlePointMatrix instance.
+    SaddlePointMatrix(MatrixXdConstRef H, MatrixXdConstRef A, MatrixXdConstRef G, VectorXiConstRef fixed);
 
     /// Return the dimension of the saddle point mathrm.
     auto dim() const -> Index;
@@ -50,6 +51,9 @@ public:
 
     /// Return the Jacobian matrix *A*.
     auto A() const -> MatrixXdConstRef;
+
+    /// Return the matrix *G*.
+    auto G() const -> MatrixXdConstRef;
 
     /// Return the indices of the fixed variables.
     auto fixed() const -> VectorXiConstRef;
@@ -63,6 +67,9 @@ private:
 
     /// The Jacobian matrix \eq{A} in the saddle point matrix.
     MatrixXdConstRef m_A;
+
+    /// The negative semi-definite matrix \eq{G} in the saddle point matrix.
+    MatrixXdConstRef m_G;
 
     /// The indices of the fixed variables.
     VectorXiConstRef m_fixed;

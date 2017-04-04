@@ -80,7 +80,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
     SUBCASE("When using RangespaceDiagonal")                                          \
     {                                                                                 \
         MatrixXd H = diag(lhs.H().diagonal());                                        \
-        SaddlePointMatrix lhsdiag(H, lhs.A(), lhs.fixed());                           \
+        SaddlePointMatrix lhsdiag(H, lhs.A(), lhs.G(), lhs.fixed());                           \
         options.method = SaddlePointMethod::RangespaceDiagonal;                       \
         testSaddlePointSolver(lhsdiag, options);                                      \
     }                                                                                 \
@@ -93,13 +93,15 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
 
     MatrixXd A = random(m, n);
     MatrixXd H = random(n, n);
+    MatrixXd G = zeros(m, m);
+//    MatrixXd G = random(m, m);
     VectorXi ifixed;
 
     SaddlePointOptions options;
 
     SUBCASE("When there are no fixed variables")
     {
-        SaddlePointMatrix lhs(H, A, ifixed);
+        SaddlePointMatrix lhs(H, A, G, ifixed);
 
         TEST_SADDLE_POINT_SOLVER(options);
     }
@@ -108,7 +110,7 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
     {
         ifixed.setLinSpaced(6, 0, 5);
 
-        SaddlePointMatrix lhs(H, A, ifixed);
+        SaddlePointMatrix lhs(H, A, G, ifixed);
 
         TEST_SADDLE_POINT_SOLVER(options);
     }
@@ -121,7 +123,7 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
         ifixed = linspace<int>(n/2);
         A.row(0).rightCols(n/2).fill(0.0);
 
-        SaddlePointMatrix lhs(H, A, ifixed);
+        SaddlePointMatrix lhs(H, A, G, ifixed);
 
         TEST_SADDLE_POINT_SOLVER(options);
     }
@@ -137,7 +139,7 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
         // Set the 3rd row of A as the 2nd row
         A.row(2) = A.row(1);
 
-        SaddlePointMatrix lhs(H, A, ifixed);
+        SaddlePointMatrix lhs(H, A, G, ifixed);
 
         TEST_SADDLE_POINT_SOLVER(options);
 
@@ -165,7 +167,7 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
         {
             H.fill(0.0);
             H.diagonal().fill(1e-13);
-            SaddlePointMatrix lhs(H, A, ifixed);
+            SaddlePointMatrix lhs(H, A, G, ifixed);
             TEST_SADDLE_POINT_SOLVER(options);
         }
 
@@ -173,7 +175,7 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
         {
             H.fill(0.0);
             H.diagonal().fill(1e+13);
-            SaddlePointMatrix lhs(H, A, ifixed);
+            SaddlePointMatrix lhs(H, A, G, ifixed);
             TEST_SADDLE_POINT_SOLVER(options);
         }
 
@@ -182,7 +184,7 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
             H.fill(0.0);
             H.diagonal().fill(1e+13);
             H.diagonal().head(m).fill(1e-13);
-            SaddlePointMatrix lhs(H, A, ifixed);
+            SaddlePointMatrix lhs(H, A, G, ifixed);
             TEST_SADDLE_POINT_SOLVER(options);
         }
 
@@ -191,7 +193,7 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
             H.fill(0.0);
             H.diagonal().fill(1e+13);
             H.diagonal().head(m - 1).fill(1e-13);
-            SaddlePointMatrix lhs(H, A, ifixed);
+            SaddlePointMatrix lhs(H, A, G, ifixed);
             TEST_SADDLE_POINT_SOLVER(options);
         }
     }

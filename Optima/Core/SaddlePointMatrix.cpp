@@ -22,8 +22,8 @@ using namespace Eigen;
 
 namespace Optima {
 
-SaddlePointMatrix::SaddlePointMatrix(MatrixXdConstRef H, MatrixXdConstRef A, VectorXiConstRef fixed)
-: m_H(H), m_A(A), m_fixed(fixed)
+SaddlePointMatrix::SaddlePointMatrix(MatrixXdConstRef H, MatrixXdConstRef A, MatrixXdConstRef G, VectorXiConstRef fixed)
+: m_H(H), m_A(A), m_G(G), m_fixed(fixed)
 {}
 
 auto SaddlePointMatrix::dim() const -> Index
@@ -39,6 +39,11 @@ auto SaddlePointMatrix::H() const -> MatrixXdConstRef
 auto SaddlePointMatrix::A() const -> MatrixXdConstRef
 {
     return m_A;
+}
+
+auto SaddlePointMatrix::G() const -> MatrixXdConstRef
+{
+    return m_G;
 }
 
 auto SaddlePointMatrix::fixed() const -> VectorXiConstRef
@@ -58,12 +63,14 @@ auto operator<<(MatrixXdRef mat, const SaddlePointMatrix& lhs) -> MatrixXdRef
 {
     const auto& H = lhs.H();
     const auto& A = lhs.A();
+    const auto& G = lhs.G();
     const auto& fixed = lhs.fixed();
     const Index n = A.cols();
     const Index m = A.rows();
     mat.topLeftCorner(n, n) << H;
     mat.topRightCorner(n, m) = tr(A);
     mat.bottomLeftCorner(m, n) = A;
+    mat.bottomRightCorner(m, m) = G;
     rows(mat, fixed).fill(0.0);
     cols(mat, fixed).topRows(n).fill(0.0);
     for(Index i = 0; i < fixed.size(); ++i)

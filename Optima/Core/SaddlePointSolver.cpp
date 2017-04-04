@@ -215,8 +215,9 @@ struct SaddlePointSolver::Impl
         M.bottomRows(nbx).middleCols(nbx, nnx) = Sx;
         M.rightCols(nbx).middleRows(nbx, nnx)  = tr(Sx);
 
-        // Set the zero block of M on the bottom-right corner
-        M.bottomRightCorner(nbx, nbx).setZero();
+        // Set the G block of M on the bottom-right corner
+        if(lhs.G().size()) M.bottomRightCorner(nbx, nbx) = lhs.G();
+        else M.bottomRightCorner(nbx, nbx).setZero();
 
         // Set the H block of the canonical saddle point matrix
         M.topLeftCorner(nx, nx) = submatrix(lhs.H(), ivx, ivx);
@@ -455,7 +456,7 @@ struct SaddlePointSolver::Impl
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a nullspace method.
-    auto decomposeNullspace(const SaddlePointMatrix& lhs) -> void
+    auto decomposeNullspaceZeroG(const SaddlePointMatrix& lhs) -> void
     {
         // Update the canonical form of the Jacobian matrix A
         updateCanonicalForm(lhs);
@@ -492,8 +493,93 @@ struct SaddlePointSolver::Impl
         if(nnx) luxn.compute(Mnnx);
     }
 
+    /// Decompose the coefficient matrix of the saddle point problem using a nullspace method.
+    auto decomposeNullspaceDenseG(const SaddlePointMatrix& lhs) -> void
+    {
+        // Update the canonical form of the Jacobian matrix A
+        updateCanonicalForm(lhs);
+
+        // Alias to the matrices of the canonicalization process
+        const auto& S = canonicalizer.S();
+        const auto& R = canonicalizer.R();
+
+        // The indices of the free variables
+        auto ivx  = iordering.head(nx);
+        auto ivbx = ivx.head(nbx);
+        auto ivnx = ivx.tail(nnx);
+
+        auto Sbnx = S.topLeftCorner(nbx, nnx);
+
+        // Create auxiliary matrix views
+        auto Hx   = mat.topLeftCorner(nx, nx);
+        auto Hbbx = Hx.topLeftCorner(nbx, nbx);
+        auto Hbnx = Hx.topRightCorner(nbx, nnx);
+        auto Hnbx = Hx.bottomLeftCorner(nnx, nbx);
+        auto Hnnx = Hx.bottomRightCorner(nnx, nnx);
+
+        Hx.noalias() = submatrix(lhs.H(), ivx, ivx);
+
+        auto Gbb  = mat.bottomRightCorner(nb, nb);
+        auto Gbbx = Gbb.topLeftCorner(nbx, nbx);
+
+        Gbbx = R * lhs.G() * tr(R);
+
+        auto M = mat.bottomRightCorner(nx, nx);
+        auto Mbbx = M.topLeftCorner(nbx, nbx);
+        auto Mbnx = M.topRightCorner(nbx, nnx);
+        auto Mnbx = M.bottomLeftCorner(nnx, nbx);
+        auto Mnnx = M.bottomRightCorner(nnx, nnx);
+
+        Mbbx.noalias()   = -Hbbx*Gbbx;
+        Mbbx.diagonal() += ones(nbx);
+
+        Mnbx.noalias() = -H
+
+
+
+        auto Hbx = Hx.leftCols(nbx);
+
+        auto B    = mat.bottomLeftCorner(nx, nbx);
+        auto Bbbx = B.topRows(nbx);
+        auto Bnbx = B.bottomRows(nnx);
+
+        // Set `H` as the diagonal Hessian according to current canonical ordering
+
+
+
+        auto T    = mat.topRightCorner(nbx, nx);
+        auto Tbbx = T.leftCols(nbx);
+        auto Tbnx = T.rightCols(nnx);
+
+        B.noalias() = -Hbx * Gbbx;
+        T.noalias() = -Hbx * Gbbx;
+
+
+        Bnbx.noalias() = G
+        auto M = Hx;
+
+
+        // Calculate auxiliary matrix Bbn
+        Bbnx.noalias()  = Hbbx * Sbnx;
+        Bbnx.noalias() -= Hbnx;
+
+        // Calculate coefficient matrix Mnn for the xn equation.
+        Mnnx.noalias() += tr(Sbnx) * Bbnx;
+        Mnnx.noalias() -= Hnbx * Sbnx;
+
+        // Compute the LU decomposition of Mnnx.
+        if(nnx) luxn.compute(Mnnx);
+    }
+
+    /// Decompose the coefficient matrix of the saddle point problem using a nullspace method.
+    auto decomposeNullspace(const SaddlePointMatrix& lhs) -> void
+    {
+        if(lhs.G().size()) decomposeNullspaceDenseG(lhs);
+        else decomposeNullspaceZeroG(lhs);
+    }
+
     /// Solve the saddle point problem using a nullspace method.
-    auto solveNullspace(const SaddlePointVector& rhs, SaddlePointSolution& sol) -> void
+    auto solveNullspaceZeroG(const SaddlePointVector& rhs, SaddlePointSolution& sol) -> void
     {
         // Alias to members of the saddle point vector solution.
         auto x = sol.x();
@@ -571,6 +657,13 @@ struct SaddlePointSolver::Impl
         // Permute back the variables `x` to their original ordering
         rows(x, ivx).noalias() = ax;
         rows(x, ivf).noalias() = af;
+    }
+
+    /// Solve the saddle point problem using a nullspace method.
+    auto solveNullspace(const SaddlePointVector& rhs, SaddlePointSolution& sol) -> void
+    {
+        if(lhs.G().size()) solveNullspaceDenseG(rhs, sol);
+        else solveNullspaceZeroG(rhs, sol);
     }
 
     /// Decompose the coefficient matrix of the saddle point problem.
@@ -687,6 +780,11 @@ auto SaddlePointSolver::solve(SaddlePointVector rhs, SaddlePointSolution sol) ->
 auto SaddlePointSolver::solve(SaddlePointMatrix lhs, SaddlePointVector rhs, SaddlePointSolution sol) -> SaddlePointResult
 {
     return pimpl->solve(lhs, rhs, sol);
+}
+
+auto SaddlePointSolver::update(const VectorXi& ordering) -> void
+{
+    pimpl->canonicalizer.update(ordering);
 }
 
 } // namespace Optima

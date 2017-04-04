@@ -26,16 +26,17 @@ TEST_CASE("Testing SaddlePointMatrix...")
 {
     MatrixXd H = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};
     MatrixXd A = {{1, 2, 3}, {3, 4, 5}};
+    MatrixXd G = {{1, 2}, {3, 4}};
     VectorXi ifixed;
 
-    SaddlePointMatrix mat(H, A, ifixed);
+    SaddlePointMatrix mat(H, A, G, ifixed);
 
     MatrixXd M = {
 		{1,  2,  3, 1, 3},
 		{4,  5,  6, 2, 4},
 		{7,  8,  9, 3, 5},
-		{1,  2,  3, 0, 0},
-		{3,  4,  5, 0, 0}
+		{1,  2,  3, 1, 2},
+		{3,  4,  5, 3, 4}
     };
 
     // Check conversion to a Matrix instance
@@ -45,7 +46,7 @@ TEST_CASE("Testing SaddlePointMatrix...")
     {
         ifixed = {1};
 
-        SaddlePointMatrix mat(H, A, ifixed);
+        SaddlePointMatrix mat(H, A, G, ifixed);
 
         M.row(1).fill(0.0);
         M.col(1).topRows(3).fill(0.0);
