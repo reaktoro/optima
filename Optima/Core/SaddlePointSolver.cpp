@@ -331,34 +331,34 @@ struct SaddlePointSolver::Impl
 
         auto M = mat.bottomRightCorner(nbx + nnx2, nbx + nnx2);
 
-        auto Mt = M.topRows(nnx2);
-        auto Mtl = Mt.leftCols(nnx2);
-        auto Mtm = Mt.middleCols(nnx2, nbx1);
-        auto Mtr = Mt.rightCols(nbx2);
+        auto Mt = M.topRows(nbx2);
+        auto Mtl = Mt.leftCols(nbx2);
+        auto Mtm = Mt.middleCols(nbx2, nbx1);
+        auto Mtr = Mt.rightCols(nnx2);
 
-        auto Mm = M.middleRows(nnx2, nbx1);
-        auto Mml = Mm.leftCols(nnx2);
-        auto Mmm = Mm.middleCols(nnx2, nbx1);
-        auto Mmr = Mm.rightCols(nbx2);
+        auto Mm = M.middleRows(nbx2, nbx1);
+        auto Mml = Mm.leftCols(nbx2);
+        auto Mmm = Mm.middleCols(nbx2, nbx1);
+        auto Mmr = Mm.rightCols(nnx2);
 
-        auto Mb = M.bottomRows(nbx2);
-        auto Mbl = Mb.leftCols(nnx2);
-        auto Mbm = Mb.middleCols(nnx2, nbx1);
-        auto Mbr = Mb.rightCols(nbx2);
+        auto Mb = M.bottomRows(nnx2);
+        auto Mbl = Mb.leftCols(nbx2);
+        auto Mbm = Mb.middleCols(nbx2, nbx1);
+        auto Mbr = Mb.rightCols(nnx2);
 
-        Mtl = diag(Hn2n2x);
-        Mtm.noalias() = tr(Sb1n2x);
-        Mtr.noalias() = -tr(Fb2n2x);
+        Mtl.noalias()   = Eb2n1x*tr(Fb2n1x);
+        Mtl.diagonal() += ones(nbx2);
+        Mtm.noalias()   = -Eb2n1x*tr(Sb1n1x);
+        Mtr.noalias()   = Sb2n2x;
 
-        Mml.noalias() = Sb1n2x;
-        Mmm.noalias() = -Eb1n1x*tr(Sb1n1x);
+        Mml.noalias()   = Eb1n1x*tr(Fb2n1x);
+        Mmm.noalias()   = -Eb1n1x*tr(Sb1n1x);
         Mmm.diagonal() -= inv(Hb1b1x);
-        Mmr.noalias() = -Eb1n1x*tr(Fb2n1x);
+        Mmr.noalias()   = Sb1n2x;
 
-        Mbl.noalias() = Sb2n2x;
-        Mbm.noalias() = -Eb2n1x*tr(Sb1n1x);
-        Mbr.noalias() = Eb2n1x*tr(Fb2n1x);
-        Mbr.diagonal() += ones(nbx2);
+        Mbl.noalias()   = -tr(Fb2n2x);
+        Mbm.noalias()   = tr(Sb1n2x);
+        Mbr             = diag(Hn2n2x);
 
         // Compute the LU decomposition of Mx.
         luxb.compute(M);
@@ -391,9 +391,9 @@ struct SaddlePointSolver::Impl
 
         auto r = x.head(nnx2 + nbx);
 
-        auto xn2 = r.head(nnx2);
-        auto yb1 = r.segment(nnx2, nbx1);
-        auto xb2 = r.tail(nbx2);
+        auto xb2 = r.head(nbx2);
+        auto yb1 = r.segment(nbx2, nbx1);
+        auto xn2 = r.tail(nnx2);
 
         // Alias to the matrices of the canonicalization process
         const auto& S = canonicalizer.S();
@@ -435,7 +435,7 @@ struct SaddlePointSolver::Impl
         bb1.noalias() -= ab1/Hb1b1x - Eb1n1x*an1;
         bb2.noalias() -= Eb2n1x*an1;
 
-        r << an2, bb1, bb2;
+        r << bb2, bb1, an2;
 
         r.noalias() = luxb.solve(r);
 
