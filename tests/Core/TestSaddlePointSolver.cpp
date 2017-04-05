@@ -50,7 +50,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
     solver.setOptions(options);
     solver.canonicalize(lhs.A());
     solver.decompose(lhs);
-    solver.solve(rhs, sol);
+    solver.solve(lhs, rhs, sol);
 
     double error = (lhs.matrix() * s - r).norm()/r.norm();
 

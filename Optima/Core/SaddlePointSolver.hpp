@@ -67,7 +67,7 @@ public:
     /// \eqc{e = ||\mathrm{lhs} \times \mathrm{sol} - \mathrm{rhs}||/||\mathrm{rhs}||.}
     /// @param lhs The saddle point matrix of the saddle point problem.
     /// @param rhs The saddle point right-hand side vector of the saddle point problem.
-    auto setMethodMoreAccurate(const SaddlePointMatrix& lhs, const SaddlePointVector& rhs) -> void;
+    auto setMethodMoreAccurate(SaddlePointMatrix lhs, SaddlePointVector rhs) -> void;
 
     /// Return the current saddle point options.
     auto options() const -> const SaddlePointOptions&;
@@ -86,20 +86,13 @@ public:
 
     /// Solve the saddle point problem.
     /// @note This method expects that a call to method @ref decompose has already been performed.
-    /// @param rhs The right-hand side vector of the saddle point problem.
-    /// @param sol The solution of the saddle point problem.
-    auto solve(SaddlePointVector rhs, SaddlePointSolution sol) -> SaddlePointResult;
-
-    /// Solve the saddle point problem.
-    /// @note This method solves the saddle point problem without exploring
-    /// @note the special structure of the saddle point matrix.
-    /// @param lhs The left-hand side matrix of the saddle point problem.
+    /// @param lhs The coefficient matrix of the saddle point problem.
     /// @param rhs The right-hand side vector of the saddle point problem.
     /// @param sol The solution of the saddle point problem.
     auto solve(SaddlePointMatrix lhs, SaddlePointVector rhs, SaddlePointSolution sol) -> SaddlePointResult;
 
     /// Update the order of the variables.
-    auto update(const VectorXi& ordering) -> void;
+    auto update(VectorXiConstRef ordering) -> void;
 
 private:
     struct Impl;

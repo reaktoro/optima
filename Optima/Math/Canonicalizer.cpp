@@ -57,7 +57,7 @@ struct Canonicalizer::Impl
 	double threshold;
 
     /// Compute the canonical matrix of the given matrix.
-	auto compute(const MatrixXd& A) -> void
+	auto compute(MatrixXdConstRef A) -> void
 	{
 	    // The number of rows and columns of A
 	    const Index m = A.rows();
@@ -145,7 +145,7 @@ struct Canonicalizer::Impl
 	}
 
     /// Update the existing canonical form with given priority weights for the columns.
-	auto update(const VectorXd& w) -> void
+	auto update(VectorXdConstRef w) -> void
 	{
 	    // Assert there are as many weights as there are variables
 	    assert(w.rows() == lu.cols() &&
@@ -215,7 +215,7 @@ struct Canonicalizer::Impl
 	}
 
 	/// Update the order of the variables.
-    auto update(const VectorXi& ordering) -> void
+    auto update(VectorXiConstRef ordering) -> void
     {
         ordering.asPermutation().transpose().applyThisOnTheLeft(Q);
     }
@@ -225,7 +225,7 @@ Canonicalizer::Canonicalizer()
 : pimpl(new Impl())
 {}
 
-Canonicalizer::Canonicalizer(const MatrixXd& A)
+Canonicalizer::Canonicalizer(MatrixXdConstRef A)
 : pimpl(new Impl())
 {
 	compute(A);
@@ -304,7 +304,7 @@ auto Canonicalizer::inonbasic() const -> VectorXiConstRef
     return Q().indices().tail(numNonBasicVariables());
 }
 
-auto Canonicalizer::compute(const MatrixXd& A) -> void
+auto Canonicalizer::compute(MatrixXdConstRef A) -> void
 {
     pimpl->compute(A);
 }
@@ -319,12 +319,12 @@ auto Canonicalizer::swapBasicVariable(Index ibasic, Index inonbasic) -> void
     pimpl->swapBasicVariable(ibasic, inonbasic);
 }
 
-auto Canonicalizer::update(const VectorXd& weights) -> void
+auto Canonicalizer::update(VectorXdConstRef weights) -> void
 {
     pimpl->update(weights);
 }
 
-auto Canonicalizer::update(const VectorXi& ordering) -> void
+auto Canonicalizer::update(VectorXiConstRef ordering) -> void
 {
     pimpl->update(ordering);
 }

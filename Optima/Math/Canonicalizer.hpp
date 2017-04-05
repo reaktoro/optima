@@ -37,7 +37,7 @@ public:
     Canonicalizer();
 
     /// Construct a Canonicalizer instance with given matrix.
-    Canonicalizer(const MatrixXd& A);
+    Canonicalizer(MatrixXdConstRef A);
 
     /// Construct a copy of a Canonicalizer instance.
     Canonicalizer(const Canonicalizer& other);
@@ -82,7 +82,7 @@ public:
     auto inonbasic() const -> VectorXiConstRef;
 
 	/// Compute the canonical matrix of the given matrix.
-	auto compute(const MatrixXd& A) -> void;
+	auto compute(MatrixXdConstRef A) -> void;
 
 	/// Rationalize the entries in the canonical form.
 	/// This method should be used if the entries in matrix \eq{A} are rational numbers and
@@ -110,10 +110,10 @@ public:
 	/// with non-positive weights need to be basic variables. This happens when all variables with
 	/// non-zero coefficient in a row of matrix \eq{A} have non-positive weights.
     /// @param weights The priority weights of the variables.
-	auto update(const VectorXd& weights) -> void;
+	auto update(VectorXdConstRef weights) -> void;
 
 	/// Update the order of the variables.
-	auto update(const VectorXi& ordering) -> void;
+	auto update(VectorXiConstRef ordering) -> void;
 
 private:
 	struct Impl;
