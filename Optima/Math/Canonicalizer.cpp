@@ -259,12 +259,12 @@ auto Canonicalizer::numNonBasicVariables() const -> Index
     return numVariables() - numBasicVariables();
 }
 
-auto Canonicalizer::S() const -> const MatrixXd&
+auto Canonicalizer::S() const -> MatrixXdConstRef
 {
 	return pimpl->S;
 }
 
-auto Canonicalizer::R() const -> const MatrixXd&
+auto Canonicalizer::R() const -> MatrixXdConstRef
 {
 	return pimpl->R;
 }

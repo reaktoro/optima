@@ -58,10 +58,10 @@ public:
     auto numNonBasicVariables() const -> Index;
 
     /// Return the matrix \eq{S} of the canonicalization.
-    auto S() const -> const MatrixXd&;
+    auto S() const -> MatrixXdConstRef;
 
     /// Return the canonicalizer matrix \eq{R}.
-    auto R() const -> const MatrixXd&;
+    auto R() const -> MatrixXdConstRef;
 
     /// Return the permutation matrix \eq{Q} of the canonicalization.
     auto Q() const -> const PermutationMatrix&;
