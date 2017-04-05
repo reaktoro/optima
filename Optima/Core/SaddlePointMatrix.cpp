@@ -70,7 +70,8 @@ auto operator<<(MatrixXdRef mat, const SaddlePointMatrix& lhs) -> MatrixXdRef
     mat.topLeftCorner(n, n) << H;
     mat.topRightCorner(n, m) = tr(A);
     mat.bottomLeftCorner(m, n) = A;
-    mat.bottomRightCorner(m, m) = G;
+    if(G.size()) mat.bottomRightCorner(m, m) = G;
+    else mat.bottomRightCorner(m, m).fill(0.0);
     rows(mat, fixed).fill(0.0);
     cols(mat, fixed).topRows(n).fill(0.0);
     for(Index i = 0; i < fixed.size(); ++i)
