@@ -45,8 +45,11 @@ struct SaddlePointSolver::Impl
     /// The number of rows and columns in the Jacobian matrix *A*
     Index m, n;
 
-    /// The number of basic and non-basic.
+    /// The number of basic and non-basic variables.
     Index nb, nn;
+
+    /// The number of linearly dependent rows in *A*
+    Index nl;
 
     /// The number of free and fixed variables.
     Index nx, nf;
@@ -58,10 +61,10 @@ struct SaddlePointSolver::Impl
     Index nnx, nnf;
 
     /// The number of pivot free basic variables.
-    Index nbx1, nnx1;
+    Index nb1, nn1;
 
     /// The number of non-pivot free non-basic variables.
-    Index nbx2, nnx2;
+    Index nb2, nn2;
 
     /// The priority weights for the selection of basic variables.
     VectorXd weights;
@@ -109,6 +112,9 @@ struct SaddlePointSolver::Impl
         nb = canonicalizer.numBasicVariables();
         nn = canonicalizer.numNonBasicVariables();
 
+        // Set the number of linearly dependent rows in A
+        nl = m - nb;
+
         /// Set the number of free and fixed variables
         nx = n;
         nf = 0;
@@ -122,12 +128,12 @@ struct SaddlePointSolver::Impl
         nnf = 0;
 
         // Set the number of pivot free basic variables.
-        nbx1 = nbx;
-        nnx1 = nnx;
+        nb1 = nbx;
+        nn1 = nnx;
 
         // Set the number of non-pivot free non-basic variables.
-        nbx2 = 0;
-        nnx2 = 0;
+        nb2 = 0;
+        nn2 = 0;
 
         // Initialize the ordering of the variables
         iordering.head(nb) = canonicalizer.ibasic();
@@ -177,14 +183,14 @@ struct SaddlePointSolver::Impl
         nnx = nn - nnf;
 
         // Update the number of non-pivot free basic variables.
-        nbx2 = 0; while(nbx2 < nbx && weights[ibasic[nbx2]] > 1.0) ++nbx2;
+        nb2 = 0; while(nb2 < nbx && weights[ibasic[nb2]] > 1.0) ++nb2;
 
         // Update the number of non-pivot free non-basic variables.
-        nnx2 = 0; while(nnx2 < nnx && weights[inonbasic[nnx2]] > norminf(S.col(nnx2))) ++nnx2;
+        nn2 = 0; while(nn2 < nnx && weights[inonbasic[nn2]] > norminf(S.col(nn2))) ++nn2;
 
         // Update the number of pivot free basic and non-basic variables.
-        nbx1 = nbx - nbx2;
-        nnx1 = nnx - nnx2;
+        nb1 = nbx - nb2;
+        nn1 = nnx - nn2;
 
         // Update the ordering of the free variables
         iordering.head(nx).head(nbx) = canonicalizer.ibasic().head(nbx);
@@ -205,58 +211,22 @@ struct SaddlePointSolver::Impl
         auto ivx = iordering.head(nx);
 
         // Alias to the matrices of the canonicalization process
-        auto Sbnx = canonicalizer.S().topLeftCorner(nbx, nnx);
+        auto Sbxnx = canonicalizer.S().topLeftCorner(nbx, nnx);
+        auto Ibxbx = identity(nbx, nbx);
 
         // Create a view to the M block of the auxiliary matrix `mat` where the canonical saddle point matrix is defined
         auto M = mat.topLeftCorner(2*nbx + nnx, 2*nbx + nnx);
 
         // Set the Ibb blocks in the canonical saddle point matrix
-        M.bottomLeftCorner(nbx, nbx).setIdentity(nbx, nbx);
-        M.topRightCorner(nbx, nbx).setIdentity(nbx, nbx);
+        M.bottomLeftCorner(nbx, nbx).noalias() = Ibxbx;
+        M.topRightCorner(nbx, nbx).noalias() = Ibxbx;
 
         // Set the Sx and tr(Sx) blocks in the canonical saddle point matrix
-        M.bottomRows(nbx).middleCols(nbx, nnx) = Sbnx;
-        M.rightCols(nbx).middleRows(nbx, nnx)  = tr(Sbnx);
+        M.bottomRows(nbx).middleCols(nbx, nnx) = Sbxnx;
+        M.rightCols(nbx).middleRows(nbx, nnx)  = tr(Sbxnx);
 
         // Set the G block of M on the bottom-right corner
         M.bottomRightCorner(nbx, nbx).setZero();
-
-        // Set the H block of the canonical saddle point matrix
-        M.topLeftCorner(nx, nx) = submatrix(lhs.H(), ivx, ivx);
-
-        // Compute the LU decomposition of M.
-        if(options.method == SaddlePointMethod::PartialPivLU)
-            luxy_partial.compute(M);
-        else
-            luxy_full.compute(M);
-    }
-
-    /// Decompose the coefficient matrix of the saddle point problem using a LU decomposition method.
-    auto decomposeLU_DenseG(SaddlePointMatrix lhs) -> void
-    {
-        // Update the canonical form of the Jacobian matrix A
-        updateCanonicalForm(lhs);
-
-        // The indices of the free variables
-        auto ivx = iordering.head(nx);
-
-        // Alias to the matrices of the canonicalization process
-        auto Sx = canonicalizer.S().leftCols(nnx);
-        auto R = canonicalizer.R();
-
-        // Create a view to the M block of the auxiliary matrix `mat` where the canonical saddle point matrix is defined
-        auto M = mat.topLeftCorner(m + nx, m + nx);
-
-        // Set the Ibb blocks in the canonical saddle point matrix
-        M.bottomLeftCorner(m, m).setIdentity(m, m);
-        M.topRightCorner(m, m).setIdentity(m, m);
-
-        // Set the Sx and tr(Sx) blocks in the canonical saddle point matrix
-        M.bottomRows(m).middleCols(m, nnx) = Sx;
-        M.rightCols(m).middleRows(m, nnx)  = tr(Sx);
-
-        // Set the G block of M on the bottom-right corner
-        M.bottomRightCorner(m, m) = R * lhs.G() * tr(R);
 
         // Set the H block of the canonical saddle point matrix
         M.topLeftCorner(nx, nx) = submatrix(lhs.H(), ivx, ivx);
@@ -347,6 +317,43 @@ struct SaddlePointSolver::Impl
         rows(x, ivf).noalias() = af;
     }
 
+    /// Decompose the coefficient matrix of the saddle point problem using a LU decomposition method.
+    auto decomposeLU_DenseG(SaddlePointMatrix lhs) -> void
+    {
+        // Update the canonical form of the Jacobian matrix A
+        updateCanonicalForm(lhs);
+
+        // The indices of the free variables
+        auto ivx = iordering.head(nx);
+
+        // Alias to the matrices of the canonicalization process
+        auto Sbn   = canonicalizer.S();
+        auto Sbxnx = Sbn.topLeftCorner(nbx, nnx);
+
+        auto R = canonicalizer.R();
+
+        auto Ibxbx = identity(nbx, nbx);
+
+        // Create a view to the M block of the auxiliary matrix `mat` where the canonical saddle point matrix is defined
+        auto M = mat.topLeftCorner(m + nx, m + nx);
+
+        M.topLeftCorner(nx, nx) = submatrix(lhs.H(), ivx, ivx);
+
+        M.middleCols(nx, nbx).topRows(nx) << Ibxbx, tr(Sbxnx);
+        M.middleRows(nx, nbx).leftCols(nx) << Ibxbx, Sbxnx;
+
+        M.topRightCorner(nf + nl, nf + nl).setZero();
+        M.bottomLeftCorner(nf + nl, nf + nl).setZero();
+
+        M.bottomRightCorner(m, m) = R * lhs.G() * tr(R);
+
+        // Compute the LU decomposition of M.
+        if(options.method == SaddlePointMethod::PartialPivLU)
+            luxy_partial.compute(M);
+        else
+            luxy_full.compute(M);
+    }
+
     /// Solve the saddle point problem using a LU decomposition method.
     auto solveLU_DenseG(SaddlePointMatrix lhs, SaddlePointVector rhs, SaddlePointSolution& sol) -> void
     {
@@ -354,23 +361,15 @@ struct SaddlePointSolver::Impl
         auto x = sol.x();
         auto y = sol.y();
 
-        // Alias to members of the saddle point right-hand side vector.
-        auto a = rhs.a();
-        auto b = rhs.b();
-
         // Alias to the matrices of the canonicalization process
         auto S = canonicalizer.S();
         auto R = canonicalizer.R();
 
-        // The columns of matrix `S` corresponding to fixed non-basic variables
-//        auto Sbnf = S.rightCols(nnf);
-        auto Sbnf = S.rightCols(nnf);
-
-        // The columns of identity matrix corresponding to fixed basic variables
-        auto Ibf = identity(m, m).leftCols(nb).rightCols(nbf);
-
-        // The rows of matrix `R` corresponding to free basic variables
-//        auto Rx = R.topRows(nbx);
+        // Alias to the matrices of the canonicalization process
+        auto Sbn   = canonicalizer.S();
+        auto Sbxnx = Sbn.topLeftCorner(nbx, nnx);
+        auto Sbxnf = Sbn.topRightCorner(nbx, nnf);
+        auto Sbfnf = Sbn.bottomRightCorner(nbf, nnf);
 
         // The indices of the free and fixed variables
         auto ivx = iordering.head(nx);
@@ -380,32 +379,25 @@ struct SaddlePointSolver::Impl
         auto ax = vec.head(nx);
         auto af = vec.tail(nf);
 
-        // The view in `vec` corresponding to values of `b` for linerly independent equation.
-        auto bb = vec.segment(nx, m);
-//        auto bx = bb.head(nbx);
-
-        // The view in `af` corresponding to fixed basic and fixed non-basic variables.
         auto abf = af.head(nbf);
         auto anf = af.tail(nnf);
 
-        // The view in `vec` corresponding to the right-hand side vector of the linear equation
+        // The view in `vec` corresponding to values of `b` for linerly independent equation.
+        auto b   = vec.segment(nx, m);
+        auto bbx = b.head(nbx);
+        auto bbf = b.segment(nbx, nbf);
+        auto bl  = b.tail(nl);
+
+        ax.noalias() = rows(rhs.a(), ivx);
+        af.noalias() = rows(rhs.a(), ivf);
+        b.noalias() = R * rhs.b();
+
+        bbx -= Sbxnf * anf;
+        bbf -= Sbfnf * anf + abf;
+
         auto r = vec.head(nx + m);
-//        std::cout << "r1 = " << tr(r) << std::endl;
-//        r.fill(0.0);
-//        std::cout << "r2 = " << tr(r) << std::endl;
 
-        // Set the vectors `ax` and `af`
-        ax.noalias() = rows(a, ivx);
-//        std::cout << "r3 = " << tr(r) << std::endl;
-        af.noalias() = rows(a, ivf);
-//        std::cout << "r4 = " << tr(r) << std::endl;
-
-        // Set the vector `bx`
-        bb.noalias() = R * rhs.b() - Ibf*abf - Sbnf*anf;
-//        bb.noalias() = R*b - Sbnf*anf;
-//        std::cout << "r5 = " << tr(r) << std::endl;
-
-//        std::cout << "bb = " << tr(bb) << std::endl;
+        std::cout << "r = " << tr(r) << std::endl;
 
         // Compute the LU decomposition of M.
         if(options.method == SaddlePointMethod::PartialPivLU)
@@ -413,13 +405,8 @@ struct SaddlePointSolver::Impl
         else
             r.noalias() = luxy_full.solve(r);
 
-
-        std::cout << "r = " << tr(r) << std::endl;
-
-
         // Compute the `y` vector without canonicalization
-//        y.noalias() = tr(Rx)*bx;
-        y.noalias() = tr(R)*bb;
+        y.noalias() = tr(R)*b;
 
         // Permute back the variables x to their original ordering
         rows(x, ivx).noalias() = ax;
@@ -530,47 +517,47 @@ struct SaddlePointSolver::Impl
         auto ivn = ivx.tail(nnx);
 
         auto Sbnx  = canonicalizer.S().topLeftCorner(nbx, nnx);
-        auto Sb1n2 = Sbnx.bottomLeftCorner(nbx1, nnx2);
-        auto Sb2n2 = Sbnx.topLeftCorner(nbx2, nnx2);
-        auto Sbn1  = Sbnx.rightCols(nnx1);
+        auto Sb1n2 = Sbnx.bottomLeftCorner(nb1, nn2);
+        auto Sb2n2 = Sbnx.topLeftCorner(nb2, nn2);
+        auto Sbn1  = Sbnx.rightCols(nn1);
 
         auto R = canonicalizer.R().topRows(nbx);
 
         auto H     = mat.col(0).head(nx);
         auto Hbb   = H.head(nbx);
         auto Hnn   = H.tail(nnx);
-        auto Hb1b1 = Hbb.tail(nbx1);
-        auto Hb2b2 = Hbb.head(nbx2);
-        auto Hn1n1 = Hnn.tail(nnx1);
-        auto Hn2n2 = Hnn.head(nnx2);
+        auto Hb1b1 = Hbb.tail(nb1);
+        auto Hb2b2 = Hbb.head(nb2);
+        auto Hn1n1 = Hnn.tail(nn1);
+        auto Hn2n2 = Hnn.head(nn2);
 
         auto G     = mat.bottomLeftCorner(nbx, nbx);
-        auto Gb2b2 = G.topLeftCorner(nbx2, nbx2);
-        auto Gb2b1 = G.topRightCorner(nbx2, nbx1);
-        auto Gb1b2 = G.bottomLeftCorner(nbx1, nbx2);
-        auto Gb1b1 = G.bottomRightCorner(nbx1, nbx1);
+        auto Gb2b2 = G.topLeftCorner(nb2, nb2);
+        auto Gb2b1 = G.topRightCorner(nb2, nb1);
+        auto Gb1b2 = G.bottomLeftCorner(nb1, nb2);
+        auto Gb1b1 = G.bottomRightCorner(nb1, nb1);
 
         auto T = mat.topRightCorner(nbx, nbx);
-        auto Tb2b2 = T.topLeftCorner(nbx2, nbx2);
-        auto Tb2b1 = T.topRightCorner(nbx2, nbx1);
-        auto Tb1b2 = T.bottomLeftCorner(nbx1, nbx2);
-        auto Tb1b1 = T.bottomRightCorner(nbx1, nbx1);
+        auto Tb2b2 = T.topLeftCorner(nb2, nb2);
+        auto Tb2b1 = T.topRightCorner(nb2, nb1);
+        auto Tb1b2 = T.bottomLeftCorner(nb1, nb2);
+        auto Tb1b1 = T.bottomRightCorner(nb1, nb1);
 
-        auto B = mat.rightCols(nbx).middleRows(nbx, nnx1);
+        auto B = mat.rightCols(nbx).middleRows(nbx, nn1);
 
-        auto M   = mat.bottomRightCorner(nbx + nnx2, nbx + nnx2);
-        auto Mt  = M.topRows(nbx2);
-        auto Mtl = Mt.leftCols(nbx2);
-        auto Mtm = Mt.middleCols(nbx2, nbx1);
-        auto Mtr = Mt.rightCols(nnx2);
-        auto Mm  = M.middleRows(nbx2, nbx1);
-        auto Mml = Mm.leftCols(nbx2);
-        auto Mmm = Mm.middleCols(nbx2, nbx1);
-        auto Mmr = Mm.rightCols(nnx2);
-        auto Mb  = M.bottomRows(nnx2);
-        auto Mbl = Mb.leftCols(nbx2);
-        auto Mbm = Mb.middleCols(nbx2, nbx1);
-        auto Mbr = Mb.rightCols(nnx2);
+        auto M   = mat.bottomRightCorner(nbx + nn2, nbx + nn2);
+        auto Mt  = M.topRows(nb2);
+        auto Mtl = Mt.leftCols(nb2);
+        auto Mtm = Mt.middleCols(nb2, nb1);
+        auto Mtr = Mt.rightCols(nn2);
+        auto Mm  = M.middleRows(nb2, nb1);
+        auto Mml = Mm.leftCols(nb2);
+        auto Mmm = Mm.middleCols(nb2, nb1);
+        auto Mmr = Mm.rightCols(nn2);
+        auto Mb  = M.bottomRows(nn2);
+        auto Mbl = Mb.leftCols(nb2);
+        auto Mbm = Mb.middleCols(nb2, nb1);
+        auto Mbr = Mb.rightCols(nn2);
 
 
 
@@ -603,7 +590,7 @@ struct SaddlePointSolver::Impl
         if(lhs.G().size())
         {
             Mtl.noalias()   = (Tb2b2 - Gb2b2)*diag(Hb2b2);
-            Mtl.diagonal() += ones(nbx2);
+            Mtl.diagonal() += ones(nb2);
             std::cout << "mat = 7\n" << mat << std::endl;
             Mtm.noalias()   = Gb2b1 - Tb2b1;
             std::cout << "mat = 8\n" << mat << std::endl;
@@ -616,7 +603,7 @@ struct SaddlePointSolver::Impl
         else
         {
             Mtl.noalias()   = Tb2b2 * diag(Hb2b2);
-            Mtl.diagonal() += ones(nbx2);
+            Mtl.diagonal() += ones(nb2);
             Mtm.noalias()   = -Tb2b1;
             Mml.noalias()   = Tb1b2 * diag(Hb2b2);
             Mmm.noalias()   = -Tb1b1;
@@ -646,23 +633,23 @@ struct SaddlePointSolver::Impl
 
         auto Sbnx  = canonicalizer.S().topLeftCorner(nbx, nnx);
         auto Sbnf  = canonicalizer.S().topRightCorner(nbx, nnf);
-        auto Sb1n1 = Sbnx.bottomRightCorner(nbx1, nnx1);
-        auto Sb2n1 = Sbnx.topRightCorner(nbx2, nnx1);
-        auto Sb2n2 = Sbnx.topLeftCorner(nbx2, nnx2);
+        auto Sb1n1 = Sbnx.bottomRightCorner(nb1, nn1);
+        auto Sb2n1 = Sbnx.topRightCorner(nb2, nn1);
+        auto Sb2n2 = Sbnx.topLeftCorner(nb2, nn2);
 
         auto R = canonicalizer.R().topRows(nbx);
 
         auto H     = mat.col(0).head(nx);
         auto Hbb   = H.head(nbx);
         auto Hnn   = H.tail(nnx);
-        auto Hb1b1 = Hbb.tail(nbx1);
-        auto Hb2b2 = Hbb.head(nbx2);
-        auto Hn1n1 = Hnn.tail(nnx1);
-        auto Hn2n2 = Hnn.head(nnx2);
+        auto Hb1b1 = Hbb.tail(nb1);
+        auto Hb2b2 = Hbb.head(nb2);
+        auto Hn1n1 = Hnn.tail(nn1);
+        auto Hn2n2 = Hnn.head(nn2);
 
         auto G     = mat.bottomLeftCorner(nbx, nbx);
-        auto Gb2b2 = G.topLeftCorner(nbx2, nbx2);
-        auto Gb1b2 = G.bottomLeftCorner(nbx1, nbx2);
+        auto Gb2b2 = G.topLeftCorner(nb2, nb2);
+        auto Gb1b2 = G.bottomLeftCorner(nb1, nb2);
 
         auto a   = vec.head(n);
         auto ax  = a.head(nx);
@@ -670,21 +657,21 @@ struct SaddlePointSolver::Impl
         auto abx = ax.head(nbx);
         auto anx = ax.tail(nnx);
         auto anf = af.tail(nnf);
-        auto ab1 = abx.tail(nbx1);
-        auto ab2 = abx.head(nbx2);
-        auto an1 = anx.tail(nnx1);
-        auto an2 = anx.head(nnx2);
+        auto ab1 = abx.tail(nb1);
+        auto ab2 = abx.head(nb2);
+        auto an1 = anx.tail(nn1);
+        auto an2 = anx.head(nn2);
 
         auto b   = vec.tail(m);
         auto bb  = b.head(nbx);
-        auto bb1 = bb.tail(nbx1);
-        auto bb2 = bb.head(nbx2);
+        auto bb1 = bb.tail(nb1);
+        auto bb2 = bb.head(nb2);
 
-        auto r = x.head(nnx2 + nbx);
+        auto r = x.head(nn2 + nbx);
 
-        auto xb2 = r.head(nbx2);
-        auto yb1 = r.segment(nbx2, nbx1);
-        auto xn2 = r.tail(nnx2);
+        auto xb2 = r.head(nb2);
+        auto yb1 = r.segment(nb2, nb1);
+        auto xn2 = r.tail(nn2);
 
         a.noalias() = rows(rhs.a(), iordering);
         bb.noalias() = R*rhs.b() - Sbnf*anf;
