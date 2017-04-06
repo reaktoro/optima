@@ -169,6 +169,9 @@ struct Canonicalizer::Impl
 	    const Index nb = r;
 	    const Index nn = n - r;
 
+	    // The upper part of R corresponding to linearly independent rows of A
+        auto Rb = R.topRows(nb);
+
 	    // The indices of the basic and non-basic variables
 	    auto ibasic = Q.indices().head(nb);
 	    auto inonbasic = Q.indices().tail(nn);
@@ -213,8 +216,8 @@ struct Canonicalizer::Impl
 	    // Rearrange the columns of S based on the new order of non-basic variables
 	    Kn.applyThisOnTheRight(S);
 
-	    // Rearrange the rows of R based on the new order of basic variables
-	    Kb.transpose().applyThisOnTheLeft(R);
+	    // Rearrange the top `nb` rows of R based on the new order of basic variables
+	    Kb.transpose().applyThisOnTheLeft(Rb);
 
 	    // Rearrange the permutation matrix Q based on the new order of basic variables
 	    Kb.transpose().applyThisOnTheLeft(ibasic);
@@ -258,6 +261,11 @@ auto Canonicalizer::numVariables() const -> Index
     return pimpl->lu.cols();
 }
 
+auto Canonicalizer::numEquations() const -> Index
+{
+    return pimpl->lu.rows();
+}
+
 auto Canonicalizer::numBasicVariables() const -> Index
 {
     return pimpl->lu.rank();
@@ -285,10 +293,11 @@ auto Canonicalizer::Q() const -> const PermutationMatrix&
 
 auto Canonicalizer::C() const -> MatrixXd
 {
-    const Index nb = numBasicVariables();
+    const Index m  = numEquations();
     const Index n  = numVariables();
-    MatrixXd res(nb, n);
-    res << identity(nb, nb), S();
+    const Index nb = numBasicVariables();
+    MatrixXd res = zeros(m, n);
+    res.topRows(nb) << identity(nb, nb), S();
     return res;
 }
 

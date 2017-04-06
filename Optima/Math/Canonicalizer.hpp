@@ -51,6 +51,9 @@ public:
     /// Return the number of variables.
     auto numVariables() const -> Index;
 
+    /// Return the number of equations.
+    auto numEquations() const -> Index;
+
     /// Return the number of basic variables.
     auto numBasicVariables() const -> Index;
 
