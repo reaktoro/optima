@@ -74,7 +74,7 @@ struct Canonicalizer::Impl
 	    const Index r = lu.rank();
 
 	    // Get the LU factors of matrix A
-	    const auto Lbb = lu.matrixLU().topLeftCorner(r, r).triangularView<Eigen::UnitLower>();
+	    const auto L   = lu.matrixLU().leftCols(m).triangularView<Eigen::UnitLower>();
 	    const auto Ubb = lu.matrixLU().topLeftCorner(r, r).triangularView<Eigen::Upper>();
 	    const auto Ubn = lu.matrixLU().topRightCorner(r, n - r);
 
@@ -84,9 +84,8 @@ struct Canonicalizer::Impl
 
 	    // Calculate the regularizer matrix R
 	    R = P;
-	    R.conservativeResize(r, m);
-	    R = Lbb.solve(R);
-	    R = Ubb.solve(R);
+	    R = L.solve(R);
+	    R.topRows(r) = Ubb.solve(R.topRows(r));
 
 	    // Calculate matrix S
 	    S = Ubn;
@@ -116,6 +115,16 @@ struct Canonicalizer::Impl
     /// Swap a basic variable by a non-basic variable.
 	auto swapBasicVariable(Index ib, Index in) -> void
 	{
+	    // Check if ib < rank(A)
+	    assert(ib < lu.rank() &&
+	        "Could not swap basic and non-basic variables. "
+	            "Expecting an index of basic variable below `r`, where `r = rank(A)`.");
+
+	    // Check if in < n - rank(A)
+	    assert(in < lu.cols() - lu.rank() &&
+	        "Could not swap basic and non-basic variables. "
+	            "Expecting an index of non-basic variable below `n - r`, where `r = rank(A)`.");
+
 	    // Check if S(ib, in) is different than zero
 	    assert(std::abs(S(ib, in)) > threshold &&
 	        "Could not swap basic and non-basic variables. "
@@ -128,7 +137,7 @@ struct Canonicalizer::Impl
 	    const Index m = S.rows();
 	    const double aux = 1.0/S(ib, in);
 
-	    // Update the canonicalizer matrix R
+	    // Update the canonicalizer matrix R (only its `r` upper rows, where `r = rank(A)`)
 	    R.row(ib) *= aux;
 	    for(Index i = 0; i < m; ++i)
 	        if(i != ib) R.row(i) -= S(i, in) * R.row(ib);
