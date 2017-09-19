@@ -69,6 +69,12 @@ struct SaddlePointSolver::Impl
     /// The priority weights for the selection of basic variables.
     VectorXd weights;
 
+    /// The workspace for the Hessian matrix H and matrix G.
+    MatrixXd H, G;
+
+    /// The workspace for the right-hand side vectors a and b
+    VectorXd a, b;
+
     /// The matrix used as a workspace for the decompose and solve methods.
     MatrixXd mat;
 
@@ -101,6 +107,8 @@ struct SaddlePointSolver::Impl
         n = A.cols();
 
         // Allocate auxiliary memory
+        H.resize(n, n);
+        G.resize(m, m);
         mat.resize(n + m, n + m);
         vec.resize(n + m);
         iordering.resize(n);
@@ -115,7 +123,7 @@ struct SaddlePointSolver::Impl
         // Set the number of linearly dependent rows in A
         nl = m - nb;
 
-        /// Set the number of free and fixed variables
+        // Set the number of free and fixed variables
         nx = n;
         nf = 0;
 
@@ -666,103 +674,119 @@ struct SaddlePointSolver::Impl
         updateCanonicalForm(lhs);
 
         // Alias to the matrices of the canonicalization process
-        auto Sbnx = canonicalizer.S().topLeftCorner(nbx, nnx);
+        auto S = canonicalizer.S();
+        auto R = canonicalizer.R();
 
-        // Create auxiliary matrix views
-        auto Hx   = mat.topLeftCorner(nx, nx);
-        auto B    = mat.bottomLeftCorner(m, n);
-        auto Hbbx = Hx.topLeftCorner(nbx, nbx);
-        auto Hbnx = Hx.topRightCorner(nbx, nnx);
-        auto Hnbx = Hx.bottomLeftCorner(nnx, nbx);
-        auto Hnnx = Hx.bottomRightCorner(nnx, nnx);
-        auto Bbnx = B.topLeftCorner(nbx, nnx);
-        auto Mnnx = Hnnx;
+        // Views to the sub-matrices of the canonical matrix S
+        auto Sbxnx = S.topLeftCorner(nbx, nnx);
+
+        // The sub-matrices in H, with Hx = [Hbxbx Hbxnx; Hnxbx Hnxnx]
+        auto Hx    = H.topLeftCorner(nx, nx);
+        auto Hbxbx = Hx.topLeftCorner(nbx, nbx);
+        auto Hbxnx = Hx.topRightCorner(nbx, nnx);
+        auto Hnxbx = Hx.bottomLeftCorner(nnx, nbx);
+        auto Hnxnx = Hx.bottomRightCorner(nnx, nnx);
 
         // The indices of the free variables
         auto ivx = iordering.head(nx);
 
-        // Set `H` as the diagonal Hessian according to current canonical ordering
+        // Retrieve the entries in H corresponding to free variables.
         Hx.noalias() = submatrix(lhs.H(), ivx, ivx);
 
-        // Calculate auxiliary matrix Bbn
-        Bbnx.noalias()  = Hbbx * Sbnx;
-        Bbnx.noalias() -= Hbnx;
+        // The matrix M where we setup the coefficient matrix of the equations
+        auto M = mat.topLeftCorner(nnx, nnx);
 
-        // Calculate coefficient matrix Mnn for the xn equation.
-        Mnnx.noalias() += tr(Sbnx) * Bbnx;
-        Mnnx.noalias() -= Hnbx * Sbnx;
+        // Calculate the coefficient matrix M of the system of linear equations
+        M.noalias() = Hnxnx;
+        M += tr(Sbxnx) * Hbxbx * Sbxnx;
+        M -= Hnxbx * Sbxnx;
+        M -= tr(Sbxnx) * Hbxnx;
 
-        // Compute the LU decomposition of Mnnx.
-        if(nnx) luxn.compute(Mnnx);
+        // Compute the LU decomposition of M.
+        if(nx) luxn.compute(M);
     }
 
     /// Solve the saddle point problem using a nullspace method.
     auto solveNullspaceZeroG(SaddlePointMatrix lhs, SaddlePointVector rhs, SaddlePointSolution& sol) -> void
     {
-        // Alias to members of the saddle point vector solution.
-        auto x = sol.x();
-        auto y = sol.y();
-
-        // Alias to members of the saddle point right-hand side vector.
-        auto a = rhs.a();
-        auto b = rhs.b();
-
         // Alias to the matrices of the canonicalization process
-        auto Sbnx = canonicalizer.S().topLeftCorner(nbx, nnx);
-        auto Sbnf = canonicalizer.S().topRightCorner(nbx, nnf);
+        auto S = canonicalizer.S();
+        auto R = canonicalizer.R();
 
-        auto R = canonicalizer.R().topRows(nbx);
+        // Views to the sub-vectors of right-hand side vector a = [ax af]
+        auto ax = a.head(nx);
+        auto af = a.tail(nf);
+        auto abx = ax.head(nbx);
+        auto anx = ax.tail(nnx);
+        auto abf = af.head(nbf);
+        auto anf = af.tail(nnf);
+
+        // Views to the sub-vectors of right-hand side vector b = [bx bf bl]
+        auto bbx = b.head(nbx);
+        auto bbf = b.segment(nbx, nbf);
+
+        // Views to the sub-matrices of the canonical matrix S
+        auto Sbxnx = S.topLeftCorner(nbx, nnx);
+        auto Sbxnf = S.topRightCorner(nbx, nnf);
+        auto Sbfnf = S.bottomRightCorner(nbf, nnf);
+
+        // Views to the sub-matrices of H, with Hx = [Hbxbx Hbxnx; Hnxbx Hnxnx]
+        auto Hx    = H.topLeftCorner(nx, nx);
+        auto Hbxbx = Hx.topLeftCorner(nbx, nbx);
+        auto Hbxnx = Hx.topRightCorner(nbx, nnx);
+        auto Hnxbx = Hx.bottomLeftCorner(nnx, nbx);
 
         // The indices of the free and fixed variables
         auto ivx = iordering.head(nx);
         auto ivf = iordering.tail(nf);
 
-        // The view in `vec` corresponding to values of `a` for free and fixed variables.
-        auto ax = vec.head(nx);
-        auto af = vec.tail(nf);
-
-        // The view in `af` corresponding to free basic and free non-basic variables.
-        auto abx = ax.head(nbx);
-        auto anx = ax.tail(nnx);
-
-        // The view in `af` corresponding to fixed basic and fixed non-basic variables.
-        auto anf = af.tail(nnf);
-
-        // The view in `vec` corresponding to values of `b` for free basic variables.
-        auto bb = vec.segment(nx, nbx);
-
-        // The view in `y` corresponding to values of `y` for free basic variables.
-        auto yb = y.head(nbx);
-
-        // Create auxiliary matrix views
-        auto Hx   = mat.topLeftCorner(nx, nx);
-        auto Hbbx = Hx.topLeftCorner(nbx, nbx);
-        auto Hbnx = Hx.topRightCorner(nbx, nnx);
-        auto Hnbx = Hx.bottomLeftCorner(nnx, nbx);
+        // The auxiliary vector rb = [rbx rbf rbl]
+        auto rb  = vec.head(m);
+        auto rbx = rb.head(nbx);
+        auto rbf = rb.segment(nbx, nbf);
+        auto rbl = rb.tail(nl);
 
         // Set vectors `ax` and `af` using values from `a`
-        ax.noalias() = rows(a, ivx);
-        af.noalias() = rows(a, ivf);
+        ax.noalias() = rows(rhs.a(), ivx);
+        af.noalias() = rows(rhs.a(), ivf);
 
-        // Set the vector `bx`
-        bb.noalias() = R*b - Sbnf*anf;
+        // Calculate b' = R*b
+        b.noalias() = R*rhs.b();
 
-        auto xx = x.head(nx);
-        auto xbx = xx.head(nbx);
-        auto xnx = xx.tail(nnx);
+        // Calculate bbx'' = bbx' - Sbxnf*anf
+        bbx -= Sbxnf*anf;
 
-        // Compute the saddle point problem solution
-        yb.noalias()  = abx - Hbbx*bb;
-        xnx.noalias() = anx - Hnbx*bb - tr(Sbnx)*yb;
-        if(nnx) anx.noalias() = luxn.solve(xnx);
-        xbx.noalias() = abx;
-        abx.noalias() = bb - Sbnx*anx;
-        bb.noalias()  = xbx - Hbbx*abx - Hbnx*anx;
+        // Calculate bbf'' = bbf' - abf - Sbfnf*anf
+        bbf -= abf + Sbfnf*anf;
 
-        // Compute the y vector without canonicalization
-        y.noalias() = tr(R)*bb;
+        // Calculate abx' = abx - Hbxbx*bbx''
+        abx -= Hbxbx*bbx;
 
-        // Permute back the variables `x` to their original ordering
+        // Calculate anx' = anx - Hnxbx*bbx'' - tr(Sbxnx)*abx'
+        anx -= Hnxbx*bbx + tr(Sbxnx)*abx;
+
+        // Solve the system of linear equations
+        if(nx) anx.noalias() = luxn.solve(anx);
+
+        // Prepare calculation of y' = abx'
+        rbx.noalias() = abx;
+        rbf.noalias() = zeros(nbf);
+        rbl.noalias() = zeros(nl);
+
+        // Calculate xbx temporarily in abx
+        abx.noalias() = bbx - Sbxnx*anx;
+
+        // Calculate y' = abx' - Hbxnx*xnx
+        rbx -= Hbxnx*anx;
+
+        // Alias to solution vectors x and y
+        auto x = sol.x();
+        auto y = sol.y();
+
+        // Calculate y = tr(R) * y'
+        y.noalias() = tr(R) * rb;
+
+        // Set back the values of x = [xx xf] currently stored in a = [ax af]
         rows(x, ivx).noalias() = ax;
         rows(x, ivf).noalias() = af;
     }
@@ -775,134 +799,177 @@ struct SaddlePointSolver::Impl
 
         // Alias to the matrices of the canonicalization process
         auto S = canonicalizer.S();
-        auto R = canonicalizer.R().topRows(nbx);
+        auto R = canonicalizer.R();
+
+        // Views to the sub-matrices of the canonical matrix S
+        auto Sbxnx = S.topLeftCorner(nbx, nnx);
+
+        // The sub-matrices in H, with Hx = [Hbxbx Hbxnx; Hnxbx Hnxnx]
+        auto Hx    = H.topLeftCorner(nx, nx);
+        auto Hbxbx = Hx.topLeftCorner(nbx, nbx);
+        auto Hbxnx = Hx.topRightCorner(nbx, nnx);
+        auto Hnxbx = Hx.bottomLeftCorner(nnx, nbx);
+        auto Hnxnx = Hx.bottomRightCorner(nnx, nnx);
+
+        // The sub-matrices in G' = R * G * tr(R)
+        auto Gbx   = G.topRows(nbx);
+        auto Gbf   = G.middleRows(nbx, nbf);
+        auto Gbl   = G.bottomRows(nl);
+        auto Gbxbx = Gbx.leftCols(nbx);
+        auto Gbxbf = Gbx.middleCols(nbx, nbf);
+        auto Gbxbl = Gbx.rightCols(nl);
+        auto Gbfbx = Gbf.leftCols(nbx);
+        auto Gbfbf = Gbf.middleCols(nbx, nbf);
+        auto Gbfbl = Gbf.rightCols(nl);
+        auto Gblbx = Gbl.leftCols(nbx);
+        auto Gblbf = Gbl.middleCols(nbx, nbf);
+        auto Gblbl = Gbl.rightCols(nl);
 
         // The indices of the free variables
-        auto ivx  = iordering.head(nx);
+        auto ivx = iordering.head(nx);
 
-        auto Sbnx = S.topLeftCorner(nbx, nnx);
-
-        // Create auxiliary matrix views
-        auto Hx = mat.topLeftCorner(nx, nx);
-
+        // Retrieve the entries in H corresponding to free variables.
         Hx.noalias() = submatrix(lhs.H(), ivx, ivx);
 
-        auto Hbx  = mat.topRightCorner(nx, nbx);
-        auto Hbbx = Hbx.topRows(nbx);
-        auto Hnbx = Hbx.bottomRows(nnx);
+        // Calculate matrix G' = R * G * tr(R)
+        G.noalias() = R * lhs.G() * tr(R);
 
-        Hbbx.noalias() = Hx.topLeftCorner(nbx, nbx);
-        Hnbx.noalias() = Hx.bottomLeftCorner(nnx, nbx);
+        // Auxliary matrix expressions
+        const auto Ibxbx = identity(nbx, nbx);
+        const auto Obfnx = zeros(nbf, nnx);
+        const auto Oblnx = zeros(nl, nnx);
 
-        auto Gbb  = mat.bottomRightCorner(nb, nb);
-        auto Gbbx = Gbb.topLeftCorner(nbx, nbx);
+        // The matrix M where we setup the coefficient matrix of the equations
+        auto M   = mat.topLeftCorner(nnx + m, nnx + m);
+        auto Mnx = mat.topRows(nnx);
+        auto Mbx = mat.middleRows(nnx, nbx);
+        auto Mbf = mat.middleRows(nnx + nbx, nbf);
+        auto Mbl = mat.bottomRows(nl);
 
-        Gbbx = R * lhs.G() * tr(R);
+        auto Mnxnx = Mnx.leftCols(nnx);
+        auto Mnxbx = Mnx.middleCols(nnx, nbx);
+        auto Mnxbf = Mnx.middleCols(nnx + nbx, nbf);
+        auto Mnxbl = Mnx.rightCols(nl);
 
-        auto M    = mat.topLeftCorner(nx, nx);
-        auto Mbbx = M.topLeftCorner(nbx, nbx);
-        auto Mbnx = M.topRightCorner(nbx, nnx);
-        auto Mnbx = M.bottomLeftCorner(nnx, nbx);
-        auto Mnnx = M.bottomRightCorner(nnx, nnx);
+        auto Mbxnx = Mbx.leftCols(nnx);
+        auto Mbxbx = Mbx.middleCols(nnx, nbx);
+        auto Mbxbf = Mbx.middleCols(nnx + nbx, nbf);
+        auto Mbxbl = Mbx.rightCols(nl);
 
-        Mbbx.noalias()   = -Hbbx*Gbbx;
-        Mbbx.diagonal() += ones(nbx);
-        Mnbx.noalias()   = tr(Sbnx) - Hnbx*Gbbx;
-        Mbnx.noalias()  -= Hbbx*Sbnx;
-        Mnnx.noalias()  -= Hnbx*Sbnx;
+        auto Mbfnx = Mbf.leftCols(nnx);
+        auto Mbfbx = Mbf.middleCols(nnx, nbx);
+        auto Mbfbf = Mbf.middleCols(nnx + nbx, nbf);
+        auto Mbfbl = Mbf.rightCols(nl);
 
-        // Compute the LU decomposition of Mnnx.
+        auto Mblnx = Mbl.leftCols(nnx);
+        auto Mblbx = Mbl.middleCols(nnx, nbx);
+        auto Mblbf = Mbl.middleCols(nnx + nbx, nbf);
+        auto Mblbl = Mbl.rightCols(nl);
+
+        Mnxnx.noalias() = Hnxnx; Mnxnx -= Hnxbx*Sbxnx;     // Mnxnx = Hnxnx - Hnxbx*Sbxnx
+        Mnxbx.noalias() = tr(Sbxnx); Mnxbx -= Hnxbx*Gbxbx; // Mnxbx = tr(Sbxnx) - Hnxbx*Gbxbx
+        Mnxbf.noalias() = -Hnxbx*Gbxbf;
+        Mnxbl.noalias() = -Hnxbx*Gbxbl;
+
+        Mbxnx.noalias() = Hbxnx; Mbxnx -= Hbxbx*Sbxnx; // Mbxnx = Hbxnx - Hbxbx*Sbxnx
+        Mbxbx.noalias() = Ibxbx; Mbxbx -= Hbxbx*Gbxbx; // Mbxbx = Ibxbx - Hbxbx*Gbxbx
+
+        Mbxbf.noalias() = -Hbxbx*Gbxbf;
+        Mbxbl.noalias() = -Hbxbx*Gbxbl;
+
+        Mbfnx.noalias() = Obfnx;
+        Mbfbx.noalias() = Gbfbx;
+        Mbfbf.noalias() = Gbfbf;
+        Mbfbl.noalias() = Gbfbl;
+
+        Mblnx.noalias() = Oblnx;
+        Mblbx.noalias() = Gblbx;
+        Mblbf.noalias() = Gblbf;
+        Mblbl.noalias() = Gblbl;
+
+        // Compute the LU decomposition of M.
         if(nx) luxn.compute(M);
     }
 
     /// Solve the saddle point problem using a nullspace method.
     auto solveNullspaceDenseG(SaddlePointMatrix lhs, SaddlePointVector rhs, SaddlePointSolution& sol) -> void
     {
-        // Alias to members of the saddle point vector solution.
-        auto x = sol.x();
-        auto y = sol.y();
-
-        // Alias to members of the saddle point right-hand side vector.
-        auto a = rhs.a();
-        auto b = rhs.b();
-
         // Alias to the matrices of the canonicalization process
         auto S = canonicalizer.S();
         auto R = canonicalizer.R();
 
-        // The columns of matrix `S` corresponding to free and fixed non-basic variables
-        auto Sbnx = S.topLeftCorner(nbx, nnx);
-        auto Sbnf = S.rightCols(nnf);
+        // Views to the sub-vectors of right-hand side vector a = [ax af]
+        auto ax = a.head(nx);
+        auto af = a.tail(nf);
+        auto abx = ax.head(nbx);
+        auto anx = ax.tail(nnx);
+        auto abf = af.head(nbf);
+        auto anf = af.tail(nnf);
 
-        // The columns of identity matrix corresponding to fixed basic variables
-        auto Ibf = identity(nb, nb).rightCols(nbf);
+        // Views to the sub-vectors of right-hand side vector b = [bx bf bl]
+        auto bbx = b.head(nbx);
+        auto bbf = b.segment(nbx, nbf);
+        auto bbl = b.tail(nl);
 
-        // The rows of matrix `R` corresponding to free basic variables
-        auto Rx = R.topRows(nbx);
+        // Views to the sub-matrices of the canonical matrix S
+        auto Sbxnx = S.topLeftCorner(nbx, nnx);
+        auto Sbxnf = S.topRightCorner(nbx, nnf);
+        auto Sbfnf = S.bottomRightCorner(nbf, nnf);
+
+        // Views to the sub-matrices of H, with Hx = [Hbxbx Hbxnx; Hnxbx Hnxnx]
+        auto Hx    = H.topLeftCorner(nx, nx);
+        auto Hbxbx = Hx.topLeftCorner(nbx, nbx);
+        auto Hnxbx = Hx.bottomLeftCorner(nnx, nbx);
+
+        // The sub-matrix Gbx in G' = R * G * tr(R)
+        auto Gbx = G.topRows(nbx);
 
         // The indices of the free and fixed variables
         auto ivx = iordering.head(nx);
         auto ivf = iordering.tail(nf);
 
-        // The view in `vec` corresponding to values of `a` for free and fixed variables.
-        auto ax = vec.head(nx);
-        auto af = vec.tail(nf);
-
-        // The view in `af` corresponding to free basic and free non-basic variables.
-        auto abx = ax.head(nbx);
-        auto anx = ax.tail(nnx);
-
-        // The view in `af` corresponding to fixed basic and fixed non-basic variables.
-        auto abf = af.head(nbf);
-        auto anf = af.tail(nnf);
-
-        // The view in `vec` corresponding to values of `b` for free basic variables.
-        auto bb  = vec.segment(nx, nb);
-        auto bbx = bb.head(nbx);
-
-//        // The view in `y` corresponding to values of `y` for free basic variables.
-//        auto yx = y.head(nbx);
-
-        // Create auxiliary matrix views
-        auto Hbx  = mat.topRightCorner(nx, nbx);
-        auto Hbbx = Hbx.topRows(nbx);
-        auto Hnbx = Hbx.bottomRows(nnx);
-        auto Gbb  = mat.bottomRightCorner(nb, nb);
-        auto Gbbx = Gbb.topLeftCorner(nbx, nbx);
+        // The right-hand side vector r = [rnx rbx rbf rbl]
+        auto r = vec.head(nnx + m);
+        auto rnx = r.head(nnx);
+        auto rb  = r.tail(m);
+        auto rbx = rb.head(nbx);
+        auto rbf = rb.segment(nbx, nbf);
+        auto rbl = rb.tail(nl);
 
         // Set vectors `ax` and `af` using values from `a`
-        ax.noalias() = rows(a, ivx);
-        af.noalias() = rows(a, ivf);
+        ax.noalias() = rows(rhs.a(), ivx);
+        af.noalias() = rows(rhs.a(), ivf);
 
-        // Set the vector `bx`
-        bb.noalias() = R*b - Ibf*abf - Sbnf*anf;
+        // Calculate b' = R*b
+        b.noalias() = R*rhs.b();
 
-        abx.noalias() -= Hbbx*bbx;
-        anx.noalias() -= Hnbx*bbx;
+        // Calculate bbx'' = bbx' - Sbxnf*anf
+        bbx -= Sbxnf*anf;
 
-        if(nx) ax.noalias() = luxn.solve(ax);
+        // Calculate bbf'' = bbf' - abf - Sbfnf*anf
+        bbf -= abf + Sbfnf*anf;
 
-        y.noalias() = tr(Rx)*abx;
+        // Set right-hand side vector r = [rnx rbx rbf rl]
+        rnx.noalias() = anx - Hnxbx*bbx;
+        rbx.noalias() = abx - Hbxbx*bbx;
+        rbf.noalias() = bbf;
+        rbl.noalias() = bbl;
 
-        bbx.noalias() -= Sbnx*anx + Gbbx*abx;
-        abx.noalias() = bbx;
+        // Solve the system of linear equations
+        if(nx) r.noalias() = luxn.solve(r);
 
-//        auto xx = x.head(nx);
-//        auto xbx = xx.head(nbx);
-//        auto xnx = xx.tail(nnx);
-//
-//        // Compute the saddle point problem solution
-//        yx.noalias()  = abx - Hbbx*bx;
-//        xnx.noalias() = anx - Hnbx*bx - tr(Sbnx)*yx;
-//        if(nnx) anx.noalias() = luxn.solve(xnx);
-//        xbx.noalias() = abx;
-//        abx.noalias() = bx - Sbnx*anx;
-//        bx.noalias()  = xbx - Hbbx*abx - Hbnx*anx;
-//
-//        // Compute the y vector without canonicalization
-//        y.noalias() = tr(Rx)*bx;
+        // Alias to solution vectors x and y
+        auto x = sol.x();
+        auto y = sol.y();
 
-        // Permute back the variables `x` to their original ordering
+        // Calculate y = tr(R) * y'
+        y.noalias() = tr(R) * rb;
+
+        // Calculate x = [xbx xnx] using auxiliary abx and anx
+        anx.noalias() = rnx;
+        abx.noalias() = bbx - Sbxnx*anx - Gbx*y;
+
+        // Set back the values of x = [xx xf] currently stored in a = [ax af]
         rows(x, ivx).noalias() = ax;
         rows(x, ivf).noalias() = af;
     }

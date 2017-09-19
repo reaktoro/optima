@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include <../PyOptima/PyOptima/Common/PyEigen.hpp"
+#include "PyEigen.hpp"
 
 // Numpy includes
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
