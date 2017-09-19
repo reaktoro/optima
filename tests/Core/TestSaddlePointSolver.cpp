@@ -134,13 +134,13 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
 
     SaddlePointOptions options;
 
-//    SUBCASE("When there are no fixed variables")
-//    {
-//        SaddlePointMatrix lhs(H, A, G, ifixed);
-//
-//        TEST_SADDLE_POINT_SOLVER(options);
-//    }
-//
+    SUBCASE("When there are no fixed variables")
+    {
+        SaddlePointMatrix lhs(H, A, G, ifixed);
+
+        TEST_SADDLE_POINT_SOLVER(options);
+    }
+
 //    SUBCASE("When there are fixed variables")
 //    {
 //        ifixed.setLinSpaced(6, 0, 5);
@@ -150,18 +150,18 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
 //        TEST_SADDLE_POINT_SOLVER(options);
 //    }
 
-    SUBCASE("When there are many fixed variables enough to degenerate the problem")
-    {
-        // Modify matrix A so that its first row has zeros for all non-positive entries.
-        // Set the fixed variables as the variables that have such entries positive.
-        // This results in a submatrix for the free variables with the first row zero.
-        ifixed = linspace<int>(n/2);
-        A.row(0).rightCols(n/2).fill(0.0);
-
-        SaddlePointMatrix lhs(H, A, G, ifixed);
-
-        TEST_SADDLE_POINT_SOLVER(options);
-    }
+//    SUBCASE("When there are many fixed variables enough to degenerate the problem")
+//    {
+//        // Modify matrix A so that its first row has zeros for all non-positive entries.
+//        // Set the fixed variables as the variables that have such entries positive.
+//        // This results in a submatrix for the free variables with the first row zero.
+//        ifixed = linspace<int>(n/2);
+//        A.row(0).rightCols(n/2).fill(0.0);
+//
+//        SaddlePointMatrix lhs(H, A, G, ifixed);
+//
+//        TEST_SADDLE_POINT_SOLVER(options);
+//    }
 //
 //    SUBCASE("When there are linearly dependent rows and many fixed variables enough to degenerate the problem")
 //    {
