@@ -17,12 +17,6 @@
 
 #include "SaddlePointSolver.hpp"
 
-
-
-#include <iostream>
-
-
-
 // Optima includes
 #include <Optima/Common/Exception.hpp>
 #include <Optima/Core/SaddlePointMatrix.hpp>
