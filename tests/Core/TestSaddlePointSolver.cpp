@@ -40,12 +40,8 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
 
     VectorXd expected = linspace(t, 1, t);
 
-
-
     rows(expected, lhs.fixed()).fill(0.0);
     expected.tail(m).fill(1.0);
-
-
 
     VectorXd r = lhs * expected;
     VectorXd s(t);
@@ -94,27 +90,26 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
         options.method = SaddlePointMethod::FullPivLU;                                \
         testSaddlePointSolver(lhs, options);                                          \
     }                                                                                 \
-}\
-//                                                                                      \
-//    SUBCASE("When using PartialPivLU")                                                \
-//    {                                                                                 \
-//        options.method = SaddlePointMethod::PartialPivLU;                             \
-//        testSaddlePointSolver(lhs, options);                                          \
-//    }                                                                                 \
-//                                                                                      \
-//    SUBCASE("When using Nullspace")                                                   \
-//    {                                                                                 \
-//        options.method = SaddlePointMethod::Nullspace;                                \
-//        testSaddlePointSolver(lhs, options);                                          \
-//    }                                                                                 \
-//                                                                                      \
-//    SUBCASE("When using RangespaceDiagonal")                                          \
-//    {                                                                                 \
-//        MatrixXd H = diag(lhs.H().diagonal());                                        \
-//        SaddlePointMatrix lhsdiag(H, lhs.A(), lhs.G(), lhs.fixed());                  \
-//        options.method = SaddlePointMethod::RangespaceDiagonal;                       \
-//        testSaddlePointSolver(lhsdiag, options);                                      \
-//    }                                                                                 \
+                                                                                      \
+    SUBCASE("When using PartialPivLU")                                                \
+    {                                                                                 \
+        options.method = SaddlePointMethod::PartialPivLU;                             \
+        testSaddlePointSolver(lhs, options);                                          \
+    }                                                                                 \
+                                                                                      \
+    SUBCASE("When using Nullspace")                                                   \
+    {                                                                                 \
+        options.method = SaddlePointMethod::Nullspace;                                \
+        testSaddlePointSolver(lhs, options);                                          \
+    }                                                                                 \
+                                                                                      \
+    SUBCASE("When using RangespaceDiagonal")                                          \
+    {                                                                                 \
+        MatrixXd H = diag(lhs.H().diagonal());                                        \
+        SaddlePointMatrix lhsdiag(H, lhs.A(), lhs.G(), lhs.fixed());                  \
+        options.method = SaddlePointMethod::RangespaceDiagonal;                       \
+        testSaddlePointSolver(lhsdiag, options);                                      \
+    }                                                                                 \
 }                                                                                     \
 
 TEST_CASE("Testing SaddlePointSolver with other methods.")
