@@ -18,6 +18,7 @@
 #include "OptimumStepper.hpp"
 
 
+#include <iostream> // todo check if necessary later
 
 // Eigenx includes
 #include <Eigenx/LU.hpp> // todo check if necessary later
@@ -60,6 +61,8 @@ struct OptimumStepper::Impl
     /// The `G` matrix in the KKT equation.
     MatrixXd G;
 
+    VectorXd x, z, g;
+
     /// The KKT solver.
     SaddlePointSolver kkt;
 
@@ -79,13 +82,10 @@ struct OptimumStepper::Impl
     Index t;
 
     /// Initialize the stepper with the structure of the optimization problem.
-    auto initialize(const OptimumStructure& strct) -> void
+    auto initialize(const OptimumStructure& structure) -> void
     {
-        // Set the structure member with the given one
-        structure = strct;
-
-        // Initialize the saddle point solver
-        kkt.canonicalize(structure.A);
+        // TODO not sure if we need this
+        this->structure = structure;
 
         // Initialize the members related to number of variables and constraints
         n  = structure.n;
@@ -97,24 +97,23 @@ struct OptimumStepper::Impl
         t  = 2*n + m;
 
         // Allocate memory for some members
-        A = zeros(m, n);
+        A = structure.A;
         H = zeros(n, n);
         G = zeros(m, m);
-        residual.resize(t);
-        solution.resize(t);
+        g = zeros(n);
+        residual = zeros(t);
+        solution = zeros(t);
 
         // Initialize the ordering of the variables
         iordering.setLinSpaced(n, 0, n);
+
+        // Initialize the saddle point solver
+        kkt.canonicalize(A);
     }
 
     /// Decompose the KKT matrix equation used to compute the step vectors.
     auto decompose(const OptimumParams& params, const OptimumState& state, const ObjectiveState& f) -> void
     {
-        // Aliases to some variables
-        const auto& A = structure.A;
-        const auto& x = state.x;
-        const auto& z = state.z;
-
         // Update the number of fixed and free variables
         nf = params.ifixed.size();
         nx = n - nf;
@@ -125,171 +124,196 @@ struct OptimumStepper::Impl
 //        auto pred = [&](Index i) { return x[i] > std::sqrt(options.mu) || z[i] < std::sqrt(options.mu); }; // todo maybe it is important to add condition on x < mu too
 //        auto pred = [&](Index i) { return true; };
 
-        auto pred = [&](Index i) { return x[i] > z[i]; };
-        auto it = std::partition(iordering.data(), iordering.data() + nx, pred);
+        const auto eps = std::sqrt(options.mu);
 
-        // Update the number of stable and unstable variables
+        // Partition the free variables into stable and unstable xx = [xs xu]
+        auto it = std::partition(
+            iordering.data(), iordering.data() + nx,
+//                [&](Index i) { return state.x[i] > state.z[i] && state.x[i] > eps; }); // TODO Maybe add a condition that certifies that xu << 1 (maybe x[i] < mu or sqrt(mu))
+//                [&](Index i) { return state.x[i] > eps || state.z[i] < eps; });
+                [&](Index i) { return true; });
+
+        // Update the number of stable and unstable free variables
         ns = it - iordering.data();
         nu = nx - ns;
 
+
+//        std::random_shuffle(iordering.data(), iordering.data() + nx);
+
+        iordering << 4, 1, 3, 5, 2, 0;
+
+
+
         // Ensure the number of stable variables are positive
         assert(ns > 0 && "Could not compute the step."
-            "The number of stable variables must be positive.");
+            "The number of stable variables must be positive."); // TODO Instead of this assert, consider returning a trivial solution with all variables fixed on the bounds
 
-        auto ivx = iordering.head(nx);
-        auto ivf = iordering.tail(nf);
-        auto ivs = ivx.head(ns);
-        auto ivu = ivx.tail(nu);
+        std::cout << "ordering = \n" << tr(iordering) << std::endl;
+        std::cout << "A = \n" << A << std::endl;
 
         // Permute the columns of A so that A = [As Au]
         iordering.asPermutation().applyThisOnTheRight(A);
 
+        std::cout << "A = \n" << A << std::endl;
+
         // The columns of A corresponding to unstable variables
-        const auto Au = A.rightCols(nu);
+        const auto Au = A.middleCols(ns, nu);
 
-        // Assemble the matrix H in the KKT equation
-        if(f.hessian.size())
-            H.noalias() = submatrix(f.hessian, iordering, iordering);
-        else H.fill(0.0);
+        // The variables x arranged in the ordering x = [xs xu xf]
+        x.noalias() = rows(state.x, iordering);
 
-        // The indices of the unstable variables in the ordering x = [xs xu]
-        auto ifixed = iordering.tail(nu + nf);
+        // The variables z arranged in the ordering z = [zs zu zf]
+        z.noalias() = rows(state.z, iordering);
+
+        // The indices of stable, unstable, and unstable+fixed variables
+        const auto js = iordering.head(ns);
+        const auto ju = iordering.segment(ns, nu);
+        const auto jf = iordering.tail(nu + nf);
+
+        // Views to the blocks Hss and Huu of the Hessian matrix
+        auto Hss = H.topLeftCorner(ns, ns);
+        auto Huu = H.col(0).segment(ns, nu); // This is actually a column vector for efficiency (memory alignment) reasons
+
+        // Views to segments xs and xu in x = [xs xu]
+        const auto xs = x.head(ns);
+        const auto xu = x.segment(ns, nu);
+
+        // Views to segments zs and zu in z = [zs zu]
+        const auto zs = z.head(ns);
+        const auto zu = z.segment(ns, nu);
+
+        // Assemble the matrices Hss and Huu
+        Hss.noalias() = submatrix(f.hessian, js, js);
+        Huu.noalias() = rows(f.hessian.diagonal(), ju);
 
         // Calculate Hss' = Hss + inv(Xs)*Zs
-        H.diagonal().head(ns) += z.head(ns)/x.head(ns);
-
-        for(Index s : ivs) H(s, s) += z[s]/x[s];
+        Hss.diagonal() += zs/xs;
 
         // Calculate Huu' = Iuu + Huu*inv(Zu)*Xu
-        for(Index u : ivu) H(u, u) += z[u]/x[u];
+        Huu.noalias() = 1.0 + Huu % xu/zu;
 
-        for(Index u : ivu) H(u, u) += z[u]/x[u];
+        // Calculate Huu'' = inv(Zu)*Xu*inv(Huu')
+        Huu.noalias() = xu/(zu % Huu);
 
-        G = Au * Huu * tr(Au);
+        // Calculate G = - Au * Huu'' * tr(Au)
+        G.noalias() = - Au * diag(Huu) * tr(Au);
 
         // Update the decomposition of the KKT matrix
-        kkt.decompose({H, A, G, ifixed});
-
-//        // The indices of the stable variables
-//        auto istable = iordering.head(ns);
-//
-//        // The indices of the fixed variables including unstable variables
-//        auto ifixed = iordering.tail(nu + nf);
-//
-//        // Assemble the matrix H in the KKT equation
-//        if(f.hessian.size())
-//            H.noalias() = f.hessian;
-//        else H.fill(0.0);
-//
-//        // Add the inv(Z)*X corresponding to stable variables
-//        for(Index s : istable)
-//            H(s, s) += z[s] / x[s];
-//
-//        // Update the decomposition of the KKT matrix
-//        kkt.decompose({H, A, ifixed});
+        kkt.update(iordering);
+        kkt.decompose({H, A, G, jf});
     }
 
     /// Solve the KKT matrix equation.
     auto solve(const OptimumParams& params, const OptimumState& state, const ObjectiveState& f) -> void
     {
-        const auto& A  = structure.A;
+        // The indices of stable, unstable, and unstable+fixed variables
+        const auto jx = iordering.head(nx); // free variables
+        const auto jf = iordering.tail(nf); // fixed variables
+        const auto js = jx.head(ns);        // stable free variables
+        const auto ju = jx.tail(nu);        // unstable free variables
 
-        auto& x = state.x;
-        auto& y = state.y;
-        auto& z = state.z;
+        // Views to the blocks Hss and Huu of the Hessian matrix
+        auto Hss = H.topLeftCorner(ns, ns);
+        auto Huu = H.col(0).segment(ns, nu); // This is actually a column vector for efficiency (memory alignment) reasons
+
+        // Views to sub-vectors of the gradient of the objective function
+        auto gx = g.head(nx); // free variables
+        auto gf = g.tail(nf); // fixed variables
 
         auto a = residual.head(n);
         auto b = residual.segment(n, m);
         auto c = residual.tail(n);
 
+        auto ax = a.head(nx);
+        auto af = a.tail(nf);
+        auto as = ax.head(ns);
+        auto au = ax.tail(nu);
+
+        auto cx = c.head(nx);
+        auto cf = c.tail(nf);
+        auto cs = cx.head(ns);
+        auto cu = cx.tail(nu);
+
+        auto xx = x.head(nx);
+        auto xf = x.tail(nf);
+        auto xs = xx.head(ns);
+        auto xu = xx.tail(nu);
+
+        auto zx = z.head(nx);
+        auto zf = z.tail(nf);
+        auto zs = zx.head(ns);
+        auto zu = zx.tail(nu);
+
         auto dx = solution.head(n);
         auto dy = solution.segment(n, m);
         auto dz = solution.tail(n);
 
-        a.noalias() = -(f.grad - tr(A)*y - z);
+        auto dxx = dx.head(nx);
+        auto dxf = dx.tail(nf);
+        auto dxs = dxx.head(ns);
+        auto dxu = dxx.tail(nu);
+
+        auto dzx = dz.head(nx);
+        auto dzf = dz.tail(nf);
+        auto dzs = dzx.head(ns);
+        auto dzu = dzx.tail(nu);
+
+        const auto Ax = A.leftCols(nx);
+        const auto Af = A.rightCols(nf);
+        const auto Au = Ax.rightCols(nu);
+
+        // The variables x arranged in the ordering x = [xs xu xf]
+        x.noalias() = rows(state.x, iordering);
+
+        // The variables z arranged in the ordering z = [zs zu zf]
+        z.noalias() = rows(state.z, iordering);
+
+        // The gradient of the objective function w.r.t. free variables
+        gx.noalias() = rows(f.grad, jx);
+
+        // Calculate ax = -(gx - tr(Ax)*y - zx)
+        ax.noalias() = -(gx - tr(Ax) * state.y - zx);
+
+        // Set af (a for fixed variables) to zero
+        af.fill(0.0);
+
         b.noalias() = -(A*x - params.a);
-        c.noalias() = -(x % z - options.mu);
 
-        // The indices of the stable and unstable variables
-        auto ivs = iordering.head(ns);
-        auto ivu = iordering.segment(ns, nu);
-        auto ivf = iordering.tail(nf);
+        // Calculate cx = -(Xx * zx - mu)
+        cx.noalias() = -(xx % zx - options.mu);
 
-//        auto hessian = [&](Index i, Index j)
-//        {
-//            return f.hessian.size() ? f.hessian(i,j) : 0.0;
-//        };
+        // Set cf (c for fixed variables) to zero
+        cf.fill(0.0);
 
-//        for(Index u : ivu) a[u] -= hessian(u,u)*c[u]/z[u];
-//        for(Index f : ivf) a[f] = params.xfixed[f];
+        // Calculate as' = as + inv(Xs) * cs
+        as += cs/xs;
 
-        for(Index s : ivs) a[s] += c[s]/x[s];
-        for(Index u : ivu) a[u] -= c[u]/x[u];
-        rows(dz, ivu) = rows(a, ivu);
-        rows(a, ivu).fill(0.0);
-        rows(a, ivf) = params.xfixed;
+        // Calculate au' = -(au - Huu * inv(Zu) * cu)
+        au.noalias() = -(au - Huu % cu/zu);
 
-        kkt.solve({a, b}, {dx, dy});
+        // Calculate b' = b - Au * inv(Zu) * cu
+        b -= Au * (cu/zu);
+
+        // Calculate b'' = b' + Au * Huu'' * au'
+        b += Au * (Huu % au);
+
+        kkt.solve({H, A, G, jf}, {a, b}, {dx, dy});
 
         dy *= -1.0;
 
-        for(Index s : ivs)
-            dz[s] = (c[s] - z[s]*dx[s])/x[s];
+        dzu = Huu % (zu/xu) % (au - tr(Au)*dy);
+        dxu = (cu - xu % dzu)/zu;
+        dzs = (cs - zs % dxs)/xs;
 
-        for(Index u : ivu)
-            dz[u] = -(dz[u] + dot(A.col(u), dy))*z[u]/(H(u, u) * x[u]);
-
-        for(Index u : ivu)
-            dx[u] = (c[u] - x[u]*dz[u])/z[u];
-
-
-
-//        for(Index s : ivs)
-//            dz[s] = (c[s] - z[s]*dx[s])/x[s];
-//
-//        for(Index u : ivu)
-//            dz[u] = -z[u]*(dx[u]/x[u]);
-//
-//        for(Index u : ivu)
-//            dx[u] = (c[u] - x[u]*dz[u])/z[u];
-//
-//        for(Index s : ivs)
-//            dz[s] = (c[s] - z[s]*dx[s])/x[s];
-//
-//        for(Index u : ivu)
-//            dz[u] = -z[u]*dx[u]/x[u];
-//
-//        for(Index u : ivu)
-//            dx[u] = (c[u] - x[u]*dz[u])/z[u];
-
-//        // The indices of the stable and unstable variables
-//        auto ivs = iordering.head(ns);
-//        auto ivu = iordering.segment(ns, nu);
-//        auto ivf = iordering.tail(nf);
-//
-//        for(Index s : ivs) a[s] += c[s]/x[s];          // as = as + inv(Xs)*cs
-//        for(Index u : ivu) std::swap(a[u], dz[u] = 0); // au = 0
-//        for(Index f : ivf) a[f] = params.xfixed[f];    // af = xf
-//
-//        kkt.solve({a, b}, {dx, dy});
-//
-//        dy *= -1.0;
-//
-//        for(Index s : ivs)
-//            dz[s] = (c[s] - z[s]*dx[s])/x[s];
-//
-//        for(Index u : ivu)
-//            dz[u] = -(dz[u] - hessian(u,u)*c[u]/z[u] + dot(A.col(u), dy))/(1 + hessian(u,u)*x[u]/z[u]);
-//
-//        for(Index u : ivu)
-//            dx[u] = (c[u] - x[u]*dz[u])/z[u];
+        iordering.asPermutation().transpose().applyThisOnTheLeft(dx);
+        iordering.asPermutation().transpose().applyThisOnTheLeft(dz);
 
         VectorXd residual_tmp = residual;
         VectorXd solution_tmp = solution;
 
         solve2(params, state, f);
 
-        std::cout << "stable  = " << tr(ivs) << std::endl;
+        std::cout << "stable  = " << tr(js) << std::endl;
         std::cout << "x       = " << tr(state.x) << std::endl;
         std::cout << "dx(rs)  = " << tr(solution_tmp.head(n)) << std::endl;
         std::cout << "dx(lu)  = " << tr(dx) << std::endl;
