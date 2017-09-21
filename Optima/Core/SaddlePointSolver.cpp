@@ -292,11 +292,11 @@ struct SaddlePointSolver::Impl
         // Get the result of xnx from r
         ax.noalias() = r.head(nx);
 
-        // The y' vector as the tail of the solution of the linear system
-        auto yp = r.tail(m);
+        // Get the result of y' from r into bbx
+        bbx.noalias() = r.tail(nbx);
 
         // Compute y = tr(R) * y'
-        y.noalias() = tr(R)*yp;
+        y.noalias() = tr(R)*b;
 
         // Permute back the variables x to their original ordering
         rows(x, iordering).noalias() = a;
@@ -1194,6 +1194,18 @@ struct SaddlePointSolver::Impl
         return res.stop();
     }
 
+    /// Update the order of the variables.
+    auto update(VectorXiConstRef ordering) -> void
+    {
+        // Update the ordering of the canonicalizer object
+        canonicalizer.update(ordering);
+
+        // Update the ordering of the variables used in the saddle point solver
+        iordering.head(nb) = canonicalizer.ibasic();
+        iordering.tail(nn) = canonicalizer.inonbasic();
+    }
+
+
 //    auto solve(SaddlePointMatrix lhs, SaddlePointVector rhs, SaddlePointSolution& sol) -> SaddlePointResult
 //    {
 //        // The result of this method call
@@ -1265,7 +1277,7 @@ auto SaddlePointSolver::solve(SaddlePointMatrix lhs, SaddlePointVector rhs, Sadd
 
 auto SaddlePointSolver::update(VectorXiConstRef ordering) -> void
 {
-    pimpl->canonicalizer.update(ordering);
+    pimpl->update(ordering);
 }
 
 } // namespace Optima
