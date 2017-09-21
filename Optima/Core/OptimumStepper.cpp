@@ -305,8 +305,8 @@ struct OptimumStepper::Impl
         dxu = (cu - xu % dzu)/zu;
         dzs = (cs - zs % dxs)/xs;
 
-        iordering.asPermutation().transpose().applyThisOnTheLeft(dx);
-        iordering.asPermutation().transpose().applyThisOnTheLeft(dz);
+        iordering.asPermutation().applyThisOnTheLeft(dx);
+        iordering.asPermutation().applyThisOnTheLeft(dz);
 
         VectorXd residual_tmp = residual;
         VectorXd solution_tmp = solution;
