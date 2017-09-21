@@ -160,7 +160,7 @@ struct OptimumStepper::Impl
 
         for(Index s : ivs) H(s, s) += z[s]/x[s];
 
-        // Calculate Huu' = Huu + inv(Xu)*Zu
+        // Calculate Huu' = Iuu + Huu*inv(Zu)*Xu
         for(Index u : ivu) H(u, u) += z[u]/x[u];
 
         for(Index u : ivu) H(u, u) += z[u]/x[u];
