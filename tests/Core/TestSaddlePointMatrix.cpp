@@ -27,9 +27,11 @@ TEST_CASE("Testing SaddlePointMatrix...")
     MatrixXd H = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};
     MatrixXd A = {{1, 2, 3}, {3, 4, 5}};
     MatrixXd G = {{1, 2}, {3, 4}};
-    VectorXi ifixed;
+    Index n = 3;
+    Index nx = 3;
+    Index nf = 0;
 
-    SaddlePointMatrix mat(H, A, G, ifixed);
+    SaddlePointMatrix mat(H, A, G, nx, nf);
 
     MatrixXd M = {
 		{1,  2,  3, 1, 3},
@@ -44,13 +46,14 @@ TEST_CASE("Testing SaddlePointMatrix...")
 
     SUBCASE("Testing conversion when some variables are fixed")
     {
-        ifixed = {1};
+        nx = 2;
+        nf = 1;
 
-        SaddlePointMatrix mat(H, A, G, ifixed);
+        SaddlePointMatrix mat(H, A, G, nx, nf);
 
-        M.row(1).fill(0.0);
-        M.col(1).topRows(3).fill(0.0);
-        M(1, 1) = 1.0;
+        M.middleRows(nx, nf).fill(0.0);
+        M.middleCols(nx, nf).topRows(n).fill(0.0);
+        M.block(nx, nx, nf, nf) = identity(nf, nf);
 
         // Check conversion to a Matrix instance
         CHECK(M.isApprox(mat.matrix()));

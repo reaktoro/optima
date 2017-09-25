@@ -41,10 +41,12 @@ class SaddlePointMatrix
 {
 public:
     /// Construct a SaddlePointMatrix instance.
-    SaddlePointMatrix(MatrixXdConstRef H, MatrixXdConstRef A, MatrixXdConstRef G, VectorXiConstRef fixed);
-
-    /// Return the dimension of the saddle point mathrm.
-    auto dim() const -> Index;
+    /// @param H The \eq{H} matrix in the saddle point equation.
+    /// @param A The \eq{A} matrix in the saddle point equation.
+    /// @param G The \eq{G} matrix in the saddle point equation.
+    /// @param nx The number of free variables.
+    /// @param nf The number of fixed variables.
+    SaddlePointMatrix(MatrixXdConstRef H, MatrixXdConstRef A, MatrixXdConstRef G, Index nx, Index nf = 0);
 
     /// Return the Hessian matrix *H*.
     auto H() const -> MatrixXdConstRef;
@@ -55,8 +57,20 @@ public:
     /// Return the matrix *G*.
     auto G() const -> MatrixXdConstRef;
 
-    /// Return the indices of the fixed variables.
-    auto fixed() const -> VectorXiConstRef;
+    /// Return the dimension of the saddle point matrix.
+    auto size() const -> Index;
+
+    /// Return the number of variables.
+    auto n() const -> Index;
+
+    /// Return the number of linear equality constraints.
+    auto m() const -> Index;
+
+    /// Return the number of free variables.
+    auto nx() const -> Index;
+
+    /// Return the number of fixed variables.
+    auto nf() const -> Index;
 
     /// Convert this SaddlePointMatrix instance into a Matrix instance.
     auto matrix() const -> MatrixXd;
@@ -71,8 +85,11 @@ private:
     /// The negative semi-definite matrix \eq{G} in the saddle point matrix.
     MatrixXdConstRef m_G;
 
-    /// The indices of the fixed variables.
-    VectorXiConstRef m_fixed;
+    /// The number of free variables.
+    Index m_nx;
+
+    /// The number of fixed variables.
+    Index m_nf;
 };
 
 /// A type used to describe a saddle point right-hand side vector.

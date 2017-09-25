@@ -22,14 +22,9 @@ using namespace Eigen;
 
 namespace Optima {
 
-SaddlePointMatrix::SaddlePointMatrix(MatrixXdConstRef H, MatrixXdConstRef A, MatrixXdConstRef G, VectorXiConstRef fixed)
-: m_H(H), m_A(A), m_G(G), m_fixed(fixed)
+SaddlePointMatrix::SaddlePointMatrix(MatrixXdConstRef H, MatrixXdConstRef A, MatrixXdConstRef G, Index nx, Index nf)
+: m_H(H), m_A(A), m_G(G), m_nx(nx), m_nf(nf)
 {}
-
-auto SaddlePointMatrix::dim() const -> Index
-{
-    return m_A.rows() + m_A.cols();
-}
 
 auto SaddlePointMatrix::H() const -> MatrixXdConstRef
 {
@@ -46,14 +41,34 @@ auto SaddlePointMatrix::G() const -> MatrixXdConstRef
     return m_G;
 }
 
-auto SaddlePointMatrix::fixed() const -> VectorXiConstRef
+auto SaddlePointMatrix::size() const -> Index
 {
-    return m_fixed;
+    return m_A.rows() + m_A.cols();
+}
+
+auto SaddlePointMatrix::n() const -> Index
+{
+    return nx() + nf();
+}
+
+auto SaddlePointMatrix::m() const -> Index
+{
+    return m_A.rows();
+}
+
+auto SaddlePointMatrix::nx() const -> Index
+{
+    return m_nx;
+}
+
+auto SaddlePointMatrix::nf() const -> Index
+{
+    return m_nf;
 }
 
 auto SaddlePointMatrix::matrix() const -> MatrixXd
 {
-    const Index t = dim();
+    const Index t = size();
     MatrixXd res = zeros(t, t);
     res << *this;
     return res;
@@ -61,21 +76,20 @@ auto SaddlePointMatrix::matrix() const -> MatrixXd
 
 auto operator<<(MatrixXdRef mat, const SaddlePointMatrix& lhs) -> MatrixXdRef
 {
-    const auto& H = lhs.H();
-    const auto& A = lhs.A();
-    const auto& G = lhs.G();
-    const auto& fixed = lhs.fixed();
-    const Index n = A.cols();
-    const Index m = A.rows();
-    mat.topLeftCorner(n, n) << H;
-    mat.topRightCorner(n, m) = tr(A);
-    mat.bottomLeftCorner(m, n) = A;
+    const auto nx = lhs.nx();
+    const auto nf = lhs.nf();
+    const auto H = lhs.H();
+    const auto A = lhs.A();
+    const auto Ax = lhs.A().leftCols(nx);
+    const auto G = lhs.G();
+    const auto n = lhs.n();
+    const auto m = lhs.m();
+    mat.fill(0.0);
+    if(H.size()) mat.topLeftCorner(nx, nx) << H.topLeftCorner(nx, nx);
     if(G.size()) mat.bottomRightCorner(m, m) = G;
-    else mat.bottomRightCorner(m, m).fill(0.0);
-    rows(mat, fixed).fill(0.0);
-    cols(mat, fixed).topRows(n).fill(0.0);
-    for(Index i = 0; i < fixed.size(); ++i)
-        mat(fixed[i], fixed[i]) = 1.0;
+    mat.block(nx, nx, nf, nf).diagonal().fill(1.0);
+    mat.topRightCorner(nx, m) = tr(Ax);
+    mat.bottomLeftCorner(m, n) = A;
     return mat;
 }
 

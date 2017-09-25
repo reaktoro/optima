@@ -56,28 +56,28 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
     CHECK(approx(error) == 0.0);
 
 //    SUBCASE("When the order of the variables change...")
-    {
-        VectorXi ordering(n);
-        ordering.head(m).setLinSpaced(m, n - 1, n - m);
-        ordering.tail(n - m).setLinSpaced(n - m, 0, n - m);
-//        ordering.setLinSpaced(n, 0, n);
-        const auto Q = ordering.asPermutation();
-        MatrixXd A = lhs.A() * Q;
-        MatrixXd H = Q.transpose() * lhs.H() * Q;
-        VectorXi ifixed = rows(ordering, lhs.fixed());
-        r.head(n) = Q.transpose() * r.head(n);
-        SaddlePointMatrix lhsnew(H, A, lhs.G(), ifixed);
-        solver.reorder(ordering); // no need to perform canonicalization again
-        solver.decompose(lhsnew);
-        solver.solve(lhsnew, rhs, sol);
-        VectorXd s1 = lhsnew.matrix().fullPivLu().solve(r);
-//        std::cout << "lhs = \n" << lhs.matrix() << std::endl;
-//        std::cout << "newlhs = \n" << lhsnew.matrix() << std::endl;
-        std::cout << "s1 = " << tr(s1) << std::endl;
-        std::cout << "s2 = " << tr(s) << std::endl;
-        error = (lhsnew.matrix() * s1 - r).norm()/r.norm();
-        CHECK(approx(error) == 0.0);
-    }
+//    {
+//        VectorXi ordering(n);
+//        ordering.head(m).setLinSpaced(m, n - 1, n - m);
+//        ordering.tail(n - m).setLinSpaced(n - m, 0, n - m);
+////        ordering.setLinSpaced(n, 0, n);
+//        const auto Q = ordering.asPermutation();
+//        MatrixXd A = lhs.A() * Q;
+//        MatrixXd H = Q.transpose() * lhs.H() * Q;
+//        VectorXi ifixed = rows(ordering, lhs.fixed());
+//        r.head(n) = Q.transpose() * r.head(n);
+//        SaddlePointMatrix lhsnew(H, A, lhs.G(), ifixed);
+//        solver.reorder(ordering); // no need to perform canonicalization again
+//        solver.decompose(lhsnew);
+//        solver.solve(lhsnew, rhs, sol);
+//        VectorXd s1 = lhsnew.matrix().fullPivLu().solve(r);
+////        std::cout << "lhs = \n" << lhs.matrix() << std::endl;
+////        std::cout << "newlhs = \n" << lhsnew.matrix() << std::endl;
+//        std::cout << "s1 = " << tr(s1) << std::endl;
+//        std::cout << "s2 = " << tr(s) << std::endl;
+//        error = (lhsnew.matrix() * s1 - r).norm()/r.norm();
+//        CHECK(approx(error) == 0.0);
+//    }
 
 //    SUBCASE("When matrix G is empty and then equivalent to zero...")
 //    {
@@ -92,7 +92,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
 
 #define TEST_SADDLE_POINT_SOLVER()                                             \
 {                                                                              \
-    SaddlePointMatrix lhs(H, A, G, ifixed);\
+    SaddlePointMatrix lhs(H, A, G, nx, nf);\
 \
     VectorXd r = lhs * expected;\
     VectorXd s(t);\
@@ -136,7 +136,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
     SUBCASE("When using RangespaceDiagonal")                                   \
     {                                                                          \
         MatrixXd H = diag(lhs.H().diagonal());                                 \
-        SaddlePointMatrix lhsdiag(H, lhs.A(), lhs.G(), lhs.fixed());           \
+        SaddlePointMatrix lhsdiag(H, lhs.A(), lhs.G(), lhs.nx(), lhs.nf());    \
         options.method = SaddlePointMethod::RangespaceDiagonal;                \
         SaddlePointSolver solver; solver.setOptions(options);                                            \
         solver.canonicalize(lhs.A());                                          \
@@ -152,16 +152,19 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
     const Index m = 3;
     const Index n = 10;
     const Index t = m + n;
+
 //    Index m = 10;
 //    Index n = 60;
 
     MatrixXd A = random(m, n);
     MatrixXd H = random(n, n);
     MatrixXd G = random(m, m);
+    Index nx = n;
+    Index nf = 0;
+
 //    MatrixXd G = diag(constants(m, 1e-3));
 //    MatrixXd G;
 //    MatrixXd G = zeros(m, m);
-    VectorXi ifixed;
 
     SaddlePointOptions options;
 
@@ -174,7 +177,8 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
 
     SUBCASE("When there are fixed variables")
     {
-        ifixed.setLinSpaced(6, 0, 5);
+        nf = 6;
+        nx = n - nf;
 
         TEST_SADDLE_POINT_SOLVER();
     }
@@ -184,8 +188,9 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
         // Modify matrix A so that its first row has zeros for all entries corresponding to free variables.
         // Set the fixed variables as the variables that have such entries positive.
         // This results in a submatrix for the free variables with the first row zero.
-        ifixed = linspace<int>(n/2);
-        A.row(0).rightCols(n/2).fill(0.0);
+        nf = n / 2;
+        nx = n - nf;
+        A.row(0).leftCols(nx).fill(0.0);
 
         TEST_SADDLE_POINT_SOLVER();
     }
@@ -195,8 +200,9 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
         // Modify matrix A so that its first row has zeros for all entries corresponding to free variables.
         // Set the fixed variables as the variables that have such entries positive.
         // This results in a submatrix for the free variables with the first row zero.
-        ifixed = linspace<int>(n/2);
-        A.row(0).rightCols(n/2).fill(0.0);
+        nf = n / 2;
+        nx = n - nf;
+        A.row(0).leftCols(nx).fill(0.0);
 
         // Set the 3rd row of A as the 2nd row to create the linear dependency
         A.row(2) = A.row(1);

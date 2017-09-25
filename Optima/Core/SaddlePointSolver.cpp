@@ -107,6 +107,7 @@ struct SaddlePointSolver::Impl
         b.resize(m);
         mat.resize(n + m, n + m);
         vec.resize(n + m);
+        weights.resize(n);
         iordering.resize(n);
 
         // Compute the canonical form of matrix A
@@ -150,31 +151,25 @@ struct SaddlePointSolver::Impl
     auto updateCanonicalForm(SaddlePointMatrix lhs) -> void
     {
         // Update the number of fixed and free variables
-        nf = lhs.fixed().size();
-        nx = n - nf;
+        nf = lhs.nf();
+        nx = lhs.nx();
 
-        // The diagonal entries of the Hessian matrix
-        auto D = lhs.H().diagonal();
+        // The diagonal entries of the Hessian matrix corresponding to free variables
+        const auto Hxx = lhs.H().diagonal().head(nx);
 
         // Update the priority weights for the update of the canonical form
-        weights.noalias() = abs(inv(D));
-
-        // Set the priority weights of the fixed variables to decreasing negative values
-        rows(weights, lhs.fixed()) = -linspace(nf, 1, nf);
+        weights.head(nx).noalias() = abs(inv(Hxx));
+        weights.tail(nf).noalias() = -linspace(nf, 1, nf);
 
         // Update the canonical form and the ordering of the variables
         canonicalizer.update(weights);
 
-        // Check if rationalization of the canonical form should be performed
-        if(options.rationalize)
-            canonicalizer.rationalize(options.maxdenominator);
-
         // Get the updated indices of basic and non-basic variables
-        const auto& ibasic = canonicalizer.ibasic();
-        const auto& inonbasic = canonicalizer.inonbasic();
+        const auto ibasic = canonicalizer.ibasic();
+        const auto inonbasic = canonicalizer.inonbasic();
 
         // Get the S matrix of the canonical form of A
-        auto S = canonicalizer.S();
+        const auto S = canonicalizer.S();
 
         // Find the number of fixed basic variables (those with weights below or equal to zero)
         nbf = 0; while(nbf < nb && weights[ibasic[nb - nbf - 1]] <= 0.0) ++nbf;
@@ -196,13 +191,13 @@ struct SaddlePointSolver::Impl
         nb1 = nbx - nb2;
         nn1 = nnx - nn2;
 
-        // Update the ordering of the free variables
-        iordering.head(nx).head(nbx) = canonicalizer.ibasic().head(nbx);
-        iordering.head(nx).tail(nnx) = canonicalizer.inonbasic().head(nnx);
+        // Update the ordering of the free variables as xx = [xbx xnx]
+        iordering.head(nx).head(nbx) = ibasic.head(nbx);
+        iordering.head(nx).tail(nnx) = inonbasic.head(nnx);
 
-        // Update the ordering of the fixed variables
-        iordering.tail(nf).head(nbf) = canonicalizer.ibasic().tail(nbf);
-        iordering.tail(nf).tail(nnf) = canonicalizer.inonbasic().tail(nnf);
+        // Update the ordering of the fixed variables as xf = [xbf xnf]
+        iordering.tail(nf).head(nbf) = ibasic.tail(nbf);
+        iordering.tail(nf).tail(nnf) = inonbasic.tail(nnf);
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a LU decomposition method.
@@ -299,7 +294,7 @@ struct SaddlePointSolver::Impl
         y.noalias() = tr(R)*b;
 
         // Permute back the variables x to their original ordering
-        rows(x, iordering).noalias() = a;
+        rows(x, iordering).noalias() = a; // TODO Replace by x(iordering) = a;
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a LU decomposition method.
