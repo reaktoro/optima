@@ -116,7 +116,7 @@ public:
 	auto update(VectorXdConstRef weights) -> void;
 
 	/// Update the order of the variables.
-	auto update(VectorXiConstRef ordering) -> void;
+	auto reorder(VectorXiConstRef ordering) -> void;
 
 private:
 	struct Impl;

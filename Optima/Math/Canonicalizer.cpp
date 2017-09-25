@@ -227,7 +227,7 @@ struct Canonicalizer::Impl
 	}
 
 	/// Update the order of the variables.
-    auto update(VectorXiConstRef ordering) -> void
+    auto reorder(VectorXiConstRef ordering) -> void
     {
         ordering.asPermutation().transpose().applyThisOnTheLeft(Q);
     }
@@ -342,9 +342,9 @@ auto Canonicalizer::update(VectorXdConstRef weights) -> void
     pimpl->update(weights);
 }
 
-auto Canonicalizer::update(VectorXiConstRef ordering) -> void
+auto Canonicalizer::reorder(VectorXiConstRef ordering) -> void
 {
-    pimpl->update(ordering);
+    pimpl->reorder(ordering);
 }
 
 } // namespace Optima

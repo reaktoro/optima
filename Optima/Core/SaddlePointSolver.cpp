@@ -1195,10 +1195,10 @@ struct SaddlePointSolver::Impl
     }
 
     /// Update the order of the variables.
-    auto update(VectorXiConstRef ordering) -> void
+    auto reorder(VectorXiConstRef ordering) -> void
     {
         // Update the ordering of the canonicalizer object
-        canonicalizer.update(ordering);
+        canonicalizer.reorder(ordering);
 
         // Update the ordering of the variables used in the saddle point solver
         iordering.head(nb) = canonicalizer.ibasic();
@@ -1275,9 +1275,9 @@ auto SaddlePointSolver::solve(SaddlePointMatrix lhs, SaddlePointVector rhs, Sadd
     return pimpl->solve(lhs, rhs, sol);
 }
 
-auto SaddlePointSolver::update(VectorXiConstRef ordering) -> void
+auto SaddlePointSolver::reorder(VectorXiConstRef ordering) -> void
 {
-    pimpl->update(ordering);
+    pimpl->reorder(ordering);
 }
 
 } // namespace Optima

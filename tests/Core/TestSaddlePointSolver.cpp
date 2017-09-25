@@ -67,7 +67,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
         VectorXi ifixed = rows(ordering, lhs.fixed());
         r.head(n) = Q.transpose() * r.head(n);
         SaddlePointMatrix lhsnew(H, A, lhs.G(), ifixed);
-        solver.update(ordering); // no need to perform canonicalization again
+        solver.reorder(ordering); // no need to perform canonicalization again
         solver.decompose(lhsnew);
         solver.solve(lhsnew, rhs, sol);
         VectorXd s1 = lhsnew.matrix().fullPivLu().solve(r);
