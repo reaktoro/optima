@@ -71,7 +71,7 @@ TEST_CASE("Testing Canonicalizer")
         ordering.head(m).setLinSpaced(m, n - 1, n - m);
         ordering.tail(n - m).setLinSpaced(n - m, 0, n - m);
 
-        canonicalizer.update(ordering);
+        canonicalizer.reorder(ordering);
 
         ordering.asPermutation().applyThisOnTheRight(A);
 
