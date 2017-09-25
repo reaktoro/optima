@@ -22,7 +22,7 @@
 
 // Eigenx includes
 #include <Eigenx/LU.hpp> // todo check if necessary later
-
+using Eigen::placeholders::all;
 
 
 
@@ -114,93 +114,82 @@ struct OptimumStepper::Impl
     /// Decompose the KKT matrix equation used to compute the step vectors.
     auto decompose(const OptimumParams& params, const OptimumState& state, const ObjectiveState& f) -> void
     {
+        // Auxiliary variables
+        const double eps = std::sqrt(options.mu);
+
         // Update the number of fixed and free variables
         nf = params.ifixed.size();
         nx = n - nf;
 
-        // Partition the variables into stable and unstable sets
-//        auto pred = [&](Index i) { return z[i] < 1.0 && x[i] > options.mu; }; // todo maybe it is important to add condition on x < mu too
-//        auto pred = [&](Index i) { return z[i] <= x[i] || x[i] > std::sqrt(options.mu) || z[i] < std::sqrt(options.mu); }; // todo maybe it is important to add condition on x < mu too
-//        auto pred = [&](Index i) { return x[i] > std::sqrt(options.mu) || z[i] < std::sqrt(options.mu); }; // todo maybe it is important to add condition on x < mu too
-//        auto pred = [&](Index i) { return true; };
+        // Partition the variables into free and fixed variables x = [xx xf]
+        iordering.tail(nf).swap(iordering(params.ifixed));
 
-        const auto eps = std::sqrt(options.mu);
-
-        // Partition the free variables into stable and unstable xx = [xs xu]
-        auto it = std::partition(
-            iordering.data(), iordering.data() + nx,
-//                [&](Index i) { return state.x[i] > state.z[i] && state.x[i] > eps; }); // TODO Maybe add a condition that certifies that xu << 1 (maybe x[i] < mu or sqrt(mu))
-//                [&](Index i) { return state.x[i] > eps || state.z[i] < eps; });
-                [&](Index i) { return true; });
+        // Partition the free variables into stable and unstable variables xx = [xs xu]
+        auto it = std::partition(iordering.data(), iordering.data() + nx,
+            [&](Index i) { return state.x[i] > eps || state.z[i] < eps; });
 
         // Update the number of stable and unstable free variables
         ns = it - iordering.data();
         nu = nx - ns;
 
-
-//        std::random_shuffle(iordering.data(), iordering.data() + nx);
-
-        iordering << 4, 1, 3, 5, 2, 0;
-
-
-
         // Ensure the number of stable variables are positive
         assert(ns > 0 && "Could not compute the step."
             "The number of stable variables must be positive."); // TODO Instead of this assert, consider returning a trivial solution with all variables fixed on the bounds
-
-        std::cout << "ordering = \n" << tr(iordering) << std::endl;
-        std::cout << "A = \n" << A << std::endl;
-
-        // Permute the columns of A so that A = [As Au]
-        iordering.asPermutation().applyThisOnTheRight(A);
-
-        std::cout << "A = \n" << A << std::endl;
-
-        // The columns of A corresponding to unstable variables
-        const auto Au = A.middleCols(ns, nu);
-
-        // The variables x arranged in the ordering x = [xs xu xf]
-        x.noalias() = rows(state.x, iordering);
-
-        // The variables z arranged in the ordering z = [zs zu zf]
-        z.noalias() = rows(state.z, iordering);
 
         // The indices of stable, unstable, and unstable+fixed variables
         const auto js = iordering.head(ns);
         const auto ju = iordering.segment(ns, nu);
         const auto jf = iordering.tail(nu + nf);
 
+        // The columns of A corresponding to unstable variables
+        const auto Au = A(all, ju);
+
         // Views to the blocks Hss and Huu of the Hessian matrix
-        auto Hss = H.topLeftCorner(ns, ns);
-        auto Huu = H.col(0).segment(ns, nu); // This is actually a column vector for efficiency (memory alignment) reasons
+        auto Hss = H(js, js);
+        auto Huu = H(ju, ju).diagonal(); // TODO maybe use a column vector here, since we only need the diagonal
 
         // Views to segments xs and xu in x = [xs xu]
-        const auto xs = x.head(ns);
-        const auto xu = x.segment(ns, nu);
+        const auto xs = x(js);
+        const auto xu = x(ju);
 
         // Views to segments zs and zu in z = [zs zu]
-        const auto zs = z.head(ns);
-        const auto zu = z.segment(ns, nu);
+        const auto zs = z(js);
+        const auto zu = z(ju);
 
         // Assemble the matrices Hss and Huu
-        Hss.noalias() = submatrix(f.hessian, js, js);
-        Huu.noalias() = rows(f.hessian.diagonal(), ju);
+        H.fill(std::numeric_limits<double>::infinity());
+
+        Hss.noalias() = f.hessian(js, js);
+
+        std::cout << "H1 = \n" << H << std::endl;
+
+        Huu.noalias() = f.hessian(ju, ju);
+
+        std::cout << "H2 = \n" << H << std::endl;
 
         // Calculate Hss' = Hss + inv(Xs)*Zs
         Hss.diagonal() += zs/xs;
 
+        std::cout << "H3 = \n" << H << std::endl;
+
         // Calculate Huu' = Iuu + Huu*inv(Zu)*Xu
         Huu.noalias() = 1.0 + Huu % xu/zu;
 
+        std::cout << "H4 = \n" << H << std::endl;
+
         // Calculate Huu'' = inv(Zu)*Xu*inv(Huu')
         Huu.noalias() = xu/(zu % Huu);
+
+        std::cout << "H5 = \n" << H << std::endl;
 
         // Calculate G = - Au * Huu'' * tr(Au)
         G.noalias() = - Au * diag(Huu) * tr(Au);
 
         // Update the decomposition of the KKT matrix
-        kkt.update(iordering);
         kkt.decompose({H, A, G, jf});
+
+        std::cout << "H6 = \n" << H << std::endl;
+
     }
 
     /// Solve the KKT matrix equation.
@@ -213,54 +202,54 @@ struct OptimumStepper::Impl
         const auto ju = jx.tail(nu);        // unstable free variables
 
         // Views to the blocks Hss and Huu of the Hessian matrix
-        auto Hss = H.topLeftCorner(ns, ns);
-        auto Huu = H.col(0).segment(ns, nu); // This is actually a column vector for efficiency (memory alignment) reasons
+        const auto Hss = H(js, js);
+        const auto Huu = H(ju, ju).diagonal();
 
         // Views to sub-vectors of the gradient of the objective function
-        auto gx = g.head(nx); // free variables
-        auto gf = g.tail(nf); // fixed variables
+        auto gx = g(jx); // free variables
+        auto gf = g(jf); // fixed variables
 
         auto a = residual.head(n);
         auto b = residual.segment(n, m);
         auto c = residual.tail(n);
 
-        auto ax = a.head(nx);
-        auto af = a.tail(nf);
-        auto as = ax.head(ns);
-        auto au = ax.tail(nu);
+        auto ax = a(jx);
+        auto af = a(jf);
+        auto as = ax(js);
+        auto au = ax(ju);
 
-        auto cx = c.head(nx);
-        auto cf = c.tail(nf);
-        auto cs = cx.head(ns);
-        auto cu = cx.tail(nu);
+        auto cx = c(jx);
+        auto cf = c(jf);
+        auto cs = cx(js);
+        auto cu = cx(ju);
 
-        auto xx = x.head(nx);
-        auto xf = x.tail(nf);
-        auto xs = xx.head(ns);
-        auto xu = xx.tail(nu);
+        auto xx = x(jx);
+        auto xf = x(jf);
+        auto xs = xx(js);
+        auto xu = xx(ju);
 
-        auto zx = z.head(nx);
-        auto zf = z.tail(nf);
-        auto zs = zx.head(ns);
-        auto zu = zx.tail(nu);
+        auto zx = z(jx);
+        auto zf = z(jf);
+        auto zs = zx(js);
+        auto zu = zx(ju);
 
         auto dx = solution.head(n);
         auto dy = solution.segment(n, m);
         auto dz = solution.tail(n);
 
-        auto dxx = dx.head(nx);
-        auto dxf = dx.tail(nf);
-        auto dxs = dxx.head(ns);
-        auto dxu = dxx.tail(nu);
+        auto dxx = dx(jx);
+        auto dxf = dx(jf);
+        auto dxs = dxx(js);
+        auto dxu = dxx(ju);
 
-        auto dzx = dz.head(nx);
-        auto dzf = dz.tail(nf);
-        auto dzs = dzx.head(ns);
-        auto dzu = dzx.tail(nu);
+        auto dzx = dz(jx);
+        auto dzf = dz(jf);
+        auto dzs = dzx(js);
+        auto dzu = dzx(ju);
 
-        const auto Ax = A.leftCols(nx);
-        const auto Af = A.rightCols(nf);
-        const auto Au = Ax.rightCols(nu);
+        const auto Ax = A(all, jx);
+        const auto Af = A(all, jf);
+        const auto Au = A(all, ju);
 
         // The variables x arranged in the ordering x = [xs xu xf]
         x.noalias() = rows(state.x, iordering);

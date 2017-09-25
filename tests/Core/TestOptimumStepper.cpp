@@ -44,11 +44,6 @@ using namespace Optima;
 
 TEST_CASE("Testing OptimumStepper")
 {
-
-    std::srand ( unsigned ( std::time(0) ) );
-
-
-
     Index n = 6;
     Index m = 3;
     Index t = 2*n + m;
@@ -112,25 +107,9 @@ TEST_CASE("Testing OptimumStepper")
         return VectorXd(stepper.step());
     };
 
-    SUBCASE("when all variables are stable")
-    {
-        z.noalias() = 1e-8 * x;
-        MatrixXd M = assemble_matrix();
-        MatrixXd r = assemble_vector();
-        VectorXd step = compute_step();
-        VectorXd res = M*step - r;
-
-        PRINT_STATE;
-
-        CHECK(norm(res)/norm(r) == approx(0.0));
-    }
-
-//    SUBCASE("when the first `m` variables are unstable")
+//    SUBCASE("when all variables are stable")
 //    {
-//        Index k = 1;
-//        z.head(k).fill(1.0);
-//        x.head(k).fill(options.mu);
-//
+//        z.noalias() = 1e-8 * x;
 //        MatrixXd M = assemble_matrix();
 //        MatrixXd r = assemble_vector();
 //        VectorXd step = compute_step();
@@ -138,9 +117,25 @@ TEST_CASE("Testing OptimumStepper")
 //
 //        PRINT_STATE;
 //
-//        res.head(k).fill(0.0);
 //        CHECK(norm(res)/norm(r) == approx(0.0));
 //    }
+
+    SUBCASE("when the first `m` variables are unstable")
+    {
+        Index k = 1;
+        z.head(k).fill(1.0);
+        x.head(k).fill(options.mu);
+
+        MatrixXd M = assemble_matrix();
+        MatrixXd r = assemble_vector();
+        VectorXd step = compute_step();
+        VectorXd res = M*step - r;
+
+        PRINT_STATE;
+
+        res.head(k).fill(0.0);
+        CHECK(norm(res)/norm(r) == approx(0.0));
+    }
 //
 //    SUBCASE("when the first `m` variables are unstable and Huu has large diagonal entries")
 //    {
