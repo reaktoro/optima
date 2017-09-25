@@ -1194,10 +1194,6 @@ struct SaddlePointSolver::Impl
     {
         // Update the ordering of the canonicalizer object
         canonicalizer.reorder(ordering);
-
-        // Update the ordering of the variables used in the saddle point solver
-        iordering.head(nb) = canonicalizer.ibasic();
-        iordering.tail(nn) = canonicalizer.inonbasic();
     }
 
 

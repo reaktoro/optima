@@ -92,18 +92,18 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
 
 #define TEST_SADDLE_POINT_SOLVER()                                             \
 {                                                                              \
-    SaddlePointMatrix lhs(H, A, G, nx, nf);\
-\
-    VectorXd r = lhs * expected;\
-    VectorXd s(t);\
-\
-    SaddlePointVector rhs(r, n, m);\
-    SaddlePointSolution sol(s, n, m);\
-\
+    SaddlePointMatrix lhs(H, A, G, nx, nf);                                    \
+                                                                               \
+    VectorXd r = lhs * expected;                                               \
+    VectorXd s(t);                                                             \
+                                                                               \
+    SaddlePointVector rhs(r, n, m);                                            \
+    SaddlePointSolution sol(s, n, m);                                          \
+                                                                               \
     SUBCASE("When using FullPivLU")                                            \
     {                                                                          \
         options.method = SaddlePointMethod::FullPivLU;                         \
-        SaddlePointSolver solver; solver.setOptions(options);                                            \
+        SaddlePointSolver solver; solver.setOptions(options);                  \
         solver.canonicalize(lhs.A());                                          \
         solver.decompose(lhs);                                                 \
         solver.solve(lhs, rhs, sol);                                           \
@@ -114,7 +114,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
     SUBCASE("When using PartialPivLU")                                         \
     {                                                                          \
         options.method = SaddlePointMethod::PartialPivLU;                      \
-        SaddlePointSolver solver; solver.setOptions(options);                                            \
+        SaddlePointSolver solver; solver.setOptions(options);                  \
         solver.canonicalize(lhs.A());                                          \
         solver.decompose(lhs);                                                 \
         solver.solve(lhs, rhs, sol);                                           \
@@ -125,7 +125,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
     SUBCASE("When using Nullspace")                                            \
     {                                                                          \
         options.method = SaddlePointMethod::Nullspace;                         \
-        SaddlePointSolver solver; solver.setOptions(options);                                            \
+        SaddlePointSolver solver; solver.setOptions(options);                  \
         solver.canonicalize(lhs.A());                                          \
         solver.decompose(lhs);                                                 \
         solver.solve(lhs, rhs, sol);                                           \
@@ -138,11 +138,31 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
         MatrixXd H = diag(lhs.H().diagonal());                                 \
         SaddlePointMatrix lhsdiag(H, lhs.A(), lhs.G(), lhs.nx(), lhs.nf());    \
         options.method = SaddlePointMethod::RangespaceDiagonal;                \
-        SaddlePointSolver solver; solver.setOptions(options);                                            \
+        SaddlePointSolver solver; solver.setOptions(options);                  \
         solver.canonicalize(lhs.A());                                          \
         solver.decompose(lhsdiag);                                             \
         solver.solve(lhsdiag, rhs, sol);                                       \
         double error = (lhsdiag.matrix() * s - r).norm()/r.norm();             \
+        CHECK(approx(error) == 0.0);                                           \
+    }                                                                          \
+                                                                               \
+    SUBCASE("When the order of the variables change...")                       \
+    {                                                                          \
+        SaddlePointSolver solver; solver.setOptions(options);                  \
+        solver.canonicalize(lhs.A());                                          \
+        VectorXi ordering(n);                                                  \
+        ordering.head(m).setLinSpaced(m, n - 1, n - m);                        \
+        ordering.tail(n - m).setLinSpaced(n - m, 0, n - m);                    \
+        const auto Q = ordering.asPermutation();                               \
+        MatrixXd A = lhs.A() * Q;                                              \
+        MatrixXd H = Q.transpose() * lhs.H() * Q;                              \
+        r.head(n) = Q.transpose() * r.head(n);                                 \
+        s.head(n) = Q.transpose() * s.head(n);                                 \
+        SaddlePointMatrix lhsnew(H, A, lhs.G(), lhs.nx(), lhs.nf());           \
+        solver.reorder(ordering);                                              \
+        solver.decompose(lhsnew);                                              \
+        solver.solve(lhsnew, rhs, sol);                                        \
+        double error = (lhsnew.matrix() * s - r).norm()/r.norm();              \
         CHECK(approx(error) == 0.0);                                           \
     }                                                                          \
 }                                                                              \

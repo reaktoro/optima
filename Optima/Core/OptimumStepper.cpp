@@ -105,7 +105,7 @@ struct OptimumStepper::Impl
         solution = zeros(t);
 
         // Initialize the ordering of the variables
-        iordering.setLinSpaced(n, 0, n);
+        iordering.setLinSpaced(n, 0, n - 1);
 
         // Initialize the saddle point solver
         kkt.canonicalize(A);
@@ -136,60 +136,71 @@ struct OptimumStepper::Impl
         assert(ns > 0 && "Could not compute the step."
             "The number of stable variables must be positive."); // TODO Instead of this assert, consider returning a trivial solution with all variables fixed on the bounds
 
+        // Permute the columns of A so that A = [As Au Af]
+        iordering.asPermutation().applyThisOnTheRight(A);
+
+        // The columns of A corresponding to unstable variables
+        const auto Au = A.middleCols(ns, nu);
+
+        // The variables x arranged in the ordering x = [xs xu xf]
+        x.noalias() = state.x(iordering);
+
+        // The variables z arranged in the ordering z = [zs zu zf]
+        z.noalias() = state.z(iordering);
+
         // The indices of stable, unstable, and unstable+fixed variables
         const auto js = iordering.head(ns);
         const auto ju = iordering.segment(ns, nu);
-        const auto jf = iordering.tail(nu + nf);
-
-        // The columns of A corresponding to unstable variables
-        const auto Au = A(all, ju);
 
         // Views to the blocks Hss and Huu of the Hessian matrix
-        auto Hss = H(js, js);
-        auto Huu = H(ju, ju).diagonal(); // TODO maybe use a column vector here, since we only need the diagonal
-
-        // Views to segments xs and xu in x = [xs xu]
-        const auto xs = x(js);
-        const auto xu = x(ju);
-
-        // Views to segments zs and zu in z = [zs zu]
-        const auto zs = z(js);
-        const auto zu = z(ju);
-
-        // Assemble the matrices Hss and Huu
-        H.fill(std::numeric_limits<double>::infinity());
-
-        Hss.noalias() = f.hessian(js, js);
+        auto Hss = H.topLeftCorner(ns, ns);
+        auto Huu = H.bottomRightCorner(nu, nu).diagonal();
+        auto Duu = H.col(0).segment(ns, nu);
 
         std::cout << "H1 = \n" << H << std::endl;
 
-        Huu.noalias() = f.hessian(ju, ju);
+        // Views to segments xs and xu in x = [xs xu]
+        const auto xs = x.head(ns);
+        const auto xu = x.segment(ns, nu);
+
+        // Views to segments zs and zu in z = [zs zu]
+        const auto zs = z.head(ns);
+        const auto zu = z.segment(ns, nu);
+
+        // Assemble the matrices Hss and Huu
+        Hss.noalias() = f.hessian(js, js);
 
         std::cout << "H2 = \n" << H << std::endl;
+
+        Huu.noalias() = f.hessian(ju, ju).diagonal();
+        Duu.noalias() = Huu.diagonal();
+
+        std::cout << "H3 = \n" << H << std::endl;
+
 
         // Calculate Hss' = Hss + inv(Xs)*Zs
         Hss.diagonal() += zs/xs;
 
-        std::cout << "H3 = \n" << H << std::endl;
-
-        // Calculate Huu' = Iuu + Huu*inv(Zu)*Xu
-        Huu.noalias() = 1.0 + Huu % xu/zu;
-
         std::cout << "H4 = \n" << H << std::endl;
 
-        // Calculate Huu'' = inv(Zu)*Xu*inv(Huu')
-        Huu.noalias() = xu/(zu % Huu);
+
+        // Calculate Huu' = Iuu + Huu*inv(Zu)*Xu
+        Duu.noalias() = 1.0 + Duu % xu/zu;
 
         std::cout << "H5 = \n" << H << std::endl;
 
-        // Calculate G = - Au * Huu'' * tr(Au)
-        G.noalias() = - Au * diag(Huu) * tr(Au);
 
-        // Update the decomposition of the KKT matrix
-        kkt.decompose({H, A, G, jf});
+        // Calculate Huu'' = inv(Zu)*Xu*inv(Huu')
+        Duu.noalias() = xu/(zu % Duu);
 
         std::cout << "H6 = \n" << H << std::endl;
 
+        // Calculate G = - Au * Huu'' * tr(Au)
+        G.noalias() = - Au * diag(Duu) * tr(Au);
+
+        // Update the decomposition of the KKT matrix
+        kkt.reorder(iordering);
+        kkt.decompose({H, A, G, ns, nu + nf});
     }
 
     /// Solve the KKT matrix equation.
@@ -202,63 +213,64 @@ struct OptimumStepper::Impl
         const auto ju = jx.tail(nu);        // unstable free variables
 
         // Views to the blocks Hss and Huu of the Hessian matrix
-        const auto Hss = H(js, js);
-        const auto Huu = H(ju, ju).diagonal();
+        auto Hss = H.topLeftCorner(ns, ns);
+        auto Huu = H.bottomRightCorner(nu, nu).diagonal();
+        auto Duu = H.col(0).segment(ns, nu);
 
         // Views to sub-vectors of the gradient of the objective function
-        auto gx = g(jx); // free variables
-        auto gf = g(jf); // fixed variables
+        auto gx = g.head(nx); // free variables
+        auto gf = g.tail(nf); // fixed variables
 
         auto a = residual.head(n);
         auto b = residual.segment(n, m);
         auto c = residual.tail(n);
 
-        auto ax = a(jx);
-        auto af = a(jf);
-        auto as = ax(js);
-        auto au = ax(ju);
+        auto ax = a.head(nx);
+        auto af = a.tail(nf);
+        auto as = ax.head(ns);
+        auto au = ax.tail(nu);
 
-        auto cx = c(jx);
-        auto cf = c(jf);
-        auto cs = cx(js);
-        auto cu = cx(ju);
+        auto cx = c.head(nx);
+        auto cf = c.tail(nf);
+        auto cs = cx.head(ns);
+        auto cu = cx.tail(nu);
 
-        auto xx = x(jx);
-        auto xf = x(jf);
-        auto xs = xx(js);
-        auto xu = xx(ju);
+        auto xx = x.head(nx);
+        auto xf = x.tail(nf);
+        auto xs = xx.head(ns);
+        auto xu = xx.tail(nu);
 
-        auto zx = z(jx);
-        auto zf = z(jf);
-        auto zs = zx(js);
-        auto zu = zx(ju);
+        auto zx = z.head(nx);
+        auto zf = z.tail(nf);
+        auto zs = zx.head(ns);
+        auto zu = zx.tail(nu);
 
         auto dx = solution.head(n);
         auto dy = solution.segment(n, m);
         auto dz = solution.tail(n);
 
-        auto dxx = dx(jx);
-        auto dxf = dx(jf);
-        auto dxs = dxx(js);
-        auto dxu = dxx(ju);
+        auto dxx = dx.head(nx);
+        auto dxf = dx.tail(nf);
+        auto dxs = dxx.head(ns);
+        auto dxu = dxx.tail(nu);
 
-        auto dzx = dz(jx);
-        auto dzf = dz(jf);
-        auto dzs = dzx(js);
-        auto dzu = dzx(ju);
+        auto dzx = dz.head(nx);
+        auto dzf = dz.tail(nf);
+        auto dzs = dzx.head(ns);
+        auto dzu = dzx.tail(nu);
 
-        const auto Ax = A(all, jx);
-        const auto Af = A(all, jf);
-        const auto Au = A(all, ju);
+        const auto Ax = A.leftCols(nx);
+        const auto Af = A.rightCols(nf);
+        const auto Au = Ax.rightCols(nu);
 
         // The variables x arranged in the ordering x = [xs xu xf]
-        x.noalias() = rows(state.x, iordering);
+        x.noalias() = state.x(iordering);
 
         // The variables z arranged in the ordering z = [zs zu zf]
-        z.noalias() = rows(state.z, iordering);
+        z.noalias() = state.z(iordering);
 
         // The gradient of the objective function w.r.t. free variables
-        gx.noalias() = rows(f.grad, jx);
+        gx.noalias() = f.grad(jx);
 
         // Calculate ax = -(gx - tr(Ax)*y - zx)
         ax.noalias() = -(gx - tr(Ax) * state.y - zx);
@@ -277,20 +289,21 @@ struct OptimumStepper::Impl
         // Calculate as' = as + inv(Xs) * cs
         as += cs/xs;
 
-        // Calculate au' = -(au - Huu * inv(Zu) * cu)
+        // Calculate au' = -(au - Huu * inv(Zu) * cu) // TODO Huu or Huu''? Because here, Huu view actually contains Huu'' values
         au.noalias() = -(au - Huu % cu/zu);
 
         // Calculate b' = b - Au * inv(Zu) * cu
         b -= Au * (cu/zu);
 
         // Calculate b'' = b' + Au * Huu'' * au'
-        b += Au * (Huu % au);
+        b += Au * (Duu % au);
 
-        kkt.solve({H, A, G, jf}, {a, b}, {dx, dy});
+        kkt.solve({H, A, G, ns, nu + nf}, {a, b}, {dx, dy});
 
         dy *= -1.0;
 
-        dzu = Huu % (zu/xu) % (au - tr(Au)*dy);
+//        dzu = Huu % (zu/xu) % (au - tr(Au)*dy);
+        dzu = (au - tr(Au)*dy);
         dxu = (cu - xu % dzu)/zu;
         dzs = (cs - zs % dxs)/xs;
 
