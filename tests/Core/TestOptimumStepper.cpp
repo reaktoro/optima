@@ -36,16 +36,19 @@ using namespace Optima;
     VectorXd s = M.fullPivLu().solve(r);                                    \
     std::cout << "M = \n" << M << std::endl;                                \
     std::cout << "r         = " << tr(r) << std::endl;                           \
-    std::cout << "s         = " << tr(s) << std::endl;      \
     std::cout << "step      = " << tr(step) << std::endl;                        \
-    std::cout << "res(s)    = " << tr(M*s - r) << std::endl;                         \
-    std::cout << "res(step) = " << tr(res) << std::endl;                         \
+    std::cout << "step(lu)  = " << tr(s) << std::endl;      \
+    std::cout << "res       = " << tr(res) << std::endl;                         \
+    std::cout << "res(lu)   = " << tr(M*s - r) << std::endl;                         \
 }                                                                           \
 
 TEST_CASE("Testing OptimumStepper")
 {
-    Index n = 6;
-    Index m = 3;
+    std::srand(std::time(0));
+    Index n = 60;
+    Index m = 20;
+//    Index n = 6;
+//    Index m = 3;
     Index t = 2*n + m;
 
     MatrixXd A = random(m, n);
@@ -70,7 +73,7 @@ TEST_CASE("Testing OptimumStepper")
     {
         MatrixXd M = zeros(t, t);
         M.topLeftCorner(n, n) = H;
-        M.topRows(n).middleCols(n, m) = -tr(A);
+        M.topRows(n).middleCols(n, m) = tr(A);
         M.topRightCorner(n, n).diagonal().fill(-1.0);
         M.middleRows(n, m).leftCols(n) = A;
         M.bottomLeftCorner(n, n).diagonal() = z;
@@ -81,7 +84,7 @@ TEST_CASE("Testing OptimumStepper")
     auto assemble_vector = [&]()
     {
         VectorXd r = zeros(t);
-        r.head(n) = -(g - tr(A)*y - z);
+        r.head(n) = -(g + tr(A)*y - z);
         r.segment(n, m) = -(A*x - a);
         r.tail(n) = -(x % z - options.mu);
         return r;
@@ -115,92 +118,65 @@ TEST_CASE("Testing OptimumStepper")
         return VectorXd(stepper.step());
     };
 
-//    SUBCASE("when all variables are stable")
-//    {
-//        z.noalias() = 1e-8 * x;
-//        MatrixXd M = assemble_matrix();
-//        MatrixXd r = assemble_vector();
-//        VectorXd step = compute_step();
-//        VectorXd res = M*step - r;
-//
-//        PRINT_STATE;
-//
-//        CHECK(norm(res)/norm(r) == approx(0.0));
-//    }
-
-    SUBCASE("when the first `m` variables are unstable")
+    SUBCASE("When all variables are stable.")
     {
-//        H.fill(0.0);
+        z.noalias() = 1e-8 * x;
+        MatrixXd M = assemble_matrix();
+        MatrixXd r = assemble_vector();
+        VectorXd step = compute_step();
+        VectorXd res = M*step - r;
 
-        Index k = 1;
-        z.tail(k).fill(1.0);
-        x.tail(k).fill(options.mu);
+//        PRINT_STATE;
+
+        CHECK(norm(res)/norm(r) == approx(0.0));
+    }
+
+    SUBCASE("When the last `m = nrows(A)` variables are unstable.")
+    {
+        z.tail(m).fill(1.0);
+        x.tail(m).fill(options.mu);
 
         MatrixXd M = assemble_matrix();
         MatrixXd r = assemble_vector();
         VectorXd step = compute_step();
         VectorXd res = M*step - r;
 
-        PRINT_STATE;
+//        PRINT_STATE;
 
-        res.head(k).fill(0.0);
         CHECK(norm(res)/norm(r) == approx(0.0));
     }
 
-//    SUBCASE("when the first `m` variables are unstable and Huu has large diagonal entries")
-//    {
-//        z.head(m).fill(1.0);
-//        x.head(m).fill(options.mu);
-//        H.topLeftCorner(m, m) = 1e16*identity(m, m);
-//
-//        MatrixXd M = assemble_matrix();
-//        MatrixXd r = assemble_vector();
-//        VectorXd step = compute_step();
-//        VectorXd res = M*step - r;
-//
-//        PRINT_STATE;
-//
-//        res.head(m).fill(0.0);
-//        CHECK(norm(res)/norm(r) == approx(0.0));
-//    }
-//
-//    SUBCASE("when the saddle point problem corresponds to a linear programming problem")
-//    {
-//        g = abs(g);
-//        z.tail(n - m).fill(1.0);
-//        z.head(m).fill(options.mu);
-//        x = options.mu/z;
-//        H = zeros(n, n);
-//
-//        MatrixXd M = assemble_matrix();
-//        MatrixXd r = assemble_vector();
-//        VectorXd step = compute_step();
-//        VectorXd res = M*step - r;
-//
-//        PRINT_STATE;
-//
-//        res.tail(n - m).fill(0.0);
-//        CHECK(norm(res)/norm(r) == approx(0.0));
-//    }
+    SUBCASE("When the last `m = nrows(A)` variables are unstable and Huu has large diagonal entries.")
+    {
+        z.tail(m).fill(1.0);
+        x.tail(m).fill(options.mu);
+        H.bottomRightCorner(m, m).diagonal().fill(1e8);
 
-//    SUBCASE("when the saddle point problem corresponds to a linear programming problem")
-//    {
-//        g = abs(g);
-//        z.fill(options.mu);
-//        x = options.mu/z;
-//        H = zeros(n, n);
-//
-//        options.kkt.method = SaddlePointMethod::RangespaceDiagonal;
-//
-//        MatrixXd M = assemble_matrix();
-//        MatrixXd r = assemble_vector();
-//        VectorXd step = compute_step();
-//        VectorXd res = M*step - r;
-//
-//        PRINT_STATE;
-//
-//        res.tail(n - m).fill(0.0);
-//        CHECK(norm(res)/norm(r) == approx(0.0));
-//    }
+        MatrixXd M = assemble_matrix();
+        MatrixXd r = assemble_vector();
+        VectorXd step = compute_step();
+        VectorXd res = M*step - r;
 
+//        PRINT_STATE;
+
+        CHECK(norm(res)/norm(r) == approx(0.0));
+    }
+
+    SUBCASE("When the saddle point problem corresponds to a linear programming problem.")
+    {
+        g = abs(g);
+        z.tail(n - m).fill(1.0);
+        z.head(m).fill(options.mu);
+        x = options.mu/z;
+        H = zeros(n, n);
+
+        MatrixXd M = assemble_matrix();
+        MatrixXd r = assemble_vector();
+        VectorXd step = compute_step();
+        VectorXd res = M*step - r;
+
+//        PRINT_STATE;
+
+        CHECK(norm(res)/norm(r) == approx(0.0));
+    }
 }

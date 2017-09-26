@@ -17,14 +17,8 @@
 
 #include "OptimumStepper.hpp"
 
-
-#include <iostream> // todo check if necessary later
-
 // Eigenx includes
 #include <Eigenx/LU.hpp> // todo check if necessary later
-using Eigen::placeholders::all;
-
-
 
 // Optima includes
 #include <Optima/Core/OptimumOptions.hpp>
@@ -99,7 +93,6 @@ struct OptimumStepper::Impl
         // Allocate memory for some members
         A = structure.A;
         H = zeros(n, n);
-        G = zeros(m, m);
         g = zeros(n);
         residual = zeros(t);
         solution = zeros(t);
@@ -134,13 +127,10 @@ struct OptimumStepper::Impl
 
         // Ensure the number of stable variables are positive
         assert(ns > 0 && "Could not compute the step."
-            "The number of stable variables must be positive."); // TODO Instead of this assert, consider returning a trivial solution with all variables fixed on the bounds
+            "The number of stable variables must be positive.");
 
         // Permute the columns of A so that A = [As Au Af]
         iordering.asPermutation().applyThisOnTheRight(A);
-
-        // The columns of A corresponding to unstable variables
-        const auto Au = A.middleCols(ns, nu);
 
         // The variables x arranged in the ordering x = [xs xu xf]
         x.noalias() = state.x(iordering);
@@ -148,55 +138,26 @@ struct OptimumStepper::Impl
         // The variables z arranged in the ordering z = [zs zu zf]
         z.noalias() = state.z(iordering);
 
-        // The indices of stable, unstable, and unstable+fixed variables
-        const auto js = iordering.head(ns);
-        const auto ju = iordering.segment(ns, nu);
+        // The indices of the variables j = [jx jf], with jx = [js ju]
+        const auto jx = iordering.head(nx); // indices of free variables
 
-        // Views to the blocks Hss and Huu of the Hessian matrix
-        auto Hss = H.topLeftCorner(ns, ns);
-        auto Huu = H.bottomRightCorner(nu, nu).diagonal();
-        auto Duu = H.col(0).segment(ns, nu);
+        // Views to the blocks of the Hessian matrix Hxx = [Hss Hsu; Hus Huu]
+        auto Hxx = H.topLeftCorner(nx, nx);
+        auto Hss = Hxx.topLeftCorner(ns, ns);
 
-        std::cout << "H1 = \n" << H << std::endl;
+        // Views to sub-vectors xs and xu in xx = [xs xu]
+        const auto xx = x.head(nx);
+        const auto xs = xx.head(ns);
 
-        // Views to segments xs and xu in x = [xs xu]
-        const auto xs = x.head(ns);
-        const auto xu = x.segment(ns, nu);
+        // Views to sub-vectors zs and zu in zx = [zs zu]
+        const auto zx = z.head(nx);
+        const auto zs = zx.head(ns);
 
-        // Views to segments zs and zu in z = [zs zu]
-        const auto zs = z.head(ns);
-        const auto zu = z.segment(ns, nu);
-
-        // Assemble the matrices Hss and Huu
-        Hss.noalias() = f.hessian(js, js);
-
-        std::cout << "H2 = \n" << H << std::endl;
-
-        Huu.noalias() = f.hessian(ju, ju).diagonal();
-        Duu.noalias() = Huu.diagonal();
-
-        std::cout << "H3 = \n" << H << std::endl;
-
+        // Update Hxx = [Hss Hsu; Hus Huu]
+        Hxx.noalias() = f.hessian(jx, jx);
 
         // Calculate Hss' = Hss + inv(Xs)*Zs
         Hss.diagonal() += zs/xs;
-
-        std::cout << "H4 = \n" << H << std::endl;
-
-
-        // Calculate Huu' = Iuu + Huu*inv(Zu)*Xu
-        Duu.noalias() = 1.0 + Duu % xu/zu;
-
-        std::cout << "H5 = \n" << H << std::endl;
-
-
-        // Calculate Huu'' = inv(Zu)*Xu*inv(Huu')
-        Duu.noalias() = xu/(zu % Duu);
-
-        std::cout << "H6 = \n" << H << std::endl;
-
-        // Calculate G = - Au * Huu'' * tr(Au)
-        G.noalias() = - Au * diag(Duu) * tr(Au);
 
         // Update the decomposition of the KKT matrix
         kkt.reorder(iordering);
@@ -206,61 +167,62 @@ struct OptimumStepper::Impl
     /// Solve the KKT matrix equation.
     auto solve(const OptimumParams& params, const OptimumState& state, const ObjectiveState& f) -> void
     {
-        // The indices of stable, unstable, and unstable+fixed variables
-        const auto jx = iordering.head(nx); // free variables
-        const auto jf = iordering.tail(nf); // fixed variables
-        const auto js = jx.head(ns);        // stable free variables
-        const auto ju = jx.tail(nu);        // unstable free variables
+        // The indices of the variables j = [jx jf], with jx = [js ju]
+        const auto jx = iordering.head(nx);  // indices of free variables
 
-        // Views to the blocks Hss and Huu of the Hessian matrix
-        auto Hss = H.topLeftCorner(ns, ns);
-        auto Huu = H.bottomRightCorner(nu, nu).diagonal();
-        auto Duu = H.col(0).segment(ns, nu);
+        // Views to the blocks of the Hessian matrix Hxx = [Hss Hsu; Hus Huu]
+        auto Hxx = H.topLeftCorner(nx, nx);
+        auto Hsu = Hxx.topRightCorner(ns, nu);
+        auto Hus = Hxx.bottomLeftCorner(nu, ns);
+        auto Huu = Hxx.bottomRightCorner(nu, nu);
 
-        // Views to sub-vectors of the gradient of the objective function
-        auto gx = g.head(nx); // free variables
-        auto gf = g.tail(nf); // fixed variables
+        // The gradient of the objective function corresponding to free variables
+        auto gx = g.head(nx);
 
+        // The vectors a, b, c
         auto a = residual.head(n);
         auto b = residual.segment(n, m);
         auto c = residual.tail(n);
 
+        // The vector a = [ax af], ax = [as au], and its sub-vectors
         auto ax = a.head(nx);
         auto af = a.tail(nf);
         auto as = ax.head(ns);
         auto au = ax.tail(nu);
 
+        // The vector c = [cx cf], cx = [cs cu], and its sub-vectors
         auto cx = c.head(nx);
         auto cf = c.tail(nf);
         auto cs = cx.head(ns);
         auto cu = cx.tail(nu);
 
+        // The vector x = [xx xf], xx = [xs xu], and its sub-vectors
         auto xx = x.head(nx);
-        auto xf = x.tail(nf);
         auto xs = xx.head(ns);
         auto xu = xx.tail(nu);
 
+        // The vector z = [zx zf], zx = [zs zu], and its sub-vectors
         auto zx = z.head(nx);
-        auto zf = z.tail(nf);
         auto zs = zx.head(ns);
         auto zu = zx.tail(nu);
 
+        // The vectors dx, dy, dz
         auto dx = solution.head(n);
         auto dy = solution.segment(n, m);
         auto dz = solution.tail(n);
 
+        // The vector dx = [dxx dxf], dxx = [dxs dxu], and its sub-vectors
         auto dxx = dx.head(nx);
-        auto dxf = dx.tail(nf);
         auto dxs = dxx.head(ns);
         auto dxu = dxx.tail(nu);
 
+        // The vector dz = [dzx dzf], dzx = [dzs dzu], and its sub-vectors
         auto dzx = dz.head(nx);
-        auto dzf = dz.tail(nf);
         auto dzs = dzx.head(ns);
         auto dzu = dzx.tail(nu);
 
+        // The matrix A = [As Au Af] and its sub-matrices
         const auto Ax = A.leftCols(nx);
-        const auto Af = A.rightCols(nf);
         const auto Au = Ax.rightCols(nu);
 
         // The variables x arranged in the ordering x = [xs xu xf]
@@ -272,15 +234,17 @@ struct OptimumStepper::Impl
         // The gradient of the objective function w.r.t. free variables
         gx.noalias() = f.grad(jx);
 
-        // Calculate ax = -(gx - tr(Ax)*y - zx)
-        ax.noalias() = -(gx - tr(Ax) * state.y - zx);
+        // Calculate ax = -(gx + tr(Ax)*y - zx)
+        ax.noalias() = -(gx + tr(Ax) * state.y - zx);
 
-        std::cout << "as = " << tr(as) << std::endl;
-        std::cout << "au = " << tr(au) << std::endl;
+        // Store -au into dzu
+        dzu.noalias() = -au;
 
-        // Set af (a for fixed variables) to zero
+        // Set both au and af sub-vectors in a = [as au af] to zero
+        au.fill(0.0);
         af.fill(0.0);
 
+        // Calculate b = -(A*x - a)
         b.noalias() = -(A*x - params.a);
 
         // Calculate cx = -(Xx * zx - mu)
@@ -290,94 +254,52 @@ struct OptimumStepper::Impl
         cf.fill(0.0);
 
         // Calculate as' = as + inv(Xs) * cs
-        as += cs/xs;
-
-        std::cout << "as' = " << tr(as) << std::endl;
-
-        // Calculate au' = -(au - Huu * inv(Zu) * cu) // TODO Huu or Huu''? Because here, Huu view actually contains Huu'' values
-        au.noalias() = -(au - Huu % cu/zu);
-
-        std::cout << "au' = " << tr(au) << std::endl;
+        as += cs/xs - Hsu * (cu/zu);
 
         // Calculate b' = b - Au * inv(Zu) * cu
         b -= Au * (cu/zu);
 
-        // Calculate b'' = b' + Au * Huu'' * au'
-        b += Au * (Duu % au);
-
-        dzu = au;
-        au.fill(0.0);
-
+        // Solve the reduced KKT equation
         kkt.solve({H, A, G, ns, nu + nf}, {a, b}, {dx, dy});
 
-        dy *= -1.0;
+        // Calculate dzu = -au + Hus*dxs + tr(Au)*dy + Huu*inv(Zu)*cu
+        dzu += Hus*dxs + tr(Au)*dy + Huu*(cu/zu);
 
-        std::cout << "Duu = " << tr(Duu) << std::endl;
-        std::cout << "Duu % (zu/xu) = " << tr(Duu % (zu/xu)) << std::endl;
-
-        dzu = Duu % (zu/xu) % (dzu - tr(Au)*dy);
+        // Calculate dxu = inv(Zu) * (cu - Xu * dzu)
         dxu = (cu - xu % dzu)/zu;
+
+        // Calculate dzs = inv(Xs) * (cs - Zs * dxs)
         dzs = (cs - zs % dxs)/xs;
 
+        // Permute the calculated dx and dz to their original order
         iordering.asPermutation().applyThisOnTheLeft(dx);
         iordering.asPermutation().applyThisOnTheLeft(dz);
-
-        VectorXd residual_tmp = residual;
-        VectorXd solution_tmp = solution;
-
-        solve2(params, state, f);
-
-        std::cout << "stable  = " << tr(js) << std::endl;
-        std::cout << "x       = " << tr(state.x) << std::endl;
-        std::cout << "dx(rs)  = " << tr(solution_tmp.head(n)) << std::endl;
-        std::cout << "dx(lu)  = " << tr(dx) << std::endl;
-        std::cout << "res(dx) = " << tr(abs(solution_tmp.head(n) - dx)) << std::endl;
-        std::cout << std::endl;
-        std::cout << "y       = " << tr(state.y) << std::endl;
-        std::cout << "dy(rs)  = " << tr(solution_tmp.segment(n, m)) << std::endl;
-        std::cout << "dy(lu)  = " << tr(dy) << std::endl;
-        std::cout << "res(dy) = " << tr(abs(solution_tmp.segment(n, m) - dy)) << std::endl;
-        std::cout << std::endl;
-        std::cout << "z       = " << tr(state.z) << std::endl;
-        std::cout << "dz(rs)  = " << tr(solution_tmp.tail(n)) << std::endl;
-        std::cout << "dz(lu)  = " << tr(dz) << std::endl;
-        std::cout << "res(dz) = " << tr(abs(solution_tmp.tail(n) - dz)) << std::endl;
-
-        residual = residual_tmp;
-        solution = solution_tmp;
     }
 
-    /// Solve the KKT matrix equation.
-    auto solve2(const OptimumParams& params, const OptimumState& state, const ObjectiveState& f) -> void
-    {
-        const auto& x = state.x;
-        const auto& y = state.y;
-        const auto& z = state.z;
-        const auto& A = structure.A;
-        const auto& a = params.a;
-
-//        MatrixXd M = zeros(n+m, n+m);
+//    /// Solve the KKT matrix equation.
+//    auto solve2(const OptimumParams& params, const OptimumState& state, const ObjectiveState& f) -> void
+//    {
+//        const auto& x = state.x;
+//        const auto& y = state.y;
+//        const auto& z = state.z;
+//        const auto& A = structure.A;
+//        const auto& a = params.a;
+//
+//        MatrixXd M = zeros(t, t);
 //        if(f.hessian.size())
 //            M.topLeftCorner(n, n) = f.hessian;
-//        M.topLeftCorner(n, n).diagonal() += z/x;
-//        M.topRows(n).rightCols(m) = -tr(A);
-//        M.bottomRows(m).leftCols(n) = A;
-
-        MatrixXd M = zeros(t, t);
-        if(f.hessian.size())
-            M.topLeftCorner(n, n) = f.hessian;
-        M.topRows(n).middleCols(n, m) = -tr(A);
-        M.topRightCorner(n, n).diagonal().fill(-1.0);
-        M.middleRows(n, m).leftCols(n) = A;
-        M.bottomLeftCorner(n, n).diagonal() = z;
-        M.bottomRightCorner(n, n).diagonal() = x;
-
-        residual.head(n) = -(f.grad - tr(A)*y - z);
-        residual.segment(n, m) = -(A*x - a);
-        residual.tail(n) = -(x % z - options.mu);
-
-        solution = M.fullPivLu().solve(residual);
-    }
+//        M.topRows(n).middleCols(n, m) = tr(A);
+//        M.topRightCorner(n, n).diagonal().fill(-1.0);
+//        M.middleRows(n, m).leftCols(n) = A;
+//        M.bottomLeftCorner(n, n).diagonal() = z;
+//        M.bottomRightCorner(n, n).diagonal() = x;
+//
+//        residual.head(n) = -(f.grad + tr(A)*y - z);
+//        residual.segment(n, m) = -(A*x - a);
+//        residual.tail(n) = -(x % z - options.mu);
+//
+//        solution = M.fullPivLu().solve(residual);
+//    }
 };
 
 OptimumStepper::OptimumStepper()
@@ -416,11 +338,6 @@ auto OptimumStepper::decompose(const OptimumParams& params, const OptimumState& 
 auto OptimumStepper::solve(const OptimumParams& params, const OptimumState& state, const ObjectiveState& f) -> void
 {
     pimpl->solve(params, state, f);
-}
-
-auto OptimumStepper::solve2(const OptimumParams& params, const OptimumState& state, const ObjectiveState& f) -> void
-{
-    pimpl->solve2(params, state, f);
 }
 
 auto OptimumStepper::step() const -> VectorXdConstRef
