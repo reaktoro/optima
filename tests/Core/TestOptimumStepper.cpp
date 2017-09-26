@@ -44,25 +44,25 @@ using namespace Optima;
 
 TEST_CASE("Testing OptimumStepper")
 {
-    Index n = 2;
-    Index m = 1;
+    Index n = 6;
+    Index m = 3;
     Index t = 2*n + m;
 
-//    MatrixXd A = random(m, n);
-//    MatrixXd H = random(n, n);
-//    VectorXd g = random(n);
-//    VectorXd a = random(m);
-//    VectorXd x = abs(random(n));
-//    VectorXd y = random(m);
-//    VectorXd z = abs(random(n));
+    MatrixXd A = random(m, n);
+    MatrixXd H = random(n, n);
+    VectorXd g = random(n);
+    VectorXd a = random(m);
+    VectorXd x = abs(random(n));
+    VectorXd y = random(m);
+    VectorXd z = abs(random(n));
 
-    MatrixXd A = ones(m, n);
-    MatrixXd H = zeros(n, n);
-    VectorXd g = ones(n);
-    VectorXd a = ones(m);
-    VectorXd x = ones(n);
-    VectorXd y = ones(m);
-    VectorXd z = ones(n);
+//    MatrixXd A = ones(m, n);
+//    MatrixXd H = zeros(n, n);
+//    VectorXd g = ones(n);
+//    VectorXd a = ones(m);
+//    VectorXd x = ones(n);
+//    VectorXd y = ones(m);
+//    VectorXd z = ones(n);
 
     OptimumOptions options;
 
@@ -130,7 +130,7 @@ TEST_CASE("Testing OptimumStepper")
 
     SUBCASE("when the first `m` variables are unstable")
     {
-        H.fill(0.0);
+//        H.fill(0.0);
 
         Index k = 1;
         z.tail(k).fill(1.0);

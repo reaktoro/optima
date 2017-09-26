@@ -275,6 +275,9 @@ struct OptimumStepper::Impl
         // Calculate ax = -(gx - tr(Ax)*y - zx)
         ax.noalias() = -(gx - tr(Ax) * state.y - zx);
 
+        std::cout << "as = " << tr(as) << std::endl;
+        std::cout << "au = " << tr(au) << std::endl;
+
         // Set af (a for fixed variables) to zero
         af.fill(0.0);
 
@@ -289,8 +292,12 @@ struct OptimumStepper::Impl
         // Calculate as' = as + inv(Xs) * cs
         as += cs/xs;
 
+        std::cout << "as' = " << tr(as) << std::endl;
+
         // Calculate au' = -(au - Huu * inv(Zu) * cu) // TODO Huu or Huu''? Because here, Huu view actually contains Huu'' values
         au.noalias() = -(au - Huu % cu/zu);
+
+        std::cout << "au' = " << tr(au) << std::endl;
 
         // Calculate b' = b - Au * inv(Zu) * cu
         b -= Au * (cu/zu);
@@ -298,12 +305,17 @@ struct OptimumStepper::Impl
         // Calculate b'' = b' + Au * Huu'' * au'
         b += Au * (Duu % au);
 
+        dzu = au;
+        au.fill(0.0);
+
         kkt.solve({H, A, G, ns, nu + nf}, {a, b}, {dx, dy});
 
         dy *= -1.0;
 
-//        dzu = Huu % (zu/xu) % (au - tr(Au)*dy);
-        dzu = (au - tr(Au)*dy);
+        std::cout << "Duu = " << tr(Duu) << std::endl;
+        std::cout << "Duu % (zu/xu) = " << tr(Duu % (zu/xu)) << std::endl;
+
+        dzu = Duu % (zu/xu) % (dzu - tr(Au)*dy);
         dxu = (cu - xu % dzu)/zu;
         dzs = (cs - zs % dxs)/xs;
 
