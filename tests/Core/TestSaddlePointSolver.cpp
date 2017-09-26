@@ -50,7 +50,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
     solver.setOptions(options);
     solver.canonicalize(lhs.A());
     solver.decompose(lhs);
-    solver.solve(lhs, rhs, sol);
+    solver.solve(rhs, sol);
 
     double error = (lhs.matrix() * s - r).norm()/r.norm();
     CHECK(approx(error) == 0.0);
@@ -106,7 +106,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
         SaddlePointSolver solver; solver.setOptions(options);                  \
         solver.canonicalize(lhs.A());                                          \
         solver.decompose(lhs);                                                 \
-        solver.solve(lhs, rhs, sol);                                           \
+        solver.solve(rhs, sol);                                                \
         double error = (lhs.matrix() * s - r).norm()/r.norm();                 \
         CHECK(approx(error) == 0.0);                                           \
     }                                                                          \
@@ -117,7 +117,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
         SaddlePointSolver solver; solver.setOptions(options);                  \
         solver.canonicalize(lhs.A());                                          \
         solver.decompose(lhs);                                                 \
-        solver.solve(lhs, rhs, sol);                                           \
+        solver.solve(rhs, sol);                                                \
         double error = (lhs.matrix() * s - r).norm()/r.norm();                 \
         CHECK(approx(error) == 0.0);                                           \
     }                                                                          \
@@ -128,7 +128,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
         SaddlePointSolver solver; solver.setOptions(options);                  \
         solver.canonicalize(lhs.A());                                          \
         solver.decompose(lhs);                                                 \
-        solver.solve(lhs, rhs, sol);                                           \
+        solver.solve(rhs, sol);                                                \
         double error = (lhs.matrix() * s - r).norm()/r.norm();                 \
         CHECK(approx(error) == 0.0);                                           \
     }                                                                          \
@@ -141,7 +141,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
         SaddlePointSolver solver; solver.setOptions(options);                  \
         solver.canonicalize(lhs.A());                                          \
         solver.decompose(lhsdiag);                                             \
-        solver.solve(lhsdiag, rhs, sol);                                       \
+        solver.solve(rhs, sol);                                                \
         double error = (lhsdiag.matrix() * s - r).norm()/r.norm();             \
         CHECK(approx(error) == 0.0);                                           \
     }                                                                          \
@@ -161,7 +161,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
         SaddlePointMatrix lhsnew(H, A, lhs.G(), lhs.nx(), lhs.nf());           \
         solver.reorder(ordering);                                              \
         solver.decompose(lhsnew);                                              \
-        solver.solve(lhsnew, rhs, sol);                                        \
+        solver.solve(rhs, sol);                                                \
         double error = (lhsnew.matrix() * s - r).norm()/r.norm();              \
         CHECK(approx(error) == 0.0);                                           \
     }                                                                          \

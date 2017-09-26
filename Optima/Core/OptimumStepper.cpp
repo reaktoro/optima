@@ -34,9 +34,6 @@ namespace Optima {
 
 struct OptimumStepper::Impl
 {
-    /// The structure of the optimization problem.
-    OptimumStructure structure;
-
     /// The options for the optimization calculation
     OptimumOptions options;
 
@@ -78,9 +75,6 @@ struct OptimumStepper::Impl
     /// Initialize the stepper with the structure of the optimization problem.
     auto initialize(const OptimumStructure& structure) -> void
     {
-        // TODO not sure if we need this
-        this->structure = structure;
-
         // Initialize the members related to number of variables and constraints
         n  = structure.n;
         ns = n;
@@ -260,7 +254,7 @@ struct OptimumStepper::Impl
         b -= Au * (cu/zu);
 
         // Solve the reduced KKT equation
-        kkt.solve({H, A, G, ns, nu + nf}, {a, b}, {dx, dy});
+        kkt.solve({a, b}, {dx, dy});
 
         // Calculate dzu = -au + Hus*dxs + tr(Au)*dy + Huu*inv(Zu)*cu
         dzu += Hus*dxs + tr(Au)*dy + Huu*(cu/zu);

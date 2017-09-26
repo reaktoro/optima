@@ -89,7 +89,7 @@ public:
     /// @param lhs The coefficient matrix of the saddle point problem.
     /// @param rhs The right-hand side vector of the saddle point problem.
     /// @param sol The solution of the saddle point problem.
-    auto solve(SaddlePointMatrix lhs, SaddlePointVector rhs, SaddlePointSolution sol) -> SaddlePointResult;
+    auto solve(SaddlePointVector rhs, SaddlePointSolution sol) -> SaddlePointResult;
 
     /// Update the order of the variables.
     auto reorder(VectorXiConstRef ordering) -> void;

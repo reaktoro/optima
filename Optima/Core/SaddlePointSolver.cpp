@@ -90,6 +90,9 @@ struct SaddlePointSolver::Impl
     /// The full LU solver used to calculate both *x* and *y* simultaneously.
     Eigen::FullPivLU<MatrixXd> luxy_full;
 
+    /// The flag that indicates decomposition for a saddle point matrix with dense G
+    bool denseG = false;
+
     /// Canonicalize the coefficient matrix *A* of the saddle point problem.
     auto canonicalize(MatrixXdConstRef A) -> SaddlePointResult
     {
@@ -237,7 +240,7 @@ struct SaddlePointSolver::Impl
     }
 
     /// Solve the saddle point problem using a LU decomposition method.
-    auto solveLU_ZeroG(SaddlePointMatrix lhs, SaddlePointVector rhs, SaddlePointSolution& sol) -> void
+    auto solveLU_ZeroG(SaddlePointVector rhs, SaddlePointSolution& sol) -> void
     {
         // Alias to members of the saddle point vector solution.
         auto x = sol.x();
@@ -331,7 +334,7 @@ struct SaddlePointSolver::Impl
     }
 
     /// Solve the saddle point problem using a LU decomposition method.
-    auto solveLU_DenseG(SaddlePointMatrix lhs, SaddlePointVector rhs, SaddlePointSolution& sol) -> void
+    auto solveLU_DenseG(SaddlePointVector rhs, SaddlePointSolution& sol) -> void
     {
         // Alias to members of the saddle point vector solution.
         auto x = sol.x();
@@ -393,14 +396,15 @@ struct SaddlePointSolver::Impl
 
     auto decomposeLU(SaddlePointMatrix lhs) -> void
     {
-        if(lhs.G().size()) decomposeLU_DenseG(lhs);
+        denseG = lhs.G().size();
+        if(denseG) decomposeLU_DenseG(lhs);
         else decomposeLU_ZeroG(lhs);
     }
 
-    auto solveLU(SaddlePointMatrix lhs, SaddlePointVector rhs, SaddlePointSolution& sol) -> void
+    auto solveLU(SaddlePointVector rhs, SaddlePointSolution& sol) -> void
     {
-        if(lhs.G().size()) solveLU_DenseG(lhs, rhs, sol);
-        else solveLU_ZeroG(lhs, rhs, sol);
+        if(denseG) solveLU_DenseG(rhs, sol);
+        else solveLU_ZeroG(rhs, sol);
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a rangespace diagonal method.
@@ -491,7 +495,7 @@ struct SaddlePointSolver::Impl
     }
 
     /// Solve the saddle point problem using a rangespace diagonal method.
-    auto solveRangespaceDiagonalZeroG(SaddlePointMatrix lhs, SaddlePointVector rhs, SaddlePointSolution& sol) -> void
+    auto solveRangespaceDiagonalZeroG(SaddlePointVector rhs, SaddlePointSolution& sol) -> void
     {
         // Alias to members of the saddle point vector solution.
         auto x = sol.x();
@@ -729,7 +733,7 @@ struct SaddlePointSolver::Impl
     }
 
     /// Solve the saddle point problem using a rangespace diagonal method.
-    auto solveRangespaceDiagonalDenseG(SaddlePointMatrix lhs, SaddlePointVector rhs, SaddlePointSolution& sol) -> void
+    auto solveRangespaceDiagonalDenseG(SaddlePointVector rhs, SaddlePointSolution& sol) -> void
     {
         // Alias to members of the saddle point vector solution.
         auto x = sol.x();
@@ -837,15 +841,16 @@ struct SaddlePointSolver::Impl
     /// Decompose the coefficient matrix of the saddle point problem using a rangespace diagonal method.
     auto decomposeRangespaceDiagonal(SaddlePointMatrix lhs) -> void
     {
-        if(lhs.G().size()) decomposeRangespaceDiagonalDenseG(lhs);
+        denseG = lhs.G().size();
+        if(denseG) decomposeRangespaceDiagonalDenseG(lhs);
         else decomposeRangespaceDiagonalZeroG(lhs);
     }
 
     /// Solve the saddle point problem using a rangespace diagonal method.
-    auto solveRangespaceDiagonal(SaddlePointMatrix lhs, SaddlePointVector rhs, SaddlePointSolution& sol) -> void
+    auto solveRangespaceDiagonal(SaddlePointVector rhs, SaddlePointSolution& sol) -> void
     {
-        if(lhs.G().size()) solveRangespaceDiagonalDenseG(lhs, rhs, sol);
-        else solveRangespaceDiagonalZeroG(lhs, rhs, sol);
+        if(denseG) solveRangespaceDiagonalDenseG(rhs, sol);
+        else solveRangespaceDiagonalZeroG(rhs, sol);
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a nullspace method.
@@ -888,7 +893,7 @@ struct SaddlePointSolver::Impl
     }
 
     /// Solve the saddle point problem using a nullspace method.
-    auto solveNullspaceZeroG(SaddlePointMatrix lhs, SaddlePointVector rhs, SaddlePointSolution& sol) -> void
+    auto solveNullspaceZeroG(SaddlePointVector rhs, SaddlePointSolution& sol) -> void
     {
         // Alias to the matrices of the canonicalization process
         auto S = canonicalizer.S();
@@ -1066,7 +1071,7 @@ struct SaddlePointSolver::Impl
     }
 
     /// Solve the saddle point problem using a nullspace method.
-    auto solveNullspaceDenseG(SaddlePointMatrix lhs, SaddlePointVector rhs, SaddlePointSolution& sol) -> void
+    auto solveNullspaceDenseG(SaddlePointVector rhs, SaddlePointSolution& sol) -> void
     {
         // Alias to the matrices of the canonicalization process
         auto S = canonicalizer.S();
@@ -1150,15 +1155,16 @@ struct SaddlePointSolver::Impl
     /// Decompose the coefficient matrix of the saddle point problem using a nullspace method.
     auto decomposeNullspace(SaddlePointMatrix lhs) -> void
     {
-        if(lhs.G().size()) decomposeNullspaceDenseG(lhs);
+        denseG = lhs.G().size();
+        if(denseG) decomposeNullspaceDenseG(lhs);
         else decomposeNullspaceZeroG(lhs);
     }
 
     /// Solve the saddle point problem using a nullspace method.
-    auto solveNullspace(SaddlePointMatrix lhs, SaddlePointVector rhs, SaddlePointSolution& sol) -> void
+    auto solveNullspace(SaddlePointVector rhs, SaddlePointSolution& sol) -> void
     {
-        if(lhs.G().size()) solveNullspaceDenseG(lhs, rhs, sol);
-        else solveNullspaceZeroG(lhs, rhs, sol);
+        if(denseG) solveNullspaceDenseG(rhs, sol);
+        else solveNullspaceZeroG(rhs, sol);
     }
 
     /// Decompose the coefficient matrix of the saddle point problem.
@@ -1176,15 +1182,15 @@ struct SaddlePointSolver::Impl
     }
 
     /// Solve the saddle point problem with diagonal Hessian matrix.
-    auto solve(SaddlePointMatrix lhs, SaddlePointVector rhs, SaddlePointSolution& sol) -> SaddlePointResult
+    auto solve(SaddlePointVector rhs, SaddlePointSolution& sol) -> SaddlePointResult
     {
         SaddlePointResult res;
         switch(options.method)
         {
         case SaddlePointMethod::PartialPivLU:
-        case SaddlePointMethod::FullPivLU: solveLU(lhs, rhs, sol); break;
-        case SaddlePointMethod::RangespaceDiagonal: solveRangespaceDiagonal(lhs, rhs, sol); break;
-        default: solveNullspace(lhs, rhs, sol); break;
+        case SaddlePointMethod::FullPivLU: solveLU(rhs, sol); break;
+        case SaddlePointMethod::RangespaceDiagonal: solveRangespaceDiagonal(rhs, sol); break;
+        default: solveNullspace(rhs, sol); break;
         }
         return res.stop();
     }
@@ -1195,7 +1201,6 @@ struct SaddlePointSolver::Impl
         // Update the ordering of the canonicalizer object
         canonicalizer.reorder(ordering);
     }
-
 
 //    auto solve(SaddlePointMatrix lhs, SaddlePointVector rhs, SaddlePointSolution& sol) -> SaddlePointResult
 //    {
@@ -1261,9 +1266,9 @@ auto SaddlePointSolver::decompose(SaddlePointMatrix lhs) -> SaddlePointResult
     return pimpl->decompose(lhs);
 }
 
-auto SaddlePointSolver::solve(SaddlePointMatrix lhs, SaddlePointVector rhs, SaddlePointSolution sol) -> SaddlePointResult
+auto SaddlePointSolver::solve(SaddlePointVector rhs, SaddlePointSolution sol) -> SaddlePointResult
 {
-    return pimpl->solve(lhs, rhs, sol);
+    return pimpl->solve(rhs, sol);
 }
 
 auto SaddlePointSolver::reorder(VectorXiConstRef ordering) -> void
