@@ -165,7 +165,7 @@ struct OptimumStepper::Impl
         l.noalias() = xlower(iordering);
 
         // The upper bounds for x arranged in the ordering u = [us ul uu uf]
-        u.noalias() = xupper(iordering);
+        u.noalias() = xupper(iordering);-
 
         // Calculate l' = x - l and u' = x - u
         l.noalias() = x - l;
@@ -344,7 +344,7 @@ struct OptimumStepper::Impl
         au.fill(0.0);
         af.fill(0.0);
 
-        // Calculate b = -(A*x - a)
+        // Calculate b = -(A*x - b)
         b.noalias() = -(A*x - params.b());
 
         // Calculate cx = -(Zx * (xx - lx) - mu)
