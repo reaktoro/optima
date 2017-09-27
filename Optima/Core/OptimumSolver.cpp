@@ -124,11 +124,11 @@ struct OptimumSolver::Impl
         const auto tolx = options.tolerancex;
         const auto maxiters = options.max_iterations;
 
-        // Define some auxiliary references to IpNewton parameters
+        // Define auxiliary references to some algorithm parameters
         const auto mu = options.mu;
         const auto tau = options.tau;
 
-        // Define some auxiliary references to result variables
+        // Define auxiliary references to some result variables
         auto& error = result.error;
         auto& iterations = result.iterations;
         auto& succeeded = result.succeeded = false;
@@ -147,24 +147,27 @@ struct OptimumSolver::Impl
         auto& x = state.x;
         auto& y = state.y;
         auto& z = state.z;
+        auto& w = state.w;
 
         // Ensure the initial guesses for `x` and `y` have adequate dimensions
         if(x.size() != n) x = zeros(n); // original
         if(y.size() != m) y = zeros(m); // original
         if(z.size() != n) z = zeros(n); // original
+        if(w.size() != n) w = zeros(n); // original
 //        if(x.size() != n) x = ones(n);
 //        if(y.size() != m) y = zeros(m);
 //        if(z.size() != n) z = constants(n, mu);
 
         // Ensure the initial guesses for `x` and `z` are inside the feasible domain
-        x.noalias() = (x.array() > 0.0).select(x, mu);  // original
-        z.noalias() = (z.array() > 0.0).select(z, 1.0); // original
+        x.noalias() = (x.array() > 0.0).select(x, mu);
+        z.noalias() = (z.array() > 0.0).select(z, 1.0);
+        w.noalias() = (w.array() < 0.0).select(w, -1.0);
 //        x.noalias() = (x.array() > 0.0).select(x, 1.0);
 //        z.noalias() = (z.array() > 0.0).select(z, mu);
         y.noalias() = state.y;
 
-        // The optimality, feasibility, centrality and total error variables
-        double errorf, errorh, errorc;
+        // The optimality, feasibility, centrality lower and centrality upper
+        double errorf, errorh, errorl, erroru;
 
         // The function that outputs the header and initial state of the solution
         auto output_initial_state = [&]()
@@ -180,19 +183,21 @@ struct OptimumSolver::Impl
             outputter.addEntries("r", n, options.output.xnames);
             outputter.addEntry("Optimality");
             outputter.addEntry("Feasibility");
-            outputter.addEntry("Centrality");
+            outputter.addEntry("CentralityLower");
+            outputter.addEntry("CentralityUpper");
 
             outputter.outputHeader();
             outputter.addValue(iterations);
             outputter.addValues(x);
             outputter.addValues(y);
             outputter.addValues(z);
-            outputter.addValues(abs(stepper.residualOptimality()));
+            outputter.addValues(abs(stepper.residualOptimality())); // TODO The ordering of the residual vector needs to be brought to original
             outputter.addValue(f.val);
             outputter.addValue(error);
             outputter.addValue(errorf);
             outputter.addValue(errorh);
-            outputter.addValue(errorc);
+            outputter.addValue(errorl);
+            outputter.addValue(erroru);
             outputter.outputState();
         };
 
@@ -207,10 +212,11 @@ struct OptimumSolver::Impl
             outputter.addValues(x);
             outputter.addValues(y);
             outputter.addValues(z);
-            outputter.addValues(abs(stepper.residualOptimality()));
+            outputter.addValues(abs(stepper.residualOptimality())); // TODO The ordering of the residual vector needs to be brought to original
             outputter.addValue(errorf);
             outputter.addValue(errorh);
-            outputter.addValue(errorc);
+            outputter.addValue(errorl);
+            outputter.addValue(erroru);
             outputter.outputState();
         };
 
@@ -225,20 +231,26 @@ struct OptimumSolver::Impl
         {
             // todo these errors should probably ignore the residual of unstable variables
 
+            // The indices of the current stable variables
+            auto istable = stepper.istable();
+
             // Update the optimality, feasibility and centrality errors
-            errorf = norminf(stepper.residualOptimality());
+            errorf = norminf(stepper.residualOptimality()(istable));
             errorh = norminf(stepper.residualFeasibility());
-            errorc = norminf(stepper.residualComplementarityLowerBounds());
-            error = std::max({errorf, errorh, errorc});
+            errorl = norminf(stepper.residualComplementarityLowerBounds());
+            erroru = norminf(stepper.residualComplementarityUpperBounds());
+            error = std::max({errorf, errorh, errorl, erroru});
         };
 
         // The function that initialize the state of some variables
         auto initialize = [&]()
         {
-            // Evaluate the objective function
+            // Establish the current needs for the objective function evaluation
             f.requires.val = true;
             f.requires.grad = true;
             f.requires.hessian = true;
+
+            // Evaluate the objective function
             structure.objective(x, f);
 
             // Use the initial optimization state to assemble and decompose the KKT equations
@@ -294,16 +306,19 @@ struct OptimumSolver::Impl
             auto dx = stepper.dx();
             auto dy = stepper.dy();
             auto dz = stepper.dz();
+            auto dw = stepper.dw();
 
             // Calculate the current trial iterate for x
             for(int i = 0; i < n; ++i)
                 xtrial[i] = (x[i] + dx[i] > 0.0) ?
                     x[i] + dx[i] : x[i]*(1.0 - tau);
 
-            // Evaluate the objective function at the trial iterate
+            // Establish the current needs for the objective function evaluation at the trial iterate
             f.requires.val = true;
             f.requires.grad = false;
             f.requires.hessian = false;
+
+            // Evaluate the objective function at the trial iterate
             structure.objective(xtrial, f);
 
             // Initialize the step length factor
@@ -318,10 +333,10 @@ struct OptimumSolver::Impl
                 // Calculate a new trial iterate using a smaller step length
                 xtrial = x + alpha * dx;
 
-                // Evaluate the objective function at the trial iterate
-                f.requires.val = true;
-				f.requires.grad = false;
-				f.requires.hessian = false;
+                // Evaluate the objective function at the new trial iterate
+                f.requires.val = true; // TODO Is this needed again?
+				f.requires.grad = false; // TODO Is this needed again?
+				f.requires.hessian = false; // TODO Is this needed again?
                 structure.objective(xtrial, f);
 
                 // Decrease the current step length
@@ -342,9 +357,14 @@ struct OptimumSolver::Impl
             structure.objective(x, f);
 
             // Update the z-Lagrange multipliers
-            for(int i = 0; i < n; ++i)
+            for(Index i = 0; i < n; ++i)
                 z[i] += (z[i] + dz[i] > 0.0) ?
                     dz[i] : -tau * z[i];
+
+            // Update the w-Lagrange multipliers
+            for(Index i = 0; i < n; ++i)
+                w[i] += (w[i] + dw[i] > 0.0) ?
+                    dw[i] : -tau * w[i];
 
             // Update the y-Lagrange multipliers
             y += dy;
@@ -360,10 +380,12 @@ struct OptimumSolver::Impl
             auto dx = stepper.dx();
             auto dy = stepper.dy();
             auto dz = stepper.dz();
+            auto dw = stepper.dw();
 
             // Initialize the step length factor
-            double alphax = fractionToTheBoundary(x, dx, tau);
+            double alphax = fractionToTheBoundary(x, dx, tau); // TODO Take into account lower and upper bounds
             double alphaz = fractionToTheBoundary(z, dz, tau);
+            double alphaw = fractionToTheBoundary(w, dw, tau);
             double alpha = alphax;
 
             // The number of tentatives to find a trial iterate that results in finite objective result
