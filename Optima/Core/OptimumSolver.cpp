@@ -116,6 +116,10 @@ struct OptimumSolver::Impl
         n = structure.n;
         m = structure.A.rows();
 
+        // Initialize the number of fixed and free variables in x
+        nf = structure.ifixed().size();
+        nx = n - nf;
+
         // Allocate memory to x(trial) and H matrix
         xtrial.resize(n);
     }
@@ -148,11 +152,6 @@ struct OptimumSolver::Impl
         auto xlower = params.xlower();
         auto xupper = params.xupper();
         auto xfixed = params.xfixed();
-        auto ifixed = params.ifixed();
-
-        // The number of fixed and free variables in x
-        nf = ifixed.size();
-        nx = n - nf;
 
         // Auxiliary references to general options
         const auto tol = options.tolerance;

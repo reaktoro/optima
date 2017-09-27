@@ -34,10 +34,20 @@ public:
     /// @param structure The structure of the optimization problem.
     OptimumParams(const OptimumStructure& structure);
 
-    /// Fix some variables in x to given values.
-    /// @param indices The indices of the variables in x that are fixed.
-    /// @param values The values of the variables in x that are fixed.
-    auto fix(VectorXiConstRef indices, VectorXdConstRef values) -> void;
+//    /// Set the indices and values of the variables in \eq{x} that are fixed.
+//    /// @param indices The indices of the fixed variables.
+//    /// @param values The values of the fixed variables.
+//    auto fix(VectorXiConstRef indices, VectorXdConstRef values) -> void;
+//
+//    /// Set the indices and minimum values of the variables in \eq{x} with lower bounds.
+//    /// @param indices The indices of the variables with lower bounds.
+//    /// @param values The minimum values of the variables with lower bounds.
+//    auto lowerbounds(VectorXiConstRef indices, VectorXdConstRef values) -> void;
+//
+//    /// Set the indices and maximum values of the variables in \eq{x} with upper bounds.
+//    /// @param indices The indices of the variables with upper bounds.
+//    /// @param values The maximum values of the variables with upper bounds.
+//    auto upperbounds(VectorXiConstRef indices, VectorXdConstRef values) -> void;
 
     /// Return right-hand side vector of the equality constraint \eq{Ax = b}.
     auto b() -> VectorXdRef { return m_b; }
@@ -58,10 +68,10 @@ public:
     auto xupper() const -> VectorXdConstRef { return m_xupper; }
 
     /// Return the values of the fixed variables in \eq{x}.
-    auto xfixed() const -> VectorXdConstRef { return m_xfixed; }
+    auto xfixed() -> VectorXdRef { return m_xfixed; }
 
-    /// Return the indices of the fixed variables in \eq{x}.
-    auto ifixed() const -> VectorXiConstRef { return m_ifixed; }
+    /// Return the values of the fixed variables in \eq{x}.
+    auto xfixed() const -> VectorXdConstRef { return m_xfixed; }
 
 private:
     /// The right-hand side vector of the linear equality constraint \eq{Ax = b}.
@@ -76,8 +86,6 @@ private:
     /// The values of the variables in \eq{x} that are fixed.
     VectorXd m_xfixed;
 
-    /// The indices of the variables in \eq{x} that are fixed.
-    VectorXi m_ifixed;
 };
 
 } // namespace Optima

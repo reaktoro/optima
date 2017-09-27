@@ -24,20 +24,14 @@
 namespace Optima {
 
 OptimumParams::OptimumParams(const OptimumStructure& structure)
-: m_b(structure.A.rows()), m_xlower(structure.n), m_xupper(structure.n)
+: m_b(structure.A.rows()),
+  m_xlower(structure.ilower().size()),
+  m_xupper(structure.iupper().size()),
+  m_xfixed(structure.ifixed().size())
 {
-    const auto inf = std::numeric_limits<double>::infinity();
-    m_xlower.fill(-inf);
-    m_xupper.fill(+inf);
-}
-
-auto OptimumParams::fix(VectorXiConstRef indices, VectorXdConstRef values) -> void
-{
-    Assert(indices.size() == values.size(),
-        "Could not set the indices and values of the fixed variables.",
-        "Expecting the number of indices and values for the fixed variables.");
-    m_ifixed = indices;
-    m_xfixed = values;
+    m_xlower.fill(0.0);
+    m_xupper.fill(0.0);
+    m_xfixed.fill(0.0);
 }
 
 } // namespace Optima

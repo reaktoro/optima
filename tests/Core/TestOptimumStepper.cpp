@@ -44,20 +44,23 @@ using namespace Optima;
 
 TEST_CASE("Testing OptimumStepper")
 {
-    std::srand(std::time(0));
-    Index n = 60;
-    Index m = 20;
-//    Index n = 6;
-//    Index m = 3;
-    Index t = 2*n + m;
+//    std::srand(std::time(0));
+//    Index n = 60;
+//    Index m = 20;
+    Index n = 6;
+    Index m = 3;
+    Index t = 3*n + m;
 
     MatrixXd A = random(m, n);
     MatrixXd H = random(n, n);
     VectorXd g = random(n);
-    VectorXd a = random(m);
+    VectorXd b = random(m);
     VectorXd x = abs(random(n));
     VectorXd y = random(m);
     VectorXd z = abs(random(n));
+    VectorXd w = -abs(random(n));
+    VectorXd l = 1e-2 * x;
+    VectorXd u = 1e+2 * x;
 
 //    MatrixXd A = ones(m, n);
 //    MatrixXd H = zeros(n, n);
@@ -72,20 +75,20 @@ TEST_CASE("Testing OptimumStepper")
     auto assemble_matrix = [&]()
     {
         MatrixXd M = zeros(t, t);
-        M.topLeftCorner(n, n) = H;
-        M.topRows(n).middleCols(n, m) = tr(A);
-        M.topRightCorner(n, n).diagonal().fill(-1.0);
+        M.topRows(n) << H, tr(A), -identity(n, n), -identity(n, n);
         M.middleRows(n, m).leftCols(n) = A;
-        M.bottomLeftCorner(n, n).diagonal() = z;
-        M.bottomRightCorner(n, n).diagonal() = x;
+        M.middleRows(n + m, n).leftCols(n).diagonal() = z;
+        M.middleRows(n + m, n).middleCols(n + m, n).diagonal() = x - l;
+        M.bottomRows(n).leftCols(n).diagonal() = w;
+        M.bottomRows(n).rightCols(n).diagonal() = x - u;
         return M;
     };
 
     auto assemble_vector = [&]()
     {
         VectorXd r = zeros(t);
-        r.head(n) = -(g + tr(A)*y - z);
-        r.segment(n, m) = -(A*x - a);
+        r.head(n) = -(g + tr(A)*y - z - w);
+        r.segment(n, m) = -(A*x - b);
         r.tail(n) = -(x % z - options.mu);
         return r;
     };
@@ -97,13 +100,14 @@ TEST_CASE("Testing OptimumStepper")
         structure.A = A;
 
         OptimumParams params(structure);
-        params.b() = a;
+        params.b() = b;
         params.xlower() = zeros(n);
 
         OptimumState state;
         state.x = x;
         state.y = y;
         state.z = z;
+        state.w = w;
 
         ObjectiveState f;
         f.grad = g;

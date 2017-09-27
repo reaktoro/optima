@@ -79,8 +79,32 @@ struct OptimumStructure
     /// The coefficient matrix of the linear equality constraint \eq{Ax = a}.
     MatrixXd A;
 
-    /// The coefficient matrix of the linear inequality constraint \eq{Bx \geq b}.
-    MatrixXd B;
+    /// Set the indices of the variables in \eq{x} with lower bounds.
+    auto ilower(VectorXiConstRef indices) -> void { m_ilower = indices; }
+
+    /// Set the indices of the variables in \eq{x} with upper bounds.
+    auto iupper(VectorXiConstRef indices) -> void { m_iupper = indices; }
+
+    /// Set the indices of the variables in \eq{x} with fixed values.
+    auto ifixed(VectorXiConstRef indices) -> void { m_ifixed = indices; }
+
+    /// Return the indices of the variables in \eq{x} with lower bounds.
+    auto ilower() const -> VectorXiConstRef { return m_ilower; }
+
+    /// Return the indices of the variables in \eq{x} with upper bounds.
+    auto iupper() const -> VectorXiConstRef { return m_iupper; }
+
+    /// Return the indices of the variables in \eq{x} with fixed values.
+    auto ifixed() const -> VectorXiConstRef { return m_ifixed; }
+
+    /// The indices of the variables constrained with lower bounds.
+    VectorXi m_ilower;
+
+    /// The indices of the variables constrained with upper bounds.
+    VectorXi m_iupper;
+
+    /// The indices of the variables in \eq{x} that are fixed.
+    VectorXi m_ifixed;
 };
 
 } // namespace Optima
