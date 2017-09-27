@@ -41,6 +41,34 @@ auto isfinite(const ObjectiveState& f) -> bool
     return std::isfinite(f.val) && f.grad.allFinite();
 }
 
+auto xStepLength(VectorXdConstRef x, VectorXdConstRef dx, VectorXdConstRef l, VectorXdConstRef u, double tau) -> double
+{
+    double alpha = 1.0;
+    const Index size = x.size();
+    for(Index i = 0; i < size; ++i)
+        alpha = (dx[i] < 0.0) ? std::min(alpha, tau*(l[i] - x[i])/dx[i]) :
+                (dx[i] > 0.0) ? std::min(alpha, tau*(u[i] - x[i])/dx[i]) : alpha;
+    return alpha;
+}
+
+auto zStepLength(VectorXdConstRef z, VectorXdConstRef dz, double tau) -> double
+{
+    double alpha = 1.0;
+    const Index size = z.size();
+    for(Index i = 0; i < size; ++i)
+        if(dz[i] < 0.0) alpha = std::min(alpha, -tau*z[i]/dz[i]);
+    return alpha;
+}
+
+auto wStepLength(VectorXdConstRef w, VectorXdConstRef dw, double tau) -> double
+{
+    double alpha = 1.0;
+    const Index size = w.size();
+    for(Index i = 0; i < size; ++i)
+        if(dw[i] > 0.0) alpha = std::min(alpha, -tau*w[i]/dw[i]);
+    return alpha;
+}
+
 } // namespace
 
 struct OptimumSolver::Impl
@@ -116,19 +144,26 @@ struct OptimumSolver::Impl
         // Set the options for the stepper solver
         stepper.setOptions(options);
 
-        nf = params.ifixed.size();
+        // Alias to OptimumParams members
+        auto xlower = params.xlower();
+        auto xupper = params.xupper();
+        auto xfixed = params.xfixed();
+        auto ifixed = params.ifixed();
+
+        // The number of fixed and free variables in x
+        nf = ifixed.size();
         nx = n - nf;
 
-        // Define auxiliary references to general options
+        // Auxiliary references to general options
         const auto tol = options.tolerance;
         const auto tolx = options.tolerancex;
         const auto maxiters = options.max_iterations;
 
-        // Define auxiliary references to some algorithm parameters
+        // Auxiliary references to some algorithm parameters
         const auto mu = options.mu;
         const auto tau = options.tau;
 
-        // Define auxiliary references to some result variables
+        // Auxiliary references to some result variables
         auto& error = result.error;
         auto& iterations = result.iterations;
         auto& succeeded = result.succeeded = false;
@@ -334,9 +369,9 @@ struct OptimumSolver::Impl
                 xtrial = x + alpha * dx;
 
                 // Evaluate the objective function at the new trial iterate
-                f.requires.val = true; // TODO Is this needed again?
-				f.requires.grad = false; // TODO Is this needed again?
-				f.requires.hessian = false; // TODO Is this needed again?
+                f.requires.val = true;
+				f.requires.grad = false;
+				f.requires.hessian = false;
                 structure.objective(xtrial, f);
 
                 // Decrease the current step length
@@ -383,9 +418,9 @@ struct OptimumSolver::Impl
             auto dw = stepper.dw();
 
             // Initialize the step length factor
-            double alphax = fractionToTheBoundary(x, dx, tau); // TODO Take into account lower and upper bounds
-            double alphaz = fractionToTheBoundary(z, dz, tau);
-            double alphaw = fractionToTheBoundary(w, dw, tau);
+            double alphax = xStepLength(x, dx, xlower, xupper, tau);
+            double alphaz = zStepLength(z, dz, tau);
+            double alphaw = wStepLength(w, dw, tau);
             double alpha = alphax;
 
             // The number of tentatives to find a trial iterate that results in finite objective result
@@ -420,6 +455,9 @@ struct OptimumSolver::Impl
 
             // Update the z-Lagrange multipliers
             z += alphaz * dz;
+
+            // Update the w-Lagrange multipliers
+            w += alphaw * dw;
 
             // Update the y-Lagrange multipliers
             y += dy;

@@ -17,6 +17,27 @@
 
 #include "OptimumParams.hpp"
 
+// Optima includes
+#include <Optima/Common/Exception.hpp>
+#include <Optima/Core/OptimumStructure.hpp>
+
 namespace Optima {
+
+OptimumParams::OptimumParams(const OptimumStructure& structure)
+: m_b(structure.A.rows()), m_xlower(structure.n), m_xupper(structure.n)
+{
+    const auto inf = std::numeric_limits<double>::infinity();
+    m_xlower.fill(-inf);
+    m_xupper.fill(+inf);
+}
+
+auto OptimumParams::fix(VectorXiConstRef indices, VectorXdConstRef values) -> void
+{
+    Assert(indices.size() == values.size(),
+        "Could not set the indices and values of the fixed variables.",
+        "Expecting the number of indices and values for the fixed variables.");
+    m_ifixed = indices;
+    m_xfixed = values;
+}
 
 } // namespace Optima

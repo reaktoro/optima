@@ -23,26 +23,61 @@
 
 namespace Optima {
 
-/// The parameters of an optimization problem that change with more frequency.
-struct OptimumParams
-{
-    /// The right-hand side vector of the linear equality constraint \eq{Ax = a}.
-    VectorXd a;
+// Forward declarations
+class OptimumStructure;
 
-    /// The right-hand side vector of the linear equality constraint \eq{Bx \geq b}.
-    VectorXd b;
+/// The parameters of an optimization problem that change with more frequency.
+class OptimumParams
+{
+public:
+    /// Construct a default OptimumParams instance.
+    /// @param structure The structure of the optimization problem.
+    OptimumParams(const OptimumStructure& structure);
+
+    /// Fix some variables in x to given values.
+    /// @param indices The indices of the variables in x that are fixed.
+    /// @param values The values of the variables in x that are fixed.
+    auto fix(VectorXiConstRef indices, VectorXdConstRef values) -> void;
+
+    /// Return right-hand side vector of the equality constraint \eq{Ax = b}.
+    auto b() -> VectorXdRef { return m_b; }
+
+    /// Return right-hand side vector of the equality constraint \eq{Ax = b}.
+    auto b() const -> VectorXdConstRef { return m_b; }
+
+    /// Return the lower bounds of the variables \eq{x}.
+    auto xlower() -> VectorXdRef { return m_xlower; }
+
+    /// Return the lower bounds of the variables \eq{x}.
+    auto xlower() const -> VectorXdConstRef { return m_xlower; }
+
+    /// Return the upper bounds of the variables \eq{x}.
+    auto xupper() -> VectorXdRef { return m_xupper; }
+
+    /// Return the upper bounds of the variables \eq{x}.
+    auto xupper() const -> VectorXdConstRef { return m_xupper; }
+
+    /// Return the values of the fixed variables in \eq{x}.
+    auto xfixed() const -> VectorXdConstRef { return m_xfixed; }
+
+    /// Return the indices of the fixed variables in \eq{x}.
+    auto ifixed() const -> VectorXiConstRef { return m_ifixed; }
+
+private:
+    /// The right-hand side vector of the linear equality constraint \eq{Ax = b}.
+    VectorXd m_b;
 
     /// The lower bounds of the variables \eq{x}.
-    VectorXd xlower;
+    VectorXd m_xlower;
 
     /// The upper bounds of the variables \eq{x}.
-    VectorXd xupper;
+    VectorXd m_xupper;
 
     /// The values of the variables in \eq{x} that are fixed.
-    VectorXd xfixed;
+    VectorXd m_xfixed;
 
     /// The indices of the variables in \eq{x} that are fixed.
-    Indices ifixed;
+    VectorXi m_ifixed;
 };
 
 } // namespace Optima

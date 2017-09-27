@@ -96,9 +96,9 @@ TEST_CASE("Testing OptimumStepper")
         structure.n = n;
         structure.A = A;
 
-        OptimumParams params;
-        params.a = a;
-        params.xlower = zeros(n);
+        OptimumParams params(structure);
+        params.b() = a;
+        params.xlower() = zeros(n);
 
         OptimumState state;
         state.x = x;

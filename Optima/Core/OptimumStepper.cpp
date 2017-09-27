@@ -101,26 +101,31 @@ struct OptimumStepper::Impl
     /// Decompose the KKT matrix equation used to compute the step vectors.
     auto decompose(const OptimumParams& params, const OptimumState& state, const ObjectiveState& f) -> void
     {
+        // Alias to OptimumParams members
+        const auto ifixed = params.ifixed();
+        const auto xlower = params.xlower();
+        const auto xupper = params.xupper();
+
         // Auxiliary variables
         const double eps = std::sqrt(options.mu);
 
         // Update the number of fixed and free variables
-        nf = params.ifixed.size();
+        nf = ifixed.size();
         nx = n - nf;
 
         // Partition the variables into free and fixed variables x = [xx xf]
-        iordering.tail(nf).swap(iordering(params.ifixed));
+        iordering.tail(nf).swap(iordering(ifixed));
 
         // Define the function that determines if variable x[i] is lower unstable
         auto lower_unstable = [&](Index i)
         {
-            return state.x[i] <= params.xlower[i] + eps && state.z[i] >= eps;
+            return state.x[i] <= xlower[i] + eps && state.z[i] >= eps;
         };
 
         // Define the function that determines if variable x[i] is upper unstable
         auto upper_unstable = [&](Index i)
         {
-            return state.x[i] >= params.xupper[i] - eps && state.w[i] <= -eps;
+            return state.x[i] >= xupper[i] - eps && state.w[i] <= -eps;
         };
 
         // Define the function that determines if variable x[i] is stable
@@ -157,10 +162,10 @@ struct OptimumStepper::Impl
         w.noalias() = state.w(iordering);
 
         // The lower bounds for x arranged in the ordering l = [ls ll lu lf]
-        l.noalias() = params.xlower(iordering);
+        l.noalias() = xlower(iordering);
 
         // The upper bounds for x arranged in the ordering u = [us ul uu uf]
-        u.noalias() = params.xupper(iordering);
+        u.noalias() = xupper(iordering);
 
         // Calculate l' = x - l and u' = x - u
         l.noalias() = x - l;
@@ -340,7 +345,7 @@ struct OptimumStepper::Impl
         af.fill(0.0);
 
         // Calculate b = -(A*x - a)
-        b.noalias() = -(A*x - params.a);
+        b.noalias() = -(A*x - params.b());
 
         // Calculate cx = -(Zx * (xx - lx) - mu)
         cx.noalias() = -(zx/lx - options.mu);
