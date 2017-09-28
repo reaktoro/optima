@@ -110,22 +110,100 @@ struct OptimumStepper::Impl
         ilowerinfo.setLinSpaced(n, 0, n - 1);
         iupperinfo.setLinSpaced(n, 0, n - 1);
         ilowerinfo.head(nlower).swap(ilowerinfo(structure.ilower()));
-        iupperinfo.head(nupper).swap(ilowerinfo(structure.iupper()));
+        iupperinfo.head(nupper).swap(iupperinfo(structure.iupper()));
 
         // Allocate memory for some members
         A = structure.A;
         H = zeros(n, n);
         g = zeros(n);
+        x = zeros(n);
+        z = zeros(n);
+        w = zeros(n);
+        l = zeros(n);
+        u = zeros(n);
         residual = zeros(t);
         solution = zeros(t);
 
         // Initialize the saddle point solver
-        kkt.canonicalize(A);
+        kkt.canonicalize(structure.A);
     }
 
     /// Solve the KKT matrix equation.
     auto solve(const OptimumParams& params, const OptimumState& state, const ObjectiveState& f) -> void
     {
+        // Alias to OptimumParams members
+        const auto xlower = params.xlower();
+        const auto xupper = params.xupper();
+
+        // The indices of the variables with lower and upper bounds
+        const auto ilower = ilowerinfo.head(nlower);
+        const auto iupper = iupperinfo.head(nupper);
+
+        // The indices of the variables without lower and upper bounds
+        const auto inolower = ilowerinfo.tail(n - nlower);
+        const auto inoupper = iupperinfo.tail(n - nupper);
+
+        // Auxiliary variables
+        const double mu = options.mu;
+        const double eps = std::sqrt(mu);
+
+        // Initialize the values of z(bar) and w(bar)
+        z(inolower).fill(0.0);
+        w(inoupper).fill(0.0);
+        z(ilower) = state.z(ilower);
+        w(iupper) = state.w(iupper);
+
+        // Initialize the values of l(bar) and u(bar)
+        l(inolower).fill(1.0);
+        u(inoupper).fill(1.0);
+        l(ilower) = state.x(ilower) - params.xlower();
+        u(iupper) = state.x(iupper) - params.xupper();
+
+        // Define the function that determines if variable x[i] is lower unstable
+        auto lower_unstable = [&](Index i)
+        {
+           return std::abs(l[i]) <= eps && std::abs(z[i]) >= eps;
+        };
+
+        // Define the function that determines if variable x[i] is upper unstable
+        auto upper_unstable = [&](Index i)
+        {
+           return std::abs(u[i]) <= eps && std::abs(w[i]) >= eps;
+        };
+
+        // Define the function that determines if variable x[i] is stable
+        auto stable = [&](Index i)
+        {
+           return !lower_unstable(i) && !upper_unstable(i);
+        };
+
+        // Partition the free variables into stable and unstable: xx = [x(stable) x(unstable)]
+        auto is = std::partition(iordering.data(), iordering.data() + nx, stable);
+
+        // Partition the stable and lower unstable variables: xsl = [xs xl]
+        auto il = std::partition(is, iordering.data() + nx, lower_unstable);
+
+        // Update the number of stable, lower unstable, and upper unstable variables
+        ns = is - iordering.data();
+        nl = il - is;
+        nu = nx - ns - nl;
+
+        // Ensure the number of stable variables is positive
+        Assert(ns > 0, "Could not compute the step.",
+           "The number of stable variables must be positive.");
+
+        // The variables x arranged in the ordering x = [xs xl xu xf]
+        x.noalias() = state.x(iordering);
+
+        // Permute z(bar), w(bar), l(bar) and u(bar) according to iordering
+        iordering.asPermutation().transpose().applyThisOnTheLeft(z);
+        iordering.asPermutation().transpose().applyThisOnTheLeft(w);
+        iordering.asPermutation().transpose().applyThisOnTheLeft(l);
+        iordering.asPermutation().transpose().applyThisOnTheLeft(u);
+
+        // Permute the columns of A so that A = [As Al Au Af]
+        iordering.asPermutation().applyThisOnTheRight(A);
+
         // The indices of the free variables
         const auto jx = iordering.head(nx);
 
@@ -146,6 +224,7 @@ struct OptimumStepper::Impl
 
         // The gradient of the objective function corresponding to free variables
         auto gx = g.head(nx);
+        auto gf = g.tail(nf);
 
         // Views to the sub-vectors in residual = [a b c d]
         auto a = residual.head(n);
@@ -227,88 +306,21 @@ struct OptimumStepper::Impl
         const auto Al = Ax.middleCols(ns, nl);
         const auto Au = Ax.rightCols(nu);
 
-        // Alias to OptimumParams members
-        const auto xlower = params.xlower();
-        const auto xupper = params.xupper();
-
-        // The indices of the variables with lower and upper bounds
-        const auto ilower = ilowerinfo.head(nlower);
-        const auto iupper = iupperinfo.head(nupper);
-
-        // The indices of the variables without lower and upper bounds
-        const auto inolower = ilowerinfo.tail(n - nlower);
-        const auto inoupper = iupperinfo.tail(n - nupper);
-
-        // Auxiliary variables
-        const double mu = options.mu;
-        const double eps = std::sqrt(mu);
-
-        // Define the function that determines if variable x[i] is lower unstable
-        auto lower_unstable = [&](Index i)
-        {
-           return state.x[i] <= xlower[i] + eps && state.z[i] >= eps;
-        };
-
-        // Define the function that determines if variable x[i] is upper unstable
-        auto upper_unstable = [&](Index i)
-        {
-           return state.x[i] >= xupper[i] - eps && state.w[i] <= -eps;
-        };
-
-        // Define the function that determines if variable x[i] is stable
-        auto stable = [&](Index i)
-        {
-           return !lower_unstable(i) && !upper_unstable(i);
-        };
-
-        // Partition the free variables into stable and unstable: xx = [x(stable) x(unstable)]
-        auto is = std::partition(iordering.data(), iordering.data() + nx, stable);
-
-        // Partition the stable and lower unstable variables: xsl = [xs xl]
-        auto il = std::partition(is, iordering.data() + nx, lower_unstable);
-
-        // Update the number of stable, lower unstable, and upper unstable variables
-        ns = is - iordering.data();
-        nl = il - is;
-        nu = nx - ns - nl;
-
-        // Ensure the number of stable variables is positive
-        Assert(ns > 0, "Could not compute the step.",
-           "The number of stable variables must be positive.");
-
-        // Permute the columns of A so that A = [As Al Au Af]
-        iordering.asPermutation().applyThisOnTheRight(A);
-
-        // The variables x arranged in the ordering x = [xs xl xu xf]
-        x.noalias() = state.x(iordering);
-
-        // Initialize the values of z(bar) and w(bar)
-        z(inolower).fill(0.0);
-        w(inoupper).fill(0.0);
-        z(ilower) = state.z(ilower);
-        w(iupper) = state.w(iupper);
-
-        // Set both l(bar) and u(bar) vectors to one
-        l(inolower).fill(1.0);
-        u(inoupper).fill(1.0);
-        l(ilower) = state.x(ilower) - params.xlower();
-        u(iupper) = state.x(ilower) - params.xupper();
-
-        // Permute z(bar), w(bar), l(bar) and u(bar) according to iordering
-        iordering.asPermutation().transpose().applyThisOnTheLeft(z);
-        iordering.asPermutation().transpose().applyThisOnTheLeft(w);
-        iordering.asPermutation().transpose().applyThisOnTheLeft(l);
-        iordering.asPermutation().transpose().applyThisOnTheLeft(u);
-
         // Update Hxx = [Hss Hsu; Hus Huu]
         Hxx.noalias() = f.hessian(jx, jx);
 
         // Calculate Hss' = Hss + inv(Ls)*Zs + inv(Us)*Ws
         Hss.diagonal() += zs/ls + ws/us;
 
-        // Update the decomposition of the KKT matrix
-        kkt.reorder(iordering);
-        kkt.decompose({H, A, G, ns, n - ns});
+        // Initialize the gradient of the objective function w.r.t. free and fixed variables
+        gx.noalias() = f.grad(jx);
+        gf.fill(0.0);
+
+        // Update Hxx = [Hss Hsu; Hus Huu]
+        Hxx.noalias() = f.hessian(jx, jx);
+
+        // Calculate Hss' = Hss + inv(Ls)*Zs + inv(Us)*Ws
+        Hss.diagonal() += zs/ls + ws/us;
 
         // The gradient of the objective function w.r.t. free variables
         gx.noalias() = f.grad(jx);
@@ -329,40 +341,49 @@ struct OptimumStepper::Impl
         b.noalias() = -(A*x - params.b());
 
         // Calculate both c and d vectors
-        cx.noalias() = l % z - mu;
-        dx.noalias() = u % w - mu;
+        cx.noalias() = mu - l % z;
+        dx.noalias() = mu - u % w;
         cf.fill(0.0);
         df.fill(0.0);
 
-        // Calculate as' = as + Ls''*cs + Us''*ds - Hsl*Zl'*cl - Hsu*Wu'*du
-        as += ls % cs + us % ds - Hsl*(zl % cl) - Hsu*(wu % du);
+        // Calculate as' = as + inv(Ls)*cs + inv(Us)*ds - Hsl*inv(Zl)*cl - Hsu*inv(Wu)*du
+        as += cs/ls + ds/us - Hsl*(cl/zl) - Hsu*(du/wu);
 
-        // Calculate b' = b - Al*Zl'cl - Au*Wu'*du
-        b -= Al*(zl % cl) + Au*(wu % du);
+        // Calculate b' = b - Al*inv(Zl)*cl - Au*inv(Wu)*du
+        b -= Al*(cl/zl) + Au*(du/wu);
 
-        // Solve the reduced KKT equation
+        // Update the ordering of the saddle point solver
+        kkt.reorder(iordering);
+
+        // Decompose the saddle point matrix
+        kkt.decompose({H, A, G, ns, n - ns});
+
+        // Solve the saddle point problem
         kkt.solve({a, b}, {hx, hy});
 
         // Calculate dzl and dwu
-        hzl += Hls*hxs + tr(Al)*hy + Hll*(zl % cl) + Hlu*(wu % du) - ul % dl;
-        hwu += Hus*hxs + tr(Au)*hy + Hul*(zl % cl) + Huu*(wu % du) - lu % cu;
+        hzl += Hls*hxs + tr(Al)*hy + Hll*(cl/zl) + Hlu*(du/wu) - dl/ul;
+        hwu += Hus*hxs + tr(Au)*hy + Hul*(cl/zl) + Huu*(du/wu) - cu/lu;
 
         // Calculate dxl and dxu
-        hxl = (cl - ll % hzl) % zl;
-        hxu = (du - uu % hwu) % wu;
+        hxl = (cl - ll % hzl)/zl;
+        hxu = (du - uu % hwu)/wu;
 
         // Calculate dzs and dzu
-        hzs = (cs - zs % hxs) % ls;
-        hzu = (cu - zu % hxu) % lu;
+        hzs = (cs - zs % hxs)/ls;
+        hzu = (cu - zu % hxu)/lu;
 
         // Calculate dws and dwl
-        hws = (ds - ws % hxs) % us;
-        hwl = (dl - wl % hxl) % ul;
+        hws = (ds - ws % hxs)/us;
+        hwl = (dl - wl % hxl)/ul;
 
         // Permute the calculated (dx dz dw) to their original order
         iordering.asPermutation().applyThisOnTheLeft(hx);
         iordering.asPermutation().applyThisOnTheLeft(hz);
         iordering.asPermutation().applyThisOnTheLeft(hw);
+
+        // Permute the columns of A back to its original order
+        iordering.asPermutation().transpose().applyThisOnTheRight(A);
     }
 //
 //    /// Decompose the KKT matrix equation used to compute the step vectors.

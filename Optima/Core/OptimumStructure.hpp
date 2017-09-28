@@ -80,13 +80,19 @@ struct OptimumStructure
     MatrixXd A;
 
     /// Set the indices of the variables in \eq{x} with lower bounds.
-    auto ilower(VectorXiConstRef indices) -> void { m_ilower = indices; }
+    auto withLowerBounds(VectorXiConstRef indices) -> void { m_ilower = indices; }
+
+    /// Set all variables in \eq{x} with lower bounds.
+    auto withLowerBounds() -> void { m_ilower.setLinSpaced(n, 0, n - 1); }
 
     /// Set the indices of the variables in \eq{x} with upper bounds.
-    auto iupper(VectorXiConstRef indices) -> void { m_iupper = indices; }
+    auto withUpperBounds(VectorXiConstRef indices) -> void { m_iupper = indices; }
+
+    /// Set all variables in \eq{x} with upper bounds.
+    auto withUpperBounds() -> void { m_iupper.setLinSpaced(n, 0, n - 1); }
 
     /// Set the indices of the variables in \eq{x} with fixed values.
-    auto ifixed(VectorXiConstRef indices) -> void { m_ifixed = indices; }
+    auto withFixedValues(VectorXiConstRef indices) -> void { m_ifixed = indices; }
 
     /// Return the indices of the variables in \eq{x} with lower bounds.
     auto ilower() const -> VectorXiConstRef { return m_ilower; }
