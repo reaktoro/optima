@@ -72,12 +72,12 @@ public:
     /// Return the current saddle point options.
     auto options() const -> const SaddlePointOptions&;
 
-    /// Canonicalize the coefficient matrix \eq{A} of the saddle point problem.
+    /// Initialize the saddle point solver wiht the coefficient matrix \eq{A} of the saddle point problem.
     /// @note This method should be called before the @ref decompose method. However, it does not
     /// need to be called again if matrix \eq{A} of the saddle point problem is the same as in the
-    /// last call to @ref canonicalize.
+    /// last call to @ref initialize.
     /// @param A The coefficient matrix \eq{A} of the saddle point problem.
-    auto canonicalize(MatrixXdConstRef A) -> SaddlePointResult;
+    auto initialize(MatrixXdConstRef A) -> SaddlePointResult;
 
     /// Decompose the coefficient matrix of the saddle point problem.
     /// @note This method should be called before the @ref solve method and after @ref canonicalize.

@@ -17,6 +17,9 @@
 
 #pragma once
 
+// C++ includes
+#include <string>
+
 // Optima includes
 #include <Optima/Common/Timing.hpp>
 
@@ -44,6 +47,13 @@ public:
     /// Stop the stopwatch.
     auto stop() -> SaddlePointResult&;
 
+    /// Stop the stopwatch and set success to false.
+    /// @param errormsg The error message about the failure.
+    auto failed(std::string error) -> SaddlePointResult&;
+
+    /// Return the error message about the failure.
+    auto error() -> std::string;
+
     /// Accumulate the result of several saddle point problem operations.
     auto operator+=(const SaddlePointResult& other) -> SaddlePointResult&;
 
@@ -62,6 +72,9 @@ private:
 
     /// The time at which stop method was called.
     Time m_stop;
+
+    /// The error message
+    std::string m_error;
 };
 
 } // namespace Optima

@@ -57,71 +57,58 @@ struct IpSaddlePointSolver::Impl
     /// The current number of stable, lower unstable, upper unstable, free, and fixed variables.
     Index ns, nl, nu, nx, nf;
 
-    /// The number of variables with lower and upper bounds
-    Index nlower, nupper;
-
     /// The number of equality constraints.
     Index m;
 
     /// The total number of variables (x, y, z, w).
     Index t;
 
-    /// The indices of the variables with and without lower bounds.
-    VectorXi ilowerinfo;
-
-    /// The indices of the variables with and without lower bounds.
-    VectorXi iupperinfo;
-
     /// Initialize the stepper with the structure of the optimization problem.
-    auto canonicalize(MatrixXdConstRef A) -> void
+    auto initialize(MatrixXdConstRef A) -> SaddlePointResult
     {
+        // The result of this method call
+        SaddlePointResult res;
+
         // Initialize the members related to number of variables and constraints
-        n  = structure.n;
-        m  = structure.A.rows();
-        nlower = structure.ilower().size();
-        nupper = structure.iupper().size();
-        nf = structure.ifixed().size();
-        nx = n - nf;
+        n  = A.cols();
+        m  = A.rows();
+        nf = 0;
+        nx = n;
         ns = n;
         nu = 0;
         t  = 3*n + m;
 
-        // Initialize the indices of the fixed variables and those with lower/upper bounds
-        ifixed = structure.ifixed();
-
         // Initialize the ordering of the variables
         iordering.setLinSpaced(n, 0, n - 1);
-        iordering.tail(nf).swap(iordering(ifixed));
-
-        // Initialize the indices of the variables with/without lower/upper bounds
-        ilowerinfo.setLinSpaced(n, 0, n - 1);
-        iupperinfo.setLinSpaced(n, 0, n - 1);
-        ilowerinfo.head(nlower).swap(ilowerinfo(structure.ilower()));
-        iupperinfo.head(nupper).swap(iupperinfo(structure.iupper()));
 
         // Allocate memory for some members
-        A = structure.A;
         H = zeros(n, n);
-        g = zeros(n);
-        x = zeros(n);
-        z = zeros(n);
-        w = zeros(n);
-        l = zeros(n);
-        u = zeros(n);
-        residual = zeros(t);
-        solution = zeros(t);
+        Z = zeros(n);
+        W = zeros(n);
+        L = zeros(n);
+        U = zeros(n);
+        r = zeros(t);
 
         // Initialize the saddle point solver
-        kkt.canonicalize(A);
+        res += kkt.initialize(A);
+
+        return res.stop();
     }
 
     /// Decompose the KKT matrix equation used to compute the step vectors.
-    auto decompose(IpSaddlePointMatrix lhs) -> void
+    auto decompose(IpSaddlePointMatrix lhs) -> SaddlePointResult
     {
+        // The result of this method call
+        SaddlePointResult res;
+
         // Auxiliary variables
         const double eps = std::sqrt(std::numeric_limits<double>::epsilon());
 
-        // Initialize copy matrices
+        // Initialize the number of free and fixed variables
+        nx = lhs.nx();
+        nf = lhs.nf();
+
+        // Initialize auxiliary matrices
         A.noalias() = lhs.A();
         Z.noalias() = lhs.Z();
         W.noalias() = lhs.W();
@@ -158,8 +145,9 @@ struct IpSaddlePointSolver::Impl
         nu = nx - ns - nl;
 
         // Ensure the number of stable variables is positive
-        Assert(ns > 0, "Could not decompose the interior-point saddle point matrix.",
-           "The number of stable variables must be positive.");
+        if(ns == 0) return res.failed(
+            "Could not decompose the interior-point saddle point matrix, "
+            "which is singular and has no stable variables.");
 
         // Permute A, Z, W, L and U according to iordering
         iordering.asPermutation().transpose().applyThisOnTheLeft(Z);
@@ -207,12 +195,17 @@ struct IpSaddlePointSolver::Impl
         kkt.reorder(iordering);
 
         // Decompose the saddle point matrix
-        kkt.decompose({H, A, G, ns, n - ns});
+        res += kkt.decompose({H, A, G, ns, n - ns});
+
+        return res.stop();
     }
 
     /// Solve the KKT matrix equation.
-    auto solve(IpSaddlePointVector rhs, IpSaddlePointSolution sol) -> void
+    auto solve(IpSaddlePointVector rhs, IpSaddlePointSolution sol) -> SaddlePointResult
     {
+        // The result of this method call
+        SaddlePointResult res;
+
         // The indices of the free and fixed variables
         const auto jx = iordering.head(nx);
         const auto jf = iordering.tail(nf);
@@ -339,7 +332,7 @@ struct IpSaddlePointSolver::Impl
         b -= Al*(cl/Zl) + Au*(du/Wu);
 
         // Solve the saddle point problem
-        kkt.solve({a, b}, {x, y});
+        res += kkt.solve({a, b}, {x, y});
 
         // Calculate dzl and dwu
         zl += Hls*xs + tr(Al)*y + Hll*(cl/Zl) + Hlu*(du/Wu) - dl/Ul;
@@ -361,6 +354,8 @@ struct IpSaddlePointSolver::Impl
         iordering.asPermutation().applyThisOnTheLeft(x);
         iordering.asPermutation().applyThisOnTheLeft(z);
         iordering.asPermutation().applyThisOnTheLeft(w);
+
+        return res.stop();
     }
 };
 
@@ -391,9 +386,9 @@ auto IpSaddlePointSolver::options() const -> const SaddlePointOptions&
     return pimpl->kkt.options();
 }
 
-auto IpSaddlePointSolver::canonicalize(MatrixXdConstRef A) -> SaddlePointResult
+auto IpSaddlePointSolver::initialize(MatrixXdConstRef A) -> SaddlePointResult
 {
-    return pimpl->canonicalize(A);
+    return pimpl->initialize(A);
 }
 
 auto IpSaddlePointSolver::decompose(IpSaddlePointMatrix lhs) -> SaddlePointResult

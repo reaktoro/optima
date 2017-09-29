@@ -125,7 +125,7 @@ struct OptimumStepper::Impl
         solution = zeros(t);
 
         // Initialize the saddle point solver
-        kkt.canonicalize(structure.A);
+        kkt.initialize(structure.A);
     }
 
     /// Decompose the KKT matrix equation used to compute the step vectors.

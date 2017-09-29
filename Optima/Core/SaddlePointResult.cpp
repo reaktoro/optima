@@ -52,9 +52,22 @@ auto SaddlePointResult::stop() -> SaddlePointResult&
     return *this;
 }
 
+auto SaddlePointResult::failed(std::string error) -> SaddlePointResult&
+{
+    m_success = false;
+    m_error = error;
+    return stop();
+}
+
+auto SaddlePointResult::error() -> std::string
+{
+    return m_error;
+}
+
 auto SaddlePointResult::operator+=(const SaddlePointResult& other) -> SaddlePointResult&
 {
     m_success = m_success && other.m_success;
+    m_error = m_error + "\n" + other.m_error;
     m_time += other.m_time;
     return *this;
 }

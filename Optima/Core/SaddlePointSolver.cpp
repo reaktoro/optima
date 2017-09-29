@@ -94,7 +94,7 @@ struct SaddlePointSolver::Impl
     bool denseG = false;
 
     /// Canonicalize the coefficient matrix *A* of the saddle point problem.
-    auto canonicalize(MatrixXdConstRef A) -> SaddlePointResult
+    auto initialize(MatrixXdConstRef A) -> SaddlePointResult
     {
         // The result of this method call
         SaddlePointResult res;
@@ -1256,9 +1256,9 @@ auto SaddlePointSolver::options() const -> const SaddlePointOptions&
     return pimpl->options;
 }
 
-auto SaddlePointSolver::canonicalize(MatrixXdConstRef A) -> SaddlePointResult
+auto SaddlePointSolver::initialize(MatrixXdConstRef A) -> SaddlePointResult
 {
-    return pimpl->canonicalize(A);
+    return pimpl->initialize(A);
 }
 
 auto SaddlePointSolver::decompose(SaddlePointMatrix lhs) -> SaddlePointResult
