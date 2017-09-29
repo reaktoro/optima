@@ -23,8 +23,9 @@
 namespace Optima {
 
 /// A type that describes the state of an optimum solution
-struct OptimumState
+class OptimumState
 {
+public:
     /// The primal solution of the optimization problem
     VectorXd x;
 

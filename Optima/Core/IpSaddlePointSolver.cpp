@@ -344,6 +344,16 @@ struct IpSaddlePointSolver::Impl
 
         return res.stop();
     }
+
+    /// Update the order of the variables.
+    auto reorder(VectorXiConstRef ordering) -> void
+    {
+        // Update the ordering of the basic KKT solver
+        kkt.reorder(ordering);
+
+        // Update the internal ordering of the variables with the new ordering
+        ordering.asPermutation().transpose().applyThisOnTheLeft(iordering);
+    }
 };
 
 IpSaddlePointSolver::IpSaddlePointSolver()
@@ -386,6 +396,11 @@ auto IpSaddlePointSolver::decompose(IpSaddlePointMatrix lhs) -> SaddlePointResul
 auto IpSaddlePointSolver::solve(IpSaddlePointVector rhs, IpSaddlePointSolution sol) -> SaddlePointResult
 {
     return pimpl->solve(rhs, sol);
+}
+
+auto IpSaddlePointSolver::reorder(VectorXiConstRef ordering) -> void
+{
+    pimpl->reorder(ordering);
 }
 
 } // namespace Optima

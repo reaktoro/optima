@@ -26,18 +26,18 @@
 namespace Optima {
 
 // Forward declarations
-struct ObjectiveState;
-struct OptimumOptions;
-struct OptimumParams;
-struct OptimumState;
-struct OptimumStructure;
+class ObjectiveState;
+class OptimumOptions;
+class OptimumParams;
+class OptimumState;
+class OptimumStructure;
 
 /// The class that implements the step calculation.
 class OptimumStepper
 {
 public:
     /// Construct a default OptimumStepper instance.
-    OptimumStepper();
+    OptimumStepper(const OptimumStructure& structure);
 
     /// Construct a copy of an OptimumStepper instance.
     OptimumStepper(const OptimumStepper& other);
@@ -50,9 +50,6 @@ public:
 
     /// Set the options for the step calculation.
     auto setOptions(const OptimumOptions& options) -> void;
-
-    /// Initialize the stepper with the structure of the optimization problem.
-    auto initialize(const OptimumStructure& structure) -> void;
 
     /// Decompose the KKT matrix equation used to compute the step vectors.
     auto decompose(const OptimumParams& params, const OptimumState& state, const ObjectiveState& f) -> void;
@@ -92,21 +89,21 @@ public:
 
     /// Return the residual of the complementarity conditions for the inequality constraints.
     auto residualComplementarityInequality() const -> VectorXdConstRef;
-
-    /// Return the left-hand side matrix of the KKT equation.
-    auto lhs() const -> MatrixXdConstRef;
-
-    /// Return the indices of the free variables.
-    auto ifree() const -> VectorXiConstRef;
-
-    /// Return the indices of the fixed variables.
-    auto ifixed() const -> VectorXiConstRef;
-
-    /// Return the indices of the stable variables.
-    auto istable() const -> VectorXiConstRef;
-
-    /// Return the indices of the unstable variables.
-    auto iunstable() const -> VectorXiConstRef;
+//
+//    /// Return the left-hand side matrix of the KKT equation.
+//    auto lhs() const -> MatrixXdConstRef;
+//
+//    /// Return the indices of the free variables.
+//    auto ifree() const -> VectorXiConstRef;
+//
+//    /// Return the indices of the fixed variables.
+//    auto ifixed() const -> VectorXiConstRef;
+//
+//    /// Return the indices of the stable variables.
+//    auto istable() const -> VectorXiConstRef;
+//
+//    /// Return the indices of the unstable variables.
+//    auto iunstable() const -> VectorXiConstRef;
 
 private:
     struct Impl;

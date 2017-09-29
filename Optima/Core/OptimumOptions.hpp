@@ -68,8 +68,9 @@ struct OptimumOutputOptions : OutputterOptions
 };
 
 /// A type that describes the options of a optimization calculation
-struct OptimumOptions
+class OptimumOptions
 {
+public:
     /// The options for the output of the optimization calculations
     OptimumOutputOptions output;
 

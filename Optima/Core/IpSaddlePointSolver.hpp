@@ -74,6 +74,9 @@ public:
     /// @param sol The solution of the saddle point problem.
     auto solve(IpSaddlePointVector rhs, IpSaddlePointSolution sol) -> SaddlePointResult;
 
+    /// Update the order of the variables.
+    auto reorder(VectorXiConstRef ordering) -> void;
+
 private:
     struct Impl;
 

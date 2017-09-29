@@ -34,43 +34,28 @@ public:
     /// @param structure The structure of the optimization problem.
     OptimumParams(const OptimumStructure& structure);
 
-//    /// Set the indices and values of the variables in \eq{x} that are fixed.
-//    /// @param indices The indices of the fixed variables.
-//    /// @param values The values of the fixed variables.
-//    auto fix(VectorXiConstRef indices, VectorXdConstRef values) -> void;
-//
-//    /// Set the indices and minimum values of the variables in \eq{x} with lower bounds.
-//    /// @param indices The indices of the variables with lower bounds.
-//    /// @param values The minimum values of the variables with lower bounds.
-//    auto lowerbounds(VectorXiConstRef indices, VectorXdConstRef values) -> void;
-//
-//    /// Set the indices and maximum values of the variables in \eq{x} with upper bounds.
-//    /// @param indices The indices of the variables with upper bounds.
-//    /// @param values The maximum values of the variables with upper bounds.
-//    auto upperbounds(VectorXiConstRef indices, VectorXdConstRef values) -> void;
-
     /// Return right-hand side vector of the equality constraint \eq{Ax = b}.
     auto b() -> VectorXdRef { return m_b; }
 
     /// Return right-hand side vector of the equality constraint \eq{Ax = b}.
     auto b() const -> VectorXdConstRef { return m_b; }
 
-    /// Return the lower bounds of the variables \eq{x}.
+    /// Return the lower bound values for the variables in \eq{x} bounded below.
     auto xlower() -> VectorXdRef { return m_xlower; }
 
-    /// Return the lower bounds of the variables \eq{x}.
+    /// Return the lower bound values for the variables in \eq{x} bounded below.
     auto xlower() const -> VectorXdConstRef { return m_xlower; }
 
-    /// Return the upper bounds of the variables \eq{x}.
+    /// Return the upper bound values for the variables in \eq{x} bounded above.
     auto xupper() -> VectorXdRef { return m_xupper; }
 
-    /// Return the upper bounds of the variables \eq{x}.
+    /// Return the upper bound values for the variables in \eq{x} bounded above.
     auto xupper() const -> VectorXdConstRef { return m_xupper; }
 
-    /// Return the values of the fixed variables in \eq{x}.
+    /// Return the values for the fixed variables in \eq{x}.
     auto xfixed() -> VectorXdRef { return m_xfixed; }
 
-    /// Return the values of the fixed variables in \eq{x}.
+    /// Return the values for the fixed variables in \eq{x}.
     auto xfixed() const -> VectorXdConstRef { return m_xfixed; }
 
 private:

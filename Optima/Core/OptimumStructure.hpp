@@ -24,8 +24,9 @@
 namespace Optima {
 
 /// The requirements in the evaluation of the objective function.
-struct ObjectiveRequirement
+class ObjectiveRequirement
 {
+public:
     /// The boolean flag that indicates the need for the objective value.
     bool val = true;
 
@@ -37,8 +38,9 @@ struct ObjectiveRequirement
 };
 
 /// The evaluated state of an objective function.
-struct ObjectiveState
+class ObjectiveState
 {
+public:
     /// The evaluated value of the objective function.
     double val;
 
@@ -68,8 +70,55 @@ using ObjectiveFunction = std::function<void(VectorXdConstRef, ObjectiveState&)>
 // structure.setConstraintMatrix(A);
 // structure.setObjective(obj);
 /// The structure of an optimization problem that changes with less frequency.
-struct OptimumStructure
+class OptimumStructure
 {
+public:
+    /// Construct an OptimumStructure instance.
+    OptimumStructure(Index n);
+
+    /// Set the indices of the variables in \eq{x} with lower bounds.
+    auto withLowerBounds(VectorXiConstRef indices) -> void;
+
+    /// Set all variables in \eq{x} with lower bounds.
+    auto withLowerBounds() -> void;
+
+    /// Set the indices of the variables in \eq{x} with upper bounds.
+    auto withUpperBounds(VectorXiConstRef indices) -> void;
+
+    /// Set all variables in \eq{x} with upper bounds.
+    auto withUpperBounds() -> void;
+
+    /// Set the indices of the variables in \eq{x} with fixed values.
+    auto withFixedValues(VectorXiConstRef indices) -> void;
+
+    /// Return the indices of the variables with lower bounds.
+    auto iwithlower() const -> VectorXiConstRef { return m_lowerpartition.tail(m_nlower); }
+
+    /// Return the indices of the variables with upper bounds.
+    auto iwithupper() const -> VectorXiConstRef { return m_upperpartition.tail(m_nupper); }
+
+    /// Return the indices of the variables with fixed values.
+    auto iwithfixed() const -> VectorXiConstRef { return m_fixedpartition.tail(m_nfixed); }
+
+    /// Return the indices of the variables without lower bounds.
+    auto iwithoutlower() const -> VectorXiConstRef { return m_lowerpartition.head(n - m_nlower); }
+
+    /// Return the indices of the variables without upper bounds.
+    auto iwithoutupper() const -> VectorXiConstRef { return m_upperpartition.head(n - m_nupper); }
+
+    /// Return the indices of the variables without fixed values.
+    auto iwithoutfixed() const -> VectorXiConstRef { return m_fixedpartition.head(n - m_nfixed); }
+
+    /// Return the indices of the variables partitioned in [without, with] lower bounds.
+    auto lowerpartition() const -> VectorXiConstRef { return m_lowerpartition; }
+
+    /// Return the indices of the variables partitioned in [without, with] upper bounds.
+    auto upperpartition() const -> VectorXiConstRef { return m_upperpartition; }
+
+    /// Return the indices of the variables partitioned in [without, with] fixed values.
+    auto fixedpartition() const -> VectorXiConstRef { return m_fixedpartition; }
+
+//private:
     /// The number of variables in the optimization problem.
     Index n;
 
@@ -79,38 +128,23 @@ struct OptimumStructure
     /// The coefficient matrix of the linear equality constraint \eq{Ax = a}.
     MatrixXd A;
 
-    /// Set the indices of the variables in \eq{x} with lower bounds.
-    auto withLowerBounds(VectorXiConstRef indices) -> void { m_ilower = indices; }
+    /// The number of variables with lower bounds.
+    Index m_nlower;
 
-    /// Set all variables in \eq{x} with lower bounds.
-    auto withLowerBounds() -> void { m_ilower.setLinSpaced(n, 0, n - 1); }
+    /// The number of variables with upper bounds.
+    Index m_nupper;
 
-    /// Set the indices of the variables in \eq{x} with upper bounds.
-    auto withUpperBounds(VectorXiConstRef indices) -> void { m_iupper = indices; }
+    /// The number of variables with fixed values.
+    Index m_nfixed;
 
-    /// Set all variables in \eq{x} with upper bounds.
-    auto withUpperBounds() -> void { m_iupper.setLinSpaced(n, 0, n - 1); }
+    /// The indices of the variables partitioned in [with, without] lower bounds.
+    VectorXi m_lowerpartition;
 
-    /// Set the indices of the variables in \eq{x} with fixed values.
-    auto withFixedValues(VectorXiConstRef indices) -> void { m_ifixed = indices; }
+    /// The indices of the variables partitioned in [with, without] upper bounds.
+    VectorXi m_upperpartition;
 
-    /// Return the indices of the variables in \eq{x} with lower bounds.
-    auto ilower() const -> VectorXiConstRef { return m_ilower; }
-
-    /// Return the indices of the variables in \eq{x} with upper bounds.
-    auto iupper() const -> VectorXiConstRef { return m_iupper; }
-
-    /// Return the indices of the variables in \eq{x} with fixed values.
-    auto ifixed() const -> VectorXiConstRef { return m_ifixed; }
-
-    /// The indices of the variables constrained with lower bounds.
-    VectorXi m_ilower;
-
-    /// The indices of the variables constrained with upper bounds.
-    VectorXi m_iupper;
-
-    /// The indices of the variables in \eq{x} that are fixed.
-    VectorXi m_ifixed;
+    /// The indices of the variables partitioned in [with, without] fixed values.
+    VectorXi m_fixedpartition;
 };
 
 } // namespace Optima

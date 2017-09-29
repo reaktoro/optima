@@ -18,17 +18,18 @@
 #include "OptimumParams.hpp"
 
 // Optima includes
-#include <Optima/Common/Exception.hpp>
 #include <Optima/Core/OptimumStructure.hpp>
+#include <Optima/Math/Matrix.hpp>
 
 namespace Optima {
 
 OptimumParams::OptimumParams(const OptimumStructure& structure)
 : m_b(structure.A.rows()),
-  m_xlower(structure.ilower().size()),
-  m_xupper(structure.iupper().size()),
-  m_xfixed(structure.ifixed().size())
+  m_xlower(structure.iwithlower().size()),
+  m_xupper(structure.iwithupper().size()),
+  m_xfixed(structure.iwithfixed().size())
 {
+    m_b.fill(0.0);
     m_xlower.fill(0.0);
     m_xupper.fill(0.0);
     m_xfixed.fill(0.0);
