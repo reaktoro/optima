@@ -17,221 +17,108 @@
 
 #include <doctest/doctest.hpp>
 
+// C++ includes
+#include <iostream>
+
 // Eigen includes
 #include <Eigenx/LU.hpp>
 using namespace Eigen;
 
 // Optima includes
-#include <Optima/Core/OptimumOptions.hpp>
-#include <Optima/Core/OptimumParams.hpp>
-#include <Optima/Core/OptimumState.hpp>
+#include <Optima/Core/IpSaddlePointMatrix.hpp>
 #include <Optima/Core/IpSaddlePointSolver.hpp>
-#include <Optima/Core/OptimumStructure.hpp>
+#include <Optima/Core/SaddlePointOptions.hpp>
+#include <Optima/Core/SaddlePointResult.hpp>
 #include <Optima/Math/Matrix.hpp>
 using namespace Optima;
 
 #define PRINT_STATE                                                         \
 {                                                                           \
     std::cout << std::setprecision(10); \
-    VectorXd s = M.fullPivLu().solve(r);                                    \
+    VectorXd slu = M.fullPivLu().solve(r);                                    \
     std::cout << "M = \n" << M << std::endl;                                \
-    std::cout << "r         = " << tr(r) << std::endl;                           \
-    std::cout << "step      = " << tr(step) << std::endl;                        \
-    std::cout << "step(lu)  = " << tr(s) << std::endl;      \
-    std::cout << "dx        = " << tr(step.head(n)) << std::endl;                        \
-    std::cout << "dx(lu)    = " << tr(s.head(n)) << std::endl;      \
-    std::cout << "dy        = " << tr(step.segment(n, m)) << std::endl;                        \
-    std::cout << "dy(lu)    = " << tr(s.segment(n, m)) << std::endl;      \
-    std::cout << "dz        = " << tr(step.segment(n+m, n)) << std::endl;                        \
-    std::cout << "dz(lu)    = " << tr(s.segment(n+m, n)) << std::endl;      \
-    std::cout << "dw        = " << tr(step.tail(n)) << std::endl;                        \
-    std::cout << "dw(lu)    = " << tr(s.tail(n)) << std::endl;      \
-    std::cout << "res       = " << tr(res) << std::endl;                         \
-    std::cout << "res(lu)   = " << tr(M*s - r) << std::endl;                         \
+    std::cout << "r        = " << tr(r) << std::endl;                           \
+    std::cout << "x        = " << tr(s.head(n)) << std::endl;                        \
+    std::cout << "x(lu)    = " << tr(slu.head(n)) << std::endl;      \
+    std::cout << "y        = " << tr(s.segment(n, m)) << std::endl;                        \
+    std::cout << "y(lu)    = " << tr(slu.segment(n, m)) << std::endl;      \
+    std::cout << "z        = " << tr(s.segment(n+m, n)) << std::endl;                        \
+    std::cout << "z(lu)    = " << tr(slu.segment(n+m, n)) << std::endl;      \
+    std::cout << "w        = " << tr(s.tail(n)) << std::endl;                        \
+    std::cout << "w(lu)    = " << tr(slu.tail(n)) << std::endl;      \
+    std::cout << "res      = " << tr(M*s - r) << std::endl;                         \
+    std::cout << "res(lu)  = " << tr(M*slu - r) << std::endl;                         \
 }                                                                           \
 
-#undef PRINT_STATE
-#define PRINT_STATE
+//#undef PRINT_STATE
+//#define PRINT_STATE
 
 TEST_CASE("Testing IpSaddlePointSolver")
 {
 //    std::srand(std::time(0));
-    Index n = 60;
-    Index m = 20;
+//    Index n = 60;
+//    Index m = 20;
 //    Index n = 6;
 //    Index m = 3;
-//    Index n = 2;
-//    Index m = 1;
+    Index n = 2;
+    Index m = 1;
     Index t = 3*n + m;
+    Index nx = n;
+    Index nf = 0;
 
     MatrixXd A = random(m, n);
     MatrixXd H = random(n, n);
-    VectorXd g = random(n);
-    VectorXd b = random(m);
-    VectorXd x = abs(random(n));
-    VectorXd y = random(m);
-    VectorXd z = abs(random(n));
-    VectorXd w = -abs(random(n));
-    VectorXd l;
-    VectorXd u;
+    VectorXd Z = random(n);
+    VectorXd W = random(n);
+    VectorXd L = random(n);
+    VectorXd U = random(n);
 
-//    MatrixXd A = ones(m, n);
-//    MatrixXd H = zeros(n, n);
-//    VectorXd g = ones(n);
-//    VectorXd a = ones(m);
-//    VectorXd x = ones(n);
-//    VectorXd y = ones(m);
-//    VectorXd z = ones(n);
+    const VectorXd expected = linspace(t, 0, t - 1);
 
-    OptimumOptions options;
+    SaddlePointOptions options;
 
-    VectorXd zbar, wbar, lbar, ubar;
+    MatrixXd M = zeros(t, t);
+    VectorXd r = zeros(t);
 
-    MatrixXd M;
-
-    VectorXd r;
-
-    auto compute_step = [&]()
+    auto check = [&]()
     {
-        OptimumStructure structure;
-        structure.n = n;
-        structure.A = A;
-        if(l.size()) structure.withLowerBounds();
-        if(u.size()) structure.withUpperBounds();
+        // The left-hand side coefficient matrix
+        IpSaddlePointMatrix lhs(H, A, Z, W, L, U, nx, nf);
 
-        OptimumParams params(structure);
-        params.b() = b;
-        params.xlower() = l;
-        params.xupper() = u;
+        // The dense matrix assembled from lhs
+        const MatrixXd M = lhs.matrix();
 
-        OptimumState state;
-        state.x = x;
-        state.y = y;
-        state.z = z;
-        state.w = w;
+        // The right-hand side vector
+        const VectorXd r = M * expected;
+        IpSaddlePointVector rhs(r, n, m);
 
-        ObjectiveState f;
-        f.grad = g;
-        f.hessian = H;
+        // The solution vector
+        VectorXd s = zeros(t);
+        IpSaddlePointSolution sol(s, n, m);
 
-        IpSaddlePointSolver stepper;
-        stepper.setOptions(options);
-        stepper.initialize(structure);
-        stepper.decompose(params, state, f);
-        stepper.solve(params, state, f);
+        // Solve the interior-poin saddle point problem
+        IpSaddlePointSolver solver;
+        solver.setOptions(options);
+        solver.initialize(A);
+        solver.decompose(lhs);
+        solver.solve(rhs, sol);
 
-        return VectorXd(stepper.step());
+        PRINT_STATE;
+
+        // Check the residual of the equation Ms = r
+        CHECK(norm(M*s - r)/norm(r) == approx(0.0));
     };
 
-    auto compute_residual = [&](VectorXdConstRef step)
+    SUBCASE("When all variables are free.")
     {
-        zbar = l.size() ? z : zeros(n);
-        wbar = u.size() ? w : zeros(n);
-        lbar = l.size() ? VectorXd(x - l) : ones(n);
-        ubar = u.size() ? VectorXd(x - u) : ones(n);
-
-        M = zeros(t, t);
-        M.topRows(n) << H, tr(A), -identity(n, n), -identity(n, n);
-        M.middleRows(n, m).leftCols(n) = A;
-        M.middleRows(n + m, n).leftCols(n).diagonal() = zbar;
-        M.middleRows(n + m, n).middleCols(n + m, n).diagonal() = lbar;
-        M.bottomRows(n).leftCols(n).diagonal() = wbar;
-        M.bottomRows(n).rightCols(n).diagonal() = ubar;
-
-        r = zeros(t);
-        r.head(n) = -(g + tr(A)*y - zbar - wbar);
-        r.segment(n, m) = -(A*x - b);
-        r.segment(n + m, n) = -(lbar % zbar - options.mu);
-        r.tail(n) = -(ubar % wbar - options.mu);
-
-        return M*step - r;
-    };
-
-    SUBCASE("When there are no lower/upper bounds.")
-    {
-        VectorXd step = compute_step();
-        VectorXd res = compute_residual(step);
-
-        PRINT_STATE;
-
-        CHECK(norm(res)/norm(r) == approx(0.0));
+        check();
     }
 
-    SUBCASE("When there are lower/upper bounds, but all variables are stable.")
+    SUBCASE("When m variables are fixed.")
     {
-        l = zeros(n);
-        u = ones(n);
-        z.fill( options.mu);
-        w.fill(-options.mu);
+        nx = n - m;
+        nf = m;
 
-        VectorXd step = compute_step();
-        VectorXd res = compute_residual(step);
-
-        PRINT_STATE;
-
-        CHECK(norm(res)/norm(r) == approx(0.0));
-    }
-
-    SUBCASE("When the last `m = nrows(A)` variables are lower unstable.")
-    {
-        l = zeros(n);
-        u = ones(n);
-        z.tail(m).fill(1.0);
-        x.tail(m).fill(options.mu);
-
-        VectorXd step = compute_step();
-        VectorXd res = compute_residual(step);
-
-        PRINT_STATE;
-
-        CHECK(norm(res)/norm(r) == approx(0.0));
-    }
-
-    SUBCASE("When the last `m = nrows(A)` variables are upper unstable.")
-    {
-        l = zeros(n);
-        u = ones(n);
-        w.tail(m).fill(1.0);
-        x.tail(m).fill(1.0 - options.mu);
-
-        VectorXd step = compute_step();
-        VectorXd res = compute_residual(step);
-
-        PRINT_STATE;
-
-        CHECK(norm(res)/norm(r) == approx(0.0));
-    }
-
-    SUBCASE("When the last `m = nrows(A)` variables are lower unstable and Huu has large diagonal entries.")
-    {
-        l = zeros(n);
-        u = ones(n);
-        z.tail(m).fill(1.0);
-        x.tail(m).fill(options.mu);
-        H.bottomRightCorner(m, m).diagonal().fill(1e8);
-
-        VectorXd step = compute_step();
-        VectorXd res = compute_residual(step);
-
-        PRINT_STATE;
-
-        CHECK(norm(res)/norm(r) == approx(0.0));
-    }
-
-    SUBCASE("When the saddle point problem corresponds to a linear programming problem.")
-    {
-        l = zeros(n);
-        g = abs(g);
-        z.tail(n - m).fill(1.0);
-        z.head(m).fill(options.mu);
-        x = options.mu/z;
-        H = zeros(n, n);
-
-        VectorXd step = compute_step();
-        VectorXd res = compute_residual(step);
-
-        PRINT_STATE;
-
-        CHECK(norm(res)/norm(r) == approx(0.0));
+        check();
     }
 }

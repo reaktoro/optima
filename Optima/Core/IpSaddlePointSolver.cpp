@@ -206,10 +206,6 @@ struct IpSaddlePointSolver::Impl
         // The result of this method call
         SaddlePointResult res;
 
-        // The indices of the free and fixed variables
-        const auto jx = iordering.head(nx);
-        const auto jf = iordering.tail(nf);
-
         // Views to the blocks of the Hessian matrix Hxx = [Hss Hsl Hsu; Hls Hll Hlu; Hus Hul Huu]
         const auto Hxx = H.topLeftCorner(nx, nx);
         const auto Hs  = Hxx.topRows(ns);
@@ -267,63 +263,51 @@ struct IpSaddlePointSolver::Impl
 
         // Views to the sub-vectors in a = [as al au af]
         auto ax = a.head(nx);
-        auto af = a.tail(nf);
         auto as = ax.head(ns);
         auto al = ax.segment(ns, nl);
         auto au = ax.tail(nu);
+        auto af = a.tail(nf);
 
         // Views to the sub-vectors in c = [cs cl cu cf]
         auto cx = c.head(nx);
-        auto cf = c.tail(nf);
         auto cs = cx.head(ns);
         auto cl = cx.segment(ns, nl);
         auto cu = cx.tail(nu);
+        auto cf = c.tail(nf);
 
         // Views to the sub-vectors in d = [ds dl du df]
         auto dx = d.head(nx);
-        auto df = d.tail(nf);
         auto ds = dx.head(ns);
         auto dl = dx.segment(ns, nl);
         auto du = dx.tail(nu);
+        auto df = d.tail(nf);
 
         // Views to the sub-vectors in x = [xs xl xu xf]
         auto xx = x.head(nx);
         auto xs = xx.head(ns);
         auto xl = xx.segment(ns, nl);
         auto xu = xx.tail(nu);
+        auto xf = x.tail(nf);
 
         // Views to the sub-vectors in z = [zs zl zu zf]
         auto zx = z.head(nx);
         auto zs = zx.head(ns);
         auto zl = zx.segment(ns, nl);
         auto zu = zx.tail(nu);
+        auto zf = z.tail(nf);
 
         // Views to the sub-vectors in w = [ws wl wu wf]
         auto wx = w.head(nx);
         auto ws = wx.head(ns);
         auto wl = wx.segment(ns, nl);
         auto wu = wx.tail(nu);
+        auto wf = w.tail(nf);
 
         // Initialize a, b, c, d in the ordering x = [xs, xl, xu, xf]
-        ax.noalias() = rhs.a()(jx);
-        af.noalias() = rhs.a()(jf);
-         b.noalias() = rhs.b();
-        cx.noalias() = rhs.c()(jx);
-        cf.fill(0.0);
-        dx.noalias() = rhs.d()(jx);
-        df.fill(0.0);
-
-        // Store -al into zl and -au into wu
-        zl.noalias() = -al;
-        wu.noalias() = -au;
-
-        // Set sub-vectors (al, au) in a to zero
-        al.fill(0.0);
-        au.fill(0.0);
-
-        // Ensure (cf, df) are zero
-        cf.fill(0.0);
-        df.fill(0.0);
+        a.noalias() = rhs.a()(iordering);
+        b.noalias() = rhs.b();
+        c.noalias() = rhs.c()(iordering);
+        d.noalias() = rhs.d()(iordering);
 
         // Calculate as' = as + inv(Ls)*cs + inv(Us)*ds - Hsl*inv(Zl)*cl - Hsu*inv(Wu)*du
         as += cs/Ls + ds/Us - Hsl*(cl/Zl) - Hsu*(du/Wu);
@@ -334,21 +318,24 @@ struct IpSaddlePointSolver::Impl
         // Solve the saddle point problem
         res += kkt.solve({a, b}, {x, y});
 
-        // Calculate dzl and dwu
-        zl += Hls*xs + tr(Al)*y + Hll*(cl/Zl) + Hlu*(du/Wu) - dl/Ul;
-        wu += Hus*xs + tr(Au)*y + Hul*(cl/Zl) + Huu*(du/Wu) - cu/Lu;
+        // Calculate zl and wu
+        zl.noalias() = Hls*xs + tr(Al)*y + Hll*(cl/Zl) + Hlu*(du/Wu) - dl/Ul - al;
+        wu.noalias() = Hus*xs + tr(Au)*y + Hul*(cl/Zl) + Huu*(du/Wu) - cu/Lu - au;
 
-        // Calculate dxl and dxu
-        xl = (cl - Ll % zl)/Zl;
-        xu = (du - Uu % wu)/Wu;
+        // Calculate xl and xu
+        xl.noalias() = (cl - Ll % zl)/Zl;
+        xu.noalias() = (du - Uu % wu)/Wu;
+        xf.noalias() = af;
 
-        // Calculate dzs and dzu
-        zs = (cs - Zs % xs)/Ls;
-        zu = (cu - Zu % xu)/Lu;
+        // Calculate zs and zu
+        zs.noalias() = (cs - Zs % xs)/Ls;
+        zu.noalias() = (cu - Zu % xu)/Lu;
+        zf.noalias() = cf;
 
-        // Calculate dws and dwl
-        ws = (ds - Ws % xs)/Us;
-        wl = (dl - Wl % xl)/Ul;
+        // Calculate ws and wl
+        ws.noalias() = (ds - Ws % xs)/Us;
+        wl.noalias() = (dl - Wl % xl)/Ul;
+        wf.noalias() = df;
 
         // Permute the calculated (x z w) to their original order
         iordering.asPermutation().applyThisOnTheLeft(x);

@@ -48,7 +48,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
 
     SaddlePointSolver solver;
     solver.setOptions(options);
-    solver.canonicalize(lhs.A());
+    solver.initialize(lhs.A());
     solver.decompose(lhs);
     solver.solve(rhs, sol);
 
@@ -104,7 +104,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
     {                                                                          \
         options.method = SaddlePointMethod::FullPivLU;                         \
         SaddlePointSolver solver; solver.setOptions(options);                  \
-        solver.canonicalize(lhs.A());                                          \
+        solver.initialize(lhs.A());                                            \
         solver.decompose(lhs);                                                 \
         solver.solve(rhs, sol);                                                \
         double error = (lhs.matrix() * s - r).norm()/r.norm();                 \
@@ -115,7 +115,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
     {                                                                          \
         options.method = SaddlePointMethod::PartialPivLU;                      \
         SaddlePointSolver solver; solver.setOptions(options);                  \
-        solver.canonicalize(lhs.A());                                          \
+        solver.initialize(lhs.A());                                            \
         solver.decompose(lhs);                                                 \
         solver.solve(rhs, sol);                                                \
         double error = (lhs.matrix() * s - r).norm()/r.norm();                 \
@@ -126,7 +126,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
     {                                                                          \
         options.method = SaddlePointMethod::Nullspace;                         \
         SaddlePointSolver solver; solver.setOptions(options);                  \
-        solver.canonicalize(lhs.A());                                          \
+        solver.initialize(lhs.A());                                            \
         solver.decompose(lhs);                                                 \
         solver.solve(rhs, sol);                                                \
         double error = (lhs.matrix() * s - r).norm()/r.norm();                 \
@@ -139,7 +139,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
         SaddlePointMatrix lhsdiag(H, lhs.A(), lhs.G(), lhs.nx(), lhs.nf());    \
         options.method = SaddlePointMethod::RangespaceDiagonal;                \
         SaddlePointSolver solver; solver.setOptions(options);                  \
-        solver.canonicalize(lhs.A());                                          \
+        solver.initialize(lhs.A());                                            \
         solver.decompose(lhsdiag);                                             \
         solver.solve(rhs, sol);                                                \
         double error = (lhsdiag.matrix() * s - r).norm()/r.norm();             \
@@ -149,7 +149,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
     SUBCASE("When the order of the variables change...")                       \
     {                                                                          \
         SaddlePointSolver solver; solver.setOptions(options);                  \
-        solver.canonicalize(lhs.A());                                          \
+        solver.initialize(lhs.A());                                            \
         VectorXi ordering(n);                                                  \
         ordering.head(m).setLinSpaced(m, n - 1, n - m);                        \
         ordering.tail(n - m).setLinSpaced(n - m, 0, n - m);                    \

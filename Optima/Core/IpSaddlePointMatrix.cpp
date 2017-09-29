@@ -111,19 +111,20 @@ auto operator<<(MatrixXdRef mat, const IpSaddlePointMatrix& lhs) -> MatrixXdRef
     
     const auto Hx = lhs.H().topLeftCorner(nx, nx);
     const auto Ax = lhs.A().leftCols(nx);
-    const auto Ix = identity(nx, nx);
-    const auto Of = zeros(nx, nx);
     const auto Zx = Z.head(nx);
     const auto Wx = W.head(nx);
     const auto Lx = L.head(nx);
     const auto Ux = U.head(nx);
 
     mat = zeros(t, t);
-    mat.topRows(nx) << Hx, Of, tr(Ax), -Ix, Of, -Ix, Of;
-    mat.block(nx, nx, nf, nf).diagonal().fill(1.0);
-    mat.block(n, 0, m, n) = A;
-    mat.block(n + m, 0, nx, nx).diagonal() = Zx;
-    mat.block(2*n + m, 0, nx, nx).diagonal() = Wx;
+    mat.topRows(nx).leftCols(nx) = Hx;
+    mat.topRows(nx).middleCols(n, m) = tr(Ax);
+    mat.topRows(nx).middleCols(n + m, nx).diagonal().fill(-1.0);
+    mat.topRows(nx).middleCols(n + m + n, nx).diagonal().fill(-1.0);
+    mat.middleRows(nx, nf).middleCols(nx, nf).diagonal().fill(1.0);
+    mat.middleRows(n, m).leftCols(n) = A;
+    mat.middleRows(n + m, nx).leftCols(nx).diagonal() = Zx;
+    mat.middleRows(n + m + n, nx).leftCols(nx).diagonal() = Wx;
     mat.bottomRightCorner(2*n, 2*n).diagonal() << Lx, ones(nf), Ux, ones(nf);
     return mat;
 }
