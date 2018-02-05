@@ -42,7 +42,7 @@ TEST_CASE("Testing SaddlePointMatrix...")
     };
 
     // Check conversion to a Matrix instance
-    CHECK(M.isApprox(mat.matrix()));
+    REQUIRE(M.isApprox(mat.matrix()));
 
     SECTION("Testing conversion when some variables are fixed")
     {
@@ -56,7 +56,7 @@ TEST_CASE("Testing SaddlePointMatrix...")
         M.block(nx, nx, nf, nf) = identity(nf, nf);
 
         // Check conversion to a Matrix instance
-        CHECK(M.isApprox(mat.matrix()));
+        REQUIRE(M.isApprox(mat.matrix()));
     }
 }
 
@@ -70,6 +70,6 @@ TEST_CASE("Testing SaddlePointVector...")
 
     SaddlePointVector vec(r, n, m);
 
-    CHECK(r.head(n).isApprox(vec.a()));
-    CHECK(r.tail(m).isApprox(vec.b()));
+    REQUIRE(r.head(n).isApprox(vec.a()));
+    REQUIRE(r.tail(m).isApprox(vec.b()));
 }

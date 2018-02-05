@@ -152,7 +152,7 @@ TEST_CASE("Testing OptimumStepper")
 //
 //        PRINT_STATE;
 //
-//        CHECK(norm(res)/norm(r) == Approx(0.0));
+//        REQUIRE(norm(res)/norm(r) == Approx(0.0));
 //    }
 //
 //    SECTION("When there are lower/upper bounds, but all variables are stable.")
@@ -167,7 +167,7 @@ TEST_CASE("Testing OptimumStepper")
 //
 //        PRINT_STATE;
 //
-//        CHECK(norm(res)/norm(r) == Approx(0.0));
+//        REQUIRE(norm(res)/norm(r) == Approx(0.0));
 //    }
 
     SECTION("When the last `m = nrows(A)` variables are lower unstable.")
@@ -182,7 +182,7 @@ TEST_CASE("Testing OptimumStepper")
 
         PRINT_STATE;
 
-        CHECK(norm(res)/norm(r) == Approx(0.0));
+        REQUIRE(norm(res)/norm(r) == Approx(0.0));
     }
 
 //    SECTION("When the last `m = nrows(A)` variables are upper unstable.")
@@ -197,7 +197,7 @@ TEST_CASE("Testing OptimumStepper")
 //
 //        PRINT_STATE;
 //
-//        CHECK(norm(res)/norm(r) == Approx(0.0));
+//        REQUIRE(norm(res)/norm(r) == Approx(0.0));
 //    }
 //
 //    SECTION("When the last `m = nrows(A)` variables are lower unstable and Huu has large diagonal entries.")
@@ -213,7 +213,7 @@ TEST_CASE("Testing OptimumStepper")
 //
 //        PRINT_STATE;
 //
-//        CHECK(norm(res)/norm(r) == Approx(0.0));
+//        REQUIRE(norm(res)/norm(r) == Approx(0.0));
 //    }
 //
 //    SECTION("When the saddle point problem corresponds to a linear programming problem.")
@@ -230,6 +230,6 @@ TEST_CASE("Testing OptimumStepper")
 //
 //        PRINT_STATE;
 //
-//        CHECK(norm(res)/norm(r) == Approx(0.0));
+//        REQUIRE(norm(res)/norm(r) == Approx(0.0));
 //    }
 }

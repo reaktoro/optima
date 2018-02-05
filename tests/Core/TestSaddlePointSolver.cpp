@@ -53,7 +53,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
     solver.solve(rhs, sol);
 
     double error = (lhs.matrix() * s - r).norm()/r.norm();
-    CHECK(Approx(error) == 0.0);
+    REQUIRE(Approx(error) == 0.0);
 
 //    SECTION("When the order of the variables change...")
 //    {
@@ -76,7 +76,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
 //        std::cout << "s1 = " << tr(s1) << std::endl;
 //        std::cout << "s2 = " << tr(s) << std::endl;
 //        error = (lhsnew.matrix() * s1 - r).norm()/r.norm();
-//        CHECK(Approx(error) == 0.0);
+//        REQUIRE(Approx(error) == 0.0);
 //    }
 
 //    SECTION("When matrix G is empty and then equivalent to zero...")
@@ -86,7 +86,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
 //        solver.decompose(lhsnew);
 //        solver.solve(lhsnew, rhs, sol);
 //        double error = (lhsnew.matrix() * s - r).norm()/r.norm();
-//        CHECK(Approx(error) == 0.0);
+//        REQUIRE(Approx(error) == 0.0);
 //    }
 }
 
@@ -108,7 +108,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
         solver.decompose(lhs);                                                 \
         solver.solve(rhs, sol);                                                \
         double error = (lhs.matrix() * s - r).norm()/r.norm();                 \
-        CHECK(Approx(error) == 0.0);                                           \
+        REQUIRE(Approx(error) == 0.0);                                           \
     }                                                                          \
                                                                                \
     SECTION("When using PartialPivLU")                                         \
@@ -119,7 +119,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
         solver.decompose(lhs);                                                 \
         solver.solve(rhs, sol);                                                \
         double error = (lhs.matrix() * s - r).norm()/r.norm();                 \
-        CHECK(Approx(error) == 0.0);                                           \
+        REQUIRE(Approx(error) == 0.0);                                           \
     }                                                                          \
                                                                                \
     SECTION("When using Nullspace")                                            \
@@ -130,7 +130,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
         solver.decompose(lhs);                                                 \
         solver.solve(rhs, sol);                                                \
         double error = (lhs.matrix() * s - r).norm()/r.norm();                 \
-        CHECK(Approx(error) == 0.0);                                           \
+        REQUIRE(Approx(error) == 0.0);                                           \
     }                                                                          \
                                                                                \
     SECTION("When using RangespaceDiagonal")                                   \
@@ -143,7 +143,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
         solver.decompose(lhsdiag);                                             \
         solver.solve(rhs, sol);                                                \
         double error = (lhsdiag.matrix() * s - r).norm()/r.norm();             \
-        CHECK(Approx(error) == 0.0);                                           \
+        REQUIRE(Approx(error) == 0.0);                                           \
     }                                                                          \
                                                                                \
     SECTION("When the order of the variables change...")                       \
@@ -163,7 +163,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
         solver.decompose(lhsnew);                                              \
         solver.solve(rhs, sol);                                                \
         double error = (lhsnew.matrix() * s - r).norm()/r.norm();              \
-        CHECK(Approx(error) == 0.0);                                           \
+        REQUIRE(Approx(error) == 0.0);                                           \
     }                                                                          \
 }                                                                              \
 

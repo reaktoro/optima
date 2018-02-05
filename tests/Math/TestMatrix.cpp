@@ -33,16 +33,16 @@ TEST_CASE("Testing Matrix")
     auto E = cols(cols(A, irows1), irows2);
     auto F = submatrix(A, irows1, irows1);
 
-    CHECK(A.row(1).isApprox(B.row(0)));
-    CHECK(A.row(2).isApprox(B.row(1)));
-    CHECK(A.row(2).isApprox(C.row(0)));
-    CHECK(A.col(1).isApprox(D.col(0)));
-    CHECK(A.col(2).isApprox(D.col(1)));
-    CHECK(A.col(2).isApprox(E.col(0)));
-    CHECK(A(1, 1) == F(0, 0));
-    CHECK(A(1, 2) == F(0, 1));
-    CHECK(A(2, 1) == F(1, 0));
-    CHECK(A(2, 2) == F(1, 1));
+    REQUIRE(A.row(1).isApprox(B.row(0)));
+    REQUIRE(A.row(2).isApprox(B.row(1)));
+    REQUIRE(A.row(2).isApprox(C.row(0)));
+    REQUIRE(A.col(1).isApprox(D.col(0)));
+    REQUIRE(A.col(2).isApprox(D.col(1)));
+    REQUIRE(A.col(2).isApprox(E.col(0)));
+    REQUIRE(A(1, 1) == F(0, 0));
+    REQUIRE(A(1, 2) == F(0, 1));
+    REQUIRE(A(2, 1) == F(1, 0));
+    REQUIRE(A(2, 2) == F(1, 1));
 }
 
 TEST_CASE("Testing const Matrix")
@@ -56,16 +56,16 @@ TEST_CASE("Testing const Matrix")
     auto E = cols(cols(A, irows1), irows2);
     auto F = submatrix(A, irows1, irows1);
 
-    CHECK(A.row(1).isApprox(B.row(0)));
-    CHECK(A.row(2).isApprox(B.row(1)));
-    CHECK(A.row(2).isApprox(C.row(0)));
-    CHECK(A.col(1).isApprox(D.col(0)));
-    CHECK(A.col(2).isApprox(D.col(1)));
-    CHECK(A.col(2).isApprox(E.col(0)));
-    CHECK(A(1, 1) == F(0, 0));
-    CHECK(A(1, 2) == F(0, 1));
-    CHECK(A(2, 1) == F(1, 0));
-    CHECK(A(2, 2) == F(1, 1));
+    REQUIRE(A.row(1).isApprox(B.row(0)));
+    REQUIRE(A.row(2).isApprox(B.row(1)));
+    REQUIRE(A.row(2).isApprox(C.row(0)));
+    REQUIRE(A.col(1).isApprox(D.col(0)));
+    REQUIRE(A.col(2).isApprox(D.col(1)));
+    REQUIRE(A.col(2).isApprox(E.col(0)));
+    REQUIRE(A(1, 1) == F(0, 0));
+    REQUIRE(A(1, 2) == F(0, 1));
+    REQUIRE(A(2, 1) == F(1, 0));
+    REQUIRE(A(2, 2) == F(1, 1));
 }
 
 

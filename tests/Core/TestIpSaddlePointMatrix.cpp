@@ -52,7 +52,7 @@ TEST_CASE("Testing IpSaddlePointMatrix...")
     };
 
     // Check conversion to a Matrix instance
-    CHECK(M.isApprox(mat.matrix()));
+    REQUIRE(M.isApprox(mat.matrix()));
 
     SECTION("Testing conversion when some variables are fixed")
     {
@@ -70,7 +70,7 @@ TEST_CASE("Testing IpSaddlePointMatrix...")
         M.bottomRightCorner(2*n, 2*n).diagonal().tail(nf).fill(1.0);
 
         // Check conversion to a Matrix instance
-        CHECK(M.isApprox(mat.matrix()));
+        REQUIRE(M.isApprox(mat.matrix()));
     }
 }
 
@@ -84,8 +84,8 @@ TEST_CASE("Testing IpSaddlePointVector...")
 
     IpSaddlePointVector vec(r, n, m);
 
-    CHECK(r.head(n).isApprox(vec.a()));
-    CHECK(r.segment(n, m).isApprox(vec.b()));
-    CHECK(r.segment(n + m, n).isApprox(vec.c()));
-    CHECK(r.tail(n).isApprox(vec.d()));
+    REQUIRE(r.head(n).isApprox(vec.a()));
+    REQUIRE(r.segment(n, m).isApprox(vec.b()));
+    REQUIRE(r.segment(n + m, n).isApprox(vec.c()));
+    REQUIRE(r.tail(n).isApprox(vec.d()));
 }

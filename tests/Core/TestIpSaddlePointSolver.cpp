@@ -114,7 +114,7 @@ TEST_CASE("Testing IpSaddlePointSolver")
         PRINT_STATE;
 
         // Check the residual of the equation Ms = r
-        CHECK(norm(M*s - r)/norm(r) == Approx(0.0));
+        REQUIRE(norm(M*s - r)/norm(r) == Approx(0.0));
     };
 
 //    SECTION("When all variables are free.")

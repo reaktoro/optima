@@ -26,7 +26,7 @@ TEST_CASE("Testing HessianMatrix when in Zero mode")
     HessianMatrix H;
     H.zero(10);
 
-    CHECK(zeros(10, 10).isApprox(H.convert()));
+    REQUIRE(zeros(10, 10).isApprox(H.convert()));
 }
 
 TEST_CASE("Testing HessianMatrix when in Diagonal mode")
@@ -34,7 +34,7 @@ TEST_CASE("Testing HessianMatrix when in Diagonal mode")
     HessianMatrix H;
     H.diagonal(10).fill(1.0);
 
-    CHECK(identity(10, 10).isApprox(H.convert()));
+    REQUIRE(identity(10, 10).isApprox(H.convert()));
 
     Vector r1 = random(3);
     Vector r2 = random(5);
@@ -46,7 +46,7 @@ TEST_CASE("Testing HessianMatrix when in Diagonal mode")
     A.diagonal().head(3) = r1;
     A.diagonal().tail(5) = r2;
 
-    CHECK(A.isApprox(H.convert()));
+    REQUIRE(A.isApprox(H.convert()));
 }
 
 TEST_CASE("Testing HessianMatrix when in Dense mode")
@@ -54,7 +54,7 @@ TEST_CASE("Testing HessianMatrix when in Dense mode")
     HessianMatrix H;
     H.dense(10).fill(1.0);
 
-    CHECK(ones(10, 10).isApprox(H.convert()));
+    REQUIRE(ones(10, 10).isApprox(H.convert()));
 
     Matrix r1 = random(3, 3);
     Matrix r2 = random(5, 5);
@@ -66,7 +66,7 @@ TEST_CASE("Testing HessianMatrix when in Dense mode")
     A.topLeftCorner(3, 3)     = r1;
     A.bottomRightCorner(5, 5) = r2;
 
-    CHECK(A.isApprox(H.convert()));
+    REQUIRE(A.isApprox(H.convert()));
 }
 
 TEST_CASE("Testing HessianMatrix when in EigenDecomp mode")
@@ -79,5 +79,5 @@ TEST_CASE("Testing HessianMatrix when in EigenDecomp mode")
 
     Matrix A = eigen.eigenvectors * diag(eigen.eigenvalues) * eigen.eigenvectorsinv;
 
-    CHECK(A.isApprox(H.convert()));
+    REQUIRE(A.isApprox(H.convert()));
 }

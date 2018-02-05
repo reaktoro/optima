@@ -40,8 +40,8 @@ TEST_CASE("Testing BlockDiagonalMatrix - square matrix")
 	A.block(1) = M.block(3, 3, 2, 2);
 	A.block(2) = M.block(5, 5, 1, 1);
 
-	CHECK(A.isApprox(M));
-	CHECK(M.isApprox(MatrixXd(A)));
+	REQUIRE(A.isApprox(M));
+	REQUIRE(M.isApprox(MatrixXd(A)));
 }
 
 TEST_CASE("Testing BlockDiagonalMatrix - rectangular matrix m < n")
@@ -60,8 +60,8 @@ TEST_CASE("Testing BlockDiagonalMatrix - rectangular matrix m < n")
 	A.block(0) = M.block(0, 0, 3, 3);
 	A.block(1) = M.block(3, 3, 2, 3);
 
-	CHECK(A.isApprox(M));
-	CHECK(M.isApprox(MatrixXd(A)));
+	REQUIRE(A.isApprox(M));
+	REQUIRE(M.isApprox(MatrixXd(A)));
 }
 
 TEST_CASE("Testing BlockDiagonalMatrix - rectangular matrix m < n")
@@ -81,7 +81,7 @@ TEST_CASE("Testing BlockDiagonalMatrix - rectangular matrix m < n")
 	A.block(0) = M.block(0, 0, 3, 3);
 	A.block(1) = M.block(3, 3, 3, 2);
 
-	CHECK(A.isApprox(M));
-	CHECK(M.isApprox(MatrixXd(A)));
+	REQUIRE(A.isApprox(M));
+	REQUIRE(M.isApprox(MatrixXd(A)));
 }
 
