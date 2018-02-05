@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include <doctest/doctest.hpp>
+#include <catch/catch.hpp>
 
 // Optima includes
 #include <Optima/Core/IpSaddlePointMatrix.hpp>
@@ -54,7 +54,7 @@ TEST_CASE("Testing IpSaddlePointMatrix...")
     // Check conversion to a Matrix instance
     CHECK(M.isApprox(mat.matrix()));
 
-    SUBCASE("Testing conversion when some variables are fixed")
+    SECTION("Testing conversion when some variables are fixed")
     {
         nx = 2;
         nf = 1;

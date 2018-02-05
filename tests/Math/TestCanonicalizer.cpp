@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include <doctest/doctest.hpp>
+#include <catch/catch.hpp>
 
 // Optima includes
 #include <Optima/Common/Index.hpp>
@@ -28,7 +28,7 @@ using namespace Optima;
     const auto& R = canonicalizer.R();                           \
     const auto& Q = canonicalizer.Q();                           \
     const auto& C = canonicalizer.C();                           \
-    CHECK((R * A * Q - C).norm() == approx(0.0));                \
+    CHECK((R * A * Q - C).norm() == Approx(0.0));                \
 }                                                                \
 
 #define CHECK_CANONICAL_ORDERING                                 \
@@ -65,7 +65,7 @@ TEST_CASE("Testing Canonicalizer")
 		}
 	}
 
-	SUBCASE("When the ordering of the variables are changed...")
+	SECTION("When the ordering of the variables are changed...")
 	{
         VectorXi ordering(n);
         ordering.head(m).setLinSpaced(m, n - 1, n - m);
@@ -77,7 +77,7 @@ TEST_CASE("Testing Canonicalizer")
 
         CHECK_CANONICAL_FORM
 
-        SUBCASE("And then an update with weights for basic and non-basic partition...")
+        SECTION("And then an update with weights for basic and non-basic partition...")
         {
             VectorXd weights = abs(random(n)) + 1.0;
 

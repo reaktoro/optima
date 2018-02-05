@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include <doctest/doctest.hpp>
+#include <catch/catch.hpp>
 
 // C++ includes
 #include <iostream>
@@ -53,9 +53,9 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
     solver.solve(rhs, sol);
 
     double error = (lhs.matrix() * s - r).norm()/r.norm();
-    CHECK(approx(error) == 0.0);
+    CHECK(Approx(error) == 0.0);
 
-//    SUBCASE("When the order of the variables change...")
+//    SECTION("When the order of the variables change...")
 //    {
 //        VectorXi ordering(n);
 //        ordering.head(m).setLinSpaced(m, n - 1, n - m);
@@ -76,17 +76,17 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
 //        std::cout << "s1 = " << tr(s1) << std::endl;
 //        std::cout << "s2 = " << tr(s) << std::endl;
 //        error = (lhsnew.matrix() * s1 - r).norm()/r.norm();
-//        CHECK(approx(error) == 0.0);
+//        CHECK(Approx(error) == 0.0);
 //    }
 
-//    SUBCASE("When matrix G is empty and then equivalent to zero...")
+//    SECTION("When matrix G is empty and then equivalent to zero...")
 //    {
 //        MatrixXd G;
 //        SaddlePointMatrix lhsnew(lhs.H(), lhs.A(), G, lhs.fixed());
 //        solver.decompose(lhsnew);
 //        solver.solve(lhsnew, rhs, sol);
 //        double error = (lhsnew.matrix() * s - r).norm()/r.norm();
-//        CHECK(approx(error) == 0.0);
+//        CHECK(Approx(error) == 0.0);
 //    }
 }
 
@@ -100,7 +100,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
     SaddlePointVector rhs(r, n, m);                                            \
     SaddlePointSolution sol(s, n, m);                                          \
                                                                                \
-    SUBCASE("When using FullPivLU")                                            \
+    SECTION("When using FullPivLU")                                            \
     {                                                                          \
         options.method = SaddlePointMethod::FullPivLU;                         \
         SaddlePointSolver solver; solver.setOptions(options);                  \
@@ -108,10 +108,10 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
         solver.decompose(lhs);                                                 \
         solver.solve(rhs, sol);                                                \
         double error = (lhs.matrix() * s - r).norm()/r.norm();                 \
-        CHECK(approx(error) == 0.0);                                           \
+        CHECK(Approx(error) == 0.0);                                           \
     }                                                                          \
                                                                                \
-    SUBCASE("When using PartialPivLU")                                         \
+    SECTION("When using PartialPivLU")                                         \
     {                                                                          \
         options.method = SaddlePointMethod::PartialPivLU;                      \
         SaddlePointSolver solver; solver.setOptions(options);                  \
@@ -119,10 +119,10 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
         solver.decompose(lhs);                                                 \
         solver.solve(rhs, sol);                                                \
         double error = (lhs.matrix() * s - r).norm()/r.norm();                 \
-        CHECK(approx(error) == 0.0);                                           \
+        CHECK(Approx(error) == 0.0);                                           \
     }                                                                          \
                                                                                \
-    SUBCASE("When using Nullspace")                                            \
+    SECTION("When using Nullspace")                                            \
     {                                                                          \
         options.method = SaddlePointMethod::Nullspace;                         \
         SaddlePointSolver solver; solver.setOptions(options);                  \
@@ -130,10 +130,10 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
         solver.decompose(lhs);                                                 \
         solver.solve(rhs, sol);                                                \
         double error = (lhs.matrix() * s - r).norm()/r.norm();                 \
-        CHECK(approx(error) == 0.0);                                           \
+        CHECK(Approx(error) == 0.0);                                           \
     }                                                                          \
                                                                                \
-    SUBCASE("When using RangespaceDiagonal")                                   \
+    SECTION("When using RangespaceDiagonal")                                   \
     {                                                                          \
         MatrixXd H = diag(lhs.H().diagonal());                                 \
         SaddlePointMatrix lhsdiag(H, lhs.A(), lhs.G(), lhs.nx(), lhs.nf());    \
@@ -143,10 +143,10 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
         solver.decompose(lhsdiag);                                             \
         solver.solve(rhs, sol);                                                \
         double error = (lhsdiag.matrix() * s - r).norm()/r.norm();             \
-        CHECK(approx(error) == 0.0);                                           \
+        CHECK(Approx(error) == 0.0);                                           \
     }                                                                          \
                                                                                \
-    SUBCASE("When the order of the variables change...")                       \
+    SECTION("When the order of the variables change...")                       \
     {                                                                          \
         SaddlePointSolver solver; solver.setOptions(options);                  \
         solver.initialize(lhs.A());                                            \
@@ -163,7 +163,7 @@ void testSaddlePointSolver(SaddlePointMatrix lhs, SaddlePointOptions options)
         solver.decompose(lhsnew);                                              \
         solver.solve(rhs, sol);                                                \
         double error = (lhsnew.matrix() * s - r).norm()/r.norm();              \
-        CHECK(approx(error) == 0.0);                                           \
+        CHECK(Approx(error) == 0.0);                                           \
     }                                                                          \
 }                                                                              \
 
@@ -190,12 +190,12 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
 
     VectorXd expected = linspace(t, 1, t);
 
-    SUBCASE("When there are no fixed variables")
+    SECTION("When there are no fixed variables")
     {
         TEST_SADDLE_POINT_SOLVER();
     }
 
-    SUBCASE("When there are fixed variables")
+    SECTION("When there are fixed variables")
     {
         nf = 6;
         nx = n - nf;
@@ -203,7 +203,7 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
         TEST_SADDLE_POINT_SOLVER();
     }
 
-    SUBCASE("When there are many fixed variables enough to degenerate the problem")
+    SECTION("When there are many fixed variables enough to degenerate the problem")
     {
         // Modify matrix A so that its first row has zeros for all entries corresponding to free variables.
         // Set the fixed variables as the variables that have such entries positive.
@@ -215,7 +215,7 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
         TEST_SADDLE_POINT_SOLVER();
     }
 
-    SUBCASE("When there are linearly dependent rows and many fixed variables enough to degenerate the problem")
+    SECTION("When there are linearly dependent rows and many fixed variables enough to degenerate the problem")
     {
         // Modify matrix A so that its first row has zeros for all entries corresponding to free variables.
         // Set the fixed variables as the variables that have such entries positive.
@@ -229,13 +229,13 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
 
         TEST_SADDLE_POINT_SOLVER();
 
-//        SUBCASE("When A has large entries")
+//        SECTION("When A has large entries")
 //        {
 //            A *= 1e6;
 //            TEST_SADDLE_POINT_SOLVER(options);
 //        }
 //
-//        SUBCASE("When A has rational entries")
+//        SECTION("When A has rational entries")
 //        {
 //            MatrixXi Anum = random<int>(m, n);
 //            MatrixXi Aden = random<int>(m, n);
@@ -247,23 +247,23 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
 //        }
     }
 
-    SUBCASE("When the system corresponds to one from a linear programming problem")
+    SECTION("When the system corresponds to one from a linear programming problem")
     {
-        SUBCASE("When all variables are stable...")
+        SECTION("When all variables are stable...")
         {
             H.fill(0.0);
             H.diagonal().fill(1e-13);
             TEST_SADDLE_POINT_SOLVER();
         }
 
-        SUBCASE("When all variables are unstable...")
+        SECTION("When all variables are unstable...")
         {
             H.fill(0.0);
             H.diagonal().fill(1e+13);
             TEST_SADDLE_POINT_SOLVER();
         }
 
-        SUBCASE("When `m` variables are stable...")
+        SECTION("When `m` variables are stable...")
         {
             H.fill(0.0);
             H.diagonal().fill(1e+13);
@@ -271,7 +271,7 @@ TEST_CASE("Testing SaddlePointSolver with other methods.")
             TEST_SADDLE_POINT_SOLVER();
         }
 
-        SUBCASE("When `m - 1` variables are stable...")
+        SECTION("When `m - 1` variables are stable...")
         {
             H.fill(0.0);
             H.diagonal().fill(1e+13);

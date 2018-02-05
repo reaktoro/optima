@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include <doctest/doctest.hpp>
+#include <catch/catch.hpp>
 
 // Eigen includes
 #include <Eigenx/LU.hpp>
@@ -145,17 +145,17 @@ TEST_CASE("Testing OptimumStepper")
         return M*step - r;
     };
 
-//    SUBCASE("When there are no lower/upper bounds.")
+//    SECTION("When there are no lower/upper bounds.")
 //    {
 //        VectorXd step = compute_step();
 //        VectorXd res = compute_residual(step);
 //
 //        PRINT_STATE;
 //
-//        CHECK(norm(res)/norm(r) == approx(0.0));
+//        CHECK(norm(res)/norm(r) == Approx(0.0));
 //    }
 //
-//    SUBCASE("When there are lower/upper bounds, but all variables are stable.")
+//    SECTION("When there are lower/upper bounds, but all variables are stable.")
 //    {
 //        l = zeros(n);
 //        u = ones(n);
@@ -167,10 +167,10 @@ TEST_CASE("Testing OptimumStepper")
 //
 //        PRINT_STATE;
 //
-//        CHECK(norm(res)/norm(r) == approx(0.0));
+//        CHECK(norm(res)/norm(r) == Approx(0.0));
 //    }
 
-    SUBCASE("When the last `m = nrows(A)` variables are lower unstable.")
+    SECTION("When the last `m = nrows(A)` variables are lower unstable.")
     {
         l = zeros(n);
         u = ones(n);
@@ -182,10 +182,10 @@ TEST_CASE("Testing OptimumStepper")
 
         PRINT_STATE;
 
-        CHECK(norm(res)/norm(r) == approx(0.0));
+        CHECK(norm(res)/norm(r) == Approx(0.0));
     }
 
-//    SUBCASE("When the last `m = nrows(A)` variables are upper unstable.")
+//    SECTION("When the last `m = nrows(A)` variables are upper unstable.")
 //    {
 //        l = zeros(n);
 //        u = ones(n);
@@ -197,10 +197,10 @@ TEST_CASE("Testing OptimumStepper")
 //
 //        PRINT_STATE;
 //
-//        CHECK(norm(res)/norm(r) == approx(0.0));
+//        CHECK(norm(res)/norm(r) == Approx(0.0));
 //    }
 //
-//    SUBCASE("When the last `m = nrows(A)` variables are lower unstable and Huu has large diagonal entries.")
+//    SECTION("When the last `m = nrows(A)` variables are lower unstable and Huu has large diagonal entries.")
 //    {
 //        l = zeros(n);
 //        u = ones(n);
@@ -213,10 +213,10 @@ TEST_CASE("Testing OptimumStepper")
 //
 //        PRINT_STATE;
 //
-//        CHECK(norm(res)/norm(r) == approx(0.0));
+//        CHECK(norm(res)/norm(r) == Approx(0.0));
 //    }
 //
-//    SUBCASE("When the saddle point problem corresponds to a linear programming problem.")
+//    SECTION("When the saddle point problem corresponds to a linear programming problem.")
 //    {
 //        l = zeros(n);
 //        g = abs(g);
@@ -230,6 +230,6 @@ TEST_CASE("Testing OptimumStepper")
 //
 //        PRINT_STATE;
 //
-//        CHECK(norm(res)/norm(r) == approx(0.0));
+//        CHECK(norm(res)/norm(r) == Approx(0.0));
 //    }
 }

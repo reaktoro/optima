@@ -15,10 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include <doctest/doctest.hpp>
+#include <catch/catch.hpp>
 
 // C++ includes
 #include <iostream>
+#include <iomanip>
 
 // Eigen includes
 #include <Eigenx/LU.hpp>
@@ -113,15 +114,15 @@ TEST_CASE("Testing IpSaddlePointSolver")
         PRINT_STATE;
 
         // Check the residual of the equation Ms = r
-        CHECK(norm(M*s - r)/norm(r) == approx(0.0));
+        CHECK(norm(M*s - r)/norm(r) == Approx(0.0));
     };
 
-//    SUBCASE("When all variables are free.")
+//    SECTION("When all variables are free.")
 //    {
 //        check();
 //    }
 //
-//    SUBCASE("When m variables are fixed.")
+//    SECTION("When m variables are fixed.")
 //    {
 //        nx = n - m;
 //        nf = m;
@@ -129,7 +130,7 @@ TEST_CASE("Testing IpSaddlePointSolver")
 //        check();
 //    }
 
-    SUBCASE("When some entries in L are very small.")
+    SECTION("When some entries in L are very small.")
     {
         L.head(1).fill(1e-16); // this works
 //        L.tail(1).fill(1e-16); // this does not work
