@@ -17,6 +17,12 @@
 
 #include "IpSaddlePointSolver.hpp"
 
+
+#include <iostream>
+
+
+
+
 // Optima includes
 #include <Optima/Common/Exception.hpp>
 #include <Optima/Core/IpSaddlePointMatrix.hpp>
@@ -118,13 +124,13 @@ struct IpSaddlePointSolver::Impl
         // Define the function that determines if variable x[i] is lower unstable
         auto lower_unstable = [&](Index i)
         {
-           return std::abs(L[i]) <= eps && std::abs(Z[i]) >= eps;
+           return std::abs(L[i]) <= eps && std::abs(Z[i]) >= eps && std::abs(W[i]) <= eps;
         };
 
         // Define the function that determines if variable x[i] is upper unstable
         auto upper_unstable = [&](Index i)
         {
-           return std::abs(U[i]) <= eps && std::abs(W[i]) >= eps;
+           return std::abs(U[i]) <= eps && std::abs(W[i]) >= eps && std::abs(Z[i]) <= eps;
         };
 
         // Define the function that determines if variable x[i] is stable
@@ -136,7 +142,7 @@ struct IpSaddlePointSolver::Impl
         // Partition the free variables into stable and unstable: xx = [x(stable) x(unstable)]
         auto is = std::partition(iordering.data(), iordering.data() + nx, stable);
 
-        // Partition the stable and lower unstable variables: xsl = [xs xl]
+        // Partition the unstable variables into lower and upper unstable variables: x(unstable) = [xl xu]
         auto il = std::partition(is, iordering.data() + nx, lower_unstable);
 
         // Update the number of stable, lower unstable, and upper unstable variables
@@ -312,6 +318,13 @@ struct IpSaddlePointSolver::Impl
         // Calculate as' = as + inv(Ls)*cs + inv(Us)*ds - Hsl*inv(Zl)*cl - Hsu*inv(Wu)*du
         as += cs/Ls + ds/Us - Hsl*(cl/Zl) - Hsu*(du/Wu);
 
+        zl.noalias() = -al;
+        wu.noalias() = -au;
+
+        al.fill(0.0);
+        au.fill(0.0);
+        af.fill(0.0);
+
         // Calculate b' = b - Al*inv(Zl)*cl - Au*inv(Wu)*du
         b -= Al*(cl/Zl) + Au*(du/Wu);
 
@@ -319,8 +332,8 @@ struct IpSaddlePointSolver::Impl
         res += kkt.solve({a, b}, {x, y});
 
         // Calculate zl and wu
-        zl.noalias() = Hls*xs + tr(Al)*y + Hll*(cl/Zl) + Hlu*(du/Wu) - dl/Ul - al;
-        wu.noalias() = Hus*xs + tr(Au)*y + Hul*(cl/Zl) + Huu*(du/Wu) - cu/Lu - au;
+        zl.noalias() += Hls*xs + tr(Al)*y + Hll*(cl/Zl) + Hlu*(du/Wu) - dl/Ul;
+        wu.noalias() += Hus*xs + tr(Au)*y + Hul*(cl/Zl) + Huu*(du/Wu) - cu/Lu;
 
         // Calculate xl and xu
         xl.noalias() = (cl - Ll % zl)/Zl;

@@ -30,9 +30,9 @@ using namespace Eigen;
 #include <Optima/Math/Matrix.hpp>
 using namespace Optima;
 
+
 #define PRINT_STATE                                                         \
 {                                                                           \
-    std::cout << std::setprecision(10); \
     VectorXd s = M.fullPivLu().solve(r);                                    \
     std::cout << "M = \n" << M << std::endl;                                \
     std::cout << "r         = " << tr(r) << std::endl;                           \
