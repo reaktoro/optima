@@ -28,7 +28,7 @@ using namespace Optima;
     const auto& R = canonicalizer.R();                           \
     const auto& Q = canonicalizer.Q();                           \
     const auto& C = canonicalizer.C();                           \
-    CHECK((R * A * Q - C).norm() == Approx(0.0));                \
+    REQUIRE((R * A * Q - C).norm() == Approx(0.0));                \
 }                                                                \
 
 #define CHECK_CANONICAL_ORDERING                                 \
@@ -38,9 +38,9 @@ using namespace Optima;
     auto ibasic = canonicalizer.Q().indices().head(r);           \
     auto inonbasic = canonicalizer.Q().indices().tail(n - r);    \
     for(Index i = 1; i < ibasic.size(); ++i)                     \
-        CHECK(w[ibasic[i]] <= w[ibasic[i - 1]]);                 \
+        REQUIRE(w[ibasic[i]] <= w[ibasic[i - 1]]);                 \
     for(Index i = 1; i < inonbasic.size(); ++i)                  \
-        CHECK(w[inonbasic[i]] <= w[inonbasic[i - 1]]);           \
+        REQUIRE(w[inonbasic[i]] <= w[inonbasic[i - 1]]);           \
 }                                                                \
 
 TEST_CASE("Testing Canonicalizer")
@@ -128,7 +128,7 @@ TEST_CASE("Testing the update method of the Canonicalizer class")
 
     const Index r = canonicalizer.numBasicVariables();
 
-	CHECK(r == 3);
+	REQUIRE(r == 3);
 	CHECK_CANONICAL_FORM
 
 	VectorXd w = {55.1, 1.e-4, 1.e-10, 0.1, 0.5, 1e-2};
@@ -141,7 +141,7 @@ TEST_CASE("Testing the update method of the Canonicalizer class")
 	Eigen::VectorXi expectedQ = {0, 4, 3, 5, 1, 2};
 	Eigen::VectorXi actualQ = canonicalizer.Q().indices();
 
-	CHECK(expectedQ.isApprox(actualQ));
+	REQUIRE(expectedQ.isApprox(actualQ));
 
 	w = {55.1, 1.e-4, 1.e-10, 0.3, 0.1, 0.8};
 
@@ -153,7 +153,7 @@ TEST_CASE("Testing the update method of the Canonicalizer class")
 	expectedQ = {0, 5, 3, 4, 1, 2};
 	actualQ = canonicalizer.Q().indices();
 
-	CHECK(expectedQ.isApprox(actualQ));
+	REQUIRE(expectedQ.isApprox(actualQ));
 }
 
 TEST_CASE("Testing the update method of the Canonicalizer class with fixed variables")
@@ -170,7 +170,7 @@ TEST_CASE("Testing the update method of the Canonicalizer class with fixed varia
 
     const Index r = canonicalizer.numBasicVariables();
 
-    CHECK(r == 3);
+    REQUIRE(r == 3);
     CHECK_CANONICAL_FORM
 
     Indices ifixed = {3, 4, 5};
@@ -184,7 +184,7 @@ TEST_CASE("Testing the update method of the Canonicalizer class with fixed varia
 //    Eigen::VectorXi expectedQ = {0, 1, 2, 3, 4, 5};
 //    Eigen::VectorXi actualQ = canonicalizer.Q().indices();
 //
-//    CHECK(expectedQ.isApprox(actualQ));
+//    REQUIRE(expectedQ.isApprox(actualQ));
 //
 //    w = {55.1, 1.e-4, 1.e-10, 0.3, 0.1, 0.8};
 //
@@ -195,6 +195,6 @@ TEST_CASE("Testing the update method of the Canonicalizer class with fixed varia
 //    expectedQ = {0, 5, 3, 4, 1, 2};
 //    actualQ = canonicalizer.Q().indices();
 //
-//    CHECK(expectedQ.isApprox(actualQ));
+//    REQUIRE(expectedQ.isApprox(actualQ));
 }
 

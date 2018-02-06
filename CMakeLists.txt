@@ -57,9 +57,15 @@ endif()
 # Find python interpreter if needed
 if(BUILD_PYTHON)
     find_package(PythonInterp)
+    find_package(pybind11 REQUIRED)
     if(NOT PYTHONINTERP_FOUND)
         set(BUILD_PYTHON OFF)
         message(WARNING "Python executable was not found. "
+            "Cannot build python wrappers and packages for Optima.")
+    endif()
+    if(NOT pybind11_FOUND)
+        set(BUILD_PYTHON OFF)
+        message(WARNING "pybind11 was not found. "
             "Cannot build python wrappers and packages for Optima.")
     endif()
 endif()
@@ -117,9 +123,9 @@ add_subdirectory(thirdparty)
 # Build the C++ library Optima
 add_subdirectory(Optima)
 
-# Build the Python extension module PyOptima and the Python packages reaktoro
+# Build the Python extension module PyOptima and the Python packages optima
 if(BUILD_PYTHON)
-    add_subdirectory(PyOptima)
+    add_subdirectory(python)
 endif()
 
 # Build the demonstration applications
