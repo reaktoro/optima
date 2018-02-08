@@ -15,44 +15,40 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+// pybind11 includes
 #include <pybind11/pybind11.h>
+#include <pybind11/eigen.h>
+#include <eigen3/Eigenx/Core>
+//#include <eigen3/Eigen/Dense>
+using namespace Eigen;
+namespace py = pybind11;
 
-int add(int i, int j)
+//// Optima includes
+//#include <PyOptima/Math/PyCanonicalizer.hpp>
+
+namespace Optima {
+
+VectorXd doubleVec(VectorXdConstRef a)
 {
-    return i + j;
+    return 2*a;
 }
 
-namespace py = pybind11;
+MatrixXd squareMat(MatrixXdConstRef a)
+{
+    return a.cwiseProduct(a);
+}
+
+} // namespace Optima
+
+void exportCanonicalizer(py::module& m);
 
 PYBIND11_MODULE(optima, m)
 {
-    m.doc() =
-            R"pbdoc(
-        Pybind11 example plugin
-        -----------------------
-        .. currentmodule:: cmake_example
-        .. autosummary::
-           :toctree: _generate
-           add
-           subtract
-    )pbdoc";
+    exportCanonicalizer(m);
 
-    m.def("add", &add,
-            R"pbdoc(
-        Add two numbers
-        Some other explanation about the add function.
-    )pbdoc");
+//    m.def("doubleVec", [](const Eigen::VectorXd& m) -> Eigen::VectorXd { return 2 * m; });
+//    m.def("squareMat", [](Eigen::MatrixXd m) -> Eigen::MatrixXd { return m; });
 
-    m.def("subtract", [](int i, int j)
-    {   return i - j;},
-            R"pbdoc(
-        Subtract two numbers
-        Some other explanation about the subtract function.
-    )pbdoc");
-
-#ifdef VERSION_INFO
-    m.attr("__version__") = VERSION_INFO;
-#else
-    m.attr("__version__") = "dev";
-#endif
+    m.def("doubleVec", &Optima::doubleVec);
+    m.def("squareMat", &Optima::squareMat);
 }

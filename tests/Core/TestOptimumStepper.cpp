@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include <catch/catch.hpp>
+#include <catch.hpp>
 
 // Eigen includes
-#include <Eigenx/LU.hpp>
+#include <eigen3/Eigen/LU>
 using namespace Eigen;
 
 // Optima includes

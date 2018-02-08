@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-// Eigenx includes
-#include <Eigenx/LU.hpp>
+// Eigen includes
+#include <eigen3/Eigen/LU>
 
 template class Eigen::FullPivLU<Eigen::MatrixXd>;
 template class Eigen::PartialPivLU<Eigen::MatrixXd>;
