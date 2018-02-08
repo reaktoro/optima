@@ -17,6 +17,9 @@
 
 #include "SaddlePointSolver.hpp"
 
+// Eigen includes
+#include <eigen3/Eigenx/Core>
+
 // Optima includes
 #include <Optima/Common/Exception.hpp>
 #include <Optima/Core/SaddlePointMatrix.hpp>
@@ -231,7 +234,7 @@ struct SaddlePointSolver::Impl
         M.bottomRightCorner(nbx, nbx).setZero();
 
         // Set the H block of the canonical saddle point matrix
-        M.topLeftCorner(nx, nx) = submatrix(lhs.H(), ivx, ivx);
+        M.topLeftCorner(nx, nx) = lhs.H()(ivx, ivx);
 
         // Compute the LU decomposition of M.
         if(options.method == SaddlePointMethod::PartialPivLU)
@@ -265,7 +268,7 @@ struct SaddlePointSolver::Impl
         auto bbf = b.segment(nbx, nbf);
 
         // Retrieve the values of a using the ordering of the free and fixed variables
-        a.noalias() = rows(rhs.a(), iordering);
+        a.noalias() = rhs.a()(iordering);
 
         // Calculate b' = R * b
         b.noalias() = R * rhs.b();
@@ -297,7 +300,7 @@ struct SaddlePointSolver::Impl
         y.noalias() = tr(R)*b;
 
         // Permute back the variables x to their original ordering
-        rows(x, iordering).noalias() = a; // TODO Replace by x(iordering) = a;
+        x(iordering).noalias() = a;
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a LU decomposition method.
@@ -320,7 +323,7 @@ struct SaddlePointSolver::Impl
         // Create a view to the M block of the auxiliary matrix `mat` where the canonical saddle point matrix is defined
         auto M = mat.topLeftCorner(m + nx, m + nx);
 
-        M.topLeftCorner(nx, nx) = submatrix(lhs.H(), ivx, ivx);
+        M.topLeftCorner(nx, nx) = lhs.H()(ivx, ivx);
         M.middleCols(nx, nbx).topRows(nx) << Ibxbx, tr(Sbxnx);
         M.middleRows(nx, nbx).leftCols(nx) << Ibxbx, Sbxnx;
         M.topRightCorner(nx, nbf + nl).setZero();
@@ -359,7 +362,7 @@ struct SaddlePointSolver::Impl
         auto bbf = b.segment(nbx, nbf);
 
         // Retrieve the values of a using the ordering of the free and fixed variables
-        a.noalias() = rows(rhs.a(), iordering);
+        a.noalias() = rhs.a()(iordering);
 
         // Calculate b' = R * b
         b.noalias() = R * rhs.b();
@@ -391,7 +394,7 @@ struct SaddlePointSolver::Impl
         y.noalias() = tr(R)*yp;
 
         // Permute back the variables x to their original ordering
-        rows(x, iordering).noalias() = a;
+        x(iordering).noalias() = a;
     }
 
     auto decomposeLU(SaddlePointMatrix lhs) -> void
@@ -436,7 +439,7 @@ struct SaddlePointSolver::Impl
         auto ivx = iordering.head(nx);
 
         // Retrieve the entries in H corresponding to free variables.
-        Hx.noalias() = rows(lhs.H().diagonal(), ivx);
+        Hx.noalias() = lhs.H().diagonal()(ivx);
 
         // The auxiliary matrix Tbxbx = Sbxn1 * Bn1bx and its submatrices
         auto Tbxbx = mat.topRightCorner(nbx, nbx);
@@ -534,7 +537,7 @@ struct SaddlePointSolver::Impl
         auto bb1 = bbx.tail(nb1);
         auto bb2 = bbx.head(nb2);
 
-        a.noalias() = rows(rhs.a(), iordering);
+        a.noalias() = rhs.a()(iordering);
 
         b.noalias() = R * rhs.b();
 
@@ -570,7 +573,7 @@ struct SaddlePointSolver::Impl
         y.noalias() = tr(R) * b;
 
         // Permute back the variables `x` to their original ordering
-        rows(x, iordering).noalias() = a;
+        x(iordering).noalias() = a;
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a rangespace diagonal method.
@@ -631,7 +634,7 @@ struct SaddlePointSolver::Impl
         auto ivx = iordering.head(nx);
 
         // Retrieve the entries in H corresponding to free variables.
-        Hx.noalias() = rows(lhs.H().diagonal(), ivx);
+        Hx.noalias() = lhs.H().diagonal()(ivx);
 
         // Calculate matrix G' = R * G * tr(R)
         G.noalias() = R * lhs.G() * tr(R);
@@ -790,7 +793,7 @@ struct SaddlePointSolver::Impl
         auto bb1 = bbx.tail(nb1);
         auto bb2 = bbx.head(nb2);
 
-        a.noalias() = rows(rhs.a(), iordering);
+        a.noalias() = rhs.a()(iordering);
 
         b.noalias() = R * rhs.b();
 
@@ -835,7 +838,7 @@ struct SaddlePointSolver::Impl
         y.noalias() = tr(R) * b;
 
         // Permute back the variables `x` to their original ordering
-        rows(x, iordering).noalias() = a;
+        x(iordering).noalias() = a;
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a rangespace diagonal method.
@@ -877,7 +880,7 @@ struct SaddlePointSolver::Impl
         auto ivx = iordering.head(nx);
 
         // Retrieve the entries in H corresponding to free variables.
-        Hx.noalias() = submatrix(lhs.H(), ivx, ivx);
+        Hx.noalias() = lhs.H()(ivx, ivx);
 
         // The matrix M where we setup the coefficient matrix of the equations
         auto M = mat.topLeftCorner(nnx, nnx);
@@ -929,7 +932,7 @@ struct SaddlePointSolver::Impl
         auto ypbl = yp.tail(nl);
 
         // Set vectors `ax` and `af` using values from `a`
-        a.noalias() = rows(rhs.a(), iordering);
+        a.noalias() = rhs.a()(iordering);
 
         // Calculate b' = R*b
         b.noalias() = R*rhs.b();
@@ -968,7 +971,7 @@ struct SaddlePointSolver::Impl
         y.noalias() = tr(R) * yp;
 
         // Set back the values of x currently stored in a
-        rows(x, iordering).noalias() = a;
+        x(iordering).noalias() = a;
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a nullspace method.
@@ -1009,7 +1012,7 @@ struct SaddlePointSolver::Impl
         auto ivx = iordering.head(nx);
 
         // Retrieve the entries in H corresponding to free variables.
-        Hx.noalias() = submatrix(lhs.H(), ivx, ivx);
+        Hx.noalias() = lhs.H()(ivx, ivx);
 
         // Calculate matrix G' = R * G * tr(R)
         G.noalias() = R * lhs.G() * tr(R);
@@ -1116,8 +1119,8 @@ struct SaddlePointSolver::Impl
         auto rbl = rb.tail(nl);
 
         // Set vectors `ax` and `af` using values from `a`
-        ax.noalias() = rows(rhs.a(), ivx);
-        af.noalias() = rows(rhs.a(), ivf);
+        ax.noalias() = rhs.a()(ivx);
+        af.noalias() = rhs.a()(ivf);
 
         // Calculate b' = R*b
         b.noalias() = R*rhs.b();
@@ -1149,7 +1152,7 @@ struct SaddlePointSolver::Impl
         abx.noalias() = bbx - Sbxnx*anx - Gbx*rb;
 
         // Set back the values of x currently stored in a
-        rows(x, iordering).noalias() = a;
+        x(iordering).noalias() = a;
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a nullspace method.

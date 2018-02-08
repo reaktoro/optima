@@ -18,9 +18,9 @@
 // C++ includes
 #include <iostream>
 
-// Eigenx includes
-#include <Eigenx/Core.hpp>
-#include <Eigenx/LU.hpp>
+// Eigen includes
+#include <eigen3/Eigenx/Core>
+#include <eigen3/Eigen/LU>
 using namespace Eigen;
 
 // Optima includes

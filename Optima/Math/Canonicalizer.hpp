@@ -67,13 +67,11 @@ public:
     auto R() const -> MatrixXdConstRef;
 
     /// Return the permutation matrix \eq{Q} of the canonicalization.
-    auto Q() const -> const PermutationMatrix&;
+    /// This method returns the indices (ordering) of the variables after canonicalization.
+    auto Q() const -> VectorXiConstRef;
 
     /// Return the canonicalized matrix \eq{C = RAQ = [I\quad S]}`.
     auto C() const -> MatrixXd;
-
-    /// Return the indices of the variables describing its ordering after canonicalization.
-    auto ordering() const -> VectorXiConstRef;
 
     /// Return the indices of the linearly independent rows of the original matrix.
     auto ili() const -> VectorXi;

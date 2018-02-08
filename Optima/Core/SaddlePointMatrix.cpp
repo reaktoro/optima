@@ -17,7 +17,7 @@
 
 #include "SaddlePointMatrix.hpp"
 
-// Eigenx includes
+// Eigen includes
 using namespace Eigen;
 
 namespace Optima {

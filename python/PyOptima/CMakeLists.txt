@@ -1,8 +1,9 @@
-# Include the current directory
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-
-# Collect the header and source files of PyEigenx
+# Collect the header and source files of PyOptima
 file(GLOB_RECURSE HEADER_FILES *.hpp)
 file(GLOB_RECURSE SOURCE_FILES *.cpp)
 
-pybind11_add_module(optima PyOptima.cpp)
+# Combine PyOptima and Optima source files to compile the python module
+pybind11_add_module(optima ${SOURCE_FILES} $<TARGET_OBJECTS:OptimaObject>)
+#pybind11_add_module(optima ${SOURCE_FILES})
+#pybind11_add_module(optima PyOptima.cpp $<TARGET_OBJECTS:OptimaObject>)
+

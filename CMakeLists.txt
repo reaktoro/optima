@@ -7,9 +7,6 @@ project(Optima)
 # Set the cmake module path of the project
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
-# Include the cotire module to help in the speedup of compilation times
-#include(cotire)
-
 # Include this module to enable testing with CTest and dashboard submissions to CDash
 include(CTest)
 
@@ -54,10 +51,14 @@ if(BUILD_ALL MATCHES ON)
     set(BUILD_TESTS  ON)
 endif()
 
+# Find Eigen library and include its directory
+find_package(Eigen3 3.3.5 REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIR})
+
 # Find python interpreter if needed
 if(BUILD_PYTHON)
     find_package(PythonInterp)
-    find_package(pybind11 REQUIRED)
+    find_package(pybind11 2.2.2 REQUIRED)
     if(NOT PYTHONINTERP_FOUND)
         set(BUILD_PYTHON OFF)
         message(WARNING "Python executable was not found. "

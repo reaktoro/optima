@@ -17,8 +17,8 @@
 
 #pragma once
 
-// Eigenx includes
-#include <Eigenx/LU.hpp>
+// Eigen includes
+#include <eigen3/Eigen/LU>
 
 extern template class Eigen::FullPivLU<Eigen::MatrixXd>;
 extern template class Eigen::PartialPivLU<Eigen::MatrixXd>;

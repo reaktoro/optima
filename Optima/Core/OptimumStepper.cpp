@@ -20,8 +20,8 @@
 
 #include <iostream>
 
-// Eigenx includes
-#include <Eigenx/LU.hpp> // todo check if necessary later
+// Eigen includes
+#include <eigen3/Eigen/LU> // todo check if necessary later
 
 // Optima includes
 #include <Optima/Common/Exception.hpp>

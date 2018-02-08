@@ -15,32 +15,33 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include <catch/catch.hpp>
+#include <catch.hpp>
 
 // Optima includes
-#include <Optima/Common/Index.hpp>
 #include <Optima/Math/Canonicalizer.hpp>
-using namespace Eigen;
 using namespace Optima;
+using namespace Eigen;
+using namespace Eigen::placeholders;
 
 #define CHECK_CANONICAL_FORM                                     \
 {                                                                \
-    const auto& R = canonicalizer.R();                           \
-    const auto& Q = canonicalizer.Q();                           \
-    const auto& C = canonicalizer.C();                           \
-    REQUIRE((R * A * Q - C).norm() == Approx(0.0));                \
+    const auto R = canonicalizer.R();                            \
+    const auto Q = canonicalizer.Q();                            \
+    const auto actualC = canonicalizer.C();                      \
+    const MatrixXd& expectedC = R * A(all, Q);                   \
+    REQUIRE((actualC - expectedC).norm() == Approx(0.0));        \
 }                                                                \
 
 #define CHECK_CANONICAL_ORDERING                                 \
 {                                                                \
     const Index n = canonicalizer.numVariables();                \
     const Index r = canonicalizer.numBasicVariables();           \
-    auto ibasic = canonicalizer.Q().indices().head(r);           \
-    auto inonbasic = canonicalizer.Q().indices().tail(n - r);    \
+    auto ibasic = canonicalizer.Q().head(r);                     \
+    auto inonbasic = canonicalizer.Q().tail(n - r);              \
     for(Index i = 1; i < ibasic.size(); ++i)                     \
-        REQUIRE(w[ibasic[i]] <= w[ibasic[i - 1]]);                 \
+        REQUIRE(w[ibasic[i]] <= w[ibasic[i - 1]]);               \
     for(Index i = 1; i < inonbasic.size(); ++i)                  \
-        REQUIRE(w[inonbasic[i]] <= w[inonbasic[i - 1]]);           \
+        REQUIRE(w[inonbasic[i]] <= w[inonbasic[i - 1]]);         \
 }                                                                \
 
 TEST_CASE("Testing Canonicalizer")
@@ -139,7 +140,7 @@ TEST_CASE("Testing the update method of the Canonicalizer class")
 	CHECK_CANONICAL_ORDERING
 
 	Eigen::VectorXi expectedQ = {0, 4, 3, 5, 1, 2};
-	Eigen::VectorXi actualQ = canonicalizer.Q().indices();
+	Eigen::VectorXi actualQ = canonicalizer.Q();
 
 	REQUIRE(expectedQ.isApprox(actualQ));
 
@@ -151,7 +152,7 @@ TEST_CASE("Testing the update method of the Canonicalizer class")
 	CHECK_CANONICAL_ORDERING
 
 	expectedQ = {0, 5, 3, 4, 1, 2};
-	actualQ = canonicalizer.Q().indices();
+	actualQ = canonicalizer.Q();
 
 	REQUIRE(expectedQ.isApprox(actualQ));
 }
@@ -182,7 +183,7 @@ TEST_CASE("Testing the update method of the Canonicalizer class with fixed varia
     CHECK_CANONICAL_FORM
     CHECK_CANONICAL_ORDERING
 //    Eigen::VectorXi expectedQ = {0, 1, 2, 3, 4, 5};
-//    Eigen::VectorXi actualQ = canonicalizer.Q().indices();
+//    Eigen::VectorXi actualQ = canonicalizer.Q();
 //
 //    REQUIRE(expectedQ.isApprox(actualQ));
 //
@@ -193,7 +194,7 @@ TEST_CASE("Testing the update method of the Canonicalizer class with fixed varia
 //    CHECK_CANONICAL_FORM
 //
 //    expectedQ = {0, 5, 3, 4, 1, 2};
-//    actualQ = canonicalizer.Q().indices();
+//    actualQ = canonicalizer.Q();
 //
 //    REQUIRE(expectedQ.isApprox(actualQ));
 }

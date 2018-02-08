@@ -286,9 +286,9 @@ auto Canonicalizer::R() const -> MatrixXdConstRef
 	return pimpl->R;
 }
 
-auto Canonicalizer::Q() const -> const PermutationMatrix&
+auto Canonicalizer::Q() const -> VectorXiConstRef
 {
-	return pimpl->Q;
+	return pimpl->Q.indices();
 }
 
 auto Canonicalizer::C() const -> MatrixXd
@@ -307,19 +307,14 @@ auto Canonicalizer::ili() const -> VectorXi
 	return Ptr.indices();
 }
 
-auto Canonicalizer::ordering() const -> VectorXiConstRef
-{
-	return Q().indices();
-}
-
 auto Canonicalizer::ibasic() const -> VectorXiConstRef
 {
-    return Q().indices().head(numBasicVariables());
+    return Q().head(numBasicVariables());
 }
 
 auto Canonicalizer::inonbasic() const -> VectorXiConstRef
 {
-    return Q().indices().tail(numNonBasicVariables());
+    return Q().tail(numNonBasicVariables());
 }
 
 auto Canonicalizer::compute(MatrixXdConstRef A) -> void
