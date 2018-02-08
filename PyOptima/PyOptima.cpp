@@ -1,4 +1,4 @@
-// Optima is a C++ library for numerical sol of linear and nonlinear programing problems.
+// Optima is a C++ library for numerical solution of linear and nonlinear programing problems.
 //
 // Copyright (C) 2014-2017 Allan Leal
 //
@@ -15,9 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include "BlockDiagonalMatrix.hpp"
+// pybind11 includes
+#include <pybind11/pybind11.h>
+namespace py = pybind11;
 
-namespace Optima {
+void exportCanonicalizer(py::module& m);
+void exportSaddlePointMatrix(py::module& m);
 
-
-} // namespace Optima
+PYBIND11_MODULE(optima, m)
+{
+    exportCanonicalizer(m);
+    exportSaddlePointMatrix(m);
+}

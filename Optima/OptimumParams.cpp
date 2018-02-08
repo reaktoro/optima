@@ -18,8 +18,8 @@
 #include "OptimumParams.hpp"
 
 // Optima includes
-#include <Optima/Core/OptimumStructure.hpp>
-#include <Optima/Math/Matrix.hpp>
+#include <Optima/OptimumStructure.hpp>
+#include <Optima/Matrix.hpp>
 
 namespace Optima {
 

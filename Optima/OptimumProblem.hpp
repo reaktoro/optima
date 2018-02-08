@@ -18,8 +18,8 @@
 //#pragma once
 //
 //// Optima includes
-//#include <Optima/Core/OptimumParams.hpp>
-//#include <Optima/Core/OptimumStructure.hpp>
+//#include <Optima/OptimumParams.hpp>
+//#include <Optima/OptimumStructure.hpp>
 //
 //namespace Optima {
 //

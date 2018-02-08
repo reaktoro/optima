@@ -18,7 +18,7 @@
 #pragma once
 
 // Optima includes
-#include <Optima/Math/Matrix.hpp>
+#include <Optima/Matrix.hpp>
 
 namespace Optima {
 

@@ -24,14 +24,14 @@
 
 
 // Optima includes
-#include <Optima/Common/Exception.hpp>
-#include <Optima/Core/IpSaddlePointMatrix.hpp>
-#include <Optima/Core/SaddlePointMatrix.hpp>
-#include <Optima/Core/SaddlePointSolver.hpp>
-#include <Optima/Core/SaddlePointOptions.hpp>
-#include <Optima/Core/SaddlePointResult.hpp>
-#include <Optima/Math/Canonicalizer.hpp>
-#include <Optima/Math/EigenExtern.hpp>
+#include <Optima/Exception.hpp>
+#include <Optima/IpSaddlePointMatrix.hpp>
+#include <Optima/SaddlePointMatrix.hpp>
+#include <Optima/SaddlePointSolver.hpp>
+#include <Optima/SaddlePointOptions.hpp>
+#include <Optima/SaddlePointResult.hpp>
+#include <Optima/Canonicalizer.hpp>
+#include <Optima/EigenExtern.hpp>
 using namespace Eigen;
 
 namespace Optima {

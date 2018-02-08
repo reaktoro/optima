@@ -21,7 +21,7 @@
 #include <string>
 
 // Optima includes
-#include <Optima/Common/Timing.hpp>
+#include <Optima/Timing.hpp>
 
 namespace Optima {
 

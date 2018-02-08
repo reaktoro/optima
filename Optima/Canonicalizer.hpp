@@ -21,8 +21,8 @@
 #include <memory>
 
 // Optima includes
-#include <Optima/Common/Index.hpp>
-#include <Optima/Math/Matrix.hpp>
+#include <Optima/Index.hpp>
+#include <Optima/Matrix.hpp>
 
 namespace Optima {
 

@@ -24,10 +24,10 @@
 using namespace Eigen;
 
 // Optima includes
-#include <Optima/Core/SaddlePointMatrix.hpp>
-#include <Optima/Core/SaddlePointOptions.hpp>
-#include <Optima/Core/SaddlePointResult.hpp>
-#include <Optima/Core/SaddlePointSolver.hpp>
+#include <Optima/SaddlePointMatrix.hpp>
+#include <Optima/SaddlePointOptions.hpp>
+#include <Optima/SaddlePointResult.hpp>
+#include <Optima/SaddlePointSolver.hpp>
 using namespace Optima;
 
 Index samples = 10;

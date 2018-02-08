@@ -18,19 +18,19 @@
 //#include "OptimumSolver.hpp"
 //
 //// Optima includes
-//#include <Optima/Common/Exception.hpp>
-//#include <Optima/Common/Outputter.hpp>
-//#include <Optima/Common/Timing.hpp>
-//#include <Optima/Core/OptimumOptions.hpp>
-//#include <Optima/Core/OptimumProblem.hpp>
-//#include <Optima/Core/OptimumResult.hpp>
-//#include <Optima/Core/OptimumState.hpp>
-//#include <Optima/Core/OptimumStepper.hpp>
-//#include <Optima/Core/SaddlePointMatrix.hpp>
-//#include <Optima/Core/SaddlePointProblem.hpp>
-//#include <Optima/Core/SaddlePointResult.hpp>
-//#include <Optima/Core/SaddlePointSolver.hpp>
-//#include <Optima/Math/Utils.hpp>
+//#include <Optima/Exception.hpp>
+//#include <Optima/Outputter.hpp>
+//#include <Optima/Timing.hpp>
+//#include <Optima/OptimumOptions.hpp>
+//#include <Optima/OptimumProblem.hpp>
+//#include <Optima/OptimumResult.hpp>
+//#include <Optima/OptimumState.hpp>
+//#include <Optima/OptimumStepper.hpp>
+//#include <Optima/SaddlePointMatrix.hpp>
+//#include <Optima/SaddlePointProblem.hpp>
+//#include <Optima/SaddlePointResult.hpp>
+//#include <Optima/SaddlePointSolver.hpp>
+//#include <Optima/Utils.hpp>
 //using namespace Eigen;
 //
 //namespace Optima {

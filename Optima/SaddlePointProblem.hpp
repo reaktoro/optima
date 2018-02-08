@@ -18,8 +18,8 @@
 //#pragma once
 //
 //// Optima includes
-//#include <Optima/Core/SaddlePointMatrix.hpp>
-//#include <Optima/Math/Canonicalizer.hpp>
+//#include <Optima/SaddlePointMatrix.hpp>
+//#include <Optima/Canonicalizer.hpp>
 //
 //namespace Optima {
 //

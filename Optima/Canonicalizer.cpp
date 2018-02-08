@@ -21,8 +21,8 @@
 #include <cassert>
 
 // Optima includes
-#include <Optima/Math/EigenExtern.hpp>
-#include <Optima/Math/Utils.hpp>
+#include <Optima/EigenExtern.hpp>
+#include <Optima/Utils.hpp>
 using namespace Eigen;
 
 namespace Optima {

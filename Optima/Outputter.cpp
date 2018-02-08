@@ -18,7 +18,7 @@
 #include "Outputter.hpp"
 
 // Optima includes
-#include <Optima/Common/Exception.hpp>
+#include <Optima/Exception.hpp>
 
 namespace Optima {
 namespace {

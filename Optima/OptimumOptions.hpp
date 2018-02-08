@@ -22,8 +22,8 @@
 #include <vector>
 
 // Optima includes
-#include <Optima/Common/Outputter.hpp>
-#include <Optima/Core/SaddlePointOptions.hpp>
+#include <Optima/Outputter.hpp>
+#include <Optima/SaddlePointOptions.hpp>
 
 namespace Optima {
 
