@@ -1,6 +1,6 @@
 // Optima is a C++ library for numerical solution of linear and nonlinear programing problems.
 //
-// Copyright (C) 2014-2017 Allan Leal
+// Copyright (C) 2014-2018 Allan Leal
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 // Optima includes
 #include <Optima/Index.hpp>
 #include <Optima/Matrix.hpp>
-#include <Optima/Optional.hpp>
 
 namespace Optima {
 

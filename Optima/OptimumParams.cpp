@@ -1,6 +1,6 @@
 // Optima is a C++ library for numerical solution of linear and nonlinear programing problems.
 //
-// Copyright (C) 2014-2017 Allan Leal
+// Copyright (C) 2014-2018 Allan Leal
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,10 +24,10 @@
 namespace Optima {
 
 OptimumParams::OptimumParams(const OptimumStructure& structure)
-: m_b(structure.A.rows()),
-  m_xlower(structure.iwithlower().size()),
-  m_xupper(structure.iwithupper().size()),
-  m_xfixed(structure.iwithfixed().size())
+: m_b(structure.numEqualityConstraints()),
+  m_xlower(structure.variablesWithLowerBounds().size()),
+  m_xupper(structure.variablesWithUpperBounds().size()),
+  m_xfixed(structure.variablesWithFixedValues().size())
 {
     m_b.fill(0.0);
     m_xlower.fill(0.0);

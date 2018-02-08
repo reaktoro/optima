@@ -1,6 +1,13 @@
+# CMake related files
+build/
+
+# Eclipse IDE related files
 .cproject
 .project
 .pydevproject
 .settings/
-build/
-*kdev*
+
+# Python related files
+*.py[cod]
+__pycache__/
+.pytest_cache/

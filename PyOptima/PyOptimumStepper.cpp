@@ -1,6 +1,6 @@
 // Optima is a C++ library for numerical solution of linear and nonlinear programing problems.
 //
-// Copyright (C) 2014-2017 Allan Leal
+// Copyright (C) 2014-2018 Allan Leal
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,12 +15,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#pragma once
+// pybind11 includes
+#include <pybind11/pybind11.h>
+#include <pybind11/eigen.h>
+namespace py = pybind11;
 
 // Optima includes
-#include <Optima/Matrix.hpp>
+#include <Optima/OptimumStepper.hpp>
+using namespace Optima;
 
-namespace Optima {
-
-
-} // namespace Optima
+void exportOptimumStepper(py::module& m)
+{
+    py::class_<OptimumStepper>(m, "OptimumStepper")
+        ;
+}

@@ -1,6 +1,6 @@
 // Optima is a C++ library for numerical solution of linear and nonlinear programing problems.
 //
-// Copyright (C) 2014-2017 Allan Leal
+// Copyright (C) 2014-2018 Allan Leal
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -41,22 +41,22 @@ public:
     auto b() const -> VectorXdConstRef { return m_b; }
 
     /// Return the lower bound values for the variables in \eq{x} bounded below.
-    auto xlower() -> VectorXdRef { return m_xlower; }
+    auto lowerBounds() -> VectorXdRef { return m_xlower; }
 
     /// Return the lower bound values for the variables in \eq{x} bounded below.
-    auto xlower() const -> VectorXdConstRef { return m_xlower; }
+    auto lowerBounds() const -> VectorXdConstRef { return m_xlower; }
 
     /// Return the upper bound values for the variables in \eq{x} bounded above.
-    auto xupper() -> VectorXdRef { return m_xupper; }
+    auto upperBounds() -> VectorXdRef { return m_xupper; }
 
     /// Return the upper bound values for the variables in \eq{x} bounded above.
-    auto xupper() const -> VectorXdConstRef { return m_xupper; }
+    auto upperBounds() const -> VectorXdConstRef { return m_xupper; }
 
     /// Return the values for the fixed variables in \eq{x}.
-    auto xfixed() -> VectorXdRef { return m_xfixed; }
+    auto fixedValues() -> VectorXdRef { return m_xfixed; }
 
     /// Return the values for the fixed variables in \eq{x}.
-    auto xfixed() const -> VectorXdConstRef { return m_xfixed; }
+    auto fixedValues() const -> VectorXdConstRef { return m_xfixed; }
 
 private:
     /// The right-hand side vector of the linear equality constraint \eq{Ax = b}.

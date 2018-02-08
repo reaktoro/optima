@@ -1,6 +1,6 @@
 //// Optima is a C++ library for numerical solution of linear and nonlinear programing problems.
 ////
-//// Copyright (C) 2014-2017 Allan Leal
+//// Copyright (C) 2014-2018 Allan Leal
 ////
 //// This program is free software: you can redistribute it and/or modify
 //// it under the terms of the GNU General Public License as published by
@@ -86,19 +86,19 @@
 //    auto iwithlower() const -> VectorXiConstRef;
 //
 //    /// Return the indices of the variables with upper bounds.
-//    auto iwithupper() const -> VectorXiConstRef;
+//    auto variablesWithUpperBounds() const -> VectorXiConstRef;
 //
 //    /// Return the indices of the variables with fixed values.
-//    auto iwithfixed() const -> VectorXiConstRef;
+//    auto variablesWithFixedValues() const -> VectorXiConstRef;
 //
 //    /// Return the indices of the variables without lower bounds.
-//    auto iwithoutlower() const -> VectorXiConstRef;
+//    auto variablesWithoutLowerBounds() const -> VectorXiConstRef;
 //
 //    /// Return the indices of the variables without upper bounds.
-//    auto iwithoutupper() const -> VectorXiConstRef;
+//    auto variablesWithoutUpperBounds() const -> VectorXiConstRef;
 //
 //    /// Return the indices of the variables without fixed values.
-//    auto iwithoutfixed() const -> VectorXiConstRef;
+//    auto variablesWithoutFixedValues() const -> VectorXiConstRef;
 //
 //    /// Return the indices of the variables partitioned in [with, without] lower bounds.
 //    auto lowerpartition() const -> VectorXiConstRef;

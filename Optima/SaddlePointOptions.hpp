@@ -1,6 +1,6 @@
 // Optima is a C++ library for numerical solution of linear and nonlinear programing problems.
 //
-// Copyright (C) 2014-2017 Allan Leal
+// Copyright (C) 2014-2018 Allan Leal
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -57,8 +57,9 @@ enum class SaddlePointMethod
 
 /// Used to specify the options for the solution of saddle point problems.
 /// @see SaddlePointSolver
-struct SaddlePointOptions
+class SaddlePointOptions
 {
+public:
     /// The method for solving the saddle point problems.
     SaddlePointMethod method = SaddlePointMethod::PartialPivLU;
 

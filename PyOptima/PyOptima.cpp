@@ -1,6 +1,6 @@
 // Optima is a C++ library for numerical solution of linear and nonlinear programing problems.
 //
-// Copyright (C) 2014-2017 Allan Leal
+// Copyright (C) 2014-2018 Allan Leal
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,6 +21,14 @@ namespace py = pybind11;
 
 void exportCanonicalizer(py::module& m);
 void exportIndex(py::module& m);
+void exportOptimumOptions(py::module& m);
+void exportOptimumParams(py::module& m);
+void exportOptimumProblem(py::module& m);
+void exportOptimumResult(py::module& m);
+void exportOptimumSolver(py::module& m);
+void exportOptimumState(py::module& m);
+void exportOptimumStepper(py::module& m);
+void exportOptimumStructure(py::module& m);
 void exportOutputter(py::module& m);
 void exportSaddlePointMatrix(py::module& m);
 void exportSaddlePointResult(py::module& m);
@@ -32,6 +40,14 @@ PYBIND11_MODULE(optima, m)
     exportCanonicalizer(m);
     exportIndex(m);
     exportOutputter(m);
+    exportOptimumOptions(m);
+    exportOptimumParams(m);
+    exportOptimumProblem(m);
+    exportOptimumResult(m);
+    exportOptimumSolver(m);
+    exportOptimumState(m);
+    exportOptimumStepper(m);
+    exportOptimumStructure(m);
     exportSaddlePointMatrix(m);
     exportSaddlePointResult(m);
     exportTiming(m);

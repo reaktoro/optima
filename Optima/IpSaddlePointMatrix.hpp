@@ -1,6 +1,6 @@
 // Optima is a C++ library for numerical solution of linear and nonlinear programing problems.
 //
-// Copyright (C) 2014-2017 Allan Leal
+// Copyright (C) 2014-2018 Allan Leal
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@
 
 // Optima includes
 #include <Optima/Index.hpp>
-#include <Optima/Optional.hpp>
 #include <Optima/Matrix.hpp>
 
 namespace Optima {
@@ -129,7 +128,7 @@ public:
     /// @param c The right-hand side vector \eq{c} in the interior-point saddle point problem.
     /// @param d The right-hand side vector \eq{d} in the interior-point saddle point problem.
     IpSaddlePointVector(
-        VectorXdConstRef a, 
+        VectorXdConstRef a,
         VectorXdConstRef b,
         VectorXdConstRef c,
         VectorXdConstRef d);
@@ -182,7 +181,7 @@ public:
     /// @param w The solution vector \eq{z} in the interior-point saddle point problem.
     /// @param z The solution vector \eq{w} in the interior-point saddle point problem.
     IpSaddlePointSolution(
-        VectorXdRef x, 
+        VectorXdRef x,
         VectorXdRef y,
         VectorXdRef z,
         VectorXdRef w);

@@ -1,6 +1,6 @@
 // Optima is a C++ library for numerical solution of linear and nonlinear programing problems.
 //
-// Copyright (C) 2014-2017 Allan Leal
+// Copyright (C) 2014-2018 Allan Leal
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,11 +27,11 @@
 namespace Optima {
 
 // Forward declarations
-class  IpSaddlePointMatrix;
-class  IpSaddlePointSolution;
-class  IpSaddlePointVector;
-struct SaddlePointOptions;
-class  SaddlePointResult;
+class IpSaddlePointMatrix;
+class IpSaddlePointSolution;
+class IpSaddlePointVector;
+class SaddlePointOptions;
+class SaddlePointResult;
 
 /// Used to solve saddle point problems in interior-point algorithms.
 class IpSaddlePointSolver

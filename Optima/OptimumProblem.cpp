@@ -1,6 +1,6 @@
 //// Optima is a C++ library for numerical solution of linear and nonlinear programing problems.
 ////
-//// Copyright (C) 2014-2017 Allan Leal
+//// Copyright (C) 2014-2018 Allan Leal
 ////
 //// This program is free software: you can redistribute it and/or modify
 //// it under the terms of the GNU General Public License as published by
@@ -113,27 +113,27 @@
 //    return m_lowerpartition.head(m_nlower);
 //}
 //
-//auto OptimumProblem::iwithupper() const -> VectorXiConstRef
+//auto OptimumProblem::variablesWithUpperBounds() const -> VectorXiConstRef
 //{
 //    return m_upperpartition.head(m_nupper);
 //}
 //
-//auto OptimumProblem::iwithfixed() const -> VectorXiConstRef
+//auto OptimumProblem::variablesWithFixedValues() const -> VectorXiConstRef
 //{
 //    return m_fixedpartition.head(m_nfixed);
 //}
 //
-//auto OptimumProblem::iwithoutlower() const -> VectorXiConstRef
+//auto OptimumProblem::variablesWithoutLowerBounds() const -> VectorXiConstRef
 //{
 //    return m_lowerpartition.tail(m_n - m_nlower);
 //}
 //
-//auto OptimumProblem::iwithoutupper() const -> VectorXiConstRef
+//auto OptimumProblem::variablesWithoutUpperBounds() const -> VectorXiConstRef
 //{
 //    return m_upperpartition.tail(m_n - m_nupper);
 //}
 //
-//auto OptimumProblem::iwithoutfixed() const -> VectorXiConstRef
+//auto OptimumProblem::variablesWithoutFixedValues() const -> VectorXiConstRef
 //{
 //    return m_fixedpartition.tail(m_n - m_nfixed);
 //}

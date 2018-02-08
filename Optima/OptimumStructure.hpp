@@ -1,6 +1,6 @@
 // Optima is a C++ library for numerical solution of linear and nonlinear programing problems.
 //
-// Copyright (C) 2014-2017 Allan Leal
+// Copyright (C) 2014-2018 Allan Leal
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,6 +16,9 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
+
+// C++ includes
+#include <functional>
 
 // Optima includes
 #include <Optima/Index.hpp>
@@ -69,64 +72,101 @@ using ObjectiveFunction = std::function<void(VectorXdConstRef, ObjectiveState&)>
 // structure.setNumInequalityConstraints(3);
 // structure.setConstraintMatrix(A);
 // structure.setObjective(obj);
+
 /// The structure of an optimization problem that changes with less frequency.
 class OptimumStructure
 {
 public:
     /// Construct an OptimumStructure instance.
-    OptimumStructure(Index n);
+    /// @param f The objective function \eq{f} in the optimization problem.
+    /// @param n The number of variables in \eq{x} in the optimization problem.
+    /// @param m The number of linear equality constraints in the optimization problem.
+    OptimumStructure(ObjectiveFunction f, Index n, Index m);
+
+    /// Construct an OptimumStructure instance.
+    /// @param f The objective function \eq{f} in the optimization problem.
+    /// @param A The linear equality constraint matrix \eq{A} in the optimization problem.
+    OptimumStructure(ObjectiveFunction f, MatrixXdConstRef A);
+
+    /// Set the coefficient matrix \eq{A} of the linear equality constraints.
+    /// This method does not allow changing the dimensions of the equality constraint matrix \eq{A}.
+    auto setEqualityConstraintMatrix(MatrixXdConstRef A) -> void;
 
     /// Set the indices of the variables in \eq{x} with lower bounds.
-    auto withLowerBounds(VectorXiConstRef indices) -> void;
+    auto setVariablesWithLowerBounds(VectorXiConstRef indices) -> void;
 
     /// Set all variables in \eq{x} with lower bounds.
-    auto withLowerBounds() -> void;
+    auto allVariablesHaveLowerBounds() -> void;
 
     /// Set the indices of the variables in \eq{x} with upper bounds.
-    auto withUpperBounds(VectorXiConstRef indices) -> void;
+    auto setVariablesWithUpperBounds(VectorXiConstRef indices) -> void;
 
     /// Set all variables in \eq{x} with upper bounds.
-    auto withUpperBounds() -> void;
+    auto allVariablesHaveUpperBounds() -> void;
 
     /// Set the indices of the variables in \eq{x} with fixed values.
-    auto withFixedValues(VectorXiConstRef indices) -> void;
+    auto setVariablesWithFixedValues(VectorXiConstRef indices) -> void;
+
+    /// Return the number of variables.
+    auto numVariables() const -> Index { return m_n; }
+
+    /// Return the number of linear equality constraints.
+    auto numEqualityConstraints() const -> Index { return m_A.rows(); }
 
     /// Return the indices of the variables with lower bounds.
-    auto iwithlower() const -> VectorXiConstRef { return m_lowerpartition.tail(m_nlower); }
+    auto variablesWithLowerBounds() const -> VectorXiConstRef { return m_lowerpartition.tail(m_nlower); }
 
     /// Return the indices of the variables with upper bounds.
-    auto iwithupper() const -> VectorXiConstRef { return m_upperpartition.tail(m_nupper); }
+    auto variablesWithUpperBounds() const -> VectorXiConstRef { return m_upperpartition.tail(m_nupper); }
 
     /// Return the indices of the variables with fixed values.
-    auto iwithfixed() const -> VectorXiConstRef { return m_fixedpartition.tail(m_nfixed); }
+    auto variablesWithFixedValues() const -> VectorXiConstRef { return m_fixedpartition.tail(m_nfixed); }
 
     /// Return the indices of the variables without lower bounds.
-    auto iwithoutlower() const -> VectorXiConstRef { return m_lowerpartition.head(n - m_nlower); }
+    auto variablesWithoutLowerBounds() const -> VectorXiConstRef { return m_lowerpartition.head(m_n - m_nlower); }
 
     /// Return the indices of the variables without upper bounds.
-    auto iwithoutupper() const -> VectorXiConstRef { return m_upperpartition.head(n - m_nupper); }
+    auto variablesWithoutUpperBounds() const -> VectorXiConstRef { return m_upperpartition.head(m_n - m_nupper); }
 
     /// Return the indices of the variables without fixed values.
-    auto iwithoutfixed() const -> VectorXiConstRef { return m_fixedpartition.head(n - m_nfixed); }
+    auto variablesWithoutFixedValues() const -> VectorXiConstRef { return m_fixedpartition.head(m_n - m_nfixed); }
 
     /// Return the indices of the variables partitioned in [without, with] lower bounds.
-    auto lowerpartition() const -> VectorXiConstRef { return m_lowerpartition; }
+    auto orderingLowerBounds() const -> VectorXiConstRef { return m_lowerpartition; }
 
     /// Return the indices of the variables partitioned in [without, with] upper bounds.
-    auto upperpartition() const -> VectorXiConstRef { return m_upperpartition; }
+    auto orderingUpperBounds() const -> VectorXiConstRef { return m_upperpartition; }
 
     /// Return the indices of the variables partitioned in [without, with] fixed values.
-    auto fixedpartition() const -> VectorXiConstRef { return m_fixedpartition; }
+    auto orderingFixedValues() const -> VectorXiConstRef { return m_fixedpartition; }
 
-//private:
+    /// Return the objective function.
+    auto objectiveFunction() const -> const ObjectiveFunction& { return m_objective; }
+
+    /// Return the coefficient matrix \eq{A} of the linear equality constraints.
+    auto equalityConstraintMatrix() const -> MatrixXdConstRef { return m_A; }
+
+    /// Evaluate the objective function.
+    /// @param x The values of the variables \eq{x}.
+    /// @param f The evaluated state of the objective function.
+    auto objective(VectorXdConstRef x, ObjectiveState& f) const -> void { m_objective(x, f); }
+
+    /// Return the coefficient matrix \eq{A} of the linear equality constraints.
+    /// This is an alias to method @ref equalityConstraintMatrix.
+    auto A() const -> MatrixXdConstRef { return m_A; }
+
+private:
+    /// The objective function in the optimization problem.
+    ObjectiveFunction m_objective;
+
     /// The number of variables in the optimization problem.
-    Index n;
+    Index m_n;
 
-    /// The objective function of the optimization problem.
-    ObjectiveFunction objective;
+    /// The number of linear equality constraints in the optimization problem.
+    Index m_m;
 
     /// The coefficient matrix of the linear equality constraint \eq{Ax = a}.
-    MatrixXd A;
+    MatrixXd m_A;
 
     /// The number of variables with lower bounds.
     Index m_nlower;

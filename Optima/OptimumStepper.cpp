@@ -1,6 +1,6 @@
 // Optima is a C++ library for numerical solution of linear and nonlinear programing problems.
 //
-// Copyright (C) 2014-2017 Allan Leal
+// Copyright (C) 2014-2018 Allan Leal
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -82,17 +82,17 @@ struct OptimumStepper::Impl
     : structure(structure)
     {
         // Initialize the members related to number of variables and constraints
-        n  = structure.n;
-        m  = structure.A.rows();
-        nf = structure.iwithfixed().size();
+        n  = structure.numVariables();
+        m  = structure.numEqualityConstraints();
+        nf = structure.variablesWithFixedValues().size();
         nx = n - nf;
         t  = 3*n + m;
 
         // The ordering of the variables partitioned as [free variables, fixed variables]
-        iordering = structure.fixedpartition();
+        iordering = structure.orderingFixedValues();
 
         // Allocate memory for some members
-        A.noalias() = structure.A * iordering.asPermutation();
+        A.noalias() = structure.A() * iordering.asPermutation();
         H = zeros(n, n);
         g = zeros(n);
         x = zeros(n);
@@ -111,26 +111,26 @@ struct OptimumStepper::Impl
     auto decompose(const OptimumParams& params, const OptimumState& state, const ObjectiveState& f) -> void
     {
         // The lower and upper bounds of x
-        const auto xlower = params.xlower();
-        const auto xupper = params.xupper();
+        const auto xlower = params.lowerBounds();
+        const auto xupper = params.upperBounds();
 
         // The indices of the variables with/without lower/upper bounds
-        const auto iwithlower = structure.iwithlower();
-        const auto iwithupper = structure.iwithupper();
-        const auto iwithoutlower = structure.iwithoutlower();
-        const auto iwithoutupper = structure.iwithoutupper();
+        const auto iwithlower = structure.variablesWithLowerBounds();
+        const auto variablesWithUpperBounds = structure.variablesWithUpperBounds();
+        const auto variablesWithoutLowerBounds = structure.variablesWithoutLowerBounds();
+        const auto variablesWithoutUpperBounds = structure.variablesWithoutUpperBounds();
 
         // Initialize the diagonal matrices Z and W
         Z(iwithlower) = state.z(iwithlower);
-        Z(iwithoutlower).fill(0.0);
-        W(iwithupper) = state.w(iwithupper);
-        W(iwithoutlower).fill(0.0);
+        Z(variablesWithoutLowerBounds).fill(0.0);
+        W(variablesWithUpperBounds) = state.w(variablesWithUpperBounds);
+        W(variablesWithoutLowerBounds).fill(0.0);
 
         // Initialize the diagonal matrices L and U
         L(iwithlower) = state.x(iwithlower) - xlower;
-        L(iwithoutlower).fill(1.0);
-        U(iwithupper) = state.x(iwithupper) - xupper;
-        U(iwithoutlower).fill(1.0);
+        L(variablesWithoutLowerBounds).fill(1.0);
+        U(variablesWithUpperBounds) = state.x(variablesWithUpperBounds) - xupper;
+        U(variablesWithoutLowerBounds).fill(1.0);
 
         // The variables x arranged in the ordering x = [xs xl xu xf]
         x.noalias() = state.x(iordering);

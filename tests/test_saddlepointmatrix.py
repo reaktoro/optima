@@ -1,6 +1,6 @@
 # Optima is a C++ library for numerical solution of linear and nonlinear programing problems.
 #
-# Copyright (C) 2014-2017 Allan Leal
+# Copyright (C) 2014-2018 Allan Leal
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,20 +50,22 @@ def block(startrow, startcol, nrows, ncols):
 
 
 def test_saddle_point_matrix():
-    H = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
-    A = [[1, 2, 3], [3, 4, 5]]
-    G = [[1, 2], [3, 4]]
+    H = array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    A = array([[1, 2, 3], [3, 4, 5]])
+    G = array([[1, 2], [3, 4]])
     n = 3
     nx = 3
     nf = 0
 
     mat1 = SaddlePointMatrix(H, A, G, nx, nf)
 
-    M = [[1, 2, 3, 1, 3],
-         [4, 5, 6, 2, 4],
-         [7, 8, 9, 3, 5],
-         [1, 2, 3, 1, 2],
-         [3, 4, 5, 3, 4]]
+    M = array([
+        [1, 2, 3, 1, 3],
+        [4, 5, 6, 2, 4],
+        [7, 8, 9, 3, 5],
+        [1, 2, 3, 1, 2],
+        [3, 4, 5, 3, 4]
+        ])
 
     # Check conversion to a Matrix instance
     assert mat1.matrix() == approx(M)
@@ -75,7 +77,7 @@ def test_saddle_point_matrix():
     mat2 = SaddlePointMatrix(H, A, G, nx, nf)
 
     M[middleRows(nx, nf)] = 0.0
-    M[middleCols(nx, nf)][topRows(n)] = 0.0
+    M[middleCols(nx, nf)][headRows(n)] = 0.0
     M[block(nx, nx, nf, nf)] = eye(nf)
 
     # Check conversion to a Matrix instance

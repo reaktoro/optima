@@ -1,6 +1,6 @@
 // Optima is a C++ library for numerical solution of linear and nonlinear programing problems.
 //
-// Copyright (C) 2014-2017 Allan Leal
+// Copyright (C) 2014-2018 Allan Leal
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,46 +17,63 @@
 
 #include "OptimumStructure.hpp"
 
+// Optima includes
+#include <Optima/Exception.hpp>
+#include <Optima/Matrix.hpp>
+using namespace Eigen;
+
 namespace Optima {
 
-OptimumStructure::OptimumStructure(Index n)
-: n(n), m_nlower(0), m_nupper(0), m_nfixed(0),
-  m_lowerpartition(VectorXi::LinSpaced(n, 0, n - 1)),
-  m_upperpartition(VectorXi::LinSpaced(n, 0, n - 1)),
-  m_fixedpartition(VectorXi::LinSpaced(n, 0, n - 1))
-{
+OptimumStructure::OptimumStructure(ObjectiveFunction f, Index n, Index m)
+: m_objective(f), m_n(n), m_m(m), m_A(zeros(m_m, m_n)),
+  m_nlower(0), m_nupper(0), m_nfixed(0),
+  m_lowerpartition(linspace<int>(n, 0, n - 1)),
+  m_upperpartition(linspace<int>(n, 0, n - 1)),
+  m_fixedpartition(linspace<int>(n, 0, n - 1))
+{}
 
+OptimumStructure::OptimumStructure(ObjectiveFunction f, MatrixXdConstRef A)
+: OptimumStructure(f, A.cols(), A.rows())
+{
+    m_A = A;
 }
-auto OptimumStructure::withLowerBounds(VectorXiConstRef indices) -> void
+
+auto OptimumStructure::setEqualityConstraintMatrix(MatrixXdConstRef A) -> void
+{
+    MatrixXdRef Aref(m_A);
+    Aref = A;
+}
+
+auto OptimumStructure::setVariablesWithLowerBounds(VectorXiConstRef indices) -> void
 {
     m_nlower = indices.size();
-    m_lowerpartition.setLinSpaced(n, 0, n - 1);
+    m_lowerpartition.setLinSpaced(m_n, 0, m_n - 1);
     m_lowerpartition.tail(m_nlower).swap(m_lowerpartition(indices));
 }
 
-auto OptimumStructure::withLowerBounds() -> void
+auto OptimumStructure::allVariablesHaveLowerBounds() -> void
 {
-    m_nlower = n;
-    m_lowerpartition.setLinSpaced(n, 0, n - 1);
+    m_nlower = m_n;
+    m_lowerpartition.setLinSpaced(m_n, 0, m_n - 1);
 }
 
-auto OptimumStructure::withUpperBounds(VectorXiConstRef indices) -> void
+auto OptimumStructure::setVariablesWithUpperBounds(VectorXiConstRef indices) -> void
 {
     m_nupper = indices.size();
-    m_upperpartition.setLinSpaced(n, 0, n - 1);
+    m_upperpartition.setLinSpaced(m_n, 0, m_n - 1);
     m_upperpartition.tail(m_nupper).swap(m_upperpartition(indices));
 }
 
-auto OptimumStructure::withUpperBounds() -> void
+auto OptimumStructure::allVariablesHaveUpperBounds() -> void
 {
-    m_nupper = n;
-    m_upperpartition.setLinSpaced(n, 0, n - 1);
+    m_nupper = m_n;
+    m_upperpartition.setLinSpaced(m_n, 0, m_n - 1);
 }
 
-auto OptimumStructure::withFixedValues(VectorXiConstRef indices) -> void
+auto OptimumStructure::setVariablesWithFixedValues(VectorXiConstRef indices) -> void
 {
     m_nfixed = indices.size();
-    m_fixedpartition.setLinSpaced(n, 0, n - 1);
+    m_fixedpartition.setLinSpaced(m_n, 0, m_n - 1);
     m_fixedpartition.tail(m_nfixed).swap(m_fixedpartition(indices));
 }
 
