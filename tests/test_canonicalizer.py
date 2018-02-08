@@ -94,3 +94,16 @@ def test_canonicalizer_with_fixed_variables():
     A[3] = A[1] - 2*A[2]  # row(3) = row(1) - 2*row(2)
     canonicalizer = Canonicalizer(A)
     check_canonicalizer(canonicalizer, A)
+    
+    
+def test_canonicalizer_with_rational_numbers():
+    m = 4
+    n = 10
+    maxdenominator = 10
+    A = (arange(m*n) / arange(10, m*n + 10)).reshape((m, n)) 
+    canonicalizer = Canonicalizer(A)
+    canonicalizer.rationalize(100) 
+    check_canonicalizer(canonicalizer, A)
+    
+    
+    

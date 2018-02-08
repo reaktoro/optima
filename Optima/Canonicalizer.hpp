@@ -82,34 +82,44 @@ public:
     /// Return the indices of the non-basic variables.
     auto indicesNonBasicVariables() const -> VectorXiConstRef;
 
-	/// Compute the canonical matrix of the given matrix.
-	auto compute(MatrixXdConstRef A) -> void;
+    /// Compute the canonical matrix of the given matrix.
+    auto compute(MatrixXdConstRef A) -> void;
 
-	/// Update the canonical form with the swap of a basic variable by a non-basic variable.
-	/// @param ibasic The index of the basic variable between 0 and \eq{n_\mathrm{b}}`.
-	/// @param inonbasic The index of the non-basic variable between 0 and \eq{n_\mathrm{n}}`.
-	auto updateWithSwapBasicVariable(Index ibasic, Index inonbasic) -> void;
+    /// Update the canonical form with the swap of a basic variable by a non-basic variable.
+    /// @param ibasic The index of the basic variable between 0 and \eq{n_\mathrm{b}}`.
+    /// @param inonbasic The index of the non-basic variable between 0 and \eq{n_\mathrm{n}}`.
+    auto updateWithSwapBasicVariable(Index ibasic, Index inonbasic) -> void;
 
-	/// Update the canonical form with given priority weights for the variables.
-	/// This method will update the canonical form by taking into account the given priority
-	/// weights of the variables when selecting the basic variables.
-	/// The basic and non-basic variables will be sorted in descend order with respect to their
-	/// priority weights.
-	/// By choosing non-positive weights for some variables, and positive for all others, the
-	/// variables with non-positive weights can be prevented from becoming basic variables.
-	/// However, there is the possibility of a *degenerate case* in which one or more variables
-	/// with non-positive weights need to be basic variables. This happens when all variables with
-	/// non-zero coefficient in a row of matrix \eq{A} have non-positive weights.
+    /// Update the canonical form with given priority weights for the variables.
+    /// This method will update the canonical form by taking into account the given priority
+    /// weights of the variables when selecting the basic variables.
+    /// The basic and non-basic variables will be sorted in descend order with respect to their
+    /// priority weights.
+    /// By choosing non-positive weights for some variables, and positive for all others, the
+    /// variables with non-positive weights can be prevented from becoming basic variables.
+    /// However, there is the possibility of a *degenerate case* in which one or more variables
+    /// with non-positive weights need to be basic variables. This happens when all variables with
+    /// non-zero coefficient in a row of matrix \eq{A} have non-positive weights.
     /// @param weights The priority weights of the variables.
-	auto updateWithPriorityWeights(VectorXdConstRef weights) -> void;
+    auto updateWithPriorityWeights(VectorXdConstRef weights) -> void;
 
-	/// Update the canonical form with a new ordering for the variables.
-	auto updateWithNewOrdering(VectorXiConstRef ordering) -> void;
+    /// Update the canonical form with a new ordering for the variables.
+    auto updateWithNewOrdering(VectorXiConstRef ordering) -> void;
+
+    /// Rationalize the entries in the canonical form.
+    /// This method should be used if the entries in matrix \eq{A} are rational numbers and
+    /// round-off errors introduced by the canonicalization should be eliminated as much as possible.
+    /// This method will replace all entries in matrices \eq{R} and \eq{S} by the nearest rational
+    /// number. To to this, an estimate for the maximum denominator among all entries in \eq{A}
+    /// is needed. For example, one might know in advance that all entries in \eq{A} are rationals
+    /// with denominators certainly not greater than 1000.
+    /// @param maxdenominator The estimate for the maximum denominator.
+    auto rationalize(Index maxdenominator) -> void;
 
 private:
-	struct Impl;
+    struct Impl;
 
-	std::unique_ptr<Impl> pimpl;
+    std::unique_ptr<Impl> pimpl;
 };
 
 } // namespace Optima

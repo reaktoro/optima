@@ -337,4 +337,9 @@ auto Canonicalizer::updateWithNewOrdering(VectorXiConstRef ordering) -> void
     pimpl->updateWithNewOrdering(ordering);
 }
 
+auto Canonicalizer::rationalize(Index maxdenominator) -> void
+{
+    pimpl->rationalize(maxdenominator);
+}
+
 } // namespace Optima

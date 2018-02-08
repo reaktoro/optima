@@ -19,8 +19,8 @@
 
 // Optima includes
 #include <Optima/Index.hpp>
-#include <Optima/Optional.hpp>
 #include <Optima/Matrix.hpp>
+#include <Optima/Optional.hpp>
 
 namespace Optima {
 
@@ -108,7 +108,7 @@ public:
     SaddlePointVector(VectorXdConstRef r, Index n, Index m) : m_a(r.head(n)), m_b(r.tail(m)) {}
 
     /// Return the dimension of the saddle point vector.
-    auto dim() const -> Index { return m_a.rows() + m_b.rows(); }
+    auto size() const -> Index { return m_a.rows() + m_b.rows(); }
 
     /// Return the solution vector *a*.
     auto a() const -> VectorXdConstRef { return m_a; }
@@ -117,7 +117,7 @@ public:
     auto b() const -> VectorXdConstRef { return m_b; }
 
     /// Convert this SaddlePointVector instance into a Vector instance.
-    auto vector() const -> VectorXd { VectorXd res(dim()); res << m_a, m_b; return res; }
+    auto vector() const -> VectorXd { VectorXd res(size()); res << m_a, m_b; return res; }
 
 private:
     /// The saddle-point solution vector *a*.
@@ -146,7 +146,7 @@ public:
     auto operator=(VectorXdConstRef vec) -> SaddlePointSolution& { m_x.noalias() = vec.head(m_x.rows()); m_y.noalias() = vec.tail(m_y.rows()); return *this; }
 
     /// Return the dimension of the saddle point solution vector.
-    auto dim() const -> Index { return m_x.rows() + m_y.rows(); }
+    auto size() const -> Index { return m_x.rows() + m_y.rows(); }
 
     /// Return the solution vector *x*.
     auto x() -> VectorXdRef { return m_x; }
@@ -155,7 +155,7 @@ public:
     auto y() -> VectorXdRef { return m_y; }
 
     /// Convert this SaddlePointSolution instance into a Vector instance.
-    auto vector() const -> VectorXd { VectorXd res(dim()); res << m_x, m_y; return res; }
+    auto vector() const -> VectorXd { VectorXd res(size()); res << m_x, m_y; return res; }
 
 private:
     /// The saddle-point solution vector *x*.

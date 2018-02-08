@@ -39,4 +39,24 @@ void exportSaddlePointMatrix(py::module& m)
         .def("nf", &SaddlePointMatrix::nf, "Return the number of fixed variables.")
         .def("matrix", &SaddlePointMatrix::matrix, "Convert this SaddlePointMatrix instance into a Matrix instance.")
         ;
+
+
+    py::class_<SaddlePointVector>(m, "SaddlePointVector")
+        .def(py::init<VectorXdConstRef, VectorXdConstRef>(), py::arg("a"), py::arg("b"))
+        .def(py::init<VectorXdConstRef, Index, Index>(), py::arg("r"), py::arg("n"), py::arg("m"))
+        .def("size", &SaddlePointVector::size, "Return the dimension of the saddle point vector.")
+        .def("a", &SaddlePointVector::a, "Return the solution vector *a*.")
+        .def("b", &SaddlePointVector::b, "Return the solution vector *b*.")
+        .def("vector", &SaddlePointVector::vector, "Convert this SaddlePointVector instance into a Vector instance.")
+        ;
+
+ 
+    py::class_<SaddlePointSolution>(m, "SaddlePointSolution")
+        .def(py::init<VectorXdRef, VectorXdRef>(), py::arg("x"), py::arg("y"))
+        .def(py::init<VectorXdRef, Index, Index>(), py::arg("s"), py::arg("n"), py::arg("m"))
+        .def("size", &SaddlePointSolution::size, "Return the dimension of the saddle point solution vector.")
+        .def("x", &SaddlePointSolution::x, "Return the solution vector *x*.")
+        .def("y", &SaddlePointSolution::y, "Return the solution vector *y*.")
+        .def("vector", &SaddlePointSolution::vector, "Convert this SaddlePointSolution instance into a Vector instance.")
+        ;
 }
