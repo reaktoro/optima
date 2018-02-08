@@ -19,7 +19,7 @@
 
 namespace Optima {
 
-auto time() -> Time
+auto timenow() -> Time
 {
     return std::chrono::high_resolution_clock::now();
 }
@@ -31,7 +31,7 @@ auto elapsed(const Time& end, const Time& begin) -> double
 
 auto elapsed(const Time& begin) -> double
 {
-    return elapsed(time(), begin);
+    return elapsed(timenow(), begin);
 }
 
 } // namespace Optima

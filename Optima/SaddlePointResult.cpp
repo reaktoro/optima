@@ -20,13 +20,8 @@
 namespace Optima {
 
 SaddlePointResult::SaddlePointResult()
-: m_success(true), m_time(0.0), m_start(Optima::time()), m_stop(m_start)
+: m_success(true), m_time(0.0), m_start(timenow()), m_stop(m_start)
 {}
-
-auto SaddlePointResult::success(bool value) -> void
-{
-    m_success = value;
-}
 
 auto SaddlePointResult::success() const -> bool
 {
@@ -41,13 +36,13 @@ auto SaddlePointResult::time() const -> double
 auto SaddlePointResult::start() -> SaddlePointResult&
 {
     m_time = 0.0;
-    m_start = Optima::time();
+    m_start = timenow();
     return *this;
 }
 
 auto SaddlePointResult::stop() -> SaddlePointResult&
 {
-    m_stop = Optima::time();
+    m_stop = timenow();
     m_time = elapsed(m_stop, m_start);
     return *this;
 }
@@ -72,11 +67,12 @@ auto SaddlePointResult::operator+=(const SaddlePointResult& other) -> SaddlePoin
     return *this;
 }
 
-auto SaddlePointResult::operator+(SaddlePointResult other) -> SaddlePointResult
+auto SaddlePointResult::operator+(const SaddlePointResult& other) const -> SaddlePointResult
 {
-    other.m_success = m_success && other.m_success;
-    other.m_time += m_time;
-    return other;
+    SaddlePointResult res;
+    res.m_success = m_success && other.m_success;
+    res.m_time = m_time + other.m_time;
+    return res;
 }
 
 } // namespace Optima

@@ -15,27 +15,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include <../PyOptima/PyOptima/Common/PyOutputter.hpp"
-
-#include <boost/python.hpp>
-namespace py = boost::python;
+// pybind11 includes
+#include <pybind11/pybind11.h>
+#include <pybind11/eigen.h>
+namespace py = pybind11;
 
 // Optima includes
-#include <Optima/Common/Outputter.hpp>
+#include <Optima/Utils.hpp>
+using namespace Optima;
 
-namespace Optima {
-
-auto export_Outputter() -> void
+void exportUtils(py::module& m)
 {
-    py::class_<OutputterOptions>("OutputterOptions")
-        .def_readwrite("active", &OutputterOptions::active)
-        .def_readwrite("fixed", &OutputterOptions::fixed)
-        .def_readwrite("scientific", &OutputterOptions::scientific)
-        .def_readwrite("precision", &OutputterOptions::precision)
-        .def_readwrite("width", &OutputterOptions::width)
-        .def_readwrite("separator", &OutputterOptions::separator)
-        ;
+    m.def("largestStep", &largestStep);
+    m.def("lessThan", &lessThan);
+    m.def("greaterThan", &greaterThan);
+    m.def("infinity", &infinity);
+    m.def("bfgs", &bfgs);
+    m.def("minimizeGoldenSectionSearch", &minimizeGoldenSectionSearch);
+    m.def("minimizeBrent", &minimizeBrent);
+    m.def("inverseShermanMorrison", &inverseShermanMorrison);
+    m.def("rationalize", &rationalize);
 }
-
-} // namespace Optima
-

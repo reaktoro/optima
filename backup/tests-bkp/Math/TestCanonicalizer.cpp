@@ -46,28 +46,28 @@ using namespace Eigen::placeholders;
 
 TEST_CASE("Testing Canonicalizer")
 {
-	const Index m = 4;
-	const Index n = 10;
+    const Index m = 4;
+    const Index n = 10;
 
-	MatrixXd A = random(m, n);
+    MatrixXd A = random(m, n);
 
     Canonicalizer canonicalizer(A);
 
     const Index r = canonicalizer.numBasicVariables();
 
-	CHECK_CANONICAL_FORM
+    CHECK_CANONICAL_FORM
 
-	for(Index i = 0; i < r; ++i)
-	{
-		for(Index j = 0; j < n - r; ++j)
-		{
-			canonicalizer.swapBasicVariable(i, j);
-			CHECK_CANONICAL_FORM
-		}
-	}
+    for(Index i = 0; i < r; ++i)
+    {
+        for(Index j = 0; j < n - r; ++j)
+        {
+            canonicalizer.swapBasicVariable(i, j);
+            CHECK_CANONICAL_FORM
+        }
+    }
 
-	SECTION("When the ordering of the variables are changed...")
-	{
+    SECTION("When the ordering of the variables are changed...")
+    {
         VectorXi ordering(n);
         ordering.head(m).setLinSpaced(m, n - 1, n - m);
         ordering.tail(n - m).setLinSpaced(n - m, 0, n - m);
@@ -86,75 +86,75 @@ TEST_CASE("Testing Canonicalizer")
 
             CHECK_CANONICAL_FORM
         }
-	}
+    }
 }
 
 TEST_CASE("Testing Canonicalizer with two linearly dependent rows")
 {
-	const Index m = 4;
-	const Index n = 10;
+    const Index m = 4;
+    const Index n = 10;
 
-	MatrixXd A = random(m, n);
-	A.row(2) = A.row(0) + 2*A.row(1);
-	A.row(3) = A.row(1) - 2*A.row(2);
+    MatrixXd A = random(m, n);
+    A.row(2) = A.row(0) + 2*A.row(1);
+    A.row(3) = A.row(1) - 2*A.row(2);
 
     Canonicalizer canonicalizer(A);
 
     const Index r = canonicalizer.numBasicVariables();
 
-	CHECK_CANONICAL_FORM
+    CHECK_CANONICAL_FORM
 
-	for(Index i = 0; i < r; ++i)
-	{
-		for(Index j = 0; j < n - r; ++j)
-		{
-			canonicalizer.swapBasicVariable(i, j);
-			CHECK_CANONICAL_FORM
-		}
-	}
+    for(Index i = 0; i < r; ++i)
+    {
+        for(Index j = 0; j < n - r; ++j)
+        {
+            canonicalizer.swapBasicVariable(i, j);
+            CHECK_CANONICAL_FORM
+        }
+    }
 }
 
 TEST_CASE("Testing the update method of the Canonicalizer class")
 {
 
-	const MatrixXd A = {
-	//    H2O   H+    OH-   HCO3- CO2   CO3--
-		{ 2,    1,    1,    1,    0,    0 }, // H
-		{ 1,    0,    1,    3,    2,    3 }, // O
-		{ 0,    0,    0,    1,    1,    1 }, // C
-		{ 0,    1,   -1,   -1,    0,   -2 }  // Z
-	};
+    const MatrixXd A = {
+    //    H2O   H+    OH-   HCO3- CO2   CO3--
+        { 2,    1,    1,    1,    0,    0 }, // H
+        { 1,    0,    1,    3,    2,    3 }, // O
+        { 0,    0,    0,    1,    1,    1 }, // C
+        { 0,    1,   -1,   -1,    0,   -2 }  // Z
+    };
 
-	Canonicalizer canonicalizer(A);
+    Canonicalizer canonicalizer(A);
 
     const Index r = canonicalizer.numBasicVariables();
 
-	REQUIRE(r == 3);
-	CHECK_CANONICAL_FORM
+    REQUIRE(r == 3);
+    CHECK_CANONICAL_FORM
 
-	VectorXd w = {55.1, 1.e-4, 1.e-10, 0.1, 0.5, 1e-2};
+    VectorXd w = {55.1, 1.e-4, 1.e-10, 0.1, 0.5, 1e-2};
 
-	canonicalizer.update(w);
+    canonicalizer.update(w);
 
-	CHECK_CANONICAL_FORM
-	CHECK_CANONICAL_ORDERING
+    CHECK_CANONICAL_FORM
+    CHECK_CANONICAL_ORDERING
 
-	Eigen::VectorXi expectedQ = {0, 4, 3, 5, 1, 2};
-	Eigen::VectorXi actualQ = canonicalizer.Q();
+    Eigen::VectorXi expectedQ = {0, 4, 3, 5, 1, 2};
+    Eigen::VectorXi actualQ = canonicalizer.Q();
 
-	REQUIRE(expectedQ.isApprox(actualQ));
+    REQUIRE(expectedQ.isApprox(actualQ));
 
-	w = {55.1, 1.e-4, 1.e-10, 0.3, 0.1, 0.8};
+    w = {55.1, 1.e-4, 1.e-10, 0.3, 0.1, 0.8};
 
-	canonicalizer.update(w);
+    canonicalizer.update(w);
 
-	CHECK_CANONICAL_FORM
-	CHECK_CANONICAL_ORDERING
+    CHECK_CANONICAL_FORM
+    CHECK_CANONICAL_ORDERING
 
-	expectedQ = {0, 5, 3, 4, 1, 2};
-	actualQ = canonicalizer.Q();
+    expectedQ = {0, 5, 3, 4, 1, 2};
+    actualQ = canonicalizer.Q();
 
-	REQUIRE(expectedQ.isApprox(actualQ));
+    REQUIRE(expectedQ.isApprox(actualQ));
 }
 
 TEST_CASE("Testing the update method of the Canonicalizer class with fixed variables")

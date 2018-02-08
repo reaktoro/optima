@@ -30,13 +30,13 @@ namespace Optima {
 /// The available stepping modes for some optimization algorithms.
 enum StepMode
 {
-	/// This mode ensures that Newton steps have direction preserved.
-	/// This is a more conservative approach, more often used in the optimization literature.
-	Conservative,
+    /// This mode ensures that Newton steps have direction preserved.
+    /// This is a more conservative approach, more often used in the optimization literature.
+    Conservative,
 
-	/// This mode permits that components of the Newton steps that would not violate bounds, are not affected.
-	/// Although not conventional, this more aggressive stepping approach results in faster convergence in many cases.
-	Aggressive
+    /// This mode permits that components of the Newton steps that would not violate bounds, are not affected.
+    /// Although not conventional, this more aggressive stepping approach results in faster convergence in many cases.
+    Aggressive
 };
 
 /// A type that describes the options for the output of a optimization calculation

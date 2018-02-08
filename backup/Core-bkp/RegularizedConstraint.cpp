@@ -21,17 +21,17 @@ namespace Optima {
 
 struct Constraint::Impl
 {
-	/// The original matrix representing the linear constraints.
-	Matrix Aorig;
+    /// The original matrix representing the linear constraints.
+    Matrix Aorig;
 
-	/// The matrix corresponding to the linearly independent constraints.
-	Matrix Ali;
+    /// The matrix corresponding to the linearly independent constraints.
+    Matrix Ali;
 
-	/// The regularized matrix that equivalently represents the linear constraints.
-	Matrix Areg;
+    /// The regularized matrix that equivalently represents the linear constraints.
+    Matrix Areg;
 
-	/// The indices of the linearly independent constraints.
-	Indices li_constraints;
+    /// The indices of the linearly independent constraints.
+    Indices li_constraints;
 };
 
 Constraint::Constraint()

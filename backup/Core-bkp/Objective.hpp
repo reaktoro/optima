@@ -25,21 +25,21 @@ namespace Optima {
 /// A type that describes the requirement options in the objective function evaluation.
 struct ObjectiveRequirement
 {
-	/// The boolean flag that indicates the need for the objective value.
-	bool val = true;
+    /// The boolean flag that indicates the need for the objective value.
+    bool val = true;
 
-	/// The boolean flag that indicates the need for the objective gradient.
-	bool grad = true;
+    /// The boolean flag that indicates the need for the objective gradient.
+    bool grad = true;
 
-	/// The boolean flag that indicates the need for the objective Hessian.
-	bool hessian = true;
+    /// The boolean flag that indicates the need for the objective Hessian.
+    bool hessian = true;
 };
 
 /// A type that describes the evaluation state of an objective function
 struct ObjectiveState
 {
-	/// The boolean flag that indicates if the objective function evaluation failed.
-	bool failed = false;
+    /// The boolean flag that indicates if the objective function evaluation failed.
+    bool failed = false;
 
     /// The evaluated value of the objective function.
     double val = 0.0;
@@ -50,7 +50,7 @@ struct ObjectiveState
     /// The evaluated Hessian of the objective function.
     Hessian hessian;
 
-	/// The requirements in the evaluation of the objective function.
+    /// The requirements in the evaluation of the objective function.
     ObjectiveRequirement requires;
 };
 

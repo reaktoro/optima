@@ -51,130 +51,130 @@ struct Canonicalizer::Impl
     PermutationMatrix Kb;
 
     /// The permutation matrix `Kn` used in the weighted update method.
-	PermutationMatrix Kn;
+    PermutationMatrix Kn;
 
-	/// The threshold used to compare numbers.
-	double threshold;
+    /// The threshold used to compare numbers.
+    double threshold;
 
     /// Compute the canonical matrix of the given matrix.
-	auto compute(MatrixXdConstRef A) -> void
-	{
-	    // The number of rows and columns of A
-	    const Index m = A.rows();
-	    const Index n = A.cols();
+    auto compute(MatrixXdConstRef A) -> void
+    {
+        // The number of rows and columns of A
+        const Index m = A.rows();
+        const Index n = A.cols();
 
-	    // Check if number of columns is greater/equal than number of rows
-	    assert(n >= m && "Could not canonicalize the given matrix. "
-	        "The given matrix has more rows than columns.");
+        // Check if number of columns is greater/equal than number of rows
+        assert(n >= m && "Could not canonicalize the given matrix. "
+            "The given matrix has more rows than columns.");
 
-	    // Compute the full-pivoting LU of A so that P*A*Q = L*U
-	    lu.compute(A);
+        // Compute the full-pivoting LU of A so that P*A*Q = L*U
+        lu.compute(A);
 
-	    // Get the rank of matrix A
-	    const Index r = lu.rank();
+        // Get the rank of matrix A
+        const Index r = lu.rank();
 
-	    // Get the LU factors of matrix A
-	    const auto L   = lu.matrixLU().leftCols(m).triangularView<Eigen::UnitLower>();
-	    const auto Ubb = lu.matrixLU().topLeftCorner(r, r).triangularView<Eigen::Upper>();
-	    const auto Ubn = lu.matrixLU().topRightCorner(r, n - r);
+        // Get the LU factors of matrix A
+        const auto L   = lu.matrixLU().leftCols(m).triangularView<Eigen::UnitLower>();
+        const auto Ubb = lu.matrixLU().topLeftCorner(r, r).triangularView<Eigen::Upper>();
+        const auto Ubn = lu.matrixLU().topRightCorner(r, n - r);
 
-	    // Set the permutation matrices P and Q
-	    P = lu.permutationP();
-	    Q = lu.permutationQ();
+        // Set the permutation matrices P and Q
+        P = lu.permutationP();
+        Q = lu.permutationQ();
 
-	    // Calculate the regularizer matrix R
-	    R = P;
-	    R = L.solve(R);
-	    R.topRows(r) = Ubb.solve(R.topRows(r));
+        // Calculate the regularizer matrix R
+        R = P;
+        R = L.solve(R);
+        R.topRows(r) = Ubb.solve(R.topRows(r));
 
-	    // Calculate matrix S
-	    S = Ubn;
-	    S = Ubb.solve(S);
+        // Calculate matrix S
+        S = Ubn;
+        S = Ubb.solve(S);
 
-	    // Initialize the permutation matrices Kb and Kn
-	    Kb.setIdentity(r);
-	    Kn.setIdentity(n - r);
+        // Initialize the permutation matrices Kb and Kn
+        Kb.setIdentity(r);
+        Kn.setIdentity(n - r);
 
-	    // Initialize the threshold value
-	    threshold = std::abs(lu.maxPivot()) * lu.threshold() * std::max(A.rows(), A.cols());
-	}
+        // Initialize the threshold value
+        threshold = std::abs(lu.maxPivot()) * lu.threshold() * std::max(A.rows(), A.cols());
+    }
 
-	/// Rationalize the entries in the canonical form.
-	auto rationalize(Index maxdenominator) -> void
-	{
-	    auto rational = [&](double val) -> double
-	    {
-	        auto pair = Optima::rationalize(val, maxdenominator);
-	        return static_cast<double>(std::get<0>(pair))/std::get<1>(pair);
-	    };
+    /// Rationalize the entries in the canonical form.
+    auto rationalize(Index maxdenominator) -> void
+    {
+        auto rational = [&](double val) -> double
+        {
+            auto pair = Optima::rationalize(val, maxdenominator);
+            return static_cast<double>(std::get<0>(pair))/std::get<1>(pair);
+        };
 
-	    std::transform(S.data(), S.data() + S.size(), S.data(), rational);
-	    std::transform(R.data(), R.data() + R.size(), R.data(), rational);
-	}
+        std::transform(S.data(), S.data() + S.size(), S.data(), rational);
+        std::transform(R.data(), R.data() + R.size(), R.data(), rational);
+    }
 
     /// Swap a basic variable by a non-basic variable.
-	auto updateWithSwapBasicVariable(Index ib, Index in) -> void
-	{
-	    // Check if ib < rank(A)
-	    assert(ib < lu.rank() &&
-	        "Could not swap basic and non-basic variables. "
-	            "Expecting an index of basic variable below `r`, where `r = rank(A)`.");
+    auto updateWithSwapBasicVariable(Index ib, Index in) -> void
+    {
+        // Check if ib < rank(A)
+        assert(ib < lu.rank() &&
+            "Could not swap basic and non-basic variables. "
+                "Expecting an index of basic variable below `r`, where `r = rank(A)`.");
 
-	    // Check if in < n - rank(A)
-	    assert(in < lu.cols() - lu.rank() &&
-	        "Could not swap basic and non-basic variables. "
-	            "Expecting an index of non-basic variable below `n - r`, where `r = rank(A)`.");
+        // Check if in < n - rank(A)
+        assert(in < lu.cols() - lu.rank() &&
+            "Could not swap basic and non-basic variables. "
+                "Expecting an index of non-basic variable below `n - r`, where `r = rank(A)`.");
 
-	    // Check if S(ib, in) is different than zero
-	    assert(std::abs(S(ib, in)) > threshold &&
-	        "Could not swap basic and non-basic variables. "
-	            "Expecting a non-basic variable with non-zero pivot.");
+        // Check if S(ib, in) is different than zero
+        assert(std::abs(S(ib, in)) > threshold &&
+            "Could not swap basic and non-basic variables. "
+                "Expecting a non-basic variable with non-zero pivot.");
 
-	    // Initialize the matrix M
-	    M = S.col(in);
+        // Initialize the matrix M
+        M = S.col(in);
 
-	    // Auxiliary variables
-	    const Index m = S.rows();
-	    const double aux = 1.0/S(ib, in);
+        // Auxiliary variables
+        const Index m = S.rows();
+        const double aux = 1.0/S(ib, in);
 
-	    // Update the canonicalizer matrix R (only its `r` upper rows, where `r = rank(A)`)
-	    R.row(ib) *= aux;
-	    for(Index i = 0; i < m; ++i)
-	        if(i != ib) R.row(i) -= S(i, in) * R.row(ib);
+        // Update the canonicalizer matrix R (only its `r` upper rows, where `r = rank(A)`)
+        R.row(ib) *= aux;
+        for(Index i = 0; i < m; ++i)
+            if(i != ib) R.row(i) -= S(i, in) * R.row(ib);
 
-	    // Update matrix S
-	    S.row(ib) *= aux;
-	    for(Index i = 0; i < m; ++i)
-	        if(i != ib) S.row(i) -= S(i, in) * S.row(ib);
-	    S.col(in) = -M*aux;
-	    S(ib, in) = aux;
+        // Update matrix S
+        S.row(ib) *= aux;
+        for(Index i = 0; i < m; ++i)
+            if(i != ib) S.row(i) -= S(i, in) * S.row(ib);
+        S.col(in) = -M*aux;
+        S(ib, in) = aux;
 
-	    // Update the permutation matrix Q
-	    std::swap(Q.indices()[ib], Q.indices()[m + in]);
-	}
+        // Update the permutation matrix Q
+        std::swap(Q.indices()[ib], Q.indices()[m + in]);
+    }
 
     /// Update the existing canonical form with given priority weights for the columns.
-	auto updateWithPriorityWeights(VectorXdConstRef w) -> void
-	{
-	    // Assert there are as many weights as there are variables
-	    assert(w.rows() == lu.cols() &&
-	        "Could not update the canonical form."
-	            "Mismatch number of variables and given priority weights.");
+    auto updateWithPriorityWeights(VectorXdConstRef w) -> void
+    {
+        // Assert there are as many weights as there are variables
+        assert(w.rows() == lu.cols() &&
+            "Could not update the canonical form."
+                "Mismatch number of variables and given priority weights.");
 
-	    // The rank and number of columns of matrix A
-	    const Index r = lu.rank();
-	    const Index n = lu.cols();
+        // The rank and number of columns of matrix A
+        const Index r = lu.rank();
+        const Index n = lu.cols();
 
-	    // The number of basic and non-basic variables
-	    const Index nb = r;
-	    const Index nn = n - r;
+        // The number of basic and non-basic variables
+        const Index nb = r;
+        const Index nn = n - r;
 
-	    // The upper part of R corresponding to linearly independent rows of A
+        // The upper part of R corresponding to linearly independent rows of A
         auto Rb = R.topRows(nb);
 
-	    // The indices of the basic and non-basic variables
-	    auto ibasic = Q.indices().head(nb);
-	    auto inonbasic = Q.indices().tail(nn);
+        // The indices of the basic and non-basic variables
+        auto ibasic = Q.indices().head(nb);
+        auto inonbasic = Q.indices().tail(nn);
 
         // Find the non-basic variable with maximum proportional weight with respect to a basic variable
         auto find_nonbasic_candidate = [&](Index i, Index& j)
@@ -206,27 +206,27 @@ struct Canonicalizer::Impl
         std::sort(Kb.indices().data(), Kb.indices().data() + nb,
             [&](Index l, Index r) { return w[ibasic[l]] > w[ibasic[r]]; });
 
-	    // Sort the non-basic variables in descend order of weights
-	    std::sort(Kn.indices().data(), Kn.indices().data() + nn,
-	        [&](Index l, Index r) { return w[inonbasic[l]] > w[inonbasic[r]]; });
+        // Sort the non-basic variables in descend order of weights
+        std::sort(Kn.indices().data(), Kn.indices().data() + nn,
+            [&](Index l, Index r) { return w[inonbasic[l]] > w[inonbasic[r]]; });
 
-	    // Rearrange the rows of S based on the new order of basic variables
-	    Kb.transpose().applyThisOnTheLeft(S);
+        // Rearrange the rows of S based on the new order of basic variables
+        Kb.transpose().applyThisOnTheLeft(S);
 
-	    // Rearrange the columns of S based on the new order of non-basic variables
-	    Kn.applyThisOnTheRight(S);
+        // Rearrange the columns of S based on the new order of non-basic variables
+        Kn.applyThisOnTheRight(S);
 
-	    // Rearrange the top `nb` rows of R based on the new order of basic variables
-	    Kb.transpose().applyThisOnTheLeft(Rb);
+        // Rearrange the top `nb` rows of R based on the new order of basic variables
+        Kb.transpose().applyThisOnTheLeft(Rb);
 
-	    // Rearrange the permutation matrix Q based on the new order of basic variables
-	    Kb.transpose().applyThisOnTheLeft(ibasic);
+        // Rearrange the permutation matrix Q based on the new order of basic variables
+        Kb.transpose().applyThisOnTheLeft(ibasic);
 
-	    // Rearrange the permutation matrix Q based on the new order of non-basic variables
-	    Kn.transpose().applyThisOnTheLeft(inonbasic);
-	}
+        // Rearrange the permutation matrix Q based on the new order of non-basic variables
+        Kn.transpose().applyThisOnTheLeft(inonbasic);
+    }
 
-	/// Update the order of the variables.
+    /// Update the order of the variables.
     auto updateWithNewOrdering(VectorXiConstRef ordering) -> void
     {
         ordering.asPermutation().transpose().applyThisOnTheLeft(Q);
@@ -240,7 +240,7 @@ Canonicalizer::Canonicalizer()
 Canonicalizer::Canonicalizer(MatrixXdConstRef A)
 : pimpl(new Impl())
 {
-	compute(A);
+    compute(A);
 }
 
 Canonicalizer::Canonicalizer(const Canonicalizer& other)
@@ -278,17 +278,17 @@ auto Canonicalizer::numNonBasicVariables() const -> Index
 
 auto Canonicalizer::S() const -> MatrixXdConstRef
 {
-	return pimpl->S;
+    return pimpl->S;
 }
 
 auto Canonicalizer::R() const -> MatrixXdConstRef
 {
-	return pimpl->R;
+    return pimpl->R;
 }
 
 auto Canonicalizer::Q() const -> VectorXiConstRef
 {
-	return pimpl->Q.indices();
+    return pimpl->Q.indices();
 }
 
 auto Canonicalizer::C() const -> MatrixXd
@@ -303,8 +303,8 @@ auto Canonicalizer::C() const -> MatrixXd
 
 auto Canonicalizer::indicesLinearlyIndependentEquations() const -> VectorXi
 {
-	PermutationMatrix Ptr = pimpl->P.transpose();
-	return Ptr.indices();
+    PermutationMatrix Ptr = pimpl->P.transpose();
+    return Ptr.indices();
 }
 
 auto Canonicalizer::indicesBasicVariables() const -> VectorXiConstRef

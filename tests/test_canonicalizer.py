@@ -1,3 +1,20 @@
+# Optima is a C++ library for numerical solution of linear and nonlinear programing problems.
+#
+# Copyright (C) 2014-2017 Allan Leal
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 from optima import *
 from numpy import *
 from pytest import approx
@@ -94,16 +111,20 @@ def test_canonicalizer_with_fixed_variables():
     A[3] = A[1] - 2*A[2]  # row(3) = row(1) - 2*row(2)
     canonicalizer = Canonicalizer(A)
     check_canonicalizer(canonicalizer, A)
-    
-    
-def test_canonicalizer_with_rational_numbers():
-    m = 4
-    n = 10
-    maxdenominator = 10
-    A = (arange(m*n) / arange(10, m*n + 10)).reshape((m, n)) 
-    canonicalizer = Canonicalizer(A)
-    canonicalizer.rationalize(100) 
-    check_canonicalizer(canonicalizer, A)
-    
-    
-    
+
+
+# def test_canonicalizer_with_rational_numbers():
+#     m = 4
+#     n = 10
+#     maxdenominator = 1000
+#     A = arange(m*n).reshape((m, n)) / 51.0
+# 
+#     canonicalizer = Canonicalizer(A)
+#     
+#     check_canonicalizer(canonicalizer, A)
+#     
+#     canonicalizer.rationalize(maxdenominator)
+# 
+#     check_canonicalizer(canonicalizer, A)
+
+

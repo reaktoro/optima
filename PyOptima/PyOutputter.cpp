@@ -15,23 +15,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include <../PyOptima/PyOptima/Common/PyMatrix.hpp"
-
-#include <boost/python.hpp>
-namespace py = boost::python;
+// pybind11 includes
+#include <pybind11/pybind11.h>
+namespace py = pybind11;
 
 // Optima includes
-#include <Optima/Math/Matrix.hpp>
+#include <Optima/Outputter.hpp>
+using namespace Optima;
 
-namespace Optima {
-
-auto export_Matrix() -> void
+void exportOutputter(py::module& m)
 {
-    // Export the typedef Vector = VectorXd
-    py::scope().attr("Vector") = py::scope().attr("VectorXd");
-
-    // Export the typedef Matrix = MatrixXd
-    py::scope().attr("Matrix") = py::scope().attr("MatrixXd");
+    py::class_<OutputterOptions>(m, "OutputterOptions")
+        .def_readwrite("active", &OutputterOptions::active)
+        .def_readwrite("fixed", &OutputterOptions::fixed)
+        .def_readwrite("scientific", &OutputterOptions::scientific)
+        .def_readwrite("precision", &OutputterOptions::precision)
+        .def_readwrite("width", &OutputterOptions::width)
+        .def_readwrite("separator", &OutputterOptions::separator)
+        ;
 }
-
-} // namespace Optima

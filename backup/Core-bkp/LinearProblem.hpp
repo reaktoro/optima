@@ -29,10 +29,10 @@ namespace Optima {
 /// A type used to describe a saddle point problem.
 struct SaddlePointProblem
 {
-	/// The diagonal matrix `H` in the coefficient matrix.
+    /// The diagonal matrix `H` in the coefficient matrix.
     Vector H;
 
-	/// The matrix `A` in the coefficient matrix.
+    /// The matrix `A` in the coefficient matrix.
     Matrix A;
 
     /// The diagonal matrix `X` in the coefficient matrix.
@@ -48,13 +48,13 @@ struct SaddlePointProblem
 /// A type used to describe a saddle point problem.
 struct SaddlePointProblemCanonical
 {
-	/// The diagonal matrix `G = diag(Gb, Gs, Gu)` in the coefficient matrix.
+    /// The diagonal matrix `G = diag(Gb, Gs, Gu)` in the coefficient matrix.
     Vector Gb, Gs, Gu;
 
-	/// The diagonal matrix `Bb` in the canonical coefficient matrix.
+    /// The diagonal matrix `Bb` in the canonical coefficient matrix.
     Vector Bb;
 
-	/// The matrix `B = [Bb Bs Bu]` in the canonical coefficient matrix.
+    /// The matrix `B = [Bb Bs Bu]` in the canonical coefficient matrix.
     Matrix Bs, Bu;
 
     /// The diagonal matrix `E = diag(Eb, Es, Eu)` in the coefficient matrix.

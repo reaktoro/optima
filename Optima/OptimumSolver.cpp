@@ -369,8 +369,8 @@
 //
 //                // Evaluate the objective function at the new trial iterate
 //                f.requires.val = true;
-//				f.requires.grad = false;
-//				f.requires.hessian = false;
+//                f.requires.grad = false;
+//                f.requires.hessian = false;
 //                structure.objective(xtrial, f);
 //
 //                // Decrease the current step length
@@ -386,8 +386,8 @@
 //
 //            // Update the gradient and Hessian at x
 //            f.requires.val = false;
-//			f.requires.grad = true;
-//			f.requires.hessian = true;
+//            f.requires.grad = true;
+//            f.requires.hessian = true;
 //            structure.objective(x, f);
 //
 //            // Update the z-Lagrange multipliers
@@ -433,8 +433,8 @@
 //
 //                // Evaluate the objective function at the trial iterate
 //                f.requires.val = true;
-//    			f.requires.grad = false;
-//    			f.requires.hessian = false;
+//                f.requires.grad = false;
+//                f.requires.hessian = false;
 //                structure.objective(xtrial, f);
 //
 //                // Leave the loop if f(xtrial) is finite
@@ -463,8 +463,8 @@
 //
 //            // Update the gradient and Hessian at x
 //            f.requires.val = false;
-//			f.requires.grad = true;
-//			f.requires.hessian = true;
+//            f.requires.grad = true;
+//            f.requires.hessian = true;
 //            structure.objective(x, f);
 //
 //            // Return true as found xtrial results in finite f(xtrial)

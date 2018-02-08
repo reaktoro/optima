@@ -20,10 +20,20 @@
 namespace py = pybind11;
 
 void exportCanonicalizer(py::module& m);
+void exportIndex(py::module& m);
+void exportOutputter(py::module& m);
 void exportSaddlePointMatrix(py::module& m);
+void exportSaddlePointResult(py::module& m);
+void exportTiming(py::module& m);
+void exportUtils(py::module& m);
 
 PYBIND11_MODULE(optima, m)
 {
     exportCanonicalizer(m);
+    exportIndex(m);
+    exportOutputter(m);
     exportSaddlePointMatrix(m);
+    exportSaddlePointResult(m);
+    exportTiming(m);
+    exportUtils(m);
 }

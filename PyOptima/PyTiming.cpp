@@ -15,23 +15,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include <../PyOptima/PyOptima/Common/PyMatrix.hpp"
-
-#include <boost/python.hpp>
-namespace py = boost::python;
+// pybind11 includes
+#include <pybind11/pybind11.h>
+#include <pybind11/chrono.h>
+namespace py = pybind11;
 
 // Optima includes
-#include <Optima/Math/Matrix.hpp>
+#include <Optima/Timing.hpp>
+using namespace Optima;
 
-namespace Optima {
-
-auto export_Matrix() -> void
+void exportTiming(py::module& m)
 {
-    // Export the typedef Vector = VectorXd
-    py::scope().attr("Vector") = py::scope().attr("VectorXd");
-
-    // Export the typedef Matrix = MatrixXd
-    py::scope().attr("Matrix") = py::scope().attr("MatrixXd");
+    m.def("timenow", &timenow);
+    m.def("elapsed", (double(*)(const Time&, const Time&)) &elapsed);
+    m.def("elapsed", (double(*)(const Time&)) &elapsed);
 }
-
-} // namespace Optima

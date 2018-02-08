@@ -329,13 +329,13 @@ auto farey(double x, unsigned n) -> std::tuple<long, long>
         double mediant = double(a+c)/(b+d);
         if(x == mediant) {
             if(b + d <= n) return std::make_tuple(a+c, b+d);
-			if(d > b) return std::make_tuple(c, d);
-			return std::make_tuple(a, b);
+            if(d > b) return std::make_tuple(c, d);
+            return std::make_tuple(a, b);
         }
         if(x > mediant) {
-			a = a+c;
-			b = b+d;
-		}
+            a = a+c;
+            b = b+d;
+        }
         else {
             c = a+c;
             d = b+d;

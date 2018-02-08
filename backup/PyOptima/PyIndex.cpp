@@ -27,11 +27,11 @@ namespace Optima {
 
 auto export_Index() -> void
 {
-	// Export the typedef Index = std::size_t
-	py::scope().attr("Index") = py::scope().attr("unsigned long");
+    // Export the typedef Index = std::size_t
+    py::scope().attr("Index") = py::scope().attr("unsigned long");
 
-	// Export the typedef Indices = std::vector<std::size_t>
-	py::scope().attr("Indices") = py::scope().attr("SizetVector");
+    // Export the typedef Indices = std::vector<std::size_t>
+    py::scope().attr("Indices") = py::scope().attr("SizetVector");
 }
 
 } // namespace Optima

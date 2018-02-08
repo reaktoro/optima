@@ -397,12 +397,12 @@ auto Regularizer::Impl::removeTrivialConstraints(
     // Update the names of the constraints and variables accordingly
     if(options.output.active)
     {
-    	if(options.output.xnames.size())
-    		options.output.xnames = extract(options.output.xnames, inontrivial_variables);
-    	if(options.output.ynames.size())
-    		options.output.ynames = extract(options.output.ynames, inontrivial_constraints);
-    	if(options.output.znames.size())
-    		options.output.znames = extract(options.output.znames, inontrivial_variables);
+        if(options.output.xnames.size())
+            options.output.xnames = extract(options.output.xnames, inontrivial_variables);
+        if(options.output.ynames.size())
+            options.output.ynames = extract(options.output.ynames, inontrivial_constraints);
+        if(options.output.znames.size())
+            options.output.znames = extract(options.output.znames, inontrivial_variables);
     }
 }
 
@@ -423,8 +423,8 @@ auto Regularizer::Impl::removeLinearlyDependentConstraints(
 
     // Update the names of the dual components y
     if(options.output.active)
-    	if(options.output.ynames.size())
-    		options.output.ynames = extract(options.output.ynames, ili_constraints);
+        if(options.output.ynames.size())
+            options.output.ynames = extract(options.output.ynames, ili_constraints);
 }
 
 auto Regularizer::Impl::echelonizeConstraints(
@@ -444,8 +444,8 @@ auto Regularizer::Impl::echelonizeConstraints(
 
     // Update the names of the constraints to the names of basic variables
     if(options.output.active)
-		if(options.output.xnames.size())
-			options.output.ynames = extract(options.output.xnames, ibasic_variables);
+        if(options.output.xnames.size())
+            options.output.ynames = extract(options.output.xnames, ibasic_variables);
 }
 
 auto Regularizer::Impl::updateConstraints(OptimumProblem& problem) -> void

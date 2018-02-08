@@ -20,7 +20,7 @@
 namespace Optima {
 
 Result::Result()
-: m_success(true), m_time(0.0), m_start(Optima::time()), m_stop(m_start)
+: m_success(true), m_time(0.0), m_start(timenow()), m_stop(m_start)
 {}
 
 auto Result::success(bool value) -> void
@@ -41,13 +41,13 @@ auto Result::time() const -> double
 auto Result::start() -> Result&
 {
     m_time = 0.0;
-    m_start = Optima::time();
+    m_start = timenow();
     return *this;
 }
 
 auto Result::stop() -> Result&
 {
-    m_stop = Optima::time();
+    m_stop = timenow();
     m_time = elapsed(m_stop, m_start);
     return *this;
 }

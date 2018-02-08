@@ -15,23 +15,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include <../PyOptima/PyOptima/Common/PyMatrix.hpp"
-
-#include <boost/python.hpp>
-namespace py = boost::python;
+// pybind11 includes
+#include <pybind11/pybind11.h>
+#include <pybind11/operators.h>
+namespace py = pybind11;
 
 // Optima includes
-#include <Optima/Math/Matrix.hpp>
+#include <Optima/SaddlePointResult.hpp>
+using namespace Optima;
 
-namespace Optima {
-
-auto export_Matrix() -> void
+void exportSaddlePointResult(py::module& m)
 {
-    // Export the typedef Vector = VectorXd
-    py::scope().attr("Vector") = py::scope().attr("VectorXd");
-
-    // Export the typedef Matrix = MatrixXd
-    py::scope().attr("Matrix") = py::scope().attr("MatrixXd");
+    py::class_<SaddlePointResult>(m, "SaddlePointResult")
+        .def(py::init<>())
+        .def("success", &SaddlePointResult::success)
+        .def("time", &SaddlePointResult::time)
+        .def("start", &SaddlePointResult::start, py::return_value_policy::reference)
+        .def("stop", &SaddlePointResult::stop, py::return_value_policy::reference)
+        .def("failed", &SaddlePointResult::failed, py::return_value_policy::reference)
+        .def("error", &SaddlePointResult::error)
+        .def(py::self += py::self)
+        .def(py::self + py::self)
+        ;
 }
-
-} // namespace Optima

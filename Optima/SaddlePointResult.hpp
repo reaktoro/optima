@@ -32,9 +32,6 @@ public:
     /// Construct a default SaddlePointResult instance.
     SaddlePointResult();
 
-    /// Set the success of the calculation.
-    auto success(bool value) -> void;
-
     /// Return `true` if the calculation was successful.
     auto success() const -> bool;
 
@@ -58,7 +55,7 @@ public:
     auto operator+=(const SaddlePointResult& other) -> SaddlePointResult&;
 
     /// Accumulate the result of several saddle point problem operations.
-    auto operator+(SaddlePointResult other) -> SaddlePointResult;
+    auto operator+(const SaddlePointResult& other) const -> SaddlePointResult;
 
 private:
     /// True if the calculation was successful.

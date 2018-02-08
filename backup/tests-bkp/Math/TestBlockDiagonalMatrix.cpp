@@ -26,42 +26,42 @@ TEST_CASE("Testing BlockDiagonalMatrix - square matrix")
 {
     const Index numblocks = 3;
 
-	MatrixXd M = {
-	    {1, 2, 3, 0, 0, 0},
-	    {2, 3, 4, 0, 0, 0},
-	    {3, 4, 5, 0, 0, 0},
-	    {0, 0, 0, 1, 2, 0},
-	    {0, 0, 0, 2, 3, 0},
-	    {0, 0, 0, 0, 0, 6}
-	};
+    MatrixXd M = {
+        {1, 2, 3, 0, 0, 0},
+        {2, 3, 4, 0, 0, 0},
+        {3, 4, 5, 0, 0, 0},
+        {0, 0, 0, 1, 2, 0},
+        {0, 0, 0, 2, 3, 0},
+        {0, 0, 0, 0, 0, 6}
+    };
 
-	BlockDiagonalMatrix A(numblocks);
-	A.block(0) = M.block(0, 0, 3, 3);
-	A.block(1) = M.block(3, 3, 2, 2);
-	A.block(2) = M.block(5, 5, 1, 1);
+    BlockDiagonalMatrix A(numblocks);
+    A.block(0) = M.block(0, 0, 3, 3);
+    A.block(1) = M.block(3, 3, 2, 2);
+    A.block(2) = M.block(5, 5, 1, 1);
 
-	REQUIRE(A.isApprox(M));
-	REQUIRE(M.isApprox(MatrixXd(A)));
+    REQUIRE(A.isApprox(M));
+    REQUIRE(M.isApprox(MatrixXd(A)));
 }
 
 TEST_CASE("Testing BlockDiagonalMatrix - rectangular matrix m < n")
 {
     const Index numblocks = 2;
 
-	MatrixXd M = {
-	    {1, 2, 3, 0, 0, 0},
-	    {2, 3, 4, 0, 0, 0},
-	    {3, 4, 5, 0, 0, 0},
-	    {0, 0, 0, 1, 2, 0},
-	    {0, 0, 0, 2, 3, 0}
-	};
+    MatrixXd M = {
+        {1, 2, 3, 0, 0, 0},
+        {2, 3, 4, 0, 0, 0},
+        {3, 4, 5, 0, 0, 0},
+        {0, 0, 0, 1, 2, 0},
+        {0, 0, 0, 2, 3, 0}
+    };
 
-	BlockDiagonalMatrix A(numblocks);
-	A.block(0) = M.block(0, 0, 3, 3);
-	A.block(1) = M.block(3, 3, 2, 3);
+    BlockDiagonalMatrix A(numblocks);
+    A.block(0) = M.block(0, 0, 3, 3);
+    A.block(1) = M.block(3, 3, 2, 3);
 
-	REQUIRE(A.isApprox(M));
-	REQUIRE(M.isApprox(MatrixXd(A)));
+    REQUIRE(A.isApprox(M));
+    REQUIRE(M.isApprox(MatrixXd(A)));
 }
 
 TEST_CASE("Testing BlockDiagonalMatrix - rectangular matrix m < n")
@@ -77,11 +77,11 @@ TEST_CASE("Testing BlockDiagonalMatrix - rectangular matrix m < n")
         {0, 0, 0, 0, 0}
     };
 
-	BlockDiagonalMatrix A(numblocks);
-	A.block(0) = M.block(0, 0, 3, 3);
-	A.block(1) = M.block(3, 3, 3, 2);
+    BlockDiagonalMatrix A(numblocks);
+    A.block(0) = M.block(0, 0, 3, 3);
+    A.block(1) = M.block(3, 3, 3, 2);
 
-	REQUIRE(A.isApprox(M));
-	REQUIRE(M.isApprox(MatrixXd(A)));
+    REQUIRE(A.isApprox(M));
+    REQUIRE(M.isApprox(MatrixXd(A)));
 }
 

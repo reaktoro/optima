@@ -186,7 +186,7 @@ auto OptimumSolver::approximate(const OptimumProblem& problem, OptimumState& sta
 
 auto OptimumSolver::approximate(const OptimumProblem& problem, OptimumState& state, const OptimumOptions& options) -> OptimumResult
 {
-	RuntimeError("Not implemented.", "Not implemented.");
+    RuntimeError("Not implemented.", "Not implemented.");
 }
 
 auto OptimumSolver::solve(const OptimumProblem& problem, OptimumState& state) -> OptimumResult

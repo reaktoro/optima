@@ -20,37 +20,37 @@ using namespace Optima;
 
 int main(int argc, char **argv)
 {
-	OptimumProblem problem;
-	problem.n = 2;
-	problem.objective = [](const VectorXd& x, ObjectiveState& f)
-	{
-		VectorXd xt = x - ones(2);
-		if(f.requires.val) f.val = 0.5 * dot(xt, xt);
-		if(f.requires.grad) f.grad = xt;
-		if(f.requires.hessian)
-		{
-			f.hessian.mode = Hessian::Diagonal;
-			f.hessian.diagonal = ones(x.rows());
-		}
-	};
-	problem.A.resize(1, 2);
-	problem.A << 1, -1;
+    OptimumProblem problem;
+    problem.n = 2;
+    problem.objective = [](const VectorXd& x, ObjectiveState& f)
+    {
+        VectorXd xt = x - ones(2);
+        if(f.requires.val) f.val = 0.5 * dot(xt, xt);
+        if(f.requires.grad) f.grad = xt;
+        if(f.requires.hessian)
+        {
+            f.hessian.mode = Hessian::Diagonal;
+            f.hessian.diagonal = ones(x.rows());
+        }
+    };
+    problem.A.resize(1, 2);
+    problem.A << 1, -1;
 
-	problem.a.resize(1);
-	problem.a << 0;
+    problem.a.resize(1);
+    problem.a << 0;
 
-	OptimumState state;
-	state.x.resize(2);
-	state.x << 6, 3;
+    OptimumState state;
+    state.x.resize(2);
+    state.x << 6, 3;
 
-	OptimumOptions options;
-	options.output.active = true;
+    OptimumOptions options;
+    options.output.active = true;
 
-	OptimumSolver solver;
+    OptimumSolver solver;
 
-	solver.solve(problem, state, options);
+    solver.solve(problem, state, options);
 
-	std::cout << state.x << std::endl;
+    std::cout << state.x << std::endl;
 }
 
 

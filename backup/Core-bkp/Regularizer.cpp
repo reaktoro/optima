@@ -33,43 +33,43 @@ namespace {
 
 template<typename Matrix, typename Vector>
 auto determineQuasiFeasibleConstraints(
-	const Matrix& A,
-	const Vector& a,
-	const Vector& l,
-	const Vector& u,
-	Indices& iquasifeasible_lower,
-	Indices& iquasifeasible_upper) -> void
+    const Matrix& A,
+    const Vector& a,
+    const Vector& l,
+    const Vector& u,
+    Indices& iquasifeasible_lower,
+    Indices& iquasifeasible_upper) -> void
 {
     // Clear the output vectors
-	iquasifeasible_lower.clear();
-	iquasifeasible_upper.clear();
+    iquasifeasible_lower.clear();
+    iquasifeasible_upper.clear();
 
-	for(Index i = 0; i < A.rows(); ++i)
-	{
-		if(min(A.row(i)) >= 0.0) // if all entries in A.row(i) are non-negative
-		{
-			if(l.rows() && A.row(i)*l >= a[i])
-				iquasifeasible_lower.push_back(i);
-			if(u.rows() && A.row(i)*u <= a[i])
-				iquasifeasible_upper.push_back(i);
-		}
-		else if(max(A.row(i)) < 0.0) // if all entries in A.row(i) are negative
-		{
-			if(l.rows() && A.row(i)*l <= a[i])
-				iquasifeasible_lower.push_back(i);
-			if(u.rows() && A.row(i)*u >= a[i])
-				iquasifeasible_upper.push_back(i);
-		}
-	}
+    for(Index i = 0; i < A.rows(); ++i)
+    {
+        if(min(A.row(i)) >= 0.0) // if all entries in A.row(i) are non-negative
+        {
+            if(l.rows() && A.row(i)*l >= a[i])
+                iquasifeasible_lower.push_back(i);
+            if(u.rows() && A.row(i)*u <= a[i])
+                iquasifeasible_upper.push_back(i);
+        }
+        else if(max(A.row(i)) < 0.0) // if all entries in A.row(i) are negative
+        {
+            if(l.rows() && A.row(i)*l <= a[i])
+                iquasifeasible_lower.push_back(i);
+            if(u.rows() && A.row(i)*u >= a[i])
+                iquasifeasible_upper.push_back(i);
+        }
+    }
 }
 
 template<typename Matrix>
 auto determineLowerUpperFixedVariables(
-	const Matrix& A,
-	const Indices& iquasifeasible_lower,
-	const Indices& iquasifeasible_upper,
-	Indices& ifixed_lower,
-	Indices& ifixed_upper) -> void
+    const Matrix& A,
+    const Indices& iquasifeasible_lower,
+    const Indices& iquasifeasible_upper,
+    Indices& ifixed_lower,
+    Indices& ifixed_upper) -> void
 {
     ifixed_lower.clear;
     ifixed_upper.clear;
@@ -450,12 +450,12 @@ auto Regularizer::Impl::removeTrivialConstraints(
     // Update the names of the constraints and variables accordingly
     if(options.output.active)
     {
-    	if(options.output.xnames.size())
-    		options.output.xnames = extract(options.output.xnames, inontrivial_variables);
-    	if(options.output.ynames.size())
-    		options.output.ynames = extract(options.output.ynames, inontrivial_constraints);
-    	if(options.output.znames.size())
-    		options.output.znames = extract(options.output.znames, inontrivial_variables);
+        if(options.output.xnames.size())
+            options.output.xnames = extract(options.output.xnames, inontrivial_variables);
+        if(options.output.ynames.size())
+            options.output.ynames = extract(options.output.ynames, inontrivial_constraints);
+        if(options.output.znames.size())
+            options.output.znames = extract(options.output.znames, inontrivial_variables);
     }
 }
 
@@ -476,8 +476,8 @@ auto Regularizer::Impl::removeLinearlyDependentConstraints(
 
     // Update the names of the dual components y
     if(options.output.active)
-    	if(options.output.ynames.size())
-    		options.output.ynames = extract(options.output.ynames, ili_constraints);
+        if(options.output.ynames.size())
+            options.output.ynames = extract(options.output.ynames, ili_constraints);
 }
 
 auto Regularizer::Impl::echelonizeConstraints(
@@ -497,8 +497,8 @@ auto Regularizer::Impl::echelonizeConstraints(
 
     // Update the names of the constraints to the names of basic variables
     if(options.output.active)
-		if(options.output.xnames.size())
-			options.output.ynames = extract(options.output.xnames, ibasic_variables);
+        if(options.output.xnames.size())
+            options.output.ynames = extract(options.output.xnames, ibasic_variables);
 }
 
 auto Regularizer::Impl::updateConstraints(OptimumProblem& problem) -> void
@@ -636,17 +636,17 @@ auto Regularizer::setOptions(const RegularizerOptions& options) -> void
 
 auto Regularizer::regularize(const OptimumState& state, const OptimumProblem& problem) -> void
 {
-	pimpl->regularize(state, problem);
+    pimpl->regularize(state, problem);
 }
 
 auto Regularizer::regularize(const OptimumState& state, const Vector& a) -> void
 {
-	pimpl->regularize(state, a);
+    pimpl->regularize(state, a);
 }
 
 auto Regularizer::regularize(const OptimumState& state) -> void
 {
-	pimpl->regularize(state);
+    pimpl->regularize(state);
 }
 
 } // namespace Optima

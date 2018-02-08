@@ -28,7 +28,7 @@ using Duration = std::chrono::duration<double>;
 
 /// Return the time point now
 /// @see elapsed
-auto time() -> Time;
+auto timenow() -> Time;
 
 /// Return the elapsed time between two time points (in units of s)
 /// @param end The end time point

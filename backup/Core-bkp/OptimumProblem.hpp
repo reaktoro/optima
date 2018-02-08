@@ -30,12 +30,12 @@ namespace Optima {
 /// A type that describes the non-linear constrained optimization problem
 struct OptimumProblem
 {
-	/// Construct a default OptimumProblem instance.
-	OptimumProblem();
+    /// Construct a default OptimumProblem instance.
+    OptimumProblem();
 
-	/// Construct an OptimumProblem instance with given number of variables.
-	/// @param n The number of variables in the optimization problem.
-	OptimumProblem(Index n);
+    /// Construct an OptimumProblem instance with given number of variables.
+    /// @param n The number of variables in the optimization problem.
+    OptimumProblem(Index n);
 
     /// The number of primal variables `x`
     Index n;

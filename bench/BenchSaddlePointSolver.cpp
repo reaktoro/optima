@@ -87,19 +87,19 @@ void benchMethodRangespaceDiagonal()
         PartialPivLU<MatrixXd> partiallu(M);
         FullPivLU<MatrixXd> fulllu(M);
 
-        begin = time();
+        begin = timenow();
         partiallu.compute(M);
         time_partiallu1 += elapsed(begin);
 
-        begin = time();
+        begin = timenow();
         fulllu.compute(M);
         time_fulllu1 += elapsed(begin);
 
-        begin = time();
+        begin = timenow();
         s_partiallu.noalias() = partiallu.solve(r);
         time_partiallu2 += elapsed(begin);
 
-        begin = time();
+        begin = timenow();
         s_fulllu.noalias() = fulllu.solve(r);
         time_fulllu2 += elapsed(begin);
     }
@@ -197,19 +197,19 @@ void benchMethodNullspace()
         PartialPivLU<MatrixXd> partiallu(M);
         FullPivLU<MatrixXd> fulllu(M);
 
-        begin = time();
+        begin = timenow();
         partiallu.compute(M);
         time_partiallu1 += elapsed(begin);
 
-        begin = time();
+        begin = timenow();
         fulllu.compute(M);
         time_fulllu1 += elapsed(begin);
 
-        begin = time();
+        begin = timenow();
         s_partiallu.noalias() = partiallu.solve(r);
         time_partiallu2 += elapsed(begin);
 
-        begin = time();
+        begin = timenow();
         s_fulllu.noalias() = fulllu.solve(r);
         time_fulllu2 += elapsed(begin);
     }
