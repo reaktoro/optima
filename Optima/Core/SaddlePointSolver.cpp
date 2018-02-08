@@ -147,8 +147,8 @@ struct SaddlePointSolver::Impl
         nn2 = 0;
 
         // Initialize the ordering of the variables
-        iordering.head(nb) = canonicalizer.ibasic();
-        iordering.tail(nn) = canonicalizer.inonbasic();
+        iordering.head(nb) = canonicalizer.indicesBasicVariables();
+        iordering.tail(nn) = canonicalizer.indicesNonBasicVariables();
 
         return res.stop();
     }
@@ -168,11 +168,11 @@ struct SaddlePointSolver::Impl
         weights.tail(nf).noalias() = -linspace(nf, 1, nf);
 
         // Update the canonical form and the ordering of the variables
-        canonicalizer.update(weights);
+        canonicalizer.updateWithPriorityWeights(weights);
 
         // Get the updated indices of basic and non-basic variables
-        const auto ibasic = canonicalizer.ibasic();
-        const auto inonbasic = canonicalizer.inonbasic();
+        const auto ibasic = canonicalizer.indicesBasicVariables();
+        const auto inonbasic = canonicalizer.indicesNonBasicVariables();
 
         // Get the S matrix of the canonical form of A
         const auto S = canonicalizer.S();
@@ -1202,7 +1202,7 @@ struct SaddlePointSolver::Impl
     auto reorder(VectorXiConstRef ordering) -> void
     {
         // Update the ordering of the canonicalizer object
-        canonicalizer.reorder(ordering);
+        canonicalizer.updateWithNewOrdering(ordering);
     }
 
 //    auto solve(SaddlePointMatrix lhs, SaddlePointVector rhs, SaddlePointSolution& sol) -> SaddlePointResult

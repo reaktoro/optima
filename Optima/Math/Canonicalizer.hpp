@@ -74,31 +74,21 @@ public:
     auto C() const -> MatrixXd;
 
     /// Return the indices of the linearly independent rows of the original matrix.
-    auto ili() const -> VectorXi;
+    auto indicesLinearlyIndependentEquations() const -> VectorXi;
 
-    /// Return the indices of the basic components.
-    auto ibasic() const -> VectorXiConstRef;
+    /// Return the indices of the basic variables.
+    auto indicesBasicVariables() const -> VectorXiConstRef;
 
-    /// Return the indices of the non-basic components.
-    auto inonbasic() const -> VectorXiConstRef;
+    /// Return the indices of the non-basic variables.
+    auto indicesNonBasicVariables() const -> VectorXiConstRef;
 
 	/// Compute the canonical matrix of the given matrix.
 	auto compute(MatrixXdConstRef A) -> void;
 
-	/// Rationalize the entries in the canonical form.
-	/// This method should be used if the entries in matrix \eq{A} are rational numbers and
-	/// round-off errors introduced by the canonicalization should be eliminated as much as possible.
-	/// This method will replace all entries in matrices \eq{R} and \eq{S} by the nearest rational
-	/// number. To to this, an estimate for the maximum denominator among all entries in \eq{A}
-	/// is needed. For example, one might know in advance that all entries in \eq{A} are rationals
-	/// with denominators certainly not greater than 1000.
-	/// @param maxdenominator The estimate for the maximum denominator.
-	auto rationalize(Index maxdenominator) -> void;
-
-	/// Swap a basic variable by a non-basic variable.
+	/// Update the canonical form with the swap of a basic variable by a non-basic variable.
 	/// @param ibasic The index of the basic variable between 0 and \eq{n_\mathrm{b}}`.
 	/// @param inonbasic The index of the non-basic variable between 0 and \eq{n_\mathrm{n}}`.
-	auto swapBasicVariable(Index ibasic, Index inonbasic) -> void;
+	auto updateWithSwapBasicVariable(Index ibasic, Index inonbasic) -> void;
 
 	/// Update the canonical form with given priority weights for the variables.
 	/// This method will update the canonical form by taking into account the given priority
@@ -111,10 +101,10 @@ public:
 	/// with non-positive weights need to be basic variables. This happens when all variables with
 	/// non-zero coefficient in a row of matrix \eq{A} have non-positive weights.
     /// @param weights The priority weights of the variables.
-	auto update(VectorXdConstRef weights) -> void;
+	auto updateWithPriorityWeights(VectorXdConstRef weights) -> void;
 
-	/// Update the order of the variables.
-	auto reorder(VectorXiConstRef ordering) -> void;
+	/// Update the canonical form with a new ordering for the variables.
+	auto updateWithNewOrdering(VectorXiConstRef ordering) -> void;
 
 private:
 	struct Impl;

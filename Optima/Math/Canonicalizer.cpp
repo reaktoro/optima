@@ -113,7 +113,7 @@ struct Canonicalizer::Impl
 	}
 
     /// Swap a basic variable by a non-basic variable.
-	auto swapBasicVariable(Index ib, Index in) -> void
+	auto updateWithSwapBasicVariable(Index ib, Index in) -> void
 	{
 	    // Check if ib < rank(A)
 	    assert(ib < lu.rank() &&
@@ -154,7 +154,7 @@ struct Canonicalizer::Impl
 	}
 
     /// Update the existing canonical form with given priority weights for the columns.
-	auto update(VectorXdConstRef w) -> void
+	auto updateWithPriorityWeights(VectorXdConstRef w) -> void
 	{
 	    // Assert there are as many weights as there are variables
 	    assert(w.rows() == lu.cols() &&
@@ -199,7 +199,7 @@ struct Canonicalizer::Impl
             const double wi = w[ibasic[i]];
             const double wj = find_nonbasic_candidate(i, j);
             if(wi < wj)
-                swapBasicVariable(i, j);
+                updateWithSwapBasicVariable(i, j);
         }
 
         // Sort the basic variables in descend order of weights
@@ -227,7 +227,7 @@ struct Canonicalizer::Impl
 	}
 
 	/// Update the order of the variables.
-    auto reorder(VectorXiConstRef ordering) -> void
+    auto updateWithNewOrdering(VectorXiConstRef ordering) -> void
     {
         ordering.asPermutation().transpose().applyThisOnTheLeft(Q);
     }
@@ -301,18 +301,18 @@ auto Canonicalizer::C() const -> MatrixXd
     return res;
 }
 
-auto Canonicalizer::ili() const -> VectorXi
+auto Canonicalizer::indicesLinearlyIndependentEquations() const -> VectorXi
 {
 	PermutationMatrix Ptr = pimpl->P.transpose();
 	return Ptr.indices();
 }
 
-auto Canonicalizer::ibasic() const -> VectorXiConstRef
+auto Canonicalizer::indicesBasicVariables() const -> VectorXiConstRef
 {
     return Q().head(numBasicVariables());
 }
 
-auto Canonicalizer::inonbasic() const -> VectorXiConstRef
+auto Canonicalizer::indicesNonBasicVariables() const -> VectorXiConstRef
 {
     return Q().tail(numNonBasicVariables());
 }
@@ -322,24 +322,19 @@ auto Canonicalizer::compute(MatrixXdConstRef A) -> void
     pimpl->compute(A);
 }
 
-auto Canonicalizer::rationalize(Index maxdenominator) -> void
+auto Canonicalizer::updateWithSwapBasicVariable(Index ibasic, Index inonbasic) -> void
 {
-    pimpl->rationalize(maxdenominator);
+    pimpl->updateWithSwapBasicVariable(ibasic, inonbasic);
 }
 
-auto Canonicalizer::swapBasicVariable(Index ibasic, Index inonbasic) -> void
+auto Canonicalizer::updateWithPriorityWeights(VectorXdConstRef weights) -> void
 {
-    pimpl->swapBasicVariable(ibasic, inonbasic);
+    pimpl->updateWithPriorityWeights(weights);
 }
 
-auto Canonicalizer::update(VectorXdConstRef weights) -> void
+auto Canonicalizer::updateWithNewOrdering(VectorXiConstRef ordering) -> void
 {
-    pimpl->update(weights);
-}
-
-auto Canonicalizer::reorder(VectorXiConstRef ordering) -> void
-{
-    pimpl->reorder(ordering);
+    pimpl->updateWithNewOrdering(ordering);
 }
 
 } // namespace Optima

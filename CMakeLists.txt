@@ -57,13 +57,8 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 
 # Find python interpreter if needed
 if(BUILD_PYTHON)
-    find_package(PythonInterp)
     find_package(pybind11 2.2.2 REQUIRED)
-    if(NOT PYTHONINTERP_FOUND)
-        set(BUILD_PYTHON OFF)
-        message(WARNING "Python executable was not found. "
-            "Cannot build python wrappers and packages for Optima.")
-    endif()
+
     if(NOT pybind11_FOUND)
         set(BUILD_PYTHON OFF)
         message(WARNING "pybind11 was not found. "

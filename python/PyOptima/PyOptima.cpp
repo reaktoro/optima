@@ -17,38 +17,13 @@
 
 // pybind11 includes
 #include <pybind11/pybind11.h>
-#include <pybind11/eigen.h>
-#include <eigen3/Eigenx/Core>
-//#include <eigen3/Eigen/Dense>
-using namespace Eigen;
 namespace py = pybind11;
 
-//// Optima includes
-//#include <PyOptima/Math/PyCanonicalizer.hpp>
-
-namespace Optima {
-
-VectorXd doubleVec(VectorXdConstRef a)
-{
-    return 2*a;
-}
-
-MatrixXd squareMat(MatrixXdConstRef a)
-{
-    return a.cwiseProduct(a);
-}
-
-} // namespace Optima
-
 void exportCanonicalizer(py::module& m);
+void exportSaddlePointMatrix(py::module& m);
 
 PYBIND11_MODULE(optima, m)
 {
     exportCanonicalizer(m);
-
-//    m.def("doubleVec", [](const Eigen::VectorXd& m) -> Eigen::VectorXd { return 2 * m; });
-//    m.def("squareMat", [](Eigen::MatrixXd m) -> Eigen::MatrixXd { return m; });
-
-    m.def("doubleVec", &Optima::doubleVec);
-    m.def("squareMat", &Optima::squareMat);
+    exportSaddlePointMatrix(m);
 }
