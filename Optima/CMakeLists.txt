@@ -1,15 +1,21 @@
-# Recursively collect all header files from the current directory
-file(GLOB_RECURSE HEADER_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.hpp *.hxx)
+# Collect all header files from the current directory for the C++ library
+file(GLOB_RECURSE HPP_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.hpp)
 
-# Recursively collect all source files from the current directory
-file(GLOB_RECURSE SOURCE_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cpp)
+# Collect all source files from the current directory for the C++ library
+file(GLOB_RECURSE CPP_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cpp)
+
+# Collect all source files from the current directory for the Python module 
+file(GLOB_RECURSE CXX_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cxx)
 
 # The name of the shared and static libraries
 set(OPTIMA_SHARED_LIB ${PROJECT_NAME}${SUFFIX_SHARED_LIBS})
 set(OPTIMA_STATIC_LIB ${PROJECT_NAME}${SUFFIX_STATIC_LIBS})
 
-# Compile Optima into object files
-add_library(OptimaObject OBJECT ${HEADER_FILES} ${SOURCE_FILES})
+# Compile Optima cpp files into object files
+add_library(OptimaObject OBJECT ${HPP_FILES} ${CPP_FILES})
+
+# Compile Optima cxx files into a Python module
+pybind11_add_module(optima ${CXX_FILES} $<TARGET_OBJECTS:OptimaObject>)
 
 # Check if a shared library for Optima must be built
 if(BUILD_SHARED_LIBS)
