@@ -116,11 +116,6 @@ include_directories(${CMAKE_SOURCE_DIR})
 # Build the C++ library Optima
 add_subdirectory(Optima)
 
-# Build the Python extension module PyOptima and the Python packages optima
-if(BUILD_PYTHON)
-    add_subdirectory(PyOptima)
-endif()
-
 # Build the demonstration applications
 if(BUILD_DEMOS)
     add_subdirectory(demos)

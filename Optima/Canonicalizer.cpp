@@ -20,8 +20,12 @@
 // C++ includes
 #include <cassert>
 
+// Eigen includes
+#include <eigen3/Eigenx/Core>
+#include <eigen3/Eigen/LU>
+using namespace Eigen;
+
 // Optima includes
-#include <Optima/EigenExtern.hpp>
 #include <Optima/Utils.hpp>
 using namespace Eigen;
 

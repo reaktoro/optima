@@ -17,11 +17,9 @@
 
 #include "IpSaddlePointSolver.hpp"
 
-
-#include <iostream>
-
-
-
+// Eigen includes
+#include <eigen3/Eigenx/Core>
+using namespace Eigen;
 
 // Optima includes
 #include <Optima/Exception.hpp>
@@ -31,8 +29,6 @@
 #include <Optima/SaddlePointOptions.hpp>
 #include <Optima/SaddlePointResult.hpp>
 #include <Optima/Canonicalizer.hpp>
-#include <Optima/EigenExtern.hpp>
-using namespace Eigen;
 
 namespace Optima {
 
