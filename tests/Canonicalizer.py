@@ -17,6 +17,7 @@
 
 from optima import *
 from numpy import *
+from numpy.linalg import norm
 from pytest import approx
 
 def reverse(list):
@@ -27,7 +28,7 @@ def check_canonical_form(canonicalizer, A):
     R = canonicalizer.R()
     Q = canonicalizer.Q()
     C = canonicalizer.C()
-    assert R.dot(A[:,Q]) == approx(C)
+    assert norm(R.dot(A[:,Q]) - C) / norm(C) == approx(0.0)
 
 
 def check_canonical_ordering(canonicalizer, weigths):
@@ -88,7 +89,7 @@ def check_canonicalizer(canonicalizer, A):
 def test_canonicalizer_with_regular_matrix():
     m = 4
     n = 10
-    A = random.rand(m, n)
+    A = eigen.random(m, n)
     canonicalizer = Canonicalizer(A)
     check_canonicalizer(canonicalizer, A)
 
@@ -96,7 +97,7 @@ def test_canonicalizer_with_regular_matrix():
 def test_canonicalizer_with_two_linearly_dependent_rows():
     m = 4
     n = 10
-    A = random.rand(m, n)
+    A = eigen.random(m, n)
     A[2] = A[0] + 2*A[1]  # row(2) = row(0) + 2*row(1)
     A[3] = A[1] - 2*A[2]  # row(3) = row(1) - 2*row(2)
     canonicalizer = Canonicalizer(A)
@@ -106,7 +107,7 @@ def test_canonicalizer_with_two_linearly_dependent_rows():
 def test_canonicalizer_with_fixed_variables():
     m = 4
     n = 10
-    A = random.rand(m, n)
+    A = eigen.random(m, n)
     A[2] = A[0] + 2*A[1]  # row(2) = row(0) + 2*row(1)
     A[3] = A[1] - 2*A[2]  # row(3) = row(1) - 2*row(2)
     canonicalizer = Canonicalizer(A)

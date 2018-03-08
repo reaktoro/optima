@@ -23,8 +23,8 @@ set(OPTIMA_VERSION "${OPTIMA_VERSION_MAJOR}.${OPTIMA_VERSION_MINOR}.${OPTIMA_VER
 option(BUILD_ALL    "Build everything." OFF)
 option(BUILD_DEMOS  "Build demos." OFF)
 option(BUILD_DOCS   "Build documentation." OFF)
-option(BUILD_PYTHON "Build the python wrappers." OFF)
-option(BUILD_TESTS  "Build tests." OFF)
+option(BUILD_PYTHON "Build the python wrappers." ON)
+option(BUILD_TESTS  "Build tests." ON)
 option(BUILD_BENCH  "Build benchmarks." OFF)
 
 # Option to conveniently permit build in debug mode
@@ -55,8 +55,12 @@ endif()
 find_package(Eigen3 3.3.5 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
 
-# Find python interpreter if needed
+# Find pybind11 library
 if(BUILD_PYTHON)
+    if(NOT PYBIND11_PYTHON_VERSION)
+        set(PYBIND11_PYTHON_VERSION 2.7)
+    endif()
+    
     find_package(pybind11 2.2.2 REQUIRED)
 
     if(NOT pybind11_FOUND)
@@ -115,6 +119,13 @@ include_directories(${CMAKE_SOURCE_DIR})
 
 # Build the C++ library Optima
 add_subdirectory(Optima)
+
+# Build the python wrappers
+if(BUILD_PYTHON)
+    add_subdirectory(python)
+else()
+    add_subdirectory(python EXCLUDE_FROM_ALL)
+endif()
 
 # Build the demonstration applications
 if(BUILD_DEMOS)

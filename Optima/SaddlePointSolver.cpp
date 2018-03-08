@@ -20,7 +20,6 @@
 // Eigen includes
 #include <eigen3/Eigenx/Core>
 #include <eigen3/Eigen/LU>
-
 using namespace Eigen;
 
 // Optima includes

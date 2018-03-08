@@ -21,34 +21,6 @@ from numpy import *
 from pytest import approx
 
 
-def headRows(n):
-    return slice(n), slice(None)
-
-
-def middleRows(start, n):
-    return slice(start, start + n), slice(None)
-
-
-def tailRows(n):
-    return slice(-n), slice(None)
-
-
-def headCols(n):
-    return slice(None), slice(n)
-
-
-def middleCols(start, n):
-    return slice(None), slice(start, start + n)
-
-
-def tailCols(n):
-    return slice(None), slice(-n)
-
-
-def block(startrow, startcol, nrows, ncols):
-    return slice(startrow, startrow + nrows), slice(startcol, startcol + ncols)
-
-
 def test_saddle_point_matrix():
     H = array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
     A = array([[1, 2, 3], [3, 4, 5]])
@@ -76,9 +48,9 @@ def test_saddle_point_matrix():
 
     mat2 = SaddlePointMatrix(H, A, G, nx, nf)
 
-    M[middleRows(nx, nf)] = 0.0
-    M[middleCols(nx, nf)][headRows(n)] = 0.0
-    M[block(nx, nx, nf, nf)] = eye(nf)
+    M[nx:nx+nf, :] = 0.0
+    M[:n, nx:nx+nf] = 0.0
+    M[nx:nx+nf, nx:nx+nf] = eye(nf)
 
     # Check conversion to a Matrix instance
     assert mat2.matrix() == approx(M)

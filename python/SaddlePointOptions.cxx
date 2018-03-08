@@ -34,6 +34,7 @@ void exportSaddlePointOptions(py::module& m)
         ;
 
     py::class_<SaddlePointOptions>(m, "SaddlePointOptions")
+        .def(py::init<>())
         .def_readwrite("method", &SaddlePointOptions::method)
         .def_readwrite("rationalize", &SaddlePointOptions::rationalize)
         .def_readwrite("maxdenominator", &SaddlePointOptions::maxdenominator)
