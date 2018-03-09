@@ -84,9 +84,6 @@ if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
     set(BUILD_SHARED_LIBS OFF)
 endif()
 
-# Define custom options
-option(ENABLE_TESTING "Enable testing." on)
-
 # Set the default build type to Release
 if(NOT CMAKE_BUILD_TYPE)
     message(STATUS "Setting build type to 'Release' as none was specified.")
@@ -111,7 +108,6 @@ endif()
 # Set the project directory names
 set(OPTIMA_DEMOS_DIR      ${CMAKE_SOURCE_DIR}/demos)
 set(OPTIMA_DOCS_DIR       ${CMAKE_SOURCE_DIR}/docs)
-set(OPTIMA_RESOURCES_DIR  ${CMAKE_SOURCE_DIR}/resources)
 set(OPTIMA_SOURCE_DIR     ${CMAKE_SOURCE_DIR}/Optima)
 
 # Set the include directories
@@ -141,15 +137,6 @@ else()
     add_subdirectory(docs EXCLUDE_FROM_ALL)
 endif()
 
-# Build the tests
-if(BUILD_TESTS)
-    enable_testing()
-    add_subdirectory(tests)
-else()
-    enable_testing()
-    add_subdirectory(tests EXCLUDE_FROM_ALL)
-endif()
-
 # Build the benchmarks
 if(BUILD_BENCH)
     add_subdirectory(bench)
@@ -162,10 +149,10 @@ add_custom_target(demos
     COMMAND ${CMAKE_MAKE_PROGRAM}
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demos")
 
-# Add target "tests" for manual building of tests, as `make tests`, if BUILD_TESTS is OFF
+# Add target "tests" for manual execution of tests, as `make tests`
 add_custom_target(tests
-    COMMAND ${CMAKE_MAKE_PROGRAM}
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/tests")
+    COMMAND pytest
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/tests")
 
 # Add target "bench" for manual building of benchmarks, as `make bench`, if BUILD_BENCH is OFF
 add_custom_target(bench

@@ -17,18 +17,16 @@
 
 #include "IpSaddlePointSolver.hpp"
 
-// Eigen includes
-#include <eigen3/Eigenx/Core>
-using namespace Eigen;
-
 // Optima includes
+#include <Optima/Canonicalizer.hpp>
 #include <Optima/Exception.hpp>
 #include <Optima/IpSaddlePointMatrix.hpp>
+#include <Optima/Matrix.hpp>
 #include <Optima/SaddlePointMatrix.hpp>
-#include <Optima/SaddlePointSolver.hpp>
 #include <Optima/SaddlePointOptions.hpp>
 #include <Optima/SaddlePointResult.hpp>
-#include <Optima/Canonicalizer.hpp>
+#include <Optima/SaddlePointSolver.hpp>
+using namespace Eigen;
 
 namespace Optima {
 
@@ -319,7 +317,6 @@ struct IpSaddlePointSolver::Impl
 
         al.fill(0.0);
         au.fill(0.0);
-        af.fill(0.0);
 
         // Calculate b' = b - Al*inv(Zl)*cl - Au*inv(Wu)*du
         b -= Al*(cl/Zl) + Au*(du/Wu);
