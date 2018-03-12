@@ -22,6 +22,7 @@ namespace py = pybind11;
 
 // Optima includes
 #include <eigen3/Eigenx/Core>
+#include <eigen3/Eigen/LU>
 using namespace Eigen;
 
 void exportEigen(py::module& m)
@@ -38,4 +39,5 @@ void exportEigen(py::module& m)
     eigen.def("diag", [](VectorXdConstRef x) -> MatrixXd { return x.asDiagonal(); });
     eigen.def("vector", [](int n=0) -> VectorXd { return VectorXd(n); }, py::arg("n")=0);
     eigen.def("matrix", [](int m=0, int n=0) -> MatrixXd { return MatrixXd(m, n); }, py::arg("m")=0, py::arg("n")=0);
+    eigen.def("solve", [](MatrixXdConstRef A, VectorXdConstRef b) -> VectorXd { return A.fullPivLu().solve(b); });
 }
