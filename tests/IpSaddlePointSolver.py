@@ -18,11 +18,11 @@
 from optima import *
 from numpy import *
 from numpy.linalg import norm
-from pytest import approx
+from pytest import approx, mark
 
 def print_state(M, r, s, m, n):
     set_printoptions(linewidth=1000, precision=10)
-    slu = linalg.solve(M, r)
+    slu = eigen.solve(M, r)
     print 'M = \n', M
     print 'r        = ', r
     print 'x        = ', s[:n]
@@ -37,79 +37,93 @@ def print_state(M, r, s, m, n):
     print 'res(lu)  = ', M.dot(slu) - r
 
 
-def test_ip_saddle_point_solver():
-    n = 3
-    m = 1
+def ip_saddle_point_matrix(m, ns, nl, nu, nz, nw, nf):
+    n = ns + nl + nu + nz + nw + nf
+    A = eigen.random(m, n)
+    H = eigen.random(n, n)
+    Z = eigen.random(n) * 1e-16
+    W = eigen.random(n) * 1e-16
+    L = eigen.random(n)
+    U = eigen.random(n)
+    nx = n - nf
+
+    if nl > 0: L[:nl] = 1.0e-3; Z[:nl] = 1.0
+    if nu > 0: U[:nu] = 1.0e-3; W[:nu] = 1.0
+
+    if nz > 0: L[nl:nz] = 1.0e-18; Z[nl:nz] = 1.0
+    if nw > 0: U[nu:nw] = 1.0e-18; W[nu:nw] = 1.0
+
+    return A, H, Z, W, L, U, nx, nf
+
+
+testdata = [
+#    m   ns  nl  nu  nz  nw  nf
+    (5,  10, 0,  0,  0,  0,  0),
+    (5,  8,  2,  0,  0,  0,  0),
+    (5,  8,  0,  2,  0,  0,  0),
+    (5,  8,  0,  0,  2,  0,  0),
+    (5,  8,  0,  0,  0,  2,  0),
+ 
+    (5,  8,  0,  0,  0,  0,  2),
+    (5,  6,  2,  0,  0,  0,  2),
+    (5,  6,  0,  2,  0,  0,  2),
+    (5,  6,  0,  0,  2,  0,  2),
+    (5,  6,  0,  0,  0,  2,  2),
+]
+
+@mark.parametrize("args", testdata)
+def test_ip_saddle_point_solver(args):
+    
+    m, ns, nl, nu, nz, nw, nf = args
+    
+    nx = ns + nl + nu + nz + nw
+    n = nx + nf
     t = 3*n + m
-    nx = n
-    nf = 0
+    
+    A = eigen.random(m, n)
+    H = eigen.random(n, n)
+    Z = eigen.random(n)
+    W = eigen.random(n)
+    L = eigen.random(n)
+    U = eigen.random(n)
 
+    if nl > 0: L[:nl] = 1.0e-3; Z[:nl] = 1.0
+    if nu > 0: U[:nu] = 1.0e-3; W[:nu] = 1.0
+
+    if nz > 0: L[nl:nz] = 1.0e-18; Z[nl:nz] = 1.0
+    if nw > 0: U[nu:nw] = 1.0e-18; W[nu:nw] = 1.0
+    
     expected = linspace(1, t, t)
-
-#     A = eigen.random(m, n)
-#     H = eigen.random(n, n)
-#     Z = eigen.random(n)
-#     W = eigen.random(n)
-#     L = eigen.random(n)
-#     U = eigen.random(n)
-
-    A = eigen.ones(m, n)
-    H = eigen.ones(n, n)
-    Z = eigen.ones(n)
-    W = eigen.ones(n)
-    L = eigen.ones(n)
-    U = eigen.ones(n)
 
     options = SaddlePointOptions()
 
     M = eigen.zeros(t, t)
     r = eigen.zeros(t)
 
-    def check_ip_saddle_point_solver():
-        # The left-hand side coefficient matrix
-        lhs = IpSaddlePointMatrix(H, A, Z, W, L, U, nx, nf)
+    # The left-hand side coefficient matrix
+    lhs = IpSaddlePointMatrix(H, A, Z, W, L, U, nx, nf)
 
-        # The dense matrix assembled from lhs
-        M = lhs.matrix()
+    # The dense matrix assembled from lhs
+    M = lhs.matrix()
 
-        # The right-hand side vector
-        r = M.dot(expected)
-        rhs = IpSaddlePointVector(r, n, m)
+    # The right-hand side vector
+    r = M.dot(expected)
+    rhs = IpSaddlePointVector(r, n, m)
 
-        # The solution vector
-        s = eigen.zeros(t)
-        sol = IpSaddlePointSolution(s, n, m)
+    # The solution vector
+    s = eigen.zeros(t)
+    sol = IpSaddlePointSolution(s, n, m)
 
-        # Solve the interior-poin saddle point problem
-        solver = IpSaddlePointSolver()
-        solver.setOptions(options)
-        solver.initialize(A)
-        solver.decompose(lhs)
-        solver.solve(rhs, sol)
+    # Solve the interior-poin saddle point problem
+    solver = IpSaddlePointSolver()
+    solver.setOptions(options)
+    solver.initialize(A)
+    solver.decompose(lhs)
+    solver.solve(rhs, sol)
 
-        print_state(M, r, s, m, n)
+    print_state(M, r, s, m, n)
 
-        # Check the residual of the equation Ms = r
-        assert norm(M.dot(s) - r)/norm(r) == approx(0.0)
+    # Check the residual of the equation Ms = r
+    assert norm(M.dot(s) - r)/norm(r) == approx(0.0)
 
-    # When all variables are free
-    nx = n
-    nf = 0
-       
-    check_ip_saddle_point_solver()
-     
-    # When m variables are fixed
-    nf = 1
-    nx = n - nf
- 
-    check_ip_saddle_point_solver()
-
-    # When some entries in L are very small
-    nx = n
-    nf = 0
-    L[1] = 1e-16
-    Z[1] = 1.0
-    W[1] = 1e-16
-
-    check_ip_saddle_point_solver()
 

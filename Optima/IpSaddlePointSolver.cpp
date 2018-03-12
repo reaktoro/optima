@@ -21,7 +21,6 @@
 #include <Optima/Canonicalizer.hpp>
 #include <Optima/Exception.hpp>
 #include <Optima/IpSaddlePointMatrix.hpp>
-#include <Optima/Matrix.hpp>
 #include <Optima/SaddlePointMatrix.hpp>
 #include <Optima/SaddlePointOptions.hpp>
 #include <Optima/SaddlePointResult.hpp>
@@ -41,21 +40,26 @@ struct IpSaddlePointSolver::Impl
     /// The `G` matrix in the KKT equation.
     MatrixXd G;
 
+    /// The matrices Z, W, L, U
     VectorXd Z, W, L, U;
 
+    /// The residual vector
     VectorXd r;
 
     /// The KKT solver.
     SaddlePointSolver kkt;
 
-    /// The order of the variables as `x = [x(stable) x(lower) x(upper) x(fixed)]`.
+    /// The order of the variables as x = [xs xl xu xz xw xf].
     VectorXi iordering;
 
     /// The number of variables.
     Index n;
 
-    /// The current number of stable, lower unstable, upper unstable, free, and fixed variables.
-    Index ns, nl, nu, nx, nf;
+    /// The number of free and fixed variables.
+    Index nx, nf;
+
+    /// The number of variables in the partitions (s, l, u, z, w)
+    Index ns, nl, nu, nz, nw;
 
     /// The number of equality constraints.
     Index m;
@@ -72,10 +76,13 @@ struct IpSaddlePointSolver::Impl
         // Initialize the members related to number of variables and constraints
         n  = A.cols();
         m  = A.rows();
-        nf = 0;
         nx = n;
+        nf = 0;
         ns = n;
+        nl = 0;
         nu = 0;
+        nz = 0;
+        nw = 0;
         t  = 3*n + m;
 
         // Initialize the ordering of the variables
@@ -101,9 +108,6 @@ struct IpSaddlePointSolver::Impl
         // The result of this method call
         SaddlePointResult res;
 
-        // Auxiliary variables
-        const double eps = std::sqrt(std::numeric_limits<double>::epsilon());
-
         // Initialize the number of free and fixed variables
         nx = lhs.nx();
         nf = lhs.nf();
@@ -115,87 +119,100 @@ struct IpSaddlePointSolver::Impl
         L.noalias() = lhs.L();
         U.noalias() = lhs.U();
 
-        // Define the function that determines if variable x[i] is lower unstable
-        auto lower_unstable = [&](Index i)
-        {
-           return std::abs(L[i]) <= eps && std::abs(Z[i]) >= eps && std::abs(W[i]) <= eps;
-        };
+        // Auxiliary variables
+        const double eps = std::numeric_limits<double>::epsilon();
 
-        // Define the function that determines if variable x[i] is upper unstable
-        auto upper_unstable = [&](Index i)
-        {
-           return std::abs(U[i]) <= eps && std::abs(W[i]) >= eps && std::abs(Z[i]) <= eps;
-        };
+        // Define the functions to classify the variables into the partitions (s, l, u, z, w)
+        auto partition_l = [&](Index i) { return std::abs(L[i]) < std::abs(Z[i]) && std::abs(L[i]/Z[i])  > eps; };
+        auto partition_u = [&](Index i) { return std::abs(U[i]) < std::abs(W[i]) && std::abs(U[i]/W[i])  > eps; };
+        auto partition_z = [&](Index i) { return std::abs(L[i]) < std::abs(Z[i]) && std::abs(L[i]/Z[i]) <= eps; };
+        auto partition_w = [&](Index i) { return std::abs(U[i]) < std::abs(W[i]) && std::abs(U[i]/W[i]) <= eps; };
 
-        // Define the function that determines if variable x[i] is stable
-        auto stable = [&](Index i)
-        {
-           return !lower_unstable(i) && !upper_unstable(i);
-        };
+        // The begin and end iterators in iordering for the free variables
+        auto ib = iordering.data();
+        auto ie = iordering.data() + nx;
 
-        // Partition the free variables into stable and unstable: xx = [x(stable) x(unstable)]
-        auto is = std::partition(iordering.data(), iordering.data() + nx, stable);
+        // Order the free variables into the partitions (w, z, u, l, s)
+        auto iw = std::partition(ib, ie, partition_w);
+        auto iz = std::partition(iw, ie, partition_z);
+        auto iu = std::partition(iz, ie, partition_u);
+        auto il = std::partition(iu, ie, partition_l);
+        auto is = ie;
 
-        // Partition the unstable variables into lower and upper unstable variables: x(unstable) = [xl xu]
-        auto il = std::partition(is, iordering.data() + nx, lower_unstable);
+        // Reverse the order of the variables into (s, l, u, z, w)
+        std::reverse(ib, ie);
 
-        // Update the number of stable, lower unstable, and upper unstable variables
-        ns = is - iordering.data();
-        nl = il - is;
-        nu = nx - ns - nl;
+        // Update the number of (s, l, u, z, w) variables
+        nw = iw - ib;
+        nz = iz - iw;
+        nu = iu - iz;
+        nl = il - iu;
+        ns = is - il;
 
-        // Ensure the number of stable variables is positive
-        if(ns == 0) return res.failed(
+        // Ensure the number of (s, l, u) variables is positive
+        if(ns + nl + nu == 0) return res.failed(
             "Could not decompose the interior-point saddle point matrix, "
-            "which is singular and has no stable variables.");
+            "which is singular and has no (s, l, u) variables.");
 
         // Permute A, Z, W, L and U according to iordering
-        iordering.asPermutation().transpose().applyThisOnTheLeft(Z);
-        iordering.asPermutation().transpose().applyThisOnTheLeft(W);
-        iordering.asPermutation().transpose().applyThisOnTheLeft(L);
-        iordering.asPermutation().transpose().applyThisOnTheLeft(U);
-        iordering.asPermutation().applyThisOnTheRight(A);
+        iordering.asPermutation().transpose().applyThisOnTheLeft(Z); // TODO Use Eigen indexed view instead
+        iordering.asPermutation().transpose().applyThisOnTheLeft(W); // TODO Use Eigen indexed view instead
+        iordering.asPermutation().transpose().applyThisOnTheLeft(L); // TODO Use Eigen indexed view instead
+        iordering.asPermutation().transpose().applyThisOnTheLeft(U); // TODO Use Eigen indexed view instead
+        iordering.asPermutation().applyThisOnTheRight(A); // TODO Use Eigen indexed view instead
 
         // The indices of the free variables
         const auto jx = iordering.head(nx);
 
         // Views to the blocks of the Hessian matrix Hxx = [Hss Hsl Hsu; Hls Hll Hlu; Hus Hul Huu]
         auto Hxx = H.topLeftCorner(nx, nx);
-        auto Hss = H.topLeftCorner(ns, ns);
+        auto Hee = H.topLeftCorner(ns + nl + nu, ns + nl + nu);
 
-        // Views to the sub-vectors in Z = [Zs Zl Zu Zf]
-        auto Zs = Z.head(ns);
+        // Views to the sub-vectors in Z = [Zs Zl Zu Zz Zw Zf], with Ze = [Zs Zl Zu]
+        auto Ze = Z.head(ns + nl + nu);
         auto Zf = Z.tail(nf);
 
-        // Views to the sub-vectors in W = [Ws Wl Wu Wf]
-        auto Ws = W.head(ns);
+        // Views to the sub-vectors in W = [Ws Wl Wu Wz Ww Wf], with We = [Ws Wl Wu]
+        auto We = W.head(ns + nl + nu);
         auto Wf = W.tail(nf);
 
-        // Views to the sub-vectors in L = [Ls Ll Lu Lf]
-        auto Ls = L.head(ns);
+        // Views to the sub-vectors in L = [Ls Ll Lu Lz Lw Lf], with Le = [Ls Ll Lu]
+        auto Le = L.head(ns + nl + nu);
         auto Lf = L.tail(nf);
 
-        // Views to the sub-vectors in U = [Us Ul Uu Uf]
-        auto Us = U.head(ns);
+        // Views to the sub-vectors in U = [Us Ul Uu Uz Uw Uf], with Ue = [Us Ul Uu]
+        auto Ue = U.head(ns + nl + nu);
         auto Uf = U.tail(nf);
 
-        // Ensure Zf = 0, Wf = 0, Lf = I, and Uf = I
+        // Ensure Zf = 0, Wf = 0, Lf = 1, and Uf = 1
         Zf.fill(0.0);
         Wf.fill(0.0);
         Lf.fill(1.0);
         Uf.fill(1.0);
 
-        // Update Hxx = [Hss Hsl Hsu; Hls Hll Hlu; Hus Hul Huu]
+        // Update Hxx
         Hxx.noalias() = lhs.H()(jx, jx);
 
-        // Calculate Hss' = Hss + inv(Ls)*Zs + inv(Us)*Ws
-        Hss.diagonal() += Zs/Ls + Ws/Us;
+        // Calculate Hee' = Hee + inv(Le)*Ze + inv(Ue)*We
+        Hee.diagonal() += Ze/Le + We/Ue;
 
         // Update the ordering of the saddle point solver
         kkt.reorder(iordering);
 
         // Decompose the saddle point matrix
-        res += kkt.decompose({H, A, G, ns, n - ns});
+        res += kkt.decompose({H, A, G, ns + nl + nu, nz + nw + nf});
+
+
+
+
+
+
+        Hee.diagonal() -= Ze/Le + We/Ue;
+
+
+
+
+
 
         return res.stop();
     }
@@ -206,48 +223,80 @@ struct IpSaddlePointSolver::Impl
         // The result of this method call
         SaddlePointResult res;
 
-        // Views to the blocks of the Hessian matrix Hxx = [Hss Hsl Hsu; Hls Hll Hlu; Hus Hul Huu]
+        // Views to the blocks of the Hessian matrix Hxx
         const auto Hxx = H.topLeftCorner(nx, nx);
+
         const auto Hs  = Hxx.topRows(ns);
         const auto Hl  = Hxx.middleRows(ns, nl);
-        const auto Hu  = Hxx.bottomRows(nu);
-        const auto Hsl = Hs.middleCols(ns, nl);
-        const auto Hsu = Hs.rightCols(nu);
-        const auto Hls = Hl.leftCols(ns);
-        const auto Hll = Hl.middleCols(ns, nl);
-        const auto Hlu = Hl.rightCols(nu);
-        const auto Hus = Hu.leftCols(ns);
-        const auto Hul = Hu.middleCols(ns, nl);
-        const auto Huu = Hu.rightCols(nu);
+        const auto Hu  = Hxx.middleRows(ns + nl, nu);
+        const auto Hz  = Hxx.middleRows(ns + nl + nu, nz);
+        const auto Hw  = Hxx.bottomRows(nw);
 
-        // Views to the sub-matrices in A = [As Al Au Af]
+        const auto Hsl = Hs.middleCols(ns, nl);
+        const auto Hsu = Hs.middleCols(ns + nl, nu);
+        const auto Hsz = Hs.middleCols(ns + nl + nu, nz);
+        const auto Hsw = Hs.rightCols(nw);
+
+        const auto Hll = Hl.middleCols(ns, nl);
+        const auto Hlu = Hl.middleCols(ns + nl, nu);
+        const auto Hlz = Hl.middleCols(ns + nl + nu, nz);
+        const auto Hlw = Hl.rightCols(nw);
+
+        const auto Hul = Hu.middleCols(ns, nl);
+        const auto Huu = Hu.middleCols(ns + nl, nu);
+        const auto Huz = Hu.middleCols(ns + nl + nu, nz);
+        const auto Huw = Hu.rightCols(nw);
+
+        const auto Hzs = Hz.leftCols(ns);
+        const auto Hzl = Hz.middleCols(ns, nl);
+        const auto Hzu = Hz.middleCols(ns + nl, nu);
+        const auto Hzz = Hz.middleCols(ns + nl + nu, nz);
+        const auto Hzw = Hz.rightCols(nw);
+
+        const auto Hws = Hw.leftCols(ns);
+        const auto Hwl = Hw.middleCols(ns, nl);
+        const auto Hwu = Hw.middleCols(ns + nl, nu);
+        const auto Hwz = Hw.middleCols(ns + nl + nu, nz);
+        const auto Hww = Hw.rightCols(nw);
+
+        // Views to the sub-matrices in A = [As Al Au Az Aw Af]
         const auto Ax = A.leftCols(nx);
         const auto Al = Ax.middleCols(ns, nl);
-        const auto Au = Ax.rightCols(nu);
+        const auto Au = Ax.middleCols(ns + nl, nu);
+        const auto Az = Ax.middleCols(ns + nl + nu, nz);
+        const auto Aw = Ax.rightCols(nw);
 
-        // Views to the sub-vectors in Z = [Zs Zl Zu Zf]
+        // Views to the sub-vectors in Z = [Zs Zl Zu Zz Zw Zf]
         const auto Zx = Z.head(nx);
         const auto Zs = Zx.head(ns);
         const auto Zl = Zx.segment(ns, nl);
-        const auto Zu = Zx.tail(nu);
+        const auto Zu = Zx.segment(ns + nl, nu);
+        const auto Zz = Zx.segment(ns + nl + nu, nz);
+        const auto Zw = Zx.tail(nw);
 
-        // Views to the sub-vectors in W = [Ws Wl Wu Wf]
+        // Views to the sub-vectors in W = [Ws Wl Wu Wz Ww Wf]
         const auto Wx = W.head(nx);
         const auto Ws = Wx.head(ns);
         const auto Wl = Wx.segment(ns, nl);
-        const auto Wu = Wx.tail(nu);
+        const auto Wu = Wx.segment(ns + nl, nu);
+        const auto Wz = Wx.segment(ns + nl + nu, nz);
+        const auto Ww = Wx.tail(nw);
 
-        // Views to the sub-vectors in L = [Ls Ll Lu Lf]
+        // Views to the sub-vectors in L = [Ls Ll Lu Lz Lw Lf]
         const auto Lx = L.head(nx);
         const auto Ls = Lx.head(ns);
         const auto Ll = Lx.segment(ns, nl);
-        const auto Lu = Lx.tail(nu);
+        const auto Lu = Lx.segment(ns + nl, nu);
+        const auto Lz = Lx.segment(ns + nl + nu, nz);
+        const auto Lw = Lx.tail(nw);
 
-        // Views to the sub-vectors in U = [Us Ul Uu Uf]
+        // Views to the sub-vectors in U = [Us Ul Uu Uz Uw Uf]
         const auto Ux = U.head(nx);
         const auto Us = Ux.head(ns);
         const auto Ul = Ux.segment(ns, nl);
-        const auto Uu = Ux.tail(nu);
+        const auto Uu = Ux.segment(ns + nl, nu);
+        const auto Uz = Ux.segment(ns + nl + nu, nz);
+        const auto Uw = Ux.tail(nw);
 
         // The right-hand side vectors [a b c d]
         auto a = r.head(n);
@@ -261,46 +310,58 @@ struct IpSaddlePointSolver::Impl
         auto z = sol.z();
         auto w = sol.w();
 
-        // Views to the sub-vectors in a = [as al au af]
+        // Views to the sub-vectors in a = [as al au az aw af]
         auto ax = a.head(nx);
         auto as = ax.head(ns);
         auto al = ax.segment(ns, nl);
-        auto au = ax.tail(nu);
+        auto au = ax.segment(ns + nl, nu);
+        auto az = ax.segment(ns + nl + nu, nz);
+        auto aw = ax.tail(nw);
         auto af = a.tail(nf);
 
-        // Views to the sub-vectors in c = [cs cl cu cf]
+        // Views to the sub-vectors in c = [cs cl cu cz cw cf]
         auto cx = c.head(nx);
         auto cs = cx.head(ns);
         auto cl = cx.segment(ns, nl);
-        auto cu = cx.tail(nu);
+        auto cu = cx.segment(ns + nl, nu);
+        auto cz = cx.segment(ns + nl + nu, nz);
+        auto cw = cx.tail(nw);
         auto cf = c.tail(nf);
 
-        // Views to the sub-vectors in d = [ds dl du df]
+        // Views to the sub-vectors in d = [ds dl du dz dw df]
         auto dx = d.head(nx);
         auto ds = dx.head(ns);
         auto dl = dx.segment(ns, nl);
-        auto du = dx.tail(nu);
+        auto du = dx.segment(ns + nl, nu);
+        auto dz = dx.segment(ns + nl + nu, nz);
+        auto dw = dx.tail(nw);
         auto df = d.tail(nf);
 
-        // Views to the sub-vectors in x = [xs xl xu xf]
+        // Views to the sub-vectors in x = [xs xl xu xz xw xf]
         auto xx = x.head(nx);
         auto xs = xx.head(ns);
         auto xl = xx.segment(ns, nl);
-        auto xu = xx.tail(nu);
+        auto xu = xx.segment(ns + nl, nu);
+        auto xz = xx.segment(ns + nl + nu, nz);
+        auto xw = xx.tail(nw);
         auto xf = x.tail(nf);
 
-        // Views to the sub-vectors in z = [zs zl zu zf]
+        // Views to the sub-vectors in z = [zs zl zu zz zw zf]
         auto zx = z.head(nx);
         auto zs = zx.head(ns);
         auto zl = zx.segment(ns, nl);
-        auto zu = zx.tail(nu);
+        auto zu = zx.segment(ns + nl, nu);
+        auto zz = zx.segment(ns + nl + nu, nz);
+        auto zw = zx.tail(nw);
         auto zf = z.tail(nf);
 
-        // Views to the sub-vectors in w = [ws wl wu wf]
+        // Views to the sub-vectors in w = [ws wl wu wz ww wf]
         auto wx = w.head(nx);
         auto ws = wx.head(ns);
         auto wl = wx.segment(ns, nl);
-        auto wu = wx.tail(nu);
+        auto wu = wx.segment(ns + nl, nu);
+        auto wz = wx.segment(ns + nl + nu, nz);
+        auto ww = wx.tail(nw);
         auto wf = w.tail(nf);
 
         // Initialize a, b, c, d in the ordering x = [xs, xl, xu, xf]
@@ -309,38 +370,54 @@ struct IpSaddlePointSolver::Impl
         c.noalias() = rhs.c()(iordering);
         d.noalias() = rhs.d()(iordering);
 
-        // Calculate as' = as + inv(Ls)*cs + inv(Us)*ds - Hsl*inv(Zl)*cl - Hsu*inv(Wu)*du
-        as += cs/Ls + ds/Us - Hsl*(cl/Zl) - Hsu*(du/Wu);
+        // Calculate as', al', au', az', aw', b'
+        as += cs/Ls + ds/Us - Hsl*(cl/Zl) - Hsu*(du/Wu) - Hsz*(cz/Zz) - Hsw*(dw/Ww);
+        al += dl/Ul - Hll*(cl/Zl) - Hlu*(du/Wu) - Hlz*(cz/Zz) - Hlw*(dw/Ww) - (Wl/Ul) % (cl/Zl);
+        au += cu/Lu - Hul*(cl/Zl) - Huu*(du/Wu) - Huz*(cz/Zz) - Huw*(dw/Ww) - (Zu/Lu) % (du/Wu);
+        az += dz/Uz - Hzl*(cl/Zl) - Hzu*(du/Wu) - Hzz*(cz/Zz) - Hzw*(dw/Ww) - (Wz/Uz) % (cz/Zz);
+        aw += cw/Lw - Hwl*(cl/Zl) - Hwu*(du/Wu) - Hwz*(cz/Zz) - Hww*(dw/Ww) - (Zw/Lw) % (dw/Ww);
+         b -= Al*(cl/Zl) + Au*(du/Wu) + Az*(cz/Zz) + Aw*(dw/Ww);
 
-        zl.noalias() = -al;
-        wu.noalias() = -au;
+        zz.noalias() = -az;
+        ww.noalias() = -aw;
 
-        al.fill(0.0);
-        au.fill(0.0);
-
-        // Calculate b' = b - Al*inv(Zl)*cl - Au*inv(Wu)*du
-        b -= Al*(cl/Zl) + Au*(du/Wu);
+        az.fill(0.0);
+        aw.fill(0.0);
 
         // Solve the saddle point problem
         res += kkt.solve({a, b}, {x, y});
 
+        // Calculate zz and ww
+        zz.noalias() += Hzs*xs + Hzl*xl + Hzu*xu + tr(Az)*y;
+        ww.noalias() += Hws*xs + Hwl*xl + Hwu*xu + tr(Aw)*y;
+
         // Calculate zl and wu
-        zl.noalias() += Hls*xs + tr(Al)*y + Hll*(cl/Zl) + Hlu*(du/Wu) - dl/Ul;
-        wu.noalias() += Hus*xs + tr(Au)*y + Hul*(cl/Zl) + Huu*(du/Wu) - cu/Lu;
+        zl.noalias() = -(Zl % xl)/Ll;
+        wu.noalias() = -(Wu % xu)/Uu;
 
         // Calculate xl and xu
         xl.noalias() = (cl - Ll % zl)/Zl;
         xu.noalias() = (du - Uu % wu)/Wu;
-        xf.noalias() = af;
 
-        // Calculate zs and zu
+        // Calculate xz and xw
+        xz.noalias() = (cz - Lz % zz)/Zz;
+        xw.noalias() = (dw - Uw % ww)/Ww;
+
+        // Calculate zs and ws
         zs.noalias() = (cs - Zs % xs)/Ls;
-        zu.noalias() = (cu - Zu % xu)/Lu;
-        zf.noalias() = cf;
-
-        // Calculate ws and wl
         ws.noalias() = (ds - Ws % xs)/Us;
+
+        // Calculate zu and zw
+        zu.noalias() = (cu - Zu % xu)/Lu;
+        zw.noalias() = (cw - Zw % xw)/Lw;
+
+        // Calculate wl and wz
         wl.noalias() = (dl - Wl % xl)/Ul;
+        wz.noalias() = (dz - Wz % xz)/Uz;
+
+        // Calculate xf, zf, wf
+        xf.noalias() = af;
+        zf.noalias() = cf;
         wf.noalias() = df;
 
         // Permute the calculated (x z w) to their original order
