@@ -45,14 +45,19 @@ enum class SaddlePointMethod
     /// \eq{m \times n} is the dimension of the Jacobian matrix \eq{A}.
     /// This method is suitable when matrix \eq{H} in the saddle point problem is dense and \eq{A}
     /// has relatively many rows to sufficiently decrease the size of the linear system.
-    Nullspace,  // todo Maybe call this NullspaceLU
+    Nullspace,
 
     /// This method reduces the dimension of the saddle point problem from \eq{n+m} to \eq{m}.
     /// This method reduces the saddle point problem of dimension \eq{n+m} to an equivalent one of
     /// dimension \eq{m}, where these dimensions are related to the dimensions of the Hessian matrix
     /// \eq{H}, \eq{n \times n}, and Jacobian matrix \eq{A}, \eq{m \times n}.
     /// @warning This method should only be used when the Hessian matrix is a diagonal matrix.
-    RangespaceDiagonal, // todo Maybe call this RangespaceLU
+    Rangespace,
+
+    /// This option automatically decides which method to be used based on the structure of the Hessian matrix.
+    /// If the Hessian matrix is a diagonal matrix, then the Rangespace method is used. If the Hessian matrix is
+    /// dense, then the Nullspace method is used.
+    Automatic
 };
 
 /// Used to specify the options for the solution of saddle point problems.
@@ -61,7 +66,7 @@ class SaddlePointOptions
 {
 public:
     /// The method for solving the saddle point problems.
-    SaddlePointMethod method = SaddlePointMethod::PartialPivLU;
+    SaddlePointMethod method = SaddlePointMethod::Automatic;
 
     /// The option to rationalize the entries in the canonical form.
     /// This option should be turned on if accuracy of the calculations is sensitive to round-off

@@ -30,7 +30,7 @@ void exportSaddlePointOptions(py::module& m)
         .value("PartialPivLU", SaddlePointMethod::PartialPivLU)
         .value("FullPivLU", SaddlePointMethod::FullPivLU)
         .value("Nullspace", SaddlePointMethod::Nullspace)
-        .value("RangespaceDiagonal", SaddlePointMethod::RangespaceDiagonal)
+        .value("Rangespace", SaddlePointMethod::Rangespace)
         ;
 
     py::class_<SaddlePointOptions>(m, "SaddlePointOptions")

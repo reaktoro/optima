@@ -75,7 +75,7 @@ def test_saddle_point_solver():
         sol = SaddlePointSolution(s, n, m)
 
         options = SaddlePointOptions()
-        options.method = SaddlePointMethod.RangespaceDiagonal
+        options.method = SaddlePointMethod.Rangespace
         
         solver = SaddlePointSolver()
         solver.setOptions(options)

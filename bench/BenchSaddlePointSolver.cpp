@@ -32,7 +32,7 @@ using namespace Optima;
 
 Index samples = 10;
 
-void benchMethodRangespaceDiagonal()
+void benchMethodRangespace()
 {
     Index m = 10;
     Index n = 60;
@@ -58,7 +58,7 @@ void benchMethodRangespaceDiagonal()
 
     for(Index i = 0; i < samples; ++i)
     {
-        options.method = SaddlePointMethod::RangespaceDiagonal;
+        options.method = SaddlePointMethod::Rangespace;
 
         SaddlePointSolver solver;
         solver.setOptions(options);
@@ -252,7 +252,7 @@ void benchMethodNullspace()
 
 int main(int argc, char **argv)
 {
-    benchMethodRangespaceDiagonal();
+    benchMethodRangespace();
     benchMethodNullspace();
 }
 
