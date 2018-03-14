@@ -55,6 +55,9 @@ public:
     /// Return the current saddle point options.
     auto options() const -> const SaddlePointOptions&;
 
+    /// Update the order of the variables.
+    auto reorderVariables(VectorXiConstRef ordering) -> void;
+
     /// initialize the saddle point solver with the coefficient matrix \eq{A} of the saddle point problem.
     /// @note This method should be called before the @ref decompose method. However, it does not
     /// need to be called again if matrix \eq{A} of the saddle point problem is the same as in the
@@ -73,9 +76,6 @@ public:
     /// @param rhs The right-hand side vector of the saddle point problem.
     /// @param sol The solution of the saddle point problem.
     auto solve(IpSaddlePointVector rhs, IpSaddlePointSolution sol) -> SaddlePointResult;
-
-    /// Update the order of the variables.
-    auto reorder(VectorXiConstRef ordering) -> void;
 
 private:
     struct Impl;

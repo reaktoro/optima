@@ -33,9 +33,9 @@ void exportIpSaddlePointSolver(py::module& m)
         .def(py::init<>())
         .def("setOptions", &IpSaddlePointSolver::setOptions)
         .def("options", &IpSaddlePointSolver::options)
+        .def("reorderVariables", &IpSaddlePointSolver::reorderVariables)
         .def("initialize", &IpSaddlePointSolver::initialize)
         .def("decompose", &IpSaddlePointSolver::decompose)
         .def("solve", &IpSaddlePointSolver::solve)
-        .def("reorder", &IpSaddlePointSolver::reorder)
         ;
 }

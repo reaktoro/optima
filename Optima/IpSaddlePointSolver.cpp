@@ -67,6 +67,16 @@ struct IpSaddlePointSolver::Impl
     /// The total number of variables (x, y, z, w).
     Index t;
 
+    /// Update the order of the variables.
+    auto reorderVariables(VectorXiConstRef ordering) -> void
+    {
+        // Update the ordering of the basic KKT solver
+        kkt.reorderVariables(ordering);
+
+        // Update the internal ordering of the variables with the new ordering
+        ordering.asPermutation().transpose().applyThisOnTheLeft(iordering);
+    }
+
     /// Initialize the stepper with the structure of the optimization problem.
     auto initialize(MatrixXdConstRef A) -> SaddlePointResult
     {
@@ -427,16 +437,6 @@ struct IpSaddlePointSolver::Impl
 
         return res.stop();
     }
-
-    /// Update the order of the variables.
-    auto reorder(VectorXiConstRef ordering) -> void
-    {
-        // Update the ordering of the basic KKT solver
-        kkt.reorderVariables(ordering);
-
-        // Update the internal ordering of the variables with the new ordering
-        ordering.asPermutation().transpose().applyThisOnTheLeft(iordering);
-    }
 };
 
 IpSaddlePointSolver::IpSaddlePointSolver()
@@ -481,9 +481,9 @@ auto IpSaddlePointSolver::solve(IpSaddlePointVector rhs, IpSaddlePointSolution s
     return pimpl->solve(rhs, sol);
 }
 
-auto IpSaddlePointSolver::reorder(VectorXiConstRef ordering) -> void
+auto IpSaddlePointSolver::reorderVariables(VectorXiConstRef ordering) -> void
 {
-    pimpl->reorder(ordering);
+    pimpl->reorderVariables(ordering);
 }
 
 } // namespace Optima
