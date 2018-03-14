@@ -26,18 +26,19 @@
 #include <Optima/SaddlePointResult.hpp>
 #include <Optima/SaddlePointSolver.hpp>
 using namespace Eigen;
+using namespace Eigen::placeholders;
 
 namespace Optima {
 
 struct IpSaddlePointSolver::Impl
 {
-    /// The `A` matrix in the KKT equation.
+    /// The `A` matrix in the saddlepointsolver equation.
     MatrixXd A;
 
-    /// The `H` matrix in the KKT equation.
+    /// The `H` matrix in the saddlepointsolver equation.
     MatrixXd H;
 
-    /// The `G` matrix in the KKT equation.
+    /// The `G` matrix in the saddlepointsolver equation.
     MatrixXd G;
 
     /// The matrices Z, W, L, U
@@ -46,8 +47,11 @@ struct IpSaddlePointSolver::Impl
     /// The residual vector
     VectorXd r;
 
-    /// The KKT solver.
-    SaddlePointSolver kkt;
+    /// The solution vector
+    VectorXd s;
+
+    /// The saddle point solver.
+    SaddlePointSolver saddlepointsolver;
 
     /// The order of the variables as x = [xs xl xu xz xw xf].
     VectorXi iordering;
@@ -70,8 +74,8 @@ struct IpSaddlePointSolver::Impl
     /// Update the order of the variables.
     auto reorderVariables(VectorXiConstRef ordering) -> void
     {
-        // Update the ordering of the basic KKT solver
-        kkt.reorderVariables(ordering);
+        // Update the ordering of the basic saddlepointsolver solver
+        saddlepointsolver.reorderVariables(ordering);
 
         // Update the internal ordering of the variables with the new ordering
         ordering.asPermutation().transpose().applyThisOnTheLeft(iordering);
@@ -96,23 +100,24 @@ struct IpSaddlePointSolver::Impl
         t  = 3*n + m;
 
         // Initialize the ordering of the variables
-        iordering.setLinSpaced(n, 0, n - 1);
+        iordering = linspace<int>(n);
 
-        // Allocate memory for some members
+        // Allocate memory for some vector/matrix members
         H = zeros(n, n);
         Z = zeros(n);
         W = zeros(n);
         L = zeros(n);
         U = zeros(n);
         r = zeros(t);
+        s = zeros(t);
 
         // Initialize the saddle point solver
-        res += kkt.initialize(A);
+        res += saddlepointsolver.initialize(A);
 
         return res.stop();
     }
 
-    /// Decompose the KKT matrix equation used to compute the step vectors.
+    /// Decompose the saddlepointsolver matrix equation used to compute the step vectors.
     auto decompose(IpSaddlePointMatrix lhs) -> SaddlePointResult
     {
         // The result of this method call
@@ -122,21 +127,14 @@ struct IpSaddlePointSolver::Impl
         nx = lhs.nx;
         nf = lhs.nf;
 
-        // Initialize auxiliary matrices
-        A.noalias() = lhs.A;
-        Z.noalias() = lhs.Z;
-        W.noalias() = lhs.W;
-        L.noalias() = lhs.L;
-        U.noalias() = lhs.U;
-
         // Auxiliary variables
         const double eps = std::numeric_limits<double>::epsilon();
 
         // Define the functions to classify the variables into the partitions (s, l, u, z, w)
-        auto partition_l = [&](Index i) { return std::abs(L[i]) < std::abs(Z[i]) && std::abs(L[i]/Z[i])  > eps; };
-        auto partition_u = [&](Index i) { return std::abs(U[i]) < std::abs(W[i]) && std::abs(U[i]/W[i])  > eps; };
-        auto partition_z = [&](Index i) { return std::abs(L[i]) < std::abs(Z[i]) && std::abs(L[i]/Z[i]) <= eps; };
-        auto partition_w = [&](Index i) { return std::abs(U[i]) < std::abs(W[i]) && std::abs(U[i]/W[i]) <= eps; };
+        auto partition_l = [&](Index i) { return std::abs(lhs.L[i]) < std::abs(lhs.Z[i]) && std::abs(lhs.L[i]/lhs.Z[i])  > eps; };
+        auto partition_u = [&](Index i) { return std::abs(lhs.U[i]) < std::abs(lhs.W[i]) && std::abs(lhs.U[i]/lhs.W[i])  > eps; };
+        auto partition_z = [&](Index i) { return std::abs(lhs.L[i]) < std::abs(lhs.Z[i]) && std::abs(lhs.L[i]/lhs.Z[i]) <= eps; };
+        auto partition_w = [&](Index i) { return std::abs(lhs.U[i]) < std::abs(lhs.W[i]) && std::abs(lhs.U[i]/lhs.W[i]) <= eps; };
 
         // The begin and end iterators in iordering for the free variables
         auto ib = iordering.data();
@@ -160,16 +158,15 @@ struct IpSaddlePointSolver::Impl
         ns = is - il;
 
         // Ensure the number of (s, l, u) variables is positive
-        if(ns + nl + nu == 0) return res.failed(
-            "Could not decompose the interior-point saddle point matrix, "
-            "which is singular and has no (s, l, u) variables.");
+        Assert(ns + nl + nu > 0, "Could not decompose the interior-point saddle point matrix.",
+            "The matrix is singular, with no (s, l, u) variables.");
 
-        // Permute A, Z, W, L and U according to iordering
-        iordering.asPermutation().transpose().applyThisOnTheLeft(Z); // TODO Use Eigen indexed view instead
-        iordering.asPermutation().transpose().applyThisOnTheLeft(W); // TODO Use Eigen indexed view instead
-        iordering.asPermutation().transpose().applyThisOnTheLeft(L); // TODO Use Eigen indexed view instead
-        iordering.asPermutation().transpose().applyThisOnTheLeft(U); // TODO Use Eigen indexed view instead
-        iordering.asPermutation().applyThisOnTheRight(A); // TODO Use Eigen indexed view instead
+        // Initialize A, Z, W, L and U according to iordering
+        A.noalias() = lhs.A(all, iordering);
+        Z.noalias() = lhs.Z(iordering);
+        W.noalias() = lhs.W(iordering);
+        L.noalias() = lhs.L(iordering);
+        U.noalias() = lhs.U(iordering);
 
         // The indices of the free variables
         const auto jx = iordering.head(nx);
@@ -207,27 +204,18 @@ struct IpSaddlePointSolver::Impl
         Hee.diagonal() += Ze/Le + We/Ue;
 
         // Update the ordering of the saddle point solver
-        kkt.reorderVariables(iordering);
+        saddlepointsolver.reorderVariables(iordering);
 
         // Decompose the saddle point matrix
-        res += kkt.decompose({H, A, G, ns + nl + nu, nz + nw + nf});
+        res += saddlepointsolver.decompose({H, A, G, ns + nl + nu, nz + nw + nf});
 
-
-
-
-
-
+        // Remove the previously added vector along the diagonal of the Hessian
         Hee.diagonal() -= Ze/Le + We/Ue;
-
-
-
-
-
 
         return res.stop();
     }
 
-    /// Solve the KKT matrix equation.
+    /// Solve the saddlepointsolver matrix equation.
     auto solve(IpSaddlePointVector rhs, IpSaddlePointSolution sol) -> SaddlePointResult
     {
         // The result of this method call
@@ -315,10 +303,10 @@ struct IpSaddlePointSolver::Impl
         auto d = r.tail(n);
 
         // The solution vectors [x y z w]
-        auto x = sol.x;
-        auto y = sol.y;
-        auto z = sol.z;
-        auto w = sol.w;
+        auto x = s.head(n);
+        auto y = s.segment(n, m);
+        auto z = s.segment(n + m, n);
+        auto w = s.tail(n);
 
         // Views to the sub-vectors in a = [as al au az aw af]
         auto ax = a.head(nx);
@@ -395,7 +383,7 @@ struct IpSaddlePointSolver::Impl
         aw.fill(0.0);
 
         // Solve the saddle point problem
-        res += kkt.solve({a, b}, {x, y});
+        res += saddlepointsolver.solve({a, b}, {x, y});
 
         // Calculate zz and ww
         zz.noalias() += Hzs*xs + Hzl*xl + Hzu*xu + tr(Az)*y;
@@ -431,9 +419,10 @@ struct IpSaddlePointSolver::Impl
         wf.noalias() = df;
 
         // Permute the calculated (x z w) to their original order
-        iordering.asPermutation().applyThisOnTheLeft(x);
-        iordering.asPermutation().applyThisOnTheLeft(z);
-        iordering.asPermutation().applyThisOnTheLeft(w);
+        sol.y = y;
+        sol.x(iordering) = x;
+        sol.z(iordering) = z;
+        sol.w(iordering) = w;
 
         return res.stop();
     }
@@ -458,12 +447,12 @@ auto IpSaddlePointSolver::operator=(IpSaddlePointSolver other) -> IpSaddlePointS
 
 auto IpSaddlePointSolver::setOptions(const SaddlePointOptions& options) -> void
 {
-    pimpl->kkt.setOptions(options);
+    pimpl->saddlepointsolver.setOptions(options);
 }
 
 auto IpSaddlePointSolver::options() const -> const SaddlePointOptions&
 {
-    return pimpl->kkt.options();
+    return pimpl->saddlepointsolver.options();
 }
 
 auto IpSaddlePointSolver::initialize(MatrixXdConstRef A) -> SaddlePointResult
