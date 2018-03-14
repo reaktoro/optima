@@ -32,12 +32,10 @@ void exportSaddlePointSolver(py::module& m)
     py::class_<SaddlePointSolver>(m, "SaddlePointSolver")
         .def(py::init<>())
         .def("setOptions", &SaddlePointSolver::setOptions)
-        .def("setMethodMoreEfficient", &SaddlePointSolver::setMethodMoreEfficient)
-        .def("setMethodMoreAccurate", &SaddlePointSolver::setMethodMoreAccurate)
         .def("options", &SaddlePointSolver::options)
+        .def("reorderVariables", &SaddlePointSolver::reorderVariables)
         .def("initialize", &SaddlePointSolver::initialize)
         .def("decompose", &SaddlePointSolver::decompose)
         .def("solve", &SaddlePointSolver::solve)
-        .def("reorder", &SaddlePointSolver::reorder)
         ;
 }

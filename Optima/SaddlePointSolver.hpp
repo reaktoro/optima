@@ -52,25 +52,11 @@ public:
     /// Set the options for the solution of saddle point problems.
     auto setOptions(const SaddlePointOptions& options) -> void;
 
-    /// Set the saddle point method to the one that finishes in less time.
-    /// This method solves the same saddle point problem many times for each
-    /// supported saddle point method. It then averages the time spent for each method
-    /// and chooses the one that finished faster on average.
-    /// @warning This method should be used with care, possibly once during
-    /// @warning an initialization stage.
-    /// @param n The number of columns of the Jacobian matrix \eq{A} and Hessian matrix \eq{H}.
-    /// @param m The number of rows of the Jacobian matrix \eq{A}.
-    auto setMethodMoreEfficient(Index n, Index m) -> void;
-
-    /// Set the saddle point method to the one that produces less numerical error.
-    /// The numerical error is calculated as:
-    /// \eqc{e = ||\mathrm{lhs} \times \mathrm{sol} - \mathrm{rhs}||/||\mathrm{rhs}||.}
-    /// @param lhs The saddle point matrix of the saddle point problem.
-    /// @param rhs The saddle point right-hand side vector of the saddle point problem.
-    auto setMethodMoreAccurate(SaddlePointMatrix lhs, SaddlePointVector rhs) -> void;
-
     /// Return the current saddle point options.
     auto options() const -> const SaddlePointOptions&;
+
+    /// Update the order of the variables.
+    auto reorderVariables(VectorXiConstRef ordering) -> void;
 
     /// Initialize the saddle point solver wiht the coefficient matrix \eq{A} of the saddle point problem.
     /// @note This method should be called before the @ref decompose method. However, it does not
@@ -90,9 +76,6 @@ public:
     /// @param rhs The right-hand side vector of the saddle point problem.
     /// @param sol The solution of the saddle point problem.
     auto solve(SaddlePointVector rhs, SaddlePointSolution sol) -> SaddlePointResult;
-
-    /// Update the order of the variables.
-    auto reorder(VectorXiConstRef ordering) -> void;
 
 private:
     struct Impl;

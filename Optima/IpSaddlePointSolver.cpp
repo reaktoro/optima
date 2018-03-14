@@ -197,7 +197,7 @@ struct IpSaddlePointSolver::Impl
         Hee.diagonal() += Ze/Le + We/Ue;
 
         // Update the ordering of the saddle point solver
-        kkt.reorder(iordering);
+        kkt.reorderVariables(iordering);
 
         // Decompose the saddle point matrix
         res += kkt.decompose({H, A, G, ns + nl + nu, nz + nw + nf});
@@ -432,7 +432,7 @@ struct IpSaddlePointSolver::Impl
     auto reorder(VectorXiConstRef ordering) -> void
     {
         // Update the ordering of the basic KKT solver
-        kkt.reorder(ordering);
+        kkt.reorderVariables(ordering);
 
         // Update the internal ordering of the variables with the new ordering
         ordering.asPermutation().transpose().applyThisOnTheLeft(iordering);

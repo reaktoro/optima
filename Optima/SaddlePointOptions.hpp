@@ -53,11 +53,6 @@ enum class SaddlePointMethod
     /// \eq{H}, \eq{n \times n}, and Jacobian matrix \eq{A}, \eq{m \times n}.
     /// @warning This method should only be used when the Hessian matrix is a diagonal matrix.
     Rangespace,
-
-    /// This option automatically decides which method to be used based on the structure of the Hessian matrix.
-    /// If the Hessian matrix is a diagonal matrix, then the Rangespace method is used. If the Hessian matrix is
-    /// dense, then the Nullspace method is used.
-    Automatic
 };
 
 /// Used to specify the options for the solution of saddle point problems.
@@ -66,7 +61,7 @@ class SaddlePointOptions
 {
 public:
     /// The method for solving the saddle point problems.
-    SaddlePointMethod method = SaddlePointMethod::Automatic;
+    SaddlePointMethod method = SaddlePointMethod::PartialPivLU;
 
     /// The option to rationalize the entries in the canonical form.
     /// This option should be turned on if accuracy of the calculations is sensitive to round-off
