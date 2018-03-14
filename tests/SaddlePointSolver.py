@@ -37,7 +37,7 @@ def test_saddle_point_solver():
         
         lhs = SaddlePointMatrix(H, A, G, nx, nf)
         
-        r = lhs.matrix().dot(expected)
+        r = lhs.array().dot(expected)
         s = zeros(t)
 
         rhs = SaddlePointVector(r, n, m)
@@ -55,7 +55,7 @@ def test_saddle_point_solver():
             
             solver = SaddlePointSolver()
             solver.setOptions(options)
-            solver.initialize(lhs.A())
+            solver.initialize(lhs.A)
             solver.decompose(lhs)
             solver.solve(rhs, sol)
             assert expected == approx(s)
@@ -68,7 +68,7 @@ def test_saddle_point_solver():
         
         lhs = SaddlePointMatrix(H, A, G, nx, nf)
         
-        r = lhs.matrix().dot(expected)
+        r = lhs.array().dot(expected)
         s = zeros(t)
 
         rhs = SaddlePointVector(r, n, m)
@@ -79,7 +79,7 @@ def test_saddle_point_solver():
         
         solver = SaddlePointSolver()
         solver.setOptions(options)
-        solver.initialize(lhs.A())
+        solver.initialize(lhs.A)
         solver.decompose(lhs)
         solver.solve(rhs, sol)
         assert expected == approx(s)

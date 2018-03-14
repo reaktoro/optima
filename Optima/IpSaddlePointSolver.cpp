@@ -109,15 +109,15 @@ struct IpSaddlePointSolver::Impl
         SaddlePointResult res;
 
         // Initialize the number of free and fixed variables
-        nx = lhs.nx();
-        nf = lhs.nf();
+        nx = lhs.nx;
+        nf = lhs.nf;
 
         // Initialize auxiliary matrices
-        A.noalias() = lhs.A();
-        Z.noalias() = lhs.Z();
-        W.noalias() = lhs.W();
-        L.noalias() = lhs.L();
-        U.noalias() = lhs.U();
+        A.noalias() = lhs.A;
+        Z.noalias() = lhs.Z;
+        W.noalias() = lhs.W;
+        L.noalias() = lhs.L;
+        U.noalias() = lhs.U;
 
         // Auxiliary variables
         const double eps = std::numeric_limits<double>::epsilon();
@@ -191,7 +191,7 @@ struct IpSaddlePointSolver::Impl
         Uf.fill(1.0);
 
         // Update Hxx
-        Hxx.noalias() = lhs.H()(jx, jx);
+        Hxx.noalias() = lhs.H(jx, jx);
 
         // Calculate Hee' = Hee + inv(Le)*Ze + inv(Ue)*We
         Hee.diagonal() += Ze/Le + We/Ue;
@@ -305,10 +305,10 @@ struct IpSaddlePointSolver::Impl
         auto d = r.tail(n);
 
         // The solution vectors [x y z w]
-        auto x = sol.x();
-        auto y = sol.y();
-        auto z = sol.z();
-        auto w = sol.w();
+        auto x = sol.x;
+        auto y = sol.y;
+        auto z = sol.z;
+        auto w = sol.w;
 
         // Views to the sub-vectors in a = [as al au az aw af]
         auto ax = a.head(nx);
@@ -365,10 +365,10 @@ struct IpSaddlePointSolver::Impl
         auto wf = w.tail(nf);
 
         // Initialize a, b, c, d in the ordering x = [xs, xl, xu, xf]
-        a.noalias() = rhs.a()(iordering);
-        b.noalias() = rhs.b();
-        c.noalias() = rhs.c()(iordering);
-        d.noalias() = rhs.d()(iordering);
+        a.noalias() = rhs.a(iordering);
+        b.noalias() = rhs.b;
+        c.noalias() = rhs.c(iordering);
+        d.noalias() = rhs.d(iordering);
 
         // Calculate as', al', au', az', aw', b'
         as += cs/Ls + ds/Us - Hsl*(cl/Zl) - Hsu*(du/Wu) - Hsz*(cz/Zz) - Hsw*(dw/Ww);

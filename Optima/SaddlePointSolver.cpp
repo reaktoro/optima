@@ -164,11 +164,11 @@ struct SaddlePointSolver::Impl
     auto updateCanonicalForm(SaddlePointMatrix lhs) -> void
     {
         // Update the number of fixed and free variables
-        nf = lhs.nf();
-        nx = lhs.nx();
+        nf = lhs.nf;
+        nx = lhs.nx;
 
         // The diagonal entries of the Hessian matrix corresponding to free variables
-        const auto Hxx = lhs.H().diagonal().head(nx);
+        const auto Hxx = lhs.H.diagonal().head(nx);
 
         // Update the priority weights for the update of the canonical form
         weights.head(nx).noalias() = abs(inv(Hxx));
@@ -230,7 +230,7 @@ struct SaddlePointSolver::Impl
     /// Decompose the coefficient matrix of the saddle point problem using a LU decomposition method.
     auto decomposeLU(SaddlePointMatrix lhs) -> void
     {
-        denseG = lhs.G().size();
+        denseG = lhs.G.size();
         if(denseG) decomposeLUDenseG(lhs);
         else decomposeLUZeroG(lhs);
     }
@@ -263,7 +263,7 @@ struct SaddlePointSolver::Impl
         M.bottomRightCorner(nbx, nbx).setZero();
 
         // Set the H block of the canonical saddle point matrix
-        M.topLeftCorner(nx, nx) = lhs.H()(ivx, ivx);
+        M.topLeftCorner(nx, nx) = lhs.H(ivx, ivx);
 
         // Compute the LU decomposition of M.
         if(options.method == SaddlePointMethod::PartialPivLU)
@@ -291,12 +291,12 @@ struct SaddlePointSolver::Impl
         // Create a view to the M block of the auxiliary matrix `mat` where the canonical saddle point matrix is defined
         auto M = mat.topLeftCorner(m + nx, m + nx);
 
-        M.topLeftCorner(nx, nx) = lhs.H()(ivx, ivx);
+        M.topLeftCorner(nx, nx) = lhs.H(ivx, ivx);
         M.middleCols(nx, nbx).topRows(nx) << Ibxbx, tr(Sbxnx);
         M.middleRows(nx, nbx).leftCols(nx) << Ibxbx, Sbxnx;
         M.topRightCorner(nx, nbf + nl).setZero();
         M.bottomLeftCorner(nbf + nl, nx).setZero();
-        M.bottomRightCorner(m, m) = R * lhs.G() * tr(R);
+        M.bottomRightCorner(m, m) = R * lhs.G * tr(R);
 
         // Compute the LU decomposition of M.
         if(options.method == SaddlePointMethod::PartialPivLU)
@@ -307,7 +307,7 @@ struct SaddlePointSolver::Impl
     /// Decompose the coefficient matrix of the saddle point problem using a rangespace diagonal method.
     auto decomposeRangespace(SaddlePointMatrix lhs) -> void
     {
-        denseG = lhs.G().size();
+        denseG = lhs.G.size();
         if(denseG) decomposeRangespaceDenseG(lhs);
         else decomposeRangespaceZeroG(lhs);
     }
@@ -341,7 +341,7 @@ struct SaddlePointSolver::Impl
         auto ivx = iordering.head(nx);
 
         // Retrieve the entries in H corresponding to free variables.
-        Hx.noalias() = lhs.H().diagonal()(ivx);
+        Hx.noalias() = lhs.H.diagonal()(ivx);
 
         // The auxiliary matrix Tbxbx = Sbxn1 * Bn1bx and its submatrices
         auto Tbxbx = mat.topRightCorner(nbx, nbx);
@@ -457,10 +457,10 @@ struct SaddlePointSolver::Impl
         auto ivx = iordering.head(nx);
 
         // Retrieve the entries in H corresponding to free variables.
-        Hx.noalias() = lhs.H().diagonal()(ivx);
+        Hx.noalias() = lhs.H.diagonal()(ivx);
 
         // Calculate matrix G' = R * G * tr(R)
-        G.noalias() = R * lhs.G() * tr(R);
+        G.noalias() = R * lhs.G * tr(R);
 
         // The auxiliary matrix Tbxbx = Sbxn1 * Bn1bx and its submatrices
         auto Tbxbx = mat.topRightCorner(nbx, nbx);
@@ -561,7 +561,7 @@ struct SaddlePointSolver::Impl
     /// Decompose the coefficient matrix of the saddle point problem using a nullspace method.
     auto decomposeNullspace(SaddlePointMatrix lhs) -> void
     {
-        denseG = lhs.G().size();
+        denseG = lhs.G.size();
         if(denseG) decomposeNullspaceDenseG(lhs);
         else decomposeNullspaceZeroG(lhs);
     }
@@ -590,7 +590,7 @@ struct SaddlePointSolver::Impl
         auto ivx = iordering.head(nx);
 
         // Retrieve the entries in H corresponding to free variables.
-        Hx.noalias() = lhs.H()(ivx, ivx);
+        Hx.noalias() = lhs.H(ivx, ivx);
 
         // The matrix M where we setup the coefficient matrix of the equations
         auto M = mat.topLeftCorner(nnx, nnx);
@@ -643,10 +643,10 @@ struct SaddlePointSolver::Impl
         auto ivx = iordering.head(nx);
 
         // Retrieve the entries in H corresponding to free variables.
-        Hx.noalias() = lhs.H()(ivx, ivx);
+        Hx.noalias() = lhs.H(ivx, ivx);
 
         // Calculate matrix G' = R * G * tr(R)
-        G.noalias() = R * lhs.G() * tr(R);
+        G.noalias() = R * lhs.G * tr(R);
 
         // Auxliary matrix expressions
         const auto Ibxbx = identity(nbx, nbx);
@@ -729,8 +729,8 @@ struct SaddlePointSolver::Impl
     auto solveLUZeroG(SaddlePointVector rhs, SaddlePointSolution sol) -> void
     {
         // Alias to members of the saddle point vector solution.
-        auto x = sol.x();
-        auto y = sol.y();
+        auto x = sol.x;
+        auto y = sol.y;
 
         // Alias to the matrices of the canonicalization process
         auto S = canonicalizer.S();
@@ -751,10 +751,10 @@ struct SaddlePointSolver::Impl
         auto bbf = b.segment(nbx, nbf);
 
         // Retrieve the values of a using the ordering of the free and fixed variables
-        a.noalias() = rhs.a()(iordering);
+        a.noalias() = rhs.a(iordering);
 
         // Calculate b' = R * b
-        b.noalias() = R * rhs.b();
+        b.noalias() = R * rhs.b;
 
         // Calculate bbx'' = bbx' - Sbxnf*anf
         bbx -= Sbxnf * anf;
@@ -790,8 +790,8 @@ struct SaddlePointSolver::Impl
     auto solveLUDenseG(SaddlePointVector rhs, SaddlePointSolution sol) -> void
     {
         // Alias to members of the saddle point vector solution.
-        auto x = sol.x();
-        auto y = sol.y();
+        auto x = sol.x;
+        auto y = sol.y;
 
         // Alias to the matrices of the canonicalization process
         auto S = canonicalizer.S();
@@ -812,10 +812,10 @@ struct SaddlePointSolver::Impl
         auto bbf = b.segment(nbx, nbf);
 
         // Retrieve the values of a using the ordering of the free and fixed variables
-        a.noalias() = rhs.a()(iordering);
+        a.noalias() = rhs.a(iordering);
 
         // Calculate b' = R * b
-        b.noalias() = R * rhs.b();
+        b.noalias() = R * rhs.b;
 
         // Calculate bbx'' = bbx' - Sbxnf*anf
         bbx -= Sbxnf * anf;
@@ -858,8 +858,8 @@ struct SaddlePointSolver::Impl
     auto solveRangespaceZeroG(SaddlePointVector rhs, SaddlePointSolution sol) -> void
     {
         // Alias to members of the saddle point vector solution.
-        auto x = sol.x();
-        auto y = sol.y();
+        auto x = sol.x;
+        auto y = sol.y;
 
         // Alias to the matrices of the canonicalization process
         auto S = canonicalizer.S();
@@ -894,9 +894,9 @@ struct SaddlePointSolver::Impl
         auto bb1 = bbx.tail(nb1);
         auto bb2 = bbx.head(nb2);
 
-        a.noalias() = rhs.a()(iordering);
+        a.noalias() = rhs.a(iordering);
 
-        b.noalias() = R * rhs.b();
+        b.noalias() = R * rhs.b;
 
         anx -= tr(Sb2nx) * ab2;
         bbx -= Sbxnf * anf;
@@ -937,8 +937,8 @@ struct SaddlePointSolver::Impl
     auto solveRangespaceDenseG(SaddlePointVector rhs, SaddlePointSolution sol) -> void
     {
         // Alias to members of the saddle point vector solution.
-        auto x = sol.x();
-        auto y = sol.y();
+        auto x = sol.x;
+        auto y = sol.y;
 
         // Alias to the matrices of the canonicalization process
         auto S = canonicalizer.S();
@@ -991,9 +991,9 @@ struct SaddlePointSolver::Impl
         auto bb1 = bbx.tail(nb1);
         auto bb2 = bbx.head(nb2);
 
-        a.noalias() = rhs.a()(iordering);
+        a.noalias() = rhs.a(iordering);
 
-        b.noalias() = R * rhs.b();
+        b.noalias() = R * rhs.b;
 
         anx -= tr(Sb2nx) * ab2;
         bbx -= Sbxnf * anf;
@@ -1083,10 +1083,10 @@ struct SaddlePointSolver::Impl
         auto ypbl = yp.tail(nl);
 
         // Set vectors `ax` and `af` using values from `a`
-        a.noalias() = rhs.a()(iordering);
+        a.noalias() = rhs.a(iordering);
 
         // Calculate b' = R*b
-        b.noalias() = R*rhs.b();
+        b.noalias() = R*rhs.b;
 
         // Calculate bbx'' = bbx' - Sbxnf*anf
         bbx -= Sbxnf*anf;
@@ -1107,8 +1107,8 @@ struct SaddlePointSolver::Impl
         if(nx) anx.noalias() = luxn.solve(anx);
 
         // Alias to solution vectors x and y
-        auto x = sol.x();
-        auto y = sol.y();
+        auto x = sol.x;
+        auto y = sol.y;
 
         // Calculate xbx and store in abx
         abx.noalias() = bbx - Sbxnx*anx;
@@ -1171,11 +1171,11 @@ struct SaddlePointSolver::Impl
         auto rbl = rb.tail(nl);
 
         // Set vectors `ax` and `af` using values from `a`
-        ax.noalias() = rhs.a()(ivx);
-        af.noalias() = rhs.a()(ivf);
+        ax.noalias() = rhs.a(ivx);
+        af.noalias() = rhs.a(ivf);
 
         // Calculate b' = R*b
-        b.noalias() = R*rhs.b();
+        b.noalias() = R*rhs.b;
 
         // Calculate bbx'' = bbx' - Sbxnf*anf
         bbx -= Sbxnf*anf;
@@ -1193,8 +1193,8 @@ struct SaddlePointSolver::Impl
         if(nx) r.noalias() = luxn.solve(r);
 
         // Alias to solution vectors x and y
-        auto x = sol.x();
-        auto y = sol.y();
+        auto x = sol.x;
+        auto y = sol.y;
 
         // Calculate y = tr(R) * y'
         y.noalias() = tr(R) * rb;

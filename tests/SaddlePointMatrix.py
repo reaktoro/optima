@@ -40,7 +40,7 @@ def test_saddle_point_matrix():
         ])
 
     # Check conversion to a Matrix instance
-    assert mat1.matrix() == approx(M)
+    assert mat1.array() == approx(M)
 
     # Testing conversion when some variables are fixed
     nx = 2
@@ -53,7 +53,7 @@ def test_saddle_point_matrix():
     M[nx:nx+nf, nx:nx+nf] = eye(nf)
 
     # Check conversion to a Matrix instance
-    assert mat2.matrix() == approx(M)
+    assert mat2.array() == approx(M)
 
 
 def test_saddle_point_vector():
@@ -65,4 +65,4 @@ def test_saddle_point_vector():
 
     vec = SaddlePointVector(r, n, m)
 
-    assert vec.vector() == approx(r)
+    assert vec.array() == approx(r)

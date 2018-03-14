@@ -104,7 +104,7 @@ def test_ip_saddle_point_solver(args):
     lhs = IpSaddlePointMatrix(H, A, Z, W, L, U, nx, nf)
 
     # The dense matrix assembled from lhs
-    M = lhs.matrix()
+    M = lhs.array()
 
     # The right-hand side vector
     r = M.dot(expected)

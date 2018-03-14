@@ -53,7 +53,7 @@ def test_ip_saddle_point_matrix():
     M = array(M, dtype=float64)
 
     # Check conversion to a Matrix instance
-    assert mat.matrix() == approx(M)
+    assert mat.array() == approx(M)
 
     # Testing conversion when some variables are fixed
     nx = 2
@@ -76,7 +76,7 @@ def test_ip_saddle_point_matrix():
     M = array(M, dtype=float64)
  
     # Check conversion to a Matrix instance
-    assert mat.matrix() == approx(M)
+    assert mat.array() == approx(M)
 
 
 def test_ip_saddle_point_vector():
@@ -88,4 +88,4 @@ def test_ip_saddle_point_vector():
  
     vec = IpSaddlePointVector(r, n, m)
  
-    assert r == approx(concatenate((vec.a(), vec.b(), vec.c(), vec.d())))
+    assert r == approx(concatenate((vec.a, vec.b, vec.c, vec.d)))

@@ -22,91 +22,80 @@ using namespace Eigen;
 
 namespace Optima {
 
-SaddlePointMatrix::SaddlePointMatrix(MatrixXdConstRef H, MatrixXdConstRef A, MatrixXdConstRef G, Index nx, Index nf)
-: m_H(H), m_A(A), m_G(G), m_nx(nx), m_nf(nf)
+SaddlePointMatrix::SaddlePointMatrix(MatrixXdConstRef H, MatrixXdConstRef A, Index nx, Index nf)
+: H(H), A(A), G(MatrixXd::Zero(0, 0)), nx(nx), nf(nf)
 {}
 
-auto SaddlePointMatrix::H() const -> MatrixXdConstRef
-{
-    return m_H;
-}
+SaddlePointMatrix::SaddlePointMatrix(MatrixXdConstRef H, MatrixXdConstRef A, MatrixXdConstRef G, Index nx, Index nf)
+: H(H), A(A), G(G), nx(nx), nf(nf)
+{}
 
-auto SaddlePointMatrix::A() const -> MatrixXdConstRef
+SaddlePointMatrix::operator MatrixXd() const
 {
-    return m_A;
-}
+    const auto m = A.rows();
+    const auto n = A.cols();
+    const auto t = m + n;
 
-auto SaddlePointMatrix::G() const -> MatrixXdConstRef
-{
-    return m_G;
-}
+    const auto Ax = A.leftCols(nx);
 
-auto SaddlePointMatrix::size() const -> Index
-{
-    return m_A.rows() + m_A.cols();
-}
-
-auto SaddlePointMatrix::n() const -> Index
-{
-    return nx() + nf();
-}
-
-auto SaddlePointMatrix::m() const -> Index
-{
-    return m_A.rows();
-}
-
-auto SaddlePointMatrix::nx() const -> Index
-{
-    return m_nx;
-}
-
-auto SaddlePointMatrix::nf() const -> Index
-{
-    return m_nf;
-}
-
-auto SaddlePointMatrix::matrix() const -> MatrixXd
-{
-    const Index t = size();
     MatrixXd res = zeros(t, t);
-    res << *this;
+    if(H.size()) res.topLeftCorner(nx, nx) = H.topLeftCorner(nx, nx);
+    if(G.size()) res.bottomRightCorner(m, m) = G;
+    res.block(nx, nx, nf, nf).diagonal().fill(1.0);
+    res.topRightCorner(nx, m) = tr(Ax);
+    res.bottomLeftCorner(m, n) = A;
+
     return res;
 }
 
-auto operator<<(MatrixXdRef mat, const SaddlePointMatrix& lhs) -> MatrixXdRef
+SaddlePointVector::SaddlePointVector(VectorXdConstRef a, VectorXdConstRef b)
+: a(a), b(b)
+{}
+
+SaddlePointVector::SaddlePointVector(VectorXdConstRef r, Index n, Index m)
+: a(r.head(n)), b(r.tail(m))
+{}
+
+SaddlePointVector::operator VectorXd() const
 {
-    const auto nx = lhs.nx();
-    const auto nf = lhs.nf();
-    const auto H = lhs.H();
-    const auto A = lhs.A();
-    const auto Ax = lhs.A().leftCols(nx);
-    const auto G = lhs.G();
-    const auto n = lhs.n();
-    const auto m = lhs.m();
-    mat.fill(0.0);
-    if(H.size()) mat.topLeftCorner(nx, nx) << H.topLeftCorner(nx, nx);
-    if(G.size()) mat.bottomRightCorner(m, m) = G;
-    mat.block(nx, nx, nf, nf).diagonal().fill(1.0);
-    mat.topRightCorner(nx, m) = tr(Ax);
-    mat.bottomLeftCorner(m, n) = A;
-    return mat;
+    const auto n = a.size();
+    const auto m = b.size();
+    const auto t = m + n;
+    VectorXd res(t);
+    res << a, b;
+    return res;
 }
 
-auto operator<<(VectorXdRef vec, const SaddlePointVector& rhs) -> VectorXdRef
+SaddlePointSolution::SaddlePointSolution(VectorXdRef x, VectorXdRef y)
+: x(x), y(y)
+{}
+
+SaddlePointSolution::SaddlePointSolution(VectorXdRef s, Index n, Index m)
+: x(s.head(n)), y(s.tail(m))
+{}
+
+auto SaddlePointSolution::operator=(VectorXdConstRef vec) -> SaddlePointSolution&
 {
-    const auto& a = rhs.a();
-    const auto& b = rhs.b();
-    const Index n = a.cols();
-    const Index m = b.rows();
-    vec.head(n).noalias() = a;
-    vec.tail(m).noalias() = b;
-    return vec;
+    x.noalias() = vec.head(x.rows());
+    y.noalias() = vec.tail(y.rows());
+    return *this;
 }
 
-auto operator*(const SaddlePointMatrix& lhs, VectorXdConstRef rhs) -> VectorXd
+SaddlePointSolution::operator VectorXd() const
 {
-    return lhs.matrix() * rhs;
+    const auto n = x.size();
+    const auto m = y.size();
+    const auto t = m + n;
+    VectorXd res(t);
+    res << x, y;
+    return res;
+}
+
+auto operator*(SaddlePointMatrix lhs, VectorXdConstRef rhs) -> VectorXd
+{
+    MatrixXd M(lhs);
+    VectorXd res = M * rhs;
+    return res;
 }
 
 } // namespace Optima
