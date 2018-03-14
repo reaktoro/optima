@@ -1206,24 +1206,6 @@ struct SaddlePointSolver::Impl
         // Set back the values of x currently stored in a
         x(iordering).noalias() = a;
     }
-
-//    auto solve(SaddlePointMatrix lhs, SaddlePointVector rhs, SaddlePointSolution sol) -> SaddlePointResult
-//    {
-//        // The result of this method call
-//        SaddlePointResult res;
-//
-//        // Assemble the saddle point coefficient matrix and the right-hand side vector
-//        mat << lhs;
-//        vec << rhs;
-//
-//        // Solve the saddle point problem
-//        vec.noalias() = mat.lu().solve(vec);
-//
-//        // Set the saddle point solution with values in vec
-//        sol = vec;
-//
-//        return res.stop();
-//    }
 };
 
 SaddlePointSolver::SaddlePointSolver()
