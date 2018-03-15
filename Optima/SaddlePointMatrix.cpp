@@ -17,14 +17,15 @@
 
 #include "SaddlePointMatrix.hpp"
 
-// Eigen includes
-using namespace Eigen;
+// Optima includes
+#include <Optima/Utils.hpp>
 
 namespace Optima {
 
 SaddlePointMatrix::SaddlePointMatrix(MatrixConstRef H, MatrixConstRef A, Index nf)
-: H(H), A(A), G(Matrix::Zero(0, 0)), nf(nf)
-{}
+: H(H), A(A), G(Eigen::zeros(0, 0)), nf(nf)
+{
+}
 
 SaddlePointMatrix::SaddlePointMatrix(MatrixConstRef H, MatrixConstRef A, MatrixConstRef G, Index nf)
 : H(H), A(A), G(G), nf(nf)
@@ -39,9 +40,11 @@ SaddlePointMatrix::operator Matrix() const
     const auto nx = n - nf;
     const auto Ax = A.leftCols(nx);
 
-    Matrix res = zeros(t, t);
-    if(H.size()) res.topLeftCorner(nx, nx) = H.topLeftCorner(nx, nx);
-    if(G.size()) res.bottomRightCorner(m, m) = G;
+    Matrix res = Eigen::zeros(t, t);
+    if(isDenseMatrix(H)) res.topLeftCorner(nx, nx) = H.topLeftCorner(nx, nx);
+    if(isDiagonalMatrix(H)) res.topLeftCorner(nx, nx).diagonal() = H.col(0).head(nx);
+    if(isDenseMatrix(G)) res.bottomRightCorner(m, m) = G;
+    if(isDiagonalMatrix(G)) res.bottomRightCorner(m, m).diagonal() = G.col(0);
     res.block(nx, nx, nf, nf).diagonal().fill(1.0);
     res.topRightCorner(nx, m) = tr(Ax);
     res.bottomLeftCorner(m, n) = A;
