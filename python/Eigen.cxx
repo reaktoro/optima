@@ -21,23 +21,23 @@
 namespace py = pybind11;
 
 // Optima includes
-#include <eigen3/Eigenx/Core>
+#include <Optima/Matrix.hpp>
 #include <eigen3/Eigen/LU>
-using namespace Eigen;
+using namespace Optima;
 
 void exportEigen(py::module& m)
 {
     auto eigen = m.def_submodule("eigen");
 
-    eigen.def("ones", [](int n) -> VectorXd { return ones(n); });
-    eigen.def("ones", [](int m, int n) -> MatrixXd { return ones(m, n); });
-    eigen.def("zeros", [](int n) -> VectorXd { return zeros(n); });
-    eigen.def("zeros", [](int m, int n) -> MatrixXd { return zeros(m, n); });
-    eigen.def("random", [](int n) -> VectorXd { return random(n); });
-    eigen.def("random", [](int m, int n) -> MatrixXd { return random(m, n); });
-    eigen.def("eye", [](int n) -> MatrixXd { return identity(n, n); });
-    eigen.def("diag", [](VectorXdConstRef x) -> MatrixXd { return x.asDiagonal(); });
-    eigen.def("vector", [](int n=0) -> VectorXd { return VectorXd(n); }, py::arg("n")=0);
-    eigen.def("matrix", [](int m=0, int n=0) -> MatrixXd { return MatrixXd(m, n); }, py::arg("m")=0, py::arg("n")=0);
-    eigen.def("solve", [](MatrixXdConstRef A, VectorXdConstRef b) -> VectorXd { return A.fullPivLu().solve(b); });
+    eigen.def("ones", [](int n) -> Vector { return Eigen::ones(n); });
+    eigen.def("ones", [](int m, int n) -> Matrix { return Eigen::ones(m, n); });
+    eigen.def("zeros", [](int n) -> Vector { return Eigen::zeros(n); });
+    eigen.def("zeros", [](int m, int n) -> Matrix { return Eigen::zeros(m, n); });
+    eigen.def("random", [](int n) -> Vector { return Eigen::random(n); });
+    eigen.def("random", [](int m, int n) -> Matrix { return Eigen::random(m, n); });
+    eigen.def("eye", [](int n) -> Matrix { return Eigen::identity(n, n); });
+    eigen.def("diag", [](VectorConstRef x) -> Matrix { return x.asDiagonal(); });
+    eigen.def("vector", [](int n=0) -> Vector { return Vector(n); }, py::arg("n")=0);
+    eigen.def("matrix", [](int m=0, int n=0) -> Matrix { return Matrix(m, n); }, py::arg("m")=0, py::arg("n")=0);
+    eigen.def("solve", [](MatrixConstRef A, VectorConstRef b) -> Vector { return A.fullPivLu().solve(b); });
 }

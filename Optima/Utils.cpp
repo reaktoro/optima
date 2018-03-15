@@ -22,9 +22,9 @@
 
 namespace Optima {
 
-auto largestStep(const VectorXd& p, const VectorXd& dp) -> double
+auto largestStep(const Vector& p, const Vector& dp) -> double
 {
-    VectorXd res = -p.array() / dp.array();
+    Vector res = -p.array() / dp.array();
     double alpha = infinity();
     for(unsigned i = 0; i < res.size(); ++i)
         if(res[i] > 0.0 && res[i] < alpha)
@@ -32,13 +32,13 @@ auto largestStep(const VectorXd& p, const VectorXd& dp) -> double
     return alpha;
 }
 
-auto fractionToTheBoundary(const VectorXd& p, const VectorXd& dp, double tau) -> double
+auto fractionToTheBoundary(const Vector& p, const Vector& dp, double tau) -> double
 {
     Index i;
     return fractionToTheBoundary(p, dp, tau, i);
 }
 
-auto fractionToTheBoundary(const VectorXd& p, const VectorXd& dp, double tau, Index& ilimiting) -> double
+auto fractionToTheBoundary(const Vector& p, const Vector& dp, double tau, Index& ilimiting) -> double
 {
     ilimiting = p.size();
     double alpha_max = 1.0;
@@ -58,7 +58,7 @@ auto fractionToTheBoundary(const VectorXd& p, const VectorXd& dp, double tau, In
     return alpha_max;
 }
 
-auto fractionToTheBoundary(const VectorXd& p, const VectorXd& dp, const MatrixXd& C, const VectorXd& r, double tau) -> double
+auto fractionToTheBoundary(const Vector& p, const Vector& dp, const Matrix& C, const Vector& r, double tau) -> double
 {
     // The number of linear inequality constraints
     const Index m = C.rows();
@@ -82,7 +82,7 @@ auto fractionToTheBoundary(const VectorXd& p, const VectorXd& dp, const MatrixXd
     return alpha_max;
 }
 
-auto fractionToTheLowerBoundary(const VectorXd& p, const VectorXd& dp, const VectorXd& lower, double tau) -> double
+auto fractionToTheLowerBoundary(const Vector& p, const Vector& dp, const Vector& lower, double tau) -> double
 {
     double alpha_max = 1.0;
     for(unsigned i = 0; i < p.size(); ++i)
@@ -107,15 +107,15 @@ auto infinity() -> double
     return std::numeric_limits<double>::infinity();
 }
 
-auto bfgs() -> std::function<MatrixXd(const VectorXd&, const VectorXd&)>
+auto bfgs() -> std::function<Matrix(const Vector&, const Vector&)>
 {
-    VectorXd x0;
-    VectorXd g0;
-    VectorXd dx;
-    VectorXd dg;
-    MatrixXd H;
+    Vector x0;
+    Vector g0;
+    Vector dx;
+    Vector dg;
+    Matrix H;
 
-    std::function<MatrixXd(const VectorXd&, const VectorXd&)> f = [=](const VectorXd& x, const VectorXd& g) mutable
+    std::function<Matrix(const Vector&, const Vector&)> f = [=](const Vector& x, const Vector& g) mutable
     {
         if(x0.size() == 0)
         {
@@ -319,9 +319,9 @@ auto minimizeBrent(const std::function<double(double)>& f, double min, double ma
     return x;
 }
 
-auto inverseShermanMorrison(const MatrixXd& invA, const VectorXd& D) -> MatrixXd
+auto inverseShermanMorrison(const Matrix& invA, const Vector& D) -> Matrix
 {
-    MatrixXd invM = invA;
+    Matrix invM = invA;
     for(unsigned i = 0; i < D.rows(); ++i)
         invM = invM - (D[i]/(1 + D[i]*invM(i, i)))*invM.col(i)*invM.row(i);
     return invM;

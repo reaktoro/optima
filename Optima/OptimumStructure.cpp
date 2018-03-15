@@ -32,15 +32,15 @@ OptimumStructure::OptimumStructure(ObjectiveFunction f, Index n, Index m)
   m_fixedpartition(linspace<int>(n, 0, n - 1))
 {}
 
-OptimumStructure::OptimumStructure(ObjectiveFunction f, MatrixXdConstRef A)
+OptimumStructure::OptimumStructure(ObjectiveFunction f, MatrixConstRef A)
 : OptimumStructure(f, A.cols(), A.rows())
 {
     m_A = A;
 }
 
-auto OptimumStructure::setEqualityConstraintMatrix(MatrixXdConstRef A) -> void
+auto OptimumStructure::setEqualityConstraintMatrix(MatrixConstRef A) -> void
 {
-    MatrixXdRef Aref(m_A);
+    MatrixRef Aref(m_A);
     Aref = A;
 }
 

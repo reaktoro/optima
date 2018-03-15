@@ -37,7 +37,7 @@ public:
     Canonicalizer();
 
     /// Construct a Canonicalizer instance with given matrix.
-    Canonicalizer(MatrixXdConstRef A);
+    Canonicalizer(MatrixConstRef A);
 
     /// Construct a copy of a Canonicalizer instance.
     Canonicalizer(const Canonicalizer& other);
@@ -61,17 +61,17 @@ public:
     auto numNonBasicVariables() const -> Index;
 
     /// Return the matrix \eq{S} of the canonicalization.
-    auto S() const -> MatrixXdConstRef;
+    auto S() const -> MatrixConstRef;
 
     /// Return the canonicalizer matrix \eq{R}.
-    auto R() const -> MatrixXdConstRef;
+    auto R() const -> MatrixConstRef;
 
     /// Return the permutation matrix \eq{Q} of the canonicalization.
     /// This method returns the indices (ordering) of the variables after canonicalization.
     auto Q() const -> VectorXiConstRef;
 
     /// Return the canonicalized matrix \eq{C = RAQ = [I\quad S]}`.
-    auto C() const -> MatrixXd;
+    auto C() const -> Matrix;
 
     /// Return the indices of the linearly independent rows of the original matrix.
     auto indicesLinearlyIndependentEquations() const -> VectorXi;
@@ -83,7 +83,7 @@ public:
     auto indicesNonBasicVariables() const -> VectorXiConstRef;
 
     /// Compute the canonical matrix of the given matrix.
-    auto compute(MatrixXdConstRef A) -> void;
+    auto compute(MatrixConstRef A) -> void;
 
     /// Update the canonical form with the swap of a basic variable by a non-basic variable.
     /// @param ibasic The index of the basic variable between 0 and \eq{n_\mathrm{b}}`.
@@ -101,7 +101,7 @@ public:
     /// with non-positive weights need to be basic variables. This happens when all variables with
     /// non-zero coefficient in a row of matrix \eq{A} have non-positive weights.
     /// @param weights The priority weights of the variables.
-    auto updateWithPriorityWeights(VectorXdConstRef weights) -> void;
+    auto updateWithPriorityWeights(VectorConstRef weights) -> void;
 
     /// Update the canonical form with a new ordering for the variables.
     auto updateWithNewOrdering(VectorXiConstRef ordering) -> void;

@@ -35,41 +35,41 @@ public:
     OptimumParams(const OptimumStructure& structure);
 
     /// Return right-hand side vector of the equality constraint \eq{Ax = b}.
-    auto b() -> VectorXdRef { return m_b; }
+    auto b() -> VectorRef { return m_b; }
 
     /// Return right-hand side vector of the equality constraint \eq{Ax = b}.
-    auto b() const -> VectorXdConstRef { return m_b; }
+    auto b() const -> VectorConstRef { return m_b; }
 
     /// Return the lower bound values for the variables in \eq{x} bounded below.
-    auto lowerBounds() -> VectorXdRef { return m_xlower; }
+    auto lowerBounds() -> VectorRef { return m_xlower; }
 
     /// Return the lower bound values for the variables in \eq{x} bounded below.
-    auto lowerBounds() const -> VectorXdConstRef { return m_xlower; }
+    auto lowerBounds() const -> VectorConstRef { return m_xlower; }
 
     /// Return the upper bound values for the variables in \eq{x} bounded above.
-    auto upperBounds() -> VectorXdRef { return m_xupper; }
+    auto upperBounds() -> VectorRef { return m_xupper; }
 
     /// Return the upper bound values for the variables in \eq{x} bounded above.
-    auto upperBounds() const -> VectorXdConstRef { return m_xupper; }
+    auto upperBounds() const -> VectorConstRef { return m_xupper; }
 
     /// Return the values for the fixed variables in \eq{x}.
-    auto fixedValues() -> VectorXdRef { return m_xfixed; }
+    auto fixedValues() -> VectorRef { return m_xfixed; }
 
     /// Return the values for the fixed variables in \eq{x}.
-    auto fixedValues() const -> VectorXdConstRef { return m_xfixed; }
+    auto fixedValues() const -> VectorConstRef { return m_xfixed; }
 
 private:
     /// The right-hand side vector of the linear equality constraint \eq{Ax = b}.
-    VectorXd m_b;
+    Vector m_b;
 
     /// The lower bounds of the variables \eq{x}.
-    VectorXd m_xlower;
+    Vector m_xlower;
 
     /// The upper bounds of the variables \eq{x}.
-    VectorXd m_xupper;
+    Vector m_xupper;
 
     /// The values of the variables in \eq{x} that are fixed.
-    VectorXd m_xfixed;
+    Vector m_xfixed;
 
 };
 

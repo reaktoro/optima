@@ -27,16 +27,16 @@ class OptimumState
 {
 public:
     /// The primal solution of the optimization problem
-    VectorXd x;
+    Vector x;
 
     /// The dual solution of the optimization problem with respect to the equality constraints
-    VectorXd y;
+    Vector y;
 
     /// The dual solution of the optimization problem with respect to the lower bound constraints
-    VectorXd z;
+    Vector z;
 
     /// The dual solution of the optimization problem with respect to the upper bound constraints
-    VectorXd w;
+    Vector w;
 };
 
 } // namespace Optima

@@ -22,9 +22,9 @@ int main(int argc, char **argv)
 {
     OptimumProblem problem;
     problem.n = 2;
-    problem.objective = [](const VectorXd& x, ObjectiveState& f)
+    problem.objective = [](const Vector& x, ObjectiveState& f)
     {
-        VectorXd xt = x - ones(2);
+        Vector xt = x - ones(2);
         if(f.requires.val) f.val = 0.5 * dot(xt, xt);
         if(f.requires.grad) f.grad = xt;
         if(f.requires.hessian)

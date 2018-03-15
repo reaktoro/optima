@@ -58,40 +58,40 @@ public:
     auto solve(const OptimumParams& params, const OptimumState& state, const ObjectiveState& f) -> void;
 
     /// Return the step vector.
-    auto step() const -> VectorXdConstRef;
+    auto step() const -> VectorConstRef;
 
     /// Return the step vector for the *x* variables.
-    auto dx() const -> VectorXdConstRef;
+    auto dx() const -> VectorConstRef;
 
     /// Return the step vector for the *y* variables.
-    auto dy() const -> VectorXdConstRef;
+    auto dy() const -> VectorConstRef;
 
     /// Return the step vector for the *z* variables.
-    auto dz() const -> VectorXdConstRef;
+    auto dz() const -> VectorConstRef;
 
     /// Return the step vector for the *w* variables.
-    auto dw() const -> VectorXdConstRef;
+    auto dw() const -> VectorConstRef;
 
     /// Return the residual of all conditions for the optimum solution.
-    auto residual() const -> VectorXdConstRef;
+    auto residual() const -> VectorConstRef;
 
     /// Return the residual of the optimality conditions.
-    auto residualOptimality() const -> VectorXdConstRef;
+    auto residualOptimality() const -> VectorConstRef;
 
     /// Return the residual of the feasibility conditions.
-    auto residualFeasibility() const -> VectorXdConstRef;
+    auto residualFeasibility() const -> VectorConstRef;
 
     /// Return the residual of the complementarity conditions for the lower bounds.
-    auto residualComplementarityLowerBounds() const -> VectorXdConstRef;
+    auto residualComplementarityLowerBounds() const -> VectorConstRef;
 
     /// Return the residual of the complementarity conditions for the upper bounds.
-    auto residualComplementarityUpperBounds() const -> VectorXdConstRef;
+    auto residualComplementarityUpperBounds() const -> VectorConstRef;
 
     /// Return the residual of the complementarity conditions for the inequality constraints.
-    auto residualComplementarityInequality() const -> VectorXdConstRef;
+    auto residualComplementarityInequality() const -> VectorConstRef;
 //
 //    /// Return the left-hand side matrix of the KKT equation.
-//    auto lhs() const -> MatrixXdConstRef;
+//    auto lhs() const -> MatrixConstRef;
 //
 //    /// Return the indices of the free variables.
 //    auto ifree() const -> VectorXiConstRef;

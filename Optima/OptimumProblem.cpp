@@ -39,13 +39,13 @@
 //    m_nlower = m_n;
 //}
 //
-//auto OptimumProblem::xlower(VectorXdConstRef values) -> void
+//auto OptimumProblem::xlower(VectorConstRef values) -> void
 //{
 //    m_xlower.head(m_n) = values;
 //    m_nlower = m_n;
 //}
 //
-//auto OptimumProblem::xlower(VectorXiConstRef indices, VectorXdConstRef values) -> void
+//auto OptimumProblem::xlower(VectorXiConstRef indices, VectorConstRef values) -> void
 //{
 //    m_xlower(indices) = values;
 //    m_nlower = indices.size();
@@ -53,7 +53,7 @@
 //    m_lowerpartition.head(m_nlower).swap(m_lowerpartition(indices));
 //}
 //
-//auto OptimumProblem::xlower() const -> VectorXdConstRef
+//auto OptimumProblem::xlower() const -> VectorConstRef
 //{
 //    return m_xlower.head(m_nlower);
 //}
@@ -64,13 +64,13 @@
 //    m_nupper = m_n;
 //}
 //
-//auto OptimumProblem::xupper(VectorXdConstRef values) -> void
+//auto OptimumProblem::xupper(VectorConstRef values) -> void
 //{
 //    m_xupper.head(m_n) = values;
 //    m_nupper = m_n;
 //}
 //
-//auto OptimumProblem::xupper(VectorXiConstRef indices, VectorXdConstRef values) -> void
+//auto OptimumProblem::xupper(VectorXiConstRef indices, VectorConstRef values) -> void
 //{
 //    m_xupper(indices) = values;
 //    m_nupper = indices.size();
@@ -78,7 +78,7 @@
 //    m_upperpartition.head(m_nlower).swap(m_upperpartition(indices));
 //}
 //
-//auto OptimumProblem::xupper() const -> VectorXdConstRef
+//auto OptimumProblem::xupper() const -> VectorConstRef
 //{
 //    return m_xupper.head(m_nupper);
 //}
@@ -89,13 +89,13 @@
 //    m_nfixed = m_n;
 //}
 //
-//auto OptimumProblem::xfixed(VectorXdConstRef values) -> void
+//auto OptimumProblem::xfixed(VectorConstRef values) -> void
 //{
 //    m_xfixed.head(m_n) = values;
 //    m_nfixed = m_n;
 //}
 //
-//auto OptimumProblem::xfixed(VectorXiConstRef indices, VectorXdConstRef values) -> void
+//auto OptimumProblem::xfixed(VectorXiConstRef indices, VectorConstRef values) -> void
 //{
 //    m_xfixed(indices) = values;
 //    m_nfixed = indices.size();
@@ -103,7 +103,7 @@
 //    m_fixedpartition.head(m_nlower).swap(m_fixedpartition(indices));
 //}
 //
-//auto OptimumProblem::xfixed() const -> VectorXdConstRef
+//auto OptimumProblem::xfixed() const -> VectorConstRef
 //{
 //    return m_xfixed.head(m_nfixed);
 //}

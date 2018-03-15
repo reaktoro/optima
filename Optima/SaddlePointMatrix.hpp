@@ -40,13 +40,13 @@ class SaddlePointMatrix
 {
 public:
     /// The Hessian matrix \eq{H} in the saddle point matrix.
-    MatrixXdConstRef H;
+    MatrixConstRef H;
 
     /// The Jacobian matrix \eq{A} in the saddle point matrix.
-    MatrixXdConstRef A;
+    MatrixConstRef A;
 
     /// The negative semi-definite matrix \eq{G} in the saddle point matrix.
-    MatrixXdConstRef G;
+    MatrixConstRef G;
 
     /// The number of fixed variables.
     Index nf;
@@ -55,17 +55,17 @@ public:
     /// @param H The \eq{H} matrix in the saddle point equation.
     /// @param A The \eq{A} matrix in the saddle point equation.
     /// @param nf The number of fixed variables.
-    SaddlePointMatrix(MatrixXdConstRef H, MatrixXdConstRef A, Index nf = 0);
+    SaddlePointMatrix(MatrixConstRef H, MatrixConstRef A, Index nf = 0);
 
     /// Construct a SaddlePointMatrix instance.
     /// @param H The \eq{H} matrix in the saddle point equation.
     /// @param A The \eq{A} matrix in the saddle point equation.
     /// @param G The \eq{G} matrix in the saddle point equation.
     /// @param nf The number of fixed variables.
-    SaddlePointMatrix(MatrixXdConstRef H, MatrixXdConstRef A, MatrixXdConstRef G, Index nf = 0);
+    SaddlePointMatrix(MatrixConstRef H, MatrixConstRef A, MatrixConstRef G, Index nf = 0);
 
-    /// Convert this SaddlePointMatrix instance into a MatrixXd instance.
-    operator MatrixXd() const;
+    /// Convert this SaddlePointMatrix instance into a Matrix instance.
+    operator Matrix() const;
 };
 
 /// A type used to describe a saddle point right-hand side vector.
@@ -73,24 +73,24 @@ class SaddlePointVector
 {
 public:
     /// The saddle-point solution vector \eq{a}.
-    VectorXdConstRef a;
+    VectorConstRef a;
 
     /// The saddle-point solution vector \eq{b}.
-    VectorXdConstRef b;
+    VectorConstRef b;
 
     /// Construct a SaddlePointVector instance with given \eq{a} and \eq{b} vectors.
     /// @param a The saddle point right-hand side vector \eq{a}.
     /// @param b The saddle point right-hand side vector \eq{b}.
-    SaddlePointVector(VectorXdConstRef a, VectorXdConstRef b);
+    SaddlePointVector(VectorConstRef a, VectorConstRef b);
 
     /// Construct a SaddlePointVector instance with given right-hand side vector.
     /// @param r The right-hand side vector \eq{r=\begin{bmatrix}a & b\end{bmatrix}}.
     /// @param n The dimension of vector \eq{a}.
     /// @param m The dimension of vector \eq{b}.
-    SaddlePointVector(VectorXdConstRef r, Index n, Index m);
+    SaddlePointVector(VectorConstRef r, Index n, Index m);
 
-    /// Convert this SaddlePointVector instance into a VectorXd instance.
-    operator VectorXd() const;
+    /// Convert this SaddlePointVector instance into a Vector instance.
+    operator Vector() const;
 };
 
 /// A type used to describe a saddle point solution vector.
@@ -98,31 +98,31 @@ class SaddlePointSolution
 {
 public:
     /// The saddle-point solution vector \eq{x}.
-    VectorXdRef x;
+    VectorRef x;
 
     /// The saddle-point solution vector \eq{y}.
-    VectorXdRef y;
+    VectorRef y;
 
     /// Construct a SaddlePointSolution instance with given \eq{x} and \eq{y} vectors.
     /// @param x The saddle point solution vector \eq{x}.
     /// @param y The saddle point solution vector \eq{y}.
-    SaddlePointSolution(VectorXdRef x, VectorXdRef y);
+    SaddlePointSolution(VectorRef x, VectorRef y);
 
     /// Construct a SaddlePointSolution instance with given solution vector.
     /// @param s The solution vector \eq{s=\begin{bmatrix}x & y\end{bmatrix}}.
     /// @param n The dimension of vector \eq{x}.
     /// @param m The dimension of vector \eq{y}.
-    SaddlePointSolution(VectorXdRef s, Index n, Index m);
+    SaddlePointSolution(VectorRef s, Index n, Index m);
 
-    /// Assign this SaddlePointSolution instance with a VectorXdConstRef instance.
-    auto operator=(VectorXdConstRef vec) -> SaddlePointSolution&;
+    /// Assign this SaddlePointSolution instance with a VectorConstRef instance.
+    auto operator=(VectorConstRef vec) -> SaddlePointSolution&;
 
-    /// Convert this SaddlePointSolution instance into a VectorXd instance.
-    operator VectorXd() const;
+    /// Convert this SaddlePointSolution instance into a Vector instance.
+    operator Vector() const;
 };
 
 /// Return the multiplication of a SaddlePointMatrix by a vector.
-auto operator*(SaddlePointMatrix lhs, VectorXdConstRef rhs) -> VectorXd;
+auto operator*(SaddlePointMatrix lhs, VectorConstRef rhs) -> Vector;
 
 } // namespace Optima
 

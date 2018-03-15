@@ -28,7 +28,7 @@ void exportCanonicalizer(py::module& m)
 {
     py::class_<Canonicalizer>(m, "Canonicalizer")
         .def(py::init<>())
-        .def(py::init<MatrixXdConstRef>())
+        .def(py::init<MatrixConstRef>())
         .def("numVariables", &Canonicalizer::numVariables)
         .def("numEquations", &Canonicalizer::numEquations)
         .def("numBasicVariables", &Canonicalizer::numBasicVariables)

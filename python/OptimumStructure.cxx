@@ -43,7 +43,7 @@ void exportOptimumStructure(py::module& m)
 
     py::class_<OptimumStructure>(m, "OptimumStructure")
         .def(py::init<ObjectiveFunction, Index, Index>(), py::arg("f"), py::arg("n"), py::arg("m"))
-        .def(py::init<ObjectiveFunction, MatrixXdConstRef>(), py::arg("f"), py::arg("A"))
+        .def(py::init<ObjectiveFunction, MatrixConstRef>(), py::arg("f"), py::arg("A"))
         .def("setEqualityConstraintMatrix", &OptimumStructure::setEqualityConstraintMatrix, "Set the coefficient matrix `A` of the linear equality constraints.")
         .def("setVariablesWithLowerBounds", &OptimumStructure::setVariablesWithLowerBounds, "Set the indices of the variables in `x` with lower bounds.")
         .def("allVariablesHaveLowerBounds", &OptimumStructure::allVariablesHaveLowerBounds, "Set all variables in `x` with lower bounds.")

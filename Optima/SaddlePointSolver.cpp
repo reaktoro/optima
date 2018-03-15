@@ -64,34 +64,34 @@ struct SaddlePointSolver::Impl
     Index nb2, nn2;
 
     /// The priority weights for the selection of basic variables.
-    VectorXd weights;
+    Vector weights;
 
     /// The workspace for the Hessian matrix H and matrix G.
-    MatrixXd H, G;
+    Matrix H, G;
 
     /// The workspace for the right-hand side vectors a and b
-    VectorXd a, b;
+    Vector a, b;
 
     /// The matrix used as a workspace for the decompose and solve methods.
-    MatrixXd mat;
+    Matrix mat;
 
     /// The vector used as a workspace for the decompose and solve methods.
-    VectorXd vec;
+    Vector vec;
 
     /// The ordering of the variables as (free-basic, free-non-basic, fixed-basic, fixed-non-basic)
     VectorXi iordering;
 
     /// The LU solver used to calculate *xb* when the Hessian matrix is in diagonal form.
-    Eigen::PartialPivLU<MatrixXd> luxb;
+    Eigen::PartialPivLU<Matrix> luxb;
 
     /// The LU solver used to calculate *xn* when the Hessian matrix is in dense form.
-    Eigen::PartialPivLU<MatrixXd> luxn;
+    Eigen::PartialPivLU<Matrix> luxn;
 
     /// The partial LU solver used to calculate both *x* and *y* simultaneously.
-    Eigen::PartialPivLU<MatrixXd> luxy_partial;
+    Eigen::PartialPivLU<Matrix> luxy_partial;
 
     /// The full LU solver used to calculate both *x* and *y* simultaneously.
-    Eigen::FullPivLU<MatrixXd> luxy_full;
+    Eigen::FullPivLU<Matrix> luxy_full;
 
     /// The flag that indicates decomposition for a saddle point matrix with dense G
     bool denseG = false;
@@ -104,7 +104,7 @@ struct SaddlePointSolver::Impl
     }
 
     /// Canonicalize the coefficient matrix *A* of the saddle point problem.
-    auto initialize(MatrixXdConstRef A) -> SaddlePointResult
+    auto initialize(MatrixConstRef A) -> SaddlePointResult
     {
         // The result of this method call
         SaddlePointResult res;
@@ -1240,7 +1240,7 @@ auto SaddlePointSolver::reorderVariables(VectorXiConstRef ordering) -> void
     pimpl->reorderVariables(ordering);
 }
 
-auto SaddlePointSolver::initialize(MatrixXdConstRef A) -> SaddlePointResult
+auto SaddlePointSolver::initialize(MatrixConstRef A) -> SaddlePointResult
 {
     return pimpl->initialize(A);
 }

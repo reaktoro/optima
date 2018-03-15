@@ -32,55 +32,55 @@
 //    OptimumProblem(const OptimumStructure& structure);
 //
 //    /// Return right-hand side vector of the equality constraint \eq{Ax = b}.
-//    auto b() -> VectorXdRef { return m_b; }
+//    auto b() -> VectorRef { return m_b; }
 //
 //    /// Return right-hand side vector of the equality constraint \eq{Ax = b}.
-//    auto b() const -> VectorXdConstRef { return m_b; }
+//    auto b() const -> VectorConstRef { return m_b; }
 //
 //    /// Set a common lower bound value for the variables \eq{x}.
 //    auto xlower(double val) -> void;
 //
 //    /// Set the lower bounds of the variables \eq{x}.
 //    /// @param values The values of the lower bounds.
-//    auto xlower(VectorXdConstRef values) -> void;
+//    auto xlower(VectorConstRef values) -> void;
 //
 //    /// Set the lower bounds of selected variables in \eq{x}.
 //    /// @param indices The indices of the variables in \eq{x} with lower bounds.
 //    /// @param values The values of the lower bounds.
-//    auto xlower(VectorXiConstRef indices, VectorXdConstRef values) -> void;
+//    auto xlower(VectorXiConstRef indices, VectorConstRef values) -> void;
 //
 //    /// Return the lower bounds of the variables \eq{x}.
-//    auto xlower() const -> VectorXdConstRef;
+//    auto xlower() const -> VectorConstRef;
 //
 //    /// Set a common upper bound value for the variables \eq{x}.
 //    auto xupper(double val) -> void;
 //
 //    /// Set the upper bounds of the variables \eq{x}.
 //    /// @param values The values of the upper bounds.
-//    auto xupper(VectorXdConstRef values) -> void;
+//    auto xupper(VectorConstRef values) -> void;
 //
 //    /// Set the upper bounds of selected variables in \eq{x}.
 //    /// @param indices The indices of the variables in \eq{x} with upper bounds.
 //    /// @param values The values of the upper bounds.
-//    auto xupper(VectorXiConstRef indices, VectorXdConstRef values) -> void;
+//    auto xupper(VectorXiConstRef indices, VectorConstRef values) -> void;
 //
 //    /// Return the upper bounds of the variables \eq{x}.
-//    auto xupper() const -> VectorXdConstRef;
+//    auto xupper() const -> VectorConstRef;
 //
 //    /// Set a common value for the fixed variables in \eq{x}.
 //    auto xfixed(double val) -> void;
 //
 //    /// Set the values of the fixed variables in \eq{x}.
 //    /// @param values The values of the fixed variables.
-//    auto xfixed(VectorXdConstRef values) -> void;
+//    auto xfixed(VectorConstRef values) -> void;
 //
 //    /// Set the fixed values of selected variables in \eq{x}.
 //    /// @param indices The indices of the fixed variables in \eq{x}.
 //    /// @param values The values of the fixed variables.
-//    auto xfixed(VectorXiConstRef indices, VectorXdConstRef values) -> void;
+//    auto xfixed(VectorXiConstRef indices, VectorConstRef values) -> void;
 //
 //    /// Return the values of the fixed variables in \eq{x}.
-//    auto xfixed() const -> VectorXdConstRef;
+//    auto xfixed() const -> VectorConstRef;
 //
 //    /// Return the indices of the variables with lower bounds.
 //    auto iwithlower() const -> VectorXiConstRef;
@@ -126,7 +126,7 @@
 //    Index m_nfixed;
 //
 //    /// The right-hand side vector of the linear equality constraint \eq{Ax = b}.
-//    VectorXd m_b;
+//    Vector m_b;
 //
 //    /// The indices of the variables partitioned in [with, without] lower bounds.
 //    VectorXi m_lowerpartition;
@@ -138,13 +138,13 @@
 //    VectorXi m_fixedpartition;
 //
 //    /// The lower bounds of the variables \eq{x}.
-//    VectorXd m_xlower;
+//    Vector m_xlower;
 //
 //    /// The upper bounds of the variables \eq{x}.
-//    VectorXd m_xupper;
+//    Vector m_xupper;
 //
 //    /// The values of the variables in \eq{x} that are fixed.
-//    VectorXd m_xfixed;
+//    Vector m_xfixed;
 //
 //};
 //

@@ -41,7 +41,7 @@
 //    return std::isfinite(f.val) && f.grad.allFinite();
 //}
 //
-//auto xStepLength(VectorXdConstRef x, VectorXdConstRef dx, VectorXdConstRef l, VectorXdConstRef u, double tau) -> double
+//auto xStepLength(VectorConstRef x, VectorConstRef dx, VectorConstRef l, VectorConstRef u, double tau) -> double
 //{
 //    double alpha = 1.0;
 //    const Index size = x.size();
@@ -51,7 +51,7 @@
 //    return alpha;
 //}
 //
-//auto zStepLength(VectorXdConstRef z, VectorXdConstRef dz, double tau) -> double
+//auto zStepLength(VectorConstRef z, VectorConstRef dz, double tau) -> double
 //{
 //    double alpha = 1.0;
 //    const Index size = z.size();
@@ -60,7 +60,7 @@
 //    return alpha;
 //}
 //
-//auto wStepLength(VectorXdConstRef w, VectorXdConstRef dw, double tau) -> double
+//auto wStepLength(VectorConstRef w, VectorConstRef dw, double tau) -> double
 //{
 //    double alpha = 1.0;
 //    const Index size = w.size();
@@ -83,7 +83,7 @@
 //    ObjectiveState f;
 //
 //    /// The trial iterate x
-//    VectorXd xtrial;
+//    Vector xtrial;
 //
 //    /// The outputter instance
 //    Outputter outputter;
@@ -881,7 +881,7 @@
 ////    }
 ////
 ////    /// Calculate the sensitivity of the optimal solution with respect to parameters.
-////    auto dxdp(VectorXdConstRef dgdp, VectorXdConstRef dbdp) -> MatrixXd
+////    auto dxdp(VectorConstRef dgdp, VectorConstRef dbdp) -> Matrix
 ////    {
 ////        // Initialize the right-hand side of the KKT equations
 ////        rhs.rx.noalias() = -dgdp;
@@ -896,7 +896,7 @@
 ////    }
 //
 //    /// Calculate the sensitivity of the optimal solution with respect to parameters.
-//    auto dxdp(VectorXdConstRef dgdp, VectorXdConstRef dbdp) -> MatrixXd
+//    auto dxdp(VectorConstRef dgdp, VectorConstRef dbdp) -> Matrix
 //    {
 ////        // Initialize the right-hand side of the KKT equations
 ////        rhs.rx.noalias() = -dgdp;
@@ -951,7 +951,7 @@
 //    return pimpl->solve(problem, state);
 //}
 //
-//auto OptimumSolver::dxdp(VectorXdConstRef dgdp, VectorXdConstRef dbdp) -> VectorXd
+//auto OptimumSolver::dxdp(VectorConstRef dgdp, VectorConstRef dbdp) -> Vector
 //{
 //    return pimpl->dxdp(dgdp, dbdp);
 //}

@@ -23,17 +23,17 @@ using namespace Eigen;
 namespace Optima {
 
 IpSaddlePointMatrix::IpSaddlePointMatrix(
-    MatrixXdConstRef H,
-    MatrixXdConstRef A,
-    VectorXdConstRef Z,
-    VectorXdConstRef W,
-    VectorXdConstRef L,
-    VectorXdConstRef U,
+    MatrixConstRef H,
+    MatrixConstRef A,
+    VectorConstRef Z,
+    VectorConstRef W,
+    VectorConstRef L,
+    VectorConstRef U,
     Index nf)
 : H(H), A(A), Z(Z), W(W), L(L), U(U), nf(nf)
 {}
 
-IpSaddlePointMatrix::operator MatrixXd() const
+IpSaddlePointMatrix::operator Matrix() const
 {
     const auto m = A.rows();
     const auto n = A.cols();
@@ -47,7 +47,7 @@ IpSaddlePointMatrix::operator MatrixXd() const
     const auto Lx = L.head(nx);
     const auto Ux = U.head(nx);
 
-    MatrixXd res = zeros(t, t);
+    Matrix res = zeros(t, t);
     res.topRows(nx).leftCols(nx) = Hx;
     res.topRows(nx).middleCols(n, m) = tr(Ax);
     res.topRows(nx).middleCols(n + m, nx).diagonal().fill(-1.0);
@@ -62,45 +62,45 @@ IpSaddlePointMatrix::operator MatrixXd() const
 }
 
 IpSaddlePointVector::IpSaddlePointVector(
-    VectorXdConstRef a,
-    VectorXdConstRef b,
-    VectorXdConstRef c,
-    VectorXdConstRef d) : a(a), b(b), c(c), d(d)
+    VectorConstRef a,
+    VectorConstRef b,
+    VectorConstRef c,
+    VectorConstRef d) : a(a), b(b), c(c), d(d)
 {}
 
-IpSaddlePointVector::IpSaddlePointVector(VectorXdConstRef r, Index n, Index m)
+IpSaddlePointVector::IpSaddlePointVector(VectorConstRef r, Index n, Index m)
 : a(r.head(n)),
   b(r.segment(n, m)),
   c(r.segment(n + m, n)),
   d(r.tail(n))
 {}
 
-IpSaddlePointVector::operator VectorXd() const
+IpSaddlePointVector::operator Vector() const
 {
     const auto n = a.size();
     const auto m = b.size();
     const auto t = 3*n + m;
-    VectorXd res(t);
+    Vector res(t);
     res << a, b, c, d;
     return res;
 }
 
 IpSaddlePointSolution::IpSaddlePointSolution(
-    VectorXdRef x,
-    VectorXdRef y,
-    VectorXdRef z,
-    VectorXdRef w)
+    VectorRef x,
+    VectorRef y,
+    VectorRef z,
+    VectorRef w)
 : x(x), y(y), z(z), w(w)
 {}
 
-IpSaddlePointSolution::IpSaddlePointSolution(VectorXdRef s, Index n, Index m)
+IpSaddlePointSolution::IpSaddlePointSolution(VectorRef s, Index n, Index m)
 : x(s.head(n)),
   y(s.segment(n, m)),
   z(s.segment(n + m, n)),
   w(s.tail(n))
 {}
 
-auto IpSaddlePointSolution::operator=(VectorXdConstRef vec) -> IpSaddlePointSolution&
+auto IpSaddlePointSolution::operator=(VectorConstRef vec) -> IpSaddlePointSolution&
 {
     const auto n = x.size();
     const auto m = y.size();
@@ -111,20 +111,20 @@ auto IpSaddlePointSolution::operator=(VectorXdConstRef vec) -> IpSaddlePointSolu
     return *this;
 }
 
-IpSaddlePointSolution::operator VectorXd() const
+IpSaddlePointSolution::operator Vector() const
 {
     const auto n = x.size();
     const auto m = y.size();
     const auto t = 3*n + m;
-    VectorXd res(t);
+    Vector res(t);
     res << x, y, z, w;
     return res;
 }
 
-auto operator*(IpSaddlePointMatrix lhs, VectorXdConstRef rhs) -> VectorXd
+auto operator*(IpSaddlePointMatrix lhs, VectorConstRef rhs) -> Vector
 {
-    MatrixXd M(lhs);
-    VectorXd res = M * rhs;
+    Matrix M(lhs);
+    Vector res = M * rhs;
     return res;
 }
 

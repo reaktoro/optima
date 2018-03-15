@@ -45,20 +45,20 @@ struct OptimumStepper::Impl
     OptimumOptions options;
 
     /// The solution vector `sol = [dx dy dz dw]`.
-    VectorXd solution;
+    Vector solution;
 
     /// The right-hand side residual vector `res = [rx ry rz rw]`.
-    VectorXd residual;
+    Vector residual;
 
     /// The `A` matrix in the KKT equation.
-    MatrixXd A;
+    Matrix A;
 
     /// The `H` matrix in the KKT equation.
-    MatrixXd H;
+    Matrix H;
 
-    VectorXd Z, W, L, U;
+    Vector Z, W, L, U;
 
-    VectorXd x, g;
+    Vector x, g;
 
     /// The KKT solver.
     IpSaddlePointSolver kkt;
@@ -269,62 +269,62 @@ auto OptimumStepper::solve(const OptimumParams& params, const OptimumState& stat
     pimpl->solve(params, state, f);
 }
 
-auto OptimumStepper::step() const -> VectorXdConstRef
+auto OptimumStepper::step() const -> VectorConstRef
 {
     return pimpl->solution;
 }
 
-auto OptimumStepper::dx() const -> VectorXdConstRef
+auto OptimumStepper::dx() const -> VectorConstRef
 {
     return pimpl->solution.head(pimpl->n);
 }
 
-auto OptimumStepper::dy() const -> VectorXdConstRef
+auto OptimumStepper::dy() const -> VectorConstRef
 {
     return pimpl->solution.segment(pimpl->n, pimpl->m);
 }
 
-auto OptimumStepper::dz() const -> VectorXdConstRef
+auto OptimumStepper::dz() const -> VectorConstRef
 {
     return pimpl->solution.tail(pimpl->n);
 }
 
-auto OptimumStepper::dw() const -> VectorXdConstRef
+auto OptimumStepper::dw() const -> VectorConstRef
 {
     return pimpl->solution.tail(pimpl->n);
 }
 
-auto OptimumStepper::residual() const -> VectorXdConstRef
+auto OptimumStepper::residual() const -> VectorConstRef
 {
     return pimpl->residual;
 }
 
-auto OptimumStepper::residualOptimality() const -> VectorXdConstRef
+auto OptimumStepper::residualOptimality() const -> VectorConstRef
 {
     return pimpl->residual.head(pimpl->n);
 }
 
-auto OptimumStepper::residualFeasibility() const -> VectorXdConstRef
+auto OptimumStepper::residualFeasibility() const -> VectorConstRef
 {
     return pimpl->residual.segment(pimpl->n, pimpl->m);
 }
 
-auto OptimumStepper::residualComplementarityLowerBounds() const -> VectorXdConstRef
+auto OptimumStepper::residualComplementarityLowerBounds() const -> VectorConstRef
 {
     return pimpl->residual.tail(pimpl->n);
 }
 
-auto OptimumStepper::residualComplementarityUpperBounds() const -> VectorXdConstRef
+auto OptimumStepper::residualComplementarityUpperBounds() const -> VectorConstRef
 {
     return pimpl->residual.tail(pimpl->n);
 }
 
-//auto OptimumStepper::residualComplementarityInequality() const -> VectorXdConstRef
+//auto OptimumStepper::residualComplementarityInequality() const -> VectorConstRef
 //{
 //
 //}
 //
-//auto OptimumStepper::lhs() const -> MatrixXdConstRef
+//auto OptimumStepper::lhs() const -> MatrixConstRef
 //{
 //
 //}

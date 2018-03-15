@@ -31,24 +31,24 @@ void exportSaddlePointMatrix(py::module& m)
         .def_readonly("A", &SaddlePointMatrix::A)
         .def_readonly("G", &SaddlePointMatrix::G)
         .def_readonly("nf", &SaddlePointMatrix::nf)
-        .def(py::init<MatrixXdConstRef, MatrixXdConstRef, Index>(), py::arg("H"), py::arg("A"), py::arg("nf") = 0)
-        .def(py::init<MatrixXdConstRef, MatrixXdConstRef, MatrixXdConstRef, Index>(), py::arg("H"), py::arg("A"), py::arg("G"), py::arg("nf") = 0)
-        .def("array", [](SaddlePointMatrix self) { return MatrixXd(self); })
+        .def(py::init<MatrixConstRef, MatrixConstRef, Index>(), py::arg("H"), py::arg("A"), py::arg("nf") = 0)
+        .def(py::init<MatrixConstRef, MatrixConstRef, MatrixConstRef, Index>(), py::arg("H"), py::arg("A"), py::arg("G"), py::arg("nf") = 0)
+        .def("array", [](SaddlePointMatrix self) { return Matrix(self); })
         ;
 
     py::class_<SaddlePointVector>(m, "SaddlePointVector")
         .def_readonly("a", &SaddlePointVector::a)
         .def_readonly("b", &SaddlePointVector::b)
-        .def(py::init<VectorXdConstRef, VectorXdConstRef>(), py::arg("a"), py::arg("b"))
-        .def(py::init<VectorXdConstRef, Index, Index>(), py::arg("r"), py::arg("n"), py::arg("m"))
-        .def("array", [](SaddlePointVector self) { return VectorXd(self); })
+        .def(py::init<VectorConstRef, VectorConstRef>(), py::arg("a"), py::arg("b"))
+        .def(py::init<VectorConstRef, Index, Index>(), py::arg("r"), py::arg("n"), py::arg("m"))
+        .def("array", [](SaddlePointVector self) { return Vector(self); })
         ;
 
     py::class_<SaddlePointSolution>(m, "SaddlePointSolution")
         .def_readwrite("x", &SaddlePointSolution::x)
         .def_readwrite("y", &SaddlePointSolution::y)
-        .def(py::init<VectorXdRef, VectorXdRef>(), py::arg("x"), py::arg("y"))
-        .def(py::init<VectorXdRef, Index, Index>(), py::arg("s"), py::arg("n"), py::arg("m"))
-        .def("array", [](SaddlePointSolution self) { return VectorXd(self); })
+        .def(py::init<VectorRef, VectorRef>(), py::arg("x"), py::arg("y"))
+        .def(py::init<VectorRef, Index, Index>(), py::arg("s"), py::arg("n"), py::arg("m"))
+        .def("array", [](SaddlePointSolution self) { return Vector(self); })
         ;
 }

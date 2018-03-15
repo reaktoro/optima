@@ -33,19 +33,19 @@ namespace Optima {
 struct IpSaddlePointSolver::Impl
 {
     /// The `A` matrix in the saddlepointsolver equation.
-    MatrixXd A;
+    Matrix A;
 
     /// The `H` matrix in the saddlepointsolver equation.
-    MatrixXd H;
+    Matrix H;
 
     /// The matrices Z, W, L, U
-    VectorXd Z, W, L, U;
+    Vector Z, W, L, U;
 
     /// The residual vector
-    VectorXd r;
+    Vector r;
 
     /// The solution vector
-    VectorXd s;
+    Vector s;
 
     /// The saddle point solver.
     SaddlePointSolver spsolver;
@@ -79,7 +79,7 @@ struct IpSaddlePointSolver::Impl
     }
 
     /// Initialize the stepper with the structure of the optimization problem.
-    auto initialize(MatrixXdConstRef A) -> SaddlePointResult
+    auto initialize(MatrixConstRef A) -> SaddlePointResult
     {
         // The result of this method call
         SaddlePointResult res;
@@ -655,7 +655,7 @@ auto IpSaddlePointSolver::options() const -> const SaddlePointOptions&
     return pimpl->spsolver.options();
 }
 
-auto IpSaddlePointSolver::initialize(MatrixXdConstRef A) -> SaddlePointResult
+auto IpSaddlePointSolver::initialize(MatrixConstRef A) -> SaddlePointResult
 {
     return pimpl->initialize(A);
 }

@@ -27,15 +27,15 @@ using namespace Optima;
 
 void exportOptimumParams(py::module& m)
 {
-    auto get_b = static_cast<VectorXdConstRef (OptimumParams::*)() const>(&OptimumParams::b);
-    auto get_lowerBounds = static_cast<VectorXdConstRef (OptimumParams::*)() const>(&OptimumParams::lowerBounds);
-    auto get_upperBounds = static_cast<VectorXdConstRef (OptimumParams::*)() const>(&OptimumParams::upperBounds);
-    auto get_fixedValues = static_cast<VectorXdConstRef (OptimumParams::*)() const>(&OptimumParams::fixedValues);
+    auto get_b = static_cast<VectorConstRef (OptimumParams::*)() const>(&OptimumParams::b);
+    auto get_lowerBounds = static_cast<VectorConstRef (OptimumParams::*)() const>(&OptimumParams::lowerBounds);
+    auto get_upperBounds = static_cast<VectorConstRef (OptimumParams::*)() const>(&OptimumParams::upperBounds);
+    auto get_fixedValues = static_cast<VectorConstRef (OptimumParams::*)() const>(&OptimumParams::fixedValues);
 
-    auto set_b = static_cast<VectorXdRef (OptimumParams::*)()>(&OptimumParams::b);
-    auto set_lowerBounds = static_cast<VectorXdRef (OptimumParams::*)()>(&OptimumParams::b);
-    auto set_upperBounds = static_cast<VectorXdRef (OptimumParams::*)()>(&OptimumParams::b);
-    auto set_fixedValues = static_cast<VectorXdRef (OptimumParams::*)()>(&OptimumParams::b);
+    auto set_b = static_cast<VectorRef (OptimumParams::*)()>(&OptimumParams::b);
+    auto set_lowerBounds = static_cast<VectorRef (OptimumParams::*)()>(&OptimumParams::b);
+    auto set_upperBounds = static_cast<VectorRef (OptimumParams::*)()>(&OptimumParams::b);
+    auto set_fixedValues = static_cast<VectorRef (OptimumParams::*)()>(&OptimumParams::b);
 
     py::class_<OptimumParams>(m, "OptimumParams")
         .def(py::init<const OptimumStructure&>())

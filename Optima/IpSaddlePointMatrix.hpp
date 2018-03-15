@@ -39,22 +39,22 @@ class IpSaddlePointMatrix
 {
 public:
     /// The Hessian matrix \eq{H} in the saddle point matrix.
-    MatrixXdConstRef H;
+    MatrixConstRef H;
 
     /// The Jacobian matrix \eq{A} in the saddle point matrix.
-    MatrixXdConstRef A;
+    MatrixConstRef A;
 
     /// The diagonal matrix \eq{Z} in the saddle point matrix.
-    VectorXdConstRef Z;
+    VectorConstRef Z;
 
     /// The diagonal matrix \eq{W} in the saddle point matrix.
-    VectorXdConstRef W;
+    VectorConstRef W;
 
     /// The diagonal matrix \eq{L} in the saddle point matrix.
-    VectorXdConstRef L;
+    VectorConstRef L;
 
     /// The diagonal matrix \eq{U} in the saddle point matrix.
-    VectorXdConstRef U;
+    VectorConstRef U;
 
     /// The number of fixed variables.
     Index nf;
@@ -68,16 +68,16 @@ public:
     /// @param U The vector representing the diagonal matrix \eq{U} in the saddle point equation.
     /// @param nf The number of fixed variables.
     IpSaddlePointMatrix(
-        MatrixXdConstRef H,
-        MatrixXdConstRef A,
-        VectorXdConstRef Z,
-        VectorXdConstRef W,
-        VectorXdConstRef L,
-        VectorXdConstRef U,
+        MatrixConstRef H,
+        MatrixConstRef A,
+        VectorConstRef Z,
+        VectorConstRef W,
+        VectorConstRef L,
+        VectorConstRef U,
         Index nf = 0);
 
-    /// Convert this IpSaddlePointMatrix instance into a MatrixXd instance.
-    operator MatrixXd() const;
+    /// Convert this IpSaddlePointMatrix instance into a Matrix instance.
+    operator Matrix() const;
 };
 
 /// A type used to describe an interior-point interior-point saddle point right-hand side vector.
@@ -85,16 +85,16 @@ class IpSaddlePointVector
 {
 public:
     /// The saddle-point solution vector \eq{a}.
-    VectorXdConstRef a;
+    VectorConstRef a;
 
     /// The saddle-point solution vector \eq{b}.
-    VectorXdConstRef b;
+    VectorConstRef b;
 
     /// The saddle-point solution vector \eq{c}.
-    VectorXdConstRef c;
+    VectorConstRef c;
 
     /// The saddle-point solution vector \eq{d}.
-    VectorXdConstRef d;
+    VectorConstRef d;
 
     /// Construct an IpSaddlePointVector instance with given \eq{(a,b,c,d)} vectors.
     /// @param a The right-hand side vector \eq{a} in the interior-point saddle point problem.
@@ -102,19 +102,19 @@ public:
     /// @param c The right-hand side vector \eq{c} in the interior-point saddle point problem.
     /// @param d The right-hand side vector \eq{d} in the interior-point saddle point problem.
     IpSaddlePointVector(
-        VectorXdConstRef a,
-        VectorXdConstRef b,
-        VectorXdConstRef c,
-        VectorXdConstRef d);
+        VectorConstRef a,
+        VectorConstRef b,
+        VectorConstRef c,
+        VectorConstRef d);
 
     /// Construct an IpSaddlePointVector instance with given right-hand side vector.
     /// @param r The right-hand side vector \eq{r = (a, b, c, d)}.
     /// @param n The dimension of vectors \eq{a}, \eq{c}, \eq{d}.
     /// @param m The dimension of vector \eq{b}.
-    IpSaddlePointVector(VectorXdConstRef r, Index n, Index m);
+    IpSaddlePointVector(VectorConstRef r, Index n, Index m);
 
-    /// Convert this IpSaddlePointVector instance into a VectorXd instance.
-    operator VectorXd() const;
+    /// Convert this IpSaddlePointVector instance into a Vector instance.
+    operator Vector() const;
 };
 
 /// A type used to describe an interior-point saddle point solution vector.
@@ -122,16 +122,16 @@ class IpSaddlePointSolution
 {
 public:
     /// The solution vector \eq{x} in the interior-point saddle-point problem.
-    VectorXdRef x;
+    VectorRef x;
 
     /// The solution vector \eq{y} in the interior-point saddle-point problem.
-    VectorXdRef y;
+    VectorRef y;
 
     /// The solution vector \eq{z} in the interior-point saddle-point problem.
-    VectorXdRef z;
+    VectorRef z;
 
     /// The solution vector \eq{w} in the interior-point saddle-point problem.
-    VectorXdRef w;
+    VectorRef w;
 
     /// Construct an IpSaddlePointSolution instance with given \eq{(x,y,z,w)} vectors.
     /// @param x The solution vector \eq{x} in the interior-point saddle point problem.
@@ -139,26 +139,26 @@ public:
     /// @param w The solution vector \eq{z} in the interior-point saddle point problem.
     /// @param z The solution vector \eq{w} in the interior-point saddle point problem.
     IpSaddlePointSolution(
-        VectorXdRef x,
-        VectorXdRef y,
-        VectorXdRef z,
-        VectorXdRef w);
+        VectorRef x,
+        VectorRef y,
+        VectorRef z,
+        VectorRef w);
 
     /// Construct an IpSaddlePointSolution instance with given solution vector.
     /// @param s The solution vector \eq{s = (x, y, z, w)}.
     /// @param n The dimension of vectors \eq{x}, \eq{z}, \eq{w}.
     /// @param m The dimension of vector \eq{y}.
-    IpSaddlePointSolution(VectorXdRef s, Index n, Index m);
+    IpSaddlePointSolution(VectorRef s, Index n, Index m);
 
-    /// Assign this IpSaddlePointSolution instance with a VectorXdConstRef instance.
-    auto operator=(VectorXdConstRef vec) -> IpSaddlePointSolution&;
+    /// Assign this IpSaddlePointSolution instance with a VectorConstRef instance.
+    auto operator=(VectorConstRef vec) -> IpSaddlePointSolution&;
 
-    /// Convert this IpSaddlePointSolution instance into a VectorXd instance.
-    operator VectorXd() const;
+    /// Convert this IpSaddlePointSolution instance into a Vector instance.
+    operator Vector() const;
 };
 
 /// Return the multiplication of an IpSaddlePointMatrix by a vector.
-auto operator*(IpSaddlePointMatrix lhs, VectorXdConstRef rhs) -> VectorXd;
+auto operator*(IpSaddlePointMatrix lhs, VectorConstRef rhs) -> Vector;
 
 } // namespace Optima
 

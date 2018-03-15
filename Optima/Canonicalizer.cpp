@@ -34,10 +34,10 @@ namespace Optima {
 struct Canonicalizer::Impl
 {
     /// The full-pivoting LU decomposition of A so that P*A*Q = L*U;
-    Eigen::FullPivLU<MatrixXd> lu;
+    Eigen::FullPivLU<Matrix> lu;
 
     /// The matrix `S` in the canonical form `C = [I S]`.
-    MatrixXd S;
+    Matrix S;
 
     /// The permutation matrix `P`.
     PermutationMatrix P;
@@ -46,10 +46,10 @@ struct Canonicalizer::Impl
     PermutationMatrix Q;
 
     /// The canonicalizer matrix `R`.
-    MatrixXd R;
+    Matrix R;
 
     /// The matrix `M` used in the swap operation.
-    VectorXd M;
+    Vector M;
 
     /// The permutation matrix `Kb` used in the weighted update method.
     PermutationMatrix Kb;
@@ -61,7 +61,7 @@ struct Canonicalizer::Impl
     double threshold;
 
     /// Compute the canonical matrix of the given matrix.
-    auto compute(MatrixXdConstRef A) -> void
+    auto compute(MatrixConstRef A) -> void
     {
         // The number of rows and columns of A
         const Index m = A.rows();
@@ -158,7 +158,7 @@ struct Canonicalizer::Impl
     }
 
     /// Update the existing canonical form with given priority weights for the columns.
-    auto updateWithPriorityWeights(VectorXdConstRef w) -> void
+    auto updateWithPriorityWeights(VectorConstRef w) -> void
     {
         // Assert there are as many weights as there are variables
         assert(w.rows() == lu.cols() &&
@@ -241,7 +241,7 @@ Canonicalizer::Canonicalizer()
 : pimpl(new Impl())
 {}
 
-Canonicalizer::Canonicalizer(MatrixXdConstRef A)
+Canonicalizer::Canonicalizer(MatrixConstRef A)
 : pimpl(new Impl())
 {
     compute(A);
@@ -280,12 +280,12 @@ auto Canonicalizer::numNonBasicVariables() const -> Index
     return numVariables() - numBasicVariables();
 }
 
-auto Canonicalizer::S() const -> MatrixXdConstRef
+auto Canonicalizer::S() const -> MatrixConstRef
 {
     return pimpl->S;
 }
 
-auto Canonicalizer::R() const -> MatrixXdConstRef
+auto Canonicalizer::R() const -> MatrixConstRef
 {
     return pimpl->R;
 }
@@ -295,12 +295,12 @@ auto Canonicalizer::Q() const -> VectorXiConstRef
     return pimpl->Q.indices();
 }
 
-auto Canonicalizer::C() const -> MatrixXd
+auto Canonicalizer::C() const -> Matrix
 {
     const Index m  = numEquations();
     const Index n  = numVariables();
     const Index nb = numBasicVariables();
-    MatrixXd res = zeros(m, n);
+    Matrix res = zeros(m, n);
     res.topRows(nb) << identity(nb, nb), S();
     return res;
 }
@@ -321,7 +321,7 @@ auto Canonicalizer::indicesNonBasicVariables() const -> VectorXiConstRef
     return Q().tail(numNonBasicVariables());
 }
 
-auto Canonicalizer::compute(MatrixXdConstRef A) -> void
+auto Canonicalizer::compute(MatrixConstRef A) -> void
 {
     pimpl->compute(A);
 }
@@ -331,7 +331,7 @@ auto Canonicalizer::updateWithSwapBasicVariable(Index ibasic, Index inonbasic) -
     pimpl->updateWithSwapBasicVariable(ibasic, inonbasic);
 }
 
-auto Canonicalizer::updateWithPriorityWeights(VectorXdConstRef weights) -> void
+auto Canonicalizer::updateWithPriorityWeights(VectorConstRef weights) -> void
 {
     pimpl->updateWithPriorityWeights(weights);
 }

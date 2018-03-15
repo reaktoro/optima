@@ -48,10 +48,10 @@ public:
     double val;
 
     /// The evaluated gradient of the objective function.
-    VectorXd grad;
+    Vector grad;
 
     /// The evaluated Hessian of the objective function.
-    MatrixXd hessian;
+    Matrix hessian;
 
     /// The requirements in the evaluation of the objective function.
     ObjectiveRequirement requires;
@@ -63,7 +63,7 @@ public:
 /// The functional signature of an objective function.
 /// @param x The values of the variables \eq{x}.
 /// @param f The evaluated state of the objective function.
-using ObjectiveFunction = std::function<void(VectorXdConstRef, ObjectiveState&)>;
+using ObjectiveFunction = std::function<void(VectorConstRef, ObjectiveState&)>;
 
 // todo Implement this as a class using the pimpl idiom
 // OptimumStructure structure;
@@ -86,11 +86,11 @@ public:
     /// Construct an OptimumStructure instance.
     /// @param f The objective function \eq{f} in the optimization problem.
     /// @param A The linear equality constraint matrix \eq{A} in the optimization problem.
-    OptimumStructure(ObjectiveFunction f, MatrixXdConstRef A);
+    OptimumStructure(ObjectiveFunction f, MatrixConstRef A);
 
     /// Set the coefficient matrix \eq{A} of the linear equality constraints.
     /// This method does not allow changing the dimensions of the equality constraint matrix \eq{A}.
-    auto setEqualityConstraintMatrix(MatrixXdConstRef A) -> void;
+    auto setEqualityConstraintMatrix(MatrixConstRef A) -> void;
 
     /// Set the indices of the variables in \eq{x} with lower bounds.
     auto setVariablesWithLowerBounds(VectorXiConstRef indices) -> void;
@@ -144,16 +144,16 @@ public:
     auto objectiveFunction() const -> const ObjectiveFunction& { return m_objective; }
 
     /// Return the coefficient matrix \eq{A} of the linear equality constraints.
-    auto equalityConstraintMatrix() const -> MatrixXdConstRef { return m_A; }
+    auto equalityConstraintMatrix() const -> MatrixConstRef { return m_A; }
 
     /// Evaluate the objective function.
     /// @param x The values of the variables \eq{x}.
     /// @param f The evaluated state of the objective function.
-    auto objective(VectorXdConstRef x, ObjectiveState& f) const -> void { m_objective(x, f); }
+    auto objective(VectorConstRef x, ObjectiveState& f) const -> void { m_objective(x, f); }
 
     /// Return the coefficient matrix \eq{A} of the linear equality constraints.
     /// This is an alias to method @ref equalityConstraintMatrix.
-    auto A() const -> MatrixXdConstRef { return m_A; }
+    auto A() const -> MatrixConstRef { return m_A; }
 
 private:
     /// The objective function in the optimization problem.
@@ -166,7 +166,7 @@ private:
     Index m_m;
 
     /// The coefficient matrix of the linear equality constraint \eq{Ax = a}.
-    MatrixXd m_A;
+    Matrix m_A;
 
     /// The number of variables with lower bounds.
     Index m_nlower;

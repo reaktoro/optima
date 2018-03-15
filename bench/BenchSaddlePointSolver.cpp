@@ -38,17 +38,17 @@ void benchMethodRangespace()
     Index n = 60;
     Index t = m + n;
 
-    VectorXd expected = linspace(t, 1, t);
+    Vector expected = linspace(t, 1, t);
 
-    MatrixXd A = random(m, n);
-    MatrixXd H = diag(random(n));
+    Matrix A = random(m, n);
+    Matrix H = diag(random(n));
     VectorXi ifixed;
 
     SaddlePointMatrix lhs(H, A, ifixed);
 
-    MatrixXd M = lhs.matrix();
-    VectorXd r = M * expected;
-    VectorXd s(t);
+    Matrix M = lhs.matrix();
+    Vector r = M * expected;
+    Vector s(t);
 
     SaddlePointVector rhs(r, n, m);
     SaddlePointSolution sol(s, n, m);
@@ -77,15 +77,15 @@ void benchMethodRangespace()
     double time_partiallu1 = 0.0, time_partiallu2 = 0.0, time_partiallu = 0.0;
     double time_fulllu1 = 0.0, time_fulllu2 = 0.0, time_fulllu = 0.0;
 
-    VectorXd s_partiallu(n + m);
-    VectorXd s_fulllu(n + m);
+    Vector s_partiallu(n + m);
+    Vector s_fulllu(n + m);
 
     Time begin;
 
     for(Index i = 0; i < samples; ++i)
     {
-        PartialPivLU<MatrixXd> partiallu(M);
-        FullPivLU<MatrixXd> fulllu(M);
+        PartialPivLU<Matrix> partiallu(M);
+        FullPivLU<Matrix> fulllu(M);
 
         begin = timenow();
         partiallu.compute(M);
@@ -146,19 +146,19 @@ void benchMethodNullspace()
     Index n = 60;
     Index t = m + n;
 
-    VectorXd expected = linspace(t, 1, t);
+    Vector expected = linspace(t, 1, t);
 
-    MatrixXd A = random(m, n);
-    MatrixXd H = random(n, n);
+    Matrix A = random(m, n);
+    Matrix H = random(n, n);
     H.diagonal().head(m)   *= 1e-2;
     H.diagonal().tail(n-m) *= 1e+5;
     VectorXi ifixed;
 
     SaddlePointMatrix lhs(H, A, ifixed);
 
-    MatrixXd M = lhs.matrix();
-    VectorXd r = M * expected;
-    VectorXd s(t);
+    Matrix M = lhs.matrix();
+    Vector r = M * expected;
+    Vector s(t);
 
     SaddlePointVector rhs(r, n, m);
     SaddlePointSolution sol(s, n, m);
@@ -187,15 +187,15 @@ void benchMethodNullspace()
     double time_partiallu1 = 0.0, time_partiallu2 = 0.0, time_partiallu = 0.0;
     double time_fulllu1 = 0.0, time_fulllu2 = 0.0, time_fulllu = 0.0;
 
-    VectorXd s_partiallu(n + m);
-    VectorXd s_fulllu(n + m);
+    Vector s_partiallu(n + m);
+    Vector s_fulllu(n + m);
 
     Time begin;
 
     for(Index i = 0; i < samples; ++i)
     {
-        PartialPivLU<MatrixXd> partiallu(M);
-        FullPivLU<MatrixXd> fulllu(M);
+        PartialPivLU<Matrix> partiallu(M);
+        FullPivLU<Matrix> fulllu(M);
 
         begin = timenow();
         partiallu.compute(M);
