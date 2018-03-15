@@ -29,7 +29,7 @@ def test_saddle_point_matrix():
     nx = 3
     nf = 0
 
-    mat1 = SaddlePointMatrix(H, A, G, nx, nf)
+    mat1 = SaddlePointMatrix(H, A, G, nf)
 
     M = array([
         [1, 2, 3, 1, 3],
@@ -46,7 +46,7 @@ def test_saddle_point_matrix():
     nx = 2
     nf = 1
 
-    mat2 = SaddlePointMatrix(H, A, G, nx, nf)
+    mat2 = SaddlePointMatrix(H, A, G, nf)
 
     M[nx:nx+nf, :] = 0.0
     M[:n, nx:nx+nf] = 0.0

@@ -29,22 +29,23 @@ IpSaddlePointMatrix::IpSaddlePointMatrix(
     VectorXdConstRef W,
     VectorXdConstRef L,
     VectorXdConstRef U,
-    Index nx, Index nf)
-: H(H), A(A), Z(Z), W(W), L(L), U(U), nx(nx), nf(nf)
+    Index nf)
+: H(H), A(A), Z(Z), W(W), L(L), U(U), nf(nf)
 {}
 
 IpSaddlePointMatrix::operator MatrixXd() const
 {
+    const auto m = A.rows();
+    const auto n = A.cols();
+    const auto t = 3*n + m;
+
+    const auto nx = n - nf;
     const auto Hx = H.topLeftCorner(nx, nx);
     const auto Ax = A.leftCols(nx);
     const auto Zx = Z.head(nx);
     const auto Wx = W.head(nx);
     const auto Lx = L.head(nx);
     const auto Ux = U.head(nx);
-
-    const auto m = A.rows();
-    const auto n = A.cols();
-    const auto t = 3*n + m;
 
     MatrixXd res = zeros(t, t);
     res.topRows(nx).leftCols(nx) = Hx;

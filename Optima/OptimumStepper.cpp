@@ -153,7 +153,7 @@ struct OptimumStepper::Impl
 //        std::cout << "matrix = \n" << IpSaddlePointMatrix(H, A, Z, W, L, U, nx, nf).matrix() << std::endl;
 
         // Decompose the interior-point saddle point matrix
-        kkt.decompose({H, A, Z, W, L, U, nx, nf});
+        kkt.decompose({H, A, Z, W, L, U, nf});
     }
 
     /// Solve the KKT matrix equation.

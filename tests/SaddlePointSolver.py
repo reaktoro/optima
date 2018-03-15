@@ -35,7 +35,7 @@ def test_saddle_point_solver():
         G = eigen.random(m, m) if not zeroG else eigen.matrix()
         nx = n - nf;
         
-        lhs = SaddlePointMatrix(H, A, G, nx, nf)
+        lhs = SaddlePointMatrix(H, A, G, nf)
         
         r = lhs.array().dot(expected)
         s = zeros(t)
@@ -66,7 +66,7 @@ def test_saddle_point_solver():
         G = eigen.random(m, m) if not zeroG else eigen.matrix()
         nx = n - nf;
         
-        lhs = SaddlePointMatrix(H, A, G, nx, nf)
+        lhs = SaddlePointMatrix(H, A, G, nf)
         
         r = lhs.array().dot(expected)
         s = zeros(t)

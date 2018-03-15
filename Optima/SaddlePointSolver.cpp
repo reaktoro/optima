@@ -165,7 +165,7 @@ struct SaddlePointSolver::Impl
     {
         // Update the number of fixed and free variables
         nf = lhs.nf;
-        nx = lhs.nx;
+        nx = n - nf;
 
         // The diagonal entries of the Hessian matrix corresponding to free variables
         const auto Hxx = lhs.H.diagonal().head(nx);

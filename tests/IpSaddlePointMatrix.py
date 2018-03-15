@@ -36,7 +36,7 @@ def test_ip_saddle_point_matrix():
     nx = 3
     nf = 0
 
-    mat = IpSaddlePointMatrix(H, A, Z, W, L, U, nx, nf)
+    mat = IpSaddlePointMatrix(H, A, Z, W, L, U, nf)
 
     M = [[1,  2,  3,  1,  3, -1,  0,  0, -1,  0,  0],
          [4,  5,  6,  2,  4,  0, -1,  0,  0, -1,  0],
@@ -59,7 +59,7 @@ def test_ip_saddle_point_matrix():
     nx = 2
     nf = 1
  
-    mat = IpSaddlePointMatrix(H, A, Z, W, L, U, nx, nf)
+    mat = IpSaddlePointMatrix(H, A, Z, W, L, U, nf)
  
     M = [[1,  2,  0,  1,  3, -1,  0,  0, -1,  0,  0],
          [4,  5,  0,  2,  4,  0, -1,  0,  0, -1,  0],

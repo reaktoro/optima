@@ -56,9 +56,6 @@ public:
     /// The diagonal matrix \eq{U} in the saddle point matrix.
     VectorXdConstRef U;
 
-    /// The number of free variables.
-    Index nx;
-
     /// The number of fixed variables.
     Index nf;
 
@@ -69,7 +66,6 @@ public:
     /// @param W The vector representing the diagonal matrix \eq{W} in the saddle point equation.
     /// @param L The vector representing the diagonal matrix \eq{L} in the saddle point equation.
     /// @param U The vector representing the diagonal matrix \eq{U} in the saddle point equation.
-    /// @param nx The number of free variables.
     /// @param nf The number of fixed variables.
     IpSaddlePointMatrix(
         MatrixXdConstRef H,
@@ -78,7 +74,7 @@ public:
         VectorXdConstRef W,
         VectorXdConstRef L,
         VectorXdConstRef U,
-        Index nx, Index nf = 0);
+        Index nf = 0);
 
     /// Convert this IpSaddlePointMatrix instance into a MatrixXd instance.
     operator MatrixXd() const;

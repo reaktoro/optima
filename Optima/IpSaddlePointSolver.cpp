@@ -121,8 +121,8 @@ struct IpSaddlePointSolver::Impl
         SaddlePointResult res;
 
         // Initialize the number of free and fixed variables
-        nx = lhs.nx;
         nf = lhs.nf;
+        nx = n - nf;
 
         // Auxiliary variables
         const double eps = std::numeric_limits<double>::epsilon();
@@ -216,7 +216,7 @@ struct IpSaddlePointSolver::Impl
         spsolver.reorderVariables(iordering);
 
         // Decompose the saddle point matrix
-        res += spsolver.decompose({H, A, ns + nl + nu, nz + nw + nf});
+        res += spsolver.decompose({H, A, nz + nw + nf});
 
         // Remove the previously added vector along the diagonal of the Hessian
         Hee.diagonal() -= Ze/Le + We/Ue;

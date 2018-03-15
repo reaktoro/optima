@@ -48,26 +48,21 @@ public:
     /// The negative semi-definite matrix \eq{G} in the saddle point matrix.
     MatrixXdConstRef G;
 
-    /// The number of free variables.
-    Index nx;
-
     /// The number of fixed variables.
     Index nf;
 
     /// Construct a SaddlePointMatrix instance.
     /// @param H The \eq{H} matrix in the saddle point equation.
     /// @param A The \eq{A} matrix in the saddle point equation.
-    /// @param nx The number of free variables.
     /// @param nf The number of fixed variables.
-    SaddlePointMatrix(MatrixXdConstRef H, MatrixXdConstRef A, Index nx, Index nf = 0);
+    SaddlePointMatrix(MatrixXdConstRef H, MatrixXdConstRef A, Index nf = 0);
 
     /// Construct a SaddlePointMatrix instance.
     /// @param H The \eq{H} matrix in the saddle point equation.
     /// @param A The \eq{A} matrix in the saddle point equation.
     /// @param G The \eq{G} matrix in the saddle point equation.
-    /// @param nx The number of free variables.
     /// @param nf The number of fixed variables.
-    SaddlePointMatrix(MatrixXdConstRef H, MatrixXdConstRef A, MatrixXdConstRef G, Index nx, Index nf = 0);
+    SaddlePointMatrix(MatrixXdConstRef H, MatrixXdConstRef A, MatrixXdConstRef G, Index nf = 0);
 
     /// Convert this SaddlePointMatrix instance into a MatrixXd instance.
     operator MatrixXd() const;

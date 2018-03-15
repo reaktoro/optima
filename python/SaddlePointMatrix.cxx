@@ -30,10 +30,9 @@ void exportSaddlePointMatrix(py::module& m)
         .def_readonly("H", &SaddlePointMatrix::H)
         .def_readonly("A", &SaddlePointMatrix::A)
         .def_readonly("G", &SaddlePointMatrix::G)
-        .def_readonly("nx", &SaddlePointMatrix::nx)
         .def_readonly("nf", &SaddlePointMatrix::nf)
-        .def(py::init<MatrixXdConstRef, MatrixXdConstRef, Index, Index>(), py::arg("H"), py::arg("A"), py::arg("nx"), py::arg("nf") = 0)
-        .def(py::init<MatrixXdConstRef, MatrixXdConstRef, MatrixXdConstRef, Index, Index>(), py::arg("H"), py::arg("A"), py::arg("G"), py::arg("nx"), py::arg("nf") = 0)
+        .def(py::init<MatrixXdConstRef, MatrixXdConstRef, Index>(), py::arg("H"), py::arg("A"), py::arg("nf") = 0)
+        .def(py::init<MatrixXdConstRef, MatrixXdConstRef, MatrixXdConstRef, Index>(), py::arg("H"), py::arg("A"), py::arg("G"), py::arg("nf") = 0)
         .def("array", [](SaddlePointMatrix self) { return MatrixXd(self); })
         ;
 

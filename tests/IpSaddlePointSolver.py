@@ -37,25 +37,6 @@ def print_state(M, r, s, m, n):
     print 'res(lu)  = ', M.dot(slu) - r
 
 
-def ip_saddle_point_matrix(m, ns, nl, nu, nz, nw, nf):
-    n = ns + nl + nu + nz + nw + nf
-    A = eigen.random(m, n)
-    H = eigen.random(n, n)
-    Z = eigen.random(n) * 1e-16
-    W = eigen.random(n) * 1e-16
-    L = eigen.random(n)
-    U = eigen.random(n)
-    nx = n - nf
-
-    if nl > 0: L[:nl] = 1.0e-3; Z[:nl] = 1.0
-    if nu > 0: U[:nu] = 1.0e-3; W[:nu] = 1.0
-
-    if nz > 0: L[nl:nz] = 1.0e-18; Z[nl:nz] = 1.0
-    if nw > 0: U[nu:nw] = 1.0e-18; W[nu:nw] = 1.0
-
-    return A, H, Z, W, L, U, nx, nf
-
-
 testdata = [
 #    m   ns  nl  nu  nz  nw  nf
     (5,  10, 0,  0,  0,  0,  0),
@@ -101,7 +82,7 @@ def test_ip_saddle_point_solver(args):
     r = eigen.zeros(t)
 
     # The left-hand side coefficient matrix
-    lhs = IpSaddlePointMatrix(H, A, Z, W, L, U, nx, nf)
+    lhs = IpSaddlePointMatrix(H, A, Z, W, L, U, nf)
 
     # The dense matrix assembled from lhs
     M = lhs.array()

@@ -22,12 +22,12 @@ using namespace Eigen;
 
 namespace Optima {
 
-SaddlePointMatrix::SaddlePointMatrix(MatrixXdConstRef H, MatrixXdConstRef A, Index nx, Index nf)
-: H(H), A(A), G(MatrixXd::Zero(0, 0)), nx(nx), nf(nf)
+SaddlePointMatrix::SaddlePointMatrix(MatrixXdConstRef H, MatrixXdConstRef A, Index nf)
+: H(H), A(A), G(MatrixXd::Zero(0, 0)), nf(nf)
 {}
 
-SaddlePointMatrix::SaddlePointMatrix(MatrixXdConstRef H, MatrixXdConstRef A, MatrixXdConstRef G, Index nx, Index nf)
-: H(H), A(A), G(G), nx(nx), nf(nf)
+SaddlePointMatrix::SaddlePointMatrix(MatrixXdConstRef H, MatrixXdConstRef A, MatrixXdConstRef G, Index nf)
+: H(H), A(A), G(G), nf(nf)
 {}
 
 SaddlePointMatrix::operator MatrixXd() const
@@ -36,6 +36,7 @@ SaddlePointMatrix::operator MatrixXd() const
     const auto n = A.cols();
     const auto t = m + n;
 
+    const auto nx = n - nf;
     const auto Ax = A.leftCols(nx);
 
     MatrixXd res = zeros(t, t);

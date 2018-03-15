@@ -33,9 +33,8 @@ void exportIpSaddlePointMatrix(py::module& m)
         .def_readonly("W", &IpSaddlePointMatrix::W)
         .def_readonly("L", &IpSaddlePointMatrix::L)
         .def_readonly("U", &IpSaddlePointMatrix::U)
-        .def_readonly("nx", &IpSaddlePointMatrix::nx)
         .def_readonly("nf", &IpSaddlePointMatrix::nf)
-        .def(py::init<MatrixXdConstRef, MatrixXdConstRef, VectorXdConstRef, VectorXdConstRef, VectorXdConstRef, VectorXdConstRef, Index, Index>(), py::arg("H"), py::arg("A"), py::arg("Z"), py::arg("W"), py::arg("L"), py::arg("U"), py::arg("nx"), py::arg("nf"))
+        .def(py::init<MatrixXdConstRef, MatrixXdConstRef, VectorXdConstRef, VectorXdConstRef, VectorXdConstRef, VectorXdConstRef, Index>(), py::arg("H"), py::arg("A"), py::arg("Z"), py::arg("W"), py::arg("L"), py::arg("U"), py::arg("nf"))
         .def("array", [](IpSaddlePointMatrix self) { return MatrixXd(self); })
         ;
 
