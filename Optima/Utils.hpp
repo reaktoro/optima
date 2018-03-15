@@ -113,4 +113,13 @@ auto inverseShermanMorrison(const Matrix& invA, const Vector& D) -> Matrix;
 /// @return A tuple containing the numerator and denominator.
 auto rationalize(double x, unsigned n) -> std::tuple<long, long>;
 
+/// Return `true` if given matrix is a zero matrix, represented by an empty matrix.
+auto isZeroMatrix(MatrixConstRef mat) -> bool;
+
+/// Return `true` if given matrix is a diagonal matrix, represented by a matrix with single column.
+auto isDiagonalMatrix(MatrixConstRef mat) -> bool;
+
+/// Return `true` if given matrix is a dense matrix, represented by a matrix with more than one rows and columns.
+auto isDenseMatrix(MatrixConstRef mat) -> bool;
+
 } // namespace Optima

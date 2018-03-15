@@ -369,4 +369,19 @@ auto rationalize(double x, unsigned n) -> std::tuple<long, long>
     }
 }
 
+auto isZeroMatrix(MatrixConstRef mat) -> bool
+{
+    return mat.size() == 0;
+}
+
+auto isDiagonalMatrix(MatrixConstRef mat) -> bool
+{
+    return mat.size() && mat.cols() == 1;
+}
+
+auto isDenseMatrix(MatrixConstRef mat) -> bool
+{
+    return mat.size() && mat.cols() > 1;
+}
+
 } // namespace Optima
