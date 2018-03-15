@@ -210,23 +210,23 @@ struct SaddlePointSolver::Impl
         SaddlePointResult res;
         switch(options.method)
         {
-        case SaddlePointMethod::PartialPivLU: decomposeLU(lhs); break;
+        case SaddlePointMethod::Nullspace: decomposeNullspace(lhs); break;
         case SaddlePointMethod::Rangespace: decomposeRangespace(lhs); break;
-        default: decomposeNullspace(lhs); break;
+        default: decomposeFullspace(lhs); break;
         }
         return res.stop();
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a LU decomposition method.
-    auto decomposeLU(SaddlePointMatrix lhs) -> void
+    auto decomposeFullspace(SaddlePointMatrix lhs) -> void
     {
         denseG = lhs.G.size();
-        if(denseG) decomposeLUDenseG(lhs);
-        else decomposeLUZeroG(lhs);
+        if(denseG) decomposeFullspaceDenseG(lhs);
+        else decomposeFullspaceZeroG(lhs);
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a LU decomposition method.
-    auto decomposeLUZeroG(SaddlePointMatrix lhs) -> void
+    auto decomposeFullspaceZeroG(SaddlePointMatrix lhs) -> void
     {
         // Update the canonical form of the matrix A
         updateCanonicalForm(lhs);
@@ -260,7 +260,7 @@ struct SaddlePointSolver::Impl
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a LU decomposition method.
-    auto decomposeLUDenseG(SaddlePointMatrix lhs) -> void
+    auto decomposeFullspaceDenseG(SaddlePointMatrix lhs) -> void
     {
         // Update the canonical form of the matrix A
         updateCanonicalForm(lhs);
@@ -696,22 +696,22 @@ struct SaddlePointSolver::Impl
         SaddlePointResult res;
         switch(options.method)
         {
-        case SaddlePointMethod::PartialPivLU: solveLU(rhs, sol); break;
+        case SaddlePointMethod::Nullspace: solveNullspace(rhs, sol); break;
         case SaddlePointMethod::Rangespace: solveRangespace(rhs, sol); break;
-        default: solveNullspace(rhs, sol); break;
+        default: solveFullspace(rhs, sol); break;
         }
         return res.stop();
     }
 
     /// Solve the saddle point problem using a LU decomposition method.
-    auto solveLU(SaddlePointVector rhs, SaddlePointSolution sol) -> void
+    auto solveFullspace(SaddlePointVector rhs, SaddlePointSolution sol) -> void
     {
-        if(denseG) solveLUDenseG(rhs, sol);
-        else solveLUZeroG(rhs, sol);
+        if(denseG) solveFullspaceDenseG(rhs, sol);
+        else solveFullspaceZeroG(rhs, sol);
     }
 
     /// Solve the saddle point problem using a LU decomposition method.
-    auto solveLUZeroG(SaddlePointVector rhs, SaddlePointSolution sol) -> void
+    auto solveFullspaceZeroG(SaddlePointVector rhs, SaddlePointSolution sol) -> void
     {
         // Alias to members of the saddle point vector solution.
         auto x = sol.x;
@@ -770,7 +770,7 @@ struct SaddlePointSolver::Impl
     }
 
     /// Solve the saddle point problem using a LU decomposition method.
-    auto solveLUDenseG(SaddlePointVector rhs, SaddlePointSolution sol) -> void
+    auto solveFullspaceDenseG(SaddlePointVector rhs, SaddlePointSolution sol) -> void
     {
         // Alias to members of the saddle point vector solution.
         auto x = sol.x;

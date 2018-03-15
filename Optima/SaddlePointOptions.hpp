@@ -24,13 +24,13 @@ namespace Optima {
 /// Used to describe the possible methods for solving saddle point problems.
 enum class SaddlePointMethod
 {
-    /// This method uses partial-pivoting LU decomposition to fully solve the saddle point problem.
+    /// This method solves the saddle point problem without any simplification.
     /// This method solves the saddle point problem by applying a partial-pivoting
     /// LU decomposition to the saddle point matrix of dimension \eq{(n+m)\times(n+m)}.
     /// This method can be faster than the other methods for problems with small dimensions and
     /// when \eq{n} is not too larger than \eq{m}.
     /// @note This method takes no advantage of the particular structure of the saddle point matrix.
-    PartialPivLU,
+    Fullspace,
 
     /// This method reduces the dimension of the saddle point problem from \eq{n+m} to \eq{n-m}.
     /// This method reduces the saddle point problem of dimension \eq{n+m} to an equivalent one of
@@ -54,7 +54,7 @@ class SaddlePointOptions
 {
 public:
     /// The method for solving the saddle point problems.
-    SaddlePointMethod method = SaddlePointMethod::PartialPivLU;
+    SaddlePointMethod method = SaddlePointMethod::Fullspace;
 
     /// The option to rationalize the entries in the canonical form.
     /// This option should be turned on if accuracy of the calculations is sensitive to round-off

@@ -27,7 +27,7 @@ using namespace Optima;
 void exportSaddlePointOptions(py::module& m)
 {
     py::enum_<SaddlePointMethod>(m, "SaddlePointMethod")
-        .value("PartialPivLU", SaddlePointMethod::PartialPivLU)
+        .value("Fullspace", SaddlePointMethod::Fullspace)
         .value("Nullspace", SaddlePointMethod::Nullspace)
         .value("Rangespace", SaddlePointMethod::Rangespace)
         ;
