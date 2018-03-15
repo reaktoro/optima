@@ -81,17 +81,8 @@ struct SaddlePointSolver::Impl
     /// The ordering of the variables as (free-basic, free-non-basic, fixed-basic, fixed-non-basic)
     VectorXi iordering;
 
-    /// The LU solver used to calculate *xb* when the Hessian matrix is in diagonal form.
-    Eigen::PartialPivLU<Matrix> luxb;
-
-    /// The LU solver used to calculate *xn* when the Hessian matrix is in dense form.
-    Eigen::PartialPivLU<Matrix> luxn;
-
-    /// The partial LU solver used to calculate both *x* and *y* simultaneously.
-    Eigen::PartialPivLU<Matrix> luxy_partial;
-
-    /// The full LU solver used to calculate both *x* and *y* simultaneously.
-    Eigen::FullPivLU<Matrix> luxy_full;
+    /// The LU decomposition solver.
+    Eigen::PartialPivLU<Matrix> lu;
 
     /// The flag that indicates decomposition for a saddle point matrix with dense G
     bool denseG = false;
@@ -219,8 +210,7 @@ struct SaddlePointSolver::Impl
         SaddlePointResult res;
         switch(options.method)
         {
-        case SaddlePointMethod::PartialPivLU:
-        case SaddlePointMethod::FullPivLU: decomposeLU(lhs); break;
+        case SaddlePointMethod::PartialPivLU: decomposeLU(lhs); break;
         case SaddlePointMethod::Rangespace: decomposeRangespace(lhs); break;
         default: decomposeNullspace(lhs); break;
         }
@@ -266,9 +256,7 @@ struct SaddlePointSolver::Impl
         M.topLeftCorner(nx, nx) = lhs.H(ivx, ivx);
 
         // Compute the LU decomposition of M.
-        if(options.method == SaddlePointMethod::PartialPivLU)
-            luxy_partial.compute(M);
-        else luxy_full.compute(M);
+        lu.compute(M);
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a LU decomposition method.
@@ -299,9 +287,7 @@ struct SaddlePointSolver::Impl
         M.bottomRightCorner(m, m) = R * lhs.G * tr(R);
 
         // Compute the LU decomposition of M.
-        if(options.method == SaddlePointMethod::PartialPivLU)
-            luxy_partial.compute(M);
-        else luxy_full.compute(M);
+        lu.compute(M);
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a rangespace diagonal method.
@@ -396,7 +382,7 @@ struct SaddlePointSolver::Impl
         Mb2b2.diagonal() += ones(nb2);
 
         // Computing the LU decomposition of matrix M
-        luxb.compute(M);
+        lu.compute(M);
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a rangespace diagonal method.
@@ -555,7 +541,7 @@ struct SaddlePointSolver::Impl
          Mll.noalias() = Gblbl;
 
         // Computing the LU decomposition of matrix M
-        luxb.compute(M);
+        lu.compute(M);
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a nullspace method.
@@ -602,7 +588,7 @@ struct SaddlePointSolver::Impl
         M -= tr(Sbxnx) * Hbxnx;
 
         // Compute the LU decomposition of M.
-        if(nx) luxn.compute(M);
+        if(nx) lu.compute(M);
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a nullspace method.
@@ -701,7 +687,7 @@ struct SaddlePointSolver::Impl
         Mblbl.noalias() = Gblbl;
 
         // Compute the LU decomposition of M.
-        if(nx) luxn.compute(M);
+        if(nx) lu.compute(M);
     }
 
     /// Solve the saddle point problem with diagonal Hessian matrix.
@@ -710,8 +696,7 @@ struct SaddlePointSolver::Impl
         SaddlePointResult res;
         switch(options.method)
         {
-        case SaddlePointMethod::PartialPivLU:
-        case SaddlePointMethod::FullPivLU: solveLU(rhs, sol); break;
+        case SaddlePointMethod::PartialPivLU: solveLU(rhs, sol); break;
         case SaddlePointMethod::Rangespace: solveRangespace(rhs, sol); break;
         default: solveNullspace(rhs, sol); break;
         }
@@ -769,9 +754,7 @@ struct SaddlePointSolver::Impl
         r << ax, bbx;
 
         // Solve the system of linear equations using the LU decomposition of M.
-        if(options.method == SaddlePointMethod::PartialPivLU)
-            r.noalias() = luxy_partial.solve(r);
-        else r.noalias() = luxy_full.solve(r);
+        r.noalias() = lu.solve(r);
 
         // Get the result of xnx from r
         ax.noalias() = r.head(nx);
@@ -830,9 +813,7 @@ struct SaddlePointSolver::Impl
         r << ax, b;
 
         // Solve the system of linear equations using the LU decomposition of M.
-        if(options.method == SaddlePointMethod::PartialPivLU)
-            r.noalias() = luxy_partial.solve(r);
-        else r.noalias() = luxy_full.solve(r);
+        r.noalias() = lu.solve(r);
 
         // Get the result of xnx from r
         ax.noalias() = r.head(nx);
@@ -916,7 +897,7 @@ struct SaddlePointSolver::Impl
 
         r << an2, bb1, bb2;
 
-        if(nx) r.noalias() = luxb.solve(r);
+        if(nx) r.noalias() = lu.solve(r);
 
         ab1.noalias() = (ab1 - yb1)/Hb1b1;
         bb2.noalias() = (ab2 - Hb2b2 % xb2);
@@ -1020,7 +1001,7 @@ struct SaddlePointSolver::Impl
 
         r << an2, bb1, bb2, bbf, bl;
 
-        if(nx) r.noalias() = luxb.solve(r);
+        if(nx) r.noalias() = lu.solve(r);
 
         ab1.noalias() = (ab1 - yb1)/Hb1b1;
         bb2.noalias() = (ab2 - Hb2b2 % xb2);
@@ -1104,7 +1085,7 @@ struct SaddlePointSolver::Impl
         anx -= Hnxbx*bbx + tr(Sbxnx)*abx;
 
         // Solve the system of linear equations
-        if(nx) anx.noalias() = luxn.solve(anx);
+        if(nx) anx.noalias() = lu.solve(anx);
 
         // Alias to solution vectors x and y
         auto x = sol.x;
@@ -1190,7 +1171,7 @@ struct SaddlePointSolver::Impl
         rbl.noalias() = bbl;
 
         // Solve the system of linear equations
-        if(nx) r.noalias() = luxn.solve(r);
+        if(nx) r.noalias() = lu.solve(r);
 
         // Alias to solution vectors x and y
         auto x = sol.x;

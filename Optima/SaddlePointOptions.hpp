@@ -27,17 +27,10 @@ enum class SaddlePointMethod
     /// This method uses partial-pivoting LU decomposition to fully solve the saddle point problem.
     /// This method solves the saddle point problem by applying a partial-pivoting
     /// LU decomposition to the saddle point matrix of dimension \eq{(n+m)\times(n+m)}.
-    /// This method is in general accurate enough, but less accurate than its
-    /// full pivoting counterpart. In general, it is also faster than the other methods
-    /// for problems with small dimensions and when \eq{n} is not too larger than \eq{m}.
+    /// This method can be faster than the other methods for problems with small dimensions and
+    /// when \eq{n} is not too larger than \eq{m}.
     /// @note This method takes no advantage of the particular structure of the saddle point matrix.
     PartialPivLU,
-
-    /// This method uses full-pivoting LU decomposition to fully solve the saddle point problem.
-    /// This method solves the saddle point problems by applying a full-pivoting LU decomposition
-    /// to the saddle point matrix. It is in general accurate, but also more computationally expensive.
-    /// @note This method takes no advantage of the particular structure of the saddle point matrix.
-    FullPivLU,
 
     /// This method reduces the dimension of the saddle point problem from \eq{n+m} to \eq{n-m}.
     /// This method reduces the saddle point problem of dimension \eq{n+m} to an equivalent one of

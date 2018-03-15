@@ -44,7 +44,6 @@ def test_saddle_point_solver():
         sol = SaddlePointSolution(s, n, m)
 
         methods = [
-            SaddlePointMethod.FullPivLU,
             SaddlePointMethod.PartialPivLU,
             SaddlePointMethod.Nullspace,
             ]

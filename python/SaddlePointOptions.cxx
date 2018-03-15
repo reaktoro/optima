@@ -28,7 +28,6 @@ void exportSaddlePointOptions(py::module& m)
 {
     py::enum_<SaddlePointMethod>(m, "SaddlePointMethod")
         .value("PartialPivLU", SaddlePointMethod::PartialPivLU)
-        .value("FullPivLU", SaddlePointMethod::FullPivLU)
         .value("Nullspace", SaddlePointMethod::Nullspace)
         .value("Rangespace", SaddlePointMethod::Rangespace)
         ;
