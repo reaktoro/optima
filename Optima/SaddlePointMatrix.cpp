@@ -19,11 +19,12 @@
 
 // Optima includes
 #include <Optima/Utils.hpp>
+using namespace Eigen;
 
 namespace Optima {
 
 SaddlePointMatrix::SaddlePointMatrix(MatrixConstRef H, MatrixConstRef A, Index nf)
-: H(H), A(A), G(Eigen::zeros(0, 0)), nf(nf)
+: H(H), A(A), G(zeros(0, 0)), nf(nf)
 {
 }
 
@@ -40,7 +41,7 @@ SaddlePointMatrix::operator Matrix() const
     const auto nx = n - nf;
     const auto Ax = A.leftCols(nx);
 
-    Matrix res = Eigen::zeros(t, t);
+    Matrix res = zeros(t, t);
     if(isDenseMatrix(H)) res.topLeftCorner(nx, nx) = H.topLeftCorner(nx, nx);
     if(isDiagonalMatrix(H)) res.topLeftCorner(nx, nx).diagonal() = H.col(0).head(nx);
     if(isDenseMatrix(G)) res.bottomRightCorner(m, m) = G;
