@@ -26,6 +26,12 @@ using namespace Optima;
 
 void exportUtils(py::module& m)
 {
+    py::enum_<MatrixStructure>("MatrixStructure", m)
+        .value("Dense", Dense)
+        .value("Diagonal", Diagonal)
+        .value("Zero", Zero)
+        ;
+
     m.def("largestStep", &largestStep);
     m.def("lessThan", &lessThan);
     m.def("greaterThan", &greaterThan);
@@ -35,4 +41,8 @@ void exportUtils(py::module& m)
     m.def("minimizeBrent", &minimizeBrent);
     m.def("inverseShermanMorrison", &inverseShermanMorrison);
     m.def("rationalize", &rationalize);
+    m.def("matrixStructure", &matrixStructure);
+    m.def("isZeroMatrix", &isZeroMatrix);
+    m.def("isDiagonalMatrix", &isDiagonalMatrix);
+    m.def("isDenseMatrix", &isDenseMatrix);
 }
