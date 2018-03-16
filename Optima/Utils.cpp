@@ -391,4 +391,11 @@ auto isDenseMatrix(MatrixConstRef mat) -> bool
     return mat.size() && mat.cols() > 1;
 }
 
+auto ensureMinimumDimension(Matrix& mat, Index rows, Index cols) -> void
+{
+    const auto m = std::max(mat.rows(), rows);
+    const auto n = std::max(mat.cols(), cols);
+    mat.resize(m, n);
+}
+
 } // namespace Optima

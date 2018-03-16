@@ -133,4 +133,9 @@ auto isDiagonalMatrix(MatrixConstRef mat) -> bool;
 /// Return `true` if given matrix is a dense matrix, represented by a matrix with more than one rows and columns.
 auto isDenseMatrix(MatrixConstRef mat) -> bool;
 
+/// Resize a matrix if its current dimension is inferior to a given one.
+/// If both given number of rows and columns are less than the current values,
+/// then no resizing is performed.
+auto ensureMinimumDimension(Matrix& mat, Index rows, Index cols) -> void;
+
 } // namespace Optima
