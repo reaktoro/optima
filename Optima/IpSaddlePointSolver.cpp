@@ -25,6 +25,7 @@
 #include <Optima/SaddlePointOptions.hpp>
 #include <Optima/SaddlePointResult.hpp>
 #include <Optima/SaddlePointSolver.hpp>
+#include <Optima/Utils.hpp>
 using namespace Eigen;
 using namespace Eigen::placeholders;
 
@@ -32,10 +33,10 @@ namespace Optima {
 
 struct IpSaddlePointSolver::Impl
 {
-    /// The `A` matrix in the saddlepointsolver equation.
+    /// The `A` matrix in the saddle point equation.
     Matrix A;
 
-    /// The `H` matrix in the saddlepointsolver equation.
+    /// The `H` matrix in the saddle point equation.
     Matrix H;
 
     /// The matrices Z, W, L, U
@@ -68,10 +69,13 @@ struct IpSaddlePointSolver::Impl
     /// The total number of variables (x, y, z, w).
     Index t;
 
+    /// The flag that indicates if the Hessian matrix in the last decompose call was dense
+    bool dense_hessian_matrix;
+
     /// Update the order of the variables.
     auto reorderVariables(VectorXiConstRef ordering) -> void
     {
-        // Update the ordering of the basic saddlepointsolver solver
+        // Update the ordering of the saddle point solver
         spsolver.reorderVariables(ordering);
 
         // Update the internal ordering of the variables with the new ordering
@@ -100,7 +104,6 @@ struct IpSaddlePointSolver::Impl
         iordering = linspace<int>(n);
 
         // Allocate memory for some vector/matrix members
-        H = zeros(n, n);
         Z = zeros(n);
         W = zeros(n);
         L = zeros(n);
@@ -158,6 +161,9 @@ struct IpSaddlePointSolver::Impl
         Assert(ns + nl + nu > 0, "Could not decompose the interior-point saddle point matrix.",
             "The matrix is singular, with no (s, l, u) variables.");
 
+        // Update the ordering of the saddle point solver
+        spsolver.reorderVariables(iordering);
+
         // Initialize A, Z, W, L and U according to iordering
         A.noalias() = lhs.A(all, iordering);
         Z.noalias() = lhs.Z(iordering);
@@ -165,11 +171,25 @@ struct IpSaddlePointSolver::Impl
         L.noalias() = lhs.L(iordering);
         U.noalias() = lhs.U(iordering);
 
+        // Ensure Z(fixed) = 0, W(fixed) = 0, L(fixed) = 1, and U(fixed) = 1
+        Z.tail(nf).fill(0.0);
+        W.tail(nf).fill(0.0);
+        L.tail(nf).fill(1.0);
+        U.tail(nf).fill(1.0);
+
         return res.stop();
     }
 
-    /// Decompose the saddlepointsolver matrix equation used to compute the step vectors.
+    /// Decompose the saddle point matrix equation.
     auto decompose(IpSaddlePointMatrix lhs) -> SaddlePointResult
+    {
+        dense_hessian_matrix = isDenseMatrix(lhs.H);
+        if(dense_hessian_matrix) return decomposeDenseHessianMatrix(lhs);
+        else return decomposeDiagonalHessianMatrix(lhs);
+    }
+
+    /// Decompose the saddle point matrix equation with dense Hessian matrix.
+    auto decomposeDenseHessianMatrix(IpSaddlePointMatrix lhs) -> SaddlePointResult
     {
         // The result of this method call
         SaddlePointResult res;
@@ -177,43 +197,27 @@ struct IpSaddlePointSolver::Impl
         // Update the partitioning of the variables
         res += updatePartitioning(lhs);
 
+        // Views to the sub-vectors in (Z, W, L, U) corresponding to (s, l, u) partition
+        auto Ze = Z.head(ns + nl + nu);
+        auto We = W.head(ns + nl + nu);
+        auto Le = L.head(ns + nl + nu);
+        auto Ue = U.head(ns + nl + nu);
+
         // The indices of the free variables
         const auto jx = iordering.head(nx);
 
+        // Ensure the auxiliary H matrix has enough allocated memory
+        ensureMinimumDimension(H, n, n);
+
         // Views to the blocks of the Hessian matrix Hxx = [Hss Hsl Hsu; Hls Hll Hlu; Hus Hul Huu]
         auto Hxx = H.topLeftCorner(nx, nx);
-        auto Hee = H.topLeftCorner(ns + nl + nu, ns + nl + nu);
-
-        // Views to the sub-vectors in Z = [Zs Zl Zu Zz Zw Zf], with Ze = [Zs Zl Zu]
-        auto Ze = Z.head(ns + nl + nu);
-        auto Zf = Z.tail(nf);
-
-        // Views to the sub-vectors in W = [Ws Wl Wu Wz Ww Wf], with We = [Ws Wl Wu]
-        auto We = W.head(ns + nl + nu);
-        auto Wf = W.tail(nf);
-
-        // Views to the sub-vectors in L = [Ls Ll Lu Lz Lw Lf], with Le = [Ls Ll Lu]
-        auto Le = L.head(ns + nl + nu);
-        auto Lf = L.tail(nf);
-
-        // Views to the sub-vectors in U = [Us Ul Uu Uz Uw Uf], with Ue = [Us Ul Uu]
-        auto Ue = U.head(ns + nl + nu);
-        auto Uf = U.tail(nf);
-
-        // Ensure Zf = 0, Wf = 0, Lf = 1, and Uf = 1
-        Zf.fill(0.0);
-        Wf.fill(0.0);
-        Lf.fill(1.0);
-        Uf.fill(1.0);
+        auto Hee = Hxx.topLeftCorner(ns + nl + nu, ns + nl + nu);
 
         // Update Hxx
         Hxx.noalias() = lhs.H(jx, jx);
 
         // Calculate Hee' = Hee + inv(Le)*Ze + inv(Ue)*We
         Hee.diagonal() += Ze/Le + We/Ue;
-
-        // Update the ordering of the saddle point solver
-        spsolver.reorderVariables(iordering);
 
         // Decompose the saddle point matrix
         res += spsolver.decompose({H, A, nz + nw + nf});
@@ -224,16 +228,55 @@ struct IpSaddlePointSolver::Impl
         return res.stop();
     }
 
+    /// Decompose the saddle point matrix equation with diagonal Hessian matrix.
+    auto decomposeDiagonalHessianMatrix(IpSaddlePointMatrix lhs) -> SaddlePointResult
+    {
+        // The result of this method call
+        SaddlePointResult res;
+
+        // Update the partitioning of the variables
+        res += updatePartitioning(lhs);
+
+        // Views to the sub-vectors in (Z, W, L, U) corresponding to (s, l, u) partition
+        auto Ze = Z.head(ns + nl + nu);
+        auto We = W.head(ns + nl + nu);
+        auto Le = L.head(ns + nl + nu);
+        auto Ue = U.head(ns + nl + nu);
+
+        // The indices of the free variables
+        const auto jx = iordering.head(nx);
+
+        // Ensure the auxiliary H matrix has enough allocated memory
+        ensureMinimumDimension(H, n, 1);
+
+        // Views to the blocks of the Hessian matrix Hxx = [Hss Hsl Hsu; Hls Hll Hlu; Hus Hul Huu]
+        auto Hxx = H.col(0).head(nx);
+        auto Hee = Hxx.head(ns + nl + nu);
+
+        // Update Hxx
+        Hxx.noalias() = lhs.H.col(0)(jx);
+
+        // Calculate Hee' = Hee + inv(Le)*Ze + inv(Ue)*We
+        Hee += Ze/Le + We/Ue;
+
+        // Decompose the saddle point matrix
+        res += spsolver.decompose({H.col(0), A, nz + nw + nf});
+
+        // Remove the previously added vector along the diagonal of the Hessian
+        Hee -= Ze/Le + We/Ue;
+
+        return res.stop();
+    }
+
     /// Solve the saddle point matrix equation.
     auto solve(IpSaddlePointVector rhs, IpSaddlePointSolution sol) -> SaddlePointResult
     {
-        if(spsolver.options().method == SaddlePointMethod::Rangespace)
-            return solveDiagonalH(rhs, sol);
-        return solveDenseH(rhs, sol);
+        if(dense_hessian_matrix) return solveDenseHessianMatrix(rhs, sol);
+        else return solveDiagonalHessianMatrix(rhs, sol);
     }
 
     /// Solve the saddle point matrix equation with dense Hessian.
-    auto solveDenseH(IpSaddlePointVector rhs, IpSaddlePointSolution sol) -> SaddlePointResult
+    auto solveDenseHessianMatrix(IpSaddlePointVector rhs, IpSaddlePointSolution sol) -> SaddlePointResult
     {
         // The result of this method call
         SaddlePointResult res;
@@ -445,7 +488,7 @@ struct IpSaddlePointSolver::Impl
     }
 
     /// Solve the saddle point matrix equation with diagonal Hessian.
-    auto solveDiagonalH(IpSaddlePointVector rhs, IpSaddlePointSolution sol) -> SaddlePointResult
+    auto solveDiagonalHessianMatrix(IpSaddlePointVector rhs, IpSaddlePointSolution sol) -> SaddlePointResult
     {
         // The result of this method call
         SaddlePointResult res;
@@ -570,10 +613,10 @@ struct IpSaddlePointSolver::Impl
 
         // Calculate as', al', au', az', aw', b'
         as += cs/Ls + ds/Us;
-        al += dl/Ul - Hll*(cl/Zl) - (Wl/Ul) % (cl/Zl);
-        au += cu/Lu - Huu*(du/Wu) - (Zu/Lu) % (du/Wu);
-        az += dz/Uz - Hzz*(cz/Zz) - (Wz/Uz) % (cz/Zz);
-        aw += cw/Lw - Hww*(dw/Ww) - (Zw/Lw) % (dw/Ww);
+        al += dl/Ul - Hll % (cl/Zl) - (Wl/Ul) % (cl/Zl);
+        au += cu/Lu - Huu % (du/Wu) - (Zu/Lu) % (du/Wu);
+        az += dz/Uz - Hzz % (cz/Zz) - (Wz/Uz) % (cz/Zz);
+        aw += cw/Lw - Hww % (dw/Ww) - (Zw/Lw) % (dw/Ww);
          b -= Al*(cl/Zl) + Au*(du/Wu) + Az*(cz/Zz) + Aw*(dw/Ww);
 
         zz.noalias() = -az;

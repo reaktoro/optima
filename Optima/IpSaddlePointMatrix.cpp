@@ -17,7 +17,8 @@
 
 #include "IpSaddlePointMatrix.hpp"
 
-// Eigen includes
+// Optima includes
+#include <Optima/Utils.hpp>
 using namespace Eigen;
 
 namespace Optima {
@@ -40,7 +41,6 @@ IpSaddlePointMatrix::operator Matrix() const
     const auto t = 3*n + m;
 
     const auto nx = n - nf;
-    const auto Hx = H.topLeftCorner(nx, nx);
     const auto Ax = A.leftCols(nx);
     const auto Zx = Z.head(nx);
     const auto Wx = W.head(nx);
@@ -48,7 +48,8 @@ IpSaddlePointMatrix::operator Matrix() const
     const auto Ux = U.head(nx);
 
     Matrix res = zeros(t, t);
-    res.topRows(nx).leftCols(nx) = Hx;
+    if(isDenseMatrix(H)) res.topLeftCorner(nx, nx) = H.topLeftCorner(nx, nx);
+    if(isDiagonalMatrix(H)) res.topLeftCorner(nx, nx).diagonal() = H.col(0).head(nx);
     res.topRows(nx).middleCols(n, m) = tr(Ax);
     res.topRows(nx).middleCols(n + m, nx).diagonal().fill(-1.0);
     res.topRows(nx).middleCols(n + m + n, nx).diagonal().fill(-1.0);
