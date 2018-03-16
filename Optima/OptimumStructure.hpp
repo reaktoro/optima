@@ -23,6 +23,7 @@
 // Optima includes
 #include <Optima/Index.hpp>
 #include <Optima/Matrix.hpp>
+#include <Optima/Utils.hpp>
 
 namespace Optima {
 
@@ -48,16 +49,30 @@ public:
     double val;
 
     /// The evaluated gradient of the objective function.
-    Vector grad;
+    VectorRef grad;
 
     /// The evaluated Hessian of the objective function.
-    Matrix hessian;
+    /// The dimension of the Hessian matrix is controlled using the methods:
+    /// OptimumStructure::setHessianMatrixAsDense,
+    /// OptimumStructure::setHessianMatrixAsDiagonal, and
+    /// OptimumStructure::setHessianMatrixAsZero.
+    /// The first method causes `hessian` to be a square matrix with dimensions
+    /// of the number of variables in the optimization problem. The second method
+    /// causes `hessian` to be a matrix with a single column and as many rows
+    /// as there are variables. The third method causes `hessian` to be an empty
+    /// matrix, with zero rows and columns.
+    MatrixRef hessian;
 
     /// The requirements in the evaluation of the objective function.
     ObjectiveRequirement requires;
 
     /// The boolean flag that indicates if the objective function evaluation failed.
-    bool failed = false;
+    bool failed;
+
+    /// Construct an ObjectiveState instance.
+    /// @param grad The vector reference to store the gradient calculation.
+    /// @param hessian The matrix reference to store the Hessian calculation.
+    ObjectiveState(VectorRef grad, MatrixRef hessian);
 };
 
 /// The functional signature of an objective function.
@@ -107,6 +122,15 @@ public:
     /// Set the indices of the variables in \eq{x} with fixed values.
     auto setVariablesWithFixedValues(VectorXiConstRef indices) -> void;
 
+    /// Set the structure of the Hessian matrix to be dense.
+    auto setHessianMatrixAsDense() -> void { m_structure_hessian_matrix = Dense; }
+
+    /// Set the structure of the Hessian matrix to be diagonal.
+    auto setHessianMatrixAsDiagonal() -> void { m_structure_hessian_matrix = Diagonal; }
+
+    /// Set the structure of the Hessian matrix to be fully zero.
+    auto setHessianMatrixAsZero() -> void { m_structure_hessian_matrix = Zero; }
+
     /// Return the number of variables.
     auto numVariables() const -> Index { return m_n; }
 
@@ -140,6 +164,9 @@ public:
     /// Return the indices of the variables partitioned in [without, with] fixed values.
     auto orderingFixedValues() const -> VectorXiConstRef { return m_fixedpartition; }
 
+    /// Return true if the Hessian matrix is dense.
+    auto structureHessianMatrix() const -> bool { return m_structure_hessian_matrix; }
+
     /// Return the objective function.
     auto objectiveFunction() const -> const ObjectiveFunction& { return m_objective; }
 
@@ -150,10 +177,6 @@ public:
     /// @param x The values of the variables \eq{x}.
     /// @param f The evaluated state of the objective function.
     auto objective(VectorConstRef x, ObjectiveState& f) const -> void { m_objective(x, f); }
-
-    /// Return the coefficient matrix \eq{A} of the linear equality constraints.
-    /// This is an alias to method @ref equalityConstraintMatrix.
-    auto A() const -> MatrixConstRef { return m_A; }
 
 private:
     /// The objective function in the optimization problem.
@@ -185,6 +208,9 @@ private:
 
     /// The indices of the variables partitioned in [with, without] fixed values.
     VectorXi m_fixedpartition;
+
+    /// The structure of the Hessian matrix
+    MatrixStructure m_structure_hessian_matrix;
 };
 
 } // namespace Optima

@@ -24,12 +24,17 @@ using namespace Eigen;
 
 namespace Optima {
 
+ObjectiveState::ObjectiveState(VectorRef grad, MatrixRef hessian)
+: grad(grad), hessian(hessian), failed(false)
+{}
+
 OptimumStructure::OptimumStructure(ObjectiveFunction f, Index n, Index m)
 : m_objective(f), m_n(n), m_m(m), m_A(zeros(m_m, m_n)),
   m_nlower(0), m_nupper(0), m_nfixed(0),
   m_lowerpartition(linspace<int>(n, 0, n - 1)),
   m_upperpartition(linspace<int>(n, 0, n - 1)),
-  m_fixedpartition(linspace<int>(n, 0, n - 1))
+  m_fixedpartition(linspace<int>(n, 0, n - 1)),
+  m_structure_hessian_matrix(Dense)
 {}
 
 OptimumStructure::OptimumStructure(ObjectiveFunction f, MatrixConstRef A)
