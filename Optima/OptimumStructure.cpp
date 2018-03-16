@@ -20,7 +20,6 @@
 // Optima includes
 #include <Optima/Exception.hpp>
 #include <Optima/Matrix.hpp>
-using namespace Eigen;
 
 namespace Optima {
 
@@ -28,12 +27,16 @@ ObjectiveState::ObjectiveState(VectorRef grad, MatrixRef hessian)
 : grad(grad), hessian(hessian), failed(false)
 {}
 
+OptimumStructure::OptimumStructure(ObjectiveFunction f, Index n)
+: OptimumStructure(f, n, 0)
+{}
+
 OptimumStructure::OptimumStructure(ObjectiveFunction f, Index n, Index m)
-: m_objective(f), m_n(n), m_m(m), m_A(zeros(m_m, m_n)),
+: m_objective(f), m_n(n), m_m(m), m_A(Eigen::zeros(m_m, m_n)),
   m_nlower(0), m_nupper(0), m_nfixed(0),
-  m_lowerpartition(linspace<int>(n, 0, n - 1)),
-  m_upperpartition(linspace<int>(n, 0, n - 1)),
-  m_fixedpartition(linspace<int>(n, 0, n - 1)),
+  m_lowerpartition(Eigen::linspace<int>(n)),
+  m_upperpartition(Eigen::linspace<int>(n)),
+  m_fixedpartition(Eigen::linspace<int>(n)),
   m_structure_hessian_matrix(Dense)
 {}
 
@@ -41,12 +44,6 @@ OptimumStructure::OptimumStructure(ObjectiveFunction f, MatrixConstRef A)
 : OptimumStructure(f, A.cols(), A.rows())
 {
     m_A = A;
-}
-
-auto OptimumStructure::setEqualityConstraintMatrix(MatrixConstRef A) -> void
-{
-    MatrixRef Aref(m_A);
-    Aref = A;
 }
 
 auto OptimumStructure::setVariablesWithLowerBounds(VectorXiConstRef indices) -> void

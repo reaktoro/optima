@@ -33,6 +33,7 @@
 #include <Optima/OptimumStructure.hpp>
 #include <Optima/SaddlePointResult.hpp>
 using namespace Eigen;
+using Eigen::placeholders::all;
 
 namespace Optima {
 
@@ -92,7 +93,7 @@ struct OptimumStepper::Impl
         iordering = structure.orderingFixedValues();
 
         // Allocate memory for some members
-        A.noalias() = structure.A() * iordering.asPermutation();
+        A.noalias() = structure.equalityConstraintMatrix()(all, iordering);
         H = zeros(n, n);
         g = zeros(n);
         x = zeros(n);

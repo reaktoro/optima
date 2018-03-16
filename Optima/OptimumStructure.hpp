@@ -80,32 +80,25 @@ public:
 /// @param f The evaluated state of the objective function.
 using ObjectiveFunction = std::function<void(VectorConstRef, ObjectiveState&)>;
 
-// todo Implement this as a class using the pimpl idiom
-// OptimumStructure structure;
-// structure.setNumVariables(10);
-// structure.setNumEqualityConstraints(5);
-// structure.setNumInequalityConstraints(3);
-// structure.setConstraintMatrix(A);
-// structure.setObjective(obj);
-
 /// The structure of an optimization problem that changes with less frequency.
 class OptimumStructure
 {
 public:
-    /// Construct an OptimumStructure instance.
+    /// Construct an OptimumStructure instance without equality constraints.
+    /// @param f The objective function \eq{f} in the optimization problem.
+    /// @param n The number of variables in \eq{x} in the optimization problem.
+    OptimumStructure(ObjectiveFunction f, Index n);
+
+    /// Construct an OptimumStructure instance with equality constraints.
     /// @param f The objective function \eq{f} in the optimization problem.
     /// @param n The number of variables in \eq{x} in the optimization problem.
     /// @param m The number of linear equality constraints in the optimization problem.
     OptimumStructure(ObjectiveFunction f, Index n, Index m);
 
-    /// Construct an OptimumStructure instance.
+    /// Construct an OptimumStructure instance with equality constraints.
     /// @param f The objective function \eq{f} in the optimization problem.
     /// @param A The linear equality constraint matrix \eq{A} in the optimization problem.
     OptimumStructure(ObjectiveFunction f, MatrixConstRef A);
-
-    /// Set the coefficient matrix \eq{A} of the linear equality constraints.
-    /// This method does not allow changing the dimensions of the equality constraint matrix \eq{A}.
-    auto setEqualityConstraintMatrix(MatrixConstRef A) -> void;
 
     /// Set the indices of the variables in \eq{x} with lower bounds.
     auto setVariablesWithLowerBounds(VectorXiConstRef indices) -> void;
@@ -164,14 +157,17 @@ public:
     /// Return the indices of the variables partitioned in [without, with] fixed values.
     auto orderingFixedValues() const -> VectorXiConstRef { return m_fixedpartition; }
 
-    /// Return true if the Hessian matrix is dense.
-    auto structureHessianMatrix() const -> bool { return m_structure_hessian_matrix; }
+    /// Return the structure type of the Hessian matrix.
+    auto structureHessianMatrix() const -> MatrixStructure { return m_structure_hessian_matrix; }
 
     /// Return the objective function.
     auto objectiveFunction() const -> const ObjectiveFunction& { return m_objective; }
 
     /// Return the coefficient matrix \eq{A} of the linear equality constraints.
     auto equalityConstraintMatrix() const -> MatrixConstRef { return m_A; }
+
+    /// Return the coefficient matrix \eq{A} of the linear equality constraints.
+    auto equalityConstraintMatrix() -> MatrixRef { return m_A; }
 
     /// Evaluate the objective function.
     /// @param x The values of the variables \eq{x}.

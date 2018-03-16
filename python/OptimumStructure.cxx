@@ -41,15 +41,21 @@ void exportOptimumStructure(py::module& m)
         .def_readwrite("failed", &ObjectiveState::failed, "The boolean flag that indicates if the objective function evaluation failed.")
         ;
 
+    auto equalityConstraintMatrix1 = [](const OptimumStructure& self) { return self.equalityConstraintMatrix(); };
+    auto equalityConstraintMatrix2 = [](OptimumStructure& self) { return self.equalityConstraintMatrix(); };
+
     py::class_<OptimumStructure>(m, "OptimumStructure")
+        .def(py::init<ObjectiveFunction, Index>(), py::arg("f"), py::arg("n"))
         .def(py::init<ObjectiveFunction, Index, Index>(), py::arg("f"), py::arg("n"), py::arg("m"))
         .def(py::init<ObjectiveFunction, MatrixConstRef>(), py::arg("f"), py::arg("A"))
-        .def("setEqualityConstraintMatrix", &OptimumStructure::setEqualityConstraintMatrix, "Set the coefficient matrix `A` of the linear equality constraints.")
         .def("setVariablesWithLowerBounds", &OptimumStructure::setVariablesWithLowerBounds, "Set the indices of the variables in `x` with lower bounds.")
         .def("allVariablesHaveLowerBounds", &OptimumStructure::allVariablesHaveLowerBounds, "Set all variables in `x` with lower bounds.")
         .def("setVariablesWithUpperBounds", &OptimumStructure::setVariablesWithUpperBounds, "Set the indices of the variables in `x` with upper bounds.")
         .def("allVariablesHaveUpperBounds", &OptimumStructure::allVariablesHaveUpperBounds, "Set all variables in `x` with upper bounds.")
         .def("setVariablesWithFixedValues", &OptimumStructure::setVariablesWithFixedValues, "Set the indices of the variables in `x` with fixed values.")
+        .def("setHessianMatrixAsDense", &OptimumStructure::setHessianMatrixAsDense, "Set the structure of the Hessian matrix to be dense.")
+        .def("setHessianMatrixAsDiagonal", &OptimumStructure::setHessianMatrixAsDiagonal, "Set the structure of the Hessian matrix to be diagonal.")
+        .def("setHessianMatrixAsZero", &OptimumStructure::setHessianMatrixAsZero, "Set the structure of the Hessian matrix to be fully zero.")
         .def("numVariables", &OptimumStructure::numVariables, py::return_value_policy::reference_internal, "Return the number of variables.")
         .def("numEqualityConstraints", &OptimumStructure::numEqualityConstraints, py::return_value_policy::reference_internal, "Return the number of linear equality constraints.")
         .def("variablesWithLowerBounds", &OptimumStructure::variablesWithLowerBounds, py::return_value_policy::reference_internal, "Return the indices of the variables with lower bounds.")
@@ -61,9 +67,10 @@ void exportOptimumStructure(py::module& m)
         .def("orderingLowerBounds", &OptimumStructure::orderingLowerBounds, py::return_value_policy::reference_internal, "Return the indices of the variables without fixed values.")
         .def("orderingUpperBounds", &OptimumStructure::orderingUpperBounds, py::return_value_policy::reference_internal, "Return the indices of the variables without fixed values.")
         .def("orderingFixedValues", &OptimumStructure::orderingFixedValues, py::return_value_policy::reference_internal, "Return the indices of the variables without fixed values.")
+        .def("structureHessianMatrix", &OptimumStructure::structureHessianMatrix, "Return the structure type of the Hessian matrix.")
         .def("objectiveFunction", &OptimumStructure::objectiveFunction, py::return_value_policy::reference_internal, "Return the objective function.")
-        .def("equalityConstraintMatrix", &OptimumStructure::equalityConstraintMatrix, py::return_value_policy::reference_internal, "Return the coefficient matrix A of the linear equality constraints.")
+        .def("equalityConstraintMatrix", equalityConstraintMatrix1, py::return_value_policy::reference_internal, "Return the coefficient matrix A of the linear equality constraints.")
+        .def("equalityConstraintMatrix", equalityConstraintMatrix2, py::return_value_policy::reference_internal, "Return the coefficient matrix A of the linear equality constraints.")
         .def("objective", &OptimumStructure::objective, py::return_value_policy::reference_internal, "Evaluate the objective function.")
-        .def("A", &OptimumStructure::A, py::return_value_policy::reference_internal, "Return the coefficient matrix A of the linear equality constraints.")
         ;
 }
