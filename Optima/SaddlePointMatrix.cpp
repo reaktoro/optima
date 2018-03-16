@@ -18,19 +18,35 @@
 #include "SaddlePointMatrix.hpp"
 
 // Optima includes
+#include <Optima/Exception.hpp>
 #include <Optima/Utils.hpp>
 using namespace Eigen;
 
 namespace Optima {
 
 SaddlePointMatrix::SaddlePointMatrix(MatrixConstRef H, MatrixConstRef A, Index nf)
-: H(H), A(A), G(zeros(0, 0)), nf(nf)
-{
-}
+: SaddlePointMatrix(H, A, zeros(0), nf)
+{}
 
 SaddlePointMatrix::SaddlePointMatrix(MatrixConstRef H, MatrixConstRef A, MatrixConstRef G, Index nf)
 : H(H), A(A), G(G), nf(nf)
-{}
+{
+    Assert(isDenseMatrix(H) || isDiagonalMatrix(H),
+        "Could not create a SaddlePointMatrix object.",
+            "Matrix H must be either square dense or diagonal (vector or single column matrix).");
+
+    Assert(isDenseMatrix(G) || isZeroMatrix(G),
+        "Could not create a SaddlePointMatrix object.",
+            "Matrix G must be either dense or an empty matrix.");
+
+    Assert(H.rows() == A.cols(),
+        "Could not create a SaddlePointMatrix object.",
+            "Matrix A must have the same number of columns as there are rows in H.");
+
+    Assert(A.rows() == G.rows() || G.size() == 0,
+        "Could not create a SaddlePointMatrix object.",
+            "Matrix G, when non-zero, must have the same number of rows and columns as there are rows in A.");
+}
 
 SaddlePointMatrix::operator Matrix() const
 {
