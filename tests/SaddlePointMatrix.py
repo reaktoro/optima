@@ -18,42 +18,56 @@
 
 from optima import *
 from numpy import *
-from pytest import approx
+from pytest import approx, mark
 
+structure_options = ['dense', 'diagonal', 'zero']
+num_fixed_variables_options = [0, 5]
+ 
+testdata = [(x, y, z) 
+            for x in structure_options 
+            for y in structure_options 
+            for z in num_fixed_variables_options] 
 
-def test_saddle_point_matrix():
-    H = array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-    A = array([[1, 2, 3], [3, 4, 5]])
-    G = array([[1, 2], [3, 4]])
-    n = 3
-    nx = 3
-    nf = 0
+@mark.parametrize("args", testdata)
+def test_saddle_point_matrix(args):
+    m = 5
+    n = 15
+    
+    structureH, structureG, nf = args
+    
+    nx = n - nf
+    
+    A = eigen.random(m, n)
+    
+    M = eigen.zeros(n + m, n + m)
+    
+    if structureH == 'dense':
+        H = eigen.random(n, n)
+        M[0:nx, 0:nx] = H[:nx, :nx]
+    elif structureH == 'diagonal':
+        H = eigen.random(n)
+        M[0:nx, 0:nx] = eigen.diag(H[:nx])
+    else:
+        H = eigen.matrix()
+    
+    if structureG == 'dense':
+        G = eigen.random(m, m)
+        M[n:, n:] = G
+    elif structureH == 'diagonal':
+        G = eigen.random(m)
+        M[n:, n:] = eigen.diag(G)
+    else:
+        G = eigen.matrix()
+    
+    M[nx:n, nx:n] = eye(nf, nf)
+    M[0:nx, n:n+m] = transpose(A[:, 0:nx])
+    M[n:, :n] = A
 
-    mat1 = SaddlePointMatrix(H, A, G, nf)
-
-    M = array([
-        [1, 2, 3, 1, 3],
-        [4, 5, 6, 2, 4],
-        [7, 8, 9, 3, 5],
-        [1, 2, 3, 1, 2],
-        [3, 4, 5, 3, 4]
-        ])
+    # Create the SaddlePointMatrix object     
+    mat = SaddlePointMatrix(H, A, G, nf)
 
     # Check conversion to a Matrix instance
-    assert mat1.array() == approx(M)
-
-    # Testing conversion when some variables are fixed
-    nx = 2
-    nf = 1
-
-    mat2 = SaddlePointMatrix(H, A, G, nf)
-
-    M[nx:nx+nf, :] = 0.0
-    M[:n, nx:nx+nf] = 0.0
-    M[nx:nx+nf, nx:nx+nf] = eye(nf)
-
-    # Check conversion to a Matrix instance
-    assert mat2.array() == approx(M)
+    assert mat.array() == approx(M)
 
 
 def test_saddle_point_vector():
