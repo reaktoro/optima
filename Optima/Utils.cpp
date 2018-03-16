@@ -388,7 +388,7 @@ auto isDiagonalMatrix(MatrixConstRef mat) -> bool
 
 auto isDenseMatrix(MatrixConstRef mat) -> bool
 {
-    return mat.size() && mat.cols() > 1;
+    return mat.size() > 1 && mat.rows() == mat.cols();
 }
 
 auto ensureMinimumDimension(Matrix& mat, Index rows, Index cols) -> void
