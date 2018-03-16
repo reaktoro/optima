@@ -113,6 +113,17 @@ auto inverseShermanMorrison(const Matrix& invA, const Vector& D) -> Matrix;
 /// @return A tuple containing the numerator and denominator.
 auto rationalize(double x, unsigned n) -> std::tuple<long, long>;
 
+/// Used to describe the structure of a matrix.
+enum MatrixStructure
+{
+    Dense,    ///< A matrix with no regular zero pattern, represented by a matrix with one or more rows and columns.
+    Diagonal, ///< A matrix with non-zero entries only on the diagonal, represented by a matrix with a single column.
+    Zero,     ///< A matrix with zero entries only, represented by a matrix with no rows and columns.
+};
+
+/// Return the structure type of the given matrix.
+auto matrixStructure(MatrixConstRef mat) -> MatrixStructure;
+
 /// Return `true` if given matrix is a zero matrix, represented by an empty matrix.
 auto isZeroMatrix(MatrixConstRef mat) -> bool;
 
