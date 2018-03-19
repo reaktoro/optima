@@ -58,10 +58,9 @@ SaddlePointMatrix::operator Matrix() const
     const auto Ax = A.leftCols(nx);
 
     Matrix res = zeros(t, t);
-    if(isDenseMatrix(H)) res.topLeftCorner(nx, nx) = H.topLeftCorner(nx, nx);
-    if(isDiagonalMatrix(H)) res.topLeftCorner(nx, nx).diagonal() = H.col(0).head(nx);
-    if(isDenseMatrix(G)) res.bottomRightCorner(m, m) = G;
-    if(isDiagonalMatrix(G)) res.bottomRightCorner(m, m).diagonal() = G.col(0);
+    if(H.diagonal.size()) res.topLeftCorner(nx, nx).diagonal() = H.diagonal.head(nx);
+    if(H.dense.size()) res.topLeftCorner(nx, nx) = H.dense.topLeftCorner(nx, nx);
+    if(G.size()) res.bottomRightCorner(m, m) = G;
     res.block(nx, nx, nf, nf).diagonal().fill(1.0);
     res.topRightCorner(nx, m) = tr(Ax);
     res.bottomLeftCorner(m, n) = A;

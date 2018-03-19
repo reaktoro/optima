@@ -158,8 +158,11 @@ struct SaddlePointSolver::Impl
         nf = lhs.nf;
         nx = n - nf;
 
+        // The diagonal entries of the Hessian matrix
+        auto Hdd = lhs.H.diagonalRef();
+
         // The diagonal entries of the Hessian matrix corresponding to free variables
-        const auto Hxx = lhs.H.diagonal().head(nx);
+        auto Hxx = Hdd.head(nx);
 
         // Update the priority weights for the update of the canonical form
         weights.head(nx).noalias() = abs(inv(Hxx));
@@ -327,7 +330,7 @@ struct SaddlePointSolver::Impl
         auto ivx = iordering.head(nx);
 
         // Retrieve the entries in H corresponding to free variables.
-        Hx.noalias() = lhs.H.diagonal()(ivx);
+        Hx.noalias() = lhs.H.diagonalRef()(ivx);
 
         // The auxiliary matrix Tbxbx = Sbxn1 * Bn1bx and its submatrices
         auto Tbxbx = mat.topRightCorner(nbx, nbx);
@@ -443,7 +446,7 @@ struct SaddlePointSolver::Impl
         auto ivx = iordering.head(nx);
 
         // Retrieve the entries in H corresponding to free variables.
-        Hx.noalias() = lhs.H.diagonal()(ivx);
+        Hx.noalias() = lhs.H.diagonalRef()(ivx);
 
         // Calculate matrix G' = R * G * tr(R)
         G.noalias() = R * lhs.G * tr(R);
