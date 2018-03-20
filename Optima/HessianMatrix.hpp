@@ -95,6 +95,12 @@ public:
     {
         return std::make_tuple(*this, indices);
     }
+
+    /// Return a view to the top left corner of the Hessian matrix.
+    auto topLeftCorner(Index size) const -> decltype(std::make_tuple(*this, Eigen::seqN(0, size)))
+    {
+        return std::make_tuple(*this, Eigen::seqN(0, size));
+    }
 };
 
 /// Used to represent a reference to a Hessian matrix.
@@ -109,7 +115,7 @@ auto operator<<(MatrixRef mat, const HessianMatrixBase<MatrixType, VectorType>& 
 {
     switch(hessian.structure) {
     case MatrixStructure::Dense: mat = hessian.dense; break;
-    case MatrixStructure::Diagonal: return mat.diagonal() = hessian.diagonal; break;
+    case MatrixStructure::Diagonal: return mat = diag(hessian.diagonal); break;
     case MatrixStructure::Zero: break;
     }
     return mat;
@@ -123,7 +129,7 @@ auto operator<<(MatrixRef mat, const std::tuple<HessianMatrixType, IndicesType>&
     const auto& indices = std::get<1>(view);
     switch(hessian.structure) {
     case MatrixStructure::Dense: mat = hessian.dense(indices, indices); break;
-    case MatrixStructure::Diagonal: mat.diagonal() = hessian.diagonal(indices); break;
+    case MatrixStructure::Diagonal: mat = diag(hessian.diagonal(indices)); break;
     case MatrixStructure::Zero: break;
     }
     return mat;

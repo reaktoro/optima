@@ -24,7 +24,7 @@ using namespace Eigen;
 namespace Optima {
 
 IpSaddlePointMatrix::IpSaddlePointMatrix(
-    MatrixConstRef H,
+    HessianMatrixConstRef H,
     MatrixConstRef A,
     VectorConstRef Z,
     VectorConstRef W,
@@ -48,8 +48,7 @@ IpSaddlePointMatrix::operator Matrix() const
     const auto Ux = U.head(nx);
 
     Matrix res = zeros(t, t);
-    if(isDenseMatrix(H)) res.topLeftCorner(nx, nx) = H.topLeftCorner(nx, nx);
-    if(isDiagonalMatrix(H)) res.topLeftCorner(nx, nx).diagonal() = H.col(0).head(nx);
+    res.topLeftCorner(nx, nx) << H.topLeftCorner(nx);
     res.topRows(nx).middleCols(n, m) = tr(Ax);
     res.topRows(nx).middleCols(n + m, nx).diagonal().fill(-1.0);
     res.topRows(nx).middleCols(n + m + n, nx).diagonal().fill(-1.0);

@@ -34,7 +34,14 @@ void exportIpSaddlePointMatrix(py::module& m)
         .def_readonly("L", &IpSaddlePointMatrix::L)
         .def_readonly("U", &IpSaddlePointMatrix::U)
         .def_readonly("nf", &IpSaddlePointMatrix::nf)
+        .def(py::init<HessianMatrixConstRef, MatrixConstRef, VectorConstRef, VectorConstRef, VectorConstRef, VectorConstRef, Index>(), py::arg("H"), py::arg("A"), py::arg("Z"), py::arg("W"), py::arg("L"), py::arg("U"), py::arg("nf"))
+
+        // IMPORTANT: Constructors below are needed to allow 1d numpy arrays to be converted to HessianMatrixConstRef
+        .def(py::init<VectorConstRef, MatrixConstRef, VectorConstRef, VectorConstRef, VectorConstRef, VectorConstRef, Index>(), py::arg("H"), py::arg("A"), py::arg("Z"), py::arg("W"), py::arg("L"), py::arg("U"), py::arg("nf"))
+
+        // IMPORTANT: Constructors below are needed to allow 2d numpy arrays to be converted to HessianMatrixConstRef
         .def(py::init<MatrixConstRef, MatrixConstRef, VectorConstRef, VectorConstRef, VectorConstRef, VectorConstRef, Index>(), py::arg("H"), py::arg("A"), py::arg("Z"), py::arg("W"), py::arg("L"), py::arg("U"), py::arg("nf"))
+
         .def("array", [](IpSaddlePointMatrix self) { return Matrix(self); })
         ;
 

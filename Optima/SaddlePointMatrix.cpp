@@ -55,18 +55,11 @@ SaddlePointMatrix::operator Matrix() const
 
     Matrix res = zeros(t, t);
 
-    switch(H.structure) {
-    case MatrixStructure::Diagonal:
-        res.topLeftCorner(nx, nx).diagonal() = H.diagonal.head(nx);
-        break;
-    default:
-        res.topLeftCorner(nx, nx) = H.dense.topLeftCorner(nx, nx);
-        break;
-    }
-    if(G.size()) res.bottomRightCorner(m, m) = G;
+    res.topLeftCorner(nx, nx) << H.topLeftCorner(nx);
     res.block(nx, nx, nf, nf).diagonal().fill(1.0);
     res.topRightCorner(nx, m) = tr(Ax);
     res.bottomLeftCorner(m, n) = A;
+    if(G.size()) res.bottomRightCorner(m, m) = G;
 
     return res;
 }

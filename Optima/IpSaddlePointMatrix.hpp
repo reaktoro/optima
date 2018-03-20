@@ -19,6 +19,7 @@
 
 // Optima includes
 #include <Optima/Index.hpp>
+#include <Optima/HessianMatrix.hpp>
 #include <Optima/Matrix.hpp>
 
 namespace Optima {
@@ -39,7 +40,7 @@ class IpSaddlePointMatrix
 {
 public:
     /// The Hessian matrix \eq{H} in the saddle point matrix.
-    MatrixConstRef H;
+    HessianMatrixConstRef H;
 
     /// The Jacobian matrix \eq{A} in the saddle point matrix.
     MatrixConstRef A;
@@ -68,7 +69,7 @@ public:
     /// @param U The vector representing the diagonal matrix \eq{U} in the saddle point equation.
     /// @param nf The number of fixed variables.
     IpSaddlePointMatrix(
-        MatrixConstRef H,
+        HessianMatrixConstRef H,
         MatrixConstRef A,
         VectorConstRef Z,
         VectorConstRef W,

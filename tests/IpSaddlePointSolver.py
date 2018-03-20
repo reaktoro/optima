@@ -19,9 +19,10 @@ from optima import *
 from numpy import *
 from numpy.linalg import norm
 from pytest import approx, mark
+from itertools import product
 
 def print_state(M, r, s, m, n):
-    set_printoptions(linewidth=1000, precision=10)
+    set_printoptions(linewidth=1000, precision=10, threshold='nan')
     slu = eigen.solve(M, r)
     print 'M = \n', M
     print 'r        = ', r
@@ -37,7 +38,7 @@ def print_state(M, r, s, m, n):
     print 'res(lu)  = ', M.dot(slu) - r
 
 
-testdata = [
+tested_dimensions = [
 #    m   ns  nl  nu  nz  nw  nf
     (5,  10, 0,  0,  0,  0,  0),
     (5,  8,  2,  0,  0,  0,  0),
@@ -52,17 +53,32 @@ testdata = [
     (5,  6,  0,  0,  0,  2,  2),
 ]
 
+tested_methods = [
+    SaddlePointMethod.Fullspace,
+    SaddlePointMethod.Nullspace,
+    SaddlePointMethod.Rangespace,
+]
+
+tested_hessian_options = ['dense', 'diagonal']
+
+testdata = product(tested_dimensions, tested_methods, tested_hessian_options)
+
+# Remove all test cases with method Rangespace and dense Hessian matrix.
+testdata = [x for x in testdata if not x[1] == SaddlePointMethod.Rangespace and x[2] == 'dense']
+
+
 @mark.parametrize("args", testdata)
 def test_ip_saddle_point_solver(args):
+    dimensions, method, structure = args
     
-    m, ns, nl, nu, nz, nw, nf = args
+    m, ns, nl, nu, nz, nw, nf = dimensions
     
     nx = ns + nl + nu + nz + nw
     n = nx + nf
     t = 3*n + m
     
     A = eigen.random(m, n)
-    H = eigen.random(n, n)
+    H = eigen.random(n, n) if structure == 'dense' else eigen.random(n)
     Z = eigen.random(n)
     W = eigen.random(n)
     L = eigen.random(n)
@@ -77,6 +93,7 @@ def test_ip_saddle_point_solver(args):
     expected = linspace(1, t, t)
 
     options = SaddlePointOptions()
+    options.method = method
 
     M = eigen.zeros(t, t)
     r = eigen.zeros(t)
@@ -106,5 +123,4 @@ def test_ip_saddle_point_solver(args):
 
     # Check the residual of the equation Ms = r
     assert norm(M.dot(s) - r)/norm(r) == approx(0.0)
-
 

@@ -72,8 +72,8 @@ struct IpSaddlePointSolver::Impl
     /// The total number of variables (x, y, z, w).
     Index t;
 
-    /// The flag that indicates if the Hessian matrix in the last decompose call was dense
-    bool dense_hessian_matrix;
+    /// The structure of the Hessian
+    MatrixStructure structure_hessian_matrix;
 
     /// Update the order of the variables.
     auto reorderVariables(VectorXiConstRef ordering) -> void
@@ -186,9 +186,15 @@ struct IpSaddlePointSolver::Impl
     /// Decompose the saddle point matrix equation.
     auto decompose(IpSaddlePointMatrix lhs) -> SaddlePointResult
     {
-        dense_hessian_matrix = isDenseMatrix(lhs.H);
-        if(dense_hessian_matrix) return decomposeDenseHessianMatrix(lhs);
-        else return decomposeDiagonalHessianMatrix(lhs);
+        structure_hessian_matrix = lhs.H.structure;
+
+        switch(structure_hessian_matrix) {
+        case MatrixStructure::Dense: return decomposeDenseHessianMatrix(lhs);
+        case MatrixStructure::Diagonal: return decomposeDiagonalHessianMatrix(lhs);
+        case MatrixStructure::Zero: return decomposeDiagonalHessianMatrix(lhs);
+        }
+
+        return {};
     }
 
     /// Decompose the saddle point matrix equation with dense Hessian matrix.
@@ -217,7 +223,7 @@ struct IpSaddlePointSolver::Impl
         auto Hee = Hxx.topLeftCorner(ns + nl + nu, ns + nl + nu);
 
         // Update Hxx
-        Hxx.noalias() = lhs.H(jx, jx);
+        Hxx.noalias() = lhs.H.dense(jx, jx);
 
         // Calculate Hee' = Hee + inv(Le)*Ze + inv(Ue)*We
         Hee.diagonal() += Ze/Le + We/Ue;
@@ -260,7 +266,7 @@ struct IpSaddlePointSolver::Impl
         auto Hee = Hxx.head(ns + nl + nu);
 
         // Update Hxx
-        Hxx.noalias() = lhs.H.col(0)(jx);
+        Hxx.noalias() = lhs.H.diagonal(jx);
 
         // Calculate Hee' = Hee + inv(Le)*Ze + inv(Ue)*We
         Hee += Ze/Le + We/Ue;
@@ -280,8 +286,13 @@ struct IpSaddlePointSolver::Impl
     /// Solve the saddle point matrix equation.
     auto solve(IpSaddlePointVector rhs, IpSaddlePointSolution sol) -> SaddlePointResult
     {
-        if(dense_hessian_matrix) return solveDenseHessianMatrix(rhs, sol);
-        else return solveDiagonalHessianMatrix(rhs, sol);
+        switch(structure_hessian_matrix) {
+        case MatrixStructure::Dense: return solveDenseHessianMatrix(rhs, sol);
+        case MatrixStructure::Diagonal: return solveDiagonalHessianMatrix(rhs, sol);
+        case MatrixStructure::Zero: return solveDiagonalHessianMatrix(rhs, sol);
+        }
+
+        return {};
     }
 
     /// Solve the saddle point matrix equation with dense Hessian.
@@ -503,7 +514,7 @@ struct IpSaddlePointSolver::Impl
         SaddlePointResult res;
 
         // Views to the blocks of the Hessian matrix Hxx
-        const auto Hxx = H.col(0).head(nx);
+        const auto Hxx = Hdiag.head(nx);
         const auto Hll = Hxx.segment(ns, nl);
         const auto Huu = Hxx.segment(ns + nl, nu);
         const auto Hzz = Hxx.segment(ns + nl + nu, nz);
