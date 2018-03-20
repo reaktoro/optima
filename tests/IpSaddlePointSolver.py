@@ -63,10 +63,6 @@ tested_hessian_options = ['dense', 'diagonal']
 
 testdata = product(tested_dimensions, tested_methods, tested_hessian_options)
 
-# Remove all test cases with method Rangespace and dense Hessian matrix.
-testdata = [x for x in testdata if not x[1] == SaddlePointMethod.Rangespace and x[2] == 'dense']
-
-
 @mark.parametrize("args", testdata)
 def test_ip_saddle_point_solver(args):
     dimensions, method, structure = args
@@ -119,7 +115,8 @@ def test_ip_saddle_point_solver(args):
     solver.decompose(lhs)
     solver.solve(rhs, sol)
 
-    print_state(M, r, s, m, n)
+    # Comment out line below to get further insight of the results when an error happens
+#     print_state(M, r, s, m, n)
 
     # Check the residual of the equation Ms = r
     assert norm(M.dot(s) - r)/norm(r) == approx(0.0)
