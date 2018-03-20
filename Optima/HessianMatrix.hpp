@@ -115,7 +115,7 @@ auto operator<<(MatrixRef mat, const HessianMatrixBase<MatrixType, VectorType>& 
 {
     switch(hessian.structure) {
     case MatrixStructure::Dense: mat = hessian.dense; break;
-    case MatrixStructure::Diagonal: return mat = diag(hessian.diagonal); break;
+    case MatrixStructure::Diagonal: mat = diag(hessian.diagonal); break;
     case MatrixStructure::Zero: break;
     }
     return mat;
