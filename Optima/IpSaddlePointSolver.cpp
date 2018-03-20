@@ -36,8 +36,11 @@ struct IpSaddlePointSolver::Impl
     /// The `A` matrix in the saddle point equation.
     Matrix A;
 
-    /// The `H` matrix in the saddle point equation.
+    /// The `H` dense matrix in the saddle point equation.
     Matrix H;
+
+    /// The `H` diagonal matrix in the saddle point equation.
+    Vector Hdiag;
 
     /// The matrices Z, W, L, U
     Vector Z, W, L, U;
@@ -207,7 +210,7 @@ struct IpSaddlePointSolver::Impl
         const auto jx = iordering.head(nx);
 
         // Ensure the auxiliary H matrix has enough allocated memory
-        ensureMinimumDimension(H, n, n);
+        H.resize(n, n);
 
         // Views to the blocks of the Hessian matrix Hxx = [Hss Hsl Hsu; Hls Hll Hlu; Hus Hul Huu]
         auto Hxx = H.topLeftCorner(nx, nx);
@@ -219,8 +222,11 @@ struct IpSaddlePointSolver::Impl
         // Calculate Hee' = Hee + inv(Le)*Ze + inv(Ue)*We
         Hee.diagonal() += Ze/Le + We/Ue;
 
+        // Define the saddle point matrix
+        SaddlePointMatrix spm(H, A, nz + nw + nf);
+
         // Decompose the saddle point matrix
-        res += spsolver.decompose({H, A, nz + nw + nf});
+        res += spsolver.decompose(spm);
 
         // Remove the previously added vector along the diagonal of the Hessian
         Hee.diagonal() -= Ze/Le + We/Ue;
@@ -246,11 +252,11 @@ struct IpSaddlePointSolver::Impl
         // The indices of the free variables
         const auto jx = iordering.head(nx);
 
-        // Ensure the auxiliary H matrix has enough allocated memory
-        ensureMinimumDimension(H, n, 1);
+        // Ensure the auxiliary Hdiag matrix has enough allocated memory
+        Hdiag.resize(n);
 
         // Views to the blocks of the Hessian matrix Hxx = [Hss Hsl Hsu; Hls Hll Hlu; Hus Hul Huu]
-        auto Hxx = H.col(0).head(nx);
+        auto Hxx = Hdiag.head(nx);
         auto Hee = Hxx.head(ns + nl + nu);
 
         // Update Hxx
@@ -259,8 +265,11 @@ struct IpSaddlePointSolver::Impl
         // Calculate Hee' = Hee + inv(Le)*Ze + inv(Ue)*We
         Hee += Ze/Le + We/Ue;
 
+        // Define the saddle point matrix
+        SaddlePointMatrix spm(Hdiag, A, nz + nw + nf);
+
         // Decompose the saddle point matrix
-        res += spsolver.decompose({H.col(0), A, nz + nw + nf});
+        res += spsolver.decompose(spm);
 
         // Remove the previously added vector along the diagonal of the Hessian
         Hee -= Ze/Le + We/Ue;

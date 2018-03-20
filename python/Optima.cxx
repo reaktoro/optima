@@ -21,6 +21,7 @@ namespace py = pybind11;
 
 void exportEigen(py::module& m);
 void exportCanonicalizer(py::module& m);
+void exportHessianMatrix(py::module& m);
 void exportOptimumOptions(py::module& m);
 void exportOptimumParams(py::module& m);
 void exportOptimumProblem(py::module& m);
@@ -43,6 +44,7 @@ PYBIND11_MODULE(optima, m)
 {
     exportEigen(m);
     exportCanonicalizer(m);
+    exportHessianMatrix(m);
     exportOutputter(m);
     exportOptimumOptions(m);
     exportOptimumParams(m);

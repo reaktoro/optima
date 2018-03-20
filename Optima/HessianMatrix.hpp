@@ -29,10 +29,10 @@ class HessianMatrixBase
 {
 public:
     /// The Hessian matrix as a dense matrix.
-    MatrixType dense;
+    Eigen::Ref<MatrixType> dense;
 
     /// The Hessian matrix as a diagonal matrix.
-    VectorType diagonal;
+    Eigen::Ref<VectorType> diagonal;
 
     /// The structure of the Hessian matrix.
     const MatrixStructure structure;
@@ -40,17 +40,42 @@ public:
     /// Construct a default HessianMatrixBase instance that represents a zero Hessian matrix.
     /// @param dense The Hessian matrix as a dense matrix.
     HessianMatrixBase()
-    : dense(Matrix::Zero(0, 0)), diagonal(Matrix::Zero(0)), structure(Zero) {}
+    : dense(Matrix()), diagonal(Vector()), structure(MatrixStructure::Diagonal)
+    {}
 
     /// Construct a HessianMatrixBase instance with given dense Hessian matrix.
     /// @param dense The Hessian matrix as a dense matrix.
-    HessianMatrixBase(MatrixType&& dense)
-    : dense(dense), diagonal(Matrix::Zero(0)), structure(Dense) {}
+    HessianMatrixBase(MatrixType& dense)
+    : dense(dense), diagonal(Vector()), structure(MatrixStructure::Diagonal) {}
+
+    /// Construct a HessianMatrixBase instance with given dense Hessian matrix.
+    /// @param dense The Hessian matrix as a dense matrix.
+    HessianMatrixBase(Eigen::Ref<MatrixType> matview)
+    : dense(matview.cols() > 1 ? matview : Eigen::Ref<MatrixType>(Matrix())),
+      diagonal(matview.cols() > 1 ? Vector() : matview.col(0)),
+      structure(matview.cols() > 1 ? MatrixStructure::Dense : MatrixStructure::Diagonal) {}
 
     /// Construct a HessianMatrixBase instance with given diagonal Hessian matrix.
     /// @param diagonal The Hessian matrix as a diagonal matrix, represented by a vector.
-    HessianMatrixBase(VectorType&& diagonal)
-    : dense(Matrix::Zero(0, 0)), diagonal(diagonal), structure(Diagonal) {}
+    HessianMatrixBase(VectorType& diagonal)
+    : dense(Matrix()), diagonal(diagonal), structure(MatrixStructure::Diagonal) {}
+
+    /// Construct a HessianMatrixBase instance with given diagonal Hessian matrix.
+    /// @param diagonal The Hessian matrix as a diagonal matrix, represented by a vector.
+    HessianMatrixBase(Eigen::Ref<VectorType> diagonal)
+    : dense(Matrix()), diagonal(diagonal), structure(MatrixStructure::Diagonal) {}
+
+    /// Construct a HessianMatrixBase instance with given dense and diagonal Hessian matrices.
+    /// @param dense The Hessian matrix as a dense matrix.
+    /// @param diagonal The Hessian matrix as a diagonal matrix.
+    HessianMatrixBase(MatrixType& dense, VectorType& diagonal)
+    : dense(dense), diagonal(diagonal), structure(dense.size() ? MatrixStructure::Dense : MatrixStructure::Diagonal) {}
+
+    /// Construct a HessianMatrixBase instance with given dense and diagonal Hessian matrices.
+    /// @param dense The Hessian matrix as a dense matrix.
+    /// @param diagonal The Hessian matrix as a diagonal matrix.
+    HessianMatrixBase(Eigen::Ref<MatrixType> dense, Eigen::Ref<VectorType> diagonal)
+    : dense(dense), diagonal(diagonal), structure(dense.size() ? MatrixStructure::Dense : MatrixStructure::Diagonal) {}
 
     /// Construct a HessianMatrixBase instance from another.
     template<typename MatrixOther, typename VectorOther>
@@ -58,37 +83,50 @@ public:
     : dense(other.dense), diagonal(other.diagonal), structure(other.structure) {}
 
     /// Return a reference to the diagonal entries of the Hessian matrix.
-    auto diagonalRef() -> VectorRef { return dense.size() ? dense.diagonal() : diagonal; }
+    auto diagonalRef() -> Eigen::Ref<VectorType>
+    {
+        switch(structure) {
+        case MatrixStructure::Diagonal: return diagonal;
+        default: return dense.diagonal();
+        }
+    }
 
-    /// Return a const reference to the diagonal entries of the Hessian matrix.
-    auto diagonalRef() const -> VectorConstRef { return dense.size() ? dense.diagonal() : diagonal; }
+    /// Return an indexed view of the Hessian matrix.
+    template<typename IndicesType>
+    auto operator()(const IndicesType& indices) const -> decltype(std::make_tuple(*this, indices))
+    {
+        return std::make_tuple(*this, indices);
+    }
 };
 
-/// Used to represend an indexed view of a Hessian matrix.
-template<typename MatrixType, typename VectorType, typename RowIndices, typename ColIndices>
-class HessianMatrixIndexedView
-{
-public:
-    /// Construct a default HessianMatrixIndexedView instance.
-    HessianMatrixIndexedView();
-
-
-private:
-};
 /// Used to represent a reference to a Hessian matrix.
-using HessianMatrixRef = HessianMatrixBase<MatrixRef, VectorRef>;
+using HessianMatrixRef = HessianMatrixBase<Matrix, Vector>;
 
 /// Used to represent a constant reference to a Hessian matrix.
-using HessianMatrixConstRef = HessianMatrixBase<MatrixConstRef, VectorConstRef>;
+using HessianMatrixConstRef = HessianMatrixBase<const Matrix, const Vector>;
 
 /// Assign a HessianMatrixBase object to a Matrix instance.
 template<typename MatrixType, typename VectorType>
-auto operator<<(MatrixRef mat, const HessianMatrixBase<MatrixType, VectorType>& hessian) -> Matrix&
+auto operator<<(MatrixRef mat, const HessianMatrixBase<MatrixType, VectorType>& hessian) -> MatrixRef
 {
     switch(hessian.structure) {
-    case Dense: mat = hessian.dense; break;
-    case Diagonal: return mat.diagonal() = hessian.diagonal; break;
-    case Zero: break;
+    case MatrixStructure::Dense: mat = hessian.dense; break;
+    case MatrixStructure::Diagonal: return mat.diagonal() = hessian.diagonal; break;
+    case MatrixStructure::Zero: break;
+    }
+    return mat;
+}
+
+/// Assign an indexed view of a HessianMatrixBase object to a Matrix instance.
+template<typename HessianMatrixType, typename IndicesType>
+auto operator<<(MatrixRef mat, const std::tuple<HessianMatrixType, IndicesType>& view) -> MatrixRef
+{
+    const auto& hessian = std::get<0>(view);
+    const auto& indices = std::get<1>(view);
+    switch(hessian.structure) {
+    case MatrixStructure::Dense: mat = hessian.dense(indices, indices); break;
+    case MatrixStructure::Diagonal: mat.diagonal() = hessian.diagonal(indices); break;
+    case MatrixStructure::Zero: break;
     }
     return mat;
 }

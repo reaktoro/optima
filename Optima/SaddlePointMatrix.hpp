@@ -56,14 +56,14 @@ public:
     /// @param H The \eq{H} matrix in the saddle point equation.
     /// @param A The \eq{A} matrix in the saddle point equation.
     /// @param nf The number of fixed variables.
-    SaddlePointMatrix(MatrixConstRef H, MatrixConstRef A, Index nf = 0);
+    SaddlePointMatrix(HessianMatrixConstRef H, MatrixConstRef A, Index nf = 0);
 
     /// Construct a SaddlePointMatrix instance.
     /// @param H The \eq{H} matrix in the saddle point equation.
     /// @param A The \eq{A} matrix in the saddle point equation.
     /// @param G The \eq{G} matrix in the saddle point equation.
     /// @param nf The number of fixed variables.
-    SaddlePointMatrix(MatrixConstRef H, MatrixConstRef A, MatrixConstRef G, Index nf = 0);
+    SaddlePointMatrix(HessianMatrixConstRef H, MatrixConstRef A, MatrixConstRef G, Index nf = 0);
 
     /// Convert this SaddlePointMatrix instance into a Matrix instance.
     operator Matrix() const;

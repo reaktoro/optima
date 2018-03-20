@@ -20,12 +20,13 @@ from optima import *
 from numpy import *
 from pytest import approx, mark
 
-structure_options = ['dense', 'diagonal', 'zero']
+structure_options_H = ['dense', 'diagonal']
+structure_options_G = ['dense', 'zero']
 num_fixed_variables_options = [0, 5]
  
 testdata = [(x, y, z) 
-            for x in structure_options 
-            for y in structure_options 
+            for x in structure_options_H
+            for y in structure_options_G
             for z in num_fixed_variables_options] 
 
 @mark.parametrize("args", testdata)
@@ -44,28 +45,29 @@ def test_saddle_point_matrix(args):
     if structureH == 'dense':
         H = eigen.random(n, n)
         M[0:nx, 0:nx] = H[:nx, :nx]
-    elif structureH == 'diagonal':
+    else: # diagonal
         H = eigen.random(n)
         M[0:nx, 0:nx] = eigen.diag(H[:nx])
-    else:
-        H = eigen.matrix()
     
     if structureG == 'dense':
         G = eigen.random(m, m)
         M[n:, n:] = G
-    elif structureH == 'diagonal':
-        G = eigen.random(m)
-        M[n:, n:] = eigen.diag(G)
-    else:
+    else: # zero
         G = eigen.matrix()
     
     M[nx:n, nx:n] = eye(nf, nf)
     M[0:nx, n:n+m] = transpose(A[:, 0:nx])
     M[n:, :n] = A
 
-    # Create the SaddlePointMatrix object     
+    # Create the SaddlePointMatrix object
+    print 'H:', H
     mat = SaddlePointMatrix(H, A, G, nf)
 
+    print 'structure:', mat.H.structure
+    print 'H.dense\n', mat.H.dense
+    print 'H.diagonal\n', mat.H.diagonal
+    print 'H:', H
+    
     # Check conversion to a Matrix instance
     assert mat.array() == approx(M)
 

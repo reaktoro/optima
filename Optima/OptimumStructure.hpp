@@ -116,13 +116,13 @@ public:
     auto setVariablesWithFixedValues(VectorXiConstRef indices) -> void;
 
     /// Set the structure of the Hessian matrix to be dense.
-    auto setHessianMatrixAsDense() -> void { m_structure_hessian_matrix = Dense; }
+    auto setHessianMatrixAsDense() -> void { m_structure_hessian_matrix = MatrixStructure::Dense; }
 
     /// Set the structure of the Hessian matrix to be diagonal.
-    auto setHessianMatrixAsDiagonal() -> void { m_structure_hessian_matrix = Diagonal; }
+    auto setHessianMatrixAsDiagonal() -> void { m_structure_hessian_matrix = MatrixStructure::Diagonal; }
 
     /// Set the structure of the Hessian matrix to be fully zero.
-    auto setHessianMatrixAsZero() -> void { m_structure_hessian_matrix = Zero; }
+    auto setHessianMatrixAsZero() -> void { m_structure_hessian_matrix = MatrixStructure::Zero; }
 
     /// Return the number of variables.
     auto numVariables() const -> Index { return m_n; }

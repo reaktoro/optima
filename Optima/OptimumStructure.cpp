@@ -37,7 +37,7 @@ OptimumStructure::OptimumStructure(ObjectiveFunction f, Index n, Index m)
   m_lowerpartition(Eigen::linspace<int>(n)),
   m_upperpartition(Eigen::linspace<int>(n)),
   m_fixedpartition(Eigen::linspace<int>(n)),
-  m_structure_hessian_matrix(Dense)
+  m_structure_hessian_matrix(MatrixStructure::Dense)
 {}
 
 OptimumStructure::OptimumStructure(ObjectiveFunction f, MatrixConstRef A)

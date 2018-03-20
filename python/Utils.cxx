@@ -27,9 +27,9 @@ using namespace Optima;
 void exportUtils(py::module& m)
 {
     py::enum_<MatrixStructure>(m, "MatrixStructure")
-        .value("Dense", Dense)
-        .value("Diagonal", Diagonal)
-        .value("Zero", Zero)
+        .value("Dense", MatrixStructure::Dense)
+        .value("Diagonal", MatrixStructure::Diagonal)
+        .value("Zero", MatrixStructure::Zero)
         ;
 
     m.def("largestStep", &largestStep);

@@ -371,9 +371,9 @@ auto rationalize(double x, unsigned n) -> std::tuple<long, long>
 
 auto matrixStructure(MatrixConstRef mat) -> MatrixStructure
 {
-    if(isDenseMatrix(mat)) return Dense;
-    if(isDiagonalMatrix(mat)) return Diagonal;
-    return Zero;
+    if(isDenseMatrix(mat)) return MatrixStructure::Dense;
+    if(isDiagonalMatrix(mat)) return MatrixStructure::Diagonal;
+    return MatrixStructure::Zero;
 }
 
 auto isZeroMatrix(MatrixConstRef mat) -> bool

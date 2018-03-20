@@ -24,22 +24,18 @@ using namespace Eigen;
 
 namespace Optima {
 
-SaddlePointMatrix::SaddlePointMatrix(MatrixConstRef H, MatrixConstRef A, Index nf)
+SaddlePointMatrix::SaddlePointMatrix(HessianMatrixConstRef H, MatrixConstRef A, Index nf)
 : SaddlePointMatrix(H, A, zeros(0), nf)
 {}
 
-SaddlePointMatrix::SaddlePointMatrix(MatrixConstRef H, MatrixConstRef A, MatrixConstRef G, Index nf)
+SaddlePointMatrix::SaddlePointMatrix(HessianMatrixConstRef H, MatrixConstRef A, MatrixConstRef G, Index nf)
 : H(H), A(A), G(G), nf(nf)
 {
-    Assert(isDenseMatrix(H) || isDiagonalMatrix(H),
-        "Could not create a SaddlePointMatrix object.",
-            "Matrix H must be either square dense or diagonal (vector or single column matrix).");
-
     Assert(isDenseMatrix(G) || isZeroMatrix(G),
         "Could not create a SaddlePointMatrix object.",
             "Matrix G must be either dense or an empty matrix.");
 
-    Assert(H.rows() == A.cols(),
+    Assert(H.dense.rows() == A.cols() || H.diagonal.rows() == A.cols(),
         "Could not create a SaddlePointMatrix object.",
             "Matrix A must have the same number of columns as there are rows in H.");
 
@@ -58,8 +54,15 @@ SaddlePointMatrix::operator Matrix() const
     const auto Ax = A.leftCols(nx);
 
     Matrix res = zeros(t, t);
-    if(H.diagonal.size()) res.topLeftCorner(nx, nx).diagonal() = H.diagonal.head(nx);
-    if(H.dense.size()) res.topLeftCorner(nx, nx) = H.dense.topLeftCorner(nx, nx);
+
+    switch(H.structure) {
+    case MatrixStructure::Diagonal:
+        res.topLeftCorner(nx, nx).diagonal() = H.diagonal.head(nx);
+        break;
+    default:
+        res.topLeftCorner(nx, nx) = H.dense.topLeftCorner(nx, nx);
+        break;
+    }
     if(G.size()) res.bottomRightCorner(m, m) = G;
     res.block(nx, nx, nf, nf).diagonal().fill(1.0);
     res.topRightCorner(nx, m) = tr(Ax);

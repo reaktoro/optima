@@ -256,7 +256,7 @@ struct SaddlePointSolver::Impl
         M.bottomRightCorner(nbx, nbx).setZero();
 
         // Set the H block of the canonical saddle point matrix
-        M.topLeftCorner(nx, nx) = lhs.H(ivx, ivx);
+        M.topLeftCorner(nx, nx) << lhs.H(ivx);
 
         // Compute the LU decomposition of M.
         lu.compute(M);
@@ -282,7 +282,7 @@ struct SaddlePointSolver::Impl
         // Create a view to the M block of the auxiliary matrix `mat` where the canonical saddle point matrix is defined
         auto M = mat.topLeftCorner(m + nx, m + nx);
 
-        M.topLeftCorner(nx, nx) = lhs.H(ivx, ivx);
+        M.topLeftCorner(nx, nx) << lhs.H(ivx);
         M.middleCols(nx, nbx).topRows(nx) << Ibxbx, tr(Sbxnx);
         M.middleRows(nx, nbx).leftCols(nx) << Ibxbx, Sbxnx;
         M.topRightCorner(nx, nbf + nl).setZero();
@@ -579,7 +579,7 @@ struct SaddlePointSolver::Impl
         auto ivx = iordering.head(nx);
 
         // Retrieve the entries in H corresponding to free variables.
-        Hx.noalias() = lhs.H(ivx, ivx);
+        Hx << lhs.H(ivx);
 
         // The matrix M where we setup the coefficient matrix of the equations
         auto M = mat.topLeftCorner(nnx, nnx);
@@ -632,7 +632,7 @@ struct SaddlePointSolver::Impl
         auto ivx = iordering.head(nx);
 
         // Retrieve the entries in H corresponding to free variables.
-        Hx.noalias() = lhs.H(ivx, ivx);
+        Hx << lhs.H(ivx);
 
         // Calculate matrix G' = R * G * tr(R)
         G.noalias() = R * lhs.G * tr(R);
