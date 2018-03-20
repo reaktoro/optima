@@ -40,20 +40,18 @@ public:
     /// Construct a default HessianMatrixBase instance that represents a zero Hessian matrix.
     /// @param dense The Hessian matrix as a dense matrix.
     HessianMatrixBase()
-    : dense(Matrix()), diagonal(Vector()), structure(MatrixStructure::Diagonal)
+    : dense(Matrix()), diagonal(Vector()), structure(MatrixStructure::Zero)
     {}
 
     /// Construct a HessianMatrixBase instance with given dense Hessian matrix.
     /// @param dense The Hessian matrix as a dense matrix.
     HessianMatrixBase(MatrixType& dense)
-    : dense(dense), diagonal(Vector()), structure(MatrixStructure::Diagonal) {}
+    : dense(dense), diagonal(Vector()), structure(MatrixStructure::Dense) {}
 
     /// Construct a HessianMatrixBase instance with given dense Hessian matrix.
     /// @param dense The Hessian matrix as a dense matrix.
-    HessianMatrixBase(Eigen::Ref<MatrixType> matview)
-    : dense(matview.cols() > 1 ? matview : Eigen::Ref<MatrixType>(Matrix())),
-      diagonal(matview.cols() > 1 ? Vector() : matview.col(0)),
-      structure(matview.cols() > 1 ? MatrixStructure::Dense : MatrixStructure::Diagonal) {}
+    HessianMatrixBase(Eigen::Ref<MatrixType> dense)
+    : dense(dense), diagonal(Vector()), structure(MatrixStructure::Dense) {}
 
     /// Construct a HessianMatrixBase instance with given diagonal Hessian matrix.
     /// @param diagonal The Hessian matrix as a diagonal matrix, represented by a vector.

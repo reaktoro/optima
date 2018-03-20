@@ -31,6 +31,14 @@ void exportSaddlePointMatrix(py::module& m)
         .def_readonly("A", &SaddlePointMatrix::A)
         .def_readonly("G", &SaddlePointMatrix::G)
         .def_readonly("nf", &SaddlePointMatrix::nf)
+        .def(py::init<HessianMatrixConstRef, MatrixConstRef, Index>(), py::arg("H"), py::arg("A"), py::arg("nf") = 0)
+        .def(py::init<HessianMatrixConstRef, MatrixConstRef, MatrixConstRef, Index>(), py::arg("H"), py::arg("A"), py::arg("G"), py::arg("nf") = 0)
+
+        // IMPORTANT: Constructors below are needed to allow 1d numpy arrays to be converted to HessianMatrixConstRef
+        .def(py::init<VectorConstRef, MatrixConstRef, Index>(), py::arg("H"), py::arg("A"), py::arg("nf") = 0)
+        .def(py::init<VectorConstRef, MatrixConstRef, MatrixConstRef, Index>(), py::arg("H"), py::arg("A"), py::arg("G"), py::arg("nf") = 0)
+
+        // IMPORTANT: Constructors below are needed to allow 2d numpy arrays to be converted to HessianMatrixConstRef
         .def(py::init<MatrixConstRef, MatrixConstRef, Index>(), py::arg("H"), py::arg("A"), py::arg("nf") = 0)
         .def(py::init<MatrixConstRef, MatrixConstRef, MatrixConstRef, Index>(), py::arg("H"), py::arg("A"), py::arg("G"), py::arg("nf") = 0)
         .def("array", [](SaddlePointMatrix self) { return Matrix(self); })

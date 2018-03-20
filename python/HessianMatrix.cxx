@@ -28,14 +28,13 @@ void exportHessianMatrix(py::module& m)
 {
     py::class_<HessianMatrixConstRef>(m, "HessianMatrixConstRef")
         .def(py::init<>())
+        .def(py::init<VectorConstRef>()) // IMPORTANT: This constructor with VectorConstRef needs to come first than the one with MatrixConstRef, otherwise 1d numpy arrays will be interpreted by pydind11 as MatrixConstRef, instead of VectorConstRef.
         .def(py::init<MatrixConstRef>())
-        .def(py::init<VectorConstRef>())
         .def(py::init<HessianMatrixRef>())
         .def(py::init<HessianMatrixConstRef>())
         .def_readonly("dense", &HessianMatrixConstRef::dense)
         .def_readonly("diagonal", &HessianMatrixConstRef::diagonal)
         .def_readonly("structure", &HessianMatrixConstRef::structure)
-        .def("diagonalRef", &HessianMatrixConstRef::diagonalRef)
         ;
 
     py::class_<HessianMatrixRef>(m, "HessianMatrixRef")

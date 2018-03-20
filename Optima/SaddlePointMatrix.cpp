@@ -25,7 +25,7 @@ using namespace Eigen;
 namespace Optima {
 
 SaddlePointMatrix::SaddlePointMatrix(HessianMatrixConstRef H, MatrixConstRef A, Index nf)
-: SaddlePointMatrix(H, A, zeros(0), nf)
+: SaddlePointMatrix(H, A, Matrix(), nf)
 {}
 
 SaddlePointMatrix::SaddlePointMatrix(HessianMatrixConstRef H, MatrixConstRef A, MatrixConstRef G, Index nf)

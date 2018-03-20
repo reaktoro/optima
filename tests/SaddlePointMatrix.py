@@ -20,61 +20,64 @@ from optima import *
 from numpy import *
 from pytest import approx, mark
 
-structure_options_H = ['dense', 'diagonal']
-structure_options_G = ['dense', 'zero']
-num_fixed_variables_options = [0, 5]
- 
-testdata = [(x, y, z) 
-            for x in structure_options_H
-            for y in structure_options_G
-            for z in num_fixed_variables_options] 
+testdata = [(zeroG, numfixed)
+            for zeroG in [True, False] 
+            for numfixed in [0, 5]]
+
 
 @mark.parametrize("args", testdata)
-def test_saddle_point_matrix(args):
+def test_saddle_point_matrix_dense(args):
     m = 5
     n = 15
     
-    structureH, structureG, nf = args
+    zeroG, nf = args
     
     nx = n - nf
     
-    A = eigen.random(m, n)
+    A = eigen.ones(m, n)
+    H = eigen.ones(n, n)
+    G = eigen.matrix() if zeroG else eigen.ones(m, m)
     
     M = eigen.zeros(n + m, n + m)
-    
-    if structureH == 'dense':
-        H = eigen.random(n, n)
-        M[0:nx, 0:nx] = H[:nx, :nx]
-    else: # diagonal
-        H = eigen.random(n)
-        M[0:nx, 0:nx] = eigen.diag(H[:nx])
-    
-    if structureG == 'dense':
-        G = eigen.random(m, m)
-        M[n:, n:] = G
-    else: # zero
-        G = eigen.matrix()
-    
+    M[0:nx, 0:nx] = H[:nx, :nx]
     M[nx:n, nx:n] = eye(nf, nf)
     M[0:nx, n:n+m] = transpose(A[:, 0:nx])
     M[n:, :n] = A
+    if not zeroG: M[n:, n:] = G
 
-    # Create the SaddlePointMatrix object
-    print 'H:', H
     mat = SaddlePointMatrix(H, A, G, nf)
-
-    print 'structure:', mat.H.structure
-    print 'H.dense\n', mat.H.dense
-    print 'H.diagonal\n', mat.H.diagonal
-    print 'H:', H
     
-    # Check conversion to a Matrix instance
+    assert mat.array() == approx(M)
+    
+ 
+@mark.parametrize("args", testdata)
+def test_saddle_point_matrix_diagonal(args):
+    m = 5
+    n = 15
+ 
+    zeroG, nf = args
+         
+    nx = n - nf
+     
+    A = eigen.random(m, n)
+    H = eigen.random(n)
+    G = eigen.matrix() if zeroG else eigen.random(m, m)
+     
+    M = eigen.zeros(n + m, n + m)
+    M[0:nx, 0:nx] = eigen.diag(H[:nx])
+    M[nx:n, nx:n] = eye(nf, nf)
+    M[0:nx, n:n+m] = transpose(A[:, 0:nx])
+    M[n:, :n] = A
+    if not zeroG: M[n:, n:] = G
+ 
+    mat = SaddlePointMatrix(H, A, G, nf)
+     
     assert mat.array() == approx(M)
 
 
 def test_saddle_point_vector():
-    n = 5
-    m = 3
+    m = 5
+    n = 15
     t = n + m
 
     r = arange(1, t + 1)
