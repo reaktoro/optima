@@ -27,6 +27,9 @@ tested_matrices_A = Canonicalizer.tested_matrices_A
 tested_nf = [0, 1, 5]
 tested_structures_H = ['dense', 'diagonal']
 tested_structures_G = ['dense', 'zero']
+tested_variable_conditions = ['all-variables-pivot',
+                              'all-variables-nonpivot',
+                              'some-variables-pivot']
 
 tested_methods = [
     SaddlePointMethod.Fullspace,
@@ -34,19 +37,19 @@ tested_methods = [
     SaddlePointMethod.Rangespace,
     ]
 
-
-testdata = product(tested_matrices_A, 
-                   tested_nf, 
-                   tested_structures_H, 
-                   tested_structures_G, 
+testdata = product(tested_matrices_A,
+                   tested_nf,
+                   tested_structures_H,
+                   tested_structures_G,
+                   tested_variable_conditions,
                    tested_methods)
 
 
 @mark.parametrize("args", testdata)
 def test_saddle_point_solver(args):
-    
-    assemble_A, nf, structure_H, structure_G, method = args
-    
+
+    assemble_A, nf, structure_H, structure_G, variable_condition, method = args
+
     m = 4
     n = 10
 
@@ -58,11 +61,23 @@ def test_saddle_point_solver(args):
 
     H = eigen.random(n, n) if structure_H == 'dense' else eigen.random(n)
     G = eigen.random(m, m) if structure_G == 'dense' else eigen.matrix()
+
+    # The diagonal entries of the Hessian matrix
+    Hdiag = H[diag_indices(n)] if structure_H == 'dense' else H
+
+    # The range along the diagonal that is affected to control the number of pivot variables
+    range = slice(m) if variable_condition == 'some-variables-pivot' else slice(n)  
+
+    # The factor multiplied by the entries in the diagonal of the Hessian matrix
+    factor = 1e-6 if variable_condition == 'all-variables-nonpivot' else 1e6
     
+    # Adjust the diagonal entries to control number of pivot variables
+    Hdiag[range] = factor * Hdiag[range] 
+
     nx = n - nf
-    
+
     lhs = SaddlePointMatrix(H, A, G, nf)
-    
+
     M = lhs.array()
     r = M.dot(expected)
     s = zeros(t)
@@ -72,12 +87,12 @@ def test_saddle_point_solver(args):
 
     options = SaddlePointOptions()
     options.method = method
-    
+
     solver = SaddlePointSolver()
     solver.setOptions(options)
     solver.initialize(lhs.A)
     solver.decompose(lhs)
     solver.solve(rhs, sol)
-    
-    # Check the residual of the equation M * s = r 
+
+    # Check the residual of the equation M * s = r
     assert norm(M.dot(s) - r) / norm(r) == approx(0.0)
