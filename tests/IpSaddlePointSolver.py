@@ -61,7 +61,10 @@ tested_methods = [
 
 tested_hessian_options = ['dense', 'diagonal']
 
-testdata = product(tested_dimensions, tested_methods, tested_hessian_options)
+testdata = product(tested_dimensions,
+                   tested_methods,
+                   tested_hessian_options)
+
 
 @mark.parametrize("args", testdata)
 def test_ip_saddle_point_solver(args):
@@ -118,6 +121,6 @@ def test_ip_saddle_point_solver(args):
     # Comment out line below to get further insight of the results when an error happens
 #     print_state(M, r, s, m, n)
 
-    # Check the residual of the equation Ms = r
+    # Check the residual of the equation M * s = r
     assert norm(M.dot(s) - r)/norm(r) == approx(0.0)
 

@@ -18,89 +18,66 @@
 from optima import *
 from numpy import *
 from numpy.linalg import norm
-from pytest import approx
+from pytest import approx, mark
+from itertools import product
 
-def test_saddle_point_solver():
-    m = 10
-    n = 60
+import Canonicalizer
+
+tested_matrices_A = Canonicalizer.tested_matrices_A
+tested_nf = [0, 1, 5]
+tested_structures_H = ['dense', 'diagonal']
+tested_structures_G = ['dense', 'zero']
+
+tested_methods = [
+    SaddlePointMethod.Fullspace,
+    SaddlePointMethod.Nullspace,
+    SaddlePointMethod.Rangespace,
+    ]
+
+
+testdata = product(tested_matrices_A, 
+                   tested_nf, 
+                   tested_structures_H, 
+                   tested_structures_G, 
+                   tested_methods)
+
+
+@mark.parametrize("args", testdata)
+def test_saddle_point_solver(args):
+    
+    assemble_A, nf, structure_H, structure_G, method = args
+    
+    m = 4
+    n = 10
+
     t = m + n
 
     expected = linspace(1, t, t);
 
-    A = eigen.random(m, n)
+    A = assemble_A(m, n, nf)
 
-    def check_saddle_point_solver_with_dense_H(nf=0, zeroG=False):
-
-        H = eigen.random(n, n)
-        G = eigen.random(m, m) if not zeroG else eigen.matrix()
-        nx = n - nf;
-        
-        lhs = SaddlePointMatrix(H, A, G, nf)
-        
-        r = lhs.array().dot(expected)
-        s = zeros(t)
-
-        rhs = SaddlePointVector(r, n, m)
-        sol = SaddlePointSolution(s, n, m)
-
-        methods = [
-            SaddlePointMethod.Fullspace,
-            SaddlePointMethod.Nullspace,
-            ]
-        
-        for method in methods:
-            options = SaddlePointOptions()
-            options.method = method
-            
-            solver = SaddlePointSolver()
-            solver.setOptions(options)
-            solver.initialize(lhs.A)
-            solver.decompose(lhs)
-            solver.solve(rhs, sol)
-            assert expected == approx(s)
-            
-    def check_saddle_point_solver_with_diagonal_H(nf=0, zeroG=False):
-
-        H = eigen.diag(eigen.random(n))  
-        G = eigen.random(m, m) if not zeroG else eigen.matrix()
-        nx = n - nf;
-        
-        lhs = SaddlePointMatrix(H, A, G, nf)
-        
-        r = lhs.array().dot(expected)
-        s = zeros(t)
-
-        rhs = SaddlePointVector(r, n, m)
-        sol = SaddlePointSolution(s, n, m)
-
-        options = SaddlePointOptions()
-        options.method = SaddlePointMethod.Rangespace
-        
-        solver = SaddlePointSolver()
-        solver.setOptions(options)
-        solver.initialize(lhs.A)
-        solver.decompose(lhs)
-        solver.solve(rhs, sol)
-        assert expected == approx(s)
-            
-
-    nf = 0; zeroG = False  # No fixed variables, G is dense 
+    H = eigen.random(n, n) if structure_H == 'dense' else eigen.random(n)
+    G = eigen.random(m, m) if structure_G == 'dense' else eigen.matrix()
     
-    check_saddle_point_solver_with_dense_H(nf, zeroG)
-    check_saddle_point_solver_with_diagonal_H(nf, zeroG)
-
-    nf = 0; zeroG = True  # No fixed variables, G is zero matrix
+    nx = n - nf
     
-    check_saddle_point_solver_with_dense_H(nf, zeroG)
-    check_saddle_point_solver_with_diagonal_H(nf, zeroG)
+    lhs = SaddlePointMatrix(H, A, G, nf)
     
-    nf = n / 10; zeroG = False  # With fixed variables, G is dense
+    M = lhs.array()
+    r = M.dot(expected)
+    s = zeros(t)
 
-    check_saddle_point_solver_with_dense_H(nf, zeroG)
-    check_saddle_point_solver_with_diagonal_H(nf, zeroG)
+    rhs = SaddlePointVector(r, n, m)
+    sol = SaddlePointSolution(s, n, m)
 
-    nf = n / 10; zeroG = True  # With fixed variables, G is zero matrix
-
-    check_saddle_point_solver_with_dense_H(nf, zeroG)
-    check_saddle_point_solver_with_diagonal_H(nf, zeroG)
-
+    options = SaddlePointOptions()
+    options.method = method
+    
+    solver = SaddlePointSolver()
+    solver.setOptions(options)
+    solver.initialize(lhs.A)
+    solver.decompose(lhs)
+    solver.solve(rhs, sol)
+    
+    # Check the residual of the equation M * s = r 
+    assert norm(M.dot(s) - r) / norm(r) == approx(0.0)

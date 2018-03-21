@@ -18,7 +18,44 @@
 from optima import *
 from numpy import *
 from numpy.linalg import norm
-from pytest import approx
+from pytest import approx, mark
+
+
+def assemble_matrix_A_with_linearly_independent_rows_only(m, n, nf=0):
+    A = eigen.random(m, n)
+    return A
+
+def assemble_matrix_A_with_one_linearly_dependent_row(m, n, nf=0):
+    A = eigen.random(m, n)
+    A[2, :] = 2*A[0, :] + A[1, :]
+    return A
+
+def assemble_matrix_A_with_two_linearly_dependent_rows(m, n, nf=0):
+    A = eigen.random(m, n)
+    A[2, :] = 2*A[0, :] + A[1, :]
+    A[3, :] = A[1, :]
+    return A
+
+def assemble_matrix_A_with_one_basic_fixed_variable(m, n, nf=0):
+    A = eigen.random(m, n)
+    A[-1, -nf] = 0.0 
+    return A
+
+def assemble_matrix_A_with_two_basic_fixed_variables(m, n, nf=0):
+    A = eigen.random(m, n)
+    A[-2, -nf] = 0.0 
+    A[-1, -nf] = 0.0 
+    return A
+
+tested_matrices_A = [
+    assemble_matrix_A_with_linearly_independent_rows_only,
+    assemble_matrix_A_with_one_linearly_dependent_row,
+    assemble_matrix_A_with_two_linearly_dependent_rows,
+    assemble_matrix_A_with_one_basic_fixed_variable,
+    assemble_matrix_A_with_two_basic_fixed_variables,
+]
+
+testdata = tested_matrices_A
 
 def reverse(list):
     return list[::-1]
@@ -86,46 +123,12 @@ def check_canonicalizer(canonicalizer, A):
     check_canonical_ordering(canonicalizer, weigths)
 
 
-def test_canonicalizer_with_regular_matrix():
+@mark.parametrize("assemble_A", tested_matrices_A)
+def test_canonicalizer(assemble_A):
     m = 4
     n = 10
-    A = eigen.random(m, n)
+    
+    A = assemble_A(m, n)
+    
     canonicalizer = Canonicalizer(A)
     check_canonicalizer(canonicalizer, A)
-
-
-def test_canonicalizer_with_two_linearly_dependent_rows():
-    m = 4
-    n = 10
-    A = eigen.random(m, n)
-    A[2] = A[0] + 2*A[1]  # row(2) = row(0) + 2*row(1)
-    A[3] = A[1] - 2*A[2]  # row(3) = row(1) - 2*row(2)
-    canonicalizer = Canonicalizer(A)
-    check_canonicalizer(canonicalizer, A)
-
-
-def test_canonicalizer_with_fixed_variables():
-    m = 4
-    n = 10
-    A = eigen.random(m, n)
-    A[2] = A[0] + 2*A[1]  # row(2) = row(0) + 2*row(1)
-    A[3] = A[1] - 2*A[2]  # row(3) = row(1) - 2*row(2)
-    canonicalizer = Canonicalizer(A)
-    check_canonicalizer(canonicalizer, A)
-
-
-# def test_canonicalizer_with_rational_numbers():
-#     m = 4
-#     n = 10
-#     maxdenominator = 1000
-#     A = arange(m*n).reshape((m, n)) / 51.0
-# 
-#     canonicalizer = Canonicalizer(A)
-#     
-#     check_canonicalizer(canonicalizer, A)
-#     
-#     canonicalizer.rationalize(maxdenominator)
-# 
-#     check_canonicalizer(canonicalizer, A)
-
-
