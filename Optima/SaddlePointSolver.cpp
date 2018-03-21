@@ -917,7 +917,7 @@ struct SaddlePointSolver::Impl
 
         bb2 -= Sb2n1 * an1;
 
-        auto r = x.head(nb1 + nb2 + nn2);
+        auto r = vec.head(nb1 + nb2 + nn2);
 
         auto xn2 = r.head(nn2);
         auto yb1 = r.segment(nn2, nb1);
@@ -1019,7 +1019,7 @@ struct SaddlePointSolver::Impl
         bbf -= Gbfb2 * ab2;
         bl  -= Gblb2 * ab2;
 
-        auto r = x.head(nn2 + m);
+        auto r = vec.head(nn2 + m);
 
         auto xn2 = r.head(nn2);
         auto yb1 = r.segment(nn2, nb1);
