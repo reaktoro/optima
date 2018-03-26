@@ -26,6 +26,7 @@
 #include <Optima/Result.hpp>
 #include <Optima/SaddlePointSolver.hpp>
 #include <Optima/Utils.hpp>
+#include <Optima/VariantMatrix.hpp>
 using namespace Eigen;
 using namespace Eigen::placeholders;
 
@@ -36,11 +37,8 @@ struct IpSaddlePointSolver::Impl
     /// The `A` matrix in the saddle point equation.
     Matrix A;
 
-    /// The `H` dense matrix in the saddle point equation.
-    Matrix H;
-
-    /// The `H` diagonal matrix in the saddle point equation.
-    Vector Hdiag;
+    /// The `H` matrix in the saddle point equation.
+    VariantMatrix H;
 
     /// The matrices Z, W, L, U
     Vector Z, W, L, U;
@@ -71,9 +69,6 @@ struct IpSaddlePointSolver::Impl
 
     /// The total number of variables (x, y, z, w).
     Index t;
-
-    /// The structure of the Hessian
-    MatrixStructure structure_hessian_matrix;
 
     /// Update the order of the variables.
     auto reorderVariables(VectorXiConstRef ordering) -> void
@@ -186,9 +181,7 @@ struct IpSaddlePointSolver::Impl
     /// Decompose the saddle point matrix equation.
     auto decompose(IpSaddlePointMatrix lhs) -> Result
     {
-        structure_hessian_matrix = lhs.H.structure;
-
-        switch(structure_hessian_matrix) {
+        switch(lhs.H.structure) {
         case MatrixStructure::Dense: return decomposeDenseHessianMatrix(lhs);
         case MatrixStructure::Diagonal: return decomposeDiagonalHessianMatrix(lhs);
         case MatrixStructure::Zero: return decomposeDiagonalHessianMatrix(lhs);
@@ -215,11 +208,11 @@ struct IpSaddlePointSolver::Impl
         // The indices of the free variables
         const auto jx = iordering.head(nx);
 
-        // Ensure the auxiliary H matrix has enough allocated memory
-        H.resize(n, n);
+        // Set the Hessian matrix to dense structure
+        H.setDense(n);
 
         // Views to the blocks of the Hessian matrix Hxx = [Hss Hsl Hsu; Hls Hll Hlu; Hus Hul Huu]
-        auto Hxx = H.topLeftCorner(nx, nx);
+        auto Hxx = H.dense().topLeftCorner(nx, nx);
         auto Hee = Hxx.topLeftCorner(ns + nl + nu, ns + nl + nu);
 
         // Update Hxx
@@ -258,11 +251,11 @@ struct IpSaddlePointSolver::Impl
         // The indices of the free variables
         const auto jx = iordering.head(nx);
 
-        // Ensure the auxiliary Hdiag matrix has enough allocated memory
-        Hdiag.resize(n);
+        // Set the Hessian matrix to diagonal structure
+        H.setDiagonal(n);
 
         // Views to the blocks of the Hessian matrix Hxx = [Hss Hsl Hsu; Hls Hll Hlu; Hus Hul Huu]
-        auto Hxx = Hdiag.head(nx);
+        auto Hxx = H.diagonal().head(nx);
         auto Hee = Hxx.head(ns + nl + nu);
 
         // Update Hxx
@@ -272,7 +265,7 @@ struct IpSaddlePointSolver::Impl
         Hee += Ze/Le + We/Ue;
 
         // Define the saddle point matrix
-        SaddlePointMatrix spm(Hdiag, A, nz + nw + nf);
+        SaddlePointMatrix spm(H, A, nz + nw + nf);
 
         // Decompose the saddle point matrix
         res += spsolver.decompose(spm);
@@ -286,7 +279,7 @@ struct IpSaddlePointSolver::Impl
     /// Solve the saddle point matrix equation.
     auto solve(IpSaddlePointVector rhs, IpSaddlePointSolution sol) -> Result
     {
-        switch(structure_hessian_matrix) {
+        switch(H.structure()) {
         case MatrixStructure::Dense: return solveDenseHessianMatrix(rhs, sol);
         case MatrixStructure::Diagonal: return solveDiagonalHessianMatrix(rhs, sol);
         case MatrixStructure::Zero: return solveDiagonalHessianMatrix(rhs, sol);
@@ -302,7 +295,7 @@ struct IpSaddlePointSolver::Impl
         Result res;
 
         // Views to the blocks of the Hessian matrix Hxx
-        const auto Hxx = H.topLeftCorner(nx, nx);
+        const auto Hxx = H.dense().topLeftCorner(nx, nx);
 
         const auto Hs  = Hxx.topRows(ns);
         const auto Hl  = Hxx.middleRows(ns, nl);
@@ -514,7 +507,7 @@ struct IpSaddlePointSolver::Impl
         Result res;
 
         // Views to the blocks of the Hessian matrix Hxx
-        const auto Hxx = Hdiag.head(nx);
+        const auto Hxx = H.diagonal().head(nx);
         const auto Hll = Hxx.segment(ns, nl);
         const auto Huu = Hxx.segment(ns + nl, nu);
         const auto Hzz = Hxx.segment(ns + nl + nu, nz);
