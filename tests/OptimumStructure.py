@@ -20,4 +20,4 @@ from numpy import *
 from pytest import approx, mark
 
 def test_optimum_structure():
-    pass
+    assert 0 == 1

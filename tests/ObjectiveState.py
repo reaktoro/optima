@@ -19,5 +19,5 @@ from optima import *
 from numpy import *
 from pytest import approx, mark
 
-def test_optimum_stepper():
+def test_objective_state():
     assert 0 == 1
