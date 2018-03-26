@@ -15,26 +15,34 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-// pybind11 includes
-#include <pybind11/pybind11.h>
-#include <pybind11/eigen.h>
-namespace py = pybind11;
+#include "OptimumState.hpp"
 
 // Optima includes
-#include <Optima/OptimumState.hpp>
 #include <Optima/OptimumStructure.hpp>
-using namespace Optima;
+using namespace Eigen;
 
-void exportOptimumState(py::module& m)
+namespace Optima {
+
+OptimumState::OptimumState(const OptimumStructure& structure)
+: x(zeros(structure.numVariables())),
+  y(zeros(structure.numEqualityConstraints())),
+  z(zeros(structure.numVariables())),
+  w(zeros(structure.numVariables())),
+  f(0.0),
+  g(zeros(structure.numVariables()))
 {
-    py::class_<OptimumState>(m, "OptimumState")
-        .def(py::init<const OptimumStructure&>())
-        .def_readwrite("x", &OptimumState::x)
-        .def_readwrite("y", &OptimumState::y)
-        .def_readwrite("z", &OptimumState::z)
-        .def_readwrite("w", &OptimumState::w)
-        .def_readwrite("f", &OptimumState::f)
-        .def_readwrite("g", &OptimumState::g)
-        .def_readwrite("H", &OptimumState::H)
-        ;
+    switch(structure.structureHessianMatrix())
+    {
+    case MatrixStructure::Dense:
+        H.setDense(structure.numVariables());
+        H.dense().fill(0.0);
+        break;
+    case MatrixStructure::Diagonal:
+    case MatrixStructure::Zero:
+        H.setDiagonal(structure.numVariables());
+        H.diagonal().fill(0.0);
+        break;
+    }
 }
+
+} // namespace Optima

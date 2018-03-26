@@ -19,10 +19,12 @@
 
 // Optima includes
 #include <Optima/Matrix.hpp>
-#include <Optima/OptimumStructure.hpp>
 #include <Optima/VariantMatrix.hpp>
 
 namespace Optima {
+
+// Forward declarations
+class OptimumStructure;
 
 /// Used to describe the state of an optimization calculation.
 class OptimumState
@@ -56,8 +58,7 @@ public:
     /// @param w The dual solution of the optimization problem with respect to the upper bound constraints.
     /// @param g The gradient of the objective function.
     /// @param H The Hessian matrix of the objective function.
-    OptimumState(const OptimumStructure& structure)
-    {}
+    OptimumState(const OptimumStructure& structure);
 };
 
 } // namespace Optima
