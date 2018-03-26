@@ -23,10 +23,6 @@
 
 namespace Optima {
 
-ObjectiveState::ObjectiveState(VectorRef grad, MatrixRef hessian)
-: grad(grad), hessian(hessian), failed(false)
-{}
-
 OptimumStructure::OptimumStructure(ObjectiveFunction f, Index n)
 : OptimumStructure(f, n, 0)
 {}

@@ -24,11 +24,11 @@ using namespace Eigen;
 
 namespace Optima {
 
-SaddlePointMatrix::SaddlePointMatrix(HessianMatrixConstRef H, MatrixConstRef A, Index nf)
+SaddlePointMatrix::SaddlePointMatrix(VariantMatrixConstRef H, MatrixConstRef A, Index nf)
 : SaddlePointMatrix(H, A, Matrix(), nf)
 {}
 
-SaddlePointMatrix::SaddlePointMatrix(HessianMatrixConstRef H, MatrixConstRef A, MatrixConstRef G, Index nf)
+SaddlePointMatrix::SaddlePointMatrix(VariantMatrixConstRef H, MatrixConstRef A, MatrixConstRef G, Index nf)
 : H(H), A(A), G(G), nf(nf)
 {
     Assert(isDenseMatrix(G) || isZeroMatrix(G),

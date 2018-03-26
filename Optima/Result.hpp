@@ -48,7 +48,7 @@ public:
     auto operator+=(const Result& other) -> Result&;
 
     /// Accumulate the result of several saddle point problem operations.
-    auto operator+(Result other) -> Result;
+    auto operator+(const Result& other) const -> Result;
 
 private:
     /// True if the calculation was successful.

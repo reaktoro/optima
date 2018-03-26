@@ -24,7 +24,7 @@ namespace py = pybind11;
 #include <Optima/IpSaddlePointMatrix.hpp>
 #include <Optima/IpSaddlePointSolver.hpp>
 #include <Optima/SaddlePointOptions.hpp>
-#include <Optima/SaddlePointResult.hpp>
+#include <Optima/Result.hpp>
 using namespace Optima;
 
 void exportIpSaddlePointSolver(py::module& m)

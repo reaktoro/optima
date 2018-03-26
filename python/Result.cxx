@@ -21,19 +21,21 @@
 namespace py = pybind11;
 
 // Optima includes
-#include <Optima/SaddlePointResult.hpp>
+#include <Optima/Result.hpp>
 using namespace Optima;
 
-void exportSaddlePointResult(py::module& m)
+void exportResult(py::module& m)
 {
-    py::class_<SaddlePointResult>(m, "SaddlePointResult")
+    const auto success1 = static_cast<void(Result::*)(bool)>(&Result::success);
+    const auto success2 = static_cast<bool(Result::*)() const>(&Result::success);
+
+    py::class_<Result>(m, "Result")
         .def(py::init<>())
-        .def("success", &SaddlePointResult::success)
-        .def("time", &SaddlePointResult::time)
-        .def("start", &SaddlePointResult::start, py::return_value_policy::reference)
-        .def("stop", &SaddlePointResult::stop, py::return_value_policy::reference)
-        .def("failed", &SaddlePointResult::failed, py::return_value_policy::reference)
-        .def("error", &SaddlePointResult::error)
+        .def("success", success1)
+        .def("success", success2)
+        .def("time", &Result::time)
+        .def("start", &Result::start, py::return_value_policy::reference)
+        .def("stop", &Result::stop, py::return_value_policy::reference)
         .def(py::self += py::self)
         .def(py::self + py::self)
         ;

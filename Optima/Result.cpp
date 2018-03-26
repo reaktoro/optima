@@ -59,11 +59,12 @@ auto Result::operator+=(const Result& other) -> Result&
     return *this;
 }
 
-auto Result::operator+(Result other) -> Result
+auto Result::operator+(const Result& other) const -> Result
 {
-    other.m_success = m_success && other.m_success;
-    other.m_time += m_time;
-    return other;
+    Result res;
+    res.m_success = m_success && other.m_success;
+    res.m_time = m_time + other.m_time;
+    return res;
 }
 
 } // namespace Optima

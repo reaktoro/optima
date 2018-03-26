@@ -21,7 +21,8 @@ namespace py = pybind11;
 
 void exportEigen(py::module& m);
 void exportCanonicalizer(py::module& m);
-void exportHessianMatrix(py::module& m);
+void exportOutputter(py::module& m);
+void exportResult(py::module& m);
 void exportOptimumOptions(py::module& m);
 void exportOptimumParams(py::module& m);
 void exportOptimumProblem(py::module& m);
@@ -30,22 +31,21 @@ void exportOptimumSolver(py::module& m);
 void exportOptimumState(py::module& m);
 void exportOptimumStepper(py::module& m);
 void exportOptimumStructure(py::module& m);
-void exportOutputter(py::module& m);
-void exportSaddlePointOptions(py::module& m);
 void exportSaddlePointMatrix(py::module& m);
-void exportSaddlePointResult(py::module& m);
+void exportSaddlePointOptions(py::module& m);
 void exportSaddlePointSolver(py::module& m);
-void exportIpSaddlePointMatrix(py::module& m);
 void exportIpSaddlePointSolver(py::module& m);
+void exportIpSaddlePointMatrix(py::module& m);
 void exportTiming(py::module& m);
 void exportUtils(py::module& m);
+void exportVariantMatrix(py::module& m);
 
 PYBIND11_MODULE(optima, m)
 {
     exportEigen(m);
     exportCanonicalizer(m);
-    exportHessianMatrix(m);
     exportOutputter(m);
+    exportResult(m);
     exportOptimumOptions(m);
     exportOptimumParams(m);
     exportOptimumProblem(m);
@@ -56,10 +56,10 @@ PYBIND11_MODULE(optima, m)
     exportOptimumStructure(m);
     exportSaddlePointMatrix(m);
     exportSaddlePointOptions(m);
-    exportSaddlePointResult(m);
     exportSaddlePointSolver(m);
     exportIpSaddlePointSolver(m);
     exportIpSaddlePointMatrix(m);
     exportTiming(m);
     exportUtils(m);
+    exportVariantMatrix(m);
 }

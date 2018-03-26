@@ -26,11 +26,11 @@
 namespace Optima {
 
 // Forward declarations
-class ObjectiveState;
 class OptimumOptions;
 class OptimumParams;
 class OptimumState;
 class OptimumStructure;
+class Result;
 
 /// The class that implements the step calculation.
 class OptimumStepper
@@ -51,11 +51,13 @@ public:
     /// Set the options for the step calculation.
     auto setOptions(const OptimumOptions& options) -> void;
 
-    /// Decompose the KKT matrix equation used to compute the step vectors.
-    auto decompose(const OptimumParams& params, const OptimumState& state, const ObjectiveState& f) -> void;
+    /// Decompose the interior-point saddle point matrix used to compute the step vectors.
+    auto decompose(const OptimumParams& params, const OptimumState& state) -> Result;
 
-    /// Solve the KKT matrix equation.
-    auto solve(const OptimumParams& params, const OptimumState& state, const ObjectiveState& f) -> void;
+    /// Solve the interior-point saddle point matrix used to compute the step vectors.
+    /// @warning Before calling method OptimumStepper::solve, one has first to call
+    ///          method OptimumStepper::decompose.
+    auto solve(const OptimumParams& params, const OptimumState& state) -> Result;
 
     /// Return the step vector.
     auto step() const -> VectorConstRef;
@@ -89,21 +91,6 @@ public:
 
     /// Return the residual of the complementarity conditions for the inequality constraints.
     auto residualComplementarityInequality() const -> VectorConstRef;
-//
-//    /// Return the left-hand side matrix of the KKT equation.
-//    auto lhs() const -> MatrixConstRef;
-//
-//    /// Return the indices of the free variables.
-//    auto ifree() const -> VectorXiConstRef;
-//
-//    /// Return the indices of the fixed variables.
-//    auto ifixed() const -> VectorXiConstRef;
-//
-//    /// Return the indices of the stable variables.
-//    auto istable() const -> VectorXiConstRef;
-//
-//    /// Return the indices of the unstable variables.
-//    auto iunstable() const -> VectorXiConstRef;
 
 private:
     struct Impl;

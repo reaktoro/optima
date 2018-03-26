@@ -24,7 +24,7 @@ using namespace Eigen;
 namespace Optima {
 
 IpSaddlePointMatrix::IpSaddlePointMatrix(
-    HessianMatrixConstRef H,
+    VariantMatrixConstRef H,
     MatrixConstRef A,
     VectorConstRef Z,
     VectorConstRef W,

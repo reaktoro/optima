@@ -19,24 +19,45 @@
 
 // Optima includes
 #include <Optima/Matrix.hpp>
+#include <Optima/OptimumStructure.hpp>
+#include <Optima/VariantMatrix.hpp>
 
 namespace Optima {
 
-/// A type that describes the state of an optimum solution
+/// Used to describe the state of an optimization calculation.
 class OptimumState
 {
 public:
-    /// The primal solution of the optimization problem
+    /// The primal solution of the optimization problem.
     Vector x;
 
-    /// The dual solution of the optimization problem with respect to the equality constraints
+    /// The dual solution of the optimization problem with respect to the equality constraints.
     Vector y;
 
-    /// The dual solution of the optimization problem with respect to the lower bound constraints
+    /// The dual solution of the optimization problem with respect to the lower bound constraints.
     Vector z;
 
-    /// The dual solution of the optimization problem with respect to the upper bound constraints
+    /// The dual solution of the optimization problem with respect to the upper bound constraints.
     Vector w;
+
+    /// The value of the objective function.
+    double f;
+
+    /// The gradient of the objective function.
+    Vector g;
+
+    /// The Hessian of the objective function.
+    VariantMatrix H;
+
+    /// Construct an OptimumState instance.
+    /// @param x The primal solution of the optimization problem.
+    /// @param y The dual solution of the optimization problem with respect to the equality constraints.
+    /// @param z The dual solution of the optimization problem with respect to the lower bound constraints.
+    /// @param w The dual solution of the optimization problem with respect to the upper bound constraints.
+    /// @param g The gradient of the objective function.
+    /// @param H The Hessian matrix of the objective function.
+    OptimumState(const OptimumStructure& structure)
+    {}
 };
 
 } // namespace Optima

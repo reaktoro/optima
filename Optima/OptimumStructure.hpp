@@ -27,58 +27,13 @@
 
 namespace Optima {
 
-/// The requirements in the evaluation of the objective function.
-class ObjectiveRequirement
-{
-public:
-    /// The boolean flag that indicates the need for the objective value.
-    bool val = true;
-
-    /// The boolean flag that indicates the need for the objective gradient.
-    bool grad = true;
-
-    /// The boolean flag that indicates the need for the objective Hessian.
-    bool hessian = true;
-};
-
-/// The evaluated state of an objective function.
-class ObjectiveState
-{
-public:
-    /// The evaluated value of the objective function.
-    double val;
-
-    /// The evaluated gradient of the objective function.
-    VectorRef grad;
-
-    /// The evaluated Hessian of the objective function.
-    /// The dimension of the Hessian matrix is controlled using the methods:
-    /// OptimumStructure::setHessianMatrixAsDense,
-    /// OptimumStructure::setHessianMatrixAsDiagonal, and
-    /// OptimumStructure::setHessianMatrixAsZero.
-    /// The first method causes `hessian` to be a square matrix with dimensions
-    /// of the number of variables in the optimization problem. The second method
-    /// causes `hessian` to be a matrix with a single column and as many rows
-    /// as there are variables. The third method causes `hessian` to be an empty
-    /// matrix, with zero rows and columns.
-    MatrixRef hessian;
-
-    /// The requirements in the evaluation of the objective function.
-    ObjectiveRequirement requires;
-
-    /// The boolean flag that indicates if the objective function evaluation failed.
-    bool failed;
-
-    /// Construct an ObjectiveState instance.
-    /// @param grad The vector reference to store the gradient calculation.
-    /// @param hessian The matrix reference to store the Hessian calculation.
-    ObjectiveState(VectorRef grad, MatrixRef hessian);
-};
+// Forward declarations
+class ObjectiveState;
 
 /// The functional signature of an objective function.
 /// @param x The values of the variables \eq{x}.
 /// @param f The evaluated state of the objective function.
-using ObjectiveFunction = std::function<void(VectorConstRef, ObjectiveState&)>;
+using ObjectiveFunction = std::function<void(VectorConstRef x, ObjectiveState& f)>;
 
 /// The structure of an optimization problem that changes with less frequency.
 class OptimumStructure

@@ -23,7 +23,7 @@
 #include <Optima/IpSaddlePointMatrix.hpp>
 #include <Optima/SaddlePointMatrix.hpp>
 #include <Optima/SaddlePointOptions.hpp>
-#include <Optima/SaddlePointResult.hpp>
+#include <Optima/Result.hpp>
 #include <Optima/SaddlePointSolver.hpp>
 #include <Optima/Utils.hpp>
 using namespace Eigen;
@@ -86,10 +86,10 @@ struct IpSaddlePointSolver::Impl
     }
 
     /// Initialize the stepper with the structure of the optimization problem.
-    auto initialize(MatrixConstRef A) -> SaddlePointResult
+    auto initialize(MatrixConstRef A) -> Result
     {
         // The result of this method call
-        SaddlePointResult res;
+        Result res;
 
         // Initialize the members related to number of variables and constraints
         n  = A.cols();
@@ -121,10 +121,10 @@ struct IpSaddlePointSolver::Impl
     }
 
     /// Update the partitioning of the free variables into (s, l, u, z, w)
-    auto updatePartitioning(IpSaddlePointMatrix lhs) -> SaddlePointResult
+    auto updatePartitioning(IpSaddlePointMatrix lhs) -> Result
     {
         // The result of this method call
-        SaddlePointResult res;
+        Result res;
 
         // Initialize the number of free and fixed variables
         nf = lhs.nf;
@@ -184,7 +184,7 @@ struct IpSaddlePointSolver::Impl
     }
 
     /// Decompose the saddle point matrix equation.
-    auto decompose(IpSaddlePointMatrix lhs) -> SaddlePointResult
+    auto decompose(IpSaddlePointMatrix lhs) -> Result
     {
         structure_hessian_matrix = lhs.H.structure;
 
@@ -198,10 +198,10 @@ struct IpSaddlePointSolver::Impl
     }
 
     /// Decompose the saddle point matrix equation with dense Hessian matrix.
-    auto decomposeDenseHessianMatrix(IpSaddlePointMatrix lhs) -> SaddlePointResult
+    auto decomposeDenseHessianMatrix(IpSaddlePointMatrix lhs) -> Result
     {
         // The result of this method call
-        SaddlePointResult res;
+        Result res;
 
         // Update the partitioning of the variables
         res += updatePartitioning(lhs);
@@ -241,10 +241,10 @@ struct IpSaddlePointSolver::Impl
     }
 
     /// Decompose the saddle point matrix equation with diagonal Hessian matrix.
-    auto decomposeDiagonalHessianMatrix(IpSaddlePointMatrix lhs) -> SaddlePointResult
+    auto decomposeDiagonalHessianMatrix(IpSaddlePointMatrix lhs) -> Result
     {
         // The result of this method call
-        SaddlePointResult res;
+        Result res;
 
         // Update the partitioning of the variables
         res += updatePartitioning(lhs);
@@ -284,7 +284,7 @@ struct IpSaddlePointSolver::Impl
     }
 
     /// Solve the saddle point matrix equation.
-    auto solve(IpSaddlePointVector rhs, IpSaddlePointSolution sol) -> SaddlePointResult
+    auto solve(IpSaddlePointVector rhs, IpSaddlePointSolution sol) -> Result
     {
         switch(structure_hessian_matrix) {
         case MatrixStructure::Dense: return solveDenseHessianMatrix(rhs, sol);
@@ -296,10 +296,10 @@ struct IpSaddlePointSolver::Impl
     }
 
     /// Solve the saddle point matrix equation with dense Hessian.
-    auto solveDenseHessianMatrix(IpSaddlePointVector rhs, IpSaddlePointSolution sol) -> SaddlePointResult
+    auto solveDenseHessianMatrix(IpSaddlePointVector rhs, IpSaddlePointSolution sol) -> Result
     {
         // The result of this method call
-        SaddlePointResult res;
+        Result res;
 
         // Views to the blocks of the Hessian matrix Hxx
         const auto Hxx = H.topLeftCorner(nx, nx);
@@ -508,10 +508,10 @@ struct IpSaddlePointSolver::Impl
     }
 
     /// Solve the saddle point matrix equation with diagonal Hessian.
-    auto solveDiagonalHessianMatrix(IpSaddlePointVector rhs, IpSaddlePointSolution sol) -> SaddlePointResult
+    auto solveDiagonalHessianMatrix(IpSaddlePointVector rhs, IpSaddlePointSolution sol) -> Result
     {
         // The result of this method call
-        SaddlePointResult res;
+        Result res;
 
         // Views to the blocks of the Hessian matrix Hxx
         const auto Hxx = Hdiag.head(nx);
@@ -718,17 +718,17 @@ auto IpSaddlePointSolver::options() const -> const SaddlePointOptions&
     return pimpl->spsolver.options();
 }
 
-auto IpSaddlePointSolver::initialize(MatrixConstRef A) -> SaddlePointResult
+auto IpSaddlePointSolver::initialize(MatrixConstRef A) -> Result
 {
     return pimpl->initialize(A);
 }
 
-auto IpSaddlePointSolver::decompose(IpSaddlePointMatrix lhs) -> SaddlePointResult
+auto IpSaddlePointSolver::decompose(IpSaddlePointMatrix lhs) -> Result
 {
     return pimpl->decompose(lhs);
 }
 
-auto IpSaddlePointSolver::solve(IpSaddlePointVector rhs, IpSaddlePointSolution sol) -> SaddlePointResult
+auto IpSaddlePointSolver::solve(IpSaddlePointVector rhs, IpSaddlePointSolution sol) -> Result
 {
     return pimpl->solve(rhs, sol);
 }

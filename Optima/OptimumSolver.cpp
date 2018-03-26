@@ -28,7 +28,7 @@
 //#include <Optima/OptimumStepper.hpp>
 //#include <Optima/SaddlePointMatrix.hpp>
 //#include <Optima/SaddlePointProblem.hpp>
-//#include <Optima/SaddlePointResult.hpp>
+//#include <Optima/Result.hpp>
 //#include <Optima/SaddlePointSolver.hpp>
 //#include <Optima/Utils.hpp>
 //using namespace Eigen;

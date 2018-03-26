@@ -34,7 +34,7 @@
 #include <Optima/SaddlePointMatrix.hpp>
 #include <Optima/SaddlePointOptions.hpp>
 #include <Optima/SaddlePointProblem.hpp>
-#include <Optima/SaddlePointResult.hpp>
+#include <Optima/Result.hpp>
 #include <Optima/SaddlePointSolver.hpp>
 #include <Optima/SaddlePointUtils.hpp>
 #include <Optima/BlockDiagonalMatrix.hpp>

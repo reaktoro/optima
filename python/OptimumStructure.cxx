@@ -22,21 +22,23 @@
 namespace py = pybind11;
 
 // Optima includes
+#include <Optima/ObjectiveState.hpp>
 #include <Optima/OptimumStructure.hpp>
 using namespace Optima;
 
 void exportOptimumStructure(py::module& m)
 {
     py::class_<ObjectiveRequirement>(m, "ObjectiveRequirement")
-        .def_readwrite("val", &ObjectiveRequirement::val, "The boolean flag that indicates the need for the objective value.")
-        .def_readwrite("grad", &ObjectiveRequirement::grad, "The boolean flag that indicates the need for the objective gradient.")
-        .def_readwrite("hessian", &ObjectiveRequirement::hessian, "The boolean flag that indicates the need for the objective Hessian.")
+        .def_readwrite("f", &ObjectiveRequirement::f, "The boolean flag that indicates the need for the objective value.")
+        .def_readwrite("g", &ObjectiveRequirement::g, "The boolean flag that indicates the need for the objective gradient.")
+        .def_readwrite("H", &ObjectiveRequirement::H, "The boolean flag that indicates the need for the objective Hessian.")
         ;
 
     py::class_<ObjectiveState>(m, "ObjectiveState")
-        .def_readwrite("val", &ObjectiveState::val, "The evaluated value of the objective function.")
-        .def_readwrite("grad", &ObjectiveState::grad, "The evaluated gradient of the objective function.")
-        .def_readwrite("hessian", &ObjectiveState::hessian, "The evaluated Hessian of the objective function.")
+        .def(py::init<OptimumState&>())
+//        .def_readwrite("f", &ObjectiveState::f, "The evaluated value of the objective function.")
+        .def_readwrite("g", &ObjectiveState::g, "The evaluated gradient of the objective function.")
+        .def_readwrite("H", &ObjectiveState::H, "The evaluated Hessian of the objective function.")
         .def_readwrite("requires", &ObjectiveState::requires, "The requirements in the evaluation of the objective function.")
         .def_readwrite("failed", &ObjectiveState::failed, "The boolean flag that indicates if the objective function evaluation failed.")
         ;

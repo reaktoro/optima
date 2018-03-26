@@ -23,7 +23,7 @@ namespace py = pybind11;
 // Optima includes
 #include <Optima/SaddlePointMatrix.hpp>
 #include <Optima/SaddlePointOptions.hpp>
-#include <Optima/SaddlePointResult.hpp>
+#include <Optima/Result.hpp>
 #include <Optima/SaddlePointSolver.hpp>
 using namespace Optima;
 

@@ -26,7 +26,7 @@ using namespace Eigen;
 #include <Optima/Exception.hpp>
 #include <Optima/SaddlePointMatrix.hpp>
 #include <Optima/SaddlePointOptions.hpp>
-#include <Optima/SaddlePointResult.hpp>
+#include <Optima/Result.hpp>
 #include <Optima/Canonicalizer.hpp>
 #include <Optima/Utils.hpp>
 
@@ -99,10 +99,10 @@ struct SaddlePointSolver::Impl
     }
 
     /// Canonicalize the coefficient matrix *A* of the saddle point problem.
-    auto initialize(MatrixConstRef A) -> SaddlePointResult
+    auto initialize(MatrixConstRef A) -> Result
     {
         // The result of this method call
-        SaddlePointResult res;
+        Result res;
 
         // Set the number of rows and columns in A
         m = A.rows();
@@ -212,9 +212,9 @@ struct SaddlePointSolver::Impl
     }
 
     /// Decompose the coefficient matrix of the saddle point problem.
-    auto decompose(SaddlePointMatrix lhs) -> SaddlePointResult
+    auto decompose(SaddlePointMatrix lhs) -> Result
     {
-        SaddlePointResult res;
+        Result res;
         switch(options.method)
         {
         case SaddlePointMethod::Nullspace: decomposeNullspace(lhs); break;
@@ -711,9 +711,9 @@ struct SaddlePointSolver::Impl
     }
 
     /// Solve the saddle point problem with diagonal Hessian matrix.
-    auto solve(SaddlePointVector rhs, SaddlePointSolution sol) -> SaddlePointResult
+    auto solve(SaddlePointVector rhs, SaddlePointSolution sol) -> Result
     {
-        SaddlePointResult res;
+        Result res;
         switch(options.method)
         {
         case SaddlePointMethod::Nullspace: solveNullspace(rhs, sol); break;
@@ -1251,17 +1251,17 @@ auto SaddlePointSolver::reorderVariables(VectorXiConstRef ordering) -> void
     pimpl->reorderVariables(ordering);
 }
 
-auto SaddlePointSolver::initialize(MatrixConstRef A) -> SaddlePointResult
+auto SaddlePointSolver::initialize(MatrixConstRef A) -> Result
 {
     return pimpl->initialize(A);
 }
 
-auto SaddlePointSolver::decompose(SaddlePointMatrix lhs) -> SaddlePointResult
+auto SaddlePointSolver::decompose(SaddlePointMatrix lhs) -> Result
 {
     return pimpl->decompose(lhs);
 }
 
-auto SaddlePointSolver::solve(SaddlePointVector rhs, SaddlePointSolution sol) -> SaddlePointResult
+auto SaddlePointSolver::solve(SaddlePointVector rhs, SaddlePointSolution sol) -> Result
 {
     return pimpl->solve(rhs, sol);
 }

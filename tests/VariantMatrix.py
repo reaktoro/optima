@@ -21,24 +21,24 @@ from numpy import *
 from pytest import approx
 
 
-def test_hessian_matrix_dense():
+def test_variant_matrix_dense():
     n = 10
     
     mat = eigen.ones(n, n)
     
-    H = HessianMatrixConstRef(mat)
+    vmat = VariantMatrixConstRef(mat)
     
-    assert H.structure == MatrixStructure.Dense
-    assert H.dense == approx(mat)
+    assert vmat.structure == MatrixStructure.Dense
+    assert vmat.dense == approx(mat)
 
 
-def test_hessian_matrix_diagonal():
+def test_variant_matrix_diagonal():
     n = 10
     
     vec = eigen.ones(n)
     
-    H = HessianMatrixConstRef(vec)
+    vmat = VariantMatrixConstRef(vec)
     
-    assert H.structure == MatrixStructure.Diagonal
-    assert H.diagonal == approx(vec)
+    assert vmat.structure == MatrixStructure.Diagonal
+    assert vmat.diagonal == approx(vec)
 

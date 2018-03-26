@@ -31,7 +31,7 @@ class IpSaddlePointMatrix;
 class IpSaddlePointSolution;
 class IpSaddlePointVector;
 class SaddlePointOptions;
-class SaddlePointResult;
+class Result;
 
 /// Used to solve saddle point problems in interior-point algorithms.
 class IpSaddlePointSolver
@@ -63,19 +63,19 @@ public:
     /// need to be called again if matrix \eq{A} of the saddle point problem is the same as in the
     /// last call to @ref initialize.
     /// @param A The coefficient matrix \eq{A} of the saddle point problem.
-    auto initialize(MatrixConstRef A) -> SaddlePointResult;
+    auto initialize(MatrixConstRef A) -> Result;
 
     /// Decompose the coefficient matrix of the saddle point problem.
     /// @note This method should be called before the @ref solve method and after @ref canonicalize.
     /// @param lhs The coefficient matrix of the saddle point problem.
-    auto decompose(IpSaddlePointMatrix lhs) -> SaddlePointResult;
+    auto decompose(IpSaddlePointMatrix lhs) -> Result;
 
     /// Solve the saddle point problem.
     /// @note This method expects that a call to method @ref decompose has already been performed.
     /// @param lhs The coefficient matrix of the saddle point problem.
     /// @param rhs The right-hand side vector of the saddle point problem.
     /// @param sol The solution of the saddle point problem.
-    auto solve(IpSaddlePointVector rhs, IpSaddlePointSolution sol) -> SaddlePointResult;
+    auto solve(IpSaddlePointVector rhs, IpSaddlePointSolution sol) -> Result;
 
 private:
     struct Impl;
