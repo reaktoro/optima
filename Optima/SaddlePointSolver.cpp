@@ -29,6 +29,7 @@ using namespace Eigen;
 #include <Optima/Result.hpp>
 #include <Optima/Canonicalizer.hpp>
 #include <Optima/Utils.hpp>
+#include <Optima/VariantMatrix.hpp>
 
 namespace Optima {
 
@@ -67,8 +68,11 @@ struct SaddlePointSolver::Impl
     /// The priority weights for the selection of basic variables.
     Vector weights;
 
-    /// The workspace for the Hessian matrix H and matrix G.
-    Matrix H, G;
+    /// The 'H' matrix in the saddle point matrix.
+    VariantMatrix H;
+
+    /// The 'G' matrix in the saddle point matrix.
+    VariantMatrix G;
 
     /// The workspace for the right-hand side vectors a and b
     Vector a, b;
@@ -84,12 +88,6 @@ struct SaddlePointSolver::Impl
 
     /// The LU decomposition solver.
     Eigen::PartialPivLU<Matrix> lu;
-
-    /// The structure of the H matrix
-    MatrixStructure structure_H;
-
-    /// The structure of the G matrix
-    MatrixStructure structure_G;
 
     /// Update the order of the variables.
     auto reorderVariables(VectorXiConstRef ordering) -> void
@@ -109,8 +107,6 @@ struct SaddlePointSolver::Impl
         n = A.cols();
 
         // Allocate auxiliary memory
-        H.resize(n, n);
-        G.resize(m, m);
         a.resize(n);
         b.resize(m);
         mat.resize(n + m, n + m);
@@ -227,9 +223,7 @@ struct SaddlePointSolver::Impl
     /// Decompose the coefficient matrix of the saddle point problem using a LU decomposition method.
     auto decomposeFullspace(SaddlePointMatrix lhs) -> void
     {
-        structure_H = lhs.H.structure;
-        structure_G = matrixStructure(lhs.G);
-        switch(structure_G) {
+        switch(lhs.G.structure) {
             case MatrixStructure::Zero: decomposeFullspaceZeroG(lhs); break;
             default: decomposeFullspaceDenseG(lhs); break;
         }
@@ -240,6 +234,12 @@ struct SaddlePointSolver::Impl
     {
         // Update the canonical form of the matrix A
         updateCanonicalForm(lhs);
+
+        // Set the H matrix to a dense structure
+        H.setDense(n);
+
+        // Set the G matrix to zero structure
+        G.setZero();
 
         // The indices of the free variables
         auto ivx = iordering.head(nx);
@@ -275,6 +275,15 @@ struct SaddlePointSolver::Impl
         // Update the canonical form of the matrix A
         updateCanonicalForm(lhs);
 
+        // Set the H matrix to a dense structure
+        H.setDense(n);
+
+        // Set the G matrix to dense structure
+        G.setDense(m);
+
+        // Set the G matrix from the given saddle point matrix
+        G.dense() << lhs.G;
+
         // The indices of the free variables
         auto ivx = iordering.head(nx);
 
@@ -294,24 +303,27 @@ struct SaddlePointSolver::Impl
         M.middleRows(nx, nbx).leftCols(nx) << Ibxbx, Sbxnx;
         M.topRightCorner(nx, nbf + nl).setZero();
         M.bottomLeftCorner(nbf + nl, nx).setZero();
-        M.bottomRightCorner(m, m) = R * lhs.G * tr(R);
+        M.bottomRightCorner(m, m) = R * G.dense() * tr(R);
 
         // Compute the LU decomposition of M.
         lu.compute(M);
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a rangespace diagonal method.
-    auto decomposeRangespace(SaddlePointMatrix lhs) -> void
+    auto decomposeRangespaceAux(SaddlePointMatrix lhs) -> void
     {
-        structure_H = lhs.H.structure;
-        structure_G = matrixStructure(lhs.G);
-        switch(structure_H) {
-        case MatrixStructure::Dense: decomposeNullspace(lhs); break;
-        default:
-            switch(structure_G) {
+        switch(lhs.G.structure) {
             case MatrixStructure::Zero: decomposeRangespaceZeroG(lhs); break;
             default: decomposeRangespaceDenseG(lhs); break;
-            }
+        }
+    }
+
+    /// Decompose the coefficient matrix of the saddle point problem using a rangespace diagonal method.
+    auto decomposeRangespace(SaddlePointMatrix lhs) -> void
+    {
+        switch(lhs.H.structure) {
+        case MatrixStructure::Dense: decomposeNullspace(lhs); break;
+        default: decomposeRangespaceAux(lhs); break;
         }
     }
 
@@ -320,6 +332,12 @@ struct SaddlePointSolver::Impl
     {
         // Update the canonical form of the matrix A
         updateCanonicalForm(lhs);
+
+        // Set the H matrix to a diagonal structure
+        H.setDiagonal(n);
+
+        // Set the G matrix to zero structure
+        G.setZero();
 
         // Alias to the matrices of the canonicalization process
         auto S = canonicalizer.S();
@@ -332,7 +350,7 @@ struct SaddlePointSolver::Impl
         auto Sbxn1 = Sbxnx.rightCols(nn1);
 
         // The diagonal entries in H of the free variables, with Hx = [Hb2b2 Hb1b1 Hn2n2 Hn1n1]
-        auto Hx    = H.col(0).head(nx);
+        auto Hx    = H.diagonal().head(nx);
         auto Hbxbx = Hx.head(nbx);
         auto Hnxnx = Hx.tail(nnx);
         auto Hb1b1 = Hbxbx.tail(nb1);
@@ -344,7 +362,7 @@ struct SaddlePointSolver::Impl
         auto ivx = iordering.head(nx);
 
         // Retrieve the entries in H corresponding to free variables.
-        Hx.noalias() = lhs.H.diagonalRef()(ivx);
+        Hx.noalias() = lhs.H.diagonal(ivx);
 
         // The auxiliary matrix Tbxbx = Sbxn1 * Bn1bx and its submatrices
         auto Tbxbx = mat.topRightCorner(nbx, nbx);
@@ -408,6 +426,15 @@ struct SaddlePointSolver::Impl
         // Update the canonical form of the matrix A
         updateCanonicalForm(lhs);
 
+        // Set the H matrix to a diagonal structure
+        H.setDiagonal(n);
+
+        // Set the G matrix to dense structure
+        G.setDense(m);
+
+        // Set the G matrix from the given saddle point matrix
+        G.dense() << lhs.G;
+
         // Alias to the matrices of the canonicalization process
         auto S = canonicalizer.S();
         auto R = canonicalizer.R();
@@ -419,7 +446,7 @@ struct SaddlePointSolver::Impl
         auto Sbxn1 = Sbxnx.rightCols(nn1);
 
         // The diagonal entries in H of the free variables, with Hx = [Hb2b2 Hb1b1 Hn2n2 Hn1n1]
-        auto Hx    = H.col(0).head(nx);
+        auto Hx    = H.diagonal().head(nx);
         auto Hbxbx = Hx.head(nbx);
         auto Hnxnx = Hx.tail(nnx);
         auto Hb1b1 = Hbxbx.tail(nb1);
@@ -428,9 +455,9 @@ struct SaddlePointSolver::Impl
         auto Hn2n2 = Hnxnx.head(nn2);
 
         // The sub-matrices in G' = R * G * tr(R)
-        auto Gbx   = G.topRows(nbx);
-        auto Gbf   = G.middleRows(nbx, nbf);
-        auto Gbl   = G.bottomRows(nl);
+        auto Gbx   = G.dense().topRows(nbx);
+        auto Gbf   = G.dense().middleRows(nbx, nbf);
+        auto Gbl   = G.dense().bottomRows(nl);
         auto Gbxbx = Gbx.leftCols(nbx);
         auto Gbxbf = Gbx.middleCols(nbx, nbf);
         auto Gbxbl = Gbx.rightCols(nl);
@@ -463,7 +490,7 @@ struct SaddlePointSolver::Impl
         Hx.noalias() = lhs.H.diagonalRef()(ivx);
 
         // Calculate matrix G' = R * G * tr(R)
-        G.noalias() = R * lhs.G * tr(R);
+        G.dense() = R * G.dense() * tr(R);
 
         // The auxiliary matrix Tbxbx = Sbxn1 * Bn1bx and its submatrices
         auto Tbxbx = mat.topRightCorner(nbx, nbx);
@@ -564,9 +591,7 @@ struct SaddlePointSolver::Impl
     /// Decompose the coefficient matrix of the saddle point problem using a nullspace method.
     auto decomposeNullspace(SaddlePointMatrix lhs) -> void
     {
-        structure_H = lhs.H.structure;
-        structure_G = matrixStructure(lhs.G);
-        switch(structure_G) {
+        switch(lhs.G.structure) {
             case MatrixStructure::Zero: decomposeNullspaceZeroG(lhs); break;
             default: decomposeNullspaceDenseG(lhs); break;
         }
@@ -578,6 +603,12 @@ struct SaddlePointSolver::Impl
         // Update the canonical form of the matrix A
         updateCanonicalForm(lhs);
 
+        // Set the H matrix to a dense structure
+        H.setDense(n);
+
+        // Set the G matrix to zero structure
+        G.setZero();
+
         // Alias to the matrices of the canonicalization process
         auto S = canonicalizer.S();
         auto R = canonicalizer.R();
@@ -586,7 +617,7 @@ struct SaddlePointSolver::Impl
         auto Sbxnx = S.topLeftCorner(nbx, nnx);
 
         // The sub-matrices in H, with Hx = [Hbxbx Hbxnx; Hnxbx Hnxnx]
-        auto Hx    = H.topLeftCorner(nx, nx);
+        auto Hx    = H.dense().topLeftCorner(nx, nx);
         auto Hbxbx = Hx.topLeftCorner(nbx, nbx);
         auto Hbxnx = Hx.topRightCorner(nbx, nnx);
         auto Hnxbx = Hx.bottomLeftCorner(nnx, nbx);
@@ -617,6 +648,15 @@ struct SaddlePointSolver::Impl
         // Update the canonical form of the matrix A
         updateCanonicalForm(lhs);
 
+        // Set the H matrix to a dense structure
+        H.setDense(n);
+
+        // Set the G matrix to dense structure
+        G.setDense(m);
+
+        // Set the G matrix from the given saddle point matrix
+        G.dense() << lhs.G;
+
         // Alias to the matrices of the canonicalization process
         auto S = canonicalizer.S();
         auto R = canonicalizer.R();
@@ -625,16 +665,16 @@ struct SaddlePointSolver::Impl
         auto Sbxnx = S.topLeftCorner(nbx, nnx);
 
         // The sub-matrices in H, with Hx = [Hbxbx Hbxnx; Hnxbx Hnxnx]
-        auto Hx    = H.topLeftCorner(nx, nx);
+        auto Hx    = H.dense().topLeftCorner(nx, nx);
         auto Hbxbx = Hx.topLeftCorner(nbx, nbx);
         auto Hbxnx = Hx.topRightCorner(nbx, nnx);
         auto Hnxbx = Hx.bottomLeftCorner(nnx, nbx);
         auto Hnxnx = Hx.bottomRightCorner(nnx, nnx);
 
         // The sub-matrices in G' = R * G * tr(R)
-        auto Gbx   = G.topRows(nbx);
-        auto Gbf   = G.middleRows(nbx, nbf);
-        auto Gbl   = G.bottomRows(nl);
+        auto Gbx   = G.dense().topRows(nbx);
+        auto Gbf   = G.dense().middleRows(nbx, nbf);
+        auto Gbl   = G.dense().bottomRows(nl);
         auto Gbxbx = Gbx.leftCols(nbx);
         auto Gbxbf = Gbx.middleCols(nbx, nbf);
         auto Gbxbl = Gbx.rightCols(nl);
@@ -652,7 +692,7 @@ struct SaddlePointSolver::Impl
         Hx << lhs.H(ivx);
 
         // Calculate matrix G' = R * G * tr(R)
-        G.noalias() = R * lhs.G * tr(R);
+        G.dense() = R * G.dense() * tr(R);
 
         // Auxliary matrix expressions
         const auto Ibxbx = identity(nbx, nbx);
@@ -726,7 +766,7 @@ struct SaddlePointSolver::Impl
     /// Solve the saddle point problem using a LU decomposition method.
     auto solveFullspace(SaddlePointVector rhs, SaddlePointSolution sol) -> void
     {
-        switch(structure_G) {
+        switch(G.structure()) {
             case MatrixStructure::Zero: solveFullspaceZeroG(rhs, sol); break;
             default: solveFullspaceDenseG(rhs, sol); break;
         }
@@ -851,15 +891,20 @@ struct SaddlePointSolver::Impl
     }
 
     /// Solve the saddle point problem using a rangespace diagonal method.
+    auto solveRangespaceAux(SaddlePointVector rhs, SaddlePointSolution sol) -> void
+    {
+        switch(G.structure()) {
+            case MatrixStructure::Zero: solveRangespaceZeroG(rhs, sol); break;
+            default: solveRangespaceDenseG(rhs, sol); break;
+        }
+    }
+
+    /// Solve the saddle point problem using a rangespace diagonal method.
     auto solveRangespace(SaddlePointVector rhs, SaddlePointSolution sol) -> void
     {
-        switch(structure_H) {
-        case MatrixStructure::Dense: solveNullspace(rhs, sol); break;
-        default:
-            switch(structure_G) {
-                case MatrixStructure::Zero: solveRangespaceZeroG(rhs, sol); break;
-                default: solveRangespaceDenseG(rhs, sol); break;
-            }
+        switch(H.structure()) {
+            case MatrixStructure::Dense: solveNullspace(rhs, sol); break;
+            default: solveRangespaceAux(rhs, sol); break;
         }
     }
 
@@ -882,7 +927,7 @@ struct SaddlePointSolver::Impl
         auto Sb2nx = Sbxnx.topRows(nb2);
 
         // The diagonal entries in H of the free variables, with Hx = [Hb2b2 Hb1b1 Hn2n2 Hn1n1]
-        auto Hx    = H.col(0).head(nx);
+        auto Hx    = H.diagonal().head(nx);
         auto Hbxbx = Hx.head(nbx);
         auto Hnxnx = Hx.tail(nnx);
         auto Hb1b1 = Hbxbx.tail(nb1);
@@ -962,7 +1007,7 @@ struct SaddlePointSolver::Impl
         auto Sb2nx = Sbxnx.topRows(nb2);
 
         // The diagonal entries in H of the free variables, with Hx = [Hb2b2 Hb1b1 Hn2n2 Hn1n1]
-        auto Hx    = H.col(0).head(nx);
+        auto Hx    = H.diagonal().head(nx);
         auto Hbxbx = Hx.head(nbx);
         auto Hnxnx = Hx.tail(nnx);
         auto Hb1b1 = Hbxbx.tail(nb1);
@@ -970,9 +1015,9 @@ struct SaddlePointSolver::Impl
         auto Hn1n1 = Hnxnx.tail(nn1);
 
         // The sub-matrices in G' = R * G * tr(R)
-        auto Gbx   = G.topRows(nbx);
-        auto Gbf   = G.middleRows(nbx, nbf);
-        auto Gbl   = G.bottomRows(nl);
+        auto Gbx   = G.dense().topRows(nbx);
+        auto Gbf   = G.dense().middleRows(nbx, nbf);
+        auto Gbl   = G.dense().bottomRows(nl);
         auto Gbxbx = Gbx.leftCols(nbx);
         auto Gbfbx = Gbf.leftCols(nbx);
         auto Gblbx = Gbl.leftCols(nbx);
@@ -1051,7 +1096,7 @@ struct SaddlePointSolver::Impl
     /// Solve the saddle point problem using a nullspace method.
     auto solveNullspace(SaddlePointVector rhs, SaddlePointSolution sol) -> void
     {
-        switch(structure_G) {
+        switch(G.structure()) {
             case MatrixStructure::Zero: solveNullspaceZeroG(rhs, sol); break;
             default: solveNullspaceDenseG(rhs, sol); break;
         }
@@ -1082,7 +1127,7 @@ struct SaddlePointSolver::Impl
         auto Sbfnf = S.bottomRightCorner(nbf, nnf);
 
         // Views to the sub-matrices of H, with Hx = [Hbxbx Hbxnx; Hnxbx Hnxnx]
-        auto Hx    = H.topLeftCorner(nx, nx);
+        auto Hx    = H.dense().topLeftCorner(nx, nx);
         auto Hbxbx = Hx.topLeftCorner(nbx, nbx);
         auto Hbxnx = Hx.topRightCorner(nbx, nnx);
         auto Hnxbx = Hx.bottomLeftCorner(nnx, nbx);
@@ -1162,12 +1207,12 @@ struct SaddlePointSolver::Impl
         auto Sbfnf = S.bottomRightCorner(nbf, nnf);
 
         // Views to the sub-matrices of H, with Hx = [Hbxbx Hbxnx; Hnxbx Hnxnx]
-        auto Hx    = H.topLeftCorner(nx, nx);
+        auto Hx    = H.dense().topLeftCorner(nx, nx);
         auto Hbxbx = Hx.topLeftCorner(nbx, nbx);
         auto Hnxbx = Hx.bottomLeftCorner(nnx, nbx);
 
         // The sub-matrix Gbx in G' = R * G * tr(R)
-        auto Gbx = G.topRows(nbx);
+        auto Gbx = G.dense().topRows(nbx);
 
         // The indices of the free and fixed variables
         auto ivx = iordering.head(nx);

@@ -30,13 +30,13 @@ auto VariantMatrix::setZero() -> void
 
 auto VariantMatrix::setDense(Index size) -> void
 {
-    _structure = MatrixStructure::Dense;
+    _structure = size ? MatrixStructure::Dense : MatrixStructure::Zero;
     _dense.resize(size, size);
 }
 
 auto VariantMatrix::setDiagonal(Index size) -> void
 {
-    _structure = MatrixStructure::Diagonal;
+    _structure = size ? MatrixStructure::Diagonal : MatrixStructure::Zero;
     _diagonal.resize(size);
 }
 
@@ -76,7 +76,7 @@ VariantMatrixConstRef::VariantMatrixConstRef()
 {}
 
 VariantMatrixConstRef::VariantMatrixConstRef(VectorConstRef diagonal)
-: dense(Matrix()), diagonal(diagonal), structure(MatrixStructure::Diagonal)
+: dense(Matrix()), diagonal(diagonal), structure(matrixStructure(diagonal))
 {}
 
 VariantMatrixConstRef::VariantMatrixConstRef(const Vector& diagonal)
@@ -84,7 +84,7 @@ VariantMatrixConstRef::VariantMatrixConstRef(const Vector& diagonal)
 {}
 
 VariantMatrixConstRef::VariantMatrixConstRef(MatrixConstRef dense)
-: dense(dense), diagonal(Vector()), structure(MatrixStructure::Dense)
+: dense(dense), diagonal(Vector()), structure(matrixStructure(dense))
 {}
 
 VariantMatrixConstRef::VariantMatrixConstRef(const Matrix& dense)

@@ -47,7 +47,7 @@ public:
     MatrixConstRef A;
 
     /// The negative semi-definite matrix \eq{G} in the saddle point matrix.
-    MatrixConstRef G;
+    VariantMatrixConstRef G;
 
     /// The number of fixed variables.
     Index nf;
@@ -63,7 +63,7 @@ public:
     /// @param A The \eq{A} matrix in the saddle point equation.
     /// @param G The \eq{G} matrix in the saddle point equation.
     /// @param nf The number of fixed variables.
-    SaddlePointMatrix(VariantMatrixConstRef H, MatrixConstRef A, MatrixConstRef G, Index nf = 0);
+    SaddlePointMatrix(VariantMatrixConstRef H, MatrixConstRef A, VariantMatrixConstRef G, Index nf = 0);
 
     /// Convert this SaddlePointMatrix instance into a Matrix instance.
     operator Matrix() const;

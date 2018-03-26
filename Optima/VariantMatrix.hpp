@@ -138,7 +138,6 @@ public:
 };
 
 /// Assign a VariantMatrixBase object to a Matrix instance.
-template<typename MatrixType, typename VectorType>
 auto operator<<(MatrixRef mat, VariantMatrixConstRef vmat) -> MatrixRef;
 
 /// Assign an indexed view of a VariantMatrixBase object to a Matrix instance.

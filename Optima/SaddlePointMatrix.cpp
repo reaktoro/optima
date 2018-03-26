@@ -25,21 +25,21 @@ using namespace Eigen;
 namespace Optima {
 
 SaddlePointMatrix::SaddlePointMatrix(VariantMatrixConstRef H, MatrixConstRef A, Index nf)
-: SaddlePointMatrix(H, A, Matrix(), nf)
+: SaddlePointMatrix(H, A, {}, nf)
 {}
 
-SaddlePointMatrix::SaddlePointMatrix(VariantMatrixConstRef H, MatrixConstRef A, MatrixConstRef G, Index nf)
+SaddlePointMatrix::SaddlePointMatrix(VariantMatrixConstRef H, MatrixConstRef A, VariantMatrixConstRef G, Index nf)
 : H(H), A(A), G(G), nf(nf)
 {
-    Assert(isDenseMatrix(G) || isZeroMatrix(G),
-        "Could not create a SaddlePointMatrix object.",
-            "Matrix G must be either dense or an empty matrix.");
-
     Assert(H.dense.rows() == A.cols() || H.diagonal.rows() == A.cols(),
         "Could not create a SaddlePointMatrix object.",
             "Matrix A must have the same number of columns as there are rows in H.");
 
-    Assert(A.rows() == G.rows() || G.size() == 0,
+    Assert(A.rows() < A.cols(),
+        "Could not create a SaddlePointMatrix object.",
+            "Matrix A must have less number of rows than number of columns.");
+
+    Assert(G.dense.rows() == A.rows() || G.diagonal.rows() == A.rows() || G.structure == MatrixStructure::Zero,
         "Could not create a SaddlePointMatrix object.",
             "Matrix G, when non-zero, must have the same number of rows and columns as there are rows in A.");
 }
@@ -59,7 +59,7 @@ SaddlePointMatrix::operator Matrix() const
     res.block(nx, nx, nf, nf).diagonal().fill(1.0);
     res.topRightCorner(nx, m) = tr(Ax);
     res.bottomLeftCorner(m, n) = A;
-    if(G.size()) res.bottomRightCorner(m, m) = G;
+    res.bottomRightCorner(m, m) << G;
 
     return res;
 }
