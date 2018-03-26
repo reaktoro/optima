@@ -160,6 +160,7 @@ struct OptimumStepper::Impl
         case MatrixStructure::Diagonal: return decomposeDiagonalHessianMatrix(params, state);
         case MatrixStructure::Zero: return decomposeDiagonalHessianMatrix(params, state);
         }
+        return {};
     }
 
     /// Decompose the interior-point saddle point matrix for diagonal Hessian matrices.
@@ -174,7 +175,7 @@ struct OptimumStepper::Impl
         // The indices of the free varibles
         const auto jx = iordering.head(nx);
 
-        // Ensure suffient allocated memory for matrix Hdiag
+        // Set the structure of the Hessian matrix to diagonal
         H.setDiagonal(n);
 
         // Create a view for the block of Hdiag corresponding to free variables
@@ -204,7 +205,7 @@ struct OptimumStepper::Impl
         // The indices of the free varibles
         const auto jx = iordering.head(nx);
 
-        // Ensure suffient allocated memory for matrix H
+        // Set the structure of the Hessian matrix to dense
         H.setDense(n);
 
         // Create a view for the block of H corresponding to free variables
