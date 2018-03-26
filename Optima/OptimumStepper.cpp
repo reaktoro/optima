@@ -26,6 +26,7 @@
 #include <Optima/OptimumState.hpp>
 #include <Optima/OptimumStructure.hpp>
 #include <Optima/Result.hpp>
+#include <Optima/VariantMatrix.hpp>
 using namespace Eigen;
 using Eigen::placeholders::all;
 
@@ -49,10 +50,7 @@ struct OptimumStepper::Impl
     Matrix A;
 
     /// The `H` dense matrix in the saddle point equation.
-    Matrix H;
-
-    /// The `H` diagonal matrix in the saddle point equation.
-    Vector Hdiag;
+    VariantMatrix H;
 
     /// The matrices Z, W, L, U
     Vector Z, W, L, U;
@@ -99,7 +97,6 @@ struct OptimumStepper::Impl
         A.noalias() = structure.equalityConstraintMatrix()(all, iordering);
 
         // Allocate memory for some members
-        H = zeros(n, n);
         g = zeros(n);
         x = zeros(n);
         Z = zeros(n);
@@ -178,16 +175,16 @@ struct OptimumStepper::Impl
         const auto jx = iordering.head(nx);
 
         // Ensure suffient allocated memory for matrix Hdiag
-        Hdiag.resize(n);
+        H.setDiagonal(n);
 
         // Create a view for the block of Hdiag corresponding to free variables
-        auto Hxx = Hdiag.head(nx);
+        auto Hxx = H.diagonal().head(nx);
 
         // Copy values of the Hessian matrix to Hxx
         Hxx.noalias() = state.H.diagonal()(jx);
 
         // Define the interior-point saddle point matrix
-        IpSaddlePointMatrix spm(Hdiag, A, Z, W, L, U, nf);
+        IpSaddlePointMatrix spm(H, A, Z, W, L, U, nf);
 
         // Decompose the interior-point saddle point matrix
         solver.decompose(spm);
@@ -208,10 +205,10 @@ struct OptimumStepper::Impl
         const auto jx = iordering.head(nx);
 
         // Ensure suffient allocated memory for matrix H
-        H.resize(n, n);
+        H.setDense(n);
 
         // Create a view for the block of H corresponding to free variables
-        auto Hxx = H.topLeftCorner(nx, nx);
+        auto Hxx = H.dense().topLeftCorner(nx, nx);
 
         // Copy values of the Hessian matrix to Hxx
         Hxx.noalias() = state.H.dense()(jx, jx);
