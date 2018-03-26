@@ -49,7 +49,7 @@ struct OptimumStepper::Impl
     /// The `A` matrix in the saddle point equation.
     Matrix A;
 
-    /// The `H` dense matrix in the saddle point equation.
+    /// The `H` matrix in the saddle point equation.
     VariantMatrix H;
 
     /// The matrices Z, W, L, U
