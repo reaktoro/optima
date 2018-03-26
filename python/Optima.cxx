@@ -23,6 +23,7 @@ void exportEigen(py::module& m);
 void exportCanonicalizer(py::module& m);
 void exportOutputter(py::module& m);
 void exportResult(py::module& m);
+void exportObjectiveState(py::module& m);
 void exportOptimumOptions(py::module& m);
 void exportOptimumParams(py::module& m);
 void exportOptimumProblem(py::module& m);
@@ -46,6 +47,7 @@ PYBIND11_MODULE(optima, m)
     exportCanonicalizer(m);
     exportOutputter(m);
     exportResult(m);
+    exportObjectiveState(m);
     exportOptimumOptions(m);
     exportOptimumParams(m);
     exportOptimumProblem(m);
