@@ -114,24 +114,25 @@ struct OptimumStepper::Impl
         // The lower and upper bounds of x
         const auto xlower = params.lowerBounds();
         const auto xupper = params.upperBounds();
+        const auto xfixed = params.fixedValues();
 
         // The indices of the variables with/without lower/upper bounds
         const auto iwithlower = structure.variablesWithLowerBounds();
-        const auto variablesWithUpperBounds = structure.variablesWithUpperBounds();
-        const auto variablesWithoutLowerBounds = structure.variablesWithoutLowerBounds();
-        const auto variablesWithoutUpperBounds = structure.variablesWithoutUpperBounds();
+        const auto iwithupper = structure.variablesWithUpperBounds();
+        const auto iwithoutlower = structure.variablesWithoutLowerBounds();
+        const auto iwithoutupper = structure.variablesWithoutUpperBounds();
 
         // Initialize the diagonal matrices Z and W
         Z(iwithlower) = state.z(iwithlower);
-        Z(variablesWithoutLowerBounds).fill(0.0);
-        W(variablesWithUpperBounds) = state.w(variablesWithUpperBounds);
-        W(variablesWithoutLowerBounds).fill(0.0);
+        W(iwithupper) = state.w(iwithupper);
+        Z(iwithoutlower).fill(0.0);
+        W(iwithoutupper).fill(0.0);
 
         // Initialize the diagonal matrices L and U
         L(iwithlower) = state.x(iwithlower) - xlower;
-        L(variablesWithoutLowerBounds).fill(1.0);
-        U(variablesWithUpperBounds) = state.x(variablesWithUpperBounds) - xupper;
-        U(variablesWithoutLowerBounds).fill(1.0);
+        U(iwithupper) = state.x(iwithupper) - xupper;
+        L(iwithoutlower).fill(1.0);
+        U(iwithoutupper).fill(1.0);
 
         // The variables x arranged in the ordering x = [xs xl xu xf]
         x.noalias() = state.x(iordering);
