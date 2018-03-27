@@ -85,33 +85,45 @@ public:
 class IpSaddlePointVector
 {
 public:
-    /// The saddle-point solution vector \eq{a}.
+    /// The saddle point sub-vector \eq{x}.
+    VectorConstRef x;
+
+    /// The saddle point sub-vector \eq{y}.
+    VectorConstRef y;
+
+    /// The saddle point sub-vector \eq{z}.
+    VectorConstRef z;
+
+    /// The saddle point sub-vector \eq{w}.
+    VectorConstRef w;
+
+    /// The saddle point right-hand side sub-vector \eq{a} *(this is an alias to x)*.
     VectorConstRef a;
 
-    /// The saddle-point solution vector \eq{b}.
+    /// The saddle point right-hand side sub-vector \eq{b} *(this is an alias to y)*.
     VectorConstRef b;
 
-    /// The saddle-point solution vector \eq{c}.
+    /// The saddle point right-hand side sub-vector \eq{c} *(this is an alias to z)*.
     VectorConstRef c;
 
-    /// The saddle-point solution vector \eq{d}.
+    /// The saddle point right-hand side sub-vector \eq{d} *(this is an alias to w)*.
     VectorConstRef d;
 
     /// Construct an IpSaddlePointVector instance with given \eq{(a,b,c,d)} vectors.
-    /// @param a The right-hand side vector \eq{a} in the interior-point saddle point problem.
-    /// @param b The right-hand side vector \eq{b} in the interior-point saddle point problem.
-    /// @param c The right-hand side vector \eq{c} in the interior-point saddle point problem.
-    /// @param d The right-hand side vector \eq{d} in the interior-point saddle point problem.
+    /// @param x The saddle point sub-vector \eq{x}.
+    /// @param y The saddle point sub-vector \eq{y}.
+    /// @param z The saddle point sub-vector \eq{z}.
+    /// @param w The saddle point sub-vector \eq{w}.
     IpSaddlePointVector(
-        VectorConstRef a,
-        VectorConstRef b,
-        VectorConstRef c,
-        VectorConstRef d);
+        VectorConstRef x,
+        VectorConstRef y,
+        VectorConstRef z,
+        VectorConstRef w);
 
-    /// Construct an IpSaddlePointVector instance with given right-hand side vector.
-    /// @param r The right-hand side vector \eq{r = (a, b, c, d)}.
-    /// @param n The dimension of vectors \eq{a}, \eq{c}, \eq{d}.
-    /// @param m The dimension of vector \eq{b}.
+    /// Construct an IpSaddlePointVector instance with given vector.
+    /// @param r The vector \eq{r=\begin{bmatrix}x & y & z & w\end{bmatrix}}.
+    /// @param n The dimension of vectors \eq{x}, \eq{z}, \eq{w}.
+    /// @param m The dimension of vector \eq{y}.
     IpSaddlePointVector(VectorConstRef r, Index n, Index m);
 
     /// Convert this IpSaddlePointVector instance into a Vector instance.
@@ -122,16 +134,16 @@ public:
 class IpSaddlePointSolution
 {
 public:
-    /// The solution vector \eq{x} in the interior-point saddle-point problem.
+    /// The solution vector \eq{x} in the interior-point saddle point problem.
     VectorRef x;
 
-    /// The solution vector \eq{y} in the interior-point saddle-point problem.
+    /// The solution vector \eq{y} in the interior-point saddle point problem.
     VectorRef y;
 
-    /// The solution vector \eq{z} in the interior-point saddle-point problem.
+    /// The solution vector \eq{z} in the interior-point saddle point problem.
     VectorRef z;
 
-    /// The solution vector \eq{w} in the interior-point saddle-point problem.
+    /// The solution vector \eq{w} in the interior-point saddle point problem.
     VectorRef w;
 
     /// Construct an IpSaddlePointSolution instance with given \eq{(x,y,z,w)} vectors.

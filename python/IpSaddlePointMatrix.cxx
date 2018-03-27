@@ -46,11 +46,15 @@ void exportIpSaddlePointMatrix(py::module& m)
         ;
 
     py::class_<IpSaddlePointVector>(m, "IpSaddlePointVector")
+        .def_readonly("x", &IpSaddlePointVector::x)
+        .def_readonly("y", &IpSaddlePointVector::y)
+        .def_readonly("z", &IpSaddlePointVector::z)
+        .def_readonly("w", &IpSaddlePointVector::w)
         .def_readonly("a", &IpSaddlePointVector::a)
         .def_readonly("b", &IpSaddlePointVector::b)
         .def_readonly("c", &IpSaddlePointVector::c)
         .def_readonly("d", &IpSaddlePointVector::d)
-        .def(py::init<VectorConstRef, VectorConstRef, VectorConstRef, VectorConstRef>(), py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d"))
+        .def(py::init<VectorConstRef, VectorConstRef, VectorConstRef, VectorConstRef>(), py::arg("x"), py::arg("y"), py::arg("z"), py::arg("w"))
         .def(py::init<VectorConstRef, Index, Index>(), py::arg("r"), py::arg("n"), py::arg("m"))
         .def("array", [](IpSaddlePointVector self) { return Vector(self); })
         ;

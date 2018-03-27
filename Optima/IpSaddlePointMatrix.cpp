@@ -62,26 +62,29 @@ IpSaddlePointMatrix::operator Matrix() const
 }
 
 IpSaddlePointVector::IpSaddlePointVector(
-    VectorConstRef a,
-    VectorConstRef b,
-    VectorConstRef c,
-    VectorConstRef d) : a(a), b(b), c(c), d(d)
+    VectorConstRef x,
+    VectorConstRef y,
+    VectorConstRef z,
+    VectorConstRef w)
+: x(x), y(y), z(z), w(w),
+  a(x), b(y), c(z), d(w)
 {}
 
 IpSaddlePointVector::IpSaddlePointVector(VectorConstRef r, Index n, Index m)
-: a(r.head(n)),
-  b(r.segment(n, m)),
-  c(r.segment(n + m, n)),
-  d(r.tail(n))
+: x(r.head(n)),
+  y(r.segment(n, m)),
+  z(r.segment(n + m, n)),
+  w(r.tail(n)),
+  a(x), b(y), c(z), d(w)
 {}
 
 IpSaddlePointVector::operator Vector() const
 {
-    const auto n = a.size();
-    const auto m = b.size();
+    const auto n = x.size();
+    const auto m = y.size();
     const auto t = 3*n + m;
     Vector res(t);
-    res << a, b, c, d;
+    res << x, y, z, w;
     return res;
 }
 
