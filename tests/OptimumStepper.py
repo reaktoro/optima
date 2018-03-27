@@ -20,4 +20,23 @@ from numpy import *
 from pytest import approx, mark
 
 def test_optimum_stepper():
-    assert 0 == 1
+    n = 10
+    m = 5
+
+    A = eigen.random(m, n)
+
+    structure = OptimumStructure(A)
+    params = OptimumParams(structure)
+    
+    params.b = eigen.random(m)
+    
+    stepper = OptimumStepper(structure)
+    
+    stepper.decompose(params, state)
+    stepper.solve(params, state)
+    
+    step = stepper.step().array()
+    residual = stepper.residual().array()
+    lhs = stepper.matrix().array()
+    
+    assert norm(lhs.dot(step) - residual) / norm(residual) == approx(0.0)

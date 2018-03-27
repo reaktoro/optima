@@ -19,20 +19,19 @@
 
 // Optima includes
 #include <Optima/OptimumStructure.hpp>
-#include <Optima/Matrix.hpp>
 
 namespace Optima {
 
 OptimumParams::OptimumParams(const OptimumStructure& structure)
-: m_b(structure.numEqualityConstraints()),
-  m_xlower(structure.variablesWithLowerBounds().size()),
-  m_xupper(structure.variablesWithUpperBounds().size()),
-  m_xfixed(structure.variablesWithFixedValues().size())
+: b(structure.numEqualityConstraints()),
+  xlower(structure.variablesWithLowerBounds().size()),
+  xupper(structure.variablesWithUpperBounds().size()),
+  xfixed(structure.variablesWithFixedValues().size())
 {
-    m_b.fill(0.0);
-    m_xlower.fill(0.0);
-    m_xupper.fill(0.0);
-    m_xfixed.fill(0.0);
+    b.fill(0.0);
+    xlower.fill(0.0);
+    xupper.fill(0.0);
+    xfixed.fill(0.0);
 }
 
 } // namespace Optima

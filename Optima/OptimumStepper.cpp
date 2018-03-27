@@ -122,10 +122,6 @@ struct OptimumStepper::Impl
     /// Update the matrices Z, W, L, U that appear in the interior-point saddle point problem.
     auto updateZWLU(const OptimumParams& params, const OptimumState& state) -> void
     {
-        // The lower and upper bounds of x
-        const auto xlower = params.lowerBounds();
-        const auto xupper = params.upperBounds();
-
         // Initialize the diagonal matrix Z assuming the ordering x = [x(free) x(fixed)]
         Z(iwithlower) = state.z(iwithlower);
         Z(iwithoutlower).fill(0.0);
@@ -137,12 +133,12 @@ struct OptimumStepper::Impl
         W.tail(nf).fill(0.0);
 
         // Initialize the diagonal matrix L assuming the ordering x = [x(free) x(fixed)]
-        L(iwithlower) = state.x(iwithlower) - xlower;
+        L(iwithlower) = state.x(iwithlower) - params.xlower;
         L(iwithoutlower).fill(1.0);
         L.tail(nf).fill(1.0);
 
         // Initialize the diagonal matrix U assuming the ordering x = [x(free) x(fixed)]
-        U(iwithupper) = xupper - state.x(iwithupper);
+        U(iwithupper) = params.xupper - state.x(iwithupper);
         U(iwithoutupper).fill(1.0);
         U.tail(nf).fill(1.0);
     }
@@ -257,7 +253,7 @@ struct OptimumStepper::Impl
         af.fill(0.0);
 
         // Calculate b = -(A*x - b)
-        b.noalias() = -(A*x - params.b());
+        b.noalias() = -(A * x - params.b);
 
         // Calculate both c and d vectors
         cx.noalias() = options.mu - L % Z; // TODO Check if mu is still needed. Maybe this algorithm no longer needs perturbation.
