@@ -34,9 +34,6 @@ namespace Optima {
 
 struct OptimumStepper::Impl
 {
-    /// The structure of the optimization problem.
-    OptimumStructure structure;
-
     /// The options for the optimization calculation
     OptimumOptions options;
 
@@ -84,7 +81,6 @@ struct OptimumStepper::Impl
 
     /// Construct a OptimumStepper::Impl instance with given optimization problem structure.
     Impl(const OptimumStructure& structure)
-    : structure(structure)
     {
         // Initialize the members related to number of variables and constraints
         n  = structure.numVariables();
@@ -264,8 +260,8 @@ struct OptimumStepper::Impl
         b.noalias() = -(A*x - params.b());
 
         // Calculate both c and d vectors
-        cx.noalias() = options.mu - L % Z;
-        dx.noalias() = options.mu - U % W;
+        cx.noalias() = options.mu - L % Z; // TODO Check if mu is still needed. Maybe this algorithm no longer needs perturbation.
+        dx.noalias() = options.mu - U % W; // TODO Check if mu is still needed. Maybe this algorithm no longer needs perturbation.
         cf.fill(0.0);
         df.fill(0.0);
 
