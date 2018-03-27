@@ -39,7 +39,8 @@ public:
     bool H = true;
 };
 
-/// The evaluated state of an objective function.
+/// The result of the evaluation of an objective function.
+/// @see ObjectiveFunction
 class ObjectiveState
 {
 public:

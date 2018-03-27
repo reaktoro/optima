@@ -25,7 +25,7 @@ namespace py = pybind11;
 #include <Optima/Objective.hpp>
 using namespace Optima;
 
-void exportObjectiveState(py::module& m)
+void exportObjective(py::module& m)
 {
     py::class_<ObjectiveRequirement>(m, "ObjectiveRequirement")
         .def_readwrite("f", &ObjectiveRequirement::f, "The boolean flag that indicates the need for the objective value.")
