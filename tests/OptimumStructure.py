@@ -19,5 +19,30 @@ from optima import *
 from numpy import *
 from pytest import approx, mark
 
+def objective(x, res):
+    res.f = 0.5 * sum(x*x) 
+    res.g = x 
+    res.H.diagonal[:] = 1.0  
+    
+
 def test_optimum_structure():
-    assert 0 == 1
+    n = 10
+    m = 5
+    
+    A = eigen.random(m, n)
+    
+    structure = OptimumStructure(objective, A)
+    
+    assert structure.numVariables() == n
+    assert structure.numEqualityConstraints() == m
+    assert structure.equalityConstraintMatrix() == approx(A)
+    
+    structure.setVariablesWithLowerBounds([0, 2])
+    assert structure.variablesWithLowerBounds() == approx([0, 2])
+    
+    structure.setVariablesWithUpperBounds([2, 4])
+    assert structure.variablesWithUpperBounds() == approx([2, 4])
+    
+    res = Object
+    structure.objective(x, res)
+    

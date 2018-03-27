@@ -32,8 +32,8 @@ class ObjectiveState;
 
 /// The functional signature of an objective function.
 /// @param x The values of the variables \eq{x}.
-/// @param f The evaluated state of the objective function.
-using ObjectiveFunction = std::function<void(VectorConstRef x, ObjectiveState& f)>;
+/// @param res The evaluated state of the objective function.
+using ObjectiveFunction = std::function<void(VectorConstRef, ObjectiveState&)>;
 
 /// The structure of an optimization problem that changes with less frequency.
 class OptimumStructure

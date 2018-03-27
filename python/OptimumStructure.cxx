@@ -22,7 +22,7 @@
 namespace py = pybind11;
 
 // Optima includes
-#include <Optima/ObjectiveState.hpp>
+#include <Optima/Objective.hpp>
 #include <Optima/OptimumStructure.hpp>
 using namespace Optima;
 

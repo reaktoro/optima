@@ -21,7 +21,7 @@
 namespace py = pybind11;
 
 // Optima includes
-#include <Optima/ObjectiveState.hpp>
+#include <Optima/Objective.hpp>
 using namespace Optima;
 
 void exportObjectiveState(py::module& m)
@@ -36,7 +36,6 @@ void exportObjectiveState(py::module& m)
     const auto fset = [](ObjectiveState& self, double value) { self.f = value; };
 
     py::class_<ObjectiveState>(m, "ObjectiveState")
-        .def(py::init<OptimumState&>())
         .def_property("f", fget, fset, "The evaluated value of the objective function.")
         .def_readwrite("g", &ObjectiveState::g, "The evaluated gradient of the objective function.")
         .def_readwrite("H", &ObjectiveState::H, "The evaluated Hessian of the objective function.")

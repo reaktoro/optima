@@ -40,26 +40,20 @@ struct OptimumStepper::Impl
     /// The options for the optimization calculation
     OptimumOptions options;
 
-    /// The solution vector `sol = [dx dy dz dw]`.
-    Vector solution;
+    /// The solution vector `s = [dx dy dz dw]`.
+    Vector s;
 
-    /// The right-hand side residual vector `res = [rx ry rz rw]`.
-    Vector residual;
+    /// The right-hand side residual vector `r = [rx ry rz rw]`.
+    Vector r;
 
-    /// The `A` matrix in the saddle point equation.
+    /// The `A` matrix in the saddle point equation assuming the ordering x = [x(free) x(fixed)].
     Matrix A;
 
-    /// The `H` matrix in the saddle point equation.
+    /// The `H` matrix in the saddle point equation assuming the ordering x = [x(free) x(fixed)].
     VariantMatrix H;
 
-    /// The matrices Z, W, L, U
+    /// The matrices Z, W, L, U assuming the ordering x = [x(free) x(fixed)].
     Vector Z, W, L, U;
-
-    /// The variables x arranged in the ordering x = [x(free) x(fixed)]
-    Vector x;
-
-    /// The gradient of the objective function arranged in the ordering g = [g(free) g(fixed)]
-    Vector g;
 
     /// The number of variables.
     Index n;
@@ -76,10 +70,17 @@ struct OptimumStepper::Impl
     /// The interior-point saddle point solver.
     IpSaddlePointSolver solver;
 
+    /// The indices of the variables with lower bounds assuming the ordering x = [x(free) x(fixed)].
+    VectorXi iwithlower;
 
-    // The indices of the variables with/without lower/upper bounds
-    VectorXi ilower_ordering;
-    VectorXi iupper_ordering;
+    /// The indices of the variables with upper bounds assuming the ordering x = [x(free) x(fixed)].
+    VectorXi iwithupper;
+
+    /// The indices of the variables without lower bounds assuming the ordering x = [x(free) x(fixed)].
+    VectorXi iwithoutlower;
+
+    /// The indices of the variables without upper bounds assuming the ordering x = [x(free) x(fixed)].
+    VectorXi iwithoutupper;
 
     /// Construct a OptimumStepper::Impl instance with given optimization problem structure.
     Impl(const OptimumStructure& structure)
@@ -92,24 +93,31 @@ struct OptimumStepper::Impl
         nx = n - nf;
         t  = 3*n + m;
 
-        // The ordering of the variables partitioned as [free variablesixed variables]
+        // The indices of the variables in the ordering x = [x(free) x(fixed)].
         const auto iordering = structure.orderingFixedValues();
 
-        ilower_ordering(iordering) = structure.orderingLowerBounds();
-        iupper_ordering(iordering) = structure.orderingUpperBounds();
+        // Initialize the indices of the variables with lower bounds for the ordering x = [x(free) x(fixed)].
+        iwithlower = iordering(structure.variablesWithLowerBounds());
 
-        // Copy the matrix A with columns having order accoring to iordering
+        // Initialize the indices of the variables with upper bounds for the ordering x = [x(free) x(fixed)].
+        iwithupper = iordering(structure.variablesWithLowerBounds());
+
+        // Initialize the indices of the variables without lower bounds for the ordering x = [x(free) x(fixed)].
+        iwithoutlower = iordering(structure.variablesWithoutLowerBounds());
+
+        // Initialize the indices of the variables without upper bounds for the ordering x = [x(free) x(fixed)].
+        iwithoutupper = iordering(structure.variablesWithoutLowerBounds());
+
+        // Copy the matrix A with columns having order according to iordering
         A.noalias() = structure.equalityConstraintMatrix()(all, iordering);
 
         // Allocate memory for some members
-        g = zeros(n);
-        x = zeros(n);
         Z = zeros(n);
         W = zeros(n);
         L = zeros(n);
         U = zeros(n);
-        residual = zeros(t);
-        solution = zeros(t);
+        r = zeros(t);
+        s = zeros(t);
 
         // Initialize the saddle point solver
         solver.initialize(A);
@@ -122,39 +130,25 @@ struct OptimumStepper::Impl
         const auto xlower = params.lowerBounds();
         const auto xupper = params.upperBounds();
 
-        // The indices of the variables with/without lower/upper bounds
-        const auto iwithlower = structure.variablesWithLowerBounds();
-        const auto iwithupper = structure.variablesWithUpperBounds();
-        const auto iwithoutlower = structure.variablesWithoutLowerBounds();
-        const auto iwithoutupper = structure.variablesWithoutUpperBounds();
-
-        // Initialize the diagonal matrices Z and W
+        // Initialize the diagonal matrix Z assuming the ordering x = [x(free) x(fixed)]
         Z(iwithlower) = state.z(iwithlower);
-        W(iwithupper) = state.w(iwithupper);
         Z(iwithoutlower).fill(0.0);
+        Z.tail(nf).fill(0.0);
+
+        // Initialize the diagonal matrix W assuming the ordering x = [x(free) x(fixed)]
+        W(iwithupper) = state.w(iwithupper);
         W(iwithoutupper).fill(0.0);
+        W.tail(nf).fill(0.0);
 
-        // Initialize the diagonal matrices L and U
+        // Initialize the diagonal matrix L assuming the ordering x = [x(free) x(fixed)]
         L(iwithlower) = state.x(iwithlower) - xlower;
-        U(iwithupper) = state.x(iwithupper) - xupper;
         L(iwithoutlower).fill(1.0);
+        L.tail(nf).fill(1.0);
+
+        // Initialize the diagonal matrix U assuming the ordering x = [x(free) x(fixed)]
+        U(iwithupper) = xupper - state.x(iwithupper);
         U(iwithoutupper).fill(1.0);
-
-        // Permute the columns of A, Z, W, L and U according to ordering x = [x(free) x(fixed)]
-//        Z = Z(iordering);
-//        W = W(iordering);
-//        L = L(iordering);
-//        U = U(iordering);
-//        VectorXd tmp;
-//        Z = tmp.noalias() = Z(iordering);
-//        W = tmp.noalias() = W(iordering);
-//        L = tmp.noalias() = L(iordering);
-//        U = tmp.noalias() = U(iordering);
-
-        iordering.asPermutation().transpose().applyThisOnTheLeft(Z);
-        iordering.asPermutation().transpose().applyThisOnTheLeft(W);
-        iordering.asPermutation().transpose().applyThisOnTheLeft(L);
-        iordering.asPermutation().transpose().applyThisOnTheLeft(U);
+        U.tail(nf).fill(1.0);
     }
 
     /// Decompose the interior-point saddle point matrix.
@@ -177,19 +171,16 @@ struct OptimumStepper::Impl
         // Update the matrices Z, W, L, U
         updateZWLU(params, state);
 
-        // The indices of the free varibles
-        const auto jx = iordering.head(nx);
-
         // Set the structure of the Hessian matrix to diagonal
         H.setDiagonal(n);
 
-        // Create a view for the block of Hdiag corresponding to free variables
+        // Create a view for the block of H corresponding to free variables
         auto Hxx = H.diagonal().head(nx);
 
-        // Copy values of the Hessian matrix to Hxx
-        Hxx.noalias() = state.H.diagonal()(jx);
+        // Copy values of the Hessian matrix to Hxx assuming the ordering x = [x(free) x(fixed)]
+        Hxx.noalias() = state.H.diagonal().head(nx);
 
-        // Define the interior-point saddle point matrix
+        // Define the interior-point saddle point matrix assuming the ordering x = [x(free) x(fixed)]
         IpSaddlePointMatrix spm(H, A, Z, W, L, U, nf);
 
         // Decompose the interior-point saddle point matrix
@@ -207,9 +198,6 @@ struct OptimumStepper::Impl
         // Update the matrices Z, W, L, U
         updateZWLU(params, state);
 
-        // The indices of the free varibles
-        const auto jx = iordering.head(nx);
-
         // Set the structure of the Hessian matrix to dense
         H.setDense(n);
 
@@ -217,9 +205,9 @@ struct OptimumStepper::Impl
         auto Hxx = H.dense().topLeftCorner(nx, nx);
 
         // Copy values of the Hessian matrix to Hxx
-        Hxx.noalias() = state.H.dense()(jx, jx);
+        Hxx.noalias() = state.H.dense().topLeftCorner(nx, nx);
 
-        // Define the interior-point saddle point matrix
+        // Define the interior-point saddle point matrix assuming the ordering x = [x(free) x(fixed)]
         IpSaddlePointMatrix spm(H, A, Z, W, L, U, nf);
 
         // Decompose the interior-point saddle point matrix
@@ -237,55 +225,39 @@ struct OptimumStepper::Impl
         // Update the matrices Z, W, L, U
         updateZWLU(params, state);
 
-        // The gradient of the objective function corresponding to free variables
-        auto gx = g.head(nx);
-        auto gf = g.tail(nf);
+        // Views to the sub-vectors in r = [a b c d]
+        auto a = r.head(n);
+        auto b = r.segment(n, m);
+        auto c = r.segment(n + m, n);
+        auto d = r.tail(n);
 
-        // Views to the sub-vectors in residual = [a b c d]
-        auto a = residual.head(n);
-        auto b = residual.segment(n, m);
-        auto c = residual.segment(n + m, n);
-        auto d = residual.tail(n);
-
-        // Views to the sub-vectors in a = [a(free) a(fixed)] = [ax af]
+        // Views to the sub-vectors in a = [a(free) a(fixed)]
         auto ax = a.head(nx);
         auto af = a.tail(nf);
 
-        // Views to the sub-vectors in c = [c(free) c(fixed)] = [cx cf]
+        // Views to the sub-vectors in c = [c(free) c(fixed)]
         auto cx = c.head(nx);
         auto cf = c.tail(nf);
 
-        // Views to the sub-vectors in d = [d(free) d(fixed)] = [dx df]
+        // Views to the sub-vectors in d = [d(free) d(fixed)]
         auto dx = d.head(nx);
         auto df = d.tail(nf);
 
-        // Views to the sub-vectors in z = [z(free) z(fixed)] = [zx zf]
-        auto zx = Z.head(nx);
-
-        // Views to the sub-vectors in w = [w(free) w(fixed)] = [wx wf]
-        auto wx = W.head(nx);
-
-        // Views to the sub-vectors in the vector solution = [delta(x) delta(y) delta(z) delta(w)]
-        auto hx = solution.head(n);
-        auto hy = solution.segment(n, m);
-        auto hz = solution.segment(n + m, n);
-        auto hw = solution.tail(n);
-
-        // The variables x arranged in the ordering x = [x(free) x(fixed)]
-        x.noalias() = state.x(iordering);
-
-        // The indices of the free variables
-        const auto jx = iordering.head(nx);
+        // Views to the sub-vectors in z = [z(free) z(fixed)] and w = [w(free) w(fixed)]
+        auto zx = state.z.head(nx);
+        auto wx = state.w.head(nx);
 
         // Initialize the gradient of the objective function w.r.t. free and fixed variables
-        gx.noalias() = state.g(jx);
-        gf.fill(0.0);
+        const auto gx = state.g.head(nx);
+
+        const auto x = state.x;
+        const auto y = state.y;
 
         // Views to the sub-matrices in A = [Ax Af]
         const auto Ax = A.leftCols(nx);
 
         // Calculate ax = -(gx + tr(Ax)*y - zx + wx)
-        ax.noalias() = -(gx + tr(Ax) * state.y - zx + wx);
+        ax.noalias() = -(gx + tr(Ax) * y - zx + wx);
         af.fill(0.0);
 
         // Calculate b = -(A*x - b)
@@ -297,15 +269,34 @@ struct OptimumStepper::Impl
         cf.fill(0.0);
         df.fill(0.0);
 
-        // Solve the saddle point problem
-        solver.solve({a, b, c, d}, {hx, hy, hz, hw});
+        // The right-hand side vector of the interior-point saddle point problem
+        IpSaddlePointVector rhs(r, n, m);
 
-        // Permute the calculated (dx dz dw) to their original order
-        iordering.asPermutation().applyThisOnTheLeft(hx);
-        iordering.asPermutation().applyThisOnTheLeft(hz);
-        iordering.asPermutation().applyThisOnTheLeft(hw);
+        // The solution vector of the interior-point saddle point problem
+        IpSaddlePointSolution sol(s, n, m);
+
+        // Solve the saddle point problem
+        solver.solve(rhs, sol);
 
         return res.stop();
+    }
+
+    /// Return the calculated Newton step vector.
+    auto step() const -> IpSaddlePointVector
+    {
+        return IpSaddlePointVector(s, n, m);
+    }
+
+    /// Return the calculated residual vector for the current optimum state.
+    auto residual() const -> IpSaddlePointVector
+    {
+        return IpSaddlePointVector(r, n, m);
+    }
+
+    /// Return the assembled interior-point saddle point matrix.
+    auto matrix() const -> IpSaddlePointMatrix
+    {
+        return IpSaddlePointMatrix(H, A, Z, W, L, U, nf);
     }
 };
 
@@ -342,59 +333,19 @@ auto OptimumStepper::solve(const OptimumParams& params, const OptimumState& stat
     return pimpl->solve(params, state);
 }
 
-auto OptimumStepper::ipSaddlePointMatrix() const -> IpSaddlePointMatrix
+auto OptimumStepper::matrix() const -> IpSaddlePointMatrix
 {
-
+    return pimpl->matrix();
 }
 
-auto OptimumStepper::step() const -> VectorConstRef
+auto OptimumStepper::step() const -> IpSaddlePointVector
 {
-    return pimpl->solution;
+    return pimpl->step();
 }
 
-auto OptimumStepper::dx() const -> VectorConstRef
+auto OptimumStepper::residual() const -> IpSaddlePointVector
 {
-    return pimpl->solution.head(pimpl->n);
-}
-
-auto OptimumStepper::dy() const -> VectorConstRef
-{
-    return pimpl->solution.segment(pimpl->n, pimpl->m);
-}
-
-auto OptimumStepper::dz() const -> VectorConstRef
-{
-    return pimpl->solution.tail(pimpl->n);
-}
-
-auto OptimumStepper::dw() const -> VectorConstRef
-{
-    return pimpl->solution.tail(pimpl->n);
-}
-
-auto OptimumStepper::residual() const -> VectorConstRef
-{
-    return pimpl->residual;
-}
-
-auto OptimumStepper::residualOptimality() const -> VectorConstRef
-{
-    return pimpl->residual.head(pimpl->n);
-}
-
-auto OptimumStepper::residualFeasibility() const -> VectorConstRef
-{
-    return pimpl->residual.segment(pimpl->n, pimpl->m);
-}
-
-auto OptimumStepper::residualComplementarityLowerBounds() const -> VectorConstRef
-{
-    return pimpl->residual.tail(pimpl->n);
-}
-
-auto OptimumStepper::residualComplementarityUpperBounds() const -> VectorConstRef
-{
-    return pimpl->residual.tail(pimpl->n);
+    return pimpl->residual();
 }
 
 } // namespace Optima

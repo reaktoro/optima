@@ -18,7 +18,6 @@
 #pragma once
 
 // Optima includes
-#include <Optima/OptimumState.hpp>
 #include <Optima/VariantMatrix.hpp>
 
 namespace Optima {
@@ -42,35 +41,19 @@ class ObjectiveState
 {
 public:
     /// The evaluated value of the objective function.
-    double& f;
+    double f;
 
     /// The evaluated gradient of the objective function.
-    VectorRef g;
+    Vector g;
 
     /// The evaluated Hessian of the objective function.
-    /// The dimension of the Hessian matrix is controlled using the methods:
-    /// OptimumStructure::setHessianMatrixAsDense,
-    /// OptimumStructure::setHessianMatrixAsDiagonal, and
-    /// OptimumStructure::setHessianMatrixAsZero.
-    /// The first method causes `hessian` to be a square matrix with dimensions
-    /// of the number of variables in the optimization problem. The second method
-    /// causes `hessian` to be a matrix with a single column and as many rows
-    /// as there are variables. The third method causes `hessian` to be an empty
-    /// matrix, with zero rows and columns.
-    VariantMatrixRef H;
+    VariantMatrix H;
 
     /// The requirements in the evaluation of the objective function.
     ObjectiveRequirement requires;
 
     /// The boolean flag that indicates if the objective function evaluation failed.
     bool failed;
-
-    /// Construct an ObjectiveState instance.
-    /// @param grad The vector reference to store the gradient calculation.
-    /// @param hessian The matrix reference to store the Hessian calculation.
-    ObjectiveState(OptimumState& state)
-    : f(state.f), g(state.g), H(state.H), failed(false)
-    {}
 };
 
 } // namespace Optima
