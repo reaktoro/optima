@@ -61,13 +61,10 @@ struct OptimumStepper::Impl
     /// The gradient of the objective function arranged in the ordering g = [g(free) g(fixed)]
     Vector g;
 
-    /// The ordering of the variables into [x(free) x(fixed)].
-    VectorXi iordering;
-
     /// The number of variables.
     Index n;
 
-    /// The current number of free and fixedvariables.
+    /// The number of free and fixed variables.
     Index nx, nf;
 
     /// The number of equality constraints.
@@ -78,6 +75,11 @@ struct OptimumStepper::Impl
 
     /// The interior-point saddle point solver.
     IpSaddlePointSolver solver;
+
+
+    // The indices of the variables with/without lower/upper bounds
+    VectorXi ilower_ordering;
+    VectorXi iupper_ordering;
 
     /// Construct a OptimumStepper::Impl instance with given optimization problem structure.
     Impl(const OptimumStructure& structure)
@@ -91,7 +93,10 @@ struct OptimumStepper::Impl
         t  = 3*n + m;
 
         // The ordering of the variables partitioned as [free variablesixed variables]
-        iordering = structure.orderingFixedValues();
+        const auto iordering = structure.orderingFixedValues();
+
+        ilower_ordering(iordering) = structure.orderingLowerBounds();
+        iupper_ordering(iordering) = structure.orderingUpperBounds();
 
         // Copy the matrix A with columns having order accoring to iordering
         A.noalias() = structure.equalityConstraintMatrix()(all, iordering);
@@ -335,6 +340,11 @@ auto OptimumStepper::decompose(const OptimumParams& params, const OptimumState& 
 auto OptimumStepper::solve(const OptimumParams& params, const OptimumState& state) -> Result
 {
     return pimpl->solve(params, state);
+}
+
+auto OptimumStepper::ipSaddlePointMatrix() const -> IpSaddlePointMatrix
+{
+
 }
 
 auto OptimumStepper::step() const -> VectorConstRef

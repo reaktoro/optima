@@ -64,21 +64,28 @@ SaddlePointMatrix::operator Matrix() const
     return res;
 }
 
-SaddlePointVector::SaddlePointVector(VectorConstRef a, VectorConstRef b)
-: a(a), b(b)
+auto operator*(SaddlePointMatrix lhs, VectorConstRef rhs) -> Vector
+{
+    Matrix M(lhs);
+    Vector res = M * rhs;
+    return res;
+}
+
+SaddlePointVector::SaddlePointVector(VectorConstRef x, VectorConstRef y)
+: x(x), y(y), a(x), b(y)
 {}
 
 SaddlePointVector::SaddlePointVector(VectorConstRef r, Index n, Index m)
-: a(r.head(n)), b(r.tail(m))
+: x(r.head(n)), y(r.tail(m)), a(x), b(y)
 {}
 
 SaddlePointVector::operator Vector() const
 {
-    const auto n = a.size();
-    const auto m = b.size();
-    const auto t = m + n;
+    const auto n = x.rows();
+    const auto m = y.rows();
+    const auto t = n + m;
     Vector res(t);
-    res << a, b;
+    res << x, y;
     return res;
 }
 
@@ -86,32 +93,15 @@ SaddlePointSolution::SaddlePointSolution(VectorRef x, VectorRef y)
 : x(x), y(y)
 {}
 
-SaddlePointSolution::SaddlePointSolution(VectorRef s, Index n, Index m)
-: x(s.head(n)), y(s.tail(m))
+SaddlePointSolution::SaddlePointSolution(VectorRef r, Index n, Index m)
+: x(r.head(n)), y(r.tail(m))
 {}
 
 auto SaddlePointSolution::operator=(VectorConstRef vec) -> SaddlePointSolution&
 {
-    x.noalias() = vec.head(x.rows());
-    y.noalias() = vec.tail(y.rows());
+    x = vec.head(x.rows());
+    y = vec.tail(y.rows());
     return *this;
-}
-
-SaddlePointSolution::operator Vector() const
-{
-    const auto n = x.size();
-    const auto m = y.size();
-    const auto t = m + n;
-    Vector res(t);
-    res << x, y;
-    return res;
-}
-
-auto operator*(SaddlePointMatrix lhs, VectorConstRef rhs) -> Vector
-{
-    Matrix M(lhs);
-    Vector res = M * rhs;
-    return res;
 }
 
 } // namespace Optima

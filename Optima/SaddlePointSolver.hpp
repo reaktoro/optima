@@ -27,9 +27,9 @@
 namespace Optima {
 
 // Forward declarations
+class Result;
 class SaddlePointMatrix;
 class SaddlePointOptions;
-class Result;
 class SaddlePointSolution;
 class SaddlePointVector;
 

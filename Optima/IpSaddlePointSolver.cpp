@@ -21,9 +21,9 @@
 #include <Optima/Canonicalizer.hpp>
 #include <Optima/Exception.hpp>
 #include <Optima/IpSaddlePointMatrix.hpp>
+#include <Optima/Result.hpp>
 #include <Optima/SaddlePointMatrix.hpp>
 #include <Optima/SaddlePointOptions.hpp>
-#include <Optima/Result.hpp>
 #include <Optima/SaddlePointSolver.hpp>
 #include <Optima/Utils.hpp>
 #include <Optima/VariantMatrix.hpp>

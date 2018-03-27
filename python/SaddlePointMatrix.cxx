@@ -45,18 +45,20 @@ void exportSaddlePointMatrix(py::module& m)
         ;
 
     py::class_<SaddlePointVector>(m, "SaddlePointVector")
-        .def_readonly("a", &SaddlePointVector::a)
-        .def_readonly("b", &SaddlePointVector::b)
-        .def(py::init<VectorConstRef, VectorConstRef>(), py::arg("a"), py::arg("b"))
-        .def(py::init<VectorConstRef, Index, Index>(), py::arg("r"), py::arg("n"), py::arg("m"))
-        .def("array", [](SaddlePointVector self) { return Vector(self); })
-        ;
+         .def_readonly("x", &SaddlePointVector::x)
+         .def_readonly("y", &SaddlePointVector::y)
+         .def_readonly("a", &SaddlePointVector::a)
+         .def_readonly("b", &SaddlePointVector::b)
+         .def(py::init<VectorConstRef, VectorConstRef>(), py::arg("x"), py::arg("y"))
+         .def(py::init<VectorConstRef, Index, Index>(), py::arg("r"), py::arg("n"), py::arg("m"))
+         .def("array", [](SaddlePointVector self) { return Vector(self); })
+         ;
 
-    py::class_<SaddlePointSolution>(m, "SaddlePointSolution")
-        .def_readwrite("x", &SaddlePointSolution::x)
-        .def_readwrite("y", &SaddlePointSolution::y)
-        .def(py::init<VectorRef, VectorRef>(), py::arg("x"), py::arg("y"))
-        .def(py::init<VectorRef, Index, Index>(), py::arg("s"), py::arg("n"), py::arg("m"))
-        .def("array", [](SaddlePointSolution self) { return Vector(self); })
-        ;
+     py::class_<SaddlePointSolution>(m, "SaddlePointSolution")
+         .def_readwrite("x", &SaddlePointSolution::x)
+         .def_readwrite("y", &SaddlePointSolution::y)
+         .def(py::init<VectorRef, VectorRef>(), py::arg("x"), py::arg("y"))
+         .def(py::init<VectorRef, Index, Index>(), py::arg("s"), py::arg("n"), py::arg("m"))
+         .def("array", [](SaddlePointSolution self) { return Vector(self); })
+         ;
 }

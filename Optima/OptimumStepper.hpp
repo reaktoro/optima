@@ -36,7 +36,7 @@ class Result;
 class OptimumStepper
 {
 public:
-    /// Construct a default OptimumStepper instance.
+    /// Construct a OptimumStepper instance with given optimization structure.
     OptimumStepper(const OptimumStructure& structure);
 
     /// Construct a copy of an OptimumStepper instance.
@@ -50,14 +50,6 @@ public:
 
     /// Set the options for the step calculation.
     auto setOptions(const OptimumOptions& options) -> void;
-
-    /// Decompose the interior-point saddle point matrix used to compute the step vectors.
-    auto decompose(const OptimumParams& params, const OptimumState& state) -> Result;
-
-    /// Solve the interior-point saddle point matrix used to compute the step vectors.
-    /// @warning Before calling method OptimumStepper::solve, one has first to call
-    ///          method OptimumStepper::decompose.
-    auto solve(const OptimumParams& params, const OptimumState& state) -> Result;
 
     /// Return the step vector.
     auto step() const -> VectorConstRef;
@@ -75,22 +67,19 @@ public:
     auto dw() const -> VectorConstRef;
 
     /// Return the residual of all conditions for the optimum solution.
-    auto residual() const -> VectorConstRef;
+//    /// @warning Method OptimumStepper::solve should be called first.
+//    auto residual() const -> IpSaddlePointSolution;
+//
+//    /// Return the assembled interior-point saddle point matrix.
+//    /// @warning Method OptimumStepper::decompose should be called first.
+//    auto ipSaddlePointMatrix() const -> IpSaddlePointMatrix;
 
-    /// Return the residual of the optimality conditions.
-    auto residualOptimality() const -> VectorConstRef;
+    /// Decompose the interior-point saddle point matrix used to compute the step vectors.
+    auto decompose(const OptimumParams& params, const OptimumState& state) -> Result;
 
-    /// Return the residual of the feasibility conditions.
-    auto residualFeasibility() const -> VectorConstRef;
-
-    /// Return the residual of the complementarity conditions for the lower bounds.
-    auto residualComplementarityLowerBounds() const -> VectorConstRef;
-
-    /// Return the residual of the complementarity conditions for the upper bounds.
-    auto residualComplementarityUpperBounds() const -> VectorConstRef;
-
-    /// Return the residual of the complementarity conditions for the inequality constraints.
-    auto residualComplementarityInequality() const -> VectorConstRef;
+    /// Solve the interior-point saddle point matrix used to compute the step vectors.
+    /// @warning Method OptimumStepper::decompose should be called first.
+    auto solve(const OptimumParams& params, const OptimumState& state) -> Result;
 
 private:
     struct Impl;

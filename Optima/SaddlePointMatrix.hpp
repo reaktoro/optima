@@ -53,15 +53,15 @@ public:
     Index nf;
 
     /// Construct a SaddlePointMatrix instance.
-    /// @param H The \eq{H} matrix in the saddle point equation.
-    /// @param A The \eq{A} matrix in the saddle point equation.
+    /// @param H The \eq{H} matrix in the saddle point matrix.
+    /// @param A The \eq{A} matrix in the saddle point matrix.
     /// @param nf The number of fixed variables.
     SaddlePointMatrix(VariantMatrixConstRef H, MatrixConstRef A, Index nf = 0);
 
     /// Construct a SaddlePointMatrix instance.
-    /// @param H The \eq{H} matrix in the saddle point equation.
-    /// @param A The \eq{A} matrix in the saddle point equation.
-    /// @param G The \eq{G} matrix in the saddle point equation.
+    /// @param H The \eq{H} matrix in the saddle point matrix.
+    /// @param A The \eq{A} matrix in the saddle point matrix.
+    /// @param G The \eq{G} matrix in the saddle point matrix.
     /// @param nf The number of fixed variables.
     SaddlePointMatrix(VariantMatrixConstRef H, MatrixConstRef A, VariantMatrixConstRef G, Index nf = 0);
 
@@ -69,57 +69,60 @@ public:
     operator Matrix() const;
 };
 
-/// A type used to describe a saddle point right-hand side vector.
+/// Used to describe a saddle point vector \eq{\begin{bmatrix}x & y\end{bmatrix}}.
 class SaddlePointVector
 {
 public:
-    /// The saddle-point solution vector \eq{a}.
+    /// The saddle-point sub-vector \eq{x}.
+    VectorConstRef x;
+
+    /// The saddle-point sub-vector \eq{y}.
+    VectorConstRef y;
+
+    /// The saddle-point sub-vector \eq{a} *as an alias to x*.
     VectorConstRef a;
 
-    /// The saddle-point solution vector \eq{b}.
+    /// The saddle-point sub-vector \eq{b} *as an alias to y*.
     VectorConstRef b;
 
-    /// Construct a SaddlePointVector instance with given \eq{a} and \eq{b} vectors.
-    /// @param a The saddle point right-hand side vector \eq{a}.
-    /// @param b The saddle point right-hand side vector \eq{b}.
-    SaddlePointVector(VectorConstRef a, VectorConstRef b);
+    /// Construct a SaddlePointVector instance with given \eq{x} and \eq{y} sub-vectors.
+    /// @param x The saddle point sub-vector \eq{x}.
+    /// @param y The saddle point sub-vector \eq{y}.
+    SaddlePointVector(VectorConstRef x, VectorConstRef y);
 
-    /// Construct a SaddlePointVector instance with given right-hand side vector.
-    /// @param r The right-hand side vector \eq{r=\begin{bmatrix}a & b\end{bmatrix}}.
-    /// @param n The dimension of vector \eq{a}.
-    /// @param m The dimension of vector \eq{b}.
+    /// Construct a SaddlePointVector instance with given vector.
+    /// @param r The vector \eq{r=\begin{bmatrix}x & y\end{bmatrix}}.
+    /// @param n The dimension of sub-vector \eq{x}.
+    /// @param m The dimension of sub-vector \eq{y}.
     SaddlePointVector(VectorConstRef r, Index n, Index m);
 
     /// Convert this SaddlePointVector instance into a Vector instance.
     operator Vector() const;
 };
 
-/// A type used to describe a saddle point solution vector.
+/// Used to describe a saddle point solution vector \eq{\begin{bmatrix}x & y\end{bmatrix}}.
 class SaddlePointSolution
 {
 public:
-    /// The saddle-point solution vector \eq{x}.
+    /// The saddle-point sub-vector \eq{x}.
     VectorRef x;
 
-    /// The saddle-point solution vector \eq{y}.
+    /// The saddle-point sub-vector \eq{y}.
     VectorRef y;
 
-    /// Construct a SaddlePointSolution instance with given \eq{x} and \eq{y} vectors.
-    /// @param x The saddle point solution vector \eq{x}.
-    /// @param y The saddle point solution vector \eq{y}.
+    /// Construct a SaddlePointSolution instance with given \eq{x} and \eq{y} sub-vectors.
+    /// @param x The saddle point sub-vector \eq{x}.
+    /// @param y The saddle point sub-vector \eq{y}.
     SaddlePointSolution(VectorRef x, VectorRef y);
 
-    /// Construct a SaddlePointSolution instance with given solution vector.
-    /// @param s The solution vector \eq{s=\begin{bmatrix}x & y\end{bmatrix}}.
-    /// @param n The dimension of vector \eq{x}.
-    /// @param m The dimension of vector \eq{y}.
-    SaddlePointSolution(VectorRef s, Index n, Index m);
+    /// Construct a SaddlePointSolution instance with given vector.
+    /// @param r The vector \eq{r=\begin{bmatrix}x & y\end{bmatrix}}.
+    /// @param n The dimension of sub-vector \eq{x}.
+    /// @param m The dimension of sub-vector \eq{y}.
+    SaddlePointSolution(VectorRef r, Index n, Index m);
 
-    /// Assign this SaddlePointSolution instance with a VectorConstRef instance.
+    /// Assign a VectorConstRef instance to this SaddlePointSolution instance.
     auto operator=(VectorConstRef vec) -> SaddlePointSolution&;
-
-    /// Convert this SaddlePointSolution instance into a Vector instance.
-    operator Vector() const;
 };
 
 /// Return the multiplication of a SaddlePointMatrix by a vector.

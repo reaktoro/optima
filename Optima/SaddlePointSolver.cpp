@@ -23,11 +23,11 @@
 using namespace Eigen;
 
 // Optima includes
+#include <Optima/Canonicalizer.hpp>
 #include <Optima/Exception.hpp>
+#include <Optima/Result.hpp>
 #include <Optima/SaddlePointMatrix.hpp>
 #include <Optima/SaddlePointOptions.hpp>
-#include <Optima/Result.hpp>
-#include <Optima/Canonicalizer.hpp>
 #include <Optima/Utils.hpp>
 #include <Optima/VariantMatrix.hpp>
 
