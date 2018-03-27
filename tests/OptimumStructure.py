@@ -23,18 +23,36 @@ from pytest import approx, mark
 def test_optimum_structure():
     n = 10
     m = 5
-    
+
     A = eigen.random(m, n)
-    
+
     structure = OptimumStructure(A)
-    
+
+    structure.setVariablesWithLowerBounds([0, 2])
+    assert structure.variablesWithLowerBounds() == approx([0, 2])
+
+    structure.setVariablesWithUpperBounds([2, 4])
+    assert structure.variablesWithUpperBounds() == approx([2, 4])
+
+    structure.setVariablesWithFixedValues([6, 8, 9])
+    assert structure.variablesWithFixedValues() == approx([6, 8, 9])
+
+    structure.allVariablesHaveLowerBounds()
+    assert structure.variablesWithLowerBounds() == approx(arange(n))
+
+    structure.allVariablesHaveUpperBounds()
+    assert structure.variablesWithUpperBounds() == approx(arange(n))
+
+    structure.setHessianMatrixAsDense()
+    assert structure.structureHessianMatrix() == MatrixStructure.Dense
+
+    structure.setHessianMatrixAsDiagonal()
+    assert structure.structureHessianMatrix() == MatrixStructure.Diagonal
+
+    structure.setHessianMatrixAsZero()
+    assert structure.structureHessianMatrix() == MatrixStructure.Zero
+
     assert structure.numVariables() == n
     assert structure.numEqualityConstraints() == m
     assert structure.equalityConstraintMatrix() == approx(A)
-    
-    structure.setVariablesWithLowerBounds([0, 2])
-    assert structure.variablesWithLowerBounds() == approx([0, 2])
-    
-    structure.setVariablesWithUpperBounds([2, 4])
-    assert structure.variablesWithUpperBounds() == approx([2, 4])
-    
+
