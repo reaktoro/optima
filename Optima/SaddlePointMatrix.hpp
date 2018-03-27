@@ -73,16 +73,16 @@ public:
 class SaddlePointVector
 {
 public:
-    /// The saddle-point sub-vector \eq{x}.
+    /// The saddle point sub-vector \eq{x}.
     VectorConstRef x;
 
-    /// The saddle-point sub-vector \eq{y}.
+    /// The saddle point sub-vector \eq{y}.
     VectorConstRef y;
 
-    /// The saddle-point sub-vector \eq{a} *as an alias to x*.
+    /// The saddle point right-hand side sub-vector \eq{a} *(this is an alias to x)*.
     VectorConstRef a;
 
-    /// The saddle-point sub-vector \eq{b} *as an alias to y*.
+    /// The saddle point right-hand side sub-vector \eq{b} *(this is an alias to y)*.
     VectorConstRef b;
 
     /// Construct a SaddlePointVector instance with given \eq{x} and \eq{y} sub-vectors.
@@ -104,10 +104,10 @@ public:
 class SaddlePointSolution
 {
 public:
-    /// The saddle-point sub-vector \eq{x}.
+    /// The solution sub-vector \eq{x} in the saddle point problem.
     VectorRef x;
 
-    /// The saddle-point sub-vector \eq{y}.
+    /// The solution sub-vector \eq{y} in the saddle point problem.
     VectorRef y;
 
     /// Construct a SaddlePointSolution instance with given \eq{x} and \eq{y} sub-vectors.
@@ -123,6 +123,9 @@ public:
 
     /// Assign a VectorConstRef instance to this SaddlePointSolution instance.
     auto operator=(VectorConstRef vec) -> SaddlePointSolution&;
+
+    /// Convert this SaddlePointSolution instance into a Vector instance.
+    operator Vector() const;
 };
 
 /// Return the multiplication of a SaddlePointMatrix by a vector.

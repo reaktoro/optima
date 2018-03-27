@@ -79,14 +79,20 @@ SaddlePointVector::SaddlePointVector(VectorConstRef r, Index n, Index m)
 : x(r.head(n)), y(r.tail(m)), a(x), b(y)
 {}
 
-SaddlePointVector::operator Vector() const
+template<typename SaddlePointVectorType>
+auto toVector(const SaddlePointVectorType& vec) -> Vector
 {
-    const auto n = x.rows();
-    const auto m = y.rows();
+    const auto n = vec.x.rows();
+    const auto m = vec.y.rows();
     const auto t = n + m;
     Vector res(t);
-    res << x, y;
+    res << vec.x, vec.y;
     return res;
+}
+
+SaddlePointVector::operator Vector() const
+{
+    return toVector(*this);
 }
 
 SaddlePointSolution::SaddlePointSolution(VectorRef x, VectorRef y)
@@ -102,6 +108,11 @@ auto SaddlePointSolution::operator=(VectorConstRef vec) -> SaddlePointSolution&
     x = vec.head(x.rows());
     y = vec.tail(y.rows());
     return *this;
+}
+
+SaddlePointSolution::operator Vector() const
+{
+    return toVector(*this);
 }
 
 } // namespace Optima
