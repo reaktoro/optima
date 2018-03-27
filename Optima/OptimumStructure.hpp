@@ -17,9 +17,6 @@
 
 #pragma once
 
-// C++ includes
-#include <functional>
-
 // Optima includes
 #include <Optima/Index.hpp>
 #include <Optima/Matrix.hpp>
@@ -27,33 +24,22 @@
 
 namespace Optima {
 
-// Forward declarations
-class ObjectiveState;
-
-/// The functional signature of an objective function.
-/// @param x The values of the variables \eq{x}.
-/// @param res The evaluated state of the objective function.
-using ObjectiveFunction = std::function<void(VectorConstRef, ObjectiveState&)>;
-
 /// The structure of an optimization problem that changes with less frequency.
 class OptimumStructure
 {
 public:
     /// Construct an OptimumStructure instance without equality constraints.
-    /// @param f The objective function \eq{f} in the optimization problem.
     /// @param n The number of variables in \eq{x} in the optimization problem.
-    OptimumStructure(ObjectiveFunction f, Index n);
+    OptimumStructure(Index n);
 
     /// Construct an OptimumStructure instance with equality constraints.
-    /// @param f The objective function \eq{f} in the optimization problem.
     /// @param n The number of variables in \eq{x} in the optimization problem.
     /// @param m The number of linear equality constraints in the optimization problem.
-    OptimumStructure(ObjectiveFunction f, Index n, Index m);
+    OptimumStructure(Index n, Index m);
 
     /// Construct an OptimumStructure instance with equality constraints.
-    /// @param f The objective function \eq{f} in the optimization problem.
     /// @param A The linear equality constraint matrix \eq{A} in the optimization problem.
-    OptimumStructure(ObjectiveFunction f, MatrixConstRef A);
+    OptimumStructure(MatrixConstRef A);
 
     /// Set the indices of the variables in \eq{x} with lower bounds.
     auto setVariablesWithLowerBounds(VectorXiConstRef indices) -> void;
@@ -71,97 +57,86 @@ public:
     auto setVariablesWithFixedValues(VectorXiConstRef indices) -> void;
 
     /// Set the structure of the Hessian matrix to be dense.
-    auto setHessianMatrixAsDense() -> void { m_structure_hessian_matrix = MatrixStructure::Dense; }
+    auto setHessianMatrixAsDense() -> void { _structure_hessian_matrix = MatrixStructure::Dense; }
 
     /// Set the structure of the Hessian matrix to be diagonal.
-    auto setHessianMatrixAsDiagonal() -> void { m_structure_hessian_matrix = MatrixStructure::Diagonal; }
+    auto setHessianMatrixAsDiagonal() -> void { _structure_hessian_matrix = MatrixStructure::Diagonal; }
 
     /// Set the structure of the Hessian matrix to be fully zero.
-    auto setHessianMatrixAsZero() -> void { m_structure_hessian_matrix = MatrixStructure::Zero; }
+    auto setHessianMatrixAsZero() -> void { _structure_hessian_matrix = MatrixStructure::Zero; }
 
     /// Return the number of variables.
-    auto numVariables() const -> Index { return m_n; }
+    auto numVariables() const -> Index { return _n; }
 
     /// Return the number of linear equality constraints.
-    auto numEqualityConstraints() const -> Index { return m_A.rows(); }
+    auto numEqualityConstraints() const -> Index { return _A.rows(); }
 
     /// Return the indices of the variables with lower bounds.
-    auto variablesWithLowerBounds() const -> VectorXiConstRef { return m_lowerpartition.tail(m_nlower); }
+    auto variablesWithLowerBounds() const -> VectorXiConstRef { return _lowerpartition.tail(_nlower); }
 
     /// Return the indices of the variables with upper bounds.
-    auto variablesWithUpperBounds() const -> VectorXiConstRef { return m_upperpartition.tail(m_nupper); }
+    auto variablesWithUpperBounds() const -> VectorXiConstRef { return _upperpartition.tail(_nupper); }
 
     /// Return the indices of the variables with fixed values.
-    auto variablesWithFixedValues() const -> VectorXiConstRef { return m_fixedpartition.tail(m_nfixed); }
+    auto variablesWithFixedValues() const -> VectorXiConstRef { return _fixedpartition.tail(_nfixed); }
 
     /// Return the indices of the variables without lower bounds.
-    auto variablesWithoutLowerBounds() const -> VectorXiConstRef { return m_lowerpartition.head(m_n - m_nlower); }
+    auto variablesWithoutLowerBounds() const -> VectorXiConstRef { return _lowerpartition.head(_n - _nlower); }
 
     /// Return the indices of the variables without upper bounds.
-    auto variablesWithoutUpperBounds() const -> VectorXiConstRef { return m_upperpartition.head(m_n - m_nupper); }
+    auto variablesWithoutUpperBounds() const -> VectorXiConstRef { return _upperpartition.head(_n - _nupper); }
 
     /// Return the indices of the variables without fixed values.
-    auto variablesWithoutFixedValues() const -> VectorXiConstRef { return m_fixedpartition.head(m_n - m_nfixed); }
+    auto variablesWithoutFixedValues() const -> VectorXiConstRef { return _fixedpartition.head(_n - _nfixed); }
 
     /// Return the indices of the variables partitioned in [without, with] lower bounds.
-    auto orderingLowerBounds() const -> VectorXiConstRef { return m_lowerpartition; }
+    auto orderingLowerBounds() const -> VectorXiConstRef { return _lowerpartition; }
 
     /// Return the indices of the variables partitioned in [without, with] upper bounds.
-    auto orderingUpperBounds() const -> VectorXiConstRef { return m_upperpartition; }
+    auto orderingUpperBounds() const -> VectorXiConstRef { return _upperpartition; }
 
     /// Return the indices of the variables partitioned in [without, with] fixed values.
-    auto orderingFixedValues() const -> VectorXiConstRef { return m_fixedpartition; }
+    auto orderingFixedValues() const -> VectorXiConstRef { return _fixedpartition; }
 
     /// Return the structure type of the Hessian matrix.
-    auto structureHessianMatrix() const -> MatrixStructure { return m_structure_hessian_matrix; }
-
-    /// Return the objective function.
-    auto objectiveFunction() const -> const ObjectiveFunction& { return m_objective; }
+    auto structureHessianMatrix() const -> MatrixStructure { return _structure_hessian_matrix; }
 
     /// Return the coefficient matrix \eq{A} of the linear equality constraints.
-    auto equalityConstraintMatrix() const -> MatrixConstRef { return m_A; }
+    auto equalityConstraintMatrix() const -> MatrixConstRef { return _A; }
 
     /// Return the coefficient matrix \eq{A} of the linear equality constraints.
-    auto equalityConstraintMatrix() -> MatrixRef { return m_A; }
-
-    /// Evaluate the objective function.
-    /// @param x The values of the variables \eq{x}.
-    /// @param f The evaluated state of the objective function.
-    auto objective(VectorConstRef x, ObjectiveState& f) const -> void { m_objective(x, f); }
+    auto equalityConstraintMatrix() -> MatrixRef { return _A; }
 
 private:
-    /// The objective function in the optimization problem.
-    ObjectiveFunction m_objective;
-
     /// The number of variables in the optimization problem.
-    Index m_n;
+    Index _n;
 
     /// The number of linear equality constraints in the optimization problem.
-    Index m_m;
+    Index _m;
 
     /// The coefficient matrix of the linear equality constraint \eq{Ax = a}.
-    Matrix m_A;
+    Matrix _A;
 
     /// The number of variables with lower bounds.
-    Index m_nlower;
+    Index _nlower;
 
     /// The number of variables with upper bounds.
-    Index m_nupper;
+    Index _nupper;
 
     /// The number of variables with fixed values.
-    Index m_nfixed;
+    Index _nfixed;
 
     /// The indices of the variables partitioned in [with, without] lower bounds.
-    VectorXi m_lowerpartition;
+    VectorXi _lowerpartition;
 
     /// The indices of the variables partitioned in [with, without] upper bounds.
-    VectorXi m_upperpartition;
+    VectorXi _upperpartition;
 
     /// The indices of the variables partitioned in [with, without] fixed values.
-    VectorXi m_fixedpartition;
+    VectorXi _fixedpartition;
 
     /// The structure of the Hessian matrix
-    MatrixStructure m_structure_hessian_matrix;
+    MatrixStructure _structure_hessian_matrix;
 };
 
 } // namespace Optima

@@ -17,6 +17,9 @@
 
 #pragma once
 
+// C++ includes
+#include <functional>
+
 // Optima includes
 #include <Optima/VariantMatrix.hpp>
 
@@ -55,5 +58,10 @@ public:
     /// The boolean flag that indicates if the objective function evaluation failed.
     bool failed;
 };
+
+/// The functional signature of an objective function.
+/// @param x The values of the variables \eq{x}.
+/// @param res The evaluated state of the objective function.
+using ObjectiveFunction = std::function<void(VectorConstRef, ObjectiveState&)>;
 
 } // namespace Optima

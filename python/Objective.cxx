@@ -16,8 +16,9 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 // pybind11 includes
-#include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
+#include <pybind11/functional.h>
+#include <pybind11/pybind11.h>
 namespace py = pybind11;
 
 // Optima includes
@@ -32,11 +33,8 @@ void exportObjectiveState(py::module& m)
         .def_readwrite("H", &ObjectiveRequirement::H, "The boolean flag that indicates the need for the objective Hessian.")
         ;
 
-    const auto fget = [](const ObjectiveState& self) { return self.f; };
-    const auto fset = [](ObjectiveState& self, double value) { self.f = value; };
-
     py::class_<ObjectiveState>(m, "ObjectiveState")
-        .def_property("f", fget, fset, "The evaluated value of the objective function.")
+        .def_readwrite("f", &ObjectiveState::f, "The evaluated value of the objective function.")
         .def_readwrite("g", &ObjectiveState::g, "The evaluated gradient of the objective function.")
         .def_readwrite("H", &ObjectiveState::H, "The evaluated Hessian of the objective function.")
         .def_readwrite("requires", &ObjectiveState::requires, "The requirements in the evaluation of the objective function.")

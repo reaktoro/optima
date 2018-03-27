@@ -18,11 +18,9 @@
 // pybind11 includes
 #include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
-#include <pybind11/functional.h>
 namespace py = pybind11;
 
 // Optima includes
-#include <Optima/Objective.hpp>
 #include <Optima/OptimumStructure.hpp>
 using namespace Optima;
 
@@ -32,9 +30,9 @@ void exportOptimumStructure(py::module& m)
     auto equalityConstraintMatrix2 = [](OptimumStructure& self) { return self.equalityConstraintMatrix(); };
 
     py::class_<OptimumStructure>(m, "OptimumStructure")
-        .def(py::init<ObjectiveFunction, Index>(), py::arg("f"), py::arg("n"))
-        .def(py::init<ObjectiveFunction, Index, Index>(), py::arg("f"), py::arg("n"), py::arg("m"))
-        .def(py::init<ObjectiveFunction, MatrixConstRef>(), py::arg("f"), py::arg("A"))
+        .def(py::init<Index>(), py::arg("n"))
+        .def(py::init<Index, Index>(), py::arg("n"), py::arg("m"))
+        .def(py::init<MatrixConstRef>(), py::arg("A"))
         .def("setVariablesWithLowerBounds", &OptimumStructure::setVariablesWithLowerBounds, "Set the indices of the variables in `x` with lower bounds.")
         .def("allVariablesHaveLowerBounds", &OptimumStructure::allVariablesHaveLowerBounds, "Set all variables in `x` with lower bounds.")
         .def("setVariablesWithUpperBounds", &OptimumStructure::setVariablesWithUpperBounds, "Set the indices of the variables in `x` with upper bounds.")
@@ -55,9 +53,7 @@ void exportOptimumStructure(py::module& m)
         .def("orderingUpperBounds", &OptimumStructure::orderingUpperBounds, py::return_value_policy::reference_internal, "Return the indices of the variables without fixed values.")
         .def("orderingFixedValues", &OptimumStructure::orderingFixedValues, py::return_value_policy::reference_internal, "Return the indices of the variables without fixed values.")
         .def("structureHessianMatrix", &OptimumStructure::structureHessianMatrix, "Return the structure type of the Hessian matrix.")
-        .def("objectiveFunction", &OptimumStructure::objectiveFunction, py::return_value_policy::reference_internal, "Return the objective function.")
         .def("equalityConstraintMatrix", equalityConstraintMatrix1, py::return_value_policy::reference_internal, "Return the coefficient matrix A of the linear equality constraints.")
         .def("equalityConstraintMatrix", equalityConstraintMatrix2, py::return_value_policy::reference_internal, "Return the coefficient matrix A of the linear equality constraints.")
-        .def("objective", &OptimumStructure::objective, py::return_value_policy::reference_internal, "Evaluate the objective function.")
         ;
 }

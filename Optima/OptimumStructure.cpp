@@ -23,56 +23,56 @@
 
 namespace Optima {
 
-OptimumStructure::OptimumStructure(ObjectiveFunction f, Index n)
-: OptimumStructure(f, n, 0)
+OptimumStructure::OptimumStructure(Index n)
+: OptimumStructure(n, 0)
 {}
 
-OptimumStructure::OptimumStructure(ObjectiveFunction f, Index n, Index m)
-: m_objective(f), m_n(n), m_m(m), m_A(Eigen::zeros(m_m, m_n)),
-  m_nlower(0), m_nupper(0), m_nfixed(0),
-  m_lowerpartition(Eigen::linspace<int>(n)),
-  m_upperpartition(Eigen::linspace<int>(n)),
-  m_fixedpartition(Eigen::linspace<int>(n)),
-  m_structure_hessian_matrix(MatrixStructure::Dense)
+OptimumStructure::OptimumStructure(Index n, Index m)
+: _n(n), _m(m), _A(Eigen::zeros(_m, _n)),
+  _nlower(0), _nupper(0), _nfixed(0),
+  _lowerpartition(Eigen::linspace<int>(n)),
+  _upperpartition(Eigen::linspace<int>(n)),
+  _fixedpartition(Eigen::linspace<int>(n)),
+  _structure_hessian_matrix(MatrixStructure::Dense)
 {}
 
-OptimumStructure::OptimumStructure(ObjectiveFunction f, MatrixConstRef A)
-: OptimumStructure(f, A.cols(), A.rows())
+OptimumStructure::OptimumStructure(MatrixConstRef A)
+: OptimumStructure(A.cols(), A.rows())
 {
-    m_A = A;
+    _A = A;
 }
 
 auto OptimumStructure::setVariablesWithLowerBounds(VectorXiConstRef indices) -> void
 {
-    m_nlower = indices.size();
-    m_lowerpartition.setLinSpaced(m_n, 0, m_n - 1);
-    m_lowerpartition.tail(m_nlower).swap(m_lowerpartition(indices));
+    _nlower = indices.size();
+    _lowerpartition.setLinSpaced(_n, 0, _n - 1);
+    _lowerpartition.tail(_nlower).swap(_lowerpartition(indices));
 }
 
 auto OptimumStructure::allVariablesHaveLowerBounds() -> void
 {
-    m_nlower = m_n;
-    m_lowerpartition.setLinSpaced(m_n, 0, m_n - 1);
+    _nlower = _n;
+    _lowerpartition.setLinSpaced(_n, 0, _n - 1);
 }
 
 auto OptimumStructure::setVariablesWithUpperBounds(VectorXiConstRef indices) -> void
 {
-    m_nupper = indices.size();
-    m_upperpartition.setLinSpaced(m_n, 0, m_n - 1);
-    m_upperpartition.tail(m_nupper).swap(m_upperpartition(indices));
+    _nupper = indices.size();
+    _upperpartition.setLinSpaced(_n, 0, _n - 1);
+    _upperpartition.tail(_nupper).swap(_upperpartition(indices));
 }
 
 auto OptimumStructure::allVariablesHaveUpperBounds() -> void
 {
-    m_nupper = m_n;
-    m_upperpartition.setLinSpaced(m_n, 0, m_n - 1);
+    _nupper = _n;
+    _upperpartition.setLinSpaced(_n, 0, _n - 1);
 }
 
 auto OptimumStructure::setVariablesWithFixedValues(VectorXiConstRef indices) -> void
 {
-    m_nfixed = indices.size();
-    m_fixedpartition.setLinSpaced(m_n, 0, m_n - 1);
-    m_fixedpartition.tail(m_nfixed).swap(m_fixedpartition(indices));
+    _nfixed = indices.size();
+    _fixedpartition.setLinSpaced(_n, 0, _n - 1);
+    _fixedpartition.tail(_nfixed).swap(_fixedpartition(indices));
 }
 
 } // namespace Optima
