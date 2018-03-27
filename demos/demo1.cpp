@@ -22,7 +22,7 @@ int main(int argc, char **argv)
 {
     OptimumProblem problem;
     problem.n = 2;
-    problem.objective = [](const Vector& x, ObjectiveState& f)
+    problem.objective = [](const Vector& x, ObjectiveResult& f)
     {
         Vector xt = x - ones(2);
         if(f.requires.val) f.val = 0.5 * dot(xt, xt);

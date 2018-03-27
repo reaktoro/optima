@@ -36,7 +36,7 @@
 //namespace Optima {
 //namespace {
 //
-//auto isfinite(const ObjectiveState& f) -> bool
+//auto isfinite(const ObjectiveResult& f) -> bool
 //{
 //    return std::isfinite(f.val) && f.grad.allFinite();
 //}
@@ -80,7 +80,7 @@
 //    OptimumStepper stepper;
 //
 //    /// The evaluation of the objective function.
-//    ObjectiveState f;
+//    ObjectiveResult f;
 //
 //    /// The trial iterate x
 //    Vector xtrial;

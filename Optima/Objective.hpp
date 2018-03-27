@@ -41,7 +41,7 @@ public:
 
 /// The result of the evaluation of an objective function.
 /// @see ObjectiveFunction
-class ObjectiveState
+class ObjectiveResult
 {
 public:
     /// The evaluated value of the objective function.
@@ -63,6 +63,6 @@ public:
 /// The functional signature of an objective function.
 /// @param x The values of the variables \eq{x}.
 /// @param res The evaluated state of the objective function.
-using ObjectiveFunction = std::function<void(VectorConstRef, ObjectiveState&)>;
+using ObjectiveFunction = std::function<void(VectorConstRef, ObjectiveResult&)>;
 
 } // namespace Optima

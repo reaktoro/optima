@@ -33,11 +33,11 @@ void exportObjective(py::module& m)
         .def_readwrite("H", &ObjectiveRequirement::H, "The boolean flag that indicates the need for the objective Hessian.")
         ;
 
-    py::class_<ObjectiveState>(m, "ObjectiveState")
-        .def_readwrite("f", &ObjectiveState::f, "The evaluated value of the objective function.")
-        .def_readwrite("g", &ObjectiveState::g, "The evaluated gradient of the objective function.")
-        .def_readwrite("H", &ObjectiveState::H, "The evaluated Hessian of the objective function.")
-        .def_readwrite("requires", &ObjectiveState::requires, "The requirements in the evaluation of the objective function.")
-        .def_readwrite("failed", &ObjectiveState::failed, "The boolean flag that indicates if the objective function evaluation failed.")
+    py::class_<ObjectiveResult>(m, "ObjectiveResult")
+        .def_readwrite("f", &ObjectiveResult::f, "The evaluated value of the objective function.")
+        .def_readwrite("g", &ObjectiveResult::g, "The evaluated gradient of the objective function.")
+        .def_readwrite("H", &ObjectiveResult::H, "The evaluated Hessian of the objective function.")
+        .def_readwrite("requires", &ObjectiveResult::requires, "The requirements in the evaluation of the objective function.")
+        .def_readwrite("failed", &ObjectiveResult::failed, "The boolean flag that indicates if the objective function evaluation failed.")
         ;
 }
