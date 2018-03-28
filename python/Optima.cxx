@@ -52,10 +52,10 @@ PYBIND11_MODULE(optima, m)
     exportOptimumParams(m);
     exportOptimumProblem(m);
     exportOptimumResult(m);
-    exportOptimumSolver(m);
     exportOptimumState(m);
     exportOptimumStepper(m);
     exportOptimumStructure(m);
+    exportOptimumSolver(m);
     exportSaddlePointMatrix(m);
     exportSaddlePointOptions(m);
     exportSaddlePointSolver(m);

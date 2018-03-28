@@ -21,9 +21,20 @@
 namespace py = pybind11;
 
 // Optima includes
+#include <Optima/OptimumOptions.hpp>
+#include <Optima/OptimumParams.hpp>
+#include <Optima/OptimumResult.hpp>
 #include <Optima/OptimumSolver.hpp>
-//using namespace Optima;
+#include <Optima/OptimumState.hpp>
+#include <Optima/OptimumStructure.hpp>
+using namespace Optima;
 
 void exportOptimumSolver(py::module& m)
 {
+    py::class_<OptimumSolver>(m, "OptimumSolver")
+        .def(py::init<const OptimumStructure&>())
+        .def("setOptions", &OptimumSolver::setOptions)
+        .def("solve", &OptimumSolver::solve)
+        .def("dxdp", &OptimumSolver::dxdp)
+        ;
 }

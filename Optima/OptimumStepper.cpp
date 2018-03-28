@@ -105,7 +105,7 @@ struct OptimumStepper::Impl
         iwithoutupper = iordering(structure.variablesWithoutLowerBounds());
 
         // Copy the matrix A with columns having order according to iordering
-        A.noalias() = structure.equalityConstraintMatrix()(all, iordering);
+        A = structure.A(all, iordering);
 
         // Allocate memory for some members
         Z = zeros(n);

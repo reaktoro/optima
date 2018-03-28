@@ -23,24 +23,13 @@
 
 namespace Optima {
 
-OptimumStructure::OptimumStructure(Index n)
-: OptimumStructure(n, 0)
-{}
-
 OptimumStructure::OptimumStructure(Index n, Index m)
-: _n(n), _m(m), _A(Eigen::zeros(_m, _n)),
-  _nlower(0), _nupper(0), _nfixed(0),
+: _n(n), _m(m), _nlower(0), _nupper(0), _nfixed(0),
   _lowerpartition(Eigen::linspace<int>(n)),
   _upperpartition(Eigen::linspace<int>(n)),
   _fixedpartition(Eigen::linspace<int>(n)),
   _structure_hessian_matrix(MatrixStructure::Dense)
 {}
-
-OptimumStructure::OptimumStructure(MatrixConstRef A)
-: OptimumStructure(A.cols(), A.rows())
-{
-    _A = A;
-}
 
 auto OptimumStructure::setVariablesWithLowerBounds(VectorXiConstRef indices) -> void
 {
@@ -73,6 +62,81 @@ auto OptimumStructure::setVariablesWithFixedValues(VectorXiConstRef indices) -> 
     _nfixed = indices.size();
     _fixedpartition.setLinSpaced(_n, 0, _n - 1);
     _fixedpartition.tail(_nfixed).swap(_fixedpartition(indices));
+}
+
+auto OptimumStructure::setHessianMatrixAsDense() -> void
+{
+    _structure_hessian_matrix = MatrixStructure::Dense;
+}
+
+auto OptimumStructure::setHessianMatrixAsDiagonal() -> void
+{
+    _structure_hessian_matrix = MatrixStructure::Diagonal;
+}
+
+auto OptimumStructure::setHessianMatrixAsZero() -> void
+{
+    _structure_hessian_matrix = MatrixStructure::Zero;
+}
+
+auto OptimumStructure::numVariables() const -> Index
+{
+    return _n;
+}
+
+auto OptimumStructure::numEqualityConstraints() const -> Index
+{
+    return A.rows();
+}
+
+auto OptimumStructure::variablesWithLowerBounds() const -> VectorXiConstRef
+{
+    return _lowerpartition.tail(_nlower);
+}
+
+auto OptimumStructure::variablesWithUpperBounds() const -> VectorXiConstRef
+{
+    return _upperpartition.tail(_nupper);
+}
+
+auto OptimumStructure::variablesWithFixedValues() const -> VectorXiConstRef
+{
+    return _fixedpartition.tail(_nfixed);
+}
+
+auto OptimumStructure::variablesWithoutLowerBounds() const -> VectorXiConstRef
+{
+    return _lowerpartition.head(_n - _nlower);
+}
+
+auto OptimumStructure::variablesWithoutUpperBounds() const -> VectorXiConstRef
+{
+    return _upperpartition.head(_n - _nupper);
+}
+
+auto OptimumStructure::variablesWithoutFixedValues() const -> VectorXiConstRef
+{
+    return _fixedpartition.head(_n - _nfixed);
+}
+
+auto OptimumStructure::orderingLowerBounds() const -> VectorXiConstRef
+{
+    return _lowerpartition;
+}
+
+auto OptimumStructure::orderingUpperBounds() const -> VectorXiConstRef
+{
+    return _upperpartition;
+}
+
+auto OptimumStructure::orderingFixedValues() const -> VectorXiConstRef
+{
+    return _fixedpartition;
+}
+
+auto OptimumStructure::structureHessianMatrix() const -> MatrixStructure 
+{
+    return _structure_hessian_matrix; 
 }
 
 } // namespace Optima
