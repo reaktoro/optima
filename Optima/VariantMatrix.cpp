@@ -71,11 +71,6 @@ auto VariantMatrixConstRef::structure() const -> MatrixStructure
     return _structure;
 }
 
-auto VariantMatrixConstRef::topLeftCorner(Index size) const -> std::tuple<VariantMatrixConstRef, decltype(Eigen::seqN(0, size))>
-{
-    return std::make_tuple(*this, Eigen::seqN(0, size));
-}
-
 auto VariantMatrixConstRef::diagonalRef() -> VectorConstRef
 {
     switch(_structure) {

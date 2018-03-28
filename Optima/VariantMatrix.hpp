@@ -110,10 +110,16 @@ public:
 
     /// Return an indexed view of the variant matrix.
     template<typename IndicesType>
-    auto operator()(const IndicesType& indices) const -> std::tuple<VariantMatrixConstRef, const IndicesType&> { return std::make_tuple(*this, indices); }
+    auto operator()(const IndicesType& indices) const -> decltype(std::make_tuple(*this, indices))
+    {
+        return std::make_tuple(*this, indices);
+    }
 
     /// Return a view to the top left corner of the variant matrix.
-    auto topLeftCorner(Index size) const -> std::tuple<VariantMatrixConstRef, decltype(Eigen::seqN(0, size))>;
+    auto topLeftCorner(Index size) const -> decltype(std::make_tuple(*this, Eigen::seqN(0, size)))
+    {
+        return std::make_tuple(*this, Eigen::seqN(0, size));
+    }
 
     /// Return a reference to the diagonal entries of the variant matrix.
     auto diagonalRef() -> VectorConstRef;
