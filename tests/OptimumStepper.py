@@ -17,7 +17,9 @@
 
 from optima import *
 from numpy import *
+from numpy.linalg import norm
 from pytest import approx, mark
+
 
 def test_optimum_stepper():
     n = 10
@@ -29,26 +31,26 @@ def test_optimum_stepper():
     structure.allVariablesHaveLowerBounds()
     structure.allVariablesHaveUpperBounds()
     structure.setHessianMatrixAsDense()
-    
+
     params = OptimumParams(structure)
     params.b = eigen.random(m)
     params.xlower = eigen.random(n)
     params.xupper = eigen.random(n)
-    
+
     state = OptimumState(structure)
     state.x = eigen.random(n)
     state.y = eigen.random(m)
     state.z = eigen.random(n)
     state.w = eigen.random(n)
     state.g = eigen.random(n)
-    state.H.dense[:] = eigen.random(n, n)
-    
+    state.H.dense = eigen.random(n, n)
+
     stepper = OptimumStepper(structure)
     stepper.decompose(params, state)
     stepper.solve(params, state)
-    
+
     step = stepper.step().array()
     residual = stepper.residual().array()
     lhs = stepper.matrix().array()
-    
+
     assert norm(lhs.dot(step) - residual) / norm(residual) == approx(0.0)

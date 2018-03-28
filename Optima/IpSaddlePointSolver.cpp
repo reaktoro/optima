@@ -181,7 +181,7 @@ struct IpSaddlePointSolver::Impl
     /// Decompose the saddle point matrix equation.
     auto decompose(IpSaddlePointMatrix lhs) -> Result
     {
-        switch(lhs.H.structure) {
+        switch(lhs.H.structure()) {
         case MatrixStructure::Dense: return decomposeDenseHessianMatrix(lhs);
         case MatrixStructure::Diagonal: return decomposeDiagonalHessianMatrix(lhs);
         case MatrixStructure::Zero: return decomposeDiagonalHessianMatrix(lhs);
@@ -212,7 +212,7 @@ struct IpSaddlePointSolver::Impl
         H.setDense(n);
 
         // Views to the blocks of the Hessian matrix Hxx = [Hss Hsl Hsu; Hls Hll Hlu; Hus Hul Huu]
-        auto Hxx = H.dense().topLeftCorner(nx, nx);
+        auto Hxx = H.dense.topLeftCorner(nx, nx);
         auto Hee = Hxx.topLeftCorner(ns + nl + nu, ns + nl + nu);
 
         // Update Hxx
@@ -255,7 +255,7 @@ struct IpSaddlePointSolver::Impl
         H.setDiagonal(n);
 
         // Views to the blocks of the Hessian matrix Hxx = [Hss Hsl Hsu; Hls Hll Hlu; Hus Hul Huu]
-        auto Hxx = H.diagonal().head(nx);
+        auto Hxx = H.diagonal.head(nx);
         auto Hee = Hxx.head(ns + nl + nu);
 
         // Update Hxx
@@ -295,7 +295,7 @@ struct IpSaddlePointSolver::Impl
         Result res;
 
         // Views to the blocks of the Hessian matrix Hxx
-        const auto Hxx = H.dense().topLeftCorner(nx, nx);
+        const auto Hxx = H.dense.topLeftCorner(nx, nx);
 
         const auto Hs  = Hxx.topRows(ns);
         const auto Hl  = Hxx.middleRows(ns, nl);
@@ -507,7 +507,7 @@ struct IpSaddlePointSolver::Impl
         Result res;
 
         // Views to the blocks of the Hessian matrix Hxx
-        const auto Hxx = H.diagonal().head(nx);
+        const auto Hxx = H.diagonal.head(nx);
         const auto Hll = Hxx.segment(ns, nl);
         const auto Huu = Hxx.segment(ns + nl, nu);
         const auto Hzz = Hxx.segment(ns + nl + nu, nz);

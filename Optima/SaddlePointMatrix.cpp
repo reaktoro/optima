@@ -39,7 +39,7 @@ SaddlePointMatrix::SaddlePointMatrix(VariantMatrixConstRef H, MatrixConstRef A, 
         "Could not create a SaddlePointMatrix object.",
             "Matrix A must have less number of rows than number of columns.");
 
-    Assert(G.dense.rows() == A.rows() || G.diagonal.rows() == A.rows() || G.structure == MatrixStructure::Zero,
+    Assert(G.dense.rows() == A.rows() || G.diagonal.rows() == A.rows() || G.structure() == MatrixStructure::Zero,
         "Could not create a SaddlePointMatrix object.",
             "Matrix G, when non-zero, must have the same number of rows and columns as there are rows in A.");
 }

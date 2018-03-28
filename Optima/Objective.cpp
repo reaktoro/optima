@@ -30,12 +30,12 @@ ObjectiveResult::ObjectiveResult(const OptimumStructure& structure)
     {
     case MatrixStructure::Dense:
         H.setDense(structure.numVariables());
-        H.dense().fill(0.0);
+        H.dense.fill(0.0);
         break;
     case MatrixStructure::Diagonal:
     case MatrixStructure::Zero:
         H.setDiagonal(structure.numVariables());
-        H.diagonal().fill(0.0);
+        H.diagonal.fill(0.0);
         break;
     }
 }

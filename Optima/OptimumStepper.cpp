@@ -167,10 +167,10 @@ struct OptimumStepper::Impl
         H.setDiagonal(n);
 
         // Create a view for the block of H corresponding to free variables
-        auto Hxx = H.diagonal().head(nx);
+        auto Hxx = H.diagonal.head(nx);
 
         // Copy values of the Hessian matrix to Hxx assuming the ordering x = [x(free) x(fixed)]
-        Hxx.noalias() = state.H.diagonal().head(nx);
+        Hxx.noalias() = state.H.diagonal.head(nx);
 
         // Define the interior-point saddle point matrix assuming the ordering x = [x(free) x(fixed)]
         IpSaddlePointMatrix spm(H, A, Z, W, L, U, nf);
@@ -194,10 +194,10 @@ struct OptimumStepper::Impl
         H.setDense(n);
 
         // Create a view for the block of H corresponding to free variables
-        auto Hxx = H.dense().topLeftCorner(nx, nx);
+        auto Hxx = H.dense.topLeftCorner(nx, nx);
 
         // Copy values of the Hessian matrix to Hxx
-        Hxx.noalias() = state.H.dense().topLeftCorner(nx, nx);
+        Hxx.noalias() = state.H.dense.topLeftCorner(nx, nx);
 
         // Define the interior-point saddle point matrix assuming the ordering x = [x(free) x(fixed)]
         IpSaddlePointMatrix spm(H, A, Z, W, L, U, nf);

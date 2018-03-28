@@ -28,21 +28,19 @@ void exportVariantMatrix(py::module& m)
 {
     py::class_<VariantMatrix>(m, "VariantMatrix")
         .def(py::init<>())
+        .def_readwrite("dense", &VariantMatrix::dense)
+        .def_readwrite("diagonal", &VariantMatrix::diagonal)
+        .def("structure", &VariantMatrix::structure)
         .def("setZero", &VariantMatrix::setZero)
         .def("setDense", &VariantMatrix::setDense)
         .def("setDiagonal", &VariantMatrix::setDiagonal)
-        .def("structure", &VariantMatrix::structure)
-        .def("dense", [](const VariantMatrix& self) { return self.dense(); } )
-        .def("dense", [](VariantMatrix& self) { return self.dense(); } )
-        .def("diagonal", [](const VariantMatrix& self) { return self.diagonal(); } )
-        .def("diagonal", [](VariantMatrix& self) { return self.diagonal(); } )
         ;
 
     py::class_<VariantMatrixRef>(m, "VariantMatrixRef")
         .def(py::init<VariantMatrix&>())
         .def_readwrite("dense", &VariantMatrixRef::dense)
         .def_readwrite("diagonal", &VariantMatrixRef::diagonal)
-        .def_readonly("structure", &VariantMatrixRef::structure)
+        .def("structure", &VariantMatrixRef::structure)
         ;
 
     py::class_<VariantMatrixConstRef>(m, "VariantMatrixConstRef")
@@ -53,6 +51,6 @@ void exportVariantMatrix(py::module& m)
         .def(py::init<const VariantMatrix&>())
         .def_readonly("dense", &VariantMatrixConstRef::dense)
         .def_readonly("diagonal", &VariantMatrixConstRef::diagonal)
-        .def_readonly("structure", &VariantMatrixConstRef::structure)
+        .def("structure", &VariantMatrixConstRef::structure)
         ;
 }
