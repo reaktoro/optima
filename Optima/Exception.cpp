@@ -50,7 +50,7 @@ std::string message(const Exception& exception, const std::string& file, int lin
     message << bar << std::endl;
     message << "*** Error: " << error << std::endl;
     message << "*** Reason: " << reason << std::endl;
-    message << "*** Location:  This error was encountered in " << loc << "." << std::endl;
+    message << "*** Location: This error was encountered in " << loc << "." << std::endl;
     message << bar << std::endl;
     message << std::endl;
     return message.str();
