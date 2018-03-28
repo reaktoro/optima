@@ -52,12 +52,7 @@ public:
     VariantMatrix H;
 
     /// Construct an OptimumState instance.
-    /// @param x The primal solution of the optimization problem.
-    /// @param y The dual solution of the optimization problem with respect to the equality constraints.
-    /// @param z The dual solution of the optimization problem with respect to the lower bound constraints.
-    /// @param w The dual solution of the optimization problem with respect to the upper bound constraints.
-    /// @param g The gradient of the objective function.
-    /// @param H The Hessian matrix of the objective function.
+    /// @param structure The structure of the optimization problem.
     OptimumState(const OptimumStructure& structure);
 };
 
