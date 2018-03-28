@@ -23,6 +23,7 @@ namespace py = pybind11;
 
 // Optima includes
 #include <Optima/Objective.hpp>
+#include <Optima/OptimumStructure.hpp>
 using namespace Optima;
 
 void exportObjective(py::module& m)
@@ -34,6 +35,7 @@ void exportObjective(py::module& m)
         ;
 
     py::class_<ObjectiveResult>(m, "ObjectiveResult")
+        .def(py::init<const OptimumStructure&>())
         .def_readwrite("f", &ObjectiveResult::f, "The evaluated value of the objective function.")
         .def_readwrite("g", &ObjectiveResult::g, "The evaluated gradient of the objective function.")
         .def_readwrite("H", &ObjectiveResult::H, "The evaluated Hessian of the objective function.")

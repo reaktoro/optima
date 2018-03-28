@@ -25,6 +25,9 @@
 
 namespace Optima {
 
+// Forward declarations
+class OptimumStructure;
+
 /// The requirements in the evaluation of the objective function.
 class ObjectiveRequirement
 {
@@ -58,6 +61,9 @@ public:
 
     /// The boolean flag that indicates if the objective function evaluation failed.
     bool failed;
+
+    /// Construct a ObjectiveResult instance with given optimization structure.
+    ObjectiveResult(const OptimumStructure& structure);
 };
 
 /// The functional signature of an objective function.

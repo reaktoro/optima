@@ -27,7 +27,7 @@ def test_optimum_stepper():
 
     structure = OptimumStructure(A)
     params = OptimumParams(structure)
-    
+    state = OptimumState()
     params.b = eigen.random(m)
     
     stepper = OptimumStepper(structure)
