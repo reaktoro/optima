@@ -32,6 +32,7 @@ void exportOptimumOptions(py::module& m)
         ;
 
     py::class_<OptimumOutputOptions, OutputterOptions>(m, "OptimumOutputOptions")
+        .def(py::init<>())
         .def_readwrite("xprefix", &OptimumOutputOptions::xprefix)
         .def_readwrite("yprefix", &OptimumOutputOptions::yprefix)
         .def_readwrite("zprefix", &OptimumOutputOptions::zprefix)
@@ -41,6 +42,7 @@ void exportOptimumOptions(py::module& m)
         ;
 
     py::class_<OptimumOptions>(m, "OptimumOptions")
+        .def(py::init<>())
         .def_readwrite("output", &OptimumOptions::output)
         .def_readwrite("tolerance", &OptimumOptions::tolerance)
         .def_readwrite("tolerancex", &OptimumOptions::tolerancex)
