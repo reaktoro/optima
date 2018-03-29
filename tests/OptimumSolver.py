@@ -27,26 +27,55 @@ def objective(x):
     res.H = 2.0 * ones(len(x))
     return res
 
-def test_optimum_solver():
-    n = 2
-    m = 1
+# def test_optimum_solver():
+#     n = 2
+#     m = 1
+# 
+#     structure = OptimumStructure(n, m)
+#     structure.allVariablesHaveLowerBounds()
+#     structure.allVariablesHaveUpperBounds()
+#     structure.A = [[1.0, -1.0]]
+# 
+#     params = OptimumParams()
+#     params.b = [0.0]
+#     params.xlower = [0.0, 0.0]
+#     params.xupper = [5.0, 5.0] 
+#     params.objective = objective
+#     
+#     state = OptimumState()
+#     state.x = array([2.0, 2.0])
+# 
+#     options = OptimumOptions()
+#     options.output.active = True
+#     
+#     solver = OptimumSolver(structure)
+#     solver.setOptions(options)
+#     solver.solve(params, state)
+#     
+#     print state.x
+
+
+def test_optimum_solver_with_fixed_variables():
+    n = 10
+    m = 4
 
     structure = OptimumStructure(n, m)
     structure.allVariablesHaveLowerBounds()
     structure.allVariablesHaveUpperBounds()
-    structure.A = [[1.0, -1.0]]
+    structure.A = eigen.random(m, n)
 
     params = OptimumParams()
-    params.b = [0.0]
-    params.xlower = [0.0, 0.0]
-    params.xupper = [5.0, 5.0] 
+    params.b = eigen.random(m)
+    params.xlower = eigen.zeros(n)
+    params.xupper = eigen.ones(n) 
     params.objective = objective
     
     state = OptimumState()
-    state.x = array([2.0, 2.0])
+#     state.x = 0.5 * eigen.ones(n)
 
     options = OptimumOptions()
     options.output.active = True
+    options.kkt.method = SaddlePointMethod.Rangespace
     
     solver = OptimumSolver(structure)
     solver.setOptions(options)
