@@ -17,21 +17,18 @@
 
 #pragma once
 
-// C++ includes
-#include <vector>
+// Optima includes
+#include <Optima/Matrix.hpp>
 
 namespace Optima {
 
 /// Define a type that represents an index
 using Index = std::ptrdiff_t;
 
-/// Define a type that represents a collection of indices
-using Indices = std::vector<Index>;
-
 /// Return a vector of indices with values from 0 up to a given length.
-inline auto indices(Index length) -> Indices
+inline auto indices(Index length) -> VectorXi
 {
-    Indices res(length);
+    VectorXi res(length);
     for(Index i = 0; i < length; ++i) res[i] = i;
     return res;
 }
