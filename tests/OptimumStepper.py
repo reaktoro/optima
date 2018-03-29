@@ -25,25 +25,23 @@ def test_optimum_stepper():
     n = 10
     m = 5
 
-    A = eigen.random(m, n)
-
-    structure = OptimumStructure(A)
+    structure = OptimumStructure(n, m)
     structure.allVariablesHaveLowerBounds()
     structure.allVariablesHaveUpperBounds()
-    structure.setHessianMatrixAsDense()
+    structure.A = eigen.random(m, n) 
 
-    params = OptimumParams(structure)
+    params = OptimumParams()
     params.b = eigen.random(m)
     params.xlower = eigen.random(n)
     params.xupper = eigen.random(n)
 
-    state = OptimumState(structure)
+    state = OptimumState()
     state.x = eigen.random(n)
     state.y = eigen.random(m)
     state.z = eigen.random(n)
     state.w = eigen.random(n)
     state.g = eigen.random(n)
-    state.H.dense = eigen.random(n, n)
+    state.H = eigen.random(n, n)
 
     stepper = OptimumStepper(structure)
     stepper.decompose(params, state)

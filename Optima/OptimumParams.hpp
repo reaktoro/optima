@@ -23,9 +23,6 @@
 
 namespace Optima {
 
-// Forward declarations
-class OptimumStructure;
-
 /// The parameters of an optimization problem that change with more frequency.
 class OptimumParams
 {
@@ -44,10 +41,6 @@ public:
 
     /// The objective function of the optimization calculation.
     ObjectiveFunction objective;
-
-    /// Construct a default OptimumParams instance.
-    /// @param structure The structure of the optimization problem.
-    OptimumParams(const OptimumStructure& structure);
 };
 
 } // namespace Optima

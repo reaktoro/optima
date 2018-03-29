@@ -20,7 +20,6 @@
 // Optima includes
 #include <Optima/Index.hpp>
 #include <Optima/Matrix.hpp>
-#include <Optima/Utils.hpp>
 
 namespace Optima {
 
@@ -51,15 +50,6 @@ public:
 
     /// Set the indices of the variables in \eq{x} with fixed values.
     auto setVariablesWithFixedValues(VectorXiConstRef indices) -> void;
-
-    /// Set the structure of the Hessian matrix to be dense.
-    auto setHessianMatrixAsDense() -> void;
-
-    /// Set the structure of the Hessian matrix to be diagonal.
-    auto setHessianMatrixAsDiagonal() -> void;
-
-    /// Set the structure of the Hessian matrix to be fully zero.
-    auto setHessianMatrixAsZero() -> void;
 
     /// Return the number of variables.
     auto numVariables() const -> Index;
@@ -94,9 +84,6 @@ public:
     /// Return the indices of the variables partitioned in [without, with] fixed values.
     auto orderingFixedValues() const -> VectorXiConstRef;
 
-    /// Return the structure type of the Hessian matrix.
-    auto structureHessianMatrix() const -> MatrixStructure;
-
 private:
     /// The number of variables in the optimization problem.
     Index _n;
@@ -121,9 +108,6 @@ private:
 
     /// The indices of the variables partitioned in [with, without] fixed values.
     VectorXi _fixedpartition;
-
-    /// The structure of the Hessian matrix
-    MatrixStructure _structure_hessian_matrix;
 };
 
 } // namespace Optima

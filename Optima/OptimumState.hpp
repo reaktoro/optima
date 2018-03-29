@@ -23,9 +23,6 @@
 
 namespace Optima {
 
-// Forward declarations
-class OptimumStructure;
-
 /// Used to describe the state of an optimization calculation.
 class OptimumState
 {
@@ -43,17 +40,13 @@ public:
     Vector w;
 
     /// The value of the objective function.
-    double f;
+    double f = 0.0;
 
     /// The gradient of the objective function.
     Vector g;
 
     /// The Hessian of the objective function.
     VariantMatrix H;
-
-    /// Construct an OptimumState instance.
-    /// @param structure The structure of the optimization problem.
-    OptimumState(const OptimumStructure& structure);
 };
 
 } // namespace Optima

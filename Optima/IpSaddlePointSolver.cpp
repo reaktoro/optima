@@ -181,7 +181,7 @@ struct IpSaddlePointSolver::Impl
     /// Decompose the saddle point matrix equation.
     auto decompose(IpSaddlePointMatrix lhs) -> Result
     {
-        switch(lhs.H.structure()) {
+        switch(lhs.H.structure) {
         case MatrixStructure::Dense: return decomposeDenseHessianMatrix(lhs);
         case MatrixStructure::Diagonal: return decomposeDiagonalHessianMatrix(lhs);
         case MatrixStructure::Zero: return decomposeDiagonalHessianMatrix(lhs);
@@ -279,7 +279,7 @@ struct IpSaddlePointSolver::Impl
     /// Solve the saddle point matrix equation.
     auto solve(IpSaddlePointVector rhs, IpSaddlePointSolution sol) -> Result
     {
-        switch(H.structure()) {
+        switch(H.structure) {
         case MatrixStructure::Dense: return solveDenseHessianMatrix(rhs, sol);
         case MatrixStructure::Diagonal: return solveDiagonalHessianMatrix(rhs, sol);
         case MatrixStructure::Zero: return solveDiagonalHessianMatrix(rhs, sol);

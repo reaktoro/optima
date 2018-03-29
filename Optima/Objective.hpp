@@ -21,6 +21,7 @@
 #include <functional>
 
 // Optima includes
+#include <Optima/Matrix.hpp>
 #include <Optima/VariantMatrix.hpp>
 
 namespace Optima {
@@ -48,7 +49,7 @@ class ObjectiveResult
 {
 public:
     /// The evaluated value of the objective function.
-    double f;
+    double f = 0.0;
 
     /// The evaluated gradient of the objective function.
     Vector g;
@@ -60,13 +61,7 @@ public:
     ObjectiveRequirement requires;
 
     /// The boolean flag that indicates if the objective function evaluation failed.
-    bool failed;
-
-    /// Construct a default ObjectiveResult instance.
-    ObjectiveResult();
-
-    /// Construct a ObjectiveResult instance with given optimization structure.
-    ObjectiveResult(const OptimumStructure& structure);
+    bool failed = false;
 };
 
 /// The functional signature of an objective function.

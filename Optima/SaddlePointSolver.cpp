@@ -223,7 +223,7 @@ struct SaddlePointSolver::Impl
     /// Decompose the coefficient matrix of the saddle point problem using a LU decomposition method.
     auto decomposeFullspace(SaddlePointMatrix lhs) -> void
     {
-        switch(lhs.G.structure()) {
+        switch(lhs.G.structure) {
             case MatrixStructure::Zero: decomposeFullspaceZeroG(lhs); break;
             default: decomposeFullspaceDenseG(lhs); break;
         }
@@ -312,7 +312,7 @@ struct SaddlePointSolver::Impl
     /// Decompose the coefficient matrix of the saddle point problem using a rangespace diagonal method.
     auto decomposeRangespaceAux(SaddlePointMatrix lhs) -> void
     {
-        switch(lhs.G.structure()) {
+        switch(lhs.G.structure) {
             case MatrixStructure::Zero: decomposeRangespaceZeroG(lhs); break;
             default: decomposeRangespaceDenseG(lhs); break;
         }
@@ -321,7 +321,7 @@ struct SaddlePointSolver::Impl
     /// Decompose the coefficient matrix of the saddle point problem using a rangespace diagonal method.
     auto decomposeRangespace(SaddlePointMatrix lhs) -> void
     {
-        switch(lhs.H.structure()) {
+        switch(lhs.H.structure) {
         case MatrixStructure::Dense: decomposeNullspace(lhs); break;
         default: decomposeRangespaceAux(lhs); break;
         }
@@ -591,7 +591,7 @@ struct SaddlePointSolver::Impl
     /// Decompose the coefficient matrix of the saddle point problem using a nullspace method.
     auto decomposeNullspace(SaddlePointMatrix lhs) -> void
     {
-        switch(lhs.G.structure()) {
+        switch(lhs.G.structure) {
             case MatrixStructure::Zero: decomposeNullspaceZeroG(lhs); break;
             default: decomposeNullspaceDenseG(lhs); break;
         }
@@ -766,7 +766,7 @@ struct SaddlePointSolver::Impl
     /// Solve the saddle point problem using a LU decomposition method.
     auto solveFullspace(SaddlePointVector rhs, SaddlePointSolution sol) -> void
     {
-        switch(G.structure()) {
+        switch(G.structure) {
             case MatrixStructure::Zero: solveFullspaceZeroG(rhs, sol); break;
             default: solveFullspaceDenseG(rhs, sol); break;
         }
@@ -893,7 +893,7 @@ struct SaddlePointSolver::Impl
     /// Solve the saddle point problem using a rangespace diagonal method.
     auto solveRangespaceAux(SaddlePointVector rhs, SaddlePointSolution sol) -> void
     {
-        switch(G.structure()) {
+        switch(G.structure) {
             case MatrixStructure::Zero: solveRangespaceZeroG(rhs, sol); break;
             default: solveRangespaceDenseG(rhs, sol); break;
         }
@@ -902,7 +902,7 @@ struct SaddlePointSolver::Impl
     /// Solve the saddle point problem using a rangespace diagonal method.
     auto solveRangespace(SaddlePointVector rhs, SaddlePointSolution sol) -> void
     {
-        switch(H.structure()) {
+        switch(H.structure) {
             case MatrixStructure::Dense: solveNullspace(rhs, sol); break;
             default: solveRangespaceAux(rhs, sol); break;
         }
@@ -1096,7 +1096,7 @@ struct SaddlePointSolver::Impl
     /// Solve the saddle point problem using a nullspace method.
     auto solveNullspace(SaddlePointVector rhs, SaddlePointSolution sol) -> void
     {
-        switch(G.structure()) {
+        switch(G.structure) {
             case MatrixStructure::Zero: solveNullspaceZeroG(rhs, sol); break;
             default: solveNullspaceDenseG(rhs, sol); break;
         }

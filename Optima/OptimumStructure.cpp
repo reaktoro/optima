@@ -19,8 +19,6 @@
 
 // Optima includes
 #include <Optima/Exception.hpp>
-#include <Optima/Index.hpp>
-#include <Optima/Matrix.hpp>
 
 namespace Optima {
 
@@ -28,8 +26,7 @@ OptimumStructure::OptimumStructure(Index n, Index m)
 : _n(n), _m(m), _nlower(0), _nupper(0), _nfixed(0),
   _lowerpartition(indices(n)),
   _upperpartition(indices(n)),
-  _fixedpartition(indices(n)),
-  _structure_hessian_matrix(MatrixStructure::Dense)
+  _fixedpartition(indices(n))
 {}
 
 auto OptimumStructure::setVariablesWithLowerBounds(VectorXiConstRef inds) -> void
@@ -63,21 +60,6 @@ auto OptimumStructure::setVariablesWithFixedValues(VectorXiConstRef inds) -> voi
     _nfixed = inds.size();
     _fixedpartition = indices(_n);
     _fixedpartition.tail(_nfixed).swap(_fixedpartition(inds));
-}
-
-auto OptimumStructure::setHessianMatrixAsDense() -> void
-{
-    _structure_hessian_matrix = MatrixStructure::Dense;
-}
-
-auto OptimumStructure::setHessianMatrixAsDiagonal() -> void
-{
-    _structure_hessian_matrix = MatrixStructure::Diagonal;
-}
-
-auto OptimumStructure::setHessianMatrixAsZero() -> void
-{
-    _structure_hessian_matrix = MatrixStructure::Zero;
 }
 
 auto OptimumStructure::numVariables() const -> Index
@@ -133,11 +115,6 @@ auto OptimumStructure::orderingUpperBounds() const -> VectorXiConstRef
 auto OptimumStructure::orderingFixedValues() const -> VectorXiConstRef
 {
     return _fixedpartition;
-}
-
-auto OptimumStructure::structureHessianMatrix() const -> MatrixStructure
-{
-    return _structure_hessian_matrix;
 }
 
 } // namespace Optima

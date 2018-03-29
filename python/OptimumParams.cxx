@@ -23,13 +23,12 @@ namespace py = pybind11;
 
 // Optima includes
 #include <Optima/OptimumParams.hpp>
-#include <Optima/OptimumStructure.hpp>
 using namespace Optima;
 
 void exportOptimumParams(py::module& m)
 {
     py::class_<OptimumParams>(m, "OptimumParams")
-        .def(py::init<const OptimumStructure&>())
+        .def(py::init<>())
         .def_readwrite("b", &OptimumParams::b)
         .def_readwrite("xlower", &OptimumParams::xlower)
         .def_readwrite("xupper", &OptimumParams::xupper)

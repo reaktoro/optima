@@ -21,18 +21,10 @@ from numpy.linalg import norm
 from pytest import approx, mark
 
 def objective(x):
-    print "Hello from objective(x, res)"
-    print "x = ", x
     res = ObjectiveResult()
-    res.f = (x[0] - 1)**2 + (x[1] - 1)**2
-    res.g = 2 * array([x[0] - 1, x[1] - 1])
-    res.H.setDiagonal(len(x))
-    res.H.diagonal = 2*array([1.0, 1.0])
-
-    print "f = ", res.f
-    print "g = ", res.g
-    print "H = ", res.H.diagonal
-    
+    res.f = sum((x - 1)**2)
+    res.g = 2.0 * (x - 1)
+    res.H = 2.0 * ones(len(x))
     return res
 
 def test_optimum_solver():
@@ -42,16 +34,15 @@ def test_optimum_solver():
     structure = OptimumStructure(n, m)
     structure.allVariablesHaveLowerBounds()
     structure.allVariablesHaveUpperBounds()
-    structure.setHessianMatrixAsDiagonal()
     structure.A = [[1.0, -1.0]]
 
-    params = OptimumParams(structure)
+    params = OptimumParams()
     params.b = [0.0]
     params.xlower = [0.0, 0.0]
     params.xupper = [5.0, 5.0] 
     params.objective = objective
     
-    state = OptimumState(structure)
+    state = OptimumState()
     state.x = array([2.0, 2.0])
 
     options = OptimumOptions()

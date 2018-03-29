@@ -28,9 +28,10 @@ void exportVariantMatrix(py::module& m)
 {
     py::class_<VariantMatrix>(m, "VariantMatrix")
         .def(py::init<>())
+        .def(py::init<VariantMatrixConstRef>())
         .def_readwrite("dense", &VariantMatrix::dense)
         .def_readwrite("diagonal", &VariantMatrix::diagonal)
-        .def("structure", &VariantMatrix::structure)
+        .def_readwrite("structure", &VariantMatrix::structure)
         .def("setZero", &VariantMatrix::setZero)
         .def("setDense", &VariantMatrix::setDense)
         .def("setDiagonal", &VariantMatrix::setDiagonal)
@@ -40,7 +41,7 @@ void exportVariantMatrix(py::module& m)
         .def(py::init<VariantMatrix&>())
         .def_readwrite("dense", &VariantMatrixRef::dense)
         .def_readwrite("diagonal", &VariantMatrixRef::diagonal)
-        .def("structure", &VariantMatrixRef::structure)
+        .def_property_readonly("structure", [](const VariantMatrixRef& self) { return self.structure; })
         ;
 
     py::class_<VariantMatrixConstRef>(m, "VariantMatrixConstRef")
@@ -51,6 +52,8 @@ void exportVariantMatrix(py::module& m)
         .def(py::init<const VariantMatrix&>())
         .def_readonly("dense", &VariantMatrixConstRef::dense)
         .def_readonly("diagonal", &VariantMatrixConstRef::diagonal)
-        .def("structure", &VariantMatrixConstRef::structure)
+        .def_property_readonly("structure", [](const VariantMatrixConstRef& self) { return self.structure; })
         ;
+
+    py::implicitly_convertible<py::array, VariantMatrixConstRef>();
 }

@@ -23,26 +23,5 @@ using namespace Eigen;
 
 namespace Optima {
 
-OptimumState::OptimumState(const OptimumStructure& structure)
-: x(zeros(structure.numVariables())),
-  y(zeros(structure.numEqualityConstraints())),
-  z(zeros(structure.numVariables())),
-  w(zeros(structure.numVariables())),
-  f(0.0),
-  g(zeros(structure.numVariables()))
-{
-    switch(structure.structureHessianMatrix())
-    {
-    case MatrixStructure::Dense:
-        H.setDense(structure.numVariables());
-        H.dense.fill(0.0);
-        break;
-    case MatrixStructure::Diagonal:
-    case MatrixStructure::Zero:
-        H.setDiagonal(structure.numVariables());
-        H.diagonal.fill(0.0);
-        break;
-    }
-}
 
 } // namespace Optima

@@ -45,15 +45,6 @@ def test_optimum_structure():
     structure.allVariablesHaveUpperBounds()
     assert structure.variablesWithUpperBounds() == approx(arange(n))
 
-    structure.setHessianMatrixAsDense()
-    assert structure.structureHessianMatrix() == MatrixStructure.Dense
-
-    structure.setHessianMatrixAsDiagonal()
-    assert structure.structureHessianMatrix() == MatrixStructure.Diagonal
-
-    structure.setHessianMatrixAsZero()
-    assert structure.structureHessianMatrix() == MatrixStructure.Zero
-
     assert structure.numVariables() == n
     assert structure.numEqualityConstraints() == m
 

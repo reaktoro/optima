@@ -21,7 +21,38 @@ from numpy import *
 from pytest import approx
 
 
-def test_variant_matrix_dense():
+def test_variant_matrix():
+    n = 10
+       
+    mat = eigen.ones(n, n)
+    
+    vmat = VariantMatrix(mat)    
+    
+    assert vmat.structure == MatrixStructure.Dense
+    assert vmat.dense == approx(mat)
+    
+    vec = eigen.ones(n)
+    
+    vmat = VariantMatrix(vec)
+    
+    assert vmat.structure == MatrixStructure.Diagonal
+    assert vmat.diagonal == approx(vec)
+    
+    vmat = VariantMatrix()
+    
+    vmat.setZero() 
+    assert vmat.structure == MatrixStructure.Zero
+    
+    vmat.setDiagonal(n); 
+    assert vmat.structure == MatrixStructure.Diagonal
+    assert len(vmat.diagonal) == n
+    
+    vmat.setDense(n); 
+    assert vmat.structure == MatrixStructure.Dense
+    assert vmat.dense.shape == (n, n)
+
+
+def test_variant_matrix_const_ref():
     n = 10
     
     mat = eigen.ones(n, n)
@@ -30,10 +61,6 @@ def test_variant_matrix_dense():
     
     assert vmat.structure == MatrixStructure.Dense
     assert vmat.dense == approx(mat)
-
-
-def test_variant_matrix_diagonal():
-    n = 10
     
     vec = eigen.ones(n)
     

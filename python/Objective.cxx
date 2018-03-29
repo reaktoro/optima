@@ -23,7 +23,6 @@ namespace py = pybind11;
 
 // Optima includes
 #include <Optima/Objective.hpp>
-#include <Optima/OptimumStructure.hpp>
 using namespace Optima;
 
 void exportObjective(py::module& m)
@@ -34,12 +33,14 @@ void exportObjective(py::module& m)
         .def_readwrite("H", &ObjectiveRequirement::H, "The boolean flag that indicates the need for the objective Hessian.")
         ;
 
+    const auto getH = [](const ObjectiveResult& self) { return self.H; };
+    const auto setH = [](ObjectiveResult& self, VariantMatrixConstRef other) { return self.H = other; };
+
     py::class_<ObjectiveResult>(m, "ObjectiveResult")
         .def(py::init<>())
-        .def(py::init<const OptimumStructure&>())
         .def_readwrite("f", &ObjectiveResult::f, "The evaluated value of the objective function.")
         .def_readwrite("g", &ObjectiveResult::g, "The evaluated gradient of the objective function.")
-        .def_readwrite("H", &ObjectiveResult::H, "The evaluated Hessian of the objective function.")
+        .def_property("H", getH, setH, "The evaluated Hessian of the objective function.")
         .def_readwrite("requires", &ObjectiveResult::requires, "The requirements in the evaluation of the objective function.")
         .def_readwrite("failed", &ObjectiveResult::failed, "The boolean flag that indicates if the objective function evaluation failed.")
         ;

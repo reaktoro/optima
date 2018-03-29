@@ -146,7 +146,7 @@ struct OptimumStepper::Impl
     /// Decompose the interior-point saddle point matrix.
     auto decompose(const OptimumParams& params, const OptimumState& state) -> Result
     {
-        switch(state.H.structure()) {
+        switch(state.H.structure) {
         case MatrixStructure::Dense: return decomposeDenseHessianMatrix(params, state);
         case MatrixStructure::Diagonal: return decomposeDiagonalHessianMatrix(params, state);
         case MatrixStructure::Zero: return decomposeDiagonalHessianMatrix(params, state);

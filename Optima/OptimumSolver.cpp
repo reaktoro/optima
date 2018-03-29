@@ -106,7 +106,7 @@ struct OptimumSolver::Impl
 
     /// Initialize the optimization solver with the structure of the problem.
     Impl(const OptimumStructure& structure)
-    : structure(structure), stepper(structure), objres(structure)
+    : structure(structure), stepper(structure)
     {
         // Initialize the members related to number of variables and constraints
         n = structure.numVariables();
