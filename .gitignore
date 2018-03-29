@@ -7,6 +7,10 @@ build/
 .pydevproject
 .settings/
 
+# SublimeText editor related files
+*.sublime-project
+*.sublime-workspace
+
 # Python related files
 *.py[cod]
 __pycache__/
