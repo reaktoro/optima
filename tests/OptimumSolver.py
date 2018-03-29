@@ -20,16 +20,20 @@ from numpy import *
 from numpy.linalg import norm
 from pytest import approx, mark
 
-def objective(x, res):
+def objective(x):
     print "Hello from objective(x, res)"
     print "x = ", x
+    res = ObjectiveResult()
     res.f = (x[0] - 1)**2 + (x[1] - 1)**2
     res.g = 2 * array([x[0] - 1, x[1] - 1])
+    res.H.setDiagonal(len(x))
     res.H.diagonal = 2*array([1.0, 1.0])
 
     print "f = ", res.f
     print "g = ", res.g
     print "H = ", res.H.diagonal
+    
+    return res
 
 def test_optimum_solver():
     n = 2

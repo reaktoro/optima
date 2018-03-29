@@ -23,6 +23,10 @@ using namespace Eigen;
 
 namespace Optima {
 
+ObjectiveResult::ObjectiveResult()
+: f(0.0), failed(false)
+{}
+
 ObjectiveResult::ObjectiveResult(const OptimumStructure& structure)
 : f(0.0), g(zeros(structure.numVariables())), failed(false)
 {

@@ -34,11 +34,13 @@ OptimumParams::OptimumParams(const OptimumStructure& structure)
     xupper.fill(0.0);
     xfixed.fill(0.0);
 
-    objective = [](VectorConstRef, ObjectiveResult&)
+    objective = [](VectorConstRef)
     {
         RuntimeError("Could not evaluate the objective function.",
             "Did you forget to set the objective function in "
             "OptimumParams::objective?");
+
+        return ObjectiveResult();
     };
 }
 

@@ -292,7 +292,11 @@ struct OptimumSolver::Impl
             objres.requires.H = true;
 
             // Evaluate the objective function
-            params.objective(x, objres);
+            objres = params.objective(x);
+
+            state.f = objres.f;
+            state.g = objres.g;
+            state.H = objres.H;
 
             // Use the initial optimization state to assemble and decompose the KKT equations
             stepper.decompose(params, state);
@@ -360,7 +364,11 @@ struct OptimumSolver::Impl
             objres.requires.H = false;
 
             // Evaluate the objective function at the trial iterate
-            params.objective(xtrial, objres);
+            objres = params.objective(xtrial);
+
+            state.f = objres.f;
+            state.g = objres.g;
+            state.H = objres.H;
 
             // Initialize the step length factor
             double alpha = fractionToTheBoundary(x, dx, tau);
@@ -378,7 +386,11 @@ struct OptimumSolver::Impl
                 objres.requires.f = true;
                 objres.requires.g = false;
                 objres.requires.H = false;
-                params.objective(xtrial, objres);
+                objres = params.objective(xtrial);
+
+                state.f = objres.f;
+                state.g = objres.g;
+                state.H = objres.H;
 
                 // Decrease the current step length
                 alpha *= 0.5;
@@ -395,7 +407,11 @@ struct OptimumSolver::Impl
             objres.requires.f = false;
             objres.requires.g = true;
             objres.requires.H = true;
-            params.objective(x, objres);
+            objres = params.objective(x);
+
+            state.f = objres.f;
+            state.g = objres.g;
+            state.H = objres.H;
 
             // Update the z-Lagrange multipliers
             for(Index i = 0; i < n; ++i)
@@ -442,7 +458,11 @@ struct OptimumSolver::Impl
                 objres.requires.f = true;
                 objres.requires.g = false;
                 objres.requires.H = false;
-                params.objective(xtrial, objres);
+                objres = params.objective(xtrial);
+
+                state.f = objres.f;
+                state.g = objres.g;
+                state.H = objres.H;
 
                 // Leave the loop if f(xtrial) is finite
                 if(isfinite(objres))
@@ -472,7 +492,11 @@ struct OptimumSolver::Impl
             objres.requires.f = false;
             objres.requires.g = true;
             objres.requires.H = true;
-            params.objective(x, objres);
+            objres = params.objective(x);
+
+            state.f = objres.f;
+            state.g = objres.g;
+            state.H = objres.H;
 
             // Return true as found xtrial results in finite f(xtrial)
             return true;

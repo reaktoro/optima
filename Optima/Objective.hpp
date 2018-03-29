@@ -62,13 +62,16 @@ public:
     /// The boolean flag that indicates if the objective function evaluation failed.
     bool failed;
 
+    /// Construct a default ObjectiveResult instance.
+    ObjectiveResult();
+
     /// Construct a ObjectiveResult instance with given optimization structure.
     ObjectiveResult(const OptimumStructure& structure);
 };
 
 /// The functional signature of an objective function.
 /// @param x The values of the variables \eq{x}.
-/// @param res The evaluated state of the objective function.
-using ObjectiveFunction = std::function<void(VectorConstRef, ObjectiveResult&)>;
+/// @return An ObjectiveResult object with the evaluated result of the objective function.
+using ObjectiveFunction = std::function<ObjectiveResult(VectorConstRef)>;
 
 } // namespace Optima
