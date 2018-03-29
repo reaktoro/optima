@@ -222,6 +222,26 @@ struct SaddlePointSolver::Impl
     {
         Result res;
 
+
+
+
+
+
+
+
+
+
+        canonicalizer.compute(lhs.A);
+
+
+
+
+
+
+
+
+
+
         // Update the canonical form of the matrix A
         updateCanonicalForm(lhs);
 
@@ -659,7 +679,7 @@ struct SaddlePointSolver::Impl
         M -= tr(Sbxnx) * Hbxnx;
 
         // Compute the LU decomposition of M.
-        if(nx) lu.compute(M);
+        if(nnx) lu.compute(M);
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a nullspace method.
@@ -764,7 +784,7 @@ struct SaddlePointSolver::Impl
         Mblbl.noalias() = Gblbl;
 
         // Compute the LU decomposition of M.
-        if(nx) lu.compute(M);
+        lu.compute(M);
     }
 
     /// Solve the saddle point problem with diagonal Hessian matrix.
@@ -1004,7 +1024,7 @@ struct SaddlePointSolver::Impl
 
         r << an2, bb1, bb2;
 
-        if(nx) r.noalias() = lu.solve(r);
+        r.noalias() = lu.solve(r);
 
         ab1.noalias() = (ab1 - yb1)/Hb1b1;
         bb2.noalias() = (ab2 - Hb2b2 % xb2);
@@ -1108,7 +1128,7 @@ struct SaddlePointSolver::Impl
 
         r << an2, bb1, bb2, bbf, bl;
 
-        if(nx) r.noalias() = lu.solve(r);
+        r.noalias() = lu.solve(r);
 
         ab1.noalias() = (ab1 - yb1)/Hb1b1;
         bb2.noalias() = (ab2 - Hb2b2 % xb2);
@@ -1194,7 +1214,7 @@ struct SaddlePointSolver::Impl
         anx -= Hnxbx*bbx + tr(Sbxnx)*abx;
 
         // Solve the system of linear equations
-        if(nx) anx.noalias() = lu.solve(anx);
+        if(nnx) anx.noalias() = lu.solve(anx);
 
         // Alias to solution vectors x and y
         auto x = sol.x;
@@ -1280,7 +1300,7 @@ struct SaddlePointSolver::Impl
         rbl.noalias() = bbl;
 
         // Solve the system of linear equations
-        if(nx) r.noalias() = lu.solve(r);
+        r.noalias() = lu.solve(r);
 
         // Alias to solution vectors x and y
         auto x = sol.x;

@@ -17,6 +17,11 @@
 
 #include "OptimumStepper.hpp"
 
+// Eigen includes
+#include <eigen3/Eigen/LU>
+using namespace Eigen;
+using Eigen::placeholders::all;
+
 // Optima includes
 #include <Optima/Exception.hpp>
 #include <Optima/IpSaddlePointMatrix.hpp>
@@ -27,8 +32,6 @@
 #include <Optima/OptimumStructure.hpp>
 #include <Optima/Result.hpp>
 #include <Optima/VariantMatrix.hpp>
-using namespace Eigen;
-using Eigen::placeholders::all;
 
 namespace Optima {
 
@@ -269,6 +272,25 @@ struct OptimumStepper::Impl
 
         // Solve the saddle point problem
         solver.solve(rhs, sol);
+
+
+
+
+
+
+
+        Matrix M = matrix();
+
+        Vector slu = M.fullPivLu().solve(r);
+
+        std::cout << tr(abs(s - slu)) << std::endl;
+
+//        s = M.fullPivLu().solve(r);
+
+
+
+
+
 
         return res.stop();
     }
