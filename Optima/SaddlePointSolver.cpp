@@ -89,6 +89,9 @@ struct SaddlePointSolver::Impl
     /// The LU decomposition solver.
     Eigen::PartialPivLU<Matrix> lu;
 
+    /// The boolean flag that indicates that the decomposed saddle point matrix was degenerate with no free variables.
+    bool degenerate = false;
+
     /// Update the order of the variables.
     auto reorderVariables(VectorXiConstRef ordering) -> void
     {
@@ -158,6 +161,13 @@ struct SaddlePointSolver::Impl
         nf = lhs.nf;
         nx = n - nf;
 
+        // Determine if the saddle point matrix is degenerate
+        degenerate = nx == 0;
+
+        // Skip the rest if there is no free variables
+        if(degenerate)
+            return;
+
         // The diagonal entries of the Hessian matrix
         auto Hdd = lhs.H.diagonalRef();
 
@@ -211,13 +221,38 @@ struct SaddlePointSolver::Impl
     auto decompose(SaddlePointMatrix lhs) -> Result
     {
         Result res;
-        switch(options.method)
+
+        // Update the canonical form of the matrix A
+        updateCanonicalForm(lhs);
+
+        // Check if the saddle point matrix is degenerate, with no free variables.
+        if(degenerate)
+            decomposeDegenerateCase(lhs);
+
+        else switch(options.method)
         {
         case SaddlePointMethod::Nullspace: decomposeNullspace(lhs); break;
         case SaddlePointMethod::Rangespace: decomposeRangespace(lhs); break;
         default: decomposeFullspace(lhs); break;
         }
+
         return res.stop();
+    }
+
+    /// Decompose the saddle point matrix for the degenerate case of no free variables.
+    auto decomposeDegenerateCase(SaddlePointMatrix lhs) -> void
+    {
+        if(lhs.G.structure == MatrixStructure::Dense)
+        {
+            // Set the G matrix to dense structure
+            G.setDense(m);
+
+            // Set the G matrix from the given saddle point matrix
+            G.dense << lhs.G;
+
+            // Compute the LU decomposition of G.
+            lu.compute(G.dense);
+        }
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a LU decomposition method.
@@ -232,9 +267,6 @@ struct SaddlePointSolver::Impl
     /// Decompose the coefficient matrix of the saddle point problem using a LU decomposition method.
     auto decomposeFullspaceZeroG(SaddlePointMatrix lhs) -> void
     {
-        // Update the canonical form of the matrix A
-        updateCanonicalForm(lhs);
-
         // Set the H matrix to a dense structure
         H.setDense(n);
 
@@ -272,9 +304,6 @@ struct SaddlePointSolver::Impl
     /// Decompose the coefficient matrix of the saddle point problem using a LU decomposition method.
     auto decomposeFullspaceDenseG(SaddlePointMatrix lhs) -> void
     {
-        // Update the canonical form of the matrix A
-        updateCanonicalForm(lhs);
-
         // Set the H matrix to a dense structure
         H.setDense(n);
 
@@ -330,9 +359,6 @@ struct SaddlePointSolver::Impl
     /// Decompose the coefficient matrix of the saddle point problem using a rangespace diagonal method.
     auto decomposeRangespaceZeroG(SaddlePointMatrix lhs) -> void
     {
-        // Update the canonical form of the matrix A
-        updateCanonicalForm(lhs);
-
         // Set the H matrix to a diagonal structure
         H.setDiagonal(n);
 
@@ -423,9 +449,6 @@ struct SaddlePointSolver::Impl
     /// Decompose the coefficient matrix of the saddle point problem using a rangespace diagonal method.
     auto decomposeRangespaceDenseG(SaddlePointMatrix lhs) -> void
     {
-        // Update the canonical form of the matrix A
-        updateCanonicalForm(lhs);
-
         // Set the H matrix to a diagonal structure
         H.setDiagonal(n);
 
@@ -600,9 +623,6 @@ struct SaddlePointSolver::Impl
     /// Decompose the coefficient matrix of the saddle point problem using a nullspace method.
     auto decomposeNullspaceZeroG(SaddlePointMatrix lhs) -> void
     {
-        // Update the canonical form of the matrix A
-        updateCanonicalForm(lhs);
-
         // Set the H matrix to a dense structure
         H.setDense(n);
 
@@ -645,9 +665,6 @@ struct SaddlePointSolver::Impl
     /// Decompose the coefficient matrix of the saddle point problem using a nullspace method.
     auto decomposeNullspaceDenseG(SaddlePointMatrix lhs) -> void
     {
-        // Update the canonical form of the matrix A
-        updateCanonicalForm(lhs);
-
         // Set the H matrix to a dense structure
         H.setDense(n);
 
@@ -754,13 +771,30 @@ struct SaddlePointSolver::Impl
     auto solve(SaddlePointVector rhs, SaddlePointSolution sol) -> Result
     {
         Result res;
-        switch(options.method)
+
+        // Check if the saddle point matrix is degenerate, with no free variables.
+        if(degenerate)
+            solveDegenerateCase(rhs, sol);
+
+        else switch(options.method)
         {
         case SaddlePointMethod::Nullspace: solveNullspace(rhs, sol); break;
         case SaddlePointMethod::Rangespace: solveRangespace(rhs, sol); break;
         default: solveFullspace(rhs, sol); break;
         }
+
         return res.stop();
+    }
+
+    /// Solve the saddle point problem for the degenerate case of no free variables.
+    auto solveDegenerateCase(SaddlePointVector rhs, SaddlePointSolution sol) -> void
+    {
+        sol.x = rhs.a;
+
+        if(G.structure == MatrixStructure::Dense)
+            sol.y.noalias() = lu.solve(rhs.b);
+        else
+            sol.y.fill(0.0);
     }
 
     /// Solve the saddle point problem using a LU decomposition method.
