@@ -155,10 +155,6 @@ struct IpSaddlePointSolver::Impl
         nl = il - iu;
         ns = is - il;
 
-        // Ensure the number of (s, l, u) variables is positive
-        Assert(ns + nl + nu > 0, "Could not decompose the interior-point saddle point matrix.",
-            "The matrix is singular, with no (s, l, u) variables.");
-
         // Update the ordering of the saddle point solver
         spsolver.reorderVariables(iordering);
 
