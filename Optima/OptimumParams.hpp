@@ -18,8 +18,8 @@
 #pragma once
 
 // Optima includes
-#include <Optima/Index.hpp>
 #include <Optima/Matrix.hpp>
+#include <Optima/Objective.hpp>
 
 namespace Optima {
 
@@ -41,6 +41,9 @@ public:
 
     /// The values of the variables in \eq{x} that are fixed.
     Vector xfixed;
+
+    /// The objective function of the optimization calculation.
+    ObjectiveFunction objective;
 
     /// Construct a default OptimumParams instance.
     /// @param structure The structure of the optimization problem.

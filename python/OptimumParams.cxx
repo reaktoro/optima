@@ -17,6 +17,7 @@
 
 // pybind11 includes
 #include <pybind11/pybind11.h>
+#include <pybind11/functional.h>
 #include <pybind11/eigen.h>
 namespace py = pybind11;
 
@@ -33,5 +34,6 @@ void exportOptimumParams(py::module& m)
         .def_readwrite("xlower", &OptimumParams::xlower)
         .def_readwrite("xupper", &OptimumParams::xupper)
         .def_readwrite("xfixed", &OptimumParams::xfixed)
+        .def_readwrite("objective", &OptimumParams::objective)
         ;
 }

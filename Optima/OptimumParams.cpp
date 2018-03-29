@@ -18,6 +18,7 @@
 #include "OptimumParams.hpp"
 
 // Optima includes
+#include <Optima/Exception.hpp>
 #include <Optima/OptimumStructure.hpp>
 
 namespace Optima {
@@ -32,6 +33,13 @@ OptimumParams::OptimumParams(const OptimumStructure& structure)
     xlower.fill(0.0);
     xupper.fill(0.0);
     xfixed.fill(0.0);
+
+    objective = [](VectorConstRef, ObjectiveResult&)
+    {
+        RuntimeError("Could not evaluate the objective function.",
+            "Did you forget to set the objective function in "
+            "OptimumParams::objective?");
+    };
 }
 
 } // namespace Optima

@@ -99,7 +99,7 @@ struct IpSaddlePointSolver::Impl
         t  = 3*n + m;
 
         // Initialize the ordering of the variables
-        iordering = linspace<int>(n);
+        iordering = indices(n);
 
         // Allocate memory for some vector/matrix members
         Z = zeros(n);

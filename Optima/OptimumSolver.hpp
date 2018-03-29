@@ -22,16 +22,17 @@
 
 // Optima includes
 #include <Optima/Matrix.hpp>
+#include <Optima/Objective.hpp>
 
 namespace Optima {
 
 // Forward declarations
-struct OptimumOptions;
-struct OptimumParams;
-struct OptimumProblem;
-struct OptimumResult;
-struct OptimumState;
-struct OptimumStructure;
+class OptimumOptions;
+class OptimumParams;
+class OptimumProblem;
+class OptimumResult;
+class OptimumState;
+class OptimumStructure;
 
 /// The class that implements the IpNewton algorithm using an interior-point method.
 class OptimumSolver
