@@ -26,11 +26,9 @@ namespace Optima {
 using Index = std::ptrdiff_t;
 
 /// Return a vector of indices with values from 0 up to a given length.
-inline auto indices(Index length) -> VectorXi
+inline auto indices(Index length) -> decltype(Eigen::linspace<Index>(length))
 {
-    VectorXi res(length);
-    for(Index i = 0; i < length; ++i) res[i] = i;
-    return res;
+    return Eigen::linspace<Index>(length);
 }
 
 } // namespace Optima
