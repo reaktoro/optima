@@ -74,7 +74,7 @@ public:
     auto C() const -> Matrix;
 
     /// Return the indices of the linearly independent rows of the original matrix.
-    auto indicesLinearlyIndependentEquations() const -> VectorXi;
+    auto indicesLinearlyIndependentEquations() const -> VectorXiConstRef;
 
     /// Return the indices of the basic variables.
     auto indicesBasicVariables() const -> VectorXiConstRef;

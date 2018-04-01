@@ -40,10 +40,19 @@ struct Canonicalizer::Impl
     Matrix S;
 
     /// The permutation matrix `P`.
-    PermutationMatrix P;
+    VectorXi P;
+
+    /// The transpose of the permutation matrix `P`.
+    VectorXi Ptr;
 
     /// The permutation matrix `Q`.
-    PermutationMatrix Q;
+    VectorXi Q;
+
+    /// The auxiliary permutation matrix `Q`.
+    VectorXi Qaux;
+
+    /// The inverse permutation of the new ordering of the variables
+    VectorXi inv_ordering;
 
     /// The canonicalizer matrix `R`.
     Matrix R;
@@ -71,6 +80,9 @@ struct Canonicalizer::Impl
         assert(n >= m && "Could not canonicalize the given matrix. "
             "The given matrix has more rows than columns.");
 
+        /// Initialize the current ordering of the variables
+        inv_ordering = indices(n);
+
         // Compute the full-pivoting LU of A so that P*A*Q = L*U
         lu.compute(A);
 
@@ -83,11 +95,17 @@ struct Canonicalizer::Impl
         const auto Ubn = lu.matrixLU().topRightCorner(r, n - r);
 
         // Set the permutation matrices P and Q
-        P = lu.permutationP();
-        Q = lu.permutationQ();
+        P = lu.permutationP().indices();
+        Q = lu.permutationQ().indices();
+
+        // Initialize the permutation matrix Q(aux)
+        Qaux = Q;
+
+        Ptr.resize(m);
+        Ptr(P) = indices(m);
 
         // Calculate the regularizer matrix R
-        R = P;
+        R = P.asPermutation();
         R = L.solve(R);
         R.topRows(r) = Ubb.solve(R.topRows(r));
 
@@ -154,7 +172,7 @@ struct Canonicalizer::Impl
         S(ib, in) = aux;
 
         // Update the permutation matrix Q
-        std::swap(Q.indices()[ib], Q.indices()[m + in]);
+        std::swap(Q[ib], Q[m + in]);
     }
 
     /// Update the existing canonical form with given priority weights for the columns.
@@ -177,8 +195,8 @@ struct Canonicalizer::Impl
         auto Rb = R.topRows(nb);
 
         // The indices of the basic and non-basic variables
-        auto ibasic = Q.indices().head(nb);
-        auto inonbasic = Q.indices().tail(nn);
+        auto ibasic = Q.head(nb);
+        auto inonbasic = Q.tail(nn);
 
         // Find the non-basic variable with maximum proportional weight with respect to a basic variable
         auto find_nonbasic_candidate = [&](Index i, Index& j)
@@ -233,7 +251,33 @@ struct Canonicalizer::Impl
     /// Update the order of the variables.
     auto updateWithNewOrdering(VectorXiConstRef ordering) -> void
     {
-        ordering.asPermutation().transpose().applyThisOnTheLeft(Q);
+        // The number of rows and columns of A
+        const Index m = lu.rows();
+        const Index n = lu.cols();
+
+        // Get the rank of matrix A
+        const Index r = lu.rank();
+
+        // Get the LU factors of matrix A
+        const auto L   = lu.matrixLU().leftCols(m).triangularView<Eigen::UnitLower>();
+        const auto Ubb = lu.matrixLU().topLeftCorner(r, r).triangularView<Eigen::Upper>();
+        const auto Ubn = lu.matrixLU().topRightCorner(r, n - r);
+
+		// The inverse of the ordering permutation
+        inv_ordering(ordering) = indices(n);
+
+        // Initialize the permutation matrices P and Q
+        P = lu.permutationP().indices();
+        Q = inv_ordering(lu.permutationQ().indices());
+
+        // Calculate the regularizer matrix R
+        R = P.asPermutation();
+        R = L.solve(R);
+        R.topRows(r) = Ubb.solve(R.topRows(r));
+
+        // Calculate matrix S
+        S = Ubn;
+        S = Ubb.solve(S);
     }
 };
 
@@ -292,7 +336,7 @@ auto Canonicalizer::R() const -> MatrixConstRef
 
 auto Canonicalizer::Q() const -> VectorXiConstRef
 {
-    return pimpl->Q.indices();
+    return pimpl->Q;
 }
 
 auto Canonicalizer::C() const -> Matrix
@@ -305,10 +349,9 @@ auto Canonicalizer::C() const -> Matrix
     return res;
 }
 
-auto Canonicalizer::indicesLinearlyIndependentEquations() const -> VectorXi
+auto Canonicalizer::indicesLinearlyIndependentEquations() const -> VectorXiConstRef
 {
-    PermutationMatrix Ptr = pimpl->P.transpose();
-    return Ptr.indices();
+    return pimpl->Ptr;
 }
 
 auto Canonicalizer::indicesBasicVariables() const -> VectorXiConstRef
