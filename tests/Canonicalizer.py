@@ -17,7 +17,7 @@
 
 from optima import *
 from numpy import *
-from numpy.linalg import norm
+from numpy.linalg import norm, inv
 from pytest import approx, mark
 
 
@@ -62,10 +62,24 @@ def reverse(list):
 
 
 def check_canonical_form(canonicalizer, A):
+    # Auxiliary varibles
+    m, n = A.shape
     R = canonicalizer.R()
     Q = canonicalizer.Q()
     C = canonicalizer.C()
+    
+    # Check R*A*Q == C
     assert norm(R.dot(A[:,Q]) - C) / norm(C) == approx(0.0)
+
+    # Assemble Qtr, the transpose of the permutation matrix Q
+    Qtr = arange(n)
+    Qtr[Q] = arange(n)
+    
+    # Calculate the invR, the inverse of matrix R
+    Rinv = inv(R)
+    
+    # Check inv(R) * C * tr(Q) == A
+    assert Rinv.dot(C[:, Qtr]) == approx(A)
 
 
 def check_canonical_ordering(canonicalizer, weigths):
@@ -126,7 +140,7 @@ def check_canonicalizer(canonicalizer, A):
 @mark.parametrize("assemble_A", tested_matrices_A)
 def test_canonicalizer(assemble_A):
     m = 4
-    n = 10
+    n = 6
     
     A = assemble_A(m, n)
     
