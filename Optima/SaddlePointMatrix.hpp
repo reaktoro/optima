@@ -49,6 +49,9 @@ public:
     /// The negative semi-definite matrix \eq{G} in the saddle point matrix.
     VariantMatrixConstRef G;
 
+//    /// The indices of the variables partitioned as (*free variables*, *fixed variables*).
+//    VectorXiConstRef partition;
+
     /// The number of fixed variables.
     Index nf;
 
