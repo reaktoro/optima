@@ -222,26 +222,6 @@ struct SaddlePointSolver::Impl
     {
         Result res;
 
-
-
-
-
-
-
-
-
-
-        canonicalizer.compute(lhs.A);
-
-
-
-
-
-
-
-
-
-
         // Update the canonical form of the matrix A
         updateCanonicalForm(lhs);
 

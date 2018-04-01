@@ -18,7 +18,6 @@
 #include "OptimumStepper.hpp"
 
 // Eigen includes
-#include <eigen3/Eigen/LU>
 using namespace Eigen;
 using Eigen::placeholders::all;
 
@@ -272,25 +271,6 @@ struct OptimumStepper::Impl
 
         // Solve the saddle point problem
         solver.solve(rhs, sol);
-
-
-
-
-
-
-
-        Matrix M = matrix();
-
-        Vector slu = M.fullPivLu().solve(r);
-
-        std::cout << tr(abs(s - slu)) << std::endl;
-
-//        s = M.fullPivLu().solve(r);
-
-
-
-
-
 
         return res.stop();
     }
