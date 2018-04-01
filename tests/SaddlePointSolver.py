@@ -65,14 +65,14 @@ def test_saddle_point_solver(args):
     # The diagonal entries of the Hessian matrix
     Hdiag = H[diag_indices(n)] if structure_H == 'dense' else H
 
-    # The range along the diagonal that is affected to control the number of pivot variables
-    range = slice(m) if variable_condition == 'some-variables-pivot' else slice(n)  
+    # The sequence along the diagonal that is affected to control the number of pivot variables
+    seq = slice(m) if variable_condition == 'some-variables-pivot' else slice(n)  
 
     # The factor multiplied by the entries in the diagonal of the Hessian matrix
     factor = 1e-6 if variable_condition == 'all-variables-nonpivot' else 1e6
     
     # Adjust the diagonal entries to control number of pivot variables
-    Hdiag[range] = factor * Hdiag[range] 
+    Hdiag[seq] = factor * Hdiag[seq] 
 
     nx = n - nf
 
