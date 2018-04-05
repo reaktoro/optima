@@ -27,7 +27,9 @@ tested_structures_H = ['dense', 'diagonal']
 tested_structures_G = ['dense', 'zero']
 
 # Tested cases for the indices of fixed variables
-tested_jf = [array([1, 7], dtype=int32)]
+tested_jf = [arange(0), 
+             arange(1), 
+             array([1, 3, 7, 9])]
 
 # Combination of all tested cases
 testdata = product(tested_structures_H,
@@ -51,10 +53,6 @@ def test_saddle_point_matrix(args):
 
     # Create the SaddlePointMatrix object
     mat = SaddlePointMatrix(H, A, G, jf)
-    
-    
-    print 'jf', jf
-    print 'lhs.jf', mat.jf
 
     # Use a dense matrix for H from this point on (for convenience)
     Haux = H if structure_H == 'dense' else eigen.diag(H)
