@@ -28,7 +28,7 @@ using namespace Eigen;
 namespace Optima {
 
 SaddlePointMatrix::SaddlePointMatrix(VariantMatrixConstRef H, VectorConstRef D, MatrixConstRef A, IndicesConstRef jf)
-: SaddlePointMatrix(H, A, D, {}, jf)
+: SaddlePointMatrix(H, D, A, {}, jf)
 {}
 
 SaddlePointMatrix::SaddlePointMatrix(VariantMatrixConstRef H, VectorConstRef D, MatrixConstRef A, VariantMatrixConstRef G, IndicesConstRef jf)
