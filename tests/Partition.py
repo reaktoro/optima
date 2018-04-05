@@ -17,24 +17,24 @@
 
 from optima import *
 from numpy import *
-from pytest import approx, mark
+from pytest import approx
 
-def test_partition():
+def test_index_utils():
     n = 10
-    partition = Partition(n)
     
-    partition.setFixedVariables([4, 5, 6])
-    assert set(partition.fixedVariables()) == set([4, 5, 6])
-    assert set(partition.freeVariables()) == set(arange(n)) - set([4, 5, 6])
-    assert partition.numVariables() == n
-    assert partition.numFixedVariables() == 3
-    assert partition.numFreeVariables() == n - 3
-    assert set(partition.ordering()) == set(arange(n))
+    assert indices(n) == arange(n)
     
-    partition.setFreeVariables([4, 5, 6])
-    assert set(partition.freeVariables()) == set([4, 5, 6])
-    assert set(partition.fixedVariables()) == set(arange(n)) - set([4, 5, 6])
-    assert partition.numVariables() == n
-    assert partition.numFixedVariables() == n - 3
-    assert partition.numFreeVariables() == 3
-    assert set(partition.ordering()) == set(arange(n))
+    assert contains([1,3,6], 1)
+    assert contains([1,3,6], 3)
+    assert contains([1,3,6], 6)
+    assert not contains([1,3,6], 7)
+    
+    inds = indices(n)
+    partitionLeft(inds, [1, 3, 5, 7])
+    assert set(inds[:-4]) == set([0, 2, 4, 6, 8, 9]) 
+    assert set(inds[4:]) == set([1, 3, 5, 7])
+    
+    inds = indices(n)
+    partitionRight(inds, [1, 3, 5, 7])
+    assert set(inds[:-4]) == set([1, 3, 5, 7])
+    assert set(inds[4:]) == set([0, 2, 4, 6, 8, 9]) 

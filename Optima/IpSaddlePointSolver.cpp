@@ -20,6 +20,7 @@
 // Optima includes
 #include <Optima/Canonicalizer.hpp>
 #include <Optima/Exception.hpp>
+#include <Optima/IndexUtils.hpp>
 #include <Optima/IpSaddlePointMatrix.hpp>
 #include <Optima/Result.hpp>
 #include <Optima/SaddlePointMatrix.hpp>

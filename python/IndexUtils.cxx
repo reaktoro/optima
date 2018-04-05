@@ -15,23 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#pragma once
+// pybind11 includes
+#include <pybind11/pybind11.h>
+#include <pybind11/eigen.h>
+namespace py = pybind11;
 
 // Optima includes
-#include <Optima/Matrix.hpp>
+#include <Optima/IndexUtils.hpp>
+using namespace Optima;
 
-namespace Optima {
-
-/// Define a type that represents an index.
-using Index = std::ptrdiff_t;
-
-/// Define a type that represents a vector of indices.
-using Indices = Eigen::Matrix<Index, Eigen::Dynamic, 1>;
-
-/// Define a type that represents a reference to a vector of indices.
-using IndicesRef = Eigen::Ref<Indices>;
-
-/// Define a type that represents a constant reference to a vector of indices.
-using IndicesConstRef = Eigen::Ref<const Indices>;
-
-} // namespace Optima
+void exportIndexUtils(py::module& m)
+{
+    m.def("indices", &indices);
+    m.def("contains", &contains);
+    m.def("partitionLeft", &partitionLeft);
+    m.def("partitionRight", &partitionRight);
+}

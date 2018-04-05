@@ -25,6 +25,7 @@ using namespace Eigen;
 // Optima includes
 #include <Optima/Canonicalizer.hpp>
 #include <Optima/Exception.hpp>
+#include <Optima/IndexUtils.hpp>
 #include <Optima/Result.hpp>
 #include <Optima/SaddlePointMatrix.hpp>
 #include <Optima/SaddlePointOptions.hpp>
@@ -169,12 +170,11 @@ struct SaddlePointSolver::Impl
             return;
 
         // The ordering of the variables as (free variables, fixed variables)
-        iordering.noalias() = indices(n);
-        iordering.tail(nf).swap(iordering(lhs.jf));
+        partitionRight(iordering, lhs.jf);
 
         // The indices of the free (ivx) and fixed (ivf) variables
-        const auto ivx = iordering.head(nx);
-        const auto ivf = iordering.tail(nf);
+        const auto ivx = iordering.head(nx); // TODO Change this name to jx
+        const auto ivf = iordering.tail(nf); // TODO Change this name to jf
 
         // The diagonal entries of the Hessian matrix
         auto Hdd = lhs.H.diagonalRef();

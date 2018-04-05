@@ -19,6 +19,7 @@
 
 // Optima includes
 #include <Optima/Exception.hpp>
+#include <Optima/IndexUtils.hpp>
 
 namespace Optima {
 
@@ -32,8 +33,7 @@ OptimumStructure::OptimumStructure(Index n, Index m)
 auto OptimumStructure::setVariablesWithLowerBounds(IndicesConstRef inds) -> void
 {
     _nlower = inds.size();
-    _lowerpartition = indices(_n);
-    _lowerpartition.tail(_nlower).swap(_lowerpartition(inds));
+    partitionLeft(_lowerpartition, inds);
 }
 
 auto OptimumStructure::allVariablesHaveLowerBounds() -> void
@@ -45,8 +45,7 @@ auto OptimumStructure::allVariablesHaveLowerBounds() -> void
 auto OptimumStructure::setVariablesWithUpperBounds(IndicesConstRef inds) -> void
 {
     _nupper = inds.size();
-    _upperpartition = indices(_n);
-    _upperpartition.tail(_nupper).swap(_upperpartition(inds));
+    partitionLeft(_upperpartition, inds);
 }
 
 auto OptimumStructure::allVariablesHaveUpperBounds() -> void
@@ -58,8 +57,7 @@ auto OptimumStructure::allVariablesHaveUpperBounds() -> void
 auto OptimumStructure::setVariablesWithFixedValues(IndicesConstRef inds) -> void
 {
     _nfixed = inds.size();
-    _fixedpartition = indices(_n);
-    _fixedpartition.tail(_nfixed).swap(_fixedpartition(inds));
+    partitionLeft(_fixedpartition, inds);
 }
 
 auto OptimumStructure::numVariables() const -> Index

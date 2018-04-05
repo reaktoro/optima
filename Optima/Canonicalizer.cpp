@@ -26,6 +26,7 @@
 using namespace Eigen;
 
 // Optima includes
+#include <Optima/IndexUtils.hpp>
 #include <Optima/Utils.hpp>
 using namespace Eigen;
 

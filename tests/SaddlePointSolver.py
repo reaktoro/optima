@@ -33,10 +33,9 @@ tested_structures_H = ['dense', 'diagonal']
 tested_structures_G = ['dense', 'zero']
 
 # Tested cases for the indices of fixed variables
-tested_jf = [array([1, 7])]
-# tested_jf = [arange(0), 
-#              arange(1), 
-#              array([1, 3, 7, 9])]
+tested_jf = [arange(0), 
+             arange(1), 
+             array([1, 3, 7, 9])]
 
 # Tested cases for the conditions of the variables in terms of pivot variables
 tested_variable_conditions = ['all-variables-pivot',
@@ -88,24 +87,27 @@ def test_saddle_point_solver(args):
     # Adjust the diagonal entries to control number of pivot variables
     Hdiag[seq] = factor * Hdiag[seq] 
 
-    print 'jf', jf
-    
-    
+    # Create the SaddlePointMatrix object
     lhs = SaddlePointMatrix(H, A, G, jf)
     
-    print 'jf', jf
-    print 'lhs.jf', lhs.jf
-
+    # Use the SaddlePointMatrix object to create an array M
     M = lhs.array()
+    
+    # Compute the right-hand side vector r = M * expected
     r = M.dot(expected)
+    
+    # The solution vector
     s = zeros(t)
 
+    # The right-hand side and solution saddle point vectors
     rhs = SaddlePointVector(r, n, m)
     sol = SaddlePointSolution(s, n, m)
 
+    # Specify the saddle point method for the current test
     options = SaddlePointOptions()
     options.method = method
 
+    # Create a SaddlePointSolver to solve the saddle point problem
     solver = SaddlePointSolver()
     solver.setOptions(options)
     solver.initialize(lhs.A)

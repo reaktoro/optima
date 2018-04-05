@@ -17,6 +17,9 @@
 
 #include "Partition.hpp"
 
+// Optima includes
+#include <Optima/IndexUtils.hpp>
+
 namespace Optima {
 
 Partition::Partition()
