@@ -405,7 +405,7 @@ struct SaddlePointSolver::Impl
         Hx.noalias() = lhs.H.diagonal(ivx);
 
         // Add the D contribution from the free variables to the H + D block
-        if(lhs.D.size()) Hx.diagonal().noalias() += lhs.D(ivx);
+        if(lhs.D.size()) Hx.noalias() += lhs.D(ivx);
 
         // The auxiliary matrix Tbxbx = Sbxn1 * Bn1bx and its submatrices
         auto Tbxbx = mat.topRightCorner(nbx, nbx);
@@ -530,7 +530,7 @@ struct SaddlePointSolver::Impl
         Hx.noalias() = lhs.H.diagonalRef()(ivx);
 
         // Add the D contribution from the free variables to the H + D block
-        if(lhs.D.size()) Hx.diagonal().noalias() += lhs.D(ivx);
+        if(lhs.D.size()) Hx.noalias() += lhs.D(ivx);
 
         // Calculate matrix G' = R * G * tr(R)
         G.dense = R * G.dense * tr(R);
