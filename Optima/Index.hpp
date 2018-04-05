@@ -22,13 +22,22 @@
 
 namespace Optima {
 
-/// Define a type that represents an index
+/// Define a type that represents an index.
 using Index = std::ptrdiff_t;
 
+/// Define a type that represents a vector of indices.
+using Indices = Eigen::Matrix<Index, Eigen::Dynamic, 1>;
+
+/// Define a type that represents a reference to a vector of indices.
+using IndicesRef = Eigen::Ref<Indices>;
+
+/// Define a type that represents a constant reference to a vector of indices.
+using IndicesConstRef = Eigen::Ref<const Indices>;
+
 /// Return a vector of indices with values from 0 up to a given length.
-inline auto indices(Index length) -> decltype(Eigen::linspace<int>(length))
+inline auto indices(Index length) -> decltype(Eigen::linspace<Index>(length))
 {
-    return Eigen::linspace<int>(length);
+    return Eigen::linspace<Index>(length);
 }
 
 } // namespace Optima
