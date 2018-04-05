@@ -96,6 +96,7 @@ struct IpSaddlePointSolver::Impl
         iordering = indices(n);
 
         // Allocate memory for some vector/matrix members
+        D = zeros(n);
         Z = zeros(n);
         W = zeros(n);
         L = zeros(n);
@@ -152,6 +153,19 @@ struct IpSaddlePointSolver::Impl
         nl = il - iu;
         ns = is - il;
 
+
+
+
+
+
+
+        // TODO maybe these Z, W, L, U should only exist as H exist to put their values according to ordering.
+
+
+
+
+
+
         // Initialize A, Z, W, L and U according to iordering
         Z.noalias() = lhs.Z;
         W.noalias() = lhs.W;
@@ -192,14 +206,14 @@ struct IpSaddlePointSolver::Impl
         const auto jx = iordering.head(ns + nl + nu);
         const auto jf = iordering.tail(nz + nw + nf);
 
+        // Calculate D = inv(L)*Z + inv(U)*W
+        D += Z/L + W/U;
+
         // Set the Hessian matrix to dense structure
         H.setDense(n);
 
         // Views to the blocks of the Hessian matrix Hxx = [Hss Hsl Hsu; Hls Hll Hlu; Hus Hul Huu]
         H.dense.topLeftCorner(nx, nx) = lhs.H.dense(jx, jx);
-
-        // Calculate D = inv(L)*Z + inv(U)*W
-        D += Z/L + W/U;
 
         // Define the saddle point matrix
         SaddlePointMatrix spm(lhs.H, D, A, jf);
@@ -431,6 +445,13 @@ struct IpSaddlePointSolver::Impl
 
         az.fill(0.0);
         aw.fill(0.0);
+
+
+
+        a(iordering) = Vector(a);
+
+
+
 
         // Solve the saddle point problem
         res += spsolver.solve({a, b}, {x, y});
