@@ -41,8 +41,8 @@ struct IpSaddlePointSolver::Impl
     /// The `H` matrix in the saddle point equation.
     VariantMatrix H;
 
-    /// The matrices Z, W, L, U
-    Vector Z, W, L, U;
+    /// The matrices D, Z, W, L, U
+    Vector D, Z, W, L, U;
 
     /// The residual vector
     Vector r;
@@ -76,6 +76,9 @@ struct IpSaddlePointSolver::Impl
     {
         // The result of this method call
         Result res;
+
+        // Create a copy of matrix A
+        this->A = A;
 
         // Initialize the members related to number of variables and constraints
         n  = A.cols();
@@ -149,6 +152,12 @@ struct IpSaddlePointSolver::Impl
         nl = il - iu;
         ns = is - il;
 
+        // Initialize A, Z, W, L and U according to iordering
+        Z.noalias() = lhs.Z;
+        W.noalias() = lhs.W;
+        L.noalias() = lhs.L;
+        U.noalias() = lhs.U;
+
         // Ensure Z(fixed) = 0, W(fixed) = 0, L(fixed) = 1, and U(fixed) = 1
         Z(lhs.jf).fill(0.0);
         W(lhs.jf).fill(0.0);
@@ -183,32 +192,20 @@ struct IpSaddlePointSolver::Impl
         const auto jx = iordering.head(ns + nl + nu);
         const auto jf = iordering.tail(nz + nw + nf);
 
-        // Views to the sub-vectors in (Z, W, L, U) corresponding to (s, l, u) partition
-        auto Ze = Z(jx);
-        auto We = W(jx);
-        auto Le = L(jx);
-        auto Ue = U(jx);
-
         // Set the Hessian matrix to dense structure
         H.setDense(n);
 
         // Views to the blocks of the Hessian matrix Hxx = [Hss Hsl Hsu; Hls Hll Hlu; Hus Hul Huu]
-        auto Hee = H.dense(jx, jx);
+        H.dense.topLeftCorner(nx, nx) = lhs.H.dense(jx, jx);
 
-        // Update Hxx
-        Hee = lhs.H.dense(jx, jx);
-
-        // Calculate Hee' = Hee + inv(Le)*Ze + inv(Ue)*We
-        Hee.diagonal() += Ze/Le + We/Ue;
+        // Calculate D = inv(L)*Z + inv(U)*W
+        D += Z/L + W/U;
 
         // Define the saddle point matrix
-        SaddlePointMatrix spm(H, A, jf);
+        SaddlePointMatrix spm(lhs.H, D, A, jf);
 
         // Decompose the saddle point matrix
         res += spsolver.decompose(spm);
-
-        // Remove the previously added vector along the diagonal of the Hessian
-        Hee.diagonal() -= Ze/Le + We/Ue;
 
         return res.stop();
     }
@@ -245,7 +242,7 @@ struct IpSaddlePointSolver::Impl
         Hee += Ze/Le + We/Ue;
 
         // Define the saddle point matrix
-        SaddlePointMatrix spm(H, A, jf);
+        SaddlePointMatrix spm(lhs.H, D, A, jf);
 
         // Decompose the saddle point matrix
         res += spsolver.decompose(spm);

@@ -29,6 +29,9 @@ tested_matrices_A = Canonicalizer.tested_matrices_A
 # Tested cases for the structure of matrix H
 tested_structures_H = ['dense', 'diagonal']
 
+# Tested cases for the structure of matrix D
+tested_structures_D = ['diagonal', 'zero']
+
 # Tested cases for the structure of matrix G
 tested_structures_G = ['dense', 'zero']
 
@@ -52,6 +55,7 @@ tested_methods = [
 # Combination of all tested cases
 testdata = product(tested_matrices_A,
                    tested_structures_H,
+                   tested_structures_D,
                    tested_structures_G,
                    tested_jf,
                    tested_variable_conditions,
@@ -61,7 +65,7 @@ testdata = product(tested_matrices_A,
 @mark.parametrize("args", testdata)
 def test_saddle_point_solver(args):
 
-    assemble_A, structure_H, structure_G, jf, variable_condition, method = args
+    assemble_A, structure_H, structure_D, structure_G, jf, variable_condition, method = args
 
     m = 4
     n = 10
@@ -73,6 +77,7 @@ def test_saddle_point_solver(args):
     A = assemble_A(m, n, len(jf))
 
     H = eigen.random(n, n) if structure_H == 'dense' else eigen.random(n)
+    D = eigen.random(n) if structure_D == 'diagonal' else eigen.vector()
     G = eigen.random(m, m) if structure_G == 'dense' else eigen.matrix()
 
     # The diagonal entries of the Hessian matrix
@@ -88,7 +93,7 @@ def test_saddle_point_solver(args):
     Hdiag[seq] = factor * Hdiag[seq] 
 
     # Create the SaddlePointMatrix object
-    lhs = SaddlePointMatrix(H, A, G, jf)
+    lhs = SaddlePointMatrix(H, D, A, G, jf)
     
     # Use the SaddlePointMatrix object to create an array M
     M = lhs.array()

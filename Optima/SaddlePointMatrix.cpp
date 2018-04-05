@@ -27,16 +27,20 @@ using namespace Eigen;
 
 namespace Optima {
 
-SaddlePointMatrix::SaddlePointMatrix(VariantMatrixConstRef H, MatrixConstRef A, IndicesConstRef jf)
-: SaddlePointMatrix(H, A, {}, jf)
+SaddlePointMatrix::SaddlePointMatrix(VariantMatrixConstRef H, VectorConstRef D, MatrixConstRef A, IndicesConstRef jf)
+: SaddlePointMatrix(H, A, D, {}, jf)
 {}
 
-SaddlePointMatrix::SaddlePointMatrix(VariantMatrixConstRef H, MatrixConstRef A, VariantMatrixConstRef G, IndicesConstRef jf)
-: H(H), A(A), G(G), jf(jf)
+SaddlePointMatrix::SaddlePointMatrix(VariantMatrixConstRef H, VectorConstRef D, MatrixConstRef A, VariantMatrixConstRef G, IndicesConstRef jf)
+: H(H), D(D), A(A), G(G), jf(jf)
 {
     Assert(H.dense.rows() == A.cols() || H.diagonal.rows() == A.cols(),
         "Could not create a SaddlePointMatrix object.",
             "Matrix A must have the same number of columns as there are rows in H.");
+
+    Assert(D.rows() == 0 || D.rows() == A.cols(),
+        "Could not create a SaddlePointMatrix object.",
+            "Matrix D must be an empty vector or have the same number of rows as there are rows in H.");
 
     Assert(A.rows() < A.cols(),
         "Could not create a SaddlePointMatrix object.",
@@ -65,9 +69,14 @@ SaddlePointMatrix::operator Matrix() const
     case MatrixStructure::Diagonal:
     case MatrixStructure::Zero:
         res.topLeftCorner(n, n) = diag(H.diagonal);
-        res.topLeftCorner(n, n).diagonal()(jf).fill(1.0);
         break;
     }
+
+    // Add the D contribution if D is non-empty
+    if(D.size()) res.topLeftCorner(n, n).diagonal() += D;
+
+    // Set all entries in H + D block corresponding to fixed variables
+    res.topLeftCorner(n, n).diagonal()(jf).fill(1.0);
 
     res.topRightCorner(n, m) = tr(A);
     res.topRightCorner(n, m)(jf, all).fill(0.0);

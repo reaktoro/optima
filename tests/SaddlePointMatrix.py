@@ -23,6 +23,9 @@ from itertools import product
 # Tested cases for the structure of matrix H
 tested_structures_H = ['dense', 'diagonal']
 
+# Tested cases for the structure of matrix D
+tested_structures_D = ['diagonal', 'zero']
+
 # Tested cases for the structure of matrix G
 tested_structures_G = ['dense', 'zero']
 
@@ -33,6 +36,7 @@ tested_jf = [arange(0),
 
 # Combination of all tested cases
 testdata = product(tested_structures_H,
+                   tested_structures_D,
                    tested_structures_G,
                    tested_jf)
 
@@ -40,7 +44,7 @@ testdata = product(tested_structures_H,
 @mark.parametrize("args", testdata)
 def test_saddle_point_matrix(args):
 
-    structure_H, structure_G, jf = args
+    structure_H, structure_D, structure_G, jf = args
 
     m = 5
     n = 15
@@ -48,14 +52,18 @@ def test_saddle_point_matrix(args):
 
     # Create matrices H, A, G
     H = eigen.random(n, n) if structure_H == 'dense' else eigen.random(n)
+    D = eigen.random(n) if structure_D == 'diagonal' else eigen.vector()
     A = eigen.random(m, n)
     G = eigen.random(m, m) if structure_G == 'dense' else eigen.matrix()
 
     # Create the SaddlePointMatrix object
-    mat = SaddlePointMatrix(H, A, G, jf)
+    mat = SaddlePointMatrix(H, D, A, G, jf)
 
     # Use a dense matrix for H from this point on (for convenience)
     Haux = H if structure_H == 'dense' else eigen.diag(H)
+
+    # Use a dense matrix for D from this point on (for convenience)
+    Daux = eigen.diag(D) if structure_D == 'diagonal' else eigen.zeros(n, n)
 
     # Use a dense matrix for G from this point on (for convenience)
     Gaux = G if structure_G == 'dense' else eigen.zeros(m ,m)
@@ -71,9 +79,12 @@ def test_saddle_point_matrix(args):
     # Set to one the diagonal entries in H corresponding to fixed variables
     Haux[jf, jf] = 1.0
 
+    # Set to zero the diagonal entries in D corresponding to fixed variables
+    Daux[jf, jf] = 0.0
+
     # Assemble the big saddle point matrix M 
     M = eigen.zeros(t, t)
-    M[0:n, 0:n] = Haux
+    M[0:n, 0:n] = Haux + Daux
     M[0:n, n:n + m] = trA
     M[n:, :n] = A
     M[n:, n:] = Gaux

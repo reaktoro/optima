@@ -169,15 +169,15 @@ struct SaddlePointSolver::Impl
         const auto ivx = iordering.head(nx); // TODO Change this name to jx
         const auto ivf = iordering.tail(nf); // TODO Change this name to jf
 
-        // The diagonal entries of the Hessian matrix
-        auto Hdd = lhs.H.diagonalRef();
+        weights.noalias() = lhs.H.diagonalRef();
+        if(lhs.D.size()) weights += lhs.D;
 
-        // The diagonal entries of the Hessian matrix corresponding to free variables
-        auto Hxx = Hdd(ivx);
+        weights.noalias() = abs(inv(weights));
+        weights(ivf).noalias() = -linspace(nf, 1, nf);
 
         // Update the priority weights for the update of the canonical form
-        weights(ivx).noalias() = abs(inv(Hxx));
-        weights(ivf).noalias() = -linspace(nf, 1, nf);
+//        weights(ivx).noalias() = abs(inv(Hxx + Dxx));
+//        weights(ivf).noalias() = -linspace(nf, 1, nf);
 
         // Update the canonical form and the ordering of the variables
         canonicalizer.updateWithPriorityWeights(weights);
@@ -295,8 +295,11 @@ struct SaddlePointSolver::Impl
         // Set the G block of M on the bottom-right corner
         M.bottomRightCorner(nbx, nbx).setZero();
 
-        // Set the H block of the canonical saddle point matrix
+        // Set the H + D block of the canonical saddle point matrix
         M.topLeftCorner(nx, nx) << lhs.H(ivx);
+
+        // Add the D contribution from the free variables to the H + D block
+        if(lhs.D.size()) M.diagonal().head(nx) += lhs.D(ivx);
 
         // Compute the LU decomposition of M.
         lu.compute(M);
@@ -328,11 +331,21 @@ struct SaddlePointSolver::Impl
         // Create a view to the M block of the auxiliary matrix `mat` where the canonical saddle point matrix is defined
         auto M = mat.topLeftCorner(m + nx, m + nx);
 
+        // Set the H + D block of the canonical saddle point matrix
         M.topLeftCorner(nx, nx) << lhs.H(ivx);
+
+        // Add the D contribution from the free variables to the H + D block
+        if(lhs.D.size()) M.diagonal().head(nx) += lhs.D(ivx);
+
+        // Set the Sx and tr(Sx) blocks in the canonical saddle point matrix
         M.middleCols(nx, nbx).topRows(nx) << Ibxbx, tr(Sbxnx);
         M.middleRows(nx, nbx).leftCols(nx) << Ibxbx, Sbxnx;
+
+        // Set the zero blocks of M on the top-right and bottom-left corners
         M.topRightCorner(nx, nbf + nl).setZero();
         M.bottomLeftCorner(nbf + nl, nx).setZero();
+
+        // Set the G block of M on the bottom-right corner
         M.bottomRightCorner(m, m) = R * G.dense * tr(R);
 
         // Compute the LU decomposition of M.
@@ -390,6 +403,9 @@ struct SaddlePointSolver::Impl
 
         // Retrieve the entries in H corresponding to free variables.
         Hx.noalias() = lhs.H.diagonal(ivx);
+
+        // Add the D contribution from the free variables to the H + D block
+        if(lhs.D.size()) Hx.diagonal().noalias() += lhs.D(ivx);
 
         // The auxiliary matrix Tbxbx = Sbxn1 * Bn1bx and its submatrices
         auto Tbxbx = mat.topRightCorner(nbx, nbx);
@@ -512,6 +528,9 @@ struct SaddlePointSolver::Impl
 
         // Retrieve the entries in H corresponding to free variables.
         Hx.noalias() = lhs.H.diagonalRef()(ivx);
+
+        // Add the D contribution from the free variables to the H + D block
+        if(lhs.D.size()) Hx.diagonal().noalias() += lhs.D(ivx);
 
         // Calculate matrix G' = R * G * tr(R)
         G.dense = R * G.dense * tr(R);
@@ -650,6 +669,9 @@ struct SaddlePointSolver::Impl
         // Retrieve the entries in H corresponding to free variables.
         Hx << lhs.H(ivx);
 
+        // Add the D contribution from the free variables to the H + D block
+        if(lhs.D.size()) Hx.diagonal().noalias() += lhs.D(ivx);
+
         // The matrix M where we setup the coefficient matrix of the equations
         auto M = mat.topLeftCorner(nnx, nnx);
 
@@ -708,6 +730,9 @@ struct SaddlePointSolver::Impl
 
         // Retrieve the entries in H corresponding to free variables.
         Hx << lhs.H(ivx);
+
+        // Add the D contribution from the free variables to the H + D block
+        if(lhs.D.size()) Hx.diagonal().noalias() += lhs.D(ivx);
 
         // Calculate matrix G' = R * G * tr(R)
         G.dense = R * G.dense * tr(R);
