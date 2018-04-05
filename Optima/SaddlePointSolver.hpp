@@ -55,9 +55,6 @@ public:
     /// Return the current saddle point options.
     auto options() const -> const SaddlePointOptions&;
 
-    /// Update the order of the variables.
-    auto reorderVariables(IndicesConstRef ordering) -> void;
-
     /// Initialize the saddle point solver wiht the coefficient matrix \eq{A} of the saddle point problem.
     /// @note This method should be called before the @ref decompose method. However, it does not
     /// need to be called again if matrix \eq{A} of the saddle point problem is the same as in the

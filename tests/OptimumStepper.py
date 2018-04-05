@@ -44,11 +44,11 @@ def test_optimum_stepper():
     state.H = eigen.random(n, n)
 
     stepper = OptimumStepper(structure)
+    lhs = stepper.matrix(params, state).array()
     stepper.decompose(params, state)
     stepper.solve(params, state)
 
     step = stepper.step().array()
     residual = stepper.residual().array()
-    lhs = stepper.matrix().array()
 
     assert norm(lhs.dot(step) - residual) / norm(residual) == approx(0.0)

@@ -248,38 +248,6 @@ struct Canonicalizer::Impl
         // Rearrange the permutation matrix Q based on the new order of non-basic variables
         Kn.transpose().applyThisOnTheLeft(inonbasic);
     }
-
-    /// Update the order of the variables.
-    auto updateWithNewOrdering(IndicesConstRef ordering) -> void
-    {
-        // The number of rows and columns of A
-        const Index m = lu.rows();
-        const Index n = lu.cols();
-
-        // Get the rank of matrix A
-        const Index r = lu.rank();
-
-        // Get the LU factors of matrix A
-        const auto L   = lu.matrixLU().leftCols(m).triangularView<Eigen::UnitLower>();
-        const auto Ubb = lu.matrixLU().topLeftCorner(r, r).triangularView<Eigen::Upper>();
-        const auto Ubn = lu.matrixLU().topRightCorner(r, n - r);
-
-		// The inverse of the ordering permutation
-        inv_ordering(ordering) = indices(n);
-
-        // Initialize the permutation matrices P and Q
-        P = lu.permutationP().indices().cast<Index>();
-        Q = inv_ordering(lu.permutationQ().indices());
-
-        // Calculate the regularizer matrix R
-        R = P.asPermutation();
-        R = L.solve(R);
-        R.topRows(r) = Ubb.solve(R.topRows(r));
-
-        // Calculate matrix S
-        S = Ubn;
-        S = Ubb.solve(S);
-    }
 };
 
 Canonicalizer::Canonicalizer()
@@ -378,11 +346,6 @@ auto Canonicalizer::updateWithSwapBasicVariable(Index ibasic, Index inonbasic) -
 auto Canonicalizer::updateWithPriorityWeights(VectorConstRef weights) -> void
 {
     pimpl->updateWithPriorityWeights(weights);
-}
-
-auto Canonicalizer::updateWithNewOrdering(IndicesConstRef ordering) -> void
-{
-    pimpl->updateWithNewOrdering(ordering);
 }
 
 auto Canonicalizer::rationalize(Index maxdenominator) -> void

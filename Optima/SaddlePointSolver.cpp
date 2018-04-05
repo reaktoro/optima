@@ -93,13 +93,6 @@ struct SaddlePointSolver::Impl
     /// The boolean flag that indicates that the decomposed saddle point matrix was degenerate with no free variables.
     bool degenerate = false;
 
-    /// Update the order of the variables.
-    auto reorderVariables(IndicesConstRef ordering) -> void
-    {
-        // Update the ordering of the canonicalizer object
-        canonicalizer.updateWithNewOrdering(ordering);
-    }
-
     /// Canonicalize the coefficient matrix *A* of the saddle point problem.
     auto initialize(MatrixConstRef A) -> Result
     {
@@ -1331,11 +1324,6 @@ auto SaddlePointSolver::setOptions(const SaddlePointOptions& options) -> void
 auto SaddlePointSolver::options() const -> const SaddlePointOptions&
 {
     return pimpl->options;
-}
-
-auto SaddlePointSolver::reorderVariables(IndicesConstRef ordering) -> void
-{
-    pimpl->reorderVariables(ordering);
 }
 
 auto SaddlePointSolver::initialize(MatrixConstRef A) -> Result

@@ -43,7 +43,6 @@ void exportCanonicalizer(py::module& m)
         .def("compute", &Canonicalizer::compute)
         .def("updateWithSwapBasicVariable", &Canonicalizer::updateWithSwapBasicVariable)
         .def("updateWithPriorityWeights", &Canonicalizer::updateWithPriorityWeights)
-        .def("updateWithNewOrdering", &Canonicalizer::updateWithNewOrdering)
         .def("rationalize", &Canonicalizer::rationalize)
         ;
 }

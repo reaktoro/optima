@@ -71,16 +71,6 @@ struct IpSaddlePointSolver::Impl
     /// The total number of variables (x, y, z, w).
     Index t;
 
-    /// Update the order of the variables.
-    auto reorderVariables(IndicesConstRef ordering) -> void
-    {
-        // Update the ordering of the saddle point solver
-        spsolver.reorderVariables(ordering);
-
-        // Update the internal ordering of the variables with the new ordering
-        ordering.asPermutation().transpose().applyThisOnTheLeft(iordering);
-    }
-
     /// Initialize the stepper with the structure of the optimization problem.
     auto initialize(MatrixConstRef A) -> Result
     {
@@ -127,8 +117,7 @@ struct IpSaddlePointSolver::Impl
         nx = n - nf;
 
         // Partition the variables into (free variables, fixed variables)
-        iordering = indices(n);
-        iordering.tail(nf).swap(iordering(lhs.jf));
+        partitionRight(iordering, lhs.jf);
 
         // Auxiliary variables
         const double eps = std::numeric_limits<double>::epsilon();
@@ -150,7 +139,7 @@ struct IpSaddlePointSolver::Impl
         auto il = std::partition(iu, ie, partition_l);
         auto is = ie;
 
-        // Reverse the order of the variables into (s, l, u, z, w)
+        // Reverse the order of the free variables into (s, l, u, z, w)
         std::reverse(ib, ie);
 
         // Update the number of (s, l, u, z, w) variables
@@ -160,21 +149,11 @@ struct IpSaddlePointSolver::Impl
         nl = il - iu;
         ns = is - il;
 
-        // Update the ordering of the saddle point solver
-        spsolver.reorderVariables(iordering);
-
-        // Initialize A, Z, W, L and U according to iordering
-        A.noalias() = lhs.A(all, iordering);
-        Z.noalias() = lhs.Z(iordering);
-        W.noalias() = lhs.W(iordering);
-        L.noalias() = lhs.L(iordering);
-        U.noalias() = lhs.U(iordering);
-
         // Ensure Z(fixed) = 0, W(fixed) = 0, L(fixed) = 1, and U(fixed) = 1
-        Z.tail(nf).fill(0.0);
-        W.tail(nf).fill(0.0);
-        L.tail(nf).fill(1.0);
-        U.tail(nf).fill(1.0);
+        Z(lhs.jf).fill(0.0);
+        W(lhs.jf).fill(0.0);
+        L(lhs.jf).fill(1.0);
+        U(lhs.jf).fill(1.0);
 
         return res.stop();
     }
@@ -725,11 +704,6 @@ auto IpSaddlePointSolver::decompose(IpSaddlePointMatrix lhs) -> Result
 auto IpSaddlePointSolver::solve(IpSaddlePointVector rhs, IpSaddlePointSolution sol) -> Result
 {
     return pimpl->solve(rhs, sol);
-}
-
-auto IpSaddlePointSolver::reorderVariables(IndicesConstRef ordering) -> void
-{
-    pimpl->reorderVariables(ordering);
 }
 
 } // namespace Optima

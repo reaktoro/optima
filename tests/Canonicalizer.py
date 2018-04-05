@@ -114,18 +114,6 @@ def check_canonicalizer(canonicalizer, A):
             check_canonical_form(canonicalizer, A)
 
     #---------------------------------------------------------------------------
-    # Change the order of the variables and see if the updated canonical
-    # form is correct
-    #---------------------------------------------------------------------------
-    ordering = reverse(range(n - m, n)) + range(n - m)
-
-    canonicalizer.updateWithNewOrdering(ordering)
-
-    A = A[:, ordering]  # Reorder the columns of matrix A
-
-    check_canonical_form(canonicalizer, A)
-
-    #---------------------------------------------------------------------------
     # Set weights for the variables to update the basic/non-basic partition
     #---------------------------------------------------------------------------
     weigths = abs(random.rand(n)) + 1.0

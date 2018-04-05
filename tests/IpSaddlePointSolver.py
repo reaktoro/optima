@@ -21,6 +21,8 @@ from numpy.linalg import norm
 from pytest import approx, mark
 from itertools import product
 
+import Canonicalizer
+
 def print_state(M, r, s, m, n):
     set_printoptions(linewidth=1000, precision=10, threshold='nan')
     slu = eigen.solve(M, r)
@@ -38,46 +40,54 @@ def print_state(M, r, s, m, n):
     print 'res(lu)  = ', M.dot(slu) - r
 
 
+# Tested number of variables in (s, l, u, z, w) partitions
 tested_dimensions = [
-#    m   ns  nl  nu  nz  nw  nf
-    (5,  10, 0,  0,  0,  0,  0),
-    (5,  8,  2,  0,  0,  0,  0),
-    (5,  8,  0,  2,  0,  0,  0),
-    (5,  8,  0,  0,  2,  0,  0),
-    (5,  8,  0,  0,  0,  2,  0),
- 
-    (5,  8,  0,  0,  0,  0,  2),
-    (5,  6,  2,  0,  0,  0,  2),
-    (5,  6,  0,  2,  0,  0,  2),
-    (5,  6,  0,  0,  2,  0,  2),
-    (5,  6,  0,  0,  0,  2,  2),
+#    m   ns  nl  nu  nz  nw
+    (5,  10, 0,  0,  0,  0),
+    (5,  8,  2,  0,  0,  0),
+    (5,  8,  0,  2,  0,  0),
+    (5,  8,  0,  0,  2,  0),
+    (5,  8,  0,  0,  0,  2),
 ]
 
+# Tested cases for the matrix A
+tested_matrices_A = Canonicalizer.tested_matrices_A
+
+# Tested cases for the structure of matrix H
+tested_structures_H = ['dense', 'diagonal']
+
+# Tested cases for the indices of fixed variables
+tested_jf = [arange(0), 
+             arange(1), 
+             array([1, 3, 7, 9])]
+
+# Tested cases for the saddle point methods
 tested_methods = [
     SaddlePointMethod.Fullspace,
     SaddlePointMethod.Nullspace,
     SaddlePointMethod.Rangespace,
-]
+    ]
 
-tested_hessian_options = ['dense', 'diagonal']
-
+# Combination of all tested cases
 testdata = product(tested_dimensions,
-                   tested_methods,
-                   tested_hessian_options)
+                   tested_matrices_A,
+                   tested_structures_H,
+                   tested_jf,
+                   tested_methods
+                   )
 
 
 @mark.parametrize("args", testdata)
 def test_ip_saddle_point_solver(args):
-    dimensions, method, structure = args
+    dimensions, assemble_A, structure_H, jf, method = args
     
-    m, ns, nl, nu, nz, nw, nf = dimensions
+    m, ns, nl, nu, nz, nw = dimensions
     
-    nx = ns + nl + nu + nz + nw
-    n = nx + nf
+    n = ns + nl + nu + nz + nw
     t = 3*n + m
     
     A = eigen.random(m, n)
-    H = eigen.random(n, n) if structure == 'dense' else eigen.random(n)
+    H = eigen.random(n, n) if structure_H == 'dense' else eigen.random(n)
     Z = eigen.random(n)
     W = eigen.random(n)
     L = eigen.random(n)
@@ -98,7 +108,7 @@ def test_ip_saddle_point_solver(args):
     r = eigen.zeros(t)
 
     # The left-hand side coefficient matrix
-    lhs = IpSaddlePointMatrix(H, A, Z, W, L, U, nf)
+    lhs = IpSaddlePointMatrix(H, A, Z, W, L, U, jf)
 
     # The dense matrix assembled from lhs
     M = lhs.array()
