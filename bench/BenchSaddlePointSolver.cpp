@@ -42,7 +42,7 @@ void benchMethodRangespace()
 
     Matrix A = random(m, n);
     Matrix H = diag(random(n));
-    VectorXi ifixed;
+    Indices ifixed;
 
     SaddlePointMatrix lhs(H, A, ifixed);
 
@@ -152,7 +152,7 @@ void benchMethodNullspace()
     Matrix H = random(n, n);
     H.diagonal().head(m)   *= 1e-2;
     H.diagonal().tail(n-m) *= 1e+5;
-    VectorXi ifixed;
+    Indices ifixed;
 
     SaddlePointMatrix lhs(H, A, ifixed);
 

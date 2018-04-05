@@ -27,7 +27,7 @@ Partition::Partition(Index n)
 : _ordering(indices(n)), _nf(0)
 {}
 
-auto Partition::setFixedVariables(VectorXiConstRef inds) -> void
+auto Partition::setFixedVariables(IndicesConstRef inds) -> void
 {
     const Index n = numVariables();
     _nf = inds.size();
@@ -35,7 +35,7 @@ auto Partition::setFixedVariables(VectorXiConstRef inds) -> void
     _ordering.tail(_nf).swap(_ordering(inds));
 }
 
-auto Partition::setFreeVariables(VectorXiConstRef inds) -> void
+auto Partition::setFreeVariables(IndicesConstRef inds) -> void
 {
     const Index n = numVariables();
     const Index nx = inds.size();
@@ -59,17 +59,17 @@ auto Partition::numFixedVariables() const -> Index
     return _nf;
 }
 
-auto Partition::freeVariables() const -> VectorXiConstRef
+auto Partition::freeVariables() const -> IndicesConstRef
 {
     return ordering().head(numFreeVariables());
 }
 
-auto Partition::fixedVariables() const -> VectorXiConstRef
+auto Partition::fixedVariables() const -> IndicesConstRef
 {
     return ordering().tail(numFixedVariables());
 }
 
-auto Partition::ordering() const -> VectorXiConstRef
+auto Partition::ordering() const -> IndicesConstRef
 {
     return _ordering;
 }

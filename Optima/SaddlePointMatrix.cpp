@@ -27,11 +27,11 @@ using namespace Eigen;
 
 namespace Optima {
 
-SaddlePointMatrix::SaddlePointMatrix(VariantMatrixConstRef H, MatrixConstRef A, VectorXiConstRef jf)
+SaddlePointMatrix::SaddlePointMatrix(VariantMatrixConstRef H, MatrixConstRef A, IndicesConstRef jf)
 : SaddlePointMatrix(H, A, {}, jf)
 {}
 
-SaddlePointMatrix::SaddlePointMatrix(VariantMatrixConstRef H, MatrixConstRef A, VariantMatrixConstRef G, VectorXiConstRef jf)
+SaddlePointMatrix::SaddlePointMatrix(VariantMatrixConstRef H, MatrixConstRef A, VariantMatrixConstRef G, IndicesConstRef jf)
 : H(H), A(A), G(G), jf(jf)
 {
     Assert(H.dense.rows() == A.cols() || H.diagonal.rows() == A.cols(),

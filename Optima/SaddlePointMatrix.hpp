@@ -50,20 +50,20 @@ public:
     VariantMatrixConstRef G;
 
     /// The indices of the fixed variables.
-    VectorXiConstRef jf;
+    IndicesConstRef jf;
 
     /// Construct a SaddlePointMatrix instance.
     /// @param H The \eq{H} matrix in the saddle point matrix.
     /// @param A The \eq{A} matrix in the saddle point matrix.
     /// @param jf The indices of the fixed variables.
-    SaddlePointMatrix(VariantMatrixConstRef H, MatrixConstRef A, VectorXiConstRef jf);
+    SaddlePointMatrix(VariantMatrixConstRef H, MatrixConstRef A, IndicesConstRef jf);
 
     /// Construct a SaddlePointMatrix instance.
     /// @param H The \eq{H} matrix in the saddle point matrix.
     /// @param A The \eq{A} matrix in the saddle point matrix.
     /// @param G The \eq{G} matrix in the saddle point matrix.
     /// @param jf The indices of the fixed variables.
-    SaddlePointMatrix(VariantMatrixConstRef H, MatrixConstRef A, VariantMatrixConstRef G, VectorXiConstRef jf);
+    SaddlePointMatrix(VariantMatrixConstRef H, MatrixConstRef A, VariantMatrixConstRef G, IndicesConstRef jf);
 
     /// Convert this SaddlePointMatrix instance into a Matrix instance.
     operator Matrix() const;

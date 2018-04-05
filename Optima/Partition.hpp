@@ -35,10 +35,10 @@ public:
     Partition(Index n);
 
     /// Set the indices of the free variables, with the remaining variables becoming fixed.
-    auto setFreeVariables(VectorXiConstRef indices) -> void;
+    auto setFreeVariables(IndicesConstRef indices) -> void;
 
     /// Set the indices of the fixed variables, with the remaining variables becoming free.
-    auto setFixedVariables(VectorXiConstRef indices) -> void;
+    auto setFixedVariables(IndicesConstRef indices) -> void;
 
     /// Return the number of variables.
     auto numVariables() const -> Index;
@@ -50,17 +50,17 @@ public:
     auto numFixedVariables() const -> Index;
 
     /// Return the indices of the free variables.
-    auto freeVariables() const -> VectorXiConstRef;
+    auto freeVariables() const -> IndicesConstRef;
 
     /// Return the indices of the fixed variables.
-    auto fixedVariables() const -> VectorXiConstRef;
+    auto fixedVariables() const -> IndicesConstRef;
 
     /// Return the ordering of the variables partitioned into (free, fixed) variables.
-    auto ordering() const -> VectorXiConstRef;
+    auto ordering() const -> IndicesConstRef;
 
 private:
     /// The ordering of the variables as (free, fixed).
-    VectorXi _ordering;
+    Indices _ordering;
 
     /// The number of fixed variables.
     Index _nf;

@@ -58,7 +58,7 @@ public:
     VectorConstRef U;
 
     /// The indices of the fixed variables.
-    VectorXiConstRef jf;
+    IndicesConstRef jf;
 
     /// Construct a SaddlePointMatrix instance.
     /// @param H The \eq{H} matrix in the saddle point equation.
@@ -75,7 +75,7 @@ public:
         VectorConstRef W,
         VectorConstRef L,
         VectorConstRef U,
-        VectorXiConstRef jf);
+        IndicesConstRef jf);
 
     /// Convert this IpSaddlePointMatrix instance into a Matrix instance.
     operator Matrix() const;

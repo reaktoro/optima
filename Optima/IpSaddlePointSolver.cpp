@@ -53,7 +53,7 @@ struct IpSaddlePointSolver::Impl
     SaddlePointSolver spsolver;
 
     /// The order of the variables as x = [xs xl xu xz xw xf].
-    VectorXi iordering;
+    Indices iordering;
 
     /// The number of variables.
     Index n;
@@ -71,7 +71,7 @@ struct IpSaddlePointSolver::Impl
     Index t;
 
     /// Update the order of the variables.
-    auto reorderVariables(VectorXiConstRef ordering) -> void
+    auto reorderVariables(IndicesConstRef ordering) -> void
     {
         // Update the ordering of the saddle point solver
         spsolver.reorderVariables(ordering);
@@ -726,7 +726,7 @@ auto IpSaddlePointSolver::solve(IpSaddlePointVector rhs, IpSaddlePointSolution s
     return pimpl->solve(rhs, sol);
 }
 
-auto IpSaddlePointSolver::reorderVariables(VectorXiConstRef ordering) -> void
+auto IpSaddlePointSolver::reorderVariables(IndicesConstRef ordering) -> void
 {
     pimpl->reorderVariables(ordering);
 }

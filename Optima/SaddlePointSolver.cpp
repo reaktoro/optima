@@ -84,7 +84,7 @@ struct SaddlePointSolver::Impl
     Vector vec;
 
     /// The ordering of the variables as (free-basic, free-non-basic, fixed-basic, fixed-non-basic)
-    VectorXi iordering;
+    Indices iordering;
 
     /// The LU decomposition solver.
     Eigen::PartialPivLU<Matrix> lu;
@@ -93,7 +93,7 @@ struct SaddlePointSolver::Impl
     bool degenerate = false;
 
     /// Update the order of the variables.
-    auto reorderVariables(VectorXiConstRef ordering) -> void
+    auto reorderVariables(IndicesConstRef ordering) -> void
     {
         // Update the ordering of the canonicalizer object
         canonicalizer.updateWithNewOrdering(ordering);
@@ -1333,7 +1333,7 @@ auto SaddlePointSolver::options() const -> const SaddlePointOptions&
     return pimpl->options;
 }
 
-auto SaddlePointSolver::reorderVariables(VectorXiConstRef ordering) -> void
+auto SaddlePointSolver::reorderVariables(IndicesConstRef ordering) -> void
 {
     pimpl->reorderVariables(ordering);
 }

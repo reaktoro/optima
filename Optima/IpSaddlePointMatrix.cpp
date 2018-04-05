@@ -17,6 +17,9 @@
 
 #include "IpSaddlePointMatrix.hpp"
 
+// Eigen includes
+using namespace Eigen::placeholders;
+
 // Optima includes
 #include <Optima/Utils.hpp>
 using namespace Eigen;
@@ -30,7 +33,7 @@ IpSaddlePointMatrix::IpSaddlePointMatrix(
     VectorConstRef W,
     VectorConstRef L,
     VectorConstRef U,
-    VectorXiConstRef jf)
+    IndicesConstRef jf)
 : H(H), A(A), Z(Z), W(W), L(L), U(U), jf(jf)
 {}
 

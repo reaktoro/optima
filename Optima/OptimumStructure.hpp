@@ -37,19 +37,19 @@ public:
     OptimumStructure(Index n, Index m);
 
     /// Set the indices of the variables in \eq{x} with lower bounds.
-    auto setVariablesWithLowerBounds(VectorXiConstRef indices) -> void;
+    auto setVariablesWithLowerBounds(IndicesConstRef indices) -> void;
 
     /// Set all variables in \eq{x} with lower bounds.
     auto allVariablesHaveLowerBounds() -> void;
 
     /// Set the indices of the variables in \eq{x} with upper bounds.
-    auto setVariablesWithUpperBounds(VectorXiConstRef indices) -> void;
+    auto setVariablesWithUpperBounds(IndicesConstRef indices) -> void;
 
     /// Set all variables in \eq{x} with upper bounds.
     auto allVariablesHaveUpperBounds() -> void;
 
     /// Set the indices of the variables in \eq{x} with fixed values.
-    auto setVariablesWithFixedValues(VectorXiConstRef indices) -> void;
+    auto setVariablesWithFixedValues(IndicesConstRef indices) -> void;
 
     /// Return the number of variables.
     auto numVariables() const -> Index;
@@ -58,31 +58,31 @@ public:
     auto numEqualityConstraints() const -> Index;
 
     /// Return the indices of the variables with lower bounds.
-    auto variablesWithLowerBounds() const -> VectorXiConstRef;
+    auto variablesWithLowerBounds() const -> IndicesConstRef;
 
     /// Return the indices of the variables with upper bounds.
-    auto variablesWithUpperBounds() const -> VectorXiConstRef;
+    auto variablesWithUpperBounds() const -> IndicesConstRef;
 
     /// Return the indices of the variables with fixed values.
-    auto variablesWithFixedValues() const -> VectorXiConstRef;
+    auto variablesWithFixedValues() const -> IndicesConstRef;
 
     /// Return the indices of the variables without lower bounds.
-    auto variablesWithoutLowerBounds() const -> VectorXiConstRef;
+    auto variablesWithoutLowerBounds() const -> IndicesConstRef;
 
     /// Return the indices of the variables without upper bounds.
-    auto variablesWithoutUpperBounds() const -> VectorXiConstRef;
+    auto variablesWithoutUpperBounds() const -> IndicesConstRef;
 
     /// Return the indices of the variables without fixed values.
-    auto variablesWithoutFixedValues() const -> VectorXiConstRef;
+    auto variablesWithoutFixedValues() const -> IndicesConstRef;
 
     /// Return the indices of the variables partitioned in [without, with] lower bounds.
-    auto orderingLowerBounds() const -> VectorXiConstRef;
+    auto orderingLowerBounds() const -> IndicesConstRef;
 
     /// Return the indices of the variables partitioned in [without, with] upper bounds.
-    auto orderingUpperBounds() const -> VectorXiConstRef;
+    auto orderingUpperBounds() const -> IndicesConstRef;
 
     /// Return the indices of the variables partitioned in [without, with] fixed values.
-    auto orderingFixedValues() const -> VectorXiConstRef;
+    auto orderingFixedValues() const -> IndicesConstRef;
 
 private:
     /// The number of variables in the optimization problem.
@@ -101,13 +101,13 @@ private:
     Index _nfixed;
 
     /// The indices of the variables partitioned in [with, without] lower bounds.
-    VectorXi _lowerpartition;
+    Indices _lowerpartition;
 
     /// The indices of the variables partitioned in [with, without] upper bounds.
-    VectorXi _upperpartition;
+    Indices _upperpartition;
 
     /// The indices of the variables partitioned in [with, without] fixed values.
-    VectorXi _fixedpartition;
+    Indices _fixedpartition;
 };
 
 } // namespace Optima

@@ -45,7 +45,7 @@
 //    m_nlower = m_n;
 //}
 //
-//auto OptimumProblem::xlower(VectorXiConstRef indices, VectorConstRef values) -> void
+//auto OptimumProblem::xlower(IndicesConstRef indices, VectorConstRef values) -> void
 //{
 //    m_xlower(indices) = values;
 //    m_nlower = indices.size();
@@ -70,7 +70,7 @@
 //    m_nupper = m_n;
 //}
 //
-//auto OptimumProblem::xupper(VectorXiConstRef indices, VectorConstRef values) -> void
+//auto OptimumProblem::xupper(IndicesConstRef indices, VectorConstRef values) -> void
 //{
 //    m_xupper(indices) = values;
 //    m_nupper = indices.size();
@@ -95,7 +95,7 @@
 //    m_nfixed = m_n;
 //}
 //
-//auto OptimumProblem::xfixed(VectorXiConstRef indices, VectorConstRef values) -> void
+//auto OptimumProblem::xfixed(IndicesConstRef indices, VectorConstRef values) -> void
 //{
 //    m_xfixed(indices) = values;
 //    m_nfixed = indices.size();
@@ -108,47 +108,47 @@
 //    return m_xfixed.head(m_nfixed);
 //}
 //
-//auto OptimumProblem::iwithlower() const -> VectorXiConstRef
+//auto OptimumProblem::iwithlower() const -> IndicesConstRef
 //{
 //    return m_lowerpartition.head(m_nlower);
 //}
 //
-//auto OptimumProblem::variablesWithUpperBounds() const -> VectorXiConstRef
+//auto OptimumProblem::variablesWithUpperBounds() const -> IndicesConstRef
 //{
 //    return m_upperpartition.head(m_nupper);
 //}
 //
-//auto OptimumProblem::variablesWithFixedValues() const -> VectorXiConstRef
+//auto OptimumProblem::variablesWithFixedValues() const -> IndicesConstRef
 //{
 //    return m_fixedpartition.head(m_nfixed);
 //}
 //
-//auto OptimumProblem::variablesWithoutLowerBounds() const -> VectorXiConstRef
+//auto OptimumProblem::variablesWithoutLowerBounds() const -> IndicesConstRef
 //{
 //    return m_lowerpartition.tail(m_n - m_nlower);
 //}
 //
-//auto OptimumProblem::variablesWithoutUpperBounds() const -> VectorXiConstRef
+//auto OptimumProblem::variablesWithoutUpperBounds() const -> IndicesConstRef
 //{
 //    return m_upperpartition.tail(m_n - m_nupper);
 //}
 //
-//auto OptimumProblem::variablesWithoutFixedValues() const -> VectorXiConstRef
+//auto OptimumProblem::variablesWithoutFixedValues() const -> IndicesConstRef
 //{
 //    return m_fixedpartition.tail(m_n - m_nfixed);
 //}
 //
-//auto OptimumProblem::lowerpartition() const -> VectorXiConstRef
+//auto OptimumProblem::lowerpartition() const -> IndicesConstRef
 //{
 //    return m_lowerpartition;
 //}
 //
-//auto OptimumProblem::upperpartition() const -> VectorXiConstRef
+//auto OptimumProblem::upperpartition() const -> IndicesConstRef
 //{
 //    return m_upperpartition;
 //}
 //
-//auto OptimumProblem::fixedpartition() const -> VectorXiConstRef
+//auto OptimumProblem::fixedpartition() const -> IndicesConstRef
 //{
 //    return m_fixedpartition;
 //}

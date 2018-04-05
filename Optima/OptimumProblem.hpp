@@ -47,7 +47,7 @@
 //    /// Set the lower bounds of selected variables in \eq{x}.
 //    /// @param indices The indices of the variables in \eq{x} with lower bounds.
 //    /// @param values The values of the lower bounds.
-//    auto xlower(VectorXiConstRef indices, VectorConstRef values) -> void;
+//    auto xlower(IndicesConstRef indices, VectorConstRef values) -> void;
 //
 //    /// Return the lower bounds of the variables \eq{x}.
 //    auto xlower() const -> VectorConstRef;
@@ -62,7 +62,7 @@
 //    /// Set the upper bounds of selected variables in \eq{x}.
 //    /// @param indices The indices of the variables in \eq{x} with upper bounds.
 //    /// @param values The values of the upper bounds.
-//    auto xupper(VectorXiConstRef indices, VectorConstRef values) -> void;
+//    auto xupper(IndicesConstRef indices, VectorConstRef values) -> void;
 //
 //    /// Return the upper bounds of the variables \eq{x}.
 //    auto xupper() const -> VectorConstRef;
@@ -77,37 +77,37 @@
 //    /// Set the fixed values of selected variables in \eq{x}.
 //    /// @param indices The indices of the fixed variables in \eq{x}.
 //    /// @param values The values of the fixed variables.
-//    auto xfixed(VectorXiConstRef indices, VectorConstRef values) -> void;
+//    auto xfixed(IndicesConstRef indices, VectorConstRef values) -> void;
 //
 //    /// Return the values of the fixed variables in \eq{x}.
 //    auto xfixed() const -> VectorConstRef;
 //
 //    /// Return the indices of the variables with lower bounds.
-//    auto iwithlower() const -> VectorXiConstRef;
+//    auto iwithlower() const -> IndicesConstRef;
 //
 //    /// Return the indices of the variables with upper bounds.
-//    auto variablesWithUpperBounds() const -> VectorXiConstRef;
+//    auto variablesWithUpperBounds() const -> IndicesConstRef;
 //
 //    /// Return the indices of the variables with fixed values.
-//    auto variablesWithFixedValues() const -> VectorXiConstRef;
+//    auto variablesWithFixedValues() const -> IndicesConstRef;
 //
 //    /// Return the indices of the variables without lower bounds.
-//    auto variablesWithoutLowerBounds() const -> VectorXiConstRef;
+//    auto variablesWithoutLowerBounds() const -> IndicesConstRef;
 //
 //    /// Return the indices of the variables without upper bounds.
-//    auto variablesWithoutUpperBounds() const -> VectorXiConstRef;
+//    auto variablesWithoutUpperBounds() const -> IndicesConstRef;
 //
 //    /// Return the indices of the variables without fixed values.
-//    auto variablesWithoutFixedValues() const -> VectorXiConstRef;
+//    auto variablesWithoutFixedValues() const -> IndicesConstRef;
 //
 //    /// Return the indices of the variables partitioned in [with, without] lower bounds.
-//    auto lowerpartition() const -> VectorXiConstRef;
+//    auto lowerpartition() const -> IndicesConstRef;
 //
 //    /// Return the indices of the variables partitioned in [with, without] upper bounds.
-//    auto upperpartition() const -> VectorXiConstRef;
+//    auto upperpartition() const -> IndicesConstRef;
 //
 //    /// Return the indices of the variables partitioned in [with, without] fixed values.
-//    auto fixedpartition() const -> VectorXiConstRef;
+//    auto fixedpartition() const -> IndicesConstRef;
 //
 //private:
 //    /// The number of variables.
@@ -129,13 +129,13 @@
 //    Vector m_b;
 //
 //    /// The indices of the variables partitioned in [with, without] lower bounds.
-//    VectorXi m_lowerpartition;
+//    Indices m_lowerpartition;
 //
 //    /// The indices of the variables partitioned in [with, without] upper bounds.
-//    VectorXi m_upperpartition;
+//    Indices m_upperpartition;
 //
 //    /// The indices of the variables partitioned in [with, without] fixed values.
-//    VectorXi m_fixedpartition;
+//    Indices m_fixedpartition;
 //
 //    /// The lower bounds of the variables \eq{x}.
 //    Vector m_xlower;

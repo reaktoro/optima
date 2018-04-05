@@ -29,7 +29,7 @@ OptimumStructure::OptimumStructure(Index n, Index m)
   _fixedpartition(indices(n))
 {}
 
-auto OptimumStructure::setVariablesWithLowerBounds(VectorXiConstRef inds) -> void
+auto OptimumStructure::setVariablesWithLowerBounds(IndicesConstRef inds) -> void
 {
     _nlower = inds.size();
     _lowerpartition = indices(_n);
@@ -42,7 +42,7 @@ auto OptimumStructure::allVariablesHaveLowerBounds() -> void
     _lowerpartition = indices(_n);
 }
 
-auto OptimumStructure::setVariablesWithUpperBounds(VectorXiConstRef inds) -> void
+auto OptimumStructure::setVariablesWithUpperBounds(IndicesConstRef inds) -> void
 {
     _nupper = inds.size();
     _upperpartition = indices(_n);
@@ -55,7 +55,7 @@ auto OptimumStructure::allVariablesHaveUpperBounds() -> void
     _upperpartition = indices(_n);
 }
 
-auto OptimumStructure::setVariablesWithFixedValues(VectorXiConstRef inds) -> void
+auto OptimumStructure::setVariablesWithFixedValues(IndicesConstRef inds) -> void
 {
     _nfixed = inds.size();
     _fixedpartition = indices(_n);
@@ -72,47 +72,47 @@ auto OptimumStructure::numEqualityConstraints() const -> Index
     return A.rows();
 }
 
-auto OptimumStructure::variablesWithLowerBounds() const -> VectorXiConstRef
+auto OptimumStructure::variablesWithLowerBounds() const -> IndicesConstRef
 {
     return _lowerpartition.tail(_nlower);
 }
 
-auto OptimumStructure::variablesWithUpperBounds() const -> VectorXiConstRef
+auto OptimumStructure::variablesWithUpperBounds() const -> IndicesConstRef
 {
     return _upperpartition.tail(_nupper);
 }
 
-auto OptimumStructure::variablesWithFixedValues() const -> VectorXiConstRef
+auto OptimumStructure::variablesWithFixedValues() const -> IndicesConstRef
 {
     return _fixedpartition.tail(_nfixed);
 }
 
-auto OptimumStructure::variablesWithoutLowerBounds() const -> VectorXiConstRef
+auto OptimumStructure::variablesWithoutLowerBounds() const -> IndicesConstRef
 {
     return _lowerpartition.head(_n - _nlower);
 }
 
-auto OptimumStructure::variablesWithoutUpperBounds() const -> VectorXiConstRef
+auto OptimumStructure::variablesWithoutUpperBounds() const -> IndicesConstRef
 {
     return _upperpartition.head(_n - _nupper);
 }
 
-auto OptimumStructure::variablesWithoutFixedValues() const -> VectorXiConstRef
+auto OptimumStructure::variablesWithoutFixedValues() const -> IndicesConstRef
 {
     return _fixedpartition.head(_n - _nfixed);
 }
 
-auto OptimumStructure::orderingLowerBounds() const -> VectorXiConstRef
+auto OptimumStructure::orderingLowerBounds() const -> IndicesConstRef
 {
     return _lowerpartition;
 }
 
-auto OptimumStructure::orderingUpperBounds() const -> VectorXiConstRef
+auto OptimumStructure::orderingUpperBounds() const -> IndicesConstRef
 {
     return _upperpartition;
 }
 
-auto OptimumStructure::orderingFixedValues() const -> VectorXiConstRef
+auto OptimumStructure::orderingFixedValues() const -> IndicesConstRef
 {
     return _fixedpartition;
 }

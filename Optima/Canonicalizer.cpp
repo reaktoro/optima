@@ -40,19 +40,19 @@ struct Canonicalizer::Impl
     Matrix S;
 
     /// The permutation matrix `P`.
-    VectorXi P;
+    Indices P;
 
     /// The transpose of the permutation matrix `P`.
-    VectorXi Ptr;
+    Indices Ptr;
 
     /// The permutation matrix `Q`.
-    VectorXi Q;
+    Indices Q;
 
     /// The auxiliary permutation matrix `Q`.
-    VectorXi Qaux;
+    Indices Qaux;
 
     /// The inverse permutation of the new ordering of the variables
-    VectorXi inv_ordering;
+    Indices inv_ordering;
 
     /// The canonicalizer matrix `R`.
     Matrix R;
@@ -95,8 +95,8 @@ struct Canonicalizer::Impl
         const auto Ubn = lu.matrixLU().topRightCorner(r, n - r);
 
         // Set the permutation matrices P and Q
-        P = lu.permutationP().indices();
-        Q = lu.permutationQ().indices();
+        P = lu.permutationP().indices().cast<Index>();
+        Q = lu.permutationQ().indices().cast<Index>();
 
         // Initialize the permutation matrix Q(aux)
         Qaux = Q;
@@ -249,7 +249,7 @@ struct Canonicalizer::Impl
     }
 
     /// Update the order of the variables.
-    auto updateWithNewOrdering(VectorXiConstRef ordering) -> void
+    auto updateWithNewOrdering(IndicesConstRef ordering) -> void
     {
         // The number of rows and columns of A
         const Index m = lu.rows();
@@ -267,7 +267,7 @@ struct Canonicalizer::Impl
         inv_ordering(ordering) = indices(n);
 
         // Initialize the permutation matrices P and Q
-        P = lu.permutationP().indices();
+        P = lu.permutationP().indices().cast<Index>();
         Q = inv_ordering(lu.permutationQ().indices());
 
         // Calculate the regularizer matrix R
@@ -334,7 +334,7 @@ auto Canonicalizer::R() const -> MatrixConstRef
     return pimpl->R;
 }
 
-auto Canonicalizer::Q() const -> VectorXiConstRef
+auto Canonicalizer::Q() const -> IndicesConstRef
 {
     return pimpl->Q;
 }
@@ -349,17 +349,17 @@ auto Canonicalizer::C() const -> Matrix
     return res;
 }
 
-auto Canonicalizer::indicesLinearlyIndependentEquations() const -> VectorXiConstRef
+auto Canonicalizer::indicesLinearlyIndependentEquations() const -> IndicesConstRef
 {
     return pimpl->Ptr;
 }
 
-auto Canonicalizer::indicesBasicVariables() const -> VectorXiConstRef
+auto Canonicalizer::indicesBasicVariables() const -> IndicesConstRef
 {
     return Q().head(numBasicVariables());
 }
 
-auto Canonicalizer::indicesNonBasicVariables() const -> VectorXiConstRef
+auto Canonicalizer::indicesNonBasicVariables() const -> IndicesConstRef
 {
     return Q().tail(numNonBasicVariables());
 }
@@ -379,7 +379,7 @@ auto Canonicalizer::updateWithPriorityWeights(VectorConstRef weights) -> void
     pimpl->updateWithPriorityWeights(weights);
 }
 
-auto Canonicalizer::updateWithNewOrdering(VectorXiConstRef ordering) -> void
+auto Canonicalizer::updateWithNewOrdering(IndicesConstRef ordering) -> void
 {
     pimpl->updateWithNewOrdering(ordering);
 }

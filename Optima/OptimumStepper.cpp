@@ -70,19 +70,19 @@ struct OptimumStepper::Impl
     IpSaddlePointSolver solver;
 
     /// The ordering of the variables as [x(free) x(fixed)].
-    VectorXi iordering;
+    Indices iordering;
 
     /// The indices of the variables with lower bounds assuming the ordering x = [x(free) x(fixed)].
-    VectorXi iwithlower;
+    Indices iwithlower;
 
     /// The indices of the variables with upper bounds assuming the ordering x = [x(free) x(fixed)].
-    VectorXi iwithupper;
+    Indices iwithupper;
 
     /// The indices of the variables without lower bounds assuming the ordering x = [x(free) x(fixed)].
-    VectorXi iwithoutlower;
+    Indices iwithoutlower;
 
     /// The indices of the variables without upper bounds assuming the ordering x = [x(free) x(fixed)].
-    VectorXi iwithoutupper;
+    Indices iwithoutupper;
 
     /// Construct a OptimumStepper::Impl instance with given optimization problem structure.
     Impl(const OptimumStructure& structure)

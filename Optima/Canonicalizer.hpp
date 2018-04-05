@@ -68,19 +68,19 @@ public:
 
     /// Return the permutation matrix \eq{Q} of the canonicalization.
     /// This method returns the indices (ordering) of the variables after canonicalization.
-    auto Q() const -> VectorXiConstRef;
+    auto Q() const -> IndicesConstRef;
 
     /// Return the canonicalized matrix \eq{C = RAQ = [I\quad S]}`.
     auto C() const -> Matrix;
 
     /// Return the indices of the linearly independent rows of the original matrix.
-    auto indicesLinearlyIndependentEquations() const -> VectorXiConstRef;
+    auto indicesLinearlyIndependentEquations() const -> IndicesConstRef;
 
     /// Return the indices of the basic variables.
-    auto indicesBasicVariables() const -> VectorXiConstRef;
+    auto indicesBasicVariables() const -> IndicesConstRef;
 
     /// Return the indices of the non-basic variables.
-    auto indicesNonBasicVariables() const -> VectorXiConstRef;
+    auto indicesNonBasicVariables() const -> IndicesConstRef;
 
     /// Compute the canonical matrix of the given matrix.
     auto compute(MatrixConstRef A) -> void;
@@ -104,7 +104,7 @@ public:
     auto updateWithPriorityWeights(VectorConstRef weights) -> void;
 
     /// Update the canonical form with a new ordering for the variables.
-    auto updateWithNewOrdering(VectorXiConstRef ordering) -> void;
+    auto updateWithNewOrdering(IndicesConstRef ordering) -> void;
 
     /// Rationalize the entries in the canonical form.
     /// This method should be used if the entries in matrix \eq{A} are rational numbers and
