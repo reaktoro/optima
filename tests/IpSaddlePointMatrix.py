@@ -19,7 +19,6 @@ from optima import *
 from numpy import *
 from pytest import approx, mark
 from itertools import product
-from IPython.parallel.controller.scheduler import numpy
 
 # Tested cases for the structure of matrix H
 tested_structures_H = ['dense', 'diagonal']
