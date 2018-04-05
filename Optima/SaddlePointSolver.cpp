@@ -158,7 +158,7 @@ struct SaddlePointSolver::Impl
     auto updateCanonicalForm(SaddlePointMatrix lhs) -> void
     {
         // Update the number of fixed and free variables
-        nf = lhs.nf;
+        nf = lhs.jf.size();
         nx = n - nf;
 
         // Determine if the saddle point matrix is degenerate
@@ -168,15 +168,23 @@ struct SaddlePointSolver::Impl
         if(degenerate)
             return;
 
+        // The ordering of the variables as (free variables, fixed variables)
+        iordering.noalias() = indices(n);
+        iordering.tail(nf).swap(iordering(lhs.jf));
+
+        // The indices of the free (ivx) and fixed (ivf) variables
+        const auto ivx = iordering.head(nx);
+        const auto ivf = iordering.tail(nf);
+
         // The diagonal entries of the Hessian matrix
         auto Hdd = lhs.H.diagonalRef();
 
         // The diagonal entries of the Hessian matrix corresponding to free variables
-        auto Hxx = Hdd.head(nx);
+        auto Hxx = Hdd(ivx);
 
         // Update the priority weights for the update of the canonical form
-        weights.head(nx).noalias() = abs(inv(Hxx));
-        weights.tail(nf).noalias() = -linspace(nf, 1, nf);
+        weights(ivx).noalias() = abs(inv(Hxx));
+        weights(ivf).noalias() = -linspace(nf, 1, nf);
 
         // Update the canonical form and the ordering of the variables
         canonicalizer.updateWithPriorityWeights(weights);

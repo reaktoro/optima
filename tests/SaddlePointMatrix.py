@@ -15,63 +15,71 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-
 from optima import *
 from numpy import *
 from pytest import approx, mark
+from itertools import product
 
-testdata = [(zeroG, numfixed)
-            for zeroG in [True, False] 
-            for numfixed in [0, 5]]
+# Tested cases for the structure of matrix H
+tested_structures_H = ['dense', 'diagonal']
+
+# Tested cases for the structure of matrix G
+tested_structures_G = ['dense', 'zero']
+
+# Tested cases for the indices of fixed variables
+tested_jf = [array([1, 7], dtype=int32)]
+
+# Combination of all tested cases
+testdata = product(tested_structures_H,
+                   tested_structures_G,
+                   tested_jf)
 
 
 @mark.parametrize("args", testdata)
-def test_saddle_point_matrix_dense(args):
-    m = 5
-    n = 15
-    
-    zeroG, nf = args
-    
-    nx = n - nf
-    
-    A = eigen.ones(m, n)
-    H = eigen.ones(n, n)
-    G = eigen.matrix() if zeroG else eigen.ones(m, m)
-    
-    M = eigen.zeros(n + m, n + m)
-    M[0:nx, 0:nx] = H[:nx, :nx]
-    M[nx:n, nx:n] = eye(nf, nf)
-    M[0:nx, n:n+m] = transpose(A[:, 0:nx])
-    M[n:, :n] = A
-    if not zeroG: M[n:, n:] = G
+def test_saddle_point_matrix(args):
 
-    mat = SaddlePointMatrix(H, A, G, nf)
-    
-    assert mat.array() == approx(M)
-    
- 
-@mark.parametrize("args", testdata)
-def test_saddle_point_matrix_diagonal(args):
+    structure_H, structure_G, jf = args
+
     m = 5
     n = 15
- 
-    zeroG, nf = args
-         
-    nx = n - nf
-     
+    t = n + m
+
+    # Create matrices H, A, G
+    H = eigen.random(n, n) if structure_H == 'dense' else eigen.random(n)
     A = eigen.random(m, n)
-    H = eigen.random(n)
-    G = eigen.matrix() if zeroG else eigen.random(m, m)
-     
-    M = eigen.zeros(n + m, n + m)
-    M[0:nx, 0:nx] = eigen.diag(H[:nx])
-    M[nx:n, nx:n] = eye(nf, nf)
-    M[0:nx, n:n+m] = transpose(A[:, 0:nx])
+    G = eigen.random(m, m) if structure_G == 'dense' else eigen.matrix()
+
+    # Create the SaddlePointMatrix object
+    mat = SaddlePointMatrix(H, A, G, jf)
+    
+    
+    print 'jf', jf
+    print 'lhs.jf', mat.jf
+
+    # Use a dense matrix for H from this point on (for convenience)
+    Haux = H if structure_H == 'dense' else eigen.diag(H)
+
+    # Use a dense matrix for G from this point on (for convenience)
+    Gaux = G if structure_G == 'dense' else eigen.zeros(m ,m)
+
+    # Assemble the tr(A) matrix block, with zeros on rows corresponding to fixed variables
+    trA = transpose(A.copy())
+    trA[jf, :] = 0.0
+
+    # Set to zero the rows and columns of H corresponding to fixed variables
+    Haux[jf, :] = 0.0
+    Haux[:, jf] = 0.0
+
+    # Set to one the diagonal entries in H corresponding to fixed variables
+    Haux[jf, jf] = 1.0
+
+    # Assemble the big saddle point matrix M 
+    M = eigen.zeros(t, t)
+    M[0:n, 0:n] = Haux
+    M[0:n, n:n + m] = trA
     M[n:, :n] = A
-    if not zeroG: M[n:, n:] = G
- 
-    mat = SaddlePointMatrix(H, A, G, nf)
-     
+    M[n:, n:] = Gaux
+    
     assert mat.array() == approx(M)
 
 

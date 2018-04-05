@@ -49,24 +49,21 @@ public:
     /// The negative semi-definite matrix \eq{G} in the saddle point matrix.
     VariantMatrixConstRef G;
 
-//    /// The indices of the variables partitioned as (*free variables*, *fixed variables*).
-//    VectorXiConstRef partition;
-
-    /// The number of fixed variables.
-    Index nf;
+    /// The indices of the fixed variables.
+    VectorXiConstRef jf;
 
     /// Construct a SaddlePointMatrix instance.
     /// @param H The \eq{H} matrix in the saddle point matrix.
     /// @param A The \eq{A} matrix in the saddle point matrix.
-    /// @param nf The number of fixed variables.
-    SaddlePointMatrix(VariantMatrixConstRef H, MatrixConstRef A, Index nf = 0);
+    /// @param jf The indices of the fixed variables.
+    SaddlePointMatrix(VariantMatrixConstRef H, MatrixConstRef A, VectorXiConstRef jf);
 
     /// Construct a SaddlePointMatrix instance.
     /// @param H The \eq{H} matrix in the saddle point matrix.
     /// @param A The \eq{A} matrix in the saddle point matrix.
     /// @param G The \eq{G} matrix in the saddle point matrix.
-    /// @param nf The number of fixed variables.
-    SaddlePointMatrix(VariantMatrixConstRef H, MatrixConstRef A, VariantMatrixConstRef G, Index nf = 0);
+    /// @param jf The indices of the fixed variables.
+    SaddlePointMatrix(VariantMatrixConstRef H, MatrixConstRef A, VariantMatrixConstRef G, VectorXiConstRef jf);
 
     /// Convert this SaddlePointMatrix instance into a Matrix instance.
     operator Matrix() const;

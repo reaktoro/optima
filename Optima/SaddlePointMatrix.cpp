@@ -17,6 +17,9 @@
 
 #include "SaddlePointMatrix.hpp"
 
+// Eigen includes
+using namespace Eigen::placeholders;
+
 // Optima includes
 #include <Optima/Exception.hpp>
 #include <Optima/Utils.hpp>
@@ -24,12 +27,12 @@ using namespace Eigen;
 
 namespace Optima {
 
-SaddlePointMatrix::SaddlePointMatrix(VariantMatrixConstRef H, MatrixConstRef A, Index nf)
-: SaddlePointMatrix(H, A, {}, nf)
+SaddlePointMatrix::SaddlePointMatrix(VariantMatrixConstRef H, MatrixConstRef A, VectorXiConstRef jf)
+: SaddlePointMatrix(H, A, {}, jf)
 {}
 
-SaddlePointMatrix::SaddlePointMatrix(VariantMatrixConstRef H, MatrixConstRef A, VariantMatrixConstRef G, Index nf)
-: H(H), A(A), G(G), nf(nf)
+SaddlePointMatrix::SaddlePointMatrix(VariantMatrixConstRef H, MatrixConstRef A, VariantMatrixConstRef G, VectorXiConstRef jf)
+: H(H), A(A), G(G), jf(jf)
 {
     Assert(H.dense.rows() == A.cols() || H.diagonal.rows() == A.cols(),
         "Could not create a SaddlePointMatrix object.",
@@ -50,14 +53,25 @@ SaddlePointMatrix::operator Matrix() const
     const auto n = A.cols();
     const auto t = m + n;
 
-    const auto nx = n - nf;
-    const auto Ax = A.leftCols(nx);
-
     Matrix res = zeros(t, t);
 
-    res.topLeftCorner(nx, nx) << H.topLeftCorner(nx);
-    res.block(nx, nx, nf, nf).diagonal().fill(1.0);
-    res.topRightCorner(nx, m) = tr(Ax);
+    switch(H.structure) {
+    case MatrixStructure::Dense:
+        res.topLeftCorner(n, n) = H.dense;
+        res.topLeftCorner(n, n)(jf, all).fill(0.0);
+        res.topLeftCorner(n, n)(all, jf).fill(0.0);
+        res.topLeftCorner(n, n).diagonal()(jf).fill(1.0);
+        break;
+    case MatrixStructure::Diagonal:
+    case MatrixStructure::Zero:
+        res.topLeftCorner(n, n) = diag(H.diagonal);
+        res.topLeftCorner(n, n).diagonal()(jf).fill(1.0);
+        break;
+    }
+
+    res.topRightCorner(n, m) = tr(A);
+    res.topRightCorner(n, m)(jf, all).fill(0.0);
+
     res.bottomLeftCorner(m, n) = A;
     res.bottomRightCorner(m, m) << G;
 

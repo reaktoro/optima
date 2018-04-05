@@ -70,7 +70,7 @@ public:
 
     /// Return the assembled interior-point saddle point matrix.
     /// @note Method OptimumStepper::decompose needs to be called first.
-    auto matrix() const -> IpSaddlePointMatrix;
+    auto matrix(const OptimumParams& params, const OptimumState& state) -> IpSaddlePointMatrix;
 
 private:
     struct Impl;

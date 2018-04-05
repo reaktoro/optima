@@ -33,14 +33,14 @@ void exportIpSaddlePointMatrix(py::module& m)
         .def_readonly("W", &IpSaddlePointMatrix::W)
         .def_readonly("L", &IpSaddlePointMatrix::L)
         .def_readonly("U", &IpSaddlePointMatrix::U)
-        .def_readonly("nf", &IpSaddlePointMatrix::nf)
-        .def(py::init<VariantMatrixConstRef, MatrixConstRef, VectorConstRef, VectorConstRef, VectorConstRef, VectorConstRef, Index>(), py::arg("H"), py::arg("A"), py::arg("Z"), py::arg("W"), py::arg("L"), py::arg("U"), py::arg("nf"))
+        .def_readonly("jf", &IpSaddlePointMatrix::jf)
+        .def(py::init<VariantMatrixConstRef, MatrixConstRef, VectorConstRef, VectorConstRef, VectorConstRef, VectorConstRef, VectorXiConstRef>(), py::arg("H"), py::arg("A"), py::arg("Z"), py::arg("W"), py::arg("L"), py::arg("U"), py::arg("jf"))
 
         // IMPORTANT: Constructors below are needed to allow 1d numpy arrays to be converted to VariantMatrixConstRef
-        .def(py::init<VectorConstRef, MatrixConstRef, VectorConstRef, VectorConstRef, VectorConstRef, VectorConstRef, Index>(), py::arg("H"), py::arg("A"), py::arg("Z"), py::arg("W"), py::arg("L"), py::arg("U"), py::arg("nf"))
+        .def(py::init<VectorConstRef, MatrixConstRef, VectorConstRef, VectorConstRef, VectorConstRef, VectorConstRef, VectorXiConstRef>(), py::arg("H"), py::arg("A"), py::arg("Z"), py::arg("W"), py::arg("L"), py::arg("U"), py::arg("jf"))
 
         // IMPORTANT: Constructors below are needed to allow 2d numpy arrays to be converted to VariantMatrixConstRef
-        .def(py::init<MatrixConstRef, MatrixConstRef, VectorConstRef, VectorConstRef, VectorConstRef, VectorConstRef, Index>(), py::arg("H"), py::arg("A"), py::arg("Z"), py::arg("W"), py::arg("L"), py::arg("U"), py::arg("nf"))
+        .def(py::init<MatrixConstRef, MatrixConstRef, VectorConstRef, VectorConstRef, VectorConstRef, VectorConstRef, VectorXiConstRef>(), py::arg("H"), py::arg("A"), py::arg("Z"), py::arg("W"), py::arg("L"), py::arg("U"), py::arg("jf"))
 
         .def("array", [](IpSaddlePointMatrix self) { return Matrix(self); })
         ;

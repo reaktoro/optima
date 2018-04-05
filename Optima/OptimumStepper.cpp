@@ -69,6 +69,9 @@ struct OptimumStepper::Impl
     /// The interior-point saddle point solver.
     IpSaddlePointSolver solver;
 
+    /// The ordering of the variables as [x(free) x(fixed)].
+    VectorXi iordering;
+
     /// The indices of the variables with lower bounds assuming the ordering x = [x(free) x(fixed)].
     VectorXi iwithlower;
 
@@ -92,7 +95,7 @@ struct OptimumStepper::Impl
         t  = 3*n + m;
 
         // The indices of the variables in the ordering x = [x(free) x(fixed)].
-        const auto iordering = structure.orderingFixedValues();
+        iordering = structure.orderingFixedValues();
 
         // Initialize the indices of the variables with lower bounds for the ordering x = [x(free) x(fixed)].
         iwithlower = iordering(structure.variablesWithLowerBounds());
@@ -165,17 +168,11 @@ struct OptimumStepper::Impl
         // Update the matrices Z, W, L, U
         updateZWLU(params, state);
 
-        // Set the structure of the Hessian matrix to diagonal
-        H.setDiagonal(n);
+        // The indices of the fixed variables
+        const auto jf = iordering.tail(nf);
 
-        // Create a view for the block of H corresponding to free variables
-        auto Hxx = H.diagonal.head(nx);
-
-        // Copy values of the Hessian matrix to Hxx assuming the ordering x = [x(free) x(fixed)]
-        Hxx.noalias() = state.H.diagonal.head(nx);
-
-        // Define the interior-point saddle point matrix assuming the ordering x = [x(free) x(fixed)]
-        IpSaddlePointMatrix spm(H, A, Z, W, L, U, nf);
+        // Define the interior-point saddle point matrix
+        IpSaddlePointMatrix spm(state.H, A, Z, W, L, U, jf);
 
         // Decompose the interior-point saddle point matrix
         solver.decompose(spm);
@@ -192,17 +189,11 @@ struct OptimumStepper::Impl
         // Update the matrices Z, W, L, U
         updateZWLU(params, state);
 
-        // Set the structure of the Hessian matrix to dense
-        H.setDense(n);
+        // The indices of the fixed variables
+        const auto jf = iordering.tail(nf);
 
-        // Create a view for the block of H corresponding to free variables
-        auto Hxx = H.dense.topLeftCorner(nx, nx);
-
-        // Copy values of the Hessian matrix to Hxx
-        Hxx.noalias() = state.H.dense.topLeftCorner(nx, nx);
-
-        // Define the interior-point saddle point matrix assuming the ordering x = [x(free) x(fixed)]
-        IpSaddlePointMatrix spm(H, A, Z, W, L, U, nf);
+        // Define the interior-point saddle point matrix
+        IpSaddlePointMatrix spm(state.H, A, Z, W, L, U, jf);
 
         // Decompose the interior-point saddle point matrix
         solver.decompose(spm);
@@ -288,9 +279,16 @@ struct OptimumStepper::Impl
     }
 
     /// Return the assembled interior-point saddle point matrix.
-    auto matrix() const -> IpSaddlePointMatrix
+    auto matrix(const OptimumParams& params, const OptimumState& state) -> IpSaddlePointMatrix
     {
-        return IpSaddlePointMatrix(H, A, Z, W, L, U, nf);
+        // Update the matrices Z, W, L, U
+        updateZWLU(params, state);
+
+        // The indices of the fixed variables
+        const auto jf = iordering.tail(nf);
+
+        // Define the interior-point saddle point matrix
+        return IpSaddlePointMatrix(state.H, A, Z, W, L, U, jf);
     }
 };
 
@@ -327,9 +325,9 @@ auto OptimumStepper::solve(const OptimumParams& params, const OptimumState& stat
     return pimpl->solve(params, state);
 }
 
-auto OptimumStepper::matrix() const -> IpSaddlePointMatrix
+auto OptimumStepper::matrix(const OptimumParams& params, const OptimumState& state) -> IpSaddlePointMatrix
 {
-    return pimpl->matrix();
+    return pimpl->matrix(params, state);
 }
 
 auto OptimumStepper::step() const -> IpSaddlePointVector

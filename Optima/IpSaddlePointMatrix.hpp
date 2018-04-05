@@ -57,8 +57,8 @@ public:
     /// The diagonal matrix \eq{U} in the saddle point matrix.
     VectorConstRef U;
 
-    /// The number of fixed variables.
-    Index nf;
+    /// The indices of the fixed variables.
+    VectorXiConstRef jf;
 
     /// Construct a SaddlePointMatrix instance.
     /// @param H The \eq{H} matrix in the saddle point equation.
@@ -67,7 +67,7 @@ public:
     /// @param W The vector representing the diagonal matrix \eq{W} in the saddle point equation.
     /// @param L The vector representing the diagonal matrix \eq{L} in the saddle point equation.
     /// @param U The vector representing the diagonal matrix \eq{U} in the saddle point equation.
-    /// @param nf The number of fixed variables.
+    /// @param jf The indices of the fixed variables.
     IpSaddlePointMatrix(
         VariantMatrixConstRef H,
         MatrixConstRef A,
@@ -75,7 +75,7 @@ public:
         VectorConstRef W,
         VectorConstRef L,
         VectorConstRef U,
-        Index nf = 0);
+        VectorXiConstRef jf);
 
     /// Convert this IpSaddlePointMatrix instance into a Matrix instance.
     operator Matrix() const;

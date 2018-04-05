@@ -23,24 +23,38 @@ from itertools import product
 
 import Canonicalizer
 
+# Tested cases for the matrix A
 tested_matrices_A = Canonicalizer.tested_matrices_A
-tested_nf = [0, 1, 5]
+
+# Tested cases for the structure of matrix H
 tested_structures_H = ['dense', 'diagonal']
+
+# Tested cases for the structure of matrix G
 tested_structures_G = ['dense', 'zero']
+
+# Tested cases for the indices of fixed variables
+tested_jf = [array([1, 7])]
+# tested_jf = [arange(0), 
+#              arange(1), 
+#              array([1, 3, 7, 9])]
+
+# Tested cases for the conditions of the variables in terms of pivot variables
 tested_variable_conditions = ['all-variables-pivot',
                               'all-variables-nonpivot',
                               'some-variables-pivot']
 
+# Tested cases for the saddle point methods
 tested_methods = [
     SaddlePointMethod.Fullspace,
     SaddlePointMethod.Nullspace,
     SaddlePointMethod.Rangespace,
     ]
 
+# Combination of all tested cases
 testdata = product(tested_matrices_A,
-                   tested_nf,
                    tested_structures_H,
                    tested_structures_G,
+                   tested_jf,
                    tested_variable_conditions,
                    tested_methods)
 
@@ -48,7 +62,7 @@ testdata = product(tested_matrices_A,
 @mark.parametrize("args", testdata)
 def test_saddle_point_solver(args):
 
-    assemble_A, nf, structure_H, structure_G, variable_condition, method = args
+    assemble_A, structure_H, structure_G, jf, variable_condition, method = args
 
     m = 4
     n = 10
@@ -57,7 +71,7 @@ def test_saddle_point_solver(args):
 
     expected = linspace(1, t, t);
 
-    A = assemble_A(m, n, nf)
+    A = assemble_A(m, n, len(jf))
 
     H = eigen.random(n, n) if structure_H == 'dense' else eigen.random(n)
     G = eigen.random(m, m) if structure_G == 'dense' else eigen.matrix()
@@ -74,9 +88,13 @@ def test_saddle_point_solver(args):
     # Adjust the diagonal entries to control number of pivot variables
     Hdiag[seq] = factor * Hdiag[seq] 
 
-    nx = n - nf
-
-    lhs = SaddlePointMatrix(H, A, G, nf)
+    print 'jf', jf
+    
+    
+    lhs = SaddlePointMatrix(H, A, G, jf)
+    
+    print 'jf', jf
+    print 'lhs.jf', lhs.jf
 
     M = lhs.array()
     r = M.dot(expected)

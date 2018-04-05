@@ -17,6 +17,15 @@
 
 #include "IpSaddlePointMatrix.hpp"
 
+
+
+#include <iostream>
+
+
+
+// Eigen includes
+using namespace Eigen::placeholders;
+
 // Optima includes
 #include <Optima/Utils.hpp>
 using namespace Eigen;
@@ -30,8 +39,8 @@ IpSaddlePointMatrix::IpSaddlePointMatrix(
     VectorConstRef W,
     VectorConstRef L,
     VectorConstRef U,
-    Index nf)
-: H(H), A(A), Z(Z), W(W), L(L), U(U), nf(nf)
+    VectorXiConstRef jf)
+: H(H), A(A), Z(Z), W(W), L(L), U(U), jf(jf)
 {}
 
 IpSaddlePointMatrix::operator Matrix() const
@@ -40,23 +49,44 @@ IpSaddlePointMatrix::operator Matrix() const
     const auto n = A.cols();
     const auto t = 3*n + m;
 
-    const auto nx = n - nf;
-    const auto Ax = A.leftCols(nx);
-    const auto Zx = Z.head(nx);
-    const auto Wx = W.head(nx);
-    const auto Lx = L.head(nx);
-    const auto Ux = U.head(nx);
-
     Matrix res = zeros(t, t);
-    res.topLeftCorner(nx, nx) << H.topLeftCorner(nx);
-    res.topRows(nx).middleCols(n, m) = tr(Ax);
-    res.topRows(nx).middleCols(n + m, nx).diagonal().fill(-1.0);
-    res.topRows(nx).middleCols(n + m + n, nx).diagonal().fill(-1.0);
-    res.middleRows(nx, nf).middleCols(nx, nf).diagonal().fill(1.0);
+
+    // Block: H
+    res.topLeftCorner(n, n) << H;
+    res.topLeftCorner(n, n)(all, jf).fill(0.0);
+    res.topLeftCorner(n, n)(jf, all).fill(0.0);
+    res.topLeftCorner(n, n).diagonal()(jf).fill(1.0);
+
+    // Block: tr(A)
+    res.middleCols(n, m).topRows(n) = tr(A);
+    res.middleCols(n, m).topRows(n)(jf, all).fill(0.0);
+
+    // Block: -I
+    res.middleCols(n + m, n).diagonal().fill(-1.0);
+    res.middleCols(n + m, n).diagonal()(jf).fill(0.0);
+
+    // Block: -I
+    res.rightCols(n).diagonal().fill(-1.0);
+    res.rightCols(n).diagonal()(jf).fill(0.0);
+
+    // Block: A
     res.middleRows(n, m).leftCols(n) = A;
-    res.middleRows(n + m, nx).leftCols(nx).diagonal() = Zx;
-    res.middleRows(n + m + n, nx).leftCols(nx).diagonal() = Wx;
-    res.bottomRightCorner(2*n, 2*n).diagonal() << Lx, ones(nf), Ux, ones(nf);
+
+    // Block: Z
+    res.middleRows(n + m, n).leftCols(n).diagonal() = Z;
+    res.middleRows(n + m, n).leftCols(n).diagonal()(jf).fill(0.0);
+
+    // Block: L
+    res.middleRows(n + m, n).middleCols(n + m, n).diagonal() = L;
+    res.middleRows(n + m, n).middleCols(n + m, n).diagonal()(jf).fill(1.0);
+
+    // Block: W
+    res.bottomRows(n).leftCols(n).diagonal() = W;
+    res.bottomRows(n).leftCols(n).diagonal()(jf).fill(0.0);
+
+    // Block: U
+    res.bottomRows(n).rightCols(n).diagonal() = U;
+    res.bottomRows(n).rightCols(n).diagonal()(jf).fill(1.0);
 
     return res;
 }

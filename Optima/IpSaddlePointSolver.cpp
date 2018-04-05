@@ -122,8 +122,12 @@ struct IpSaddlePointSolver::Impl
         Result res;
 
         // Initialize the number of free and fixed variables
-        nf = lhs.nf;
+        nf = lhs.jf.size();
         nx = n - nf;
+
+        // Partition the variables into (free variables, fixed variables)
+        iordering = indices(n);
+        iordering.tail(nf).swap(iordering(lhs.jf));
 
         // Auxiliary variables
         const double eps = std::numeric_limits<double>::epsilon();
@@ -195,30 +199,30 @@ struct IpSaddlePointSolver::Impl
         // Update the partitioning of the variables
         res += updatePartitioning(lhs);
 
-        // Views to the sub-vectors in (Z, W, L, U) corresponding to (s, l, u) partition
-        auto Ze = Z.head(ns + nl + nu);
-        auto We = W.head(ns + nl + nu);
-        auto Le = L.head(ns + nl + nu);
-        auto Ue = U.head(ns + nl + nu);
+        // The indices of the free and fixed variables
+        const auto jx = iordering.head(ns + nl + nu);
+        const auto jf = iordering.tail(nz + nw + nf);
 
-        // The indices of the free variables
-        const auto jx = iordering.head(nx);
+        // Views to the sub-vectors in (Z, W, L, U) corresponding to (s, l, u) partition
+        auto Ze = Z(jx);
+        auto We = W(jx);
+        auto Le = L(jx);
+        auto Ue = U(jx);
 
         // Set the Hessian matrix to dense structure
         H.setDense(n);
 
         // Views to the blocks of the Hessian matrix Hxx = [Hss Hsl Hsu; Hls Hll Hlu; Hus Hul Huu]
-        auto Hxx = H.dense.topLeftCorner(nx, nx);
-        auto Hee = Hxx.topLeftCorner(ns + nl + nu, ns + nl + nu);
+        auto Hee = H.dense(jx, jx);
 
         // Update Hxx
-        Hxx.noalias() = lhs.H.dense(jx, jx);
+        Hee = lhs.H.dense(jx, jx);
 
         // Calculate Hee' = Hee + inv(Le)*Ze + inv(Ue)*We
         Hee.diagonal() += Ze/Le + We/Ue;
 
         // Define the saddle point matrix
-        SaddlePointMatrix spm(H, A, nz + nw + nf);
+        SaddlePointMatrix spm(H, A, jf);
 
         // Decompose the saddle point matrix
         res += spsolver.decompose(spm);
@@ -238,30 +242,30 @@ struct IpSaddlePointSolver::Impl
         // Update the partitioning of the variables
         res += updatePartitioning(lhs);
 
-        // Views to the sub-vectors in (Z, W, L, U) corresponding to (s, l, u) partition
-        auto Ze = Z.head(ns + nl + nu);
-        auto We = W.head(ns + nl + nu);
-        auto Le = L.head(ns + nl + nu);
-        auto Ue = U.head(ns + nl + nu);
+        // The indices of the free and fixed variables
+        const auto jx = iordering.head(ns + nl + nu);
+        const auto jf = iordering.tail(nz + nw + nf);
 
-        // The indices of the free variables
-        const auto jx = iordering.head(nx);
+        // Views to the sub-vectors in (Z, W, L, U) corresponding to (s, l, u) partition
+        auto Ze = Z(jx);
+        auto We = W(jx);
+        auto Le = L(jx);
+        auto Ue = U(jx);
 
         // Set the Hessian matrix to diagonal structure
         H.setDiagonal(n);
 
         // Views to the blocks of the Hessian matrix Hxx = [Hss Hsl Hsu; Hls Hll Hlu; Hus Hul Huu]
-        auto Hxx = H.diagonal.head(nx);
-        auto Hee = Hxx.head(ns + nl + nu);
+        auto Hee = H.diagonal(jx);
 
         // Update Hxx
-        Hxx.noalias() = lhs.H.diagonal(jx);
+        Hee = lhs.H.diagonal(jx);
 
         // Calculate Hee' = Hee + inv(Le)*Ze + inv(Ue)*We
         Hee += Ze/Le + We/Ue;
 
         // Define the saddle point matrix
-        SaddlePointMatrix spm(H, A, nz + nw + nf);
+        SaddlePointMatrix spm(H, A, jf);
 
         // Decompose the saddle point matrix
         res += spsolver.decompose(spm);

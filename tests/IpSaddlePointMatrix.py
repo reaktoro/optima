@@ -15,77 +15,99 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-
 from optima import *
 from numpy import *
-from pytest import approx
+from pytest import approx, mark
+from itertools import product
+from IPython.parallel.controller.scheduler import numpy
+
+# Tested cases for the structure of matrix H
+tested_structures_H = ['dense', 'diagonal']
+
+# Tested cases for the indices of fixed variables
+tested_jf = [arange(0), 
+            arange(1), 
+            array([1, 3, 7, 9])
+             ]
+
+# Combination of all tested cases
+testdata = product(tested_structures_H,
+                   tested_jf)
 
 
-def test_ip_saddle_point_matrix():
-    H = array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-    A = array([[1, 2, 3], [3, 4, 5]])
-    Z = array([1, 2, 3])
-    W = array([4, 5, 6])
-    L = array([9, 8, 7])
-    U = array([6, 5, 4])
+@mark.parametrize("args", testdata)
+def test_ip_saddle_point_matrix(args):
 
-    n = 3
-    m = 2
+    structure_H, jf = args
 
-    # Testing conversion when no variables are fixed
-    nx = 3
-    nf = 0
+    m = 5
+    n = 15
+    t = 3*n + m
 
-    mat = IpSaddlePointMatrix(H, A, Z, W, L, U, nf)
+    # Create matrices H, A, L, U, Z, W
+    H = eigen.random(n, n) if structure_H == 'dense' else eigen.random(n)
+    A = eigen.random(m, n)
+    L = eigen.random(n)
+    U = eigen.random(n)
+    Z = eigen.random(n)
+    W = eigen.random(n)
 
-    M = [[1,  2,  3,  1,  3, -1,  0,  0, -1,  0,  0],
-         [4,  5,  6,  2,  4,  0, -1,  0,  0, -1,  0],
-         [7,  8,  9,  3,  5,  0,  0, -1,  0,  0, -1],
-         [1,  2,  3,  0,  0,  0,  0,  0,  0,  0,  0],
-         [3,  4,  5,  0,  0,  0,  0,  0,  0,  0,  0],
-         [1,  0,  0,  0,  0,  9,  0,  0,  0,  0,  0],
-         [0,  2,  0,  0,  0,  0,  8,  0,  0,  0,  0],
-         [0,  0,  3,  0,  0,  0,  0,  7,  0,  0,  0],
-         [4,  0,  0,  0,  0,  0,  0,  0,  6,  0,  0],
-         [0,  5,  0,  0,  0,  0,  0,  0,  0,  5,  0],
-         [0,  0,  6,  0,  0,  0,  0,  0,  0,  0,  4]]
+    # Create the IpSaddlePointMatrix object
+    mat = IpSaddlePointMatrix(H, A, Z, W, L, U, jf).array()
+
+    # Use a dense matrix for H from this point on (for convenience)
+    H = H if structure_H == 'dense' else eigen.diag(H)
+
+    # Use a dense matrix for L, U, Z, W from this point on (for convenience)
+    L = eigen.diag(L)
+    U = eigen.diag(U)
+    Z = eigen.diag(Z)
+    W = eigen.diag(W)
     
-    M = array(M, dtype=float64)
+    # Assemble the tr(A) matrix block, with zeros on rows corresponding to fixed variables
+    trA = transpose(A.copy())
+    trA[jf, :] = 0.0
 
-    # Check conversion to a Matrix instance
-    assert mat.array() == approx(M)
+    # Set to zero the rows and columns of H corresponding to fixed variables
+    H[jf, :] = 0.0
+    H[:, jf] = 0.0
 
-    # Testing conversion when some variables are fixed
-    nx = 2
-    nf = 1
- 
-    mat = IpSaddlePointMatrix(H, A, Z, W, L, U, nf)
- 
-    M = [[1,  2,  0,  1,  3, -1,  0,  0, -1,  0,  0],
-         [4,  5,  0,  2,  4,  0, -1,  0,  0, -1,  0],
-         [0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0],
-         [1,  2,  3,  0,  0,  0,  0,  0,  0,  0,  0],
-         [3,  4,  5,  0,  0,  0,  0,  0,  0,  0,  0],
-         [1,  0,  0,  0,  0,  9,  0,  0,  0,  0,  0],
-         [0,  2,  0,  0,  0,  0,  8,  0,  0,  0,  0],
-         [0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0],
-         [4,  0,  0,  0,  0,  0,  0,  0,  6,  0,  0],
-         [0,  5,  0,  0,  0,  0,  0,  0,  0,  5,  0],
-         [0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1]]
- 
-    M = array(M, dtype=float64)
- 
-    # Check conversion to a Matrix instance
-    assert mat.array() == approx(M)
+    # Set to one the diagonal entries in H corresponding to fixed variables
+    H[jf, jf] = 1.0
+
+    # Set to one the diagonal entries in L and U corresponding to fixed variables
+    L[jf, jf] = U[jf, jf] = 1.0
+
+    # Set to zero the diagonal entries in Z and W corresponding to fixed variables
+    Z[jf, jf] = W[jf, jf] = 0.0
+    
+    # Assemble an identity matrix of dimension n by n
+    Inn = eigen.eye(n)
+    
+    # Set to zero the entries in Inn corresponding to fixed variables
+    Inn[jf, jf] = 0.0
+
+    # Assemble zero matrices of dimensions n by m and n by n
+    Onm = eigen.zeros(n, m)
+    Onn = eigen.zeros(n, n)
+    
+    # Assemble the big saddle point matrix M 
+    M = eigen.zeros(t, t)
+    M[0:n, :] = concatenate([H, trA, -Inn, -Inn], 1)
+    M[n:n + m, 0:n] = A
+    M[n + m:n + m + n, :] = concatenate([Z, Onm, L, Onn], 1)
+    M[n + m + n:, :] = concatenate([W, Onm, Onn, U], 1)
+    
+    assert mat == approx(M)
 
 
 def test_ip_saddle_point_vector():
-    n = 5
-    m = 3
+    m = 5
+    n = 15
     t = 3*n + m
- 
-    r = linspace(1, t, t)
- 
+
+    r = arange(1, t + 1)
+
     vec = IpSaddlePointVector(r, n, m)
- 
-    assert r == approx(concatenate((vec.a, vec.b, vec.c, vec.d)))
+
+    assert vec.array() == approx(r)
