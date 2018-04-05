@@ -24,45 +24,45 @@
 namespace Optima {
 
 OptimumStructure::OptimumStructure(Index n, Index m)
-: _n(n), _m(m), _nlower(0), _nupper(0), _nfixed(0),
-  _lowerpartition(indices(n)),
-  _upperpartition(indices(n)),
-  _fixedpartition(indices(n))
+: n(n), m(m), nlower(0), nupper(0), nfixed(0),
+  lowerpartition(indices(n)),
+  upperpartition(indices(n)),
+  fixedpartition(indices(n))
 {}
 
 auto OptimumStructure::setVariablesWithLowerBounds(IndicesConstRef inds) -> void
 {
-    _nlower = inds.size();
-    partitionLeft(_lowerpartition, inds);
+    nlower = inds.size();
+    partitionLeft(lowerpartition, inds);
 }
 
 auto OptimumStructure::allVariablesHaveLowerBounds() -> void
 {
-    _nlower = _n;
-    _lowerpartition = indices(_n);
+    nlower = n;
+    lowerpartition = indices(n);
 }
 
 auto OptimumStructure::setVariablesWithUpperBounds(IndicesConstRef inds) -> void
 {
-    _nupper = inds.size();
-    partitionLeft(_upperpartition, inds);
+    nupper = inds.size();
+    partitionLeft(upperpartition, inds);
 }
 
 auto OptimumStructure::allVariablesHaveUpperBounds() -> void
 {
-    _nupper = _n;
-    _upperpartition = indices(_n);
+    nupper = n;
+    upperpartition = indices(n);
 }
 
 auto OptimumStructure::setVariablesWithFixedValues(IndicesConstRef inds) -> void
 {
-    _nfixed = inds.size();
-    partitionLeft(_fixedpartition, inds);
+    nfixed = inds.size();
+    partitionLeft(fixedpartition, inds);
 }
 
 auto OptimumStructure::numVariables() const -> Index
 {
-    return _n;
+    return n;
 }
 
 auto OptimumStructure::numEqualityConstraints() const -> Index
@@ -72,47 +72,47 @@ auto OptimumStructure::numEqualityConstraints() const -> Index
 
 auto OptimumStructure::variablesWithLowerBounds() const -> IndicesConstRef
 {
-    return _lowerpartition.tail(_nlower);
+    return lowerpartition.head(nlower);
 }
 
 auto OptimumStructure::variablesWithUpperBounds() const -> IndicesConstRef
 {
-    return _upperpartition.tail(_nupper);
+    return upperpartition.head(nupper);
 }
 
 auto OptimumStructure::variablesWithFixedValues() const -> IndicesConstRef
 {
-    return _fixedpartition.tail(_nfixed);
+    return fixedpartition.head(nfixed);
 }
 
 auto OptimumStructure::variablesWithoutLowerBounds() const -> IndicesConstRef
 {
-    return _lowerpartition.head(_n - _nlower);
+    return lowerpartition.tail(n - nlower);
 }
 
 auto OptimumStructure::variablesWithoutUpperBounds() const -> IndicesConstRef
 {
-    return _upperpartition.head(_n - _nupper);
+    return upperpartition.tail(n - nupper);
 }
 
 auto OptimumStructure::variablesWithoutFixedValues() const -> IndicesConstRef
 {
-    return _fixedpartition.head(_n - _nfixed);
+    return fixedpartition.tail(n - nfixed);
 }
 
 auto OptimumStructure::orderingLowerBounds() const -> IndicesConstRef
 {
-    return _lowerpartition;
+    return lowerpartition;
 }
 
 auto OptimumStructure::orderingUpperBounds() const -> IndicesConstRef
 {
-    return _upperpartition;
+    return upperpartition;
 }
 
 auto OptimumStructure::orderingFixedValues() const -> IndicesConstRef
 {
-    return _fixedpartition;
+    return fixedpartition;
 }
 
 } // namespace Optima

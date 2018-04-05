@@ -86,28 +86,28 @@ public:
 
 private:
     /// The number of variables in the optimization problem.
-    Index _n;
+    Index n;
 
     /// The number of linear equality constraints in the optimization problem.
-    Index _m;
+    Index m;
 
     /// The number of variables with lower bounds.
-    Index _nlower;
+    Index nlower;
 
     /// The number of variables with upper bounds.
-    Index _nupper;
+    Index nupper;
 
     /// The number of variables with fixed values.
-    Index _nfixed;
+    Index nfixed;
 
     /// The indices of the variables partitioned in [with, without] lower bounds.
-    Indices _lowerpartition;
+    Indices lowerpartition;
 
     /// The indices of the variables partitioned in [with, without] upper bounds.
-    Indices _upperpartition;
+    Indices upperpartition;
 
     /// The indices of the variables partitioned in [with, without] fixed values.
-    Indices _fixedpartition;
+    Indices fixedpartition;
 };
 
 } // namespace Optima
