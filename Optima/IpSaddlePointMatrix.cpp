@@ -17,15 +17,6 @@
 
 #include "IpSaddlePointMatrix.hpp"
 
-
-
-#include <iostream>
-
-
-
-// Eigen includes
-using namespace Eigen::placeholders;
-
 // Optima includes
 #include <Optima/Utils.hpp>
 using namespace Eigen;
