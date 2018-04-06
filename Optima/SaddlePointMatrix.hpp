@@ -1,4 +1,4 @@
-// Optima is a C++ library for numerical solution of linear and nonlinear programing problems.
+// Optima is a C++ library for solving linear and non-linear constrained optimization problems
 //
 // Copyright (C) 2014-2018 Allan Leal
 //
