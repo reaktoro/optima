@@ -156,31 +156,12 @@ struct IpSaddlePointSolver::Impl
         nl = il - iu;
         ns = is - il;
 
-
-
-
-
-
-
-        // TODO maybe these Z, W, L, U should only exist as H exist to put their values according to ordering.
-
-
-
-
-
-
         // Initialize A, Z, W, L and U according to iordering
         A.noalias() = lhs.A(all, iordering);
         Z.noalias() = lhs.Z(iordering);
         W.noalias() = lhs.W(iordering);
         L.noalias() = lhs.L(iordering);
         U.noalias() = lhs.U(iordering);
-
-//        // Ensure Z(fixed) = 0, W(fixed) = 0, L(fixed) = 1, and U(fixed) = 1
-//        Z(lhs.jf).fill(0.0);
-//        W(lhs.jf).fill(0.0);
-//        L(lhs.jf).fill(1.0);
-//        U(lhs.jf).fill(1.0);
 
         return res.stop();
     }
@@ -436,9 +417,11 @@ struct IpSaddlePointSolver::Impl
         aw += cw/Lw - Hwl*(cl/Zl) - Hwu*(du/Wu) - Hwz*(cz/Zz) - Hww*(dw/Ww) - (Zw/Lw) % (dw/Ww);
          b -= Al*(cl/Zl) + Au*(du/Wu) + Az*(cz/Zz) + Aw*(dw/Ww);
 
+        // Store az and aw in zz and ww for later use
         zz.noalias() = -az;
         ww.noalias() = -aw;
 
+        // Set az and aw to zero
         az.fill(0.0);
         aw.fill(0.0);
 
@@ -625,11 +608,13 @@ struct IpSaddlePointSolver::Impl
         aw += cw/Lw - Hww % (dw/Ww) - (Zw/Lw) % (dw/Ww);
          b -= Al*(cl/Zl) + Au*(du/Wu) + Az*(cz/Zz) + Aw*(dw/Ww);
 
-        zz.noalias() = -az;
-        ww.noalias() = -aw;
+		// Store az and aw in zz and ww for later use
+		zz.noalias() = -az;
+		ww.noalias() = -aw;
 
-        az.fill(0.0);
-        aw.fill(0.0);
+		// Set az and aw to zero
+		az.fill(0.0);
+		aw.fill(0.0);
 
         // Take advantage of `sol.x` to bring `a` back to original ordering
         sol.x(iordering) = a;
