@@ -35,14 +35,17 @@ namespace Optima {
 
 struct IpSaddlePointSolver::Impl
 {
-    /// The `A` matrix in the saddle point equation.
+    /// The `A` matrix ordered according to (s, l, u, z, w, f).
     Matrix A;
 
-    /// The `H` matrix in the saddle point equation.
+    /// The `H` matrix ordered according to (s, l, u, z, w, f).
     VariantMatrix H;
 
-    /// The matrices D, Z, W, L, U
-    Vector D, Z, W, L, U;
+    /// The diagonal matrices Z, W, L, U ordered according to (s, l, u, z, w, f).
+    Vector Z, W, L, U;
+
+    /// The diagonal matrix D in the H + D block in original order.
+    Vector D;
 
     /// The residual vector
     Vector r;
@@ -167,16 +170,17 @@ struct IpSaddlePointSolver::Impl
 
 
         // Initialize A, Z, W, L and U according to iordering
-        Z.noalias() = lhs.Z;
-        W.noalias() = lhs.W;
-        L.noalias() = lhs.L;
-        U.noalias() = lhs.U;
+        A.noalias() = lhs.A(all, iordering);
+        Z.noalias() = lhs.Z(iordering);
+        W.noalias() = lhs.W(iordering);
+        L.noalias() = lhs.L(iordering);
+        U.noalias() = lhs.U(iordering);
 
-        // Ensure Z(fixed) = 0, W(fixed) = 0, L(fixed) = 1, and U(fixed) = 1
-        Z(lhs.jf).fill(0.0);
-        W(lhs.jf).fill(0.0);
-        L(lhs.jf).fill(1.0);
-        U(lhs.jf).fill(1.0);
+//        // Ensure Z(fixed) = 0, W(fixed) = 0, L(fixed) = 1, and U(fixed) = 1
+//        Z(lhs.jf).fill(0.0);
+//        W(lhs.jf).fill(0.0);
+//        L(lhs.jf).fill(1.0);
+//        U(lhs.jf).fill(1.0);
 
         return res.stop();
     }
@@ -202,21 +206,23 @@ struct IpSaddlePointSolver::Impl
         // Update the partitioning of the variables
         res += updatePartitioning(lhs);
 
-        // The indices of the free and fixed variables
-        const auto jx = iordering.head(ns + nl + nu);
-        const auto jf = iordering.tail(nz + nw + nf);
-
         // Calculate D = inv(L)*Z + inv(U)*W
-        D += Z/L + W/U;
+        D = lhs.Z/lhs.L + lhs.W/lhs.U;
+
+        // The indices of the free variables
+        const auto jx = iordering.head(nx);
 
         // Set the Hessian matrix to dense structure
         H.setDense(n);
 
-        // Views to the blocks of the Hessian matrix Hxx = [Hss Hsl Hsu; Hls Hll Hlu; Hus Hul Huu]
+        // Set the Hessian matrix considering the ordering (s, l, u, z, w, f)
         H.dense.topLeftCorner(nx, nx) = lhs.H.dense(jx, jx);
 
-        // Define the saddle point matrix
-        SaddlePointMatrix spm(lhs.H, D, A, jf);
+        // The indices of the (z, w, f) variables that are excluded from the decomposition
+        const auto jzwf = iordering.tail(nz + nw + nf);
+
+        // Define the saddle point matrix in original ordering
+        SaddlePointMatrix spm(lhs.H, D, lhs.A, jzwf);
 
         // Decompose the saddle point matrix
         res += spsolver.decompose(spm);
@@ -233,36 +239,26 @@ struct IpSaddlePointSolver::Impl
         // Update the partitioning of the variables
         res += updatePartitioning(lhs);
 
-        // The indices of the free and fixed variables
-        const auto jx = iordering.head(ns + nl + nu);
-        const auto jf = iordering.tail(nz + nw + nf);
+        // Calculate D = inv(L)*Z + inv(U)*W
+        D = lhs.Z/lhs.L + lhs.W/lhs.U;
 
-        // Views to the sub-vectors in (Z, W, L, U) corresponding to (s, l, u) partition
-        auto Ze = Z(jx);
-        auto We = W(jx);
-        auto Le = L(jx);
-        auto Ue = U(jx);
+        // The indices of the free variables
+        const auto jx = iordering.head(nx);
 
         // Set the Hessian matrix to diagonal structure
         H.setDiagonal(n);
 
-        // Views to the blocks of the Hessian matrix Hxx = [Hss Hsl Hsu; Hls Hll Hlu; Hus Hul Huu]
-        auto Hee = H.diagonal(jx);
+        // Set the Hessian matrix considering the ordering (s, l, u, z, w, f)
+        H.diagonal.head(nx) = lhs.H.diagonal(jx);
 
-        // Update Hxx
-        Hee = lhs.H.diagonal(jx);
+        // The indices of the (z, w, f) variables that are excluded from the decomposition
+        const auto jzwf = iordering.tail(nz + nw + nf);
 
-        // Calculate Hee' = Hee + inv(Le)*Ze + inv(Ue)*We
-        Hee += Ze/Le + We/Ue;
-
-        // Define the saddle point matrix
-        SaddlePointMatrix spm(lhs.H, D, A, jf);
+        // Define the saddle point matrix in original ordering
+        SaddlePointMatrix spm(lhs.H, D, lhs.A, jzwf);
 
         // Decompose the saddle point matrix
         res += spsolver.decompose(spm);
-
-        // Remove the previously added vector along the diagonal of the Hessian
-        Hee -= Ze/Le + We/Ue;
 
         return res.stop();
     }
@@ -426,7 +422,7 @@ struct IpSaddlePointSolver::Impl
         auto ww = wx.tail(nw);
         auto wf = w.tail(nf);
 
-        // Initialize a, b, c, d in the ordering x = [xs, xl, xu, xf]
+        // Initialize a, b, c, d in the ordering x = [xs, xl, xu, xz, xw, xf]
         a.noalias() = rhs.a(iordering);
         b.noalias() = rhs.b;
         c.noalias() = rhs.c(iordering);
@@ -446,15 +442,14 @@ struct IpSaddlePointSolver::Impl
         az.fill(0.0);
         aw.fill(0.0);
 
-
-
-        a(iordering) = Vector(a);
-
-
-
+        // Take advantage of `sol.x` to bring `a` back to original ordering
+        sol.x(iordering) = a;
 
         // Solve the saddle point problem
-        res += spsolver.solve({a, b}, {x, y});
+        res += spsolver.solve({sol.x, b}, {sol.x, y});
+
+        // Set `x` to the just calculated `sol.x` in the ordering (s, l, u, z, w, f)
+        x = sol.x(iordering);
 
         // Calculate zz and ww
         zz.noalias() += Hzs*xs + Hzl*xl + Hzu*xu + tr(Az)*y;
@@ -636,8 +631,14 @@ struct IpSaddlePointSolver::Impl
         az.fill(0.0);
         aw.fill(0.0);
 
+        // Take advantage of `sol.x` to bring `a` back to original ordering
+        sol.x(iordering) = a;
+
         // Solve the saddle point problem
-        res += spsolver.solve({a, b}, {x, y});
+        res += spsolver.solve({sol.x, b}, {sol.x, y});
+
+        // Set `x` to the just calculated `sol.x` in the ordering (s, l, u, z, w, f)
+        x = sol.x(iordering);
 
         // Calculate zz and ww
         zz.noalias() += tr(Az)*y;

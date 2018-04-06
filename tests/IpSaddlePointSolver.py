@@ -30,12 +30,16 @@ def print_state(M, r, s, m, n):
     print 'r        = ', r
     print 'x        = ', s[:n]
     print 'x(lu)    = ', slu[:n]
+    print 'x(diff)  = ', abs(s[:n] - slu[:n])
     print 'y        = ', s[n:n+m]
     print 'y(lu)    = ', slu[n:n+m]
+    print 'y(diff)  = ', abs(s[n:n+m] - slu[n:n+m])
     print 'z        = ', s[n+m:n+m+n]
     print 'z(lu)    = ', slu[n+m:n+m+n]
+    print 'z(diff)  = ', abs(s[n+m:n+m+n] - slu[n+m:n+m+n])
     print 'w        = ', s[:n]
     print 'w(lu)    = ', slu[:n]
+    print 'w(diff)  = ', abs(s[:n] - slu[:n])
     print 'res      = ', M.dot(s) - r
     print 'res(lu)  = ', M.dot(slu) - r
 
@@ -54,12 +58,17 @@ tested_dimensions = [
 tested_matrices_A = Canonicalizer.tested_matrices_A
 
 # Tested cases for the structure of matrix H
-tested_structures_H = ['dense', 'diagonal']
+tested_structures_H = [
+    'dense', 
+    'diagonal'
+]
 
 # Tested cases for the indices of fixed variables
-tested_jf = [arange(0), 
-             arange(1), 
-             array([1, 3, 7, 9])]
+tested_jf = [
+    arange(0), 
+    arange(1), 
+    array([1, 3, 7, 9])
+]
 
 # Tested cases for the saddle point methods
 tested_methods = [
