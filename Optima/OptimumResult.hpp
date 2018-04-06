@@ -20,8 +20,9 @@
 namespace Optima {
 
 /// A type that describes the result of an optimization calculation
-struct OptimumResult
+class OptimumResult
 {
+public:
     /// The flag that indicates if the optimization calculation converged
     bool succeeded = false;
 
