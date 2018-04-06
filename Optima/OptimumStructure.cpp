@@ -24,7 +24,7 @@
 namespace Optima {
 
 OptimumStructure::OptimumStructure(Index n, Index m)
-: n(n), m(m), nlower(0), nupper(0), nfixed(0),
+: n(n), nlower(0), nupper(0), nfixed(0),
   lowerpartition(indices(n)),
   upperpartition(indices(n)),
   fixedpartition(indices(n))

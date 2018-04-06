@@ -88,9 +88,6 @@ private:
     /// The number of variables in the optimization problem.
     Index n;
 
-    /// The number of linear equality constraints in the optimization problem.
-    Index m;
-
     /// The number of variables with lower bounds.
     Index nlower;
 
