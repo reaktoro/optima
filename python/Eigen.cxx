@@ -22,7 +22,7 @@ namespace py = pybind11;
 
 // Optima includes
 #include <Optima/Matrix.hpp>
-#include <eigen3/Eigen/LU>
+#include <Eigen/LU>
 using namespace Optima;
 
 void exportEigen(py::module& m)

@@ -18,8 +18,7 @@
 #pragma once
 
 // Eigen includes
-#include <eigen3/Eigenx/Core>
-#include <eigen3/Eigen/SparseCore>
+#include <Eigenx/Core>
 
 namespace Optima {
 
@@ -62,8 +61,6 @@ using MatrixXiMap = Eigen::Map<MatrixXi>; ///< Alias to Eigen type Eigen::Map<Ma
 using MatrixConstMap = Eigen::Map<const MatrixXd>; ///< Alias to Eigen type Eigen::Map<const MatrixXd>.
 using MatrixXdConstMap = Eigen::Map<const MatrixXd>; ///< Alias to Eigen type Eigen::Map<const MatrixXd>.
 using MatrixXiConstMap = Eigen::Map<const MatrixXi>; ///< Alias to Eigen type Eigen::Map<const MatrixXi>.
-
-using SparseMatrix = Eigen::SparseMatrix<double>; ///< Alias to Eigen type Eigen::SparseMatrix<double>.
 
 using PermutationMatrix = Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic>; ///< /// Alias to a permutation matrix type of the Eigen library.
 

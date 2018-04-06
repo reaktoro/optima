@@ -7,9 +7,6 @@ project(Optima)
 # Set the cmake module path of the project
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
-# Include this module to enable testing with CTest and dashboard submissions to CDash
-include(CTest)
-
 # Include the cmake variables with values for installation directories
 include(GNUInstallDirs)
 
@@ -24,7 +21,6 @@ option(BUILD_ALL    "Build everything." OFF)
 option(BUILD_DEMOS  "Build demos." OFF)
 option(BUILD_DOCS   "Build documentation." OFF)
 option(BUILD_PYTHON "Build the python wrappers." ON)
-option(BUILD_TESTS  "Build tests." ON)
 option(BUILD_BENCH  "Build benchmarks." OFF)
 
 # Option to conveniently permit build in debug mode
@@ -48,11 +44,12 @@ if(BUILD_ALL MATCHES ON)
     set(BUILD_DEMOS  ON)
     set(BUILD_DOCS   ON)
     set(BUILD_PYTHON ON)
-    set(BUILD_TESTS  ON)
 endif()
 
 # Find Eigen library and include its directory
 find_package(Eigen3 3.3.5 REQUIRED)
+
+# Include Eigen directory
 include_directories(${EIGEN3_INCLUDE_DIR})
 
 # Find pybind11 library
@@ -97,19 +94,12 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # Set the list of compiler flags for GNU compiler
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU" OR ${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
     add_compile_options(-std=c++11 -Wall)
-#    add_compile_options(-std=c++11 -Wall -Wno-ignored-attributes -Wno-pedantic -Wno-variadic-macros -Wno-deprecated)
-#    add_compile_options(-std=c++11 -Wall -Wno-misleading-indentation -Wno-ignored-attributes -Wno-pedantic -Wno-variadic-macros -Wno-deprecated)
 endif()
 
 # Set the list of compiler flags for MSVC compiler
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
     add_compile_options("/W0 -D_SCL_SECURE_NO_WARNINGS /MP4")
 endif()
-
-# Set the project directory names
-set(OPTIMA_DEMOS_DIR      ${CMAKE_SOURCE_DIR}/demos)
-set(OPTIMA_DOCS_DIR       ${CMAKE_SOURCE_DIR}/docs)
-set(OPTIMA_SOURCE_DIR     ${CMAKE_SOURCE_DIR}/Optima)
 
 # Set the include directories
 include_directories(${CMAKE_SOURCE_DIR})
