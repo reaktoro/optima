@@ -23,28 +23,23 @@
 namespace Optima {
 
 Partition::Partition()
-: _nf(0)
+: nf(0)
 {}
 
 Partition::Partition(Index n)
-: _ordering(indices(n)), _nf(0)
+: order(indices(n)), nf(0)
 {}
 
 auto Partition::setFixedVariables(IndicesConstRef inds) -> void
 {
-    const Index n = numVariables();
-    _nf = inds.size();
-    _ordering.noalias() = indices(n);
-    _ordering.tail(_nf).swap(_ordering(inds));
+    nf = inds.size();
+    partitionRight(order, inds);
 }
 
 auto Partition::setFreeVariables(IndicesConstRef inds) -> void
 {
-    const Index n = numVariables();
-    const Index nx = inds.size();
-    _nf = n - nx;
-    _ordering.noalias() = indices(n);
-    _ordering.head(nx).swap(_ordering(inds));
+    nf = numVariables() - inds.size();
+    partitionLeft(order, inds);
 }
 
 auto Partition::numVariables() const -> Index
@@ -59,7 +54,7 @@ auto Partition::numFreeVariables() const -> Index
 
 auto Partition::numFixedVariables() const -> Index
 {
-    return _nf;
+    return nf;
 }
 
 auto Partition::freeVariables() const -> IndicesConstRef
@@ -74,7 +69,7 @@ auto Partition::fixedVariables() const -> IndicesConstRef
 
 auto Partition::ordering() const -> IndicesConstRef
 {
-    return _ordering;
+    return order;
 }
 
 } // namespace Optima

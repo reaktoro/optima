@@ -60,10 +60,10 @@ public:
 
 private:
     /// The ordering of the variables as (free, fixed).
-    Indices _ordering;
+    Indices order;
 
     /// The number of fixed variables.
-    Index _nf;
+    Index nf;
 };
 
 } // namespace Optima

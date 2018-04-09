@@ -22,19 +22,17 @@ from pytest import approx
 def test_index_utils():
     n = 10
     
-    assert indices(n) == arange(n)
-    
     assert contains([1,3,6], 1)
     assert contains([1,3,6], 3)
     assert contains([1,3,6], 6)
     assert not contains([1,3,6], 7)
     
-    inds = indices(n)
+    inds = arange(n)
     partitionLeft(inds, [1, 3, 5, 7])
-    assert set(inds[:-4]) == set([0, 2, 4, 6, 8, 9]) 
-    assert set(inds[4:]) == set([1, 3, 5, 7])
-    
-    inds = indices(n)
-    partitionRight(inds, [1, 3, 5, 7])
-    assert set(inds[:-4]) == set([1, 3, 5, 7])
+    assert set(inds[:4]) == set([1, 3, 5, 7])
     assert set(inds[4:]) == set([0, 2, 4, 6, 8, 9]) 
+    
+    inds = arange(n)
+    partitionRight(inds, [1, 3, 5, 7])
+    assert set(inds[-4:]) == set([1, 3, 5, 7])
+    assert set(inds[:-4]) == set([0, 2, 4, 6, 8, 9]) 
