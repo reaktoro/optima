@@ -69,12 +69,13 @@ def test_saddle_point_solver(args):
 
     m = 4
     n = 10
-
     t = m + n
+    
+    nf = len(jf)
 
     expected = linspace(1, t, t);
 
-    A = assemble_A(m, n, len(jf))
+    A = assemble_A(m, n, nf)
 
     H = eigen.random(n, n) if structure_H == 'dense' else eigen.random(n)
     D = eigen.random(n) if structure_D == 'diagonal' else eigen.vector()
