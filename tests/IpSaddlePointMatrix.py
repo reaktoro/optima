@@ -24,10 +24,11 @@ from itertools import product
 tested_structures_H = ['dense', 'diagonal']
 
 # Tested cases for the indices of fixed variables
-tested_jf = [arange(0), 
-            arange(1), 
-            array([1, 3, 7, 9])
-             ]
+tested_jf = [
+    arange(0), 
+    arange(1), 
+    array([1, 3, 7, 9])
+]
 
 # Combination of all tested cases
 testdata = product(tested_structures_H,

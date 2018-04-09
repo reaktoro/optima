@@ -23,27 +23,44 @@ from itertools import product
 
 import Canonicalizer
 
+# The number of variables and number of equality constraints
+n = 10
+m = 5
+
 # Tested cases for the matrix A
 tested_matrices_A = Canonicalizer.tested_matrices_A
 
 # Tested cases for the structure of matrix H
-tested_structures_H = ['dense', 'diagonal']
+tested_structures_H = [
+    'dense', 
+    'diagonal'
+]
 
 # Tested cases for the structure of matrix D
-tested_structures_D = ['diagonal', 'zero']
+tested_structures_D = [
+    'diagonal', 
+    'zero'
+]
 
 # Tested cases for the structure of matrix G
-tested_structures_G = ['dense', 'zero']
+tested_structures_G = [
+    'dense', 
+    'zero'
+]
 
 # Tested cases for the indices of fixed variables
-tested_jf = [arange(0), 
-             arange(1), 
-             array([1, 3, 7, 9])]
+tested_jf = [
+    arange(0), 
+    arange(1), 
+    array([1, 3, 7, 9])
+]
 
 # Tested cases for the conditions of the variables in terms of pivot variables
-tested_variable_conditions = ['all-variables-pivot',
-                              'all-variables-nonpivot',
-                              'some-variables-pivot']
+tested_variable_conditions = [
+    'all-variables-pivot',
+    'all-variables-nonpivot',
+    'some-variables-pivot'
+]
 
 # Tested cases for the saddle point methods
 tested_methods = [
@@ -61,14 +78,11 @@ testdata = product(tested_matrices_A,
                    tested_variable_conditions,
                    tested_methods)
 
-
 @mark.parametrize("args", testdata)
 def test_saddle_point_solver(args):
 
     assemble_A, structure_H, structure_D, structure_G, jf, variable_condition, method = args
 
-    m = 4
-    n = 10
     t = m + n
     
     nf = len(jf)
