@@ -34,6 +34,35 @@ class SaddlePointSolution;
 class SaddlePointVector;
 
 /// Used to solve saddle point problems.
+/// Use this class to solve saddle point problems.
+///
+/// @note There is no need for matrix \eq{A} to have linearly independent rows.
+/// The algorithm is able to ignore the linearly dependent rows automatically.
+/// However, it is expected that vector \eq{b} in the saddle point matrix have
+/// consistent values when linearly dependent rows in \eq{A} exists.
+/// For example, assume \eq{Ax = b} represents:
+/// \eqc{
+/// \begin{bmatrix}
+/// 1 & 1 & 1 & 1\\
+/// 0 & 1 & 1 & 1\\
+/// 1 & 0 & 0 & 0
+/// \end{bmatrix}
+/// \begin{bmatrix}
+/// x_{1}\\
+/// x_{2}\\
+/// x_{3}\\
+/// x_{4}
+/// \end{bmatrix}=
+/// \begin{bmatrix}
+/// b_{1}\\
+/// b_{2}\\
+/// b_{3}
+/// \end{bmatrix}.
+/// }
+/// Note that the third row of \eq{A} is linearly dependent on the other two
+/// rows: \eq{\text{row}_3=\text{row}_1-\text{row}_2}.
+/// Thus, it is expected that an input for vector \eq{b} is consistent with
+/// the dependence relationship \eq{b_{3}=b_{1}-b_{2}}.
 class SaddlePointSolver
 {
 public:
