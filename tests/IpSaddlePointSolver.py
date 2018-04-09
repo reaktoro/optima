@@ -23,6 +23,7 @@ from itertools import product
 
 import Canonicalizer
 
+
 def print_state(M, r, s, m, n):
     set_printoptions(linewidth=1000, precision=10, threshold='nan')
     slu = eigen.solve(M, r)
@@ -31,12 +32,12 @@ def print_state(M, r, s, m, n):
     print 'x        = ', s[:n]
     print 'x(lu)    = ', slu[:n]
     print 'x(diff)  = ', abs(s[:n] - slu[:n])
-    print 'y        = ', s[n:n+m]
-    print 'y(lu)    = ', slu[n:n+m]
-    print 'y(diff)  = ', abs(s[n:n+m] - slu[n:n+m])
-    print 'z        = ', s[n+m:n+m+n]
-    print 'z(lu)    = ', slu[n+m:n+m+n]
-    print 'z(diff)  = ', abs(s[n+m:n+m+n] - slu[n+m:n+m+n])
+    print 'y        = ', s[n:n + m]
+    print 'y(lu)    = ', slu[n:n + m]
+    print 'y(diff)  = ', abs(s[n:n + m] - slu[n:n + m])
+    print 'z        = ', s[n + m:n + m + n]
+    print 'z(lu)    = ', slu[n + m:n + m + n]
+    print 'z(diff)  = ', abs(s[n + m:n + m + n] - slu[n + m:n + m + n])
     print 'w        = ', s[:n]
     print 'w(lu)    = ', slu[:n]
     print 'w(diff)  = ', abs(s[:n] - slu[:n])
@@ -47,11 +48,11 @@ def print_state(M, r, s, m, n):
 # Tested number of variables in (s, l, u, z, w) partitions
 tested_dimensions = [
 #    m   ns  nl  nu  nz  nw
-    (5,  10, 0,  0,  0,  0),
-    (5,  8,  2,  0,  0,  0),
-    (5,  8,  0,  2,  0,  0),
-    (5,  8,  0,  0,  2,  0),
-    (5,  8,  0,  0,  0,  2),
+    (5, 10, 0, 0, 0, 0),
+    (5, 8, 2, 0, 0, 0),
+    (5, 8, 0, 2, 0, 0),
+    (5, 8, 0, 0, 2, 0),
+    (5, 8, 0, 0, 0, 2),
 ]
 
 # Tested cases for the matrix A
@@ -59,14 +60,14 @@ tested_matrices_A = Canonicalizer.tested_matrices_A
 
 # Tested cases for the structure of matrix H
 tested_structures_H = [
-    'dense', 
+    'dense',
     'diagonal'
 ]
 
 # Tested cases for the indices of fixed variables
 tested_jf = [
-    arange(0), 
-    arange(1), 
+    arange(0),
+    arange(1),
     array([1, 3, 7, 9])
 ]
 
@@ -93,9 +94,11 @@ def test_ip_saddle_point_solver(args):
     m, ns, nl, nu, nz, nw = dimensions
     
     n = ns + nl + nu + nz + nw
-    t = 3*n + m
+    t = 3 * n + m
     
-    A = eigen.random(m, n)
+    nf = len(jf)
+        
+    A = assemble_A(m, n, nf)
     H = eigen.random(n, n) if structure_H == 'dense' else eigen.random(n)
     Z = eigen.random(n)
     W = eigen.random(n)
@@ -141,5 +144,5 @@ def test_ip_saddle_point_solver(args):
 #     print_state(M, r, s, m, n)
 
     # Check the residual of the equation M * s = r
-    assert norm(M.dot(s) - r)/norm(r) == approx(0.0)
+    assert norm(M.dot(s) - r) / norm(r) == approx(0.0)
 
