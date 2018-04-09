@@ -19,21 +19,75 @@ from optima import *
 from numpy import *
 from numpy.linalg import norm
 from pytest import approx, mark
+from itertools import product
 
+import Canonicalizer
 
-def test_optimum_stepper():
-    n = 10
-    m = 5
+# The number of variables and number of equality constraints
+n = 10
+m = 5
+    
+# Tested cases for the matrix A
+tested_matrices_A = Canonicalizer.tested_matrices_A
 
+# Tested cases for the structure of matrix H
+tested_structures_H = [
+    'dense', 
+    'diagonal'
+]
+
+# Tested cases for the indices of fixed variables
+tested_jfixed = [
+    arange(0), 
+    arange(1), 
+    array([1, 3, 7, 9])
+]
+
+# Tested cases for the indices of variables with lower bounds
+tested_jlower = [
+    arange(0), 
+    arange(1), 
+    array([1, 3, 7, 9]),
+    arange(n)  # all variables with lower bounds
+]
+
+# Tested cases for the indices of variables with upper bounds
+tested_jupper = [
+    arange(0), 
+    arange(1), 
+    array([1, 3, 7, 9]),
+    arange(n)  # all variables with upper bounds
+]
+
+# Tested cases for the saddle point methods
+tested_methods = [
+    SaddlePointMethod.Fullspace,
+    SaddlePointMethod.Nullspace,
+    SaddlePointMethod.Rangespace,
+    ]
+
+# Combination of all tested cases
+testdata = product(tested_matrices_A,
+                   tested_structures_H,
+                   tested_jfixed,
+                   tested_jlower,
+                   tested_jupper,
+                   tested_methods)
+
+@mark.parametrize("args", testdata)
+def test_optimum_stepper(args):
+
+    assemble_A, structure_H, jfixed, jlower, jupper, method = args
+    
+    nfixed = len(jfixed)
+    nlower = len(jlower)
+    nupper = len(jupper)
+    
     structure = OptimumStructure(n, m)
-    structure.allVariablesHaveLowerBounds()
-    structure.allVariablesHaveUpperBounds()
-    structure.A = eigen.random(m, n) 
-
-    params = OptimumParams()
-    params.b = eigen.random(m)
-    params.xlower = eigen.random(n)
-    params.xupper = eigen.random(n)
+    structure.setVariablesWithFixedValues(jfixed)
+    structure.setVariablesWithLowerBounds(jlower)
+    structure.setVariablesWithUpperBounds(jupper)
+    structure.A = assemble_A(m, n, nfixed)
 
     state = OptimumState()
     state.x = eigen.random(n)
@@ -41,14 +95,24 @@ def test_optimum_stepper():
     state.z = eigen.random(n)
     state.w = eigen.random(n)
     state.g = eigen.random(n)
-    state.H = eigen.random(n, n)
+    state.H = eigen.random(n, n) if structure_H == 'dense' else eigen.random(n)
 
+    params = OptimumParams()
+    params.b = structure.A.dot(state.x)  # *** IMPORTANT *** b = A*x is essential here when A has linearly dependent rows, because it ensures a consistent set of values for vector b (see note in the documentation of SaddlePointSolver class).
+    params.xfixed = linspace(1, nfixed, nfixed)
+    params.xlower = eigen.zeros(nlower)
+    params.xupper = eigen.ones(nupper)
+
+    options = OptimumOptions()
+    options.kkt.method = method
+    
     stepper = OptimumStepper(structure)
-    lhs = stepper.matrix(params, state).array()
+    stepper.setOptions(options)
     stepper.decompose(params, state)
     stepper.solve(params, state)
 
-    step = stepper.step().array()
-    residual = stepper.residual().array()
+    M = stepper.matrix(params, state).array()
+    s = stepper.step().array()
+    r = stepper.residual().array()
 
-    assert norm(lhs.dot(step) - residual) / norm(residual) == approx(0.0)
+    assert norm(M.dot(s) - r) / norm(r) == approx(0.0)
