@@ -47,4 +47,19 @@ def test_optimum_structure():
 
     assert structure.numVariables() == n
     assert structure.numEqualityConstraints() == m
+    
+    # Assert orderingLowerBounds = [without lower bounds, with lower bounds]
+    assert list(structure.orderingLowerBounds()) == \
+        list(structure.variablesWithoutLowerBounds()) + \
+             list(structure.variablesWithLowerBounds())
+    
+    # Assert orderingUpperBounds = [without upper bounds, with upper bounds]
+    assert list(structure.orderingUpperBounds()) == \
+        list(structure.variablesWithoutUpperBounds()) + \
+             list(structure.variablesWithUpperBounds())
+
+    # Assert orderingFixedValues = [without fixed values, with fixed values]
+    assert list(structure.orderingFixedValues()) == \
+        list(structure.variablesWithoutFixedValues()) + \
+             list(structure.variablesWithFixedValues())
 

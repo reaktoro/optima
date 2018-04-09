@@ -33,7 +33,7 @@ OptimumStructure::OptimumStructure(Index n, Index m)
 auto OptimumStructure::setVariablesWithLowerBounds(IndicesConstRef inds) -> void
 {
     nlower = inds.size();
-    partitionLeft(lowerpartition, inds);
+    partitionRight(lowerpartition, inds);
 }
 
 auto OptimumStructure::allVariablesHaveLowerBounds() -> void
@@ -45,7 +45,7 @@ auto OptimumStructure::allVariablesHaveLowerBounds() -> void
 auto OptimumStructure::setVariablesWithUpperBounds(IndicesConstRef inds) -> void
 {
     nupper = inds.size();
-    partitionLeft(upperpartition, inds);
+    partitionRight(upperpartition, inds);
 }
 
 auto OptimumStructure::allVariablesHaveUpperBounds() -> void
@@ -57,7 +57,7 @@ auto OptimumStructure::allVariablesHaveUpperBounds() -> void
 auto OptimumStructure::setVariablesWithFixedValues(IndicesConstRef inds) -> void
 {
     nfixed = inds.size();
-    partitionLeft(fixedpartition, inds);
+    partitionRight(fixedpartition, inds);
 }
 
 auto OptimumStructure::numVariables() const -> Index
@@ -72,32 +72,32 @@ auto OptimumStructure::numEqualityConstraints() const -> Index
 
 auto OptimumStructure::variablesWithLowerBounds() const -> IndicesConstRef
 {
-    return lowerpartition.head(nlower);
+    return lowerpartition.tail(nlower);
 }
 
 auto OptimumStructure::variablesWithUpperBounds() const -> IndicesConstRef
 {
-    return upperpartition.head(nupper);
+    return upperpartition.tail(nupper);
 }
 
 auto OptimumStructure::variablesWithFixedValues() const -> IndicesConstRef
 {
-    return fixedpartition.head(nfixed);
+    return fixedpartition.tail(nfixed);
 }
 
 auto OptimumStructure::variablesWithoutLowerBounds() const -> IndicesConstRef
 {
-    return lowerpartition.tail(n - nlower);
+    return lowerpartition.head(n - nlower);
 }
 
 auto OptimumStructure::variablesWithoutUpperBounds() const -> IndicesConstRef
 {
-    return upperpartition.tail(n - nupper);
+    return upperpartition.head(n - nupper);
 }
 
 auto OptimumStructure::variablesWithoutFixedValues() const -> IndicesConstRef
 {
-    return fixedpartition.tail(n - nfixed);
+    return fixedpartition.head(n - nfixed);
 }
 
 auto OptimumStructure::orderingLowerBounds() const -> IndicesConstRef
