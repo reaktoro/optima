@@ -86,6 +86,12 @@ struct OptimumSolver::Impl
     /// The trial iterate x
     Vector xtrial;
 
+    /// The lower bounds for each variable x (-inf with no lower bound)
+    Vector xlower;
+
+    /// The upper bounds for each variable x (+inf with no lower bound)
+    Vector xupper;
+
     /// The outputter instance
     Outputter outputter;
 
@@ -116,8 +122,12 @@ struct OptimumSolver::Impl
         nf = structure.variablesWithFixedValues().size();
         nx = n - nf;
 
-        // Allocate memory to x(trial) and H matrix
+        // Allocate memory
         xtrial.resize(n);
+
+        // Initialize xlower and xupper with -inf and +inf
+        xlower = constants(n, -infinity());
+        xupper = constants(n,  infinity());
     }
 
     auto solve(const OptimumParams& params, OptimumState& state) -> OptimumResult
@@ -148,11 +158,6 @@ struct OptimumSolver::Impl
         const auto& iupper = structure.variablesWithUpperBounds();
         const auto& ifixed = structure.variablesWithFixedValues();
 
-        // Alias to OptimumParams members
-        const auto& xlower = params.xlower;
-        const auto& xupper = params.xupper;
-        const auto& xfixed = params.xfixed;
-
         // Auxiliary references to general options
         const auto tol = options.tolerance;
         const auto tolx = options.tolerancex;
@@ -179,22 +184,22 @@ struct OptimumSolver::Impl
         if(z.size() != n) z = zeros(n);
         if(w.size() != n) w = zeros(n);
 
-        // The number of variables with lower and upper bounds
-        const Index nlower = ilower.size();
-        const Index nupper = iupper.size();
-
-        // Ensure the initial guess for `x` does not violate lower and upper bounds
-        for(Index i = 0; i < nlower; ++i) x[ilower[i]] = std::max(x[ilower[i]], xlower[i] + mu);
-        for(Index i = 0; i < nupper; ++i) x[iupper[i]] = std::min(x[iupper[i]], xupper[i] - mu);
-
-        // Ensure z = mu/(x - xlower) for variables with lower bounds
-        z(ilower) = mu / ( x(ilower) - xlower );
-
-        // Ensure w = mu/(xupper - x) for variables with lower bounds
-        w(ilower) = mu / ( xupper - x(iupper) );
+        // Set the lower and upper bounds of the variables
+        xlower(ilower) = params.xlower;
+        xupper(iupper) = params.xupper;
 
         // Set the values of x corresponding to fixed variables
-        x(ifixed) = xfixed;
+        x(ifixed) = params.xfixed;
+
+        // Ensure the initial guess for `x` does not violate lower and upper bounds
+        for(Index i : ilower) x[i] = std::max(x[i], xlower[i] + mu);
+        for(Index i : iupper) x[i] = std::min(x[i], xupper[i] - mu);
+
+        // Ensure z = mu/(x - xlower) for variables with lower bounds
+        z(ilower) = mu / ( x(ilower) - xlower(ilower) );
+
+        // Ensure w = mu/(xupper - x) for variables with upper bounds
+        w(iupper) = mu / ( xupper(iupper) - x(iupper) );
 
         // The optimality, feasibility, centrality lower and centrality upper
         double errorf, errorh, errorl, erroru;
@@ -336,10 +341,18 @@ struct OptimumSolver::Impl
             auto dz = stepper.step().z;
             auto dw = stepper.step().w;
 
-            // Calculate the current trial iterate for x
-            for(int i = 0; i < n; ++i)
-                xtrial[i] = (x[i] + dx[i] > 0.0) ?
-                    x[i] + dx[i] : x[i]*(1.0 - tau);
+			// Update xtrial with the calculated Newton step
+            xtrial = x + dx;
+
+            // Update x for variables with violated lower bounds
+            for(Index i : ilower)
+            	if(xtrial[i] <= xlower[i])
+					xtrial[i] = x[i] - (x[i] - xlower[i]) * tau;
+
+            // Update x for variables with violated upper bounds
+            for(Index i : iupper)
+            	if(xtrial[i] >= xupper[i])
+					xtrial[i] = x[i] + (xupper[i] - x[i]) * tau;
 
             // Establish the current needs for the objective function evaluation at the trial iterate
             objres.requires.f = true;

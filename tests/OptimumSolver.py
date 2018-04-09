@@ -19,6 +19,60 @@ from optima import *
 from numpy import *
 from numpy.linalg import norm
 from pytest import approx, mark
+from itertools import product
+
+import Canonicalizer
+
+# The number of variables and number of equality constraints
+n = 10
+m = 5
+    
+# Tested cases for the matrix A
+tested_matrices_A = Canonicalizer.tested_matrices_A
+
+# Tested cases for the structure of matrix H
+tested_structures_H = [
+    'dense', 
+    'diagonal'
+]
+
+# Tested cases for the indices of fixed variables
+tested_jf = [
+#     arange(0), 
+#     arange(1), 
+    array([1, 3, 7, 9])
+]
+
+# Tested cases for the indices of variables with lower bounds
+tested_jlower = [
+    arange(0), 
+    arange(1), 
+    array([1, 3, 7, 9]),
+    arange(n)  # all variables with lower bounds
+]
+
+# Tested cases for the indices of variables with upper bounds
+tested_jupper = [
+    arange(0), 
+    arange(1), 
+    array([1, 3, 7, 9]),
+    arange(n)  # all variables with upper bounds
+]
+
+# Tested cases for the saddle point methods
+tested_methods = [
+    SaddlePointMethod.Fullspace,
+    SaddlePointMethod.Nullspace,
+    SaddlePointMethod.Rangespace,
+    ]
+
+# Combination of all tested cases
+testdata = product(tested_matrices_A,
+                   tested_structures_H,
+                   tested_jf,
+                   tested_jlower,
+                   tested_jupper,
+                   tested_methods)
 
 def objective(x):
     res = ObjectiveResult()
@@ -27,47 +81,27 @@ def objective(x):
     res.H = 2.0 * ones(len(x))
     return res
 
-# def test_optimum_solver():
-#     n = 2
-#     m = 1
-# 
-#     structure = OptimumStructure(n, m)
-#     structure.allVariablesHaveLowerBounds()
-#     structure.allVariablesHaveUpperBounds()
-#     structure.A = [[1.0, -1.0]]
-# 
-#     params = OptimumParams()
-#     params.b = [0.0]
-#     params.xlower = [0.0, 0.0]
-#     params.xupper = [5.0, 5.0] 
-#     params.objective = objective
-#     
-#     state = OptimumState()
-#     state.x = array([2.0, 2.0])
-# 
-#     options = OptimumOptions()
-#     options.output.active = True
-#     
-#     solver = OptimumSolver(structure)
-#     solver.setOptions(options)
-#     solver.solve(params, state)
-#     
-#     print state.x
 
+@mark.parametrize("args", testdata)
+def test_optimum_solver(args):
 
-def test_optimum_solver_with_fixed_variables():
-    n = 10
-    m = 4
+    assemble_A, structure_H, jf, jlower, jupper, method = args
+    
+    nf = len(jf)
+    nlower = len(jlower)
+    nupper = len(jupper)
 
     structure = OptimumStructure(n, m)
-    structure.allVariablesHaveLowerBounds()
-    structure.allVariablesHaveUpperBounds()
-    structure.A = eigen.random(m, n)
+    structure.setVariablesWithFixedValues(jf)
+    structure.setVariablesWithLowerBounds(jlower)
+    structure.setVariablesWithUpperBounds(jupper)
+    structure.A = assemble_A(m, n, nf)
 
     params = OptimumParams()
-    params.b = eigen.random(m)
-    params.xlower = eigen.zeros(n)
-    params.xupper = eigen.ones(n) 
+    params.b = structure.A.dot(eigen.random(n))  # *** IMPORTANT *** b = A*v (for some v) is essential here when A has linearly dependent rows, because it ensures a consistent set of values for vector b (see note in the documentation of SaddlePointSolver class).
+    params.xfixed = linspace(1, nf, nf)
+    params.xlower = eigen.zeros(nlower)
+    params.xupper = eigen.ones(nupper)
     params.objective = objective
     
     state = OptimumState()
@@ -75,11 +109,13 @@ def test_optimum_solver_with_fixed_variables():
 
     options = OptimumOptions()
     options.output.active = True
-    options.kkt.method = SaddlePointMethod.Rangespace
+    options.kkt.method = method
     
     solver = OptimumSolver(structure)
     solver.setOptions(options)
-    solver.solve(params, state)
+    res = solver.solve(params, state)
     
     print state.x
+    
+    assert res.succeeded
 
