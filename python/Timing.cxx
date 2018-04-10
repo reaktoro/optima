@@ -31,8 +31,6 @@ void exportTiming(py::module& m)
 		.def("elapsed", &Timer::elapsed)
 		;
 
-	py::implicitly_convertible<Timer, double>();
-
     m.def("timenow", &timenow);
     m.def("elapsed", (double(*)(const Time&, const Time&)) &elapsed);
     m.def("elapsed", (double(*)(const Time&)) &elapsed);
