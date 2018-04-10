@@ -42,22 +42,7 @@ class SaddlePointVector;
 /// consistent values when linearly dependent rows in \eq{A} exists.
 /// For example, assume \eq{Ax = b} represents:
 /// \eqc{
-/// \begin{bmatrix}
-/// 1 & 1 & 1 & 1\\
-/// 0 & 1 & 1 & 1\\
-/// 1 & 0 & 0 & 0
-/// \end{bmatrix}
-/// \begin{bmatrix}
-/// x_{1}\\
-/// x_{2}\\
-/// x_{3}\\
-/// x_{4}
-/// \end{bmatrix}=
-/// \begin{bmatrix}
-/// b_{1}\\
-/// b_{2}\\
-/// b_{3}
-/// \end{bmatrix}.
+/// \begin{bmatrix}1 & 1 & 1 & 1\\0 & 1 & 1 & 1\\1 & 0 & 0 & 0\end{bmatrix}\begin{bmatrix}x_{1}\\x_{2}\\x_{3}\\x_{4}\end{bmatrix}=\begin{bmatrix}b_{1}\\b_{2}\\b_{3}\end{bmatrix}.
 /// }
 /// Note that the third row of \eq{A} is linearly dependent on the other two
 /// rows: \eq{\text{row}_3=\text{row}_1-\text{row}_2}.
