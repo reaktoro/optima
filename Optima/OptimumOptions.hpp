@@ -51,6 +51,9 @@ struct OptimumOutputOptions : OutputterOptions
     /// The prefix for the dual variables `z`.
     std::string zprefix = "z";
 
+    /// The prefix for the dual variables `w`.
+    std::string wprefix = "w";
+
     /// The names of the primal variables `x`.
     /// Numbers will be used if not properly set (e.g., `x[0]`, `x[1]`)
     std::vector<std::string> xnames;
@@ -62,6 +65,10 @@ struct OptimumOutputOptions : OutputterOptions
     /// The names of the dual variables `z`.
     /// Numbers will be used if not properly set (e.g., `z[0]`, `z[1]`)
     std::vector<std::string> znames;
+
+    /// The names of the dual variables `w`.
+    /// Numbers will be used if not properly set (e.g., `z[0]`, `z[1]`)
+    std::vector<std::string> wnames;
 
     /// Assign a boolean value to `active` member.
     auto operator=(bool active) -> OptimumOutputOptions&;
