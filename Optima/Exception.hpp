@@ -78,12 +78,25 @@ std::string message(const Exception& exception, const std::string& file, int lin
 /// Define a macro to raise a runtime exception from a error string and a reason string.
 /// @see Exception
 /// @ingroup Common
+#define RuntimeErrorIf(condition, errorstr, reasonstr) \
+    { \
+        if((condition)) { \
+            Optima::Exception exception; \
+            exception.error << (errorstr); \
+            exception.reason << (reasonstr); \
+            RaiseError(exception); \
+        } \
+    }
+
+/// Define a macro to raise a runtime exception from a error string and a reason string.
+/// @see Exception
+/// @ingroup Common
 #define Assert(condition, errorstr, reasonstr) \
     { \
         if(!(condition)) { \
             Optima::Exception exception; \
-            exception.error << errorstr; \
-            exception.reason << reasonstr; \
+            exception.error << (errorstr); \
+            exception.reason << (reasonstr); \
             RaiseError(exception); \
         } \
     }
