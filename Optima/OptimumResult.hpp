@@ -17,40 +17,55 @@
 
 #pragma once
 
+// Optima includes
+#include <Optima/Index.hpp>
+
 namespace Optima {
 
-/// A type that describes the result of an optimization calculation
+/// A type that describes the result of an optimization calculation.
 class OptimumResult
 {
 public:
-    /// The flag that indicates if the optimization calculation converged
+    /// The flag that indicates if the optimization calculation converged.
     bool succeeded = false;
 
-    /// The number of iterations in the optimization calculation
-    unsigned iterations = 0;
+    /// The number of iterations in the optimization calculation.
+    Index iterations = 0;
 
-    /// The number of evaluations of the objective function in the optimization calculation
-    unsigned num_objective_evals = 0;
+    /// The number of evaluations of the objective function in the optimization calculation.
+    Index num_objective_evals = 0;
 
-    /// The convergence rate of the optimization calculation near the solution
+    /// The convergence rate of the optimization calculation near the solution.
     double convergence_rate = 0;
 
-    /// The final residual error of the optimization calculation
+    /// The final residual error of the optimization calculation.
     double error = 0;
 
-    /// The wall time spent for the optimization calculation (in units of s)
+    /// The final optimality error of the optimization calculation.
+    double error_optimality = 0;
+
+    /// The final feasibility error of the optimization calculation.
+    double error_feasibility = 0;
+
+    /// The final complementarity error (lower bounds) of the optimization calculation.
+    double error_complementarity_lower = 0;
+
+    /// The final complementarity error (upper bounds) of the optimization calculation.
+    double error_complementarity_upper = 0;
+
+    /// The wall time spent for the optimization calculation (in units of s).
     double time = 0;
 
-    /// The wall time spent for all objective evaluations (in units of s)
+    /// The wall time spent for all objective evaluations (in units of s).
     double time_objective_evals = 0;
 
-    /// The wall time spent for all contraint evaluations (in units of s)
+    /// The wall time spent for all contraint evaluations (in units of s).
     double time_constraint_evals = 0;
 
-    /// The wall time spent for all linear system solutions (in units of s)
+    /// The wall time spent for all linear system solutions (in units of s).
     double time_linear_systems = 0;
 
-    /// Update this OptimumResult instance with another by addition
+    /// Update this OptimumResult instance with another by addition.
     auto operator+=(const OptimumResult& other) -> OptimumResult&;
 };
 
