@@ -38,7 +38,6 @@ void exportOptimumOptions(py::module& m)
         .def_readwrite("zprefix", &OptimumOutputOptions::zprefix)
         .def_readwrite("xnames", &OptimumOutputOptions::xnames)
         .def_readwrite("ynames", &OptimumOutputOptions::ynames)
-        .def_readwrite("znames", &OptimumOutputOptions::znames)
         ;
 
     py::class_<OptimumOptions>(m, "OptimumOptions")
