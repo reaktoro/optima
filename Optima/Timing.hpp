@@ -22,7 +22,26 @@
 
 namespace Optima {
 
+/// A type alias for time related numbers.
 using Time = std::chrono::time_point<std::chrono::high_resolution_clock>;
+
+/// Used to measure time between two execution points.
+class Timer
+{
+public:
+	/// Construct a default Timer instance.
+	Timer();
+
+	/// Return the elapsed time since object creation (in seconds)
+	auto elapsed() const -> double;
+
+	/// Convert this Time instance into double (time in seconds).
+	operator double() const;
+
+private:
+	/// The time at which this Time object was created.
+	Time begin;
+};
 
 using Duration = std::chrono::duration<double>;
 

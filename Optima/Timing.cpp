@@ -19,6 +19,20 @@
 
 namespace Optima {
 
+Timer::Timer()
+: begin(timenow())
+{}
+
+auto Timer::elapsed() const -> double
+{
+	return std::chrono::duration<double>(timenow() - begin).count();
+}
+
+Timer::operator double() const
+{
+	return elapsed();
+}
+
 auto timenow() -> Time
 {
     return std::chrono::high_resolution_clock::now();
