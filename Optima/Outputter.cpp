@@ -46,6 +46,12 @@ auto OutputterOptions::operator=(bool act) -> OutputterOptions&
 Outputter::Outputter()
 {}
 
+void Outputter::clear()
+{
+	values.clear();
+	entries.clear();
+}
+
 void Outputter::setOptions(const OutputterOptions& options_)
 {
     options = options_;

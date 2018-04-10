@@ -55,6 +55,8 @@ public:
 
     Outputter();
 
+    void clear();
+
     void setOptions(const OutputterOptions& options);
 
     void addEntry(const std::string& name);
