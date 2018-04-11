@@ -18,6 +18,10 @@
 #include "OptimumStepper.hpp"
 
 // Eigen includes
+#include <Eigen/LU>
+
+
+
 using namespace Eigen;
 using Eigen::placeholders::all;
 
@@ -69,18 +73,6 @@ struct OptimumStepper::Impl
     /// The ordering of the variables as [x(free) x(fixed)].
     Indices iordering;
 
-//    /// The indices of the variables with lower bounds assuming the ordering x = [x(free) x(fixed)].
-//    Indices iwithlower;
-//
-//    /// The indices of the variables with upper bounds assuming the ordering x = [x(free) x(fixed)].
-//    Indices iwithupper;
-//
-//    /// The indices of the variables without lower bounds assuming the ordering x = [x(free) x(fixed)].
-//    Indices iwithoutlower;
-//
-//    /// The indices of the variables without upper bounds assuming the ordering x = [x(free) x(fixed)].
-//    Indices iwithoutupper;
-
     /// Construct a OptimumStepper::Impl instance with given optimization problem structure.
     Impl(const OptimumStructure& structure)
     : structure(structure)
@@ -95,28 +87,17 @@ struct OptimumStepper::Impl
         // The indices of the variables in the ordering x = [x(free) x(fixed)].
         iordering = structure.orderingFixedValues();
 
-        // TODO Check if these vectors iwithoutlower, iwithoutupper, iwithlower, iwithupper are indeed needed.
-
-//        // Initialize the indices of the variables with lower bounds for the ordering x = [x(free) x(fixed)].
-//        iwithlower = iordering(structure.variablesWithLowerBounds());
-//
-//        // Initialize the indices of the variables with upper bounds for the ordering x = [x(free) x(fixed)].
-//        iwithupper = iordering(structure.variablesWithUpperBounds());
-//
-//        // Initialize the indices of the variables without lower bounds for the ordering x = [x(free) x(fixed)].
-//        iwithoutlower = iordering(structure.variablesWithoutLowerBounds());
-//
-//        // Initialize the indices of the variables without upper bounds for the ordering x = [x(free) x(fixed)].
-//        iwithoutupper = iordering(structure.variablesWithoutUpperBounds());
-//
-//        // Copy the matrix A with columns having order according to iordering
-//        A = structure.A(all, iordering);
-
-        // Allocate memory for some members
+        // Initialize Z and W with zeros (the dafault value for variables
+        // with fixed values or no lower/upper bounds).
         Z = zeros(n);
         W = zeros(n);
-        L = zeros(n);
-        U = zeros(n);
+
+        // Initialize L and U with ones (the dafault value for variables
+        // with fixed values or no lower/upper bounds).
+        L = ones(n);
+        U = ones(n);
+
+        // Initialize r and s with zeros.
         r = zeros(t);
         s = zeros(t);
 
@@ -124,77 +105,36 @@ struct OptimumStepper::Impl
         solver.initialize(structure.A);
     }
 
-    /// Update the matrices Z, W, L, U that appear in the interior-point saddle point problem.
-    auto updateZWLU(const OptimumParams& params, const OptimumState& state) -> void
-    {
-        // The indices of the variables with/without lower and upper bounds
-        const auto iwithlower = structure.variablesWithLowerBounds();
-        const auto iwithupper = structure.variablesWithUpperBounds();
-        const auto iwithfixed = structure.variablesWithFixedValues();
-        const auto iwithoutlower = structure.variablesWithoutLowerBounds();
-        const auto iwithoutupper = structure.variablesWithoutUpperBounds();
-
-        // Initialize the diagonal matrix Z assuming the ordering x = [x(free) x(fixed)]
-        Z(iwithlower) = state.z(iwithlower);
-        Z(iwithoutlower).fill(0.0);
-        Z(iwithfixed).fill(0.0);
-
-        // Initialize the diagonal matrix W assuming the ordering x = [x(free) x(fixed)]
-        W(iwithupper) = state.w(iwithupper);
-        W(iwithoutupper).fill(0.0);
-        W(iwithfixed).fill(0.0);
-
-        // Initialize the diagonal matrix L assuming the ordering x = [x(free) x(fixed)]
-        L(iwithlower) = state.x(iwithlower) - params.xlower;
-        L(iwithoutlower).fill(1.0);
-        L(iwithfixed).fill(1.0);
-
-        // Initialize the diagonal matrix U assuming the ordering x = [x(free) x(fixed)]
-        U(iwithupper) = params.xupper - state.x(iwithupper);
-        U(iwithoutupper).fill(1.0);
-        U(iwithfixed).fill(1.0);
-    }
-
-    /// Decompose the interior-point saddle point matrix.
+    /// Decompose the interior-point saddle point matrix for diagonal Hessian matrices.
     auto decompose(const OptimumParams& params, const OptimumState& state) -> Result
     {
-        switch(state.H.structure) {
-        case MatrixStructure::Dense: return decomposeDenseHessianMatrix(params, state);
-        case MatrixStructure::Diagonal: return decomposeDiagonalHessianMatrix(params, state);
-        case MatrixStructure::Zero: return decomposeDiagonalHessianMatrix(params, state);
-        }
-        return {};
-    }
-
-    /// Decompose the interior-point saddle point matrix for diagonal Hessian matrices.
-    auto decomposeDiagonalHessianMatrix(const OptimumParams& params, const OptimumState& state) -> Result
-    {
         // The result of this method call
         Result res;
 
-        // Update the matrices Z, W, L, U
-        updateZWLU(params, state);
+        // The indices of the variables with lower and upper bounds
+        const auto ilower = structure.variablesWithLowerBounds();
+        const auto iupper = structure.variablesWithUpperBounds();
 
-        // The indices of the fixed variables
-        const auto jf = iordering.tail(nf);
+        // Update Z and L for the variables with lower bounds
+        Z(ilower) = state.z(ilower);
+		L(ilower) = state.x(ilower) - params.xlower;
 
-        // Define the interior-point saddle point matrix
-        IpSaddlePointMatrix spm(state.H, structure.A, Z, W, L, U, jf);
+        // Update W and U for the variables with upper bounds
+        W(iupper) = state.w(iupper);
+        U(iupper) = params.xupper - state.x(iupper);
 
-        // Decompose the interior-point saddle point matrix
-        solver.decompose(spm);
+        // Ensure entries in L are positive in case x(ilower) == xlower
+		for(Index i : ilower) L[i] = L[i] ? L[i] : options.mu;
 
-        return res.stop();
-    }
+        // Ensure entries in U are positive in case x(iupper) == xupper
+		for(Index i : iupper) U[i] = U[i] ? U[i] : options.mu;
 
-    /// Decompose the interior-point saddle point matrix for dense Hessian matrices.
-    auto decomposeDenseHessianMatrix(const OptimumParams& params, const OptimumState& state) -> Result
-    {
-        // The result of this method call
-        Result res;
+        Assert((Z(ilower).array() > 0).all(), "Error: Z <= 0!", "");
+        Assert((W(iupper).array() > 0).all(), "Error: W <= 0!", "");
+        Assert((L(ilower).array() > 0).all(), "Error: L <= 0!", "");
+        Assert((U(iupper).array() > 0).all(), "Error: U <= 0!", "");
 
-        // Update the matrices Z, W, L, U
-        updateZWLU(params, state);
+
 
         // The indices of the fixed variables
         const auto jf = iordering.tail(nf);
@@ -214,12 +154,12 @@ struct OptimumStepper::Impl
         // The result of this method call
         Result res;
 
-        // Update the matrices Z, W, L, U
-        updateZWLU(params, state);
-
-        // The indices of the free and variables
-        const auto jx = iordering.head(nx);
+        // The indices of the fixed variables
         const auto jf = iordering.tail(nf);
+
+        // The indices of the variables with lower and upper bounds
+        const auto ilower = structure.variablesWithLowerBounds();
+        const auto iupper = structure.variablesWithUpperBounds();
 
         // Views to the sub-vectors in r = [a b c d]
         auto a = r.head(n);
@@ -235,19 +175,21 @@ struct OptimumStepper::Impl
 
         MatrixConstRef A = structure.A;
 
-        // Calculate ax = -(gx + tr(Ax)*y - zx + wx)
+        // Calculate the optimality residual vector a
         a.noalias() = -(g + tr(A) * y - z + w);
-//        ax.noalias() = -(gx + tr(Ax) * y - zx + wx); // TODO Why not a = -(g + tr(A)*y - z + w)???
+
+        // Set a to zero for fixed variables
         a(jf).fill(0.0);
 
-        // Calculate b = -(A*x - b)
+        // Calculate the feasibility residual vector b
         b.noalias() = -(A * x - params.b);
 
-        // Calculate both c and d vectors
-        c = options.mu - L % Z; // TODO Check if mu is still needed. Maybe this algorithm no longer needs perturbation.
-        d = options.mu - U % W; // TODO Check if mu is still needed. Maybe this algorithm no longer needs perturbation.
-        c(jf).fill(0.0);
-        d(jf).fill(0.0);
+        // Calculate the centrality residual vectors c and d
+        for(Index i : ilower) c[i] = options.mu - L[i] * state.z[i]; // TODO Check if mu is still needed. Maybe this algorithm no longer needs perturbation.
+        for(Index i : iupper) d[i] = U[i] * state.w[i] - options.mu;
+
+//        c.fill(0.0); // TODO For example, there is no mu here and this seems to work
+//        d.fill(0.0);
 
         // The right-hand side vector of the interior-point saddle point problem
         IpSaddlePointVector rhs(r, n, m);
@@ -258,8 +200,82 @@ struct OptimumStepper::Impl
         // Solve the saddle point problem
         solver.solve(rhs, sol);
 
+//
+//		IpSaddlePointMatrix spm(state.H, structure.A, Z, W, L, U, jf);
+//
+//		Matrix M = spm;
+//
+//		s = M.fullPivLu().solve(r);
+
+
+        sol.w *= -1.0;
+
+
+
+
+
         return res.stop();
     }
+
+
+//    /// Solve the interior-point saddle point matrix.
+//    auto solve(const OptimumParams& params, const OptimumState& state) -> Result
+//    {
+//        // The result of this method call
+//        Result res;
+//
+//        // The indices of the fixed variables
+//        const auto jf = iordering.tail(nf);
+//
+//        // The indices of the variables with lower and upper bounds
+//        const auto ilower = structure.variablesWithLowerBounds();
+//        const auto iupper = structure.variablesWithUpperBounds();
+//
+//        // Views to the sub-vectors in r = [a b c d]
+//        auto a = r.head(n);
+//        auto b = r.segment(n, m);
+//        auto c = r.segment(n + m, n);
+//        auto d = r.tail(n);
+//
+//        VectorConstRef x = state.x;
+//        VectorConstRef y = state.y;
+//        VectorConstRef z = state.z;
+//        VectorConstRef w = state.w;
+//        VectorConstRef g = state.g;
+//
+//        MatrixConstRef A = structure.A;
+//
+//        // Calculate the optimality residual vector a
+//        a.noalias() = -(g + tr(A) * y - z + w);
+//
+//        // Set a to zero for fixed variables
+//        a(jf).fill(0.0);
+//
+//        // Calculate the feasibility residual vector b
+//        b.noalias() = -(A * x - params.b);
+//
+//        // Calculate the centrality residual vectors c and d
+//        for(Index i : ilower) c[i] = options.mu - L[i] * state.z[i]; // TODO Check if mu is still needed. Maybe this algorithm no longer needs perturbation.
+//        for(Index i : ilower) d[i] = options.mu - U[i] * state.w[i];
+//
+//        // The right-hand side vector of the interior-point saddle point problem
+//        IpSaddlePointVector rhs(r, n, m);
+//
+//        // The solution vector of the interior-point saddle point problem
+//        IpSaddlePointSolution sol(s, n, m);
+//
+//		IpSaddlePointMatrix spm(state.H, structure.A, Z, W, L, U, jf);
+//
+//		Matrix M = spm;
+//
+//		s = M.fullPivLu().solve(r);
+//
+//
+//        sol.w *= -1.0;
+//
+//
+//        return res.stop();
+//    }
 
     /// Return the calculated Newton step vector.
     auto step() const -> IpSaddlePointVector
@@ -276,9 +292,6 @@ struct OptimumStepper::Impl
     /// Return the assembled interior-point saddle point matrix.
     auto matrix(const OptimumParams& params, const OptimumState& state) -> IpSaddlePointMatrix
     {
-        // Update the matrices Z, W, L, U
-        updateZWLU(params, state);
-
         // The indices of the fixed variables
         const auto jf = iordering.tail(nf);
 
