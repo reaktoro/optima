@@ -26,37 +26,35 @@ import Canonicalizer
 # The number of variables and number of equality constraints
 n = 10
 m = 5
-    
+
 # Tested cases for the matrix A
 tested_matrices_A = Canonicalizer.tested_matrices_A
 
 # Tested cases for the structure of matrix H
 tested_structures_H = [
-    'dense', 
+    'dense',
     'diagonal'
 ]
 
 # Tested cases for the indices of fixed variables
-tested_jf = [
-#     arange(0), 
-#     arange(1), 
-    array([1, 3, 7, 9])
+tested_jfixed = [
+    arange(0),
+    array([0]),
+    array([0, 1, 2])
 ]
 
 # Tested cases for the indices of variables with lower bounds
 tested_jlower = [
-    arange(0), 
-    arange(1), 
-    array([1, 3, 7, 9]),
-    arange(n)  # all variables with lower bounds
+    arange(0),
+    array([0]),
+    array([3, 4, 5])
 ]
 
 # Tested cases for the indices of variables with upper bounds
 tested_jupper = [
-    arange(0), 
-    arange(1), 
-    array([1, 3, 7, 9]),
-    arange(n)  # all variables with upper bounds
+    arange(0),
+    array([0]),
+    array([6, 7, 8])
 ]
 
 # Tested cases for the saddle point methods
@@ -64,20 +62,21 @@ tested_methods = [
     SaddlePointMethod.Fullspace,
     SaddlePointMethod.Nullspace,
     SaddlePointMethod.Rangespace,
-    ]
+]
 
 # Combination of all tested cases
 testdata = product(tested_matrices_A,
                    tested_structures_H,
-                   tested_jf,
+                   tested_jfixed,
                    tested_jlower,
                    tested_jupper,
                    tested_methods)
 
+
 def objective(x):
     res = ObjectiveResult()
-    res.f = sum((x - 1)**2)
-    res.g = 2.0 * (x - 1)
+    res.f = sum((x - 0.5) ** 2)
+    res.g = 2.0 * (x - 0.5)
     res.H = 2.0 * ones(len(x))
     return res
 
@@ -85,37 +84,178 @@ def objective(x):
 @mark.parametrize("args", testdata)
 def test_optimum_solver(args):
 
-    assemble_A, structure_H, jf, jlower, jupper, method = args
-    
+    assemble_A, structure_H, jf, jl, ju, method = args
+
     nf = len(jf)
-    nlower = len(jlower)
-    nupper = len(jupper)
+    nl = len(jl)
+    nu = len(ju)
+
+    A = assemble_A(m, n, nf)
 
     structure = OptimumStructure(n, m)
     structure.setVariablesWithFixedValues(jf)
-    structure.setVariablesWithLowerBounds(jlower)
-    structure.setVariablesWithUpperBounds(jupper)
-    structure.A = assemble_A(m, n, nf)
+    structure.setVariablesWithLowerBounds(jl)
+    structure.setVariablesWithUpperBounds(ju)
+    structure.A = A
+
+    y_expected = linspace(1, m, m)
+
+    z_expected = zeros(n)
+    z_expected[jl] = 1.0  # Slack variables z are one at active lower bounds
+
+    w_expected = zeros(n)
+    w_expected[ju] = 1.0  # Slack variables w are one at active upper bounds
+
+    jx = structure.variablesWithoutFixedValues()
+
+    Ax = A[:, jx]  # The columns of A corresponding to free variables
+    Atx = array(transpose(Ax))
+    zx = array(z_expected[jx])  # The rows of z corresponding to free variables
+    wx = array(w_expected[jx])  # The rows of w corresponding to free variables
+    gx = zx - wx - Atx.dot(y_expected)
+    xx = 0.5 * (gx + 1.0)
+
+    x_expected = zeros(n)
+    x_expected[jx] = xx
+    x_expected[jf] = linspace(1, nf, nf)
 
     params = OptimumParams()
-    params.b = structure.A.dot(eigen.random(n))  # *** IMPORTANT *** b = A*v (for some v) is essential here when A has linearly dependent rows, because it ensures a consistent set of values for vector b (see note in the documentation of SaddlePointSolver class).
-    params.xfixed = linspace(1, nf, nf)
-    params.xlower = eigen.zeros(nlower)
-    params.xupper = eigen.ones(nupper)
+    params.b = A.dot(x_expected)  # Use expected values of x to compute b
+    # Use expected values of x for the fixed values
+    params.xfixed = x_expected[jf]
+    # Use expected values of x for the lower bounds
+    params.xlower = x_expected[jl]
+    # Use expected values of x for the upper bounds
+    params.xupper = x_expected[ju]
     params.objective = objective
-    
+
     state = OptimumState()
-#     state.x = 0.5 * eigen.ones(n)
 
     options = OptimumOptions()
     options.output.active = True
     options.kkt.method = method
-    
+
     solver = OptimumSolver(structure)
     solver.setOptions(options)
     res = solver.solve(params, state)
-    
+
     print state.x
-    
+
     assert res.succeeded
 
+
+# 
+# def test_optimum_solver():
+# 
+#     set_printoptions(linewidth=1000)
+# 
+#     A = eigen.random(m, n)
+# 
+# #     jf = []
+# #     jl = []
+# #     ju = [1,2, 3, 4]
+# 
+# #     jf = []
+# #     jl = []
+# #     jl = [0, 1, 2]
+# #     ju = [4, 5, 6]
+# 
+#     jf = [9]
+#     jl = [1, 2, 3]
+#     ju = [4, 6]
+# 
+# #     jl = [2, 5, 7, 9]
+# #     ju = [1, 3, 6]
+# 
+#     nf = len(jf)
+#     nl = len(jl)
+#     nu = len(ju)
+# 
+#     structure = OptimumStructure(n, m)
+#     structure.setVariablesWithFixedValues(jf)
+#     structure.setVariablesWithLowerBounds(jl)
+#     structure.setVariablesWithUpperBounds(ju)
+#     structure.A = A
+# 
+#     print 'jl =', jl
+#     print 'structure.variablesWithLowerBounds() =', structure.variablesWithLowerBounds()
+# 
+# #     factor = 10 ** ceil(log10(n))  # Used to have all x between 0 and 1 no matter the number of variables
+# # x_expected = linspace(1, n, n) / factor  # Variables x have values
+# # between 0 and 1
+#     y_expected = linspace(1, m, m)
+#     z_expected = zeros(n)
+#     w_expected = zeros(n)
+# 
+# # x_expected[jf] = 10 * x_expected[jf]  # Fixed variables x have values
+# # greater than one
+# 
+# #     x_expected[jl] = 0.0  # Variables x active at lower bounds are zero
+# #     x_expected[ju] = 1.0  # Variables x active at upper bounds are one
+# 
+#     z_expected[jl] = 1.0  # Slack variables z are one at active lower bounds
+#     w_expected[ju] = 1.0  # Slack variables w are one at active upper bounds
+# 
+#     jx = list(set(range(n)) - set(jf))  # The indices of the free variables
+# 
+#     Ax = A[:, jx]  # The columns of A corresponding to free variables
+#     Atx = array(transpose(Ax))
+#     zx = array(z_expected[jx])  # The rows of z corresponding to free variables
+#     wx = array(w_expected[jx])  # The rows of w corresponding to free variables
+#     gx = zx - wx - Atx.dot(y_expected)
+#     xx = 0.5 * (gx + 1.0)
+# 
+#     x_expected = zeros(n)
+#     x_expected[jx] = xx
+#     x_expected[jf] = linspace(1, nf, nf)
+# 
+#     params = OptimumParams()
+#     params.b = A.dot(x_expected)  # Use expected values of x to compute b
+#     params.xfixed = x_expected[jf]
+#     params.xlower = x_expected[jl]
+#     params.xupper = x_expected[ju]
+#     params.objective = objective
+# 
+#     print 'x_expected =', x_expected
+#     print 'y_expected =', y_expected
+#     print 'z_expected =', z_expected
+#     print 'w_expected =', w_expected
+#     print 'xlower     =', params.xlower
+#     print 'xupper     =', params.xupper
+# 
+#     state = OptimumState()
+# #     state.x = 0.5 * eigen.ones(n)
+# 
+#     options = OptimumOptions()
+#     options.output.active = True
+#     options.max_iterations = 25
+# #     options.kkt.method = method
+#     options.kkt.method = SaddlePointMethod.Rangespace
+# 
+#     solver = OptimumSolver(structure)
+#     solver.setOptions(options)
+#     res = solver.solve(params, state)
+# 
+#     print 'x(calculated) =', state.x
+#     print 'x(expected)   =', x_expected
+#     print
+#     print 'y(calculated) =', state.y
+#     print 'y(eypected)   =', y_expected
+#     print
+#     print 'z(calculated) =', state.z
+#     print 'z(expected)   =', z_expected
+#     print
+#     print 'w(calculated) =', state.w
+#     print 'w(expected)   =', w_expected
+#     print
+#     print 'x(diff)       =', abs(state.x - x_expected)
+#     print 'y(diff)       =', abs(state.y - y_expected)
+#     print 'z(diff)       =', abs(state.z - z_expected)
+#     print 'w(diff)       =', abs(state.w - w_expected)
+#     print
+#     print 'norm(x(diff)) =', norm(abs(state.x - x_expected))
+#     print 'norm(y(diff)) =', norm(abs(state.y - y_expected))
+#     print 'norm(z(diff)) =', norm(abs(state.z - z_expected))
+#     print 'norm(w(diff)) =', norm(abs(state.w - w_expected))
+# 
+#     assert res.succeeded
