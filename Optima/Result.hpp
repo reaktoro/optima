@@ -54,9 +54,6 @@ private:
     /// True if the calculation was successful.
     bool m_success;
 
-    /// The elapsed time in seconds of the calculation.
-    double m_time;
-
     /// The time at which start method was called.
     Time m_start;
 
