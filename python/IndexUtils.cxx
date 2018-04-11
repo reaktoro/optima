@@ -30,4 +30,6 @@ void exportIndexUtils(py::module& m)
     m.def("contains", &contains);
     m.def("partitionLeft", &partitionLeft);
     m.def("partitionRight", &partitionRight);
+    m.def("partitionLeftStable", &partitionLeftStable);
+    m.def("partitionRightStable", &partitionRightStable);
 }
