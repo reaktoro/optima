@@ -28,16 +28,16 @@ def test_optimum_structure():
     structure.A = eigen.random(m, n)
      
     structure.setVariablesWithLowerBounds([0, 2])
-    assert set(structure.variablesWithLowerBounds()) == set([0, 2])
-    assert set(structure.variablesWithoutLowerBounds()) == set([1, 3, 4, 5, 6, 7, 8, 9])
+    assert structure.variablesWithLowerBounds() == approx([0, 2])
+    assert structure.variablesWithoutLowerBounds() == approx([1, 3, 4, 5, 6, 7, 8, 9])
 
     structure.setVariablesWithUpperBounds([2, 4])
-    assert set(structure.variablesWithUpperBounds()) == set([2, 4])
-    assert set(structure.variablesWithoutUpperBounds()) == set([0, 1, 3, 5, 6, 7, 8, 9])
+    assert structure.variablesWithUpperBounds() == approx([2, 4])
+    assert structure.variablesWithoutUpperBounds() == approx([0, 1, 3, 5, 6, 7, 8, 9])
 
     structure.setVariablesWithFixedValues([6, 8, 9])
-    assert set(structure.variablesWithFixedValues()) == set([6, 8, 9])
-    assert set(structure.variablesWithoutFixedValues()) == set([0, 1, 2, 3, 4, 5, 7])
+    assert structure.variablesWithFixedValues() == approx([6, 8, 9])
+    assert structure.variablesWithoutFixedValues() == approx([0, 1, 2, 3, 4, 5, 7])
 
     structure.allVariablesHaveLowerBounds()
     assert structure.variablesWithLowerBounds() == approx(arange(n))
