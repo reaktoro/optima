@@ -33,13 +33,13 @@ Partition::Partition(Index n)
 auto Partition::setFixedVariables(IndicesConstRef inds) -> void
 {
     nf = inds.size();
-    partitionRight(order, inds);
+    partitionRightStable(order, inds);
 }
 
 auto Partition::setFreeVariables(IndicesConstRef inds) -> void
 {
     nf = numVariables() - inds.size();
-    partitionLeft(order, inds);
+    partitionLeftStable(order, inds);
 }
 
 auto Partition::numVariables() const -> Index

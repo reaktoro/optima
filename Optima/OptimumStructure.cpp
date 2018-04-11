@@ -33,7 +33,7 @@ OptimumStructure::OptimumStructure(Index n, Index m)
 auto OptimumStructure::setVariablesWithLowerBounds(IndicesConstRef inds) -> void
 {
     nlower = inds.size();
-    partitionRight(lowerpartition, inds);
+    partitionRightStable(lowerpartition, inds);
 }
 
 auto OptimumStructure::allVariablesHaveLowerBounds() -> void
@@ -45,7 +45,7 @@ auto OptimumStructure::allVariablesHaveLowerBounds() -> void
 auto OptimumStructure::setVariablesWithUpperBounds(IndicesConstRef inds) -> void
 {
     nupper = inds.size();
-    partitionRight(upperpartition, inds);
+    partitionRightStable(upperpartition, inds);
 }
 
 auto OptimumStructure::allVariablesHaveUpperBounds() -> void
@@ -57,7 +57,7 @@ auto OptimumStructure::allVariablesHaveUpperBounds() -> void
 auto OptimumStructure::setVariablesWithFixedValues(IndicesConstRef inds) -> void
 {
     nfixed = inds.size();
-    partitionRight(fixedpartition, inds);
+    partitionRightStable(fixedpartition, inds);
 }
 
 auto OptimumStructure::numVariables() const -> Index
