@@ -17,11 +17,6 @@
 
 #include "OptimumStepper.hpp"
 
-// Eigen includes
-#include <Eigen/LU>
-
-
-
 using namespace Eigen;
 using Eigen::placeholders::all;
 
@@ -184,13 +179,6 @@ struct OptimumStepper::Impl
 
         // Solve the saddle point problem
         solver.solve(rhs, sol);
-
-//		IpSaddlePointMatrix spm(state.H, structure.A, Z, W, L, U, jfixed);
-//		Matrix M = spm;
-//		s = M.fullPivLu().solve(r);
-
-//		// Negate the Newton step dw, because of the use of U = u - x to ensure positive entries
-//        sol.w *= -1.0;
 
         return res.stop();
     }
