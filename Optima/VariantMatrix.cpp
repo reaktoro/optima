@@ -85,14 +85,6 @@ VariantMatrixConstRef::VariantMatrixConstRef(const Vector& diagonal)
 : VariantMatrixConstRef(VectorConstRef(diagonal))
 {}
 
-auto VariantMatrixConstRef::diagonalRef() -> VectorConstRef
-{
-    switch(structure) {
-    case MatrixStructure::Diagonal: return diagonal;
-    default: return dense.diagonal();
-    }
-}
-
 VariantMatrixConstRef::VariantMatrixConstRef(MatrixConstRef dense)
 : dense(dense), diagonal(Vector()), structure(matrixStructure(dense))
 {}
@@ -108,6 +100,14 @@ VariantMatrixConstRef::VariantMatrixConstRef(VariantMatrixRef mat)
 VariantMatrixConstRef::VariantMatrixConstRef(const VariantMatrix& mat)
 : dense(mat.dense), diagonal(mat.diagonal), structure(mat.structure)
 {}
+
+auto VariantMatrixConstRef::diagonalRef() -> VectorConstRef
+{
+    switch(structure) {
+    case MatrixStructure::Diagonal: return diagonal;
+    default: return dense.diagonal();
+    }
+}
 
 auto operator<<(MatrixRef mat, VariantMatrixConstRef vmat) -> MatrixRef
 {
