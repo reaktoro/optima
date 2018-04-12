@@ -231,14 +231,14 @@ struct OptimumSolver::Impl
         // Ensure z = mu/(x - xlower) for variables with lower bounds
         for(Index i : ilower)
         	state.z[i] = state.x[i] == xlower[i] ?
-        		1.0 : options.mu / (state.x[i] - xlower[i]);
+        		+1.0 : options.mu / (state.x[i] - xlower[i]);
 
 //        state.z(ilower) = options.mu / ( state.x(ilower) - xlower(ilower) );
 
         // Ensure w = mu/(xupper - x) for variables with upper bounds
         for(Index i : iupper)
         	state.w[i] = state.x[i] == xupper[i] ?
-        		1.0 : options.mu / (xupper[i] - state.x[i]);
+        		-1.0 : options.mu / (state.x[i] - xupper[i]);
 //        state.w(iupper) = options.mu / ( xupper(iupper) - state.x(iupper) );
 
         // Set the values of x, z, w corresponding to fixed variables
@@ -439,7 +439,7 @@ struct OptimumSolver::Impl
 
 		// Update the w-Lagrange multipliers for variables with upper bounds
 		for(Index i : iupper)
-			w[i] += (w[i] + dw[i] > 0.0) ?
+			w[i] += (w[i] + dw[i] < 0.0) ?
 				dw[i] : -options.tau * w[i];
 
 		// Update the x variables

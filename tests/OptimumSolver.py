@@ -101,10 +101,10 @@ def test_optimum_solver(args):
     y_expected = linspace(1, m, m)
 
     z_expected = zeros(n)
-    z_expected[jl] = 1.0  # Slack variables z are one at active lower bounds
+    z_expected[jl] = +1.0  # Slack variables z are +1 at active lower bounds
 
     w_expected = zeros(n)
-    w_expected[ju] = 1.0  # Slack variables w are one at active upper bounds
+    w_expected[ju] = -1.0  # Slack variables w are -1 at active upper bounds
 
     jx = structure.variablesWithoutFixedValues()
 
@@ -112,7 +112,7 @@ def test_optimum_solver(args):
     Atx = array(transpose(Ax))
     zx = array(z_expected[jx])  # The rows of z corresponding to free variables
     wx = array(w_expected[jx])  # The rows of w corresponding to free variables
-    gx = zx - wx - Atx.dot(y_expected)
+    gx = zx + wx - Atx.dot(y_expected)
     xx = 0.5 * (gx + 1.0)
 
     x_expected = zeros(n)

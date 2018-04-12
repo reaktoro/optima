@@ -116,13 +116,13 @@ struct OptimumStepper::Impl
 
         // Update W and U for the variables with upper bounds
         W(iupper) = state.w(iupper);
-        U(iupper) = params.xupper - state.x(iupper);
+        U(iupper) = state.x(iupper) - params.xupper;
 
         // Ensure entries in L are positive in case x[i] == lowerbound[i]
 		for(Index i : ilower) L[i] = L[i] > 0.0 ? L[i] : options.mu;
 
-        // Ensure entries in U are positive in case x[i] == upperbound[i]
-		for(Index i : iupper) U[i] = U[i] > 0.0 ? U[i] : options.mu;
+        // Ensure entries in U are negative in case x[i] == upperbound[i]
+		for(Index i : iupper) U[i] = U[i] < 0.0 ? U[i] : -options.mu;
 
         // Define the interior-point saddle point matrix
         IpSaddlePointMatrix spm(state.H, structure.A, Z, W, L, U, ifixed);
@@ -161,7 +161,7 @@ struct OptimumStepper::Impl
         auto d = r.tail(n);
 
         // Calculate the optimality residual vector a
-        a.noalias() = -(g + tr(A) * y - z + w);
+        a.noalias() = -(g + tr(A) * y - z - w);
 
         // Set a to zero for fixed variables
         a(ifixed).fill(0.0);
@@ -171,7 +171,7 @@ struct OptimumStepper::Impl
 
         // Calculate the centrality residual vectors c and d
         for(Index i : ilower) c[i] = options.mu - L[i] * state.z[i]; // TODO Check if mu is still needed. Maybe this algorithm no longer needs perturbation.
-        for(Index i : iupper) d[i] = U[i] * state.w[i] - options.mu;
+        for(Index i : iupper) d[i] = options.mu - U[i] * state.w[i];
 
 //        c.fill(0.0); // TODO For example, there is no mu here and this seems to work
 //        d.fill(0.0);
@@ -189,8 +189,8 @@ struct OptimumStepper::Impl
 //		Matrix M = spm;
 //		s = M.fullPivLu().solve(r);
 
-		// Negate the Newton step dw, because of the use of U = u - x to ensure positive entries
-        sol.w *= -1.0;
+//		// Negate the Newton step dw, because of the use of U = u - x to ensure positive entries
+//        sol.w *= -1.0;
 
         return res.stop();
     }
