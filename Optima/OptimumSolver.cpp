@@ -233,13 +233,10 @@ struct OptimumSolver::Impl
         	state.z[i] = state.x[i] == xlower[i] ?
         		+1.0 : options.mu / (state.x[i] - xlower[i]);
 
-//        state.z(ilower) = options.mu / ( state.x(ilower) - xlower(ilower) );
-
         // Ensure w = mu/(xupper - x) for variables with upper bounds
         for(Index i : iupper)
         	state.w[i] = state.x[i] == xupper[i] ?
         		-1.0 : options.mu / (state.x[i] - xupper[i]);
-//        state.w(iupper) = options.mu / ( xupper(iupper) - state.x(iupper) );
 
         // Set the values of x, z, w corresponding to fixed variables
         state.x(ifixed) = params.xfixed;
@@ -444,19 +441,6 @@ struct OptimumSolver::Impl
 
 		// Update the x variables
 		x = xtrial;
-
-
-		for(Index i : ilower)
-			if(xtrial[i] < xlower[i])
-				RuntimeError("Failed to check lower bounds for variable " + std::to_string(i), "");
-
-
-		for(Index i : iupper)
-			if(xtrial[i] > xupper[i])
-				RuntimeError("Failed to check upper bounds for variable " + std::to_string(i), "");
-
-//		Assert((xtrial.array() > xlower).all(), "Failed to check lower bounds.", "There are variables with values below bounds.");
-//		Assert((xtrial.array() < xupper).all(), "Failed to check lower bounds.", "There are variables with values below bounds.");
 
 		// Update the y-Lagrange multipliers
 		y += dy;
