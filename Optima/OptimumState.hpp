@@ -38,15 +38,6 @@ public:
 
     /// The dual solution of the optimization problem with respect to the upper bound constraints.
     Vector w;
-
-    /// The value of the objective function.
-    double f = 0.0;
-
-    /// The gradient of the objective function.
-    Vector g;
-
-    /// The Hessian of the objective function.
-    VariantMatrix H;
 };
 
 } // namespace Optima

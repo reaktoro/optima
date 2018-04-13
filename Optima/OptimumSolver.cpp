@@ -39,7 +39,7 @@ namespace {
 
 auto isfinite(const ObjectiveResult& res) -> bool
 {
-    return std::isfinite(res.f) && res.g.allFinite();
+    return std::isfinite(res.value) && res.gradient.allFinite();
 }
 
 //auto xStepLength(VectorConstRef x, VectorConstRef dx, VectorConstRef l, VectorConstRef u, double tau) -> double
@@ -80,8 +80,8 @@ struct OptimumSolver::Impl
     /// The calculator of the Newton step (dx, dy, dz, dw)
     OptimumStepper stepper;
 
-    /// The evaluation of the objective function.
-    ObjectiveResult obj;
+    /// The evaluated result of the objective function.
+    ObjectiveResult f;
 
     /// The result of the optimization problem
     OptimumResult result;
@@ -169,7 +169,7 @@ struct OptimumSolver::Impl
 
         outputter.outputHeader();
         outputter.addValue(result.iterations);
-        outputter.addValue(obj.f);
+        outputter.addValue(f.value);
         outputter.addValue(result.error);
         outputter.addValues(state.x);
         outputter.addValues(state.y);
@@ -189,7 +189,7 @@ struct OptimumSolver::Impl
         if(!options.output.active) return;
 
         outputter.addValue(result.iterations);
-        outputter.addValue(obj.f);
+        outputter.addValue(f.value);
         outputter.addValue(result.error);
         outputter.addValues(state.x);
         outputter.addValues(state.y);
@@ -247,7 +247,7 @@ struct OptimumSolver::Impl
         evaluateObjectiveFunction(params, state);
 
         // Assert the objective function produces finite numbers at this point
-        Assert(isfinite(obj),
+        Assert(isfinite(f),
 			"Failure evaluating the objective function.", "The evaluation of "
 			"the objective function at the entry point of the optimization "
 			"calculation produced non-finite numbers, "
@@ -264,17 +264,15 @@ struct OptimumSolver::Impl
     auto evaluateObjectiveFunction(const OptimumParams& params, OptimumState& state) -> void
 	{
         // Establish the current needs for the objective function evaluation
-        obj.requires.f = true;
-        obj.requires.g = true;
-        obj.requires.H = true;
+        f.requires.value = true;
+        f.requires.gradient = true;
+        f.requires.hessian = true;
 
         // Evaluate the objective function
-        obj = params.objective(state.x);
-
-        // Update the state TODO This needs to be improved. OptimumState perhaps should have a ObjectiveState object instead. Thus, state.objective = params.objective(state.x)
-        state.f = obj.f;
-        state.g = obj.g;
-        state.H = obj.H;
+        f.gradient.resize(n);
+        f.hessian.diagonal.resize(n);
+        f.hessian.dense.resize(n, n);
+        params.objective(state.x, f);
 	}
 
     // The function that computes the Newton step
@@ -283,14 +281,14 @@ struct OptimumSolver::Impl
     	Timer timer;
 
     	// Decompose the Jacobian matrix and calculate a Newton step
-        Result res1 = stepper.decompose(params, state);
+        Result res1 = stepper.decompose(params, state, f);
 
         // Assert the decomposition of the Jacobian matrix succeeded
         Assert(res1.success(), "Could not compute a Newton step.",
 			"The decomposition of the Jacobian matrix failed.");
 
         // Calculate the Newton step
-        Result res2 = stepper.solve(params, state);
+        Result res2 = stepper.solve(params, state, f);
 
         // Assert the calculation of the Newton step succeeded
         Assert(res2.success(), "Could not compute a Newton step.",
@@ -337,16 +335,16 @@ struct OptimumSolver::Impl
     	// TODO Use dxtrial to calculate alpha step length to decrease the stepping
 
 //		// Establish the current needs for the objective function evaluation at the trial iterate
-//		obj.requires.f = true;
-//		obj.requires.g = false;
-//		obj.requires.H = false;
+//		f.requires.f = true;
+//		f.requires.g = false;
+//		f.requires.H = false;
 //
 //		// Evaluate the objective function at the trial iterate
-//		obj = params.objective(xtrial);
+//		f = params.objective(xtrial);
 //
-//		state.f = obj.f;
-//		state.g = obj.g;
-//		state.H = obj.H;
+//		state.f = f.f;
+//		state.g = f.g;
+//		state.H = f.H;
 //
 //		// Initialize the step length factor
 //		double alpha = fractionToTheBoundary(x, dx, options.tau);
@@ -355,20 +353,20 @@ struct OptimumSolver::Impl
 //		unsigned tentatives = 0;
 //
 //		// Repeat until f(xtrial) is finite
-//		while(!isfinite(obj) && ++tentatives < 10)
+//		while(!isfinite(f) && ++tentatives < 10)
 //		{
 //			// Calculate a new trial iterate using a smaller step length
 //			xtrial = x + alpha * dx;
 //
 //			// Evaluate the objective function at the new trial iterate
-//			obj.requires.f = true;
-//			obj.requires.g = false;
-//			obj.requires.H = false;
-//			obj = params.objective(xtrial);
+//			f.requires.f = true;
+//			f.requires.g = false;
+//			f.requires.H = false;
+//			f = params.objective(xtrial);
 //
-//			state.f = obj.f;
-//			state.g = obj.g;
-//			state.H = obj.H;
+//			state.f = f.f;
+//			state.g = f.g;
+//			state.H = f.H;
 //
 //			// Decrease the current step length
 //			alpha *= 0.5;
@@ -382,14 +380,14 @@ struct OptimumSolver::Impl
 //		x = xtrial;
 //
 //		// Update the gradient and Hessian at x
-//		obj.requires.f = false;
-//		obj.requires.g = true;
-//		obj.requires.H = true;
-//		obj = params.objective(x);
+//		f.requires.f = false;
+//		f.requires.g = true;
+//		f.requires.H = true;
+//		f = params.objective(x);
 //
-//		state.f = obj.f;
-//		state.g = obj.g;
-//		state.H = obj.H;
+//		state.f = f.f;
+//		state.g = f.g;
+//		state.H = f.H;
 
 	}
 
@@ -487,17 +485,17 @@ struct OptimumSolver::Impl
 //			xtrial = x + alpha * dx;
 //
 //			// Evaluate the objective function at the trial iterate
-//			obj.requires.f = true;
-//			obj.requires.g = false;
-//			obj.requires.H = false;
-//			obj = params.objective(xtrial);
+//			f.requires.f = true;
+//			f.requires.g = false;
+//			f.requires.H = false;
+//			f = params.objective(xtrial);
 //
-//			state.f = obj.f;
-//			state.g = obj.g;
-//			state.H = obj.H;
+//			state.f = f.f;
+//			state.g = f.g;
+//			state.H = f.H;
 //
 //			// Leave the loop if f(xtrial) is finite
-//			if(isfinite(obj))
+//			if(isfinite(f))
 //				break;
 //
 //			// Decrease alpha in a hope that a shorter step results f(xtrial) finite
@@ -521,14 +519,14 @@ struct OptimumSolver::Impl
 //		y += dy;
 //
 //		// Update the gradient and Hessian at x
-//		obj.requires.f = false;
-//		obj.requires.g = true;
-//		obj.requires.H = true;
-//		obj = params.objective(x);
+//		f.requires.f = false;
+//		f.requires.g = true;
+//		f.requires.H = true;
+//		f = params.objective(x);
 //
-//		state.f = obj.f;
-//		state.g = obj.g;
-//		state.H = obj.H;
+//		state.f = f.f;
+//		state.g = f.g;
+//		state.H = f.H;
 //
 //		// Return true as found xtrial results in finite f(xtrial)
 //		return true;

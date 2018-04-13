@@ -34,13 +34,13 @@ class ObjectiveRequirement
 {
 public:
     /// The boolean flag that indicates the need for the objective value.
-    bool f = true;
+    bool value = true;
 
     /// The boolean flag that indicates the need for the objective gradient.
-    bool g = true;
+    bool gradient = true;
 
     /// The boolean flag that indicates the need for the objective Hessian.
-    bool H = true;
+    bool hessian = true;
 };
 
 /// The result of the evaluation of an objective function.
@@ -49,13 +49,13 @@ class ObjectiveResult
 {
 public:
     /// The evaluated value of the objective function.
-    double f = 0.0;
+    double value = 0.0;
 
     /// The evaluated gradient of the objective function.
-    Vector g;
+    Vector gradient;
 
     /// The evaluated Hessian of the objective function.
-    VariantMatrix H;
+    VariantMatrix hessian;
 
     /// The requirements in the evaluation of the objective function.
     ObjectiveRequirement requires;
@@ -67,6 +67,6 @@ public:
 /// The functional signature of an objective function.
 /// @param x The values of the variables \eq{x}.
 /// @return An ObjectiveResult object with the evaluated result of the objective function.
-using ObjectiveFunction = std::function<ObjectiveResult(VectorConstRef)>;
+using ObjectiveFunction = std::function<void(VectorConstRef, ObjectiveResult&)>;
 
 } // namespace Optima

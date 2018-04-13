@@ -27,12 +27,31 @@ using namespace Optima;
 
 void exportOptimumParams(py::module& m)
 {
+	using ObjectiveFunctionPtr =
+		std::function<void(VectorConstRef, ObjectiveResult*)>;
+
+	// This is a workaround to let Python callback change the state of ObjectiveResult, and not a copy
+	auto get_objective = [](const OptimumParams& self)
+	{
+		return [&](VectorConstRef x, ObjectiveResult* f) {
+			self.objective(x, *f);
+		};
+	};
+
+	// This is a workaround to let Python callback change the state of ObjectiveResult, and not a copy
+	auto set_objective = [](OptimumParams& self, const ObjectiveFunctionPtr& objectiveptr)
+	{
+		self.objective = [=](VectorConstRef x, ObjectiveResult& f) {
+			objectiveptr(x, &f);
+		};
+	};
+
     py::class_<OptimumParams>(m, "OptimumParams")
         .def(py::init<>())
         .def_readwrite("b", &OptimumParams::b)
         .def_readwrite("xlower", &OptimumParams::xlower)
         .def_readwrite("xupper", &OptimumParams::xupper)
         .def_readwrite("xfixed", &OptimumParams::xfixed)
-        .def_readwrite("objective", &OptimumParams::objective)
+        .def_property("objective", get_objective, set_objective)
         ;
 }

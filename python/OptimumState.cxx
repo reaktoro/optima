@@ -26,17 +26,11 @@ using namespace Optima;
 
 void exportOptimumState(py::module& m)
 {
-    const auto getH = [](const OptimumState& self) { return self.H; };
-    const auto setH = [](OptimumState& self, VariantMatrixConstRef other) { return self.H = other; };
-
     py::class_<OptimumState>(m, "OptimumState")
         .def(py::init<>())
         .def_readwrite("x", &OptimumState::x)
         .def_readwrite("y", &OptimumState::y)
         .def_readwrite("z", &OptimumState::z)
         .def_readwrite("w", &OptimumState::w)
-        .def_readwrite("f", &OptimumState::f)
-        .def_readwrite("g", &OptimumState::g)
-        .def_property("H", getH, setH)
         ;
 }

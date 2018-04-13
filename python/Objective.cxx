@@ -28,19 +28,26 @@ using namespace Optima;
 void exportObjective(py::module& m)
 {
     py::class_<ObjectiveRequirement>(m, "ObjectiveRequirement")
-        .def_readwrite("f", &ObjectiveRequirement::f, "The boolean flag that indicates the need for the objective value.")
-        .def_readwrite("g", &ObjectiveRequirement::g, "The boolean flag that indicates the need for the objective gradient.")
-        .def_readwrite("H", &ObjectiveRequirement::H, "The boolean flag that indicates the need for the objective Hessian.")
+        .def_readwrite("value", &ObjectiveRequirement::value, "The boolean flag that indicates the need for the objective value.")
+        .def_readwrite("gradient", &ObjectiveRequirement::gradient, "The boolean flag that indicates the need for the objective gradient.")
+        .def_readwrite("hessian", &ObjectiveRequirement::hessian, "The boolean flag that indicates the need for the objective Hessian.")
         ;
 
-    const auto getH = [](const ObjectiveResult& self) { return self.H; };
-    const auto setH = [](ObjectiveResult& self, VariantMatrixConstRef other) { return self.H = other; };
+    const auto getH = [](const ObjectiveResult& self)
+	{
+    	return self.hessian;
+	};
+
+    const auto setH = [](ObjectiveResult& self, VariantMatrixConstRef other)
+	{
+    	return self.hessian = other;
+	};
 
     py::class_<ObjectiveResult>(m, "ObjectiveResult")
         .def(py::init<>())
-        .def_readwrite("f", &ObjectiveResult::f, "The evaluated value of the objective function.")
-        .def_readwrite("g", &ObjectiveResult::g, "The evaluated gradient of the objective function.")
-        .def_property("H", getH, setH, "The evaluated Hessian of the objective function.")
+        .def_readwrite("value", &ObjectiveResult::value, "The evaluated value of the objective function.")
+        .def_readwrite("gradient", &ObjectiveResult::gradient, "The evaluated gradient of the objective function.")
+        .def_property("hessian", getH, setH, "The evaluated Hessian of the objective function.")
         .def_readwrite("requires", &ObjectiveResult::requires, "The requirements in the evaluation of the objective function.")
         .def_readwrite("failed", &ObjectiveResult::failed, "The boolean flag that indicates if the objective function evaluation failed.")
         ;

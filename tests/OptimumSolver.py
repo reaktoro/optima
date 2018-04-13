@@ -73,12 +73,10 @@ testdata = product(tested_matrices_A,
                    tested_methods)
 
 
-def objective(x):
-    res = ObjectiveResult()
-    res.f = sum((x - 0.5) ** 2)
-    res.g = 2.0 * (x - 0.5)
-    res.H = 2.0 * ones(len(x))
-    return res
+def objective(x, f):
+    f.value = sum((x - 0.5) ** 2)
+    f.gradient = 2.0 * (x - 0.5)
+    f.hessian = 2.0 * ones(len(x))
 
 
 @mark.parametrize("args", testdata)
@@ -132,14 +130,14 @@ def test_optimum_solver(args):
     state = OptimumState()
 
     options = OptimumOptions()
-    options.output.active = True
+#     options.output.active = True
     options.kkt.method = method
 
     solver = OptimumSolver(structure)
     solver.setOptions(options)
     res = solver.solve(params, state)
 
-    print state.x
+#     print state.x
 
     assert res.succeeded
 

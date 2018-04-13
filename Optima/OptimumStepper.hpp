@@ -26,8 +26,9 @@
 namespace Optima {
 
 // Forward declarations
-class IpSaddlePointVector;
 class IpSaddlePointMatrix;
+class IpSaddlePointVector;
+class ObjectiveResult;
 class OptimumOptions;
 class OptimumParams;
 class OptimumState;
@@ -54,11 +55,11 @@ public:
     auto setOptions(const OptimumOptions& options) -> void;
 
     /// Decompose the interior-point saddle point matrix used to compute the step vectors.
-    auto decompose(const OptimumParams& params, const OptimumState& state) -> Result;
+    auto decompose(const OptimumParams& params, const OptimumState& state, const ObjectiveResult& f) -> Result;
 
     /// Solve the interior-point saddle point matrix used to compute the step vectors.
     /// @note Method OptimumStepper::decompose needs to be called first.
-    auto solve(const OptimumParams& params, const OptimumState& state) -> Result;
+    auto solve(const OptimumParams& params, const OptimumState& state, const ObjectiveResult& f) -> Result;
 
     /// Return the calculated Newton step vector.
     /// @note Method OptimumStepper::solve needs to be called first.
@@ -70,7 +71,7 @@ public:
 
     /// Return the assembled interior-point saddle point matrix.
     /// @note Method OptimumStepper::decompose needs to be called first.
-    auto matrix(const OptimumParams& params, const OptimumState& state) -> IpSaddlePointMatrix;
+    auto matrix(const OptimumParams& params, const OptimumState& state, const ObjectiveResult& f) -> IpSaddlePointMatrix;
 
 private:
     struct Impl;

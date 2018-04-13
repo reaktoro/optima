@@ -24,6 +24,7 @@ using Eigen::placeholders::all;
 #include <Optima/Exception.hpp>
 #include <Optima/IpSaddlePointMatrix.hpp>
 #include <Optima/IpSaddlePointSolver.hpp>
+#include <Optima/Objective.hpp>
 #include <Optima/OptimumOptions.hpp>
 #include <Optima/OptimumParams.hpp>
 #include <Optima/OptimumState.hpp>
@@ -95,7 +96,7 @@ struct OptimumStepper::Impl
     }
 
     /// Decompose the interior-point saddle point matrix for diagonal Hessian matrices.
-    auto decompose(const OptimumParams& params, const OptimumState& state) -> Result
+    auto decompose(const OptimumParams& params, const OptimumState& state, const ObjectiveResult& f) -> Result
     {
         // The result of this method call
         Result res;
@@ -120,7 +121,7 @@ struct OptimumStepper::Impl
 		for(Index i : iupper) U[i] = U[i] < 0.0 ? U[i] : -options.mu;
 
         // Define the interior-point saddle point matrix
-        IpSaddlePointMatrix spm(state.H, structure.A, Z, W, L, U, ifixed);
+        IpSaddlePointMatrix spm(f.hessian, structure.A, Z, W, L, U, ifixed);
 
         // Decompose the interior-point saddle point matrix
         solver.decompose(spm);
@@ -129,7 +130,7 @@ struct OptimumStepper::Impl
     }
 
     /// Solve the interior-point saddle point matrix.
-    auto solve(const OptimumParams& params, const OptimumState& state) -> Result
+    auto solve(const OptimumParams& params, const OptimumState& state, const ObjectiveResult& f) -> Result
     {
         // The result of this method call
         Result res;
@@ -139,7 +140,9 @@ struct OptimumStepper::Impl
         VectorConstRef y = state.y;
         VectorConstRef z = state.z;
         VectorConstRef w = state.w;
-        VectorConstRef g = state.g;
+
+        // Alias to objective variables
+        VectorConstRef g = f.gradient;
 
         // Alias to structure variables
         MatrixConstRef A = structure.A;
@@ -165,8 +168,8 @@ struct OptimumStepper::Impl
         b.noalias() = -(A * x - params.b);
 
         // Calculate the centrality residual vectors c and d
-        for(Index i : ilower) c[i] = options.mu - L[i] * state.z[i]; // TODO Check if mu is still needed. Maybe this algorithm no longer needs perturbation.
-        for(Index i : iupper) d[i] = options.mu - U[i] * state.w[i];
+        for(Index i : ilower) c[i] = options.mu - L[i] * z[i]; // TODO Check if mu is still needed. Maybe this algorithm no longer needs perturbation.
+        for(Index i : iupper) d[i] = options.mu - U[i] * w[i];
 
 //        c.fill(0.0); // TODO For example, there is no mu here and this seems to work
 //        d.fill(0.0);
@@ -196,13 +199,13 @@ struct OptimumStepper::Impl
     }
 
     /// Return the assembled interior-point saddle point matrix.
-    auto matrix(const OptimumParams& params, const OptimumState& state) -> IpSaddlePointMatrix
+    auto matrix(const OptimumParams& params, const OptimumState& state, const ObjectiveResult& f) -> IpSaddlePointMatrix
     {
         // The indices of the variables with fixed values
         IndicesConstRef ifixed = structure.variablesWithFixedValues();
 
         // Define the interior-point saddle point matrix
-        return IpSaddlePointMatrix(state.H, structure.A, Z, W, L, U, ifixed);
+        return IpSaddlePointMatrix(f.hessian, structure.A, Z, W, L, U, ifixed);
     }
 };
 
@@ -229,19 +232,19 @@ auto OptimumStepper::setOptions(const OptimumOptions& options) -> void
     pimpl->solver.setOptions(options.kkt);
 }
 
-auto OptimumStepper::decompose(const OptimumParams& params, const OptimumState& state) -> Result
+auto OptimumStepper::decompose(const OptimumParams& params, const OptimumState& state, const ObjectiveResult& f) -> Result
 {
-    return pimpl->decompose(params, state);
+    return pimpl->decompose(params, state, f);
 }
 
-auto OptimumStepper::solve(const OptimumParams& params, const OptimumState& state) -> Result
+auto OptimumStepper::solve(const OptimumParams& params, const OptimumState& state, const ObjectiveResult& f) -> Result
 {
-    return pimpl->solve(params, state);
+    return pimpl->solve(params, state, f);
 }
 
-auto OptimumStepper::matrix(const OptimumParams& params, const OptimumState& state) -> IpSaddlePointMatrix
+auto OptimumStepper::matrix(const OptimumParams& params, const OptimumState& state, const ObjectiveResult& f) -> IpSaddlePointMatrix
 {
-    return pimpl->matrix(params, state);
+    return pimpl->matrix(params, state, f);
 }
 
 auto OptimumStepper::step() const -> IpSaddlePointVector
