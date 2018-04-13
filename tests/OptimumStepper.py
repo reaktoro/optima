@@ -83,19 +83,25 @@ def test_optimum_stepper(args):
     nlower = len(jlower)
     nupper = len(jupper)
     
+    t = 3*n + m
+    
+    A = assemble_A(m, n, nfixed)
+    
     structure = OptimumStructure(n, m)
     structure.setVariablesWithFixedValues(jfixed)
     structure.setVariablesWithLowerBounds(jlower)
     structure.setVariablesWithUpperBounds(jupper)
-    structure.A = assemble_A(m, n, nfixed)
+    structure.A = A
 
     state = OptimumState()
-    state.x = eigen.random(n)
-    state.y = eigen.random(m)
-    state.z = eigen.random(n)
-    state.w = eigen.random(n)
-    state.g = eigen.random(n)
-    state.H = eigen.random(n, n) if structure_H == 'dense' else eigen.random(n)
+    state.x = linspace(1, n, n)
+    state.y = linspace(1, m, m)
+    state.z = linspace(1, n, n)
+    state.w = linspace(1, n, n)
+    
+    f = ObjectiveResult()
+    f.gradient = linspace(1, n, n)
+    f.hessian = eigen.random(n, n) if structure_H == 'dense' else eigen.random(n)
 
     params = OptimumParams()
     params.b = structure.A.dot(state.x)  # *** IMPORTANT *** b = A*x is essential here when A has linearly dependent rows, because it ensures a consistent set of values for vector b (see note in the documentation of SaddlePointSolver class).
@@ -108,10 +114,13 @@ def test_optimum_stepper(args):
     
     stepper = OptimumStepper(structure)
     stepper.setOptions(options)
-    stepper.decompose(params, state)
-    stepper.solve(params, state)
+    stepper.decompose(params, state, f)
+    M = stepper.matrix(params, state, f).array()
+    expected = linspace(1, t, t)
+    rhs = M.dot(expected)
+    
+    stepper.solve(params, state, f)
 
-    M = stepper.matrix(params, state).array()
     s = stepper.step().array()
     r = stepper.residual().array()
 
