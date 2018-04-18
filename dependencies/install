@@ -1,0 +1,29 @@
+#-------------------------------------------------------------
+# This is script assumes it is executed from CMAKE_SOURCE_DIR.
+# In other words, from the root of the main project.
+#-------------------------------------------------------------
+
+# Use this module to get the number of processors/cores available
+include(ProcessorCount)
+
+# Ensure some parallel build for the external dependencies
+if(NOT DEFINED JOBS OR JOBS LESS 1)
+    ProcessorCount(JOBS)
+    if(JOBS LESS 4)
+        set(JOBS 1)
+    else()
+        # Remove two cores/processors to prevent freezing of the system
+        math(EXPR JOBS "${JOBS} - 2")
+    endif()
+endif()
+
+# Create the external directory under CMAKE_SOURCE_DIR
+execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory external)
+
+# Configure the installation of the external dependencies
+execute_process(COMMAND ${CMAKE_COMMAND} -E chdir external
+    ${CMAKE_COMMAND} ../dependencies -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})
+
+# Build and install the external dependencies 
+# TODO: The following needs to be adapted for Visual Studio (/MP4 means 4 jobs)
+execute_process(COMMAND ${CMAKE_COMMAND} --build external -- -j${JOBS})

@@ -17,11 +17,11 @@ set(OPTIMA_VERSION_MICRO "0")
 set(OPTIMA_VERSION "${OPTIMA_VERSION_MAJOR}.${OPTIMA_VERSION_MINOR}.${OPTIMA_VERSION_MICRO}")
 
 # Define which Optima targets to build
-option(BUILD_ALL    "Build everything." OFF)
-option(BUILD_DEMOS  "Build demos." OFF)
-option(BUILD_DOCS   "Build documentation." OFF)
-option(BUILD_PYTHON "Build the python wrappers." ON)
-option(BUILD_BENCH  "Build benchmarks." OFF)
+option(OPTIMA_BUILD_ALL    "Build everything." OFF)
+option(OPTIMA_BUILD_DEMOS  "Build demos." OFF)
+option(OPTIMA_BUILD_DOCS   "Build documentation." OFF)
+option(OPTIMA_BUILD_PYTHON "Build the python wrappers." ON)
+option(OPTIMA_BUILD_BENCH  "Build benchmarks." OFF)
 
 # Option to conveniently permit build in debug mode
 option(DEBUG "Build in debug mode." OFF)
@@ -39,18 +39,12 @@ if(EIGEN_RUNTIME_NO_MALLOC)
     add_definitions(-DEIGEN_RUNTIME_NO_MALLOC)
 endif()
 
-# Modify the BUILD_XXX variables accordingly to BUILD_ALL
-if(BUILD_ALL MATCHES ON)
-    set(BUILD_DEMOS  ON)
-    set(BUILD_DOCS   ON)
-    set(BUILD_PYTHON ON)
+# Modify the BUILD_XXX variables accordingly to OPTIMA_BUILD_ALL
+if(OPTIMA_BUILD_ALL MATCHES ON)
+    set(OPTIMA_BUILD_DEMOS  ON)
+    set(OPTIMA_BUILD_DOCS   ON)
+    set(OPTIMA_BUILD_PYTHON ON)
 endif()
-
-# # Find Eigen library and include its directory
-# find_package(Eigen3 3.3.5 REQUIRED)
-
-# # Include Eigen directory
-# include_directories(${EIGEN3_INCLUDE_DIR})
 
 # Set the output directories of the built libraries and binaries
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -91,67 +85,48 @@ endif()
 # Output a message detailing the build type used
 message(STATUS "Using build type `${CMAKE_BUILD_TYPE}` for ${PROJECT_NAME}.")
 
-
-# Build the external projects that have not been built yet
-if(EXTERNAL_EXCLUDE_FROM_ALL)
-    add_subdirectory(dependencies EXCLUDE_FROM_ALL)
-else()
-    add_subdirectory(dependencies)
-endif()
-
-# Find pybind11 library
-if(BUILD_PYTHON)
-    if(NOT PYBIND11_PYTHON_VERSION)
-        set(PYBIND11_PYTHON_VERSION 2.7)
-    endif()
-    
-    find_package(pybind11 2.2.2 REQUIRED)
-
-    if(NOT pybind11_FOUND)
-        set(BUILD_PYTHON OFF)
-        message(WARNING "pybind11 was not found. "
-            "Cannot build python wrappers and packages for Optima.")
-    endif()
-endif()
+# Specify where the external dependencies are installed using CMAKE_PREFIX_PATH.
+# This will allow cmake commands find_package, find_program, find_library, find_file,
+# and find_path to work properly with the installed external dependencies.
+set(CMAKE_PREFIX_PATH ${CMAKE_SOURCE_DIR}/external/)
+set(CMAKE_INCLUDE_PATH ${CMAKE_SOURCE_DIR}/external/include)
 
 # Include the root directory of the project
 include_directories(${CMAKE_SOURCE_DIR})
 
-# Include directories from external projects
+# Include directories for the previously installed external projects
 include_directories(${CMAKE_SOURCE_DIR}/external/include/)
 
 # Build the C++ library Optima
 add_subdirectory(Optima)
 
 # Build the python wrappers
-if(BUILD_PYTHON)
+if(OPTIMA_BUILD_PYTHON)
     add_subdirectory(python)
 else()
     add_subdirectory(python EXCLUDE_FROM_ALL)
 endif()
 
 # Build the demonstration applications
-if(BUILD_DEMOS)
+if(OPTIMA_BUILD_DEMOS)
     add_subdirectory(demos)
 else()
     add_subdirectory(demos EXCLUDE_FROM_ALL)
 endif()
 
 # Build the project documentation
-if(BUILD_DOCS)
+if(OPTIMA_BUILD_DOCS)
     add_subdirectory(docs)
 else()
     add_subdirectory(docs EXCLUDE_FROM_ALL)
 endif()
 
-# Build the benchmarks
-if(BUILD_BENCH)
-    add_subdirectory(bench)
-else()
-    add_subdirectory(bench EXCLUDE_FROM_ALL)
-endif()
+# Add target "dependencies" for manual building of the external dependencies, as `make dependencies`
+add_custom_target(dependencies
+    COMMAND ${CMAKE_COMMAND} -P dependencies/install
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 
-# Add target "demos" for manual building of demos, as `make demos`, if BUILD_DEMOS is OFF
+# Add target "demos" for manual building of demos, as `make demos`, if OPTIMA_BUILD_DEMOS is OFF
 add_custom_target(demos
     COMMAND ${CMAKE_MAKE_PROGRAM}
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demos")
@@ -160,8 +135,3 @@ add_custom_target(demos
 add_custom_target(tests
     COMMAND pytest
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/tests")
-
-# Add target "bench" for manual building of benchmarks, as `make bench`, if BUILD_BENCH is OFF
-add_custom_target(bench
-    COMMAND ${CMAKE_MAKE_PROGRAM}
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bench")

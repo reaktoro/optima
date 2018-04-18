@@ -26,10 +26,10 @@ if(BUILD_STATIC_LIBS)
 endif()
 
 # Create an install target for Optima header files
-install(DIRECTORY ${OPTIMA_SOURCE_DIR}
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/Optima
     DESTINATION "include" COMPONENT headers
     FILES_MATCHING PATTERN "*.hpp" PATTERN "*.hxx")
 
 # Create an install target for Eigen header files
-install(DIRECTORY ${OPTIMA_SOURCE_DIR}/Eigen
-    DESTINATION "include/Optima" COMPONENT headers)
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/external/include/Optima
+    DESTINATION "include" COMPONENT headers)
