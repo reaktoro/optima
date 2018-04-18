@@ -1,5 +1,6 @@
-# CMake related files
-build/
+# Build directories
+*build*
+*external*
 
 # Eclipse IDE related files
 .cproject

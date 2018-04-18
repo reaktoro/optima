@@ -18,7 +18,7 @@
 #pragma once
 
 // Eigen includes
-#include <Eigenx/Core>
+#include <Optima/external/eigenx/Eigen/Core>
 
 namespace Optima {
 

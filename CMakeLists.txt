@@ -46,11 +46,58 @@ if(BUILD_ALL MATCHES ON)
     set(BUILD_PYTHON ON)
 endif()
 
-# Find Eigen library and include its directory
-find_package(Eigen3 3.3.5 REQUIRED)
+# # Find Eigen library and include its directory
+# find_package(Eigen3 3.3.5 REQUIRED)
 
-# Include Eigen directory
-include_directories(${EIGEN3_INCLUDE_DIR})
+# # Include Eigen directory
+# include_directories(${EIGEN3_INCLUDE_DIR})
+
+# Set the output directories of the built libraries and binaries
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+# Define which types of libraries to build
+option(BUILD_SHARED_LIBS "Build shared libraries." ON)
+option(BUILD_STATIC_LIBS "Build static libraries." ON)
+
+# Set libraries to be compiled with position independent code mode (i.e., fPIC option in GNU compilers)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+# Set the list of compiler flags for GNU compiler
+if(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU" OR ${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
+    add_compile_options(-std=c++11 -Wall)
+endif()
+
+# Set the list of compiler flags for MSVC compiler
+if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
+    add_compile_options("/W0 -D_SCL_SECURE_NO_WARNINGS /MP4")
+endif()
+
+# Optima currently is not setup to produce a dynamic library using MSVC, only static
+if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
+    set(BUILD_SHARED_LIBS OFF)
+endif()
+
+# Set the default build type to Release
+if(NOT CMAKE_BUILD_TYPE)
+    # The build type selection for the project
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the build type for ${PROJECT_NAME}." FORCE)
+
+    # The build type options for the project
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release MinSizeRel RelWithDebInfo)
+endif()
+
+# Output a message detailing the build type used
+message(STATUS "Using build type `${CMAKE_BUILD_TYPE}` for ${PROJECT_NAME}.")
+
+
+# Build the external projects that have not been built yet
+if(EXTERNAL_EXCLUDE_FROM_ALL)
+    add_subdirectory(dependencies EXCLUDE_FROM_ALL)
+else()
+    add_subdirectory(dependencies)
+endif()
 
 # Find pybind11 library
 if(BUILD_PYTHON)
@@ -67,42 +114,11 @@ if(BUILD_PYTHON)
     endif()
 endif()
 
-# Set the output directories of the built libraries and binaries
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-
-# Define which types of libraries to build
-option(BUILD_SHARED_LIBS "Build shared libraries." ON)
-option(BUILD_STATIC_LIBS "Build static libraries." ON)
-
-# Optima currently is not setup to produce a dynamic library using MSVC, only static
-if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
-    set(BUILD_SHARED_LIBS OFF)
-endif()
-
-# Set the default build type to Release
-if(NOT CMAKE_BUILD_TYPE)
-    message(STATUS "Setting build type to 'Release' as none was specified.")
-    set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
-    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
-endif()
-
-# Set libraries to be compiled with position independent code mode (i.e., fPIC option in GNU compilers)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-# Set the list of compiler flags for GNU compiler
-if(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU" OR ${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
-    add_compile_options(-std=c++11 -Wall)
-endif()
-
-# Set the list of compiler flags for MSVC compiler
-if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
-    add_compile_options("/W0 -D_SCL_SECURE_NO_WARNINGS /MP4")
-endif()
-
-# Set the include directories
+# Include the root directory of the project
 include_directories(${CMAKE_SOURCE_DIR})
+
+# Include directories from external projects
+include_directories(${CMAKE_SOURCE_DIR}/external/include/)
 
 # Build the C++ library Optima
 add_subdirectory(Optima)
