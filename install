@@ -4,7 +4,7 @@
 #-------------------------------------------------------------
 
 # Include this file to define a variable JOBS
-include(cmake/Jobs.cmake)
+include(cmake/ParallelJobs.cmake)
 
 # Include this file to output colored text messages
 include(cmake/ColoredText.cmake)

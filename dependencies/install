@@ -4,7 +4,7 @@
 #-------------------------------------------------------------
 
 # Include this file to define a variable JOBS
-include(cmake/Jobs.cmake)
+include(cmake/ParallelJobs.cmake)
 
 # Set the build type to Release by default, if not provided
 if(NOT DEFINED BUILD_TYPE)
