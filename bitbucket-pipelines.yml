@@ -10,7 +10,6 @@ pipelines:
     - step:
         script: # Modify the commands below to build your repository.
           - apt-get update
-          - apt-get install -y cmake python python-pip pytest
           - apt-get install -y cmake
           - apt-get install -y python
           - apt-get install -y python-numpy
