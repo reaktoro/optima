@@ -23,14 +23,6 @@ option(OPTIMA_BUILD_DOCS   "Build documentation." OFF)
 option(OPTIMA_BUILD_PYTHON "Build the python wrappers." ON)
 option(OPTIMA_BUILD_BENCH  "Build benchmarks." OFF)
 
-# Option to conveniently permit build in debug mode
-option(DEBUG "Build in debug mode." OFF)
-
-# Set debug mode if DEBUG is ON
-if(DEBUG)
-    set(CMAKE_BUILD_TYPE Debug)
-endif()
-
 # Option to allow or not Eigen to allocate memory at runtime
 option(EIGEN_RUNTIME_NO_MALLOC "Allow or not Eigen to allocate memory at runtime" OFF)
 
@@ -85,17 +77,24 @@ endif()
 # Output a message detailing the build type used
 message(STATUS "Using build type `${CMAKE_BUILD_TYPE}` for ${PROJECT_NAME}.")
 
-# Specify where the external dependencies are installed using CMAKE_PREFIX_PATH.
-# This will allow cmake commands find_package, find_program, find_library, find_file,
-# and find_path to work properly with the installed external dependencies.
-set(CMAKE_PREFIX_PATH ${CMAKE_SOURCE_DIR}/external/)
-set(CMAKE_INCLUDE_PATH ${CMAKE_SOURCE_DIR}/external/include)
+# Set the build path for the external dependencies, if not provided
+if(NOT DEFINED EXTERNAL_BUILD_PATH)
+    set(EXTERNAL_BUILD_PATH ${CMAKE_SOURCE_DIR}/external)
+endif()
+
+# Set path variables for the include and lib directories of the installed dependencies
+set(EXTERNAL_INCLUDE_PATH ${EXTERNAL_BUILD_PATH}/include)
+set(EXTERNAL_LIBRARY_PATH ${EXTERNAL_BUILD_PATH}/lib)
+
+# Copy Eigen header files to PROJECT_NAME/external/eigenx
+file(COPY ${EXTERNAL_INCLUDE_PATH}/eigenx
+    DESTINATION ${EXTERNAL_INCLUDE_PATH}/${PROJECT_NAME}/external/)
 
 # Include the root directory of the project
 include_directories(${CMAKE_SOURCE_DIR})
 
-# Include directories for the previously installed external projects
-include_directories(${CMAKE_SOURCE_DIR}/external/include/)
+# Include directories for the previously installed external dependencies
+include_directories(${EXTERNAL_INCLUDE_PATH})
 
 # Build the C++ library Optima
 add_subdirectory(Optima)

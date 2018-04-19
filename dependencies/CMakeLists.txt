@@ -65,8 +65,13 @@ ExternalProject_Add(PYBIND11
     # GIT_PROGRESS TRUE
     # DOWNLOAD_DIR ${CMAKE_BINARY_DIR}/download
 
+# file(COPY ${CMAKE_INSTALL_PREFIX}/include/eigenx
+#     DESTINATION ${CMAKE_INSTALL_PREFIX}/include/Optima/external/eigenx)
 # Copy the installed include directories from the EIGEN target and install under external dir
-add_custom_command(TARGET EIGENX POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_INSTALL_PREFIX}/include/eigenx
-        ${CMAKE_INSTALL_PREFIX}/include/Optima/external/eigenx)
+# add_custom_command(TARGET EIGENX POST_BUILD
+#     COMMAND ${CMAKE_COMMAND} -E copy_directory
+#         ${CMAKE_INSTALL_PREFIX}/include/eigenx
+#         ${CMAKE_INSTALL_PREFIX}/include/Optima/external/eigenx)
+# add_custom_command(TARGET EIGENX POST_BUILD
+#     COMMENT "Executing the post build command"
+#     COMMAND ${CMAKE_COMMAND} -E echo Hello)

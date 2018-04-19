@@ -31,5 +31,5 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/Optima
     FILES_MATCHING PATTERN "*.hpp" PATTERN "*.hxx")
 
 # Create an install target for Eigen header files
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/external/include/Optima
+install(DIRECTORY ${EXTERNAL_INCLUDE_PATH}/Optima
     DESTINATION "include" COMPONENT headers)

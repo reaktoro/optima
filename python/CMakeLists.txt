@@ -7,12 +7,12 @@ if(NOT PYBIND11_PYTHON_VERSION)
 endif()
 
 # Include the Eigen include path for pybind11
-include_directories(${CMAKE_SOURCE_DIR}/external/include/eigenx)
+include_directories(${EXTERNAL_INCLUDE_PATH}/eigenx)
 
 # Find a local installation of pybind11
 find_package(pybind11 REQUIRED
     NO_DEFAULT_PATH  # used to prevent system installed pybind11
-    PATHS ${CMAKE_SOURCE_DIR}/external/)
+    PATHS ${EXTERNAL_BUILD_PATH})
 
 # Compile Optima cxx files into a Python module
 pybind11_add_module(optima ${CXX_FILES} $<TARGET_OBJECTS:OptimaObject>)
