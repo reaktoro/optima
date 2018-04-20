@@ -22,7 +22,7 @@ message(STATUS "Using build type `${CMAKE_BUILD_TYPE}` for all external dependen
 # Set the path where the external dependencies should be installed
 set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
 
-# Set the common cmake arguments to all external dependencies
+# Set the common cmake arguments for all external dependencies
 set(EXTERNAL_CMAKE_ARGS
     -DCMAKE_GENERATOR=${CMAKE_GENERATOR}
     -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
@@ -38,20 +38,14 @@ set(EXTERNAL_CMAKE_ARGS
     --no-warn-unused-cli
     )
 
-# Download the external dependencies (git submodules) if they haven't yet
+# Update, and download if needed, the external dependencies in the form of git submodule
 execute_process(COMMAND git submodule update --init --recursive)
 
-# Build the Eigenx library and do an intermediate install to EXTERNAL_INTERMEDIATE_INSTALL_DIR
+# Build and install the Eigenx library
 ExternalProject_Add(EIGENX
     PREFIX build
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Eigenx
-    CMAKE_ARGS ${EXTERNAL_CMAKE_ARGS}
-    # GIT_REPOSITORY "https://bitbucket.org/reaktoro/eigenx.git"
-    # GIT_TAG "master"
-    # GIT_SHALLOW TRUE
-    # GIT_PROGRESS TRUE
-    # DOWNLOAD_DIR ${CMAKE_BINARY_DIR}/download
-    )
+    CMAKE_ARGS ${EXTERNAL_CMAKE_ARGS})
 
 # Build the pybind11 library and do an intermediate install to EXTERNAL_INTERMEDIATE_INSTALL_DIR
 ExternalProject_Add(PYBIND11
@@ -59,19 +53,3 @@ ExternalProject_Add(PYBIND11
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/pybind11
     CMAKE_ARGS ${EXTERNAL_CMAKE_ARGS}
     CMAKE_ARGS -DPYBIND11_TEST=OFF)
-    # GIT_REPOSITORY "https://github.com/reaktoro/pybind11.git"
-    # GIT_TAG "master"
-    # GIT_SHALLOW TRUE
-    # GIT_PROGRESS TRUE
-    # DOWNLOAD_DIR ${CMAKE_BINARY_DIR}/download
-
-# file(COPY ${CMAKE_INSTALL_PREFIX}/include/eigenx
-#     DESTINATION ${CMAKE_INSTALL_PREFIX}/include/Optima/external/eigenx)
-# Copy the installed include directories from the EIGEN target and install under external dir
-# add_custom_command(TARGET EIGENX POST_BUILD
-#     COMMAND ${CMAKE_COMMAND} -E copy_directory
-#         ${CMAKE_INSTALL_PREFIX}/include/eigenx
-#         ${CMAKE_INSTALL_PREFIX}/include/Optima/external/eigenx)
-# add_custom_command(TARGET EIGENX POST_BUILD
-#     COMMENT "Executing the post build command"
-#     COMMAND ${CMAKE_COMMAND} -E echo Hello)
