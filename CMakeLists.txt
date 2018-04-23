@@ -90,10 +90,10 @@ set(EXTERNAL_LIBRARY_PATH ${EXTERNAL_BUILD_PATH}/lib)
 file(COPY ${EXTERNAL_INCLUDE_PATH}/eigenx
     DESTINATION ${EXTERNAL_INCLUDE_PATH}/${PROJECT_NAME}/external/)
 
-# Include the root directory of the project
+# Add the root path of this project to the cmake include directories
 include_directories(${CMAKE_SOURCE_DIR})
 
-# Include directories for the previously installed external dependencies
+# Add the include path of the installed external dependencies to the cmake include directories
 include_directories(${EXTERNAL_INCLUDE_PATH})
 
 # Build the C++ library Optima
