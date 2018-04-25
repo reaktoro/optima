@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.0)
 
 # Set the name of the project
-project(Optima)
+project(Optima VERSION 0.1 LANGUAGES CXX)
 
 # Set the cmake module path of the project
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
@@ -10,11 +10,8 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 # Include the cmake variables with values for installation directories
 include(GNUInstallDirs)
 
-# Set the version of the project
-set(OPTIMA_VERSION_MAJOR "0")
-set(OPTIMA_VERSION_MINOR "1")
-set(OPTIMA_VERSION_MICRO "0")
-set(OPTIMA_VERSION "${OPTIMA_VERSION_MAJOR}.${OPTIMA_VERSION_MINOR}.${OPTIMA_VERSION_MICRO}")
+# Include this file to output colored text messages
+include(cmake/ColoredText.cmake)
 
 # Define which Optima targets to build
 option(OPTIMA_BUILD_ALL    "Build everything." OFF)
@@ -38,27 +35,24 @@ if(OPTIMA_BUILD_ALL MATCHES ON)
     set(OPTIMA_BUILD_PYTHON ON)
 endif()
 
+# Set OPTIMA_INSTALL_PREFIX to /cmake-install-prefix-path/Optima/v1.2.3 if not defined 
+if(NOT DEFINED OPTIMA_INSTALL_PREFIX)
+    set(OPTIMA_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}/v${PROJECT_VERSION})
+endif()
+
 # Set the output directories of the built libraries and binaries
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
+
+# Set the directories where libraries and header files are installed
+set(OPTIMA_INSTALL_LIBDIR     ${OPTIMA_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
+set(OPTIMA_INSTALL_BINDIR     ${OPTIMA_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR})
+set(OPTIMA_INSTALL_INCLUDEDIR ${OPTIMA_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR})
 
 # Define which types of libraries to build
 option(BUILD_SHARED_LIBS "Build shared libraries." ON)
 option(BUILD_STATIC_LIBS "Build static libraries." ON)
-
-# Set libraries to be compiled with position independent code mode (i.e., fPIC option in GNU compilers)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-# Set the list of compiler flags for GNU compiler
-if(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU" OR ${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
-    add_compile_options(-std=c++11 -Wall)
-endif()
-
-# Set the list of compiler flags for MSVC compiler
-if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
-    add_compile_options("/W0 -D_SCL_SECURE_NO_WARNINGS /MP4")
-endif()
 
 # Optima currently is not setup to produce a dynamic library using MSVC, only static
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
@@ -74,27 +68,35 @@ if(NOT CMAKE_BUILD_TYPE)
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release MinSizeRel RelWithDebInfo)
 endif()
 
-# Output a message detailing the build type used
-message(STATUS "Using build type `${CMAKE_BUILD_TYPE}` for ${PROJECT_NAME}.")
+# The default path where the external dependencies are installed 
+set(OPTIMA_EXTERNAL_BUILD_PATH_DEFAULT ${CMAKE_SOURCE_DIR}/build/dependencies)
 
-# Set the build path for the external dependencies, if not provided
-if(NOT DEFINED EXTERNAL_BUILD_PATH)
-    set(EXTERNAL_BUILD_PATH ${CMAKE_SOURCE_DIR}/external)
+# Set the build path for the external dependencies, if not provided, and install them there
+if(NOT DEFINED OPTIMA_EXTERNAL_BUILD_PATH)
+    # Check if the dependencies have been installed in the default build/dependencies dir 
+    if(EXISTS ${OPTIMA_EXTERNAL_BUILD_PATH_DEFAULT}/include)
+        set(OPTIMA_EXTERNAL_BUILD_PATH ${OPTIMA_EXTERNAL_BUILD_PATH_DEFAULT})
+    else()
+    message(FATAL_ERROR "\nCould not find the installed external dependencies. "
+        "Have you already installed it using:\n"
+        "\tcmake -P dependencies/install\n"
+        "issued from the root directory? "
+        "If you installed the dependencies in a directory different than the default:\n"
+        "\t${OPTIMA_EXTERNAL_BUILD_PATH_DEFAULT}\n"
+        "you need to set OPTIMA_EXTERNAL_BUILD_PATH variable to that path using:\n"
+        "\tcmake . -DOPTIMA_EXTERNAL_BUILD_PATH=/some/to/installed/dependencies")
+    endif()
 endif()
 
 # Set path variables for the include and lib directories of the installed dependencies
-set(EXTERNAL_INCLUDE_PATH ${EXTERNAL_BUILD_PATH}/include)
-set(EXTERNAL_LIBRARY_PATH ${EXTERNAL_BUILD_PATH}/lib)
-
-# Copy Eigen header files to PROJECT_NAME/external/eigenx
-file(COPY ${EXTERNAL_INCLUDE_PATH}/eigenx
-    DESTINATION ${EXTERNAL_INCLUDE_PATH}/${PROJECT_NAME}/external/)
+set(OPTIMA_EXTERNAL_INCLUDE_PATH ${OPTIMA_EXTERNAL_BUILD_PATH}/include)
+set(OPTIMA_EXTERNAL_LIBRARY_PATH ${OPTIMA_EXTERNAL_BUILD_PATH}/lib)
 
 # Add the root path of this project to the cmake include directories
 include_directories(${CMAKE_SOURCE_DIR})
 
 # Add the include path of the installed external dependencies to the cmake include directories
-include_directories(${EXTERNAL_INCLUDE_PATH})
+include_directories(${OPTIMA_EXTERNAL_INCLUDE_PATH})
 
 # Build the C++ library Optima
 add_subdirectory(Optima)
@@ -134,3 +136,16 @@ add_custom_target(demos
 add_custom_target(tests
     COMMAND pytest
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/tests")
+
+# Print a summary of the configuration
+#if(NOT DEFINED OPTIMA_DISABLE_SUMMARY)
+#    message("====================================================================================================")
+#    message("Summary")
+#    message("====================================================================================================")
+#    message("${PROJECT_NAME} will be compiled in ${CMAKE_BUILD_TYPE} mode.")
+#    message("${PROJECT_NAME} will be installed in:")
+#    message("    ${OPTIMA_INSTALL_PREFIX}")
+#    message("----------------------------------------------------------------------------------------------------")
+#    message("*** To disable this summary, set OPTIMA_DISABLE_SUMMARY to ON ***")
+#    message("====================================================================================================")
+#endif()

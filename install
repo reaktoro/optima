@@ -41,19 +41,26 @@ else()
     set(ABSOLUTE_INSTALL_PATH ${INSTALL_PATH})
 endif()
 
-# Set the build path for the external dependencies under CMAKE_SOURCE_DIR/external, if not provided
+# Set the build path for the external dependencies, if not provided
 if(NOT DEFINED EXTERNAL_BUILD_PATH)
-    set(EXTERNAL_BUILD_PATH ${CMAKE_SOURCE_DIR}/external)
+    set(EXTERNAL_BUILD_PATH ${CMAKE_SOURCE_DIR}/build/dependencies)
+endif()
+
+# Set the build type to Release by default for the external dependencies, if not provided
+if(NOT DEFINED EXTERNAL_BUILD_TYPE)
+    set(EXTERNAL_BUILD_TYPE Release)
 endif()
 
 # Install the external dependencies
 execute_process(COMMAND ${CMAKE_COMMAND} 
-    -DJOBS=${JOBS} -DBUILD_PATH=${EXTERNAL_BUILD_PATH} -P dependencies/install)
+    -DJOBS=${JOBS} 
+    -DBUILD_TYPE=${EXTERNAL_BUILD_TYPE} 
+    -DBUILD_PATH=${EXTERNAL_BUILD_PATH} -P dependencies/install)
 
 # Configure the compilation and installation of the library
 execute_process(COMMAND ${CMAKE_COMMAND} -E chdir ${BUILD_PATH}
     ${CMAKE_COMMAND} ${CMAKE_SOURCE_DIR} 
-        -DEXTERNAL_BUILD_PATH=${EXTERNAL_BUILD_PATH}
+        -DOPTIMA_EXTERNAL_BUILD_PATH=${EXTERNAL_BUILD_PATH}
         -DCMAKE_BUILD_TYPE=${BUILD_TYPE} 
         -DCMAKE_INSTALL_PREFIX=${INSTALL_PATH})
 
@@ -69,7 +76,7 @@ message("Summary")
 message("====================================================================================================${BoldWhite}")
 message("The number of parallel jobs used were: ${BoldYellow}${JOBS}${BoldWhite}")
 message("The external dependencies were built and installed in:")
-message("    ${BoldYellow}${CMAKE_SOURCE_DIR}/external${BoldWhite}")
+message("    ${BoldYellow}${EXTERNAL_BUILD_PATH}${BoldWhite}")
 message("The library was built in:")
 message("    ${BoldYellow}${ABSOLUTE_BUILD_PATH}${BoldWhite}")
 message("The library was installed in:")

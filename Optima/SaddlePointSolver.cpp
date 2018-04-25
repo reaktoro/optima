@@ -18,8 +18,8 @@
 #include "SaddlePointSolver.hpp"
 
 // Eigen includes
-#include <Optima/external/eigenx/Eigen/Core>
-#include <Optima/external/eigenx/Eigen/LU>
+#include <eigenx/Eigen/Core>
+#include <eigenx/Eigen/LU>
 using namespace Eigen;
 
 // Optima includes
