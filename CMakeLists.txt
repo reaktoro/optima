@@ -10,9 +10,6 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 # Include the cmake variables with values for installation directories
 include(GNUInstallDirs)
 
-# Include this file to output colored text messages
-include(cmake/ColoredText.cmake)
-
 # Define which Optima targets to build
 option(OPTIMA_BUILD_ALL    "Build everything." OFF)
 option(OPTIMA_BUILD_DEMOS  "Build demos." OFF)
