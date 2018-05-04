@@ -23,8 +23,6 @@
 
 namespace Optima {
 
-using namespace Eigen::alias;
-using namespace Eigen::placeholders;
-using namespace Eigen::extensions;
+#include <eigenx/Eigen/Typedefs>
 
 } // namespace Optima
