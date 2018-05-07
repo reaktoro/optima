@@ -1,4 +1,4 @@
-[submodule "dependencies/Eigenx"]
+[submodule "dependencies/eigenx"]
 	path = dependencies/eigenx
 	url = git@bitbucket.org:reaktoro/eigenx.git
 [submodule "dependencies/pybind11"]
