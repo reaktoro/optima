@@ -1,5 +1,5 @@
 # Set cmake version requirement
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.1)
 
 # Set the name of the project
 project(dependencies)
@@ -34,24 +34,14 @@ execute_process(COMMAND git submodule update --init --recursive)
 ExternalProject_Add(EIGENX
     PREFIX build
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/eigenx
+    BUILD_ALWAYS TRUE
     CMAKE_ARGS ${COMMON_CMAKE_ARGS}
     CMAKE_ARGS -DBUILD_TESTING=OFF)
 
-# Build the pybind11 library and do an intermediate install to EXTERNAL_INTERMEDIATE_INSTALL_DIR
+# Build and install the pybind11 library
 ExternalProject_Add(PYBIND11
     PREFIX build
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/pybind11
+    BUILD_ALWAYS TRUE
     CMAKE_ARGS ${COMMON_CMAKE_ARGS}
     CMAKE_ARGS -DPYBIND11_INSTALL=ON -DPYBIND11_TEST=OFF)
-
-# Create target eigenx to force the build of the EIGENX dependency by removing its timestamp file
-add_custom_target(eigenx
-    COMMAND ${CMAKE_COMMAND} -E remove build/src/EIGENX-stamp/EIGENX-build
-    COMMAND ${CMAKE_COMMAND} --build .
-    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
-
-# Create target pybind11 to force the build of the PYBIND11 dependency by removing its timestamp file
-add_custom_target(pybind11
-    COMMAND ${CMAKE_COMMAND} -E remove build/src/PYBIND11-stamp/PYBIND11-build
-    COMMAND ${CMAKE_COMMAND} --build .
-    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
