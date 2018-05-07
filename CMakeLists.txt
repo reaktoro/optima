@@ -32,16 +32,6 @@ if(OPTIMA_BUILD_ALL MATCHES ON)
     set(OPTIMA_BUILD_PYTHON ON)
 endif()
 
-# Set CMAKE_INSTALL_PREFIX based on the availability of variable OPTIMA_INSTALL_PREFIX.
-# If OPTIMA_INSTALL_PREFIX is not defined, then CMAKE_INSTALL_PREFIX is adjusted to:
-#     CMAKE_INSTALL_PREFIX/Optima/vX.Y.Z, 
-# where X.Y.Z is the installed Optima version
-if(NOT DEFINED OPTIMA_INSTALL_PREFIX)
-    set(CMAKE_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}/v${PROJECT_VERSION})
-else()
-    set(CMAKE_INSTALL_PREFIX ${OPTIMA_INSTALL_PREFIX})
-endif()
-
 # Set the output directories of the built libraries and binaries
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
@@ -130,16 +120,3 @@ add_custom_target(demos
 add_custom_target(tests
     COMMAND pytest
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/tests")
-
-# Print a summary of the configuration
-#if(NOT DEFINED OPTIMA_DISABLE_SUMMARY)
-#    message("====================================================================================================")
-#    message("Summary")
-#    message("====================================================================================================")
-#    message("${PROJECT_NAME} will be compiled in ${CMAKE_BUILD_TYPE} mode.")
-#    message("${PROJECT_NAME} will be installed in:")
-#    message("    ${CMAKE_INSTALL_PREFIX}")
-#    message("----------------------------------------------------------------------------------------------------")
-#    message("*** To disable this summary, set OPTIMA_DISABLE_SUMMARY to ON ***")
-#    message("====================================================================================================")
-#endif()
