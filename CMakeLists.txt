@@ -65,6 +65,11 @@ if(NOT CMAKE_BUILD_TYPE)
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release MinSizeRel RelWithDebInfo)
 endif()
 
+# Check if the DEPENDENCIES_PATH cmake variable was provided as argument
+if(DEFINED DEPENDENCIES_PATH)
+    set(OPTIMA_DEPENDENCIES_PATH ${DEPENDENCIES_PATH})
+endif()
+
 # Build and install the dependencies if the path to the installed dependencies is 
 # not provided via the variable OPTIMA_DEPENDENCIES_PATH
 if(NOT DEFINED OPTIMA_DEPENDENCIES_PATH)
@@ -78,8 +83,8 @@ if(NOT DEFINED OPTIMA_DEPENDENCIES_PATH)
 endif()
 
 # Set path variables for the include and lib directories of the installed dependencies
-set(OPTIMA_DEPENDENCIES_INCLUDE_PATH ${OPTIMA_DEPENDENCIES_PATH}/include)
-set(OPTIMA_DEPENDENCIES_LIBRARY_PATH ${OPTIMA_DEPENDENCIES_PATH}/lib)
+set(OPTIMA_DEPENDENCIES_INCLUDE_PATH ${OPTIMA_DEPENDENCIES_PATH}/${CMAKE_INSTALL_INCLUDEDIR})
+set(OPTIMA_DEPENDENCIES_LIBRARY_PATH ${OPTIMA_DEPENDENCIES_PATH}/${CMAKE_INSTALL_LIBDIR})
 
 # Add the root path of this project to the cmake include directories
 include_directories(${CMAKE_SOURCE_DIR})
