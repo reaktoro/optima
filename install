@@ -63,7 +63,7 @@ endif()
 # Configure the compilation and installation of the library
 execute_process(COMMAND ${CMAKE_COMMAND} -E chdir ${BUILD_PATH}
     ${CMAKE_COMMAND} ${CMAKE_SOURCE_DIR} 
-        -DOPTIMA_DEPENDENCIES_PATH=${DEPENDENCIES_PATH}
+        -DDEPENDENCIES_PATH=${DEPENDENCIES_PATH}
         -DCMAKE_BUILD_TYPE=${BUILD_TYPE} 
         -DCMAKE_INSTALL_PREFIX=${INSTALL_PATH})
 
