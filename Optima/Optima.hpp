@@ -17,12 +17,15 @@
 
 #pragma once
 
+// Optima includes
+#include <Optima/Canonicalizer.hpp>
 #include <Optima/Exception.hpp>
 #include <Optima/Index.hpp>
-#include <Optima/Optional.hpp>
-#include <Optima/Outputter.hpp>
-#include <Optima/Result.hpp>
-#include <Optima/Timing.hpp>
+#include <Optima/IndexUtils.hpp>
+#include <Optima/IpSaddlePointMatrix.hpp>
+#include <Optima/IpSaddlePointSolver.hpp>
+#include <Optima/Matrix.hpp>
+#include <Optima/Objective.hpp>
 #include <Optima/OptimumOptions.hpp>
 #include <Optima/OptimumParams.hpp>
 #include <Optima/OptimumProblem.hpp>
@@ -31,15 +34,12 @@
 #include <Optima/OptimumState.hpp>
 #include <Optima/OptimumStepper.hpp>
 #include <Optima/OptimumStructure.hpp>
+#include <Optima/Outputter.hpp>
+#include <Optima/Partition.hpp>
+#include <Optima/Result.hpp>
 #include <Optima/SaddlePointMatrix.hpp>
 #include <Optima/SaddlePointOptions.hpp>
-#include <Optima/SaddlePointProblem.hpp>
-#include <Optima/Result.hpp>
 #include <Optima/SaddlePointSolver.hpp>
-#include <Optima/SaddlePointUtils.hpp>
-#include <Optima/BlockDiagonalMatrix.hpp>
-#include <Optima/Canonicalizer.hpp>
-#include <Optima/EigenExtern.hpp>
-#include <Optima/Matrix.hpp>
+#include <Optima/Timing.hpp>
 #include <Optima/Utils.hpp>
-
+#include <Optima/VariantMatrix.hpp>

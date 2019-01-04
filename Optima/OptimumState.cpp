@@ -19,7 +19,6 @@
 
 // Optima includes
 #include <Optima/OptimumStructure.hpp>
-using namespace Eigen;
 
 namespace Optima {
 

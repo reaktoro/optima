@@ -1,5 +1,5 @@
 # Set cmake version requirement
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.1)
 
 # Set the name of the project
 project(Optima VERSION 0.1 LANGUAGES CXX)
@@ -12,9 +12,6 @@ include(CCache)
 
 # Include the cmake variables with values for installation directories
 include(GNUInstallDirs)
-
-# Include this file to output colored text messages
-include(cmake/ColoredText.cmake)
 
 # Define which Optima targets to build
 option(OPTIMA_BUILD_ALL    "Build everything." OFF)
@@ -38,20 +35,10 @@ if(OPTIMA_BUILD_ALL MATCHES ON)
     set(OPTIMA_BUILD_PYTHON ON)
 endif()
 
-# Set OPTIMA_INSTALL_PREFIX to /cmake-install-prefix-path/Optima/v1.2.3 if not defined 
-if(NOT DEFINED OPTIMA_INSTALL_PREFIX)
-    set(OPTIMA_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}/v${PROJECT_VERSION})
-endif()
-
 # Set the output directories of the built libraries and binaries
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
-
-# Set the directories where libraries and header files are installed
-set(OPTIMA_INSTALL_LIBDIR     ${OPTIMA_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
-set(OPTIMA_INSTALL_BINDIR     ${OPTIMA_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR})
-set(OPTIMA_INSTALL_INCLUDEDIR ${OPTIMA_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR})
 
 # Define which types of libraries to build
 option(BUILD_SHARED_LIBS "Build shared libraries." ON)
@@ -71,35 +58,32 @@ if(NOT CMAKE_BUILD_TYPE)
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release MinSizeRel RelWithDebInfo)
 endif()
 
-# The default path where the external dependencies are installed 
-set(OPTIMA_EXTERNAL_BUILD_PATH_DEFAULT ${CMAKE_SOURCE_DIR}/build/dependencies)
+# Check if the DEPENDENCIES_PATH cmake variable was provided as argument
+if(DEFINED DEPENDENCIES_PATH)
+    set(OPTIMA_DEPENDENCIES_PATH ${DEPENDENCIES_PATH})
+endif()
 
-# Set the build path for the external dependencies, if not provided, and install them there
-if(NOT DEFINED OPTIMA_EXTERNAL_BUILD_PATH)
-    # Check if the dependencies have been installed in the default build/dependencies dir 
-    if(EXISTS ${OPTIMA_EXTERNAL_BUILD_PATH_DEFAULT}/include)
-        set(OPTIMA_EXTERNAL_BUILD_PATH ${OPTIMA_EXTERNAL_BUILD_PATH_DEFAULT})
-    else()
-    message(FATAL_ERROR "\nCould not find the installed external dependencies. "
-        "Have you already installed it using:\n"
-        "\tcmake -P dependencies/install\n"
-        "issued from the root directory? "
-        "If you installed the dependencies in a directory different than the default:\n"
-        "\t${OPTIMA_EXTERNAL_BUILD_PATH_DEFAULT}\n"
-        "you need to set OPTIMA_EXTERNAL_BUILD_PATH variable to that path using:\n"
-        "\tcmake . -DOPTIMA_EXTERNAL_BUILD_PATH=/some/to/installed/dependencies")
-    endif()
+# Build and install the dependencies if the path to the installed dependencies is 
+# not provided via the variable OPTIMA_DEPENDENCIES_PATH
+if(NOT DEFINED OPTIMA_DEPENDENCIES_PATH)
+    # Define the OPTIMA_DEPENDENCIES_PATH to default path under build/dependencies
+    set(OPTIMA_DEPENDENCIES_PATH ${CMAKE_SOURCE_DIR}/build/dependencies 
+        CACHE PATH "Path where the library dependencies of Optima were installed.")
+    
+    # Execute the installation script for the library dependencies
+    execute_process(COMMAND ${CMAKE_COMMAND} -P dependencies/install
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 endif()
 
 # Set path variables for the include and lib directories of the installed dependencies
-set(OPTIMA_EXTERNAL_INCLUDE_PATH ${OPTIMA_EXTERNAL_BUILD_PATH}/include)
-set(OPTIMA_EXTERNAL_LIBRARY_PATH ${OPTIMA_EXTERNAL_BUILD_PATH}/lib)
+set(OPTIMA_DEPENDENCIES_INCLUDE_PATH ${OPTIMA_DEPENDENCIES_PATH}/${CMAKE_INSTALL_INCLUDEDIR})
+set(OPTIMA_DEPENDENCIES_LIBRARY_PATH ${OPTIMA_DEPENDENCIES_PATH}/${CMAKE_INSTALL_LIBDIR})
 
 # Add the root path of this project to the cmake include directories
 include_directories(${CMAKE_SOURCE_DIR})
 
 # Add the include path of the installed external dependencies to the cmake include directories
-include_directories(${OPTIMA_EXTERNAL_INCLUDE_PATH})
+include_directories(${OPTIMA_DEPENDENCIES_INCLUDE_PATH})
 
 # Build the C++ library Optima
 add_subdirectory(Optima)
@@ -139,16 +123,3 @@ add_custom_target(demos
 add_custom_target(tests
     COMMAND pytest
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/tests")
-
-# Print a summary of the configuration
-#if(NOT DEFINED OPTIMA_DISABLE_SUMMARY)
-#    message("====================================================================================================")
-#    message("Summary")
-#    message("====================================================================================================")
-#    message("${PROJECT_NAME} will be compiled in ${CMAKE_BUILD_TYPE} mode.")
-#    message("${PROJECT_NAME} will be installed in:")
-#    message("    ${OPTIMA_INSTALL_PREFIX}")
-#    message("----------------------------------------------------------------------------------------------------")
-#    message("*** To disable this summary, set OPTIMA_DISABLE_SUMMARY to ON ***")
-#    message("====================================================================================================")
-#endif()

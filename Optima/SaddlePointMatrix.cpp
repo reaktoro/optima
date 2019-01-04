@@ -17,13 +17,9 @@
 
 #include "SaddlePointMatrix.hpp"
 
-// Eigen includes
-using namespace Eigen::placeholders;
-
 // Optima includes
 #include <Optima/Exception.hpp>
 #include <Optima/Utils.hpp>
-using namespace Eigen;
 
 namespace Optima {
 

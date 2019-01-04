@@ -23,15 +23,15 @@
 namespace Optima {
 
 /// Define a type that represents an index.
-using Index = std::ptrdiff_t;
+using Index = long int;
 
 /// Define a type that represents a vector of indices.
-using Indices = Eigen::Matrix<Index, Eigen::Dynamic, 1>;
+using Indices = Eigen::VectorXl;
 
 /// Define a type that represents a reference to a vector of indices.
-using IndicesRef = Eigen::Ref<Indices>;
+using IndicesRef = Eigen::VectorXlRef;
 
 /// Define a type that represents a constant reference to a vector of indices.
-using IndicesConstRef = Eigen::Ref<const Indices>;
+using IndicesConstRef = Eigen::VectorXlConstRef;
 
 } // namespace Optima
