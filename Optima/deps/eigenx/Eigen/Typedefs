@@ -1,0 +1,136 @@
+// This file is part of Eigenx, an extension of Eigen.
+//
+// Copyright (C) 2018-2019 Allan Leal
+//
+// This Source Code Form is subject to the terms of the Mozilla
+// Public License v. 2.0. If a copy of the MPL was not distributed
+// with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+// Permit the use of the `all` placeholder without Eigen::placeholders::all
+using namespace Eigen::placeholders;
+
+// Exported Eigenx functions
+using Eigen::zeros;
+using Eigen::ones;
+using Eigen::constants;
+using Eigen::random;
+using Eigen::linspace;
+using Eigen::unit;
+using Eigen::unitrow;
+using Eigen::identity;
+using Eigen::tr;
+using Eigen::inv;
+using Eigen::diag;
+using Eigen::diagonal;
+using Eigen::norm;
+using Eigen::norminf;
+using Eigen::sum;
+using Eigen::dot;
+using Eigen::min;
+using Eigen::max;
+using Eigen::abs;
+using Eigen::sqrt;
+using Eigen::pow;
+using Eigen::exp;
+using Eigen::log;
+using Eigen::log10;
+using Eigen::rows;
+using Eigen::cols;
+using Eigen::segment;
+using Eigen::block;
+using Eigen::submatrix;
+using Eigen::blockmap;
+using Eigen::rowsmap;
+using Eigen::colsmap;
+
+// Exported Eigenx typedefs
+
+using Matrix = Eigen::MatrixXd;
+using MatrixXi = Eigen::MatrixXi;
+using MatrixXl = Eigen::MatrixXl;
+using MatrixXf = Eigen::MatrixXf;
+using MatrixXd = Eigen::MatrixXd;
+using MatrixXcf = Eigen::MatrixXcf;
+using MatrixXcd = Eigen::MatrixXcd;
+
+using MatrixRef = Eigen::MatrixXdRef;
+using MatrixXiRef = Eigen::MatrixXiRef;
+using MatrixXlRef = Eigen::MatrixXlRef;
+using MatrixXfRef = Eigen::MatrixXfRef;
+using MatrixXdRef = Eigen::MatrixXdRef;
+using MatrixXcfRef = Eigen::MatrixXcfRef;
+using MatrixXcdRef = Eigen::MatrixXcdRef;
+
+using MatrixConstRef = Eigen::MatrixXdConstRef;
+using MatrixXiConstRef = Eigen::MatrixXiConstRef;
+using MatrixXlConstRef = Eigen::MatrixXlConstRef;
+using MatrixXfConstRef = Eigen::MatrixXfConstRef;
+using MatrixXdConstRef = Eigen::MatrixXdConstRef;
+using MatrixXcfConstRef = Eigen::MatrixXcfConstRef;
+using MatrixXcdConstRef = Eigen::MatrixXcdConstRef;
+
+using Vector = Eigen::VectorXd;
+using VectorXi = Eigen::VectorXi;
+using VectorXl = Eigen::VectorXl;
+using VectorXf = Eigen::VectorXf;
+using VectorXd = Eigen::VectorXd;
+using VectorXcf = Eigen::VectorXcf;
+using VectorXcd = Eigen::VectorXcd;
+
+using VectorRef = Eigen::VectorXdRef;
+using VectorXiRef = Eigen::VectorXiRef;
+using VectorXlRef = Eigen::VectorXlRef;
+using VectorXfRef = Eigen::VectorXfRef;
+using VectorXdRef = Eigen::VectorXdRef;
+using VectorXcfRef = Eigen::VectorXcfRef;
+using VectorXcdRef = Eigen::VectorXcdRef;
+
+using VectorConstRef = Eigen::VectorXdConstRef;
+using VectorXiConstRef = Eigen::VectorXiConstRef;
+using VectorXlConstRef = Eigen::VectorXlConstRef;
+using VectorXfConstRef = Eigen::VectorXfConstRef;
+using VectorXdConstRef = Eigen::VectorXdConstRef;
+using VectorXcfConstRef = Eigen::VectorXcfConstRef;
+using VectorXcdConstRef = Eigen::VectorXcdConstRef;
+
+using RowVector = Eigen::RowVectorXd;
+using RowVectorXi = Eigen::RowVectorXi;
+using RowVectorXl = Eigen::RowVectorXl;
+using RowVectorXf = Eigen::RowVectorXf;
+using RowVectorXd = Eigen::RowVectorXd;
+using RowVectorXcf = Eigen::RowVectorXcf;
+using RowVectorXcd = Eigen::RowVectorXcd;
+
+using RowVectorRef = Eigen::RowVectorXdRef;
+using RowVectorXiRef = Eigen::RowVectorXiRef;
+using RowVectorXlRef = Eigen::RowVectorXlRef;
+using RowVectorXfRef = Eigen::RowVectorXfRef;
+using RowVectorXdRef = Eigen::RowVectorXdRef;
+using RowVectorXcfRef = Eigen::RowVectorXcfRef;
+using RowVectorXcdRef = Eigen::RowVectorXcdRef;
+
+using RowVectorConstRef = Eigen::RowVectorXdConstRef;
+using RowVectorXiConstRef = Eigen::RowVectorXiConstRef;
+using RowVectorXlConstRef = Eigen::RowVectorXlConstRef;
+using RowVectorXfConstRef = Eigen::RowVectorXfConstRef;
+using RowVectorXdConstRef = Eigen::RowVectorXdConstRef;
+using RowVectorXcfConstRef = Eigen::RowVectorXcfConstRef;
+using RowVectorXcdConstRef = Eigen::RowVectorXcdConstRef;
+
+using StridedVectorRef = Eigen::StridedVectorXdRef;
+using StridedVectorXiRef = Eigen::StridedVectorXiRef;
+using StridedVectorXlRef = Eigen::StridedVectorXlRef;
+using StridedVectorXfRef = Eigen::StridedVectorXfRef;
+using StridedVectorXdRef = Eigen::StridedVectorXdRef;
+using StridedVectorXcfRef = Eigen::StridedVectorXcfRef;
+using StridedVectorXcdRef = Eigen::StridedVectorXcdRef;
+
+using StridedVectorConstRef = Eigen::StridedVectorXdConstRef;
+using StridedVectorXiConstRef = Eigen::StridedVectorXiConstRef;
+using StridedVectorXlConstRef = Eigen::StridedVectorXlConstRef;
+using StridedVectorXfConstRef = Eigen::StridedVectorXfConstRef;
+using StridedVectorXdConstRef = Eigen::StridedVectorXdConstRef;
+using StridedVectorXcfConstRef = Eigen::StridedVectorXcfConstRef;
+using StridedVectorXcdConstRef = Eigen::StridedVectorXcdConstRef;
+
+using PermutationMatrix = Eigen::PermutationMatrix<-1, -1, int>;
