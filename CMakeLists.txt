@@ -7,6 +7,9 @@ project(Optima VERSION 0.1 LANGUAGES CXX)
 # Set the cmake module path of the project
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
+# Use ccache to speed up repeated compilations
+include(CCache)
+
 # Include the cmake variables with values for installation directories
 include(GNUInstallDirs)
 
