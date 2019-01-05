@@ -18,11 +18,12 @@
 #pragma once
 
 // Eigen includes
-#include <eigenx/Eigen/Core>
-#include <eigenx/Eigen/Types>
+#include <Optima/deps/eigen3/Eigen/Core>
+#include <Optima/deps/eigenx/Eigen/Functions>
+#include <Optima/deps/eigenx/Eigen/Types>
 
 namespace Optima {
 
-#include <eigenx/Eigen/Typedefs>
+#include <Optima/deps/eigenx/Eigen/Typedefs>
 
 } // namespace Optima

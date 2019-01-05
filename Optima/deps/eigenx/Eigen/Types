@@ -9,9 +9,6 @@
 #ifndef EIGEN_EIGENXTYPES_H
 #define EIGEN_EIGENXTYPES_H
 
-// Eigen forward declarations
-#include <eigen3/Eigen/Core/util/ForwardDeclarations.h>
-
 // C++ includes
 #include <complex>
 

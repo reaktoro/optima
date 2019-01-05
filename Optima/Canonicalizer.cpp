@@ -21,7 +21,7 @@
 #include <cassert>
 
 // Eigen includes
-#include <eigenx/Eigen/Dense>
+#include <Optima/deps/eigen3/Eigen/Dense>
 
 // Optima includes
 #include <Optima/IndexUtils.hpp>

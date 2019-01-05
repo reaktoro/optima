@@ -63,13 +63,13 @@ if(DEFINED DEPENDENCIES_PATH)
     set(OPTIMA_DEPENDENCIES_PATH ${DEPENDENCIES_PATH})
 endif()
 
-# Build and install the dependencies if the path to the installed dependencies is 
+# Build and install the dependencies if the path to the installed dependencies is
 # not provided via the variable OPTIMA_DEPENDENCIES_PATH
 if(NOT DEFINED OPTIMA_DEPENDENCIES_PATH)
     # Define the OPTIMA_DEPENDENCIES_PATH to default path under build/dependencies
-    set(OPTIMA_DEPENDENCIES_PATH ${CMAKE_SOURCE_DIR}/build/dependencies 
+    set(OPTIMA_DEPENDENCIES_PATH ${CMAKE_SOURCE_DIR}/build/dependencies
         CACHE PATH "Path where the library dependencies of Optima were installed.")
-    
+
     # Execute the installation script for the library dependencies
     execute_process(COMMAND ${CMAKE_COMMAND} -P dependencies/install
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
