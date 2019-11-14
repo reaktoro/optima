@@ -14,8 +14,8 @@ add_library(OptimaObject OBJECT ${HPP_FILES} ${CPP_FILES})
 # Set some properties for the OptimaObject target
 set_property(TARGET OptimaObject PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-# Ensure Optima is compiled with a compiler that supports C++11
-target_compile_features(OptimaObject PUBLIC cxx_std_11)
+# Ensure Optima is compiled with a compiler that supports C++17
+target_compile_features(OptimaObject PUBLIC cxx_std_17)
 
 # Check if a shared library for Optima must be built
 if(BUILD_SHARED_LIBS)
