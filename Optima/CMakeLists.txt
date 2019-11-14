@@ -14,6 +14,9 @@ add_library(OptimaObject OBJECT ${HPP_FILES} ${CPP_FILES})
 # Set some properties for the OptimaObject target
 set_property(TARGET OptimaObject PROPERTY POSITION_INDEPENDENT_CODE ON)
 
+# Add the root directory of the project to the include list
+target_include_directories(OptimaObject PRIVATE ${PROJECT_SOURCE_DIR})
+
 # Ensure Optima is compiled with a compiler that supports C++17
 target_compile_features(OptimaObject PUBLIC cxx_std_17)
 
