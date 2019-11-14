@@ -1,14 +1,8 @@
-# Set python version to 2.7 by default, if not specified
-if(NOT PYBIND11_PYTHON_VERSION AND NOT PYTHON_EXECUTABLE)
-    find_package(PythonInterp REQUIRED) # PYTHON_EXECUTABLE gets set here
-endif()
-
 # Include the Eigen include path for pybind11
 include_directories(${PROJECT_SOURCE_DIR}/Optima/deps/eigen3)
 
-# Find pybind11 among the external dependencies
-find_package(pybind11 REQUIRED NO_DEFAULT_PATH
-    PATHS ${PROJECT_SOURCE_DIR}/deps/pybind11)
+# Find pybind11, needed to compile the python bindings
+find_package(pybind11 REQUIRED)
 
 # Collect all source files from the current directory for the Python module
 file(GLOB_RECURSE CXX_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cxx)
