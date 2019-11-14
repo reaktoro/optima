@@ -383,12 +383,22 @@ auto isZeroMatrix(MatrixConstRef mat) -> bool
 
 auto isDiagonalMatrix(MatrixConstRef mat) -> bool
 {
-    return mat.size() && mat.cols() == 1;
+    return mat.size() > 1 && mat.cols() == 1;
 }
 
 auto isDenseMatrix(MatrixConstRef mat) -> bool
 {
     return mat.size() > 1 && mat.rows() == mat.cols();
+}
+
+auto operator<<(MatrixRef mat, MatrixConstRef other) -> MatrixRef
+{
+    switch(matrixStructure(other)) {
+    case MatrixStructure::Dense: mat = other; break;
+    case MatrixStructure::Diagonal: mat = diag(other.col(0)); break;
+    case MatrixStructure::Zero: break;
+    }
+    return mat;
 }
 
 auto ensureMinimumDimension(Matrix& mat, Index rows, Index cols) -> void

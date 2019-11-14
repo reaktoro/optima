@@ -55,7 +55,7 @@ public:
     Vector gradient;
 
     /// The evaluated Hessian of the objective function.
-    VariantMatrix hessian;
+    Matrix hessian;
 
     /// The requirements in the evaluation of the objective function.
     ObjectiveRequirement requires;

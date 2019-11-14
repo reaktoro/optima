@@ -36,7 +36,7 @@ struct IpSaddlePointSolver::Impl
     Matrix A;
 
     /// The `H` matrix ordered according to (s, l, u, z, w, f).
-    VariantMatrix H;
+    Matrix H;
 
     /// The diagonal matrices Z, W, L, U ordered according to (s, l, u, z, w, f).
     Vector Z, W, L, U;
@@ -156,7 +156,7 @@ struct IpSaddlePointSolver::Impl
     /// Decompose the saddle point matrix equation.
     auto decompose(IpSaddlePointMatrix lhs) -> void
     {
-        switch(lhs.H.structure) {
+        switch(matrixStructure(lhs.H)) {
         case MatrixStructure::Dense: return decomposeDenseHessianMatrix(lhs);
         case MatrixStructure::Diagonal: return decomposeDiagonalHessianMatrix(lhs);
         case MatrixStructure::Zero: return decomposeDiagonalHessianMatrix(lhs);
@@ -176,10 +176,10 @@ struct IpSaddlePointSolver::Impl
         const auto jx = iordering.head(nx);
 
         // Set the Hessian matrix to dense structure
-        H.setDense(n);
+        H.resize(n, n);
 
         // Set the Hessian matrix considering the ordering (s, l, u, z, w, f)
-        H.dense.topLeftCorner(nx, nx) = lhs.H.dense(jx, jx);
+        H.topLeftCorner(nx, nx) = lhs.H(jx, jx);
 
         // The indices of the (z, w, f) variables that are excluded from the decomposition
         const auto jzwf = iordering.tail(nz + nw + nf);
@@ -204,10 +204,10 @@ struct IpSaddlePointSolver::Impl
         const auto jx = iordering.head(nx);
 
         // Set the Hessian matrix to diagonal structure
-        H.setDiagonal(n);
+        H.resize(n, 1);
 
         // Set the Hessian matrix considering the ordering (s, l, u, z, w, f)
-        H.diagonal.head(nx) = lhs.H.diagonal(jx);
+        H.col(0).head(nx) = lhs.H.col(0)(jx);
 
         // The indices of the (z, w, f) variables that are excluded from the decomposition
         const auto jzwf = iordering.tail(nz + nw + nf);
@@ -222,7 +222,7 @@ struct IpSaddlePointSolver::Impl
     /// Solve the saddle point matrix equation.
     auto solve(IpSaddlePointVector rhs, IpSaddlePointSolution sol) -> void
     {
-        switch(H.structure) {
+        switch(matrixStructure(H)) {
         case MatrixStructure::Dense: return solveDenseHessianMatrix(rhs, sol);
         case MatrixStructure::Diagonal: return solveDiagonalHessianMatrix(rhs, sol);
         case MatrixStructure::Zero: return solveDiagonalHessianMatrix(rhs, sol);
@@ -233,7 +233,7 @@ struct IpSaddlePointSolver::Impl
     auto solveDenseHessianMatrix(IpSaddlePointVector rhs, IpSaddlePointSolution sol) -> void
     {
         // Views to the blocks of the Hessian matrix Hxx
-        const auto Hxx = H.dense.topLeftCorner(nx, nx);
+        const auto Hxx = H.topLeftCorner(nx, nx);
 
         const auto Hs  = Hxx.topRows(ns);
         const auto Hl  = Hxx.middleRows(ns, nl);
@@ -448,7 +448,7 @@ struct IpSaddlePointSolver::Impl
     auto solveDiagonalHessianMatrix(IpSaddlePointVector rhs, IpSaddlePointSolution sol) -> void
     {
         // Views to the blocks of the Hessian matrix Hxx
-        const auto Hxx = H.diagonal.head(nx);
+        const auto Hxx = H.col(0).head(nx);
         const auto Hll = Hxx.segment(ns, nl);
         const auto Huu = Hxx.segment(ns + nl, nu);
         const auto Hzz = Hxx.segment(ns + nl + nu, nz);

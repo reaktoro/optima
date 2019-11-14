@@ -24,10 +24,10 @@
 #include <Optima/Canonicalizer.hpp>
 #include <Optima/Exception.hpp>
 #include <Optima/IndexUtils.hpp>
+#include <Optima/Matrix.hpp>
 #include <Optima/SaddlePointMatrix.hpp>
 #include <Optima/SaddlePointOptions.hpp>
 #include <Optima/Utils.hpp>
-#include <Optima/VariantMatrix.hpp>
 
 namespace Optima {
 
@@ -67,10 +67,10 @@ struct SaddlePointSolver::Impl
     Vector weights;
 
     /// The 'H' matrix in the saddle point matrix.
-    VariantMatrix H;
+    Matrix H;
 
     /// The 'G' matrix in the saddle point matrix.
-    VariantMatrix G;
+    Matrix G;
 
     /// The workspace for the right-hand side vectors a and b
     Vector a, b;

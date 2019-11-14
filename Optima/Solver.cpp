@@ -268,8 +268,7 @@ struct Solver::Impl
 
         // Evaluate the objective function
         f.gradient.resize(n);
-        f.hessian.diagonal.resize(n);
-        f.hessian.dense.resize(n, n);
+        f.hessian.resize(n, n);
         params.objective(state.x, f);
 	}
 

@@ -23,14 +23,18 @@
 
 namespace Optima {
 
-SaddlePointMatrix::SaddlePointMatrix(VariantMatrixConstRef H, VectorConstRef D, MatrixConstRef A, IndicesConstRef jf)
-: SaddlePointMatrix(H, D, A, {}, jf)
+SaddlePointMatrix::SaddlePointMatrix(MatrixConstRef H, VectorConstRef D, MatrixConstRef A, IndicesConstRef jf)
+: SaddlePointMatrix(H, D, A, Matrix{}, jf)
 {}
 
-SaddlePointMatrix::SaddlePointMatrix(VariantMatrixConstRef H, VectorConstRef D, MatrixConstRef A, VariantMatrixConstRef G, IndicesConstRef jf)
+SaddlePointMatrix::SaddlePointMatrix(MatrixConstRef H, VectorConstRef D, MatrixConstRef A, MatrixConstRef G, IndicesConstRef jf)
 : H(H), D(D), A(A), G(G), jf(jf)
 {
-    Assert(H.dense.rows() == A.cols() || H.diagonal.rows() == A.cols(),
+    Assert(H.rows() == H.cols() || H.cols() == 1,
+        "Could not create a SaddlePointMatrix object.",
+            "Matrix H is neither a square n-by-n matrix or a diagonal n-by-1 matrix.");
+
+    Assert(H.rows() == A.cols(),
         "Could not create a SaddlePointMatrix object.",
             "Matrix A must have the same number of columns as there are rows in H.");
 
@@ -42,7 +46,7 @@ SaddlePointMatrix::SaddlePointMatrix(VariantMatrixConstRef H, VectorConstRef D, 
         "Could not create a SaddlePointMatrix object.",
             "Matrix A must have less number of rows than number of columns.");
 
-    Assert(G.dense.rows() == A.rows() || G.diagonal.rows() == A.rows() || G.structure == MatrixStructure::Zero,
+    Assert(G.size() == 0 || G.rows() == A.rows(),
         "Could not create a SaddlePointMatrix object.",
             "Matrix G, when non-zero, must have the same number of rows and columns as there are rows in A.");
 }
@@ -55,16 +59,17 @@ SaddlePointMatrix::operator Matrix() const
 
     Matrix res = zeros(t, t);
 
-    switch(H.structure) {
+    switch(matrixStructure(H)) {
     case MatrixStructure::Dense:
-        res.topLeftCorner(n, n) = H.dense;
+        res.topLeftCorner(n, n) = H;
         res.topLeftCorner(n, n)(jf, all).fill(0.0);
         res.topLeftCorner(n, n)(all, jf).fill(0.0);
         res.topLeftCorner(n, n).diagonal()(jf).fill(1.0);
         break;
     case MatrixStructure::Diagonal:
+        res.topLeftCorner(n, n).diagonal() = H.col(0);
+        break;
     case MatrixStructure::Zero:
-        res.topLeftCorner(n, n) = diag(H.diagonal);
         break;
     }
 

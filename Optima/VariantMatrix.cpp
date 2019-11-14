@@ -19,105 +19,105 @@
 
 namespace Optima {
 
-VariantMatrix::VariantMatrix()
-: structure(MatrixStructure::Zero)
-{}
+// VariantMatrix::VariantMatrix()
+// : structure(MatrixStructure::Zero)
+// {}
 
-VariantMatrix::VariantMatrix(VariantMatrixConstRef other)
-: dense(other.dense), diagonal(other.diagonal), structure(other.structure)
-{}
+// VariantMatrix::VariantMatrix(VariantMatrixConstRef other)
+// : dense(other.dense), diagonal(other.diagonal), structure(other.structure)
+// {}
 
-auto VariantMatrix::operator=(MatrixConstRef mat) -> VariantMatrix&
-{
-    dense = mat;
-    structure = MatrixStructure::Dense;
-    return *this;
-}
+// auto VariantMatrix::operator=(MatrixConstRef mat) -> VariantMatrix&
+// {
+//     dense = mat;
+//     structure = MatrixStructure::Dense;
+//     return *this;
+// }
 
-auto VariantMatrix::operator=(VectorConstRef vec) -> VariantMatrix&
-{
-    diagonal = vec;
-    structure = MatrixStructure::Diagonal;
-    return *this;
-}
+// auto VariantMatrix::operator=(VectorConstRef vec) -> VariantMatrix&
+// {
+//     diagonal = vec;
+//     structure = MatrixStructure::Diagonal;
+//     return *this;
+// }
 
-auto VariantMatrix::setZero() -> void
-{
-    structure = MatrixStructure::Zero;
-}
+// auto VariantMatrix::setZero() -> void
+// {
+//     structure = MatrixStructure::Zero;
+// }
 
-auto VariantMatrix::setDense(Index size) -> void
-{
-    structure = size ? MatrixStructure::Dense : MatrixStructure::Zero;
-    dense.resize(size, size);
-}
+// auto VariantMatrix::setDense(Index size) -> void
+// {
+//     structure = size ? MatrixStructure::Dense : MatrixStructure::Zero;
+//     dense.resize(size, size);
+// }
 
-auto VariantMatrix::setDiagonal(Index size) -> void
-{
-    structure = size ? MatrixStructure::Diagonal : MatrixStructure::Zero;
-    diagonal.resize(size);
-}
+// auto VariantMatrix::setDiagonal(Index size) -> void
+// {
+//     structure = size ? MatrixStructure::Diagonal : MatrixStructure::Zero;
+//     diagonal.resize(size);
+// }
 
-VariantMatrix::operator MatrixConstRef() const
-{
-    return dense;
-}
+// VariantMatrix::operator MatrixConstRef() const
+// {
+//     return dense;
+// }
 
-VariantMatrix::operator VectorConstRef() const
-{
-    return diagonal;
-}
+// VariantMatrix::operator VectorConstRef() const
+// {
+//     return diagonal;
+// }
 
 
-VariantMatrixRef::VariantMatrixRef(VariantMatrix& mat)
-: dense(mat.dense), diagonal(mat.diagonal), structure(mat.structure)
-{}
+// VariantMatrixRef::VariantMatrixRef(VariantMatrix& mat)
+// : dense(mat.dense), diagonal(mat.diagonal), structure(mat.structure)
+// {}
 
-VariantMatrixConstRef::VariantMatrixConstRef()
-: dense(Matrix()), diagonal(Vector()), structure(MatrixStructure::Zero)
-{}
+// VariantMatrixConstRef::VariantMatrixConstRef()
+// : dense(Matrix()), diagonal(Vector()), structure(MatrixStructure::Zero)
+// {}
 
-VariantMatrixConstRef::VariantMatrixConstRef(VectorConstRef diagonal)
-: dense(Matrix()), diagonal(diagonal), structure(matrixStructure(diagonal))
-{}
+// VariantMatrixConstRef::VariantMatrixConstRef(VectorConstRef diagonal)
+// : dense(Matrix()), diagonal(diagonal), structure(matrixStructure(diagonal))
+// {}
 
-VariantMatrixConstRef::VariantMatrixConstRef(const Vector& diagonal)
-: VariantMatrixConstRef(VectorConstRef(diagonal))
-{}
+// VariantMatrixConstRef::VariantMatrixConstRef(const Vector& diagonal)
+// : VariantMatrixConstRef(VectorConstRef(diagonal))
+// {}
 
-VariantMatrixConstRef::VariantMatrixConstRef(MatrixConstRef dense)
-: dense(dense), diagonal(Vector()), structure(matrixStructure(dense))
-{}
+// VariantMatrixConstRef::VariantMatrixConstRef(MatrixConstRef dense)
+// : dense(dense), diagonal(Vector()), structure(matrixStructure(dense))
+// {}
 
-VariantMatrixConstRef::VariantMatrixConstRef(const Matrix& dense)
-: VariantMatrixConstRef(MatrixConstRef(dense))
-{}
+// VariantMatrixConstRef::VariantMatrixConstRef(const Matrix& dense)
+// : VariantMatrixConstRef(MatrixConstRef(dense))
+// {}
 
-VariantMatrixConstRef::VariantMatrixConstRef(VariantMatrixRef mat)
-: dense(mat.dense), diagonal(mat.diagonal), structure(mat.structure)
-{}
+// VariantMatrixConstRef::VariantMatrixConstRef(VariantMatrixRef mat)
+// : dense(mat.dense), diagonal(mat.diagonal), structure(mat.structure)
+// {}
 
-VariantMatrixConstRef::VariantMatrixConstRef(const VariantMatrix& mat)
-: dense(mat.dense), diagonal(mat.diagonal), structure(mat.structure)
-{}
+// VariantMatrixConstRef::VariantMatrixConstRef(const VariantMatrix& mat)
+// : dense(mat.dense), diagonal(mat.diagonal), structure(mat.structure)
+// {}
 
-auto VariantMatrixConstRef::diagonalRef() -> VectorConstRef
-{
-    switch(structure) {
-    case MatrixStructure::Diagonal: return diagonal;
-    default: return dense.diagonal();
-    }
-}
+// auto VariantMatrixConstRef::diagonalRef() -> VectorConstRef
+// {
+//     switch(structure) {
+//     case MatrixStructure::Diagonal: return diagonal;
+//     default: return dense.diagonal();
+//     }
+// }
 
-auto operator<<(MatrixRef mat, VariantMatrixConstRef vmat) -> MatrixRef
-{
-    switch(vmat.structure) {
-    case MatrixStructure::Dense: mat = vmat.dense; break;
-    case MatrixStructure::Diagonal: mat = diag(vmat.diagonal); break;
-    case MatrixStructure::Zero: break;
-    }
-    return mat;
-}
+// auto operator<<(MatrixRef mat, VariantMatrixConstRef vmat) -> MatrixRef
+// {
+//     switch(vmat.structure) {
+//     case MatrixStructure::Dense: mat = vmat.dense; break;
+//     case MatrixStructure::Diagonal: mat = diag(vmat.diagonal); break;
+//     case MatrixStructure::Zero: break;
+//     }
+//     return mat;
+// }
 
 } // namespace Optima
 

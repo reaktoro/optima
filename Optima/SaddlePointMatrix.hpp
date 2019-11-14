@@ -20,7 +20,6 @@
 // Optima includes
 #include <Optima/Index.hpp>
 #include <Optima/Matrix.hpp>
-#include <Optima/VariantMatrix.hpp>
 
 namespace Optima {
 
@@ -41,7 +40,7 @@ class SaddlePointMatrix
 {
 public:
     /// The Hessian matrix \eq{H} in the saddle point matrix.
-    VariantMatrixConstRef H;
+    MatrixConstRef H;
 
     /// The diagonal matrix \eq{D} in the saddle point matrix.
     VectorConstRef D;
@@ -50,7 +49,7 @@ public:
     MatrixConstRef A;
 
     /// The negative semi-definite matrix \eq{G} in the saddle point matrix.
-    VariantMatrixConstRef G;
+    MatrixConstRef G;
 
     /// The indices of the fixed variables.
     IndicesConstRef jf;
@@ -60,7 +59,7 @@ public:
     /// @param D The \eq{D} matrix in the saddle point matrix.
     /// @param A The \eq{A} matrix in the saddle point matrix.
     /// @param jf The indices of the fixed variables.
-    SaddlePointMatrix(VariantMatrixConstRef H, VectorConstRef D, MatrixConstRef A, IndicesConstRef jf);
+    SaddlePointMatrix(MatrixConstRef H, VectorConstRef D, MatrixConstRef A, IndicesConstRef jf);
 
     /// Construct a SaddlePointMatrix instance.
     /// @param H The \eq{H} matrix in the saddle point matrix.
@@ -68,7 +67,7 @@ public:
     /// @param A The \eq{A} matrix in the saddle point matrix.
     /// @param G The \eq{G} matrix in the saddle point matrix.
     /// @param jf The indices of the fixed variables.
-    SaddlePointMatrix(VariantMatrixConstRef H, VectorConstRef D, MatrixConstRef A, VariantMatrixConstRef G, IndicesConstRef jf);
+    SaddlePointMatrix(MatrixConstRef H, VectorConstRef D, MatrixConstRef A, MatrixConstRef G, IndicesConstRef jf);
 
     /// Convert this SaddlePointMatrix instance into a Matrix instance.
     operator Matrix() const;

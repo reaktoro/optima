@@ -23,7 +23,7 @@
 namespace Optima {
 
 IpSaddlePointMatrix::IpSaddlePointMatrix(
-    VariantMatrixConstRef H,
+    MatrixConstRef H,
     MatrixConstRef A,
     VectorConstRef Z,
     VectorConstRef W,
@@ -42,7 +42,17 @@ IpSaddlePointMatrix::operator Matrix() const
     Matrix res = zeros(t, t);
 
     // Block: H
-    res.topLeftCorner(n, n) << H;
+    switch(matrixStructure(H))
+    {
+    case MatrixStructure::Dense:
+        res.topLeftCorner(n, n) = H;
+        break;
+    case MatrixStructure::Diagonal:
+        res.topLeftCorner(n, n) = diag(H.col(0));
+        break;
+    case MatrixStructure::Zero:
+        break;
+    }
     res.topLeftCorner(n, n)(all, jf).fill(0.0);
     res.topLeftCorner(n, n)(jf, all).fill(0.0);
     res.topLeftCorner(n, n).diagonal()(jf).fill(1.0);
