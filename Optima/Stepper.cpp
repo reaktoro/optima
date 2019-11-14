@@ -15,29 +15,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include "OptimumStepper.hpp"
+#include "Stepper.hpp"
 
 // Optima includes
 #include <Optima/Exception.hpp>
 #include <Optima/IpSaddlePointMatrix.hpp>
 #include <Optima/IpSaddlePointSolver.hpp>
 #include <Optima/Objective.hpp>
-#include <Optima/OptimumOptions.hpp>
-#include <Optima/OptimumParams.hpp>
-#include <Optima/OptimumState.hpp>
-#include <Optima/OptimumStructure.hpp>
-#include <Optima/Result.hpp>
+#include <Optima/Options.hpp>
+#include <Optima/Params.hpp>
+#include <Optima/State.hpp>
+#include <Optima/Structure.hpp>
 #include <Optima/VariantMatrix.hpp>
 
 namespace Optima {
 
-struct OptimumStepper::Impl
+struct Stepper::Impl
 {
     /// The structure of the optimization calculation
-    OptimumStructure structure;
+    Structure structure;
 
     /// The options for the optimization calculation
-    OptimumOptions options;
+    Options options;
 
     /// The solution vector `s = [dx dy dz dw]`.
     Vector s;
@@ -63,8 +62,8 @@ struct OptimumStepper::Impl
     /// The interior-point saddle point solver.
     IpSaddlePointSolver solver;
 
-    /// Construct a OptimumStepper::Impl instance with given optimization problem structure.
-    Impl(const OptimumStructure& structure)
+    /// Construct a Stepper::Impl instance with given optimization problem structure.
+    Impl(const Structure& structure)
     : structure(structure)
     {
         // Initialize the members related to number of variables and constraints
@@ -93,11 +92,8 @@ struct OptimumStepper::Impl
     }
 
     /// Decompose the interior-point saddle point matrix for diagonal Hessian matrices.
-    auto decompose(const OptimumParams& params, const OptimumState& state, const ObjectiveResult& f) -> Result
+    auto decompose(const Params& params, const State& state, const ObjectiveResult& f) -> void
     {
-        // The result of this method call
-        Result res;
-
         // The indices of the variables with lower and upper bounds and fixed values
         IndicesConstRef ilower = structure.variablesWithLowerBounds();
         IndicesConstRef iupper = structure.variablesWithUpperBounds();
@@ -122,16 +118,11 @@ struct OptimumStepper::Impl
 
         // Decompose the interior-point saddle point matrix
         solver.decompose(spm);
-
-        return res.stop();
     }
 
     /// Solve the interior-point saddle point matrix.
-    auto solve(const OptimumParams& params, const OptimumState& state, const ObjectiveResult& f) -> Result
+    auto solve(const Params& params, const State& state, const ObjectiveResult& f) -> void
     {
-        // The result of this method call
-        Result res;
-
         // Alias to state variables
         VectorConstRef x = state.x;
         VectorConstRef y = state.y;
@@ -179,8 +170,6 @@ struct OptimumStepper::Impl
 
         // Solve the saddle point problem
         solver.solve(rhs, sol);
-
-        return res.stop();
     }
 
     /// Return the calculated Newton step vector.
@@ -196,7 +185,7 @@ struct OptimumStepper::Impl
     }
 
     /// Return the assembled interior-point saddle point matrix.
-    auto matrix(const OptimumParams& params, const OptimumState& state, const ObjectiveResult& f) -> IpSaddlePointMatrix
+    auto matrix(const Params& params, const State& state, const ObjectiveResult& f) -> IpSaddlePointMatrix
     {
         // The indices of the variables with fixed values
         IndicesConstRef ifixed = structure.variablesWithFixedValues();
@@ -206,50 +195,50 @@ struct OptimumStepper::Impl
     }
 };
 
-OptimumStepper::OptimumStepper(const OptimumStructure& structure)
+Stepper::Stepper(const Structure& structure)
 : pimpl(new Impl(structure))
 {}
 
-OptimumStepper::OptimumStepper(const OptimumStepper& other)
+Stepper::Stepper(const Stepper& other)
 : pimpl(new Impl(*other.pimpl))
 {}
 
-OptimumStepper::~OptimumStepper()
+Stepper::~Stepper()
 {}
 
-auto OptimumStepper::operator=(OptimumStepper other) -> OptimumStepper&
+auto Stepper::operator=(Stepper other) -> Stepper&
 {
     pimpl = std::move(other.pimpl);
     return *this;
 }
 
-auto OptimumStepper::setOptions(const OptimumOptions& options) -> void
+auto Stepper::setOptions(const Options& options) -> void
 {
     pimpl->options = options;
     pimpl->solver.setOptions(options.kkt);
 }
 
-auto OptimumStepper::decompose(const OptimumParams& params, const OptimumState& state, const ObjectiveResult& f) -> Result
+auto Stepper::decompose(const Params& params, const State& state, const ObjectiveResult& f) -> void
 {
     return pimpl->decompose(params, state, f);
 }
 
-auto OptimumStepper::solve(const OptimumParams& params, const OptimumState& state, const ObjectiveResult& f) -> Result
+auto Stepper::solve(const Params& params, const State& state, const ObjectiveResult& f) -> void
 {
     return pimpl->solve(params, state, f);
 }
 
-auto OptimumStepper::matrix(const OptimumParams& params, const OptimumState& state, const ObjectiveResult& f) -> IpSaddlePointMatrix
+auto Stepper::matrix(const Params& params, const State& state, const ObjectiveResult& f) -> IpSaddlePointMatrix
 {
     return pimpl->matrix(params, state, f);
 }
 
-auto OptimumStepper::step() const -> IpSaddlePointVector
+auto Stepper::step() const -> IpSaddlePointVector
 {
     return pimpl->step();
 }
 
-auto OptimumStepper::residual() const -> IpSaddlePointVector
+auto Stepper::residual() const -> IpSaddlePointVector
 {
     return pimpl->residual();
 }

@@ -19,48 +19,19 @@
 
 namespace Optima {
 
-Result::Result()
-: m_success(true), m_start(timenow()), m_stop(m_start)
-{}
-
-auto Result::success(bool value) -> void
-{
-    m_success = value;
-}
-
-auto Result::success() const -> bool
-{
-    return m_success;
-}
-
-auto Result::time() const -> double
-{
-    return elapsed(m_stop, m_start);
-}
-
-auto Result::start() -> Result&
-{
-    m_start = timenow();
-    return *this;
-}
-
-auto Result::stop() -> Result&
-{
-    m_stop = timenow();
-    return *this;
-}
-
 auto Result::operator+=(const Result& other) -> Result&
 {
-    m_success = m_success && other.m_success;
-    return *this;
-}
+    succeeded              = other.succeeded;
+    iterations            += other.iterations;
+    num_objective_evals   += other.num_objective_evals;
+    convergence_rate       = other.convergence_rate;
+    error                  = other.error;
+    time                  += other.time;
+    time_objective_evals  += other.time_objective_evals;
+    time_constraint_evals += other.time_constraint_evals;
+    time_linear_systems   += other.time_linear_systems;
 
-auto Result::operator+(const Result& other) const -> Result
-{
-    Result res;
-    res.m_success = m_success && other.m_success;
-    return res;
+    return *this;
 }
 
 } // namespace Optima

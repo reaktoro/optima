@@ -15,21 +15,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include "OptimumSolver.hpp"
+#include "Solver.hpp"
 
 // Optima includes
 #include <Optima/Exception.hpp>
 #include <Optima/IpSaddlePointMatrix.hpp>
 #include <Optima/Objective.hpp>
-#include <Optima/OptimumOptions.hpp>
-#include <Optima/OptimumParams.hpp>
-#include <Optima/OptimumResult.hpp>
-#include <Optima/OptimumState.hpp>
-#include <Optima/OptimumStepper.hpp>
-#include <Optima/OptimumStructure.hpp>
+#include <Optima/Options.hpp>
 #include <Optima/Outputter.hpp>
+#include <Optima/Params.hpp>
 #include <Optima/Result.hpp>
 #include <Optima/SaddlePointMatrix.hpp>
+#include <Optima/State.hpp>
+#include <Optima/Stepper.hpp>
+#include <Optima/Structure.hpp>
 #include <Optima/Timing.hpp>
 #include <Optima/Utils.hpp>
 
@@ -71,19 +70,19 @@ auto isfinite(const ObjectiveResult& res) -> bool
 
 } // namespace
 
-struct OptimumSolver::Impl
+struct Solver::Impl
 {
     /// The structure of the optimization problem
-    OptimumStructure structure;
+    Structure structure;
 
     /// The calculator of the Newton step (dx, dy, dz, dw)
-    OptimumStepper stepper;
+    Stepper stepper;
 
     /// The evaluated result of the objective function.
     ObjectiveResult f;
 
     /// The result of the optimization problem
-    OptimumResult result;
+    Result result;
 
     /// The trial iterate x(trial)
     Vector xtrial;
@@ -101,7 +100,7 @@ struct OptimumSolver::Impl
     Outputter outputter;
 
     /// The options for the optimization calculation
-    OptimumOptions options;
+    Options options;
 
     /// The number of variables
     Index n;
@@ -116,7 +115,7 @@ struct OptimumSolver::Impl
     Index t;
 
     /// Initialize the optimization solver with the structure of the problem.
-    Impl(const OptimumStructure& structure)
+    Impl(const Structure& structure)
     : structure(structure), stepper(structure)
     {
         // Initialize the members related to number of variables and constraints
@@ -136,7 +135,7 @@ struct OptimumSolver::Impl
     }
 
     /// Set the options for the optimization calculation.
-    auto setOptions(const OptimumOptions& _options) -> void
+    auto setOptions(const Options& _options) -> void
     {
     	// Set member options
     	options = _options;
@@ -149,7 +148,7 @@ struct OptimumSolver::Impl
     }
 
     // Output the header and initial state of the solution
-    auto outputInitialState(const OptimumState& state) -> void
+    auto outputInitialState(const State& state) -> void
     {
         if(!options.output.active) return;
 
@@ -183,7 +182,7 @@ struct OptimumSolver::Impl
     };
 
     // The function that outputs the current state of the solution
-    auto outputCurrentState(const OptimumState& state) -> void
+    auto outputCurrentState(const State& state) -> void
     {
         if(!options.output.active) return;
 
@@ -203,7 +202,7 @@ struct OptimumSolver::Impl
     };
 
     // Initialize internal state before calculation begins
-    auto initialize(const OptimumParams& params, OptimumState& state) -> void
+    auto initialize(const Params& params, State& state) -> void
 	{
         // Clear previous state of the Outputter instance
         outputter.clear();
@@ -260,7 +259,7 @@ struct OptimumSolver::Impl
 	}
 
     // Evaluate the objective function
-    auto evaluateObjectiveFunction(const OptimumParams& params, OptimumState& state) -> void
+    auto evaluateObjectiveFunction(const Params& params, State& state) -> void
 	{
         // Establish the current needs for the objective function evaluation
         f.requires.value = true;
@@ -275,24 +274,15 @@ struct OptimumSolver::Impl
 	}
 
     // The function that computes the Newton step
-    auto computeNewtonStep(const OptimumParams& params, OptimumState& state) -> void
+    auto computeNewtonStep(const Params& params, State& state) -> void
     {
     	Timer timer;
 
     	// Decompose the Jacobian matrix and calculate a Newton step
-        Result res1 = stepper.decompose(params, state, f);
-
-        // Assert the decomposition of the Jacobian matrix succeeded
-        Assert(res1.success(), "Could not compute a Newton step.",
-			"The decomposition of the Jacobian matrix failed.");
+        stepper.decompose(params, state, f);
 
         // Calculate the Newton step
-        Result res2 = stepper.solve(params, state, f);
-
-        // Assert the calculation of the Newton step succeeded
-        Assert(res2.success(), "Could not compute a Newton step.",
-			"The decomposition of the Jacobian matrix succeeded, but the "
-			"step calculation failed.");
+        stepper.solve(params, state, f);
 
         // Update the time spent in linear systems
 		result.time_linear_systems += timer.elapsed();
@@ -317,7 +307,7 @@ struct OptimumSolver::Impl
 	}
 
     // Update the variables (x, y, z, w) with a Newton stepping scheme
-    auto applyNewtonStepping(const OptimumParams& params, OptimumState& state) -> void
+    auto applyNewtonStepping(const Params& params, State& state) -> void
     {
         switch(options.step) {
         case Aggressive: return applyNewtonSteppingAggressive(params, state);
@@ -391,7 +381,7 @@ struct OptimumSolver::Impl
 	}
 
 	// Update the variables (x, y, z, w) with an aggressive Newton stepping scheme
-	auto applyNewtonSteppingAggressive(const OptimumParams& params, OptimumState& state) -> void
+	auto applyNewtonSteppingAggressive(const Params& params, State& state) -> void
 	{
 		// Aliases to variables x, y, z, w
 		VectorRef x = state.x;
@@ -449,7 +439,7 @@ struct OptimumSolver::Impl
 	};
 
 	// Update the variables (x, y, z, w) with a conservative Newton stepping scheme
-	auto applyNewtonSteppingConservative(const OptimumParams& params, OptimumState& state) -> void
+	auto applyNewtonSteppingConservative(const Params& params, State& state) -> void
 	{
 //		// Aliases to variables x, y, z, w
 //		VectorRef x = state.x;
@@ -545,7 +535,7 @@ struct OptimumSolver::Impl
         return result.error < options.tolerance;
     };
 
-    auto solve(const OptimumParams& params, OptimumState& state) -> OptimumResult
+    auto solve(const Params& params, State& state) -> Result
     {
         // Start timing the calculation
         Timer timer;
@@ -608,34 +598,34 @@ struct OptimumSolver::Impl
     }
 };
 
-OptimumSolver::OptimumSolver(const OptimumStructure& structure)
+Solver::Solver(const Structure& structure)
 : pimpl(new Impl(structure))
 {}
 
-OptimumSolver::OptimumSolver(const OptimumSolver& other)
+Solver::Solver(const Solver& other)
 : pimpl(new Impl(*other.pimpl))
 {}
 
-OptimumSolver::~OptimumSolver()
+Solver::~Solver()
 {}
 
-auto OptimumSolver::operator=(OptimumSolver other) -> OptimumSolver&
+auto Solver::operator=(Solver other) -> Solver&
 {
     pimpl = std::move(other.pimpl);
     return *this;
 }
 
-auto OptimumSolver::setOptions(const OptimumOptions& options) -> void
+auto Solver::setOptions(const Options& options) -> void
 {
 	pimpl->setOptions(options);
 }
 
-auto OptimumSolver::solve(const OptimumParams& params, OptimumState& state) -> OptimumResult
+auto Solver::solve(const Params& params, State& state) -> Result
 {
     return pimpl->solve(params, state);
 }
 
-auto OptimumSolver::dxdp(VectorConstRef dgdp, VectorConstRef dbdp) -> Vector
+auto Solver::dxdp(VectorConstRef dgdp, VectorConstRef dbdp) -> Vector
 {
     return pimpl->dxdp(dgdp, dbdp);
 }

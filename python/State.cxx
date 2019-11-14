@@ -15,43 +15,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include <Optima/Optima.hpp>
+// pybind11 includes
+#include <pybind11/pybind11.h>
+#include <pybind11/eigen.h>
+namespace py = pybind11;
+
+// Optima includes
+#include <Optima/State.hpp>
 using namespace Optima;
 
-int main(int argc, char **argv)
+void exportState(py::module& m)
 {
-    OptimumProblem problem;
-    problem.n = 2;
-    problem.objective = [](const Vector& x, ObjectiveResult& f)
-    {
-        Vector xt = x - ones(2);
-        if(f.requires.val) f.val = 0.5 * dot(xt, xt);
-        if(f.requires.grad) f.grad = xt;
-        if(f.requires.hessian)
-        {
-            f.hessian.mode = Hessian::Diagonal;
-            f.hessian.diagonal = ones(x.rows());
-        }
-    };
-    problem.A.resize(1, 2);
-    problem.A << 1, -1;
-
-    problem.a.resize(1);
-    problem.a << 0;
-
-    OptimumState state;
-    state.x.resize(2);
-    state.x << 6, 3;
-
-    OptimumOptions options;
-    options.output.active = true;
-
-    OptimumSolver solver;
-
-    solver.solve(problem, state, options);
-
-    std::cout << state.x << std::endl;
+    py::class_<State>(m, "State")
+        .def(py::init<>())
+        .def_readwrite("x", &State::x)
+        .def_readwrite("y", &State::y)
+        .def_readwrite("z", &State::z)
+        .def_readwrite("w", &State::w)
+        ;
 }
-
-
-

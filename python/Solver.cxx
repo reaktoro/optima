@@ -15,23 +15,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include "OptimumResult.hpp"
+// pybind11 includes
+#include <pybind11/pybind11.h>
+#include <pybind11/eigen.h>
+namespace py = pybind11;
 
-namespace Optima {
+// Optima includes
+#include <Optima/Options.hpp>
+#include <Optima/Params.hpp>
+#include <Optima/Result.hpp>
+#include <Optima/Solver.hpp>
+#include <Optima/State.hpp>
+#include <Optima/Structure.hpp>
+using namespace Optima;
 
-auto OptimumResult::operator+=(const OptimumResult& other) -> OptimumResult&
+void exportSolver(py::module& m)
 {
-    succeeded              = other.succeeded;
-    iterations            += other.iterations;
-    num_objective_evals   += other.num_objective_evals;
-    convergence_rate       = other.convergence_rate;
-    error                  = other.error;
-    time                  += other.time;
-    time_objective_evals  += other.time_objective_evals;
-    time_constraint_evals += other.time_constraint_evals;
-    time_linear_systems   += other.time_linear_systems;
-
-    return *this;
+    py::class_<Solver>(m, "Solver")
+        .def(py::init<const Structure&>())
+        .def("setOptions", &Solver::setOptions)
+        .def("solve", &Solver::solve)
+        .def("dxdp", &Solver::dxdp)
+        ;
 }
-
-} // namespace Optima

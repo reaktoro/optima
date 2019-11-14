@@ -40,7 +40,7 @@ enum StepMode
 };
 
 /// A type that describes the options for the output of a optimization calculation
-struct OptimumOutputOptions : OutputterOptions
+struct OutputOptions : OutputterOptions
 {
     /// The prefix for the primal variables `x`.
     std::string xprefix = "x";
@@ -63,15 +63,15 @@ struct OptimumOutputOptions : OutputterOptions
     std::vector<std::string> ynames;
 
     /// Assign a boolean value to `active` member.
-    auto operator=(bool active) -> OptimumOutputOptions&;
+    auto operator=(bool active) -> OutputOptions&;
 };
 
 /// A type that describes the options of a optimization calculation
-class OptimumOptions
+class Options
 {
 public:
     /// The options for the output of the optimization calculations
-    OptimumOutputOptions output;
+    OutputOptions output;
 
     /// The tolerance for the residual of the optimality conditions.
     double tolerance = 1.0e-6;

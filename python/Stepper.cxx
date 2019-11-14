@@ -22,23 +22,23 @@ namespace py = pybind11;
 
 // Optima includes
 #include <Optima/IpSaddlePointMatrix.hpp>
-#include <Optima/OptimumOptions.hpp>
-#include <Optima/OptimumParams.hpp>
-#include <Optima/OptimumState.hpp>
-#include <Optima/OptimumStepper.hpp>
-#include <Optima/OptimumStructure.hpp>
+#include <Optima/Options.hpp>
+#include <Optima/Params.hpp>
+#include <Optima/State.hpp>
+#include <Optima/Stepper.hpp>
+#include <Optima/Structure.hpp>
 #include <Optima/Result.hpp>
 using namespace Optima;
 
-void exportOptimumStepper(py::module& m)
+void exportStepper(py::module& m)
 {
-    py::class_<OptimumStepper>(m, "OptimumStepper")
-        .def(py::init<const OptimumStructure&>())
-        .def("setOptions", &OptimumStepper::setOptions)
-        .def("decompose", &OptimumStepper::decompose)
-        .def("solve", &OptimumStepper::solve)
-        .def("step", &OptimumStepper::step)
-        .def("residual", &OptimumStepper::residual)
-        .def("matrix", &OptimumStepper::matrix)
+    py::class_<Stepper>(m, "Stepper")
+        .def(py::init<const Structure&>())
+        .def("setOptions", &Stepper::setOptions)
+        .def("decompose", &Stepper::decompose)
+        .def("solve", &Stepper::solve)
+        .def("step", &Stepper::step)
+        .def("residual", &Stepper::residual)
+        .def("matrix", &Stepper::matrix)
         ;
 }

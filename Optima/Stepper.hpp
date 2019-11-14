@@ -29,49 +29,48 @@ namespace Optima {
 class IpSaddlePointMatrix;
 class IpSaddlePointVector;
 class ObjectiveResult;
-class OptimumOptions;
-class OptimumParams;
-class OptimumState;
-class OptimumStructure;
-class Result;
+class Options;
+class Params;
+class State;
+class Structure;
 
 /// The class that implements the step calculation.
-class OptimumStepper
+class Stepper
 {
 public:
-    /// Construct a OptimumStepper instance with given optimization structure.
-    OptimumStepper(const OptimumStructure& structure);
+    /// Construct a Stepper instance with given optimization structure.
+    Stepper(const Structure& structure);
 
-    /// Construct a copy of an OptimumStepper instance.
-    OptimumStepper(const OptimumStepper& other);
+    /// Construct a copy of an Stepper instance.
+    Stepper(const Stepper& other);
 
-    /// Destroy this OptimumStepper instance.
-    virtual ~OptimumStepper();
+    /// Destroy this Stepper instance.
+    virtual ~Stepper();
 
-    /// Assign an OptimumStepper instance to this.
-    auto operator=(OptimumStepper other) -> OptimumStepper&;
+    /// Assign an Stepper instance to this.
+    auto operator=(Stepper other) -> Stepper&;
 
     /// Set the options for the step calculation.
-    auto setOptions(const OptimumOptions& options) -> void;
+    auto setOptions(const Options& options) -> void;
 
     /// Decompose the interior-point saddle point matrix used to compute the step vectors.
-    auto decompose(const OptimumParams& params, const OptimumState& state, const ObjectiveResult& f) -> Result;
+    auto decompose(const Params& params, const State& state, const ObjectiveResult& f) -> void;
 
     /// Solve the interior-point saddle point matrix used to compute the step vectors.
-    /// @note Method OptimumStepper::decompose needs to be called first.
-    auto solve(const OptimumParams& params, const OptimumState& state, const ObjectiveResult& f) -> Result;
+    /// @note Method Stepper::decompose needs to be called first.
+    auto solve(const Params& params, const State& state, const ObjectiveResult& f) -> void;
 
     /// Return the calculated Newton step vector.
-    /// @note Method OptimumStepper::solve needs to be called first.
+    /// @note Method Stepper::solve needs to be called first.
     auto step() const -> IpSaddlePointVector;
 
     /// Return the calculated residual vector for the current optimum state.
-    /// @note Method OptimumStepper::solve needs to be called first.
+    /// @note Method Stepper::solve needs to be called first.
     auto residual() const -> IpSaddlePointVector;
 
     /// Return the assembled interior-point saddle point matrix.
-    /// @note Method OptimumStepper::decompose needs to be called first.
-    auto matrix(const OptimumParams& params, const OptimumState& state, const ObjectiveResult& f) -> IpSaddlePointMatrix;
+    /// @note Method Stepper::decompose needs to be called first.
+    auto matrix(const Params& params, const State& state, const ObjectiveResult& f) -> IpSaddlePointMatrix;
 
 private:
     struct Impl;

@@ -21,35 +21,35 @@
 namespace py = pybind11;
 
 // Optima includes
-#include <Optima/OptimumOptions.hpp>
+#include <Optima/Options.hpp>
 using namespace Optima;
 
-void exportOptimumOptions(py::module& m)
+void exportOptions(py::module& m)
 {
     py::enum_<StepMode>(m, "StepMode")
         .value("Conservative", StepMode::Conservative)
         .value("Aggressive", StepMode::Aggressive)
         ;
 
-    py::class_<OptimumOutputOptions, OutputterOptions>(m, "OptimumOutputOptions")
+    py::class_<OutputOptions, OutputterOptions>(m, "OutputOptions")
         .def(py::init<>())
-        .def_readwrite("xprefix", &OptimumOutputOptions::xprefix)
-        .def_readwrite("yprefix", &OptimumOutputOptions::yprefix)
-        .def_readwrite("zprefix", &OptimumOutputOptions::zprefix)
-        .def_readwrite("xnames", &OptimumOutputOptions::xnames)
-        .def_readwrite("ynames", &OptimumOutputOptions::ynames)
+        .def_readwrite("xprefix", &OutputOptions::xprefix)
+        .def_readwrite("yprefix", &OutputOptions::yprefix)
+        .def_readwrite("zprefix", &OutputOptions::zprefix)
+        .def_readwrite("xnames", &OutputOptions::xnames)
+        .def_readwrite("ynames", &OutputOptions::ynames)
         ;
 
-    py::class_<OptimumOptions>(m, "OptimumOptions")
+    py::class_<Options>(m, "Options")
         .def(py::init<>())
-        .def_readwrite("output", &OptimumOptions::output)
-        .def_readwrite("tolerance", &OptimumOptions::tolerance)
-        .def_readwrite("tolerancex", &OptimumOptions::tolerancex)
-        .def_readwrite("tolerancef", &OptimumOptions::tolerancef)
-        .def_readwrite("max_iterations", &OptimumOptions::max_iterations)
-        .def_readwrite("mu", &OptimumOptions::mu)
-        .def_readwrite("tau", &OptimumOptions::tau)
-        .def_readwrite("step", &OptimumOptions::step)
-        .def_readwrite("kkt", &OptimumOptions::kkt)
+        .def_readwrite("output", &Options::output)
+        .def_readwrite("tolerance", &Options::tolerance)
+        .def_readwrite("tolerancex", &Options::tolerancex)
+        .def_readwrite("tolerancef", &Options::tolerancef)
+        .def_readwrite("max_iterations", &Options::max_iterations)
+        .def_readwrite("mu", &Options::mu)
+        .def_readwrite("tau", &Options::tau)
+        .def_readwrite("step", &Options::step)
+        .def_readwrite("kkt", &Options::kkt)
         ;
 }

@@ -26,35 +26,35 @@ import Canonicalizer
 # The number of variables and number of equality constraints
 n = 10
 m = 5
-    
+
 # Tested cases for the matrix A
 tested_matrices_A = Canonicalizer.tested_matrices_A
 
 # Tested cases for the structure of matrix H
 tested_structures_H = [
-    'dense', 
+    'dense',
     'diagonal'
 ]
 
 # Tested cases for the indices of fixed variables
 tested_jfixed = [
-    arange(0), 
-    arange(1), 
+    arange(0),
+    arange(1),
     array([1, 3, 7, 9])
 ]
 
 # Tested cases for the indices of variables with lower bounds
 tested_jlower = [
-    arange(0), 
-    arange(1), 
+    arange(0),
+    arange(1),
     array([1, 3, 7, 9]),
     arange(n)  # all variables with lower bounds
 ]
 
 # Tested cases for the indices of variables with upper bounds
 tested_jupper = [
-    arange(0), 
-    arange(1), 
+    arange(0),
+    arange(1),
     array([1, 3, 7, 9]),
     arange(n)  # all variables with upper bounds
 ]
@@ -78,47 +78,47 @@ testdata = product(tested_matrices_A,
 def test_optimum_stepper(args):
 
     assemble_A, structure_H, jfixed, jlower, jupper, method = args
-    
+
     nfixed = len(jfixed)
     nlower = len(jlower)
     nupper = len(jupper)
-    
+
     t = 3*n + m
-    
+
     A = assemble_A(m, n, nfixed)
-    
-    structure = OptimumStructure(n, m)
+
+    structure = Structure(n, m)
     structure.setVariablesWithFixedValues(jfixed)
     structure.setVariablesWithLowerBounds(jlower)
     structure.setVariablesWithUpperBounds(jupper)
     structure.A = A
 
-    state = OptimumState()
+    state = State()
     state.x = linspace(1, n, n)
     state.y = linspace(1, m, m)
     state.z = linspace(1, n, n)
     state.w = linspace(1, n, n)
-    
+
     f = ObjectiveResult()
     f.gradient = linspace(1, n, n)
     f.hessian = eigen.random(n, n) if structure_H == 'dense' else eigen.random(n)
 
-    params = OptimumParams()
+    params = Params()
     params.b = structure.A.dot(state.x)  # *** IMPORTANT *** b = A*x is essential here when A has linearly dependent rows, because it ensures a consistent set of values for vector b (see note in the documentation of SaddlePointSolver class).
     params.xfixed = linspace(1, nfixed, nfixed)
     params.xlower = eigen.zeros(nlower)
     params.xupper = eigen.ones(nupper)
 
-    options = OptimumOptions()
+    options = Options()
     options.kkt.method = method
-    
-    stepper = OptimumStepper(structure)
+
+    stepper = Stepper(structure)
     stepper.setOptions(options)
     stepper.decompose(params, state, f)
     M = stepper.matrix(params, state, f).array()
     expected = linspace(1, t, t)
     rhs = M.dot(expected)
-    
+
     stepper.solve(params, state, f)
 
     s = stepper.step().array()

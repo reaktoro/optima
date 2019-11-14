@@ -24,9 +24,9 @@ def test_optimum_structure():
     n = 10
     m = 5
 
-    structure = OptimumStructure(n, m)
+    structure = Structure(n, m)
     structure.A = eigen.random(m, n)
-     
+
     structure.setVariablesWithLowerBounds([0, 2])
     assert structure.variablesWithLowerBounds() == approx([0, 2])
     assert structure.variablesWithoutLowerBounds() == approx([1, 3, 4, 5, 6, 7, 8, 9])
@@ -47,12 +47,12 @@ def test_optimum_structure():
 
     assert structure.numVariables() == n
     assert structure.numEqualityConstraints() == m
-    
+
     # Assert orderingLowerBounds = [without lower bounds, with lower bounds]
     assert list(structure.orderingLowerBounds()) == \
         list(structure.variablesWithoutLowerBounds()) + \
              list(structure.variablesWithLowerBounds())
-    
+
     # Assert orderingUpperBounds = [without upper bounds, with upper bounds]
     assert list(structure.orderingUpperBounds()) == \
         list(structure.variablesWithoutUpperBounds()) + \

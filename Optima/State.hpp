@@ -15,12 +15,29 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include "OptimumState.hpp"
+#pragma once
 
 // Optima includes
-#include <Optima/OptimumStructure.hpp>
+#include <Optima/Matrix.hpp>
+#include <Optima/VariantMatrix.hpp>
 
 namespace Optima {
 
+/// Used to describe the state of an optimization calculation.
+class State
+{
+public:
+    /// The primal solution of the optimization problem.
+    Vector x;
+
+    /// The dual solution of the optimization problem with respect to the equality constraints.
+    Vector y;
+
+    /// The dual solution of the optimization problem with respect to the lower bound constraints.
+    Vector z;
+
+    /// The dual solution of the optimization problem with respect to the upper bound constraints.
+    Vector w;
+};
 
 } // namespace Optima

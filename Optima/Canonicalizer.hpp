@@ -91,15 +91,16 @@ public:
     auto updateWithSwapBasicVariable(Index ibasic, Index inonbasic) -> void;
 
     /// Update the canonical form with given priority weights for the variables.
-    /// This method will update the canonical form by taking into account the given priority
-    /// weights of the variables when selecting the basic variables.
-    /// The basic and non-basic variables will be sorted in descend order with respect to their
-    /// priority weights.
-    /// By choosing non-positive weights for some variables, and positive for all others, the
-    /// variables with non-positive weights can be prevented from becoming basic variables.
-    /// However, there is the possibility of a *degenerate case* in which one or more variables
-    /// with non-positive weights need to be basic variables. This happens when all variables with
-    /// non-zero coefficient in a row of matrix \eq{A} have non-positive weights.
+    /// This method will update the canonical form by taking into account the
+    /// given priority weights of the variables when selecting the basic
+    /// variables. The basic and non-basic variables will be sorted in descend
+    /// order with respect to their priority weights. By choosing non-positive
+    /// weights for some variables, and positive for all others, the variables
+    /// with non-positive weights can be prevented from becoming basic
+    /// variables. However, there is the possibility of a *degenerate case* in
+    /// which one or more variables with non-positive weights need to be basic
+    /// variables. This happens when all variables with non-zero coefficient in
+    /// a row of matrix \eq{A} have non-positive weights.
     /// @param weights The priority weights of the variables.
     auto updateWithPriorityWeights(VectorConstRef weights) -> void;
 

@@ -22,7 +22,6 @@
 #include <Optima/Matrix.hpp>
 #include <Optima/SaddlePointMatrix.hpp>
 #include <Optima/SaddlePointOptions.hpp>
-#include <Optima/Result.hpp>
 #include <Optima/SaddlePointSolver.hpp>
 using namespace Optima;
 

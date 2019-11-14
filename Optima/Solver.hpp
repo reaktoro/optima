@@ -27,31 +27,31 @@
 namespace Optima {
 
 // Forward declarations
-class OptimumOptions;
-class OptimumParams;
-class OptimumProblem;
-class OptimumResult;
-class OptimumState;
-class OptimumStructure;
+class Options;
+class Params;
+class Problem;
+class Result;
+class State;
+class Structure;
 
 /// The class that implements the IpNewton algorithm using an interior-point method.
-class OptimumSolver
+class Solver
 {
 public:
-    /// Construct an OptimumSolver instance with given optimization structure.
-    OptimumSolver(const OptimumStructure& structure);
+    /// Construct an Solver instance with given optimization structure.
+    Solver(const Structure& structure);
 
-    /// Construct a copy of an OptimumSolver instance.
-    OptimumSolver(const OptimumSolver& other);
+    /// Construct a copy of an Solver instance.
+    Solver(const Solver& other);
 
-    /// Destroy this OptimumSolver instance.
-    virtual ~OptimumSolver();
+    /// Destroy this Solver instance.
+    virtual ~Solver();
 
-    /// Assign an OptimumSolver instance to this.
-    auto operator=(OptimumSolver other) -> OptimumSolver&;
+    /// Assign an Solver instance to this.
+    auto operator=(Solver other) -> Solver&;
 
     /// Set the options for the optimization calculation.
-    auto setOptions(const OptimumOptions& options) -> void;
+    auto setOptions(const Options& options) -> void;
 
     /// Solve an optimization problem.
     /// This method is useful when the same optimization problem needs to
@@ -60,7 +60,7 @@ public:
     /// @note optimization problem was set with method @ref initialize.
     /// @param params The parameters for the optimization calculation.
     /// @param state[in,out] The initial guess and the final state of the optimization calculation.
-    auto solve(const OptimumParams& params, OptimumState& state) -> OptimumResult;
+    auto solve(const Params& params, State& state) -> Result;
 
     /// Return the sensitivity \eq{dx/dp} of the solution \eq{x} with respect to a vector of parameters \eq{p}.
     /// @param dgdp The derivatives \eq{dg/dp} of the gradient vector \eq{g = \nabla f} with respect to the parameters \eq{p}.

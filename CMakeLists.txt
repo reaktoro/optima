@@ -17,11 +17,11 @@ include(CondaAware)
 include(GNUInstallDirs)
 
 # Define which Optima targets to build
-option(OPTIMA_BUILD_ALL    "Build everything." OFF)
-option(OPTIMA_BUILD_DEMOS  "Build demos." OFF)
-option(OPTIMA_BUILD_DOCS   "Build documentation." OFF)
+option(OPTIMA_BUILD_DEMOS  "Build demos." ON)
 option(OPTIMA_BUILD_PYTHON "Build the python wrappers." ON)
+option(OPTIMA_BUILD_DOCS   "Build documentation." OFF)
 option(OPTIMA_BUILD_BENCH  "Build benchmarks." OFF)
+option(OPTIMA_BUILD_ALL    "Build everything." OFF)
 
 # Option to allow or not Eigen to allocate memory at runtime
 option(EIGEN_RUNTIME_NO_MALLOC "Allow or not Eigen to allocate memory at runtime" OFF)

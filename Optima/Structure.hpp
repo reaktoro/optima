@@ -24,17 +24,17 @@
 namespace Optima {
 
 /// The structure of an optimization problem that changes with less frequency.
-class OptimumStructure
+class Structure
 {
 public:
     /// The coefficient matrix of the linear equality constraint \eq{Ax = b}.
     Matrix A;
 
 public:
-    /// Construct an OptimumStructure instance with equality constraints.
+    /// Construct an Structure instance with equality constraints.
     /// @param n The number of variables in \eq{x} in the optimization problem.
     /// @param m The number of linear equality constraints in the optimization problem.
-    OptimumStructure(Index n, Index m);
+    Structure(Index n, Index m);
 
     /// Set the indices of the variables in \eq{x} with lower bounds.
     auto setVariablesWithLowerBounds(IndicesConstRef indices) -> void;

@@ -26,17 +26,21 @@ using namespace Optima;
 
 void exportResult(py::module& m)
 {
-    const auto success1 = static_cast<void(Result::*)(bool)>(&Result::success);
-    const auto success2 = static_cast<bool(Result::*)() const>(&Result::success);
-
     py::class_<Result>(m, "Result")
         .def(py::init<>())
-        .def("success", success1)
-        .def("success", success2)
-        .def("time", &Result::time)
-        .def("start", &Result::start, py::return_value_policy::reference)
-        .def("stop", &Result::stop, py::return_value_policy::reference)
+        .def_readwrite("succeeded", &Result::succeeded)
+        .def_readwrite("iterations", &Result::iterations)
+        .def_readwrite("num_objective_evals", &Result::num_objective_evals)
+        .def_readwrite("convergence_rate", &Result::convergence_rate)
+        .def_readwrite("error", &Result::error)
+        .def_readwrite("error_optimality", &Result::error_optimality)
+        .def_readwrite("error_feasibility", &Result::error_feasibility)
+        .def_readwrite("error_complementarity_lower", &Result::error_complementarity_lower)
+        .def_readwrite("error_complementarity_upper", &Result::error_complementarity_upper)
+        .def_readwrite("time", &Result::time)
+        .def_readwrite("time_objective_evals", &Result::time_objective_evals)
+        .def_readwrite("time_constraint_evals", &Result::time_constraint_evals)
+        .def_readwrite("time_linear_systems", &Result::time_linear_systems)
         .def(py::self += py::self)
-        .def(py::self + py::self)
         ;
 }

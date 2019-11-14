@@ -15,22 +15,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-// pybind11 includes
-#include <pybind11/pybind11.h>
-#include <pybind11/eigen.h>
-namespace py = pybind11;
+#include "Options.hpp"
 
-// Optima includes
-#include <Optima/OptimumState.hpp>
-using namespace Optima;
+namespace Optima {
 
-void exportOptimumState(py::module& m)
+auto OutputOptions::operator=(bool active) -> OutputOptions&
 {
-    py::class_<OptimumState>(m, "OptimumState")
-        .def(py::init<>())
-        .def_readwrite("x", &OptimumState::x)
-        .def_readwrite("y", &OptimumState::y)
-        .def_readwrite("z", &OptimumState::z)
-        .def_readwrite("w", &OptimumState::w)
-        ;
+    OutputterOptions::operator=(active);
+    return *this;
 }
+
+} // namespace Optima

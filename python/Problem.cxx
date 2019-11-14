@@ -15,29 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#pragma once
+// pybind11 includes
+#include <pybind11/pybind11.h>
+#include <pybind11/eigen.h>
+namespace py = pybind11;
 
 // Optima includes
-#include <Optima/Matrix.hpp>
-#include <Optima/VariantMatrix.hpp>
+#include <Optima/Problem.hpp>
+//using namespace Optima;
 
-namespace Optima {
-
-/// Used to describe the state of an optimization calculation.
-class OptimumState
+void exportProblem(py::module& m)
 {
-public:
-    /// The primal solution of the optimization problem.
-    Vector x;
-
-    /// The dual solution of the optimization problem with respect to the equality constraints.
-    Vector y;
-
-    /// The dual solution of the optimization problem with respect to the lower bound constraints.
-    Vector z;
-
-    /// The dual solution of the optimization problem with respect to the upper bound constraints.
-    Vector w;
-};
-
-} // namespace Optima
+}

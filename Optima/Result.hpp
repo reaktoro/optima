@@ -18,47 +18,55 @@
 #pragma once
 
 // Optima includes
-#include <Optima/Timing.hpp>
+#include <Optima/Index.hpp>
 
 namespace Optima {
 
-/// Used to indicate the result of the evaluation of a function.
+/// A type that describes the result of an optimization calculation.
 class Result
 {
 public:
-    /// Construct a default Result instance.
-    Result();
+    /// The flag that indicates if the optimization calculation converged.
+    bool succeeded = false;
 
-    /// Set the success of the calculation.
-    auto success(bool value) -> void;
+    /// The number of iterations in the optimization calculation.
+    Index iterations = 0;
 
-    /// Return `true` if the calculation was successful.
-    auto success() const -> bool;
+    /// The number of evaluations of the objective function in the optimization calculation.
+    Index num_objective_evals = 0;
 
-    /// Return the elapsed time in seconds of the calculation.
-    auto time() const -> double;
+    /// The convergence rate of the optimization calculation near the solution.
+    double convergence_rate = 0;
 
-    /// Start the stopwatch.
-    auto start() -> Result&;
+    /// The final residual error of the optimization calculation.
+    double error = 0;
 
-    /// Stop the stopwatch.
-    auto stop() -> Result&;
+    /// The final optimality error of the optimization calculation.
+    double error_optimality = 0;
 
-    /// Accumulate the result of several saddle point problem operations.
+    /// The final feasibility error of the optimization calculation.
+    double error_feasibility = 0;
+
+    /// The final complementarity error (lower bounds) of the optimization calculation.
+    double error_complementarity_lower = 0;
+
+    /// The final complementarity error (upper bounds) of the optimization calculation.
+    double error_complementarity_upper = 0;
+
+    /// The wall time spent for the optimization calculation (in units of s).
+    double time = 0;
+
+    /// The wall time spent for all objective evaluations (in units of s).
+    double time_objective_evals = 0;
+
+    /// The wall time spent for all contraint evaluations (in units of s).
+    double time_constraint_evals = 0;
+
+    /// The wall time spent for all linear system solutions (in units of s).
+    double time_linear_systems = 0;
+
+    /// Update this Result instance with another by addition.
     auto operator+=(const Result& other) -> Result&;
-
-    /// Accumulate the result of several saddle point problem operations.
-    auto operator+(const Result& other) const -> Result;
-
-private:
-    /// True if the calculation was successful.
-    bool m_success;
-
-    /// The time at which start method was called.
-    Time m_start;
-
-    /// The time at which stop method was called.
-    Time m_stop;
 };
 
 } // namespace Optima

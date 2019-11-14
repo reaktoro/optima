@@ -24,7 +24,6 @@
 #include <Optima/Canonicalizer.hpp>
 #include <Optima/Exception.hpp>
 #include <Optima/IndexUtils.hpp>
-#include <Optima/Result.hpp>
 #include <Optima/SaddlePointMatrix.hpp>
 #include <Optima/SaddlePointOptions.hpp>
 #include <Optima/Utils.hpp>
@@ -98,11 +97,8 @@ struct SaddlePointSolver::Impl
     SaddlePointMethod best_method;
 
     /// Canonicalize the coefficient matrix *A* of the saddle point problem.
-    auto initialize(MatrixConstRef A) -> Result
+    auto initialize(MatrixConstRef A) -> void
     {
-        // The result of this method call
-        Result res;
-
         // Set the number of rows and columns in A
         m = A.rows();
         n = A.cols();
@@ -148,8 +144,6 @@ struct SaddlePointSolver::Impl
         // Initialize the ordering of the variables
         iordering.head(nb) = canonicalizer.indicesBasicVariables();
         iordering.tail(nn) = canonicalizer.indicesNonBasicVariables();
-
-        return res.stop();
     }
 
     /// Update the canonical form of the coefficient matrix *A* of the saddle point problem.
@@ -219,10 +213,8 @@ struct SaddlePointSolver::Impl
     }
 
     /// Decompose the coefficient matrix of the saddle point problem.
-    auto decompose(SaddlePointMatrix lhs) -> Result
+    auto decompose(SaddlePointMatrix lhs) -> void
     {
-        Result res;
-
         // Update the canonical form of the matrix A
         updateCanonicalForm(lhs);
 
@@ -251,8 +243,6 @@ struct SaddlePointSolver::Impl
         case SaddlePointMethod::Rangespace: decomposeRangespace(lhs); break;
         default: decomposeFullspace(lhs); break;
         }
-
-        return res.stop();
     }
 
     /// Decompose the saddle point matrix for the degenerate case of no free variables.
@@ -809,10 +799,8 @@ struct SaddlePointSolver::Impl
     }
 
     /// Solve the saddle point problem with diagonal Hessian matrix.
-    auto solve(SaddlePointVector rhs, SaddlePointSolution sol) -> Result
+    auto solve(SaddlePointVector rhs, SaddlePointSolution sol) -> void
     {
-        Result res;
-
         // Check if the saddle point matrix is degenerate, with no free variables.
         if(degenerate)
             solveDegenerateCase(rhs, sol);
@@ -823,8 +811,6 @@ struct SaddlePointSolver::Impl
         case SaddlePointMethod::Rangespace: solveRangespace(rhs, sol); break;
         default: solveFullspace(rhs, sol); break;
         }
-
-        return res.stop();
     }
 
     /// Solve the saddle point problem for the degenerate case of no free variables.
@@ -1366,17 +1352,17 @@ auto SaddlePointSolver::options() const -> const SaddlePointOptions&
     return pimpl->options;
 }
 
-auto SaddlePointSolver::initialize(MatrixConstRef A) -> Result
+auto SaddlePointSolver::initialize(MatrixConstRef A) -> void
 {
     return pimpl->initialize(A);
 }
 
-auto SaddlePointSolver::decompose(SaddlePointMatrix lhs) -> Result
+auto SaddlePointSolver::decompose(SaddlePointMatrix lhs) -> void
 {
     return pimpl->decompose(lhs);
 }
 
-auto SaddlePointSolver::solve(SaddlePointVector rhs, SaddlePointSolution sol) -> Result
+auto SaddlePointSolver::solve(SaddlePointVector rhs, SaddlePointSolution sol) -> void
 {
     return pimpl->solve(rhs, sol);
 }

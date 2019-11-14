@@ -22,16 +22,16 @@
 namespace py = pybind11;
 
 // Optima includes
-#include <Optima/OptimumParams.hpp>
+#include <Optima/Params.hpp>
 using namespace Optima;
 
-void exportOptimumParams(py::module& m)
+void exportParams(py::module& m)
 {
 	using ObjectiveFunctionPtr =
 		std::function<void(VectorConstRef, ObjectiveResult*)>;
 
 	// This is a workaround to let Python callback change the state of ObjectiveResult, and not a copy
-	auto get_objective = [](const OptimumParams& self)
+	auto get_objective = [](const Params& self)
 	{
 		return [&](VectorConstRef x, ObjectiveResult* f) {
 			self.objective(x, *f);
@@ -39,19 +39,19 @@ void exportOptimumParams(py::module& m)
 	};
 
 	// This is a workaround to let Python callback change the state of ObjectiveResult, and not a copy
-	auto set_objective = [](OptimumParams& self, const ObjectiveFunctionPtr& objectiveptr)
+	auto set_objective = [](Params& self, const ObjectiveFunctionPtr& objectiveptr)
 	{
 		self.objective = [=](VectorConstRef x, ObjectiveResult& f) {
 			objectiveptr(x, &f);
 		};
 	};
 
-    py::class_<OptimumParams>(m, "OptimumParams")
+    py::class_<Params>(m, "Params")
         .def(py::init<>())
-        .def_readwrite("b", &OptimumParams::b)
-        .def_readwrite("xlower", &OptimumParams::xlower)
-        .def_readwrite("xupper", &OptimumParams::xupper)
-        .def_readwrite("xfixed", &OptimumParams::xfixed)
+        .def_readwrite("b", &Params::b)
+        .def_readwrite("xlower", &Params::xlower)
+        .def_readwrite("xupper", &Params::xupper)
+        .def_readwrite("xfixed", &Params::xfixed)
         .def_property("objective", get_objective, set_objective)
         ;
 }

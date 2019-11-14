@@ -90,7 +90,7 @@ def test_optimum_solver(args):
 
     A = assemble_A(m, n, nf)
 
-    structure = OptimumStructure(n, m)
+    structure = Structure(n, m)
     structure.setVariablesWithFixedValues(jf)
     structure.setVariablesWithLowerBounds(jl)
     structure.setVariablesWithUpperBounds(ju)
@@ -117,7 +117,7 @@ def test_optimum_solver(args):
     x_expected[jx] = xx
     x_expected[jf] = linspace(1, nf, nf)
 
-    params = OptimumParams()
+    params = Params()
     params.b = A.dot(x_expected)  # Use expected values of x to compute b
     # Use expected values of x for the fixed values
     params.xfixed = x_expected[jf]
@@ -127,13 +127,13 @@ def test_optimum_solver(args):
     params.xupper = x_expected[ju]
     params.objective = objective
 
-    state = OptimumState()
+    state = State()
 
-    options = OptimumOptions()
+    options = Options()
 #     options.output.active = True
     options.kkt.method = method
 
-    solver = OptimumSolver(structure)
+    solver = Solver(structure)
     solver.setOptions(options)
     res = solver.solve(params, state)
 
@@ -142,98 +142,98 @@ def test_optimum_solver(args):
     assert res.succeeded
 
 
-# 
+#
 # def test_optimum_solver():
-# 
+#
 #     set_printoptions(linewidth=1000)
-# 
+#
 #     A = eigen.random(m, n)
-# 
+#
 # #     jf = []
 # #     jl = []
 # #     ju = [1,2, 3, 4]
-# 
+#
 # #     jf = []
 # #     jl = []
 # #     jl = [0, 1, 2]
 # #     ju = [4, 5, 6]
-# 
+#
 #     jf = [9]
 #     jl = [1, 2, 3]
 #     ju = [4, 6]
-# 
+#
 # #     jl = [2, 5, 7, 9]
 # #     ju = [1, 3, 6]
-# 
+#
 #     nf = len(jf)
 #     nl = len(jl)
 #     nu = len(ju)
-# 
-#     structure = OptimumStructure(n, m)
+#
+#     structure = Structure(n, m)
 #     structure.setVariablesWithFixedValues(jf)
 #     structure.setVariablesWithLowerBounds(jl)
 #     structure.setVariablesWithUpperBounds(ju)
 #     structure.A = A
-# 
+#
 #     print 'jl =', jl
 #     print 'structure.variablesWithLowerBounds() =', structure.variablesWithLowerBounds()
-# 
+#
 # #     factor = 10 ** ceil(log10(n))  # Used to have all x between 0 and 1 no matter the number of variables
 # # x_expected = linspace(1, n, n) / factor  # Variables x have values
 # # between 0 and 1
 #     y_expected = linspace(1, m, m)
 #     z_expected = zeros(n)
 #     w_expected = zeros(n)
-# 
+#
 # # x_expected[jf] = 10 * x_expected[jf]  # Fixed variables x have values
 # # greater than one
-# 
+#
 # #     x_expected[jl] = 0.0  # Variables x active at lower bounds are zero
 # #     x_expected[ju] = 1.0  # Variables x active at upper bounds are one
-# 
+#
 #     z_expected[jl] = 1.0  # Slack variables z are one at active lower bounds
 #     w_expected[ju] = 1.0  # Slack variables w are one at active upper bounds
-# 
+#
 #     jx = list(set(range(n)) - set(jf))  # The indices of the free variables
-# 
+#
 #     Ax = A[:, jx]  # The columns of A corresponding to free variables
 #     Atx = array(transpose(Ax))
 #     zx = array(z_expected[jx])  # The rows of z corresponding to free variables
 #     wx = array(w_expected[jx])  # The rows of w corresponding to free variables
 #     gx = zx - wx - Atx.dot(y_expected)
 #     xx = 0.5 * (gx + 1.0)
-# 
+#
 #     x_expected = zeros(n)
 #     x_expected[jx] = xx
 #     x_expected[jf] = linspace(1, nf, nf)
-# 
-#     params = OptimumParams()
+#
+#     params = Params()
 #     params.b = A.dot(x_expected)  # Use expected values of x to compute b
 #     params.xfixed = x_expected[jf]
 #     params.xlower = x_expected[jl]
 #     params.xupper = x_expected[ju]
 #     params.objective = objective
-# 
+#
 #     print 'x_expected =', x_expected
 #     print 'y_expected =', y_expected
 #     print 'z_expected =', z_expected
 #     print 'w_expected =', w_expected
 #     print 'xlower     =', params.xlower
 #     print 'xupper     =', params.xupper
-# 
-#     state = OptimumState()
+#
+#     state = State()
 # #     state.x = 0.5 * eigen.ones(n)
-# 
-#     options = OptimumOptions()
+#
+#     options = Options()
 #     options.output.active = True
 #     options.max_iterations = 25
 # #     options.kkt.method = method
 #     options.kkt.method = SaddlePointMethod.Rangespace
-# 
-#     solver = OptimumSolver(structure)
+#
+#     solver = Solver(structure)
 #     solver.setOptions(options)
 #     res = solver.solve(params, state)
-# 
+#
 #     print 'x(calculated) =', state.x
 #     print 'x(expected)   =', x_expected
 #     print
@@ -255,5 +255,5 @@ def test_optimum_solver(args):
 #     print 'norm(y(diff)) =', norm(abs(state.y - y_expected))
 #     print 'norm(z(diff)) =', norm(abs(state.z - z_expected))
 #     print 'norm(w(diff)) =', norm(abs(state.w - w_expected))
-# 
+#
 #     assert res.succeeded

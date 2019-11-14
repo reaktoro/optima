@@ -15,12 +15,12 @@
 //// You should have received a copy of the GNU General Public License
 //// along with this program. If not, see <http://www.gnu.org/licenses/>.
 //
-//#include "OptimumProblem.hpp"
+//#include "Problem.hpp"
 //
 //namespace Optima {
 //
 //
-//OptimumProblem::OptimumProblem(const OptimumStructure& structure)
+//Problem::Problem(const Structure& structure)
 //: m_n(structure.n), m_m(structure.A.rows()),
 //  m_nlower(0), m_nupper(0), m_nfixed(0), m_b(m_m),
 //  m_xlower(m_n), m_xupper(m_n), m_xfixed(m_n)
@@ -33,19 +33,19 @@
 //    m_xfixed.fill(0.0);
 //}
 //
-//auto OptimumProblem::xlower(double val) -> void
+//auto Problem::xlower(double val) -> void
 //{
 //    m_xlower.fill(val);
 //    m_nlower = m_n;
 //}
 //
-//auto OptimumProblem::xlower(VectorConstRef values) -> void
+//auto Problem::xlower(VectorConstRef values) -> void
 //{
 //    m_xlower.head(m_n) = values;
 //    m_nlower = m_n;
 //}
 //
-//auto OptimumProblem::xlower(IndicesConstRef indices, VectorConstRef values) -> void
+//auto Problem::xlower(IndicesConstRef indices, VectorConstRef values) -> void
 //{
 //    m_xlower(indices) = values;
 //    m_nlower = indices.size();
@@ -53,24 +53,24 @@
 //    m_lowerpartition.head(m_nlower).swap(m_lowerpartition(indices));
 //}
 //
-//auto OptimumProblem::xlower() const -> VectorConstRef
+//auto Problem::xlower() const -> VectorConstRef
 //{
 //    return m_xlower.head(m_nlower);
 //}
 //
-//auto OptimumProblem::xupper(double val) -> void
+//auto Problem::xupper(double val) -> void
 //{
 //    m_xupper.fill(val);
 //    m_nupper = m_n;
 //}
 //
-//auto OptimumProblem::xupper(VectorConstRef values) -> void
+//auto Problem::xupper(VectorConstRef values) -> void
 //{
 //    m_xupper.head(m_n) = values;
 //    m_nupper = m_n;
 //}
 //
-//auto OptimumProblem::xupper(IndicesConstRef indices, VectorConstRef values) -> void
+//auto Problem::xupper(IndicesConstRef indices, VectorConstRef values) -> void
 //{
 //    m_xupper(indices) = values;
 //    m_nupper = indices.size();
@@ -78,24 +78,24 @@
 //    m_upperpartition.head(m_nlower).swap(m_upperpartition(indices));
 //}
 //
-//auto OptimumProblem::xupper() const -> VectorConstRef
+//auto Problem::xupper() const -> VectorConstRef
 //{
 //    return m_xupper.head(m_nupper);
 //}
 //
-//auto OptimumProblem::xfixed(double val) -> void
+//auto Problem::xfixed(double val) -> void
 //{
 //    m_xfixed.fill(val);
 //    m_nfixed = m_n;
 //}
 //
-//auto OptimumProblem::xfixed(VectorConstRef values) -> void
+//auto Problem::xfixed(VectorConstRef values) -> void
 //{
 //    m_xfixed.head(m_n) = values;
 //    m_nfixed = m_n;
 //}
 //
-//auto OptimumProblem::xfixed(IndicesConstRef indices, VectorConstRef values) -> void
+//auto Problem::xfixed(IndicesConstRef indices, VectorConstRef values) -> void
 //{
 //    m_xfixed(indices) = values;
 //    m_nfixed = indices.size();
@@ -103,52 +103,52 @@
 //    m_fixedpartition.head(m_nlower).swap(m_fixedpartition(indices));
 //}
 //
-//auto OptimumProblem::xfixed() const -> VectorConstRef
+//auto Problem::xfixed() const -> VectorConstRef
 //{
 //    return m_xfixed.head(m_nfixed);
 //}
 //
-//auto OptimumProblem::iwithlower() const -> IndicesConstRef
+//auto Problem::iwithlower() const -> IndicesConstRef
 //{
 //    return m_lowerpartition.head(m_nlower);
 //}
 //
-//auto OptimumProblem::variablesWithUpperBounds() const -> IndicesConstRef
+//auto Problem::variablesWithUpperBounds() const -> IndicesConstRef
 //{
 //    return m_upperpartition.head(m_nupper);
 //}
 //
-//auto OptimumProblem::variablesWithFixedValues() const -> IndicesConstRef
+//auto Problem::variablesWithFixedValues() const -> IndicesConstRef
 //{
 //    return m_fixedpartition.head(m_nfixed);
 //}
 //
-//auto OptimumProblem::variablesWithoutLowerBounds() const -> IndicesConstRef
+//auto Problem::variablesWithoutLowerBounds() const -> IndicesConstRef
 //{
 //    return m_lowerpartition.tail(m_n - m_nlower);
 //}
 //
-//auto OptimumProblem::variablesWithoutUpperBounds() const -> IndicesConstRef
+//auto Problem::variablesWithoutUpperBounds() const -> IndicesConstRef
 //{
 //    return m_upperpartition.tail(m_n - m_nupper);
 //}
 //
-//auto OptimumProblem::variablesWithoutFixedValues() const -> IndicesConstRef
+//auto Problem::variablesWithoutFixedValues() const -> IndicesConstRef
 //{
 //    return m_fixedpartition.tail(m_n - m_nfixed);
 //}
 //
-//auto OptimumProblem::lowerpartition() const -> IndicesConstRef
+//auto Problem::lowerpartition() const -> IndicesConstRef
 //{
 //    return m_lowerpartition;
 //}
 //
-//auto OptimumProblem::upperpartition() const -> IndicesConstRef
+//auto Problem::upperpartition() const -> IndicesConstRef
 //{
 //    return m_upperpartition;
 //}
 //
-//auto OptimumProblem::fixedpartition() const -> IndicesConstRef
+//auto Problem::fixedpartition() const -> IndicesConstRef
 //{
 //    return m_fixedpartition;
 //}

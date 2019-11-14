@@ -15,14 +15,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include "OptimumOptions.hpp"
+#pragma once
+
+// Optima includes
+#include <Optima/Matrix.hpp>
+#include <Optima/Objective.hpp>
 
 namespace Optima {
 
-auto OptimumOutputOptions::operator=(bool active) -> OptimumOutputOptions&
+/// The parameters of an optimization problem that change with more frequency.
+class Params
 {
-    OutputterOptions::operator=(active);
-    return *this;
-}
+public:
+    /// The right-hand side vector of the linear equality constraint \eq{Ax = b}.
+    Vector b;
+
+    /// The lower bounds of the variables in \eq{x} that have lower bounds.
+    Vector xlower;
+
+    /// The upper bounds of the variables \eq{x} that have upper bounds.
+    Vector xupper;
+
+    /// The values of the variables in \eq{x} that are fixed.
+    Vector xfixed;
+
+    /// The objective function of the optimization calculation.
+    ObjectiveFunction objective;
+};
 
 } // namespace Optima
