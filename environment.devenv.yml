@@ -1,0 +1,16 @@
+name: optima
+
+dependencies:
+  - gxx_linux-64=7.3.0  # [linux]
+  - clangxx_osx-64=9.0.0  # [osx]
+  - cmake>=3.13
+  - ninja
+  - eigen
+  - pybind11
+  - catch2
+  - ccache  # [unix]
+  - pip
+  - pip:
+    - mkdocs
+    - mkdocs-material
+    - mkdocs-macros-plugin

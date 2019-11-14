@@ -2,6 +2,9 @@
 *build*
 *external*
 
+# Conda files
+environment.yml
+
 # Eclipse IDE related files
 .cproject
 .project
