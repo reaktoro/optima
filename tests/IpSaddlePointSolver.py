@@ -27,22 +27,22 @@ import Canonicalizer
 def print_state(M, r, s, m, n):
     set_printoptions(linewidth=1000, precision=10, threshold='nan')
     slu = eigen.solve(M, r)
-    print 'M = \n', M
-    print 'r        = ', r
-    print 'x        = ', s[:n]
-    print 'x(lu)    = ', slu[:n]
-    print 'x(diff)  = ', abs(s[:n] - slu[:n])
-    print 'y        = ', s[n:n + m]
-    print 'y(lu)    = ', slu[n:n + m]
-    print 'y(diff)  = ', abs(s[n:n + m] - slu[n:n + m])
-    print 'z        = ', s[n + m:n + m + n]
-    print 'z(lu)    = ', slu[n + m:n + m + n]
-    print 'z(diff)  = ', abs(s[n + m:n + m + n] - slu[n + m:n + m + n])
-    print 'w        = ', s[:n]
-    print 'w(lu)    = ', slu[:n]
-    print 'w(diff)  = ', abs(s[:n] - slu[:n])
-    print 'res      = ', M.dot(s) - r
-    print 'res(lu)  = ', M.dot(slu) - r
+    print( 'M = \n', M )
+    print( 'r        = ', r )
+    print( 'x        = ', s[:n] )
+    print( 'x(lu)    = ', slu[:n] )
+    print( 'x(diff)  = ', abs(s[:n] - slu[:n]) )
+    print( 'y        = ', s[n:n + m] )
+    print( 'y(lu)    = ', slu[n:n + m] )
+    print( 'y(diff)  = ', abs(s[n:n + m] - slu[n:n + m]) )
+    print( 'z        = ', s[n + m:n + m + n] )
+    print( 'z(lu)    = ', slu[n + m:n + m + n] )
+    print( 'z(diff)  = ', abs(s[n + m:n + m + n] - slu[n + m:n + m + n]) )
+    print( 'w        = ', s[:n] )
+    print( 'w(lu)    = ', slu[:n] )
+    print( 'w(diff)  = ', abs(s[:n] - slu[:n]) )
+    print( 'res      = ', M.dot(s) - r )
+    print( 'res(lu)  = ', M.dot(slu) - r )
 
 
 # Tested number of variables in (s, l, u, z, w) partitions
@@ -90,14 +90,14 @@ testdata = product(tested_dimensions,
 @mark.parametrize("args", testdata)
 def test_ip_saddle_point_solver(args):
     dimensions, assemble_A, structure_H, jf, method = args
-    
+
     m, ns, nl, nu, nz, nw = dimensions
-    
+
     n = ns + nl + nu + nz + nw
     t = 3 * n + m
-    
+
     nf = len(jf)
-        
+
     A = assemble_A(m, n, nf)
     H = eigen.random(n, n) if structure_H == 'dense' else eigen.random(n)
     Z = eigen.random(n)
@@ -110,7 +110,7 @@ def test_ip_saddle_point_solver(args):
 
     if nz > 0: L[nl:nz] = 1.0e-18; Z[nl:nz] = 1.0
     if nw > 0: U[nu:nw] = 1.0e-18; W[nu:nw] = 1.0
-    
+
     expected = linspace(1, t, t)
 
     options = SaddlePointOptions()
