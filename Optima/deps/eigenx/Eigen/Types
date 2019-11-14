@@ -1,0 +1,121 @@
+// This file is part of Eigenx, an extension of Eigen.
+//
+// Copyright (C) 2018-2019 Allan Leal
+//
+// This Source Code Form is subject to the terms of the Mozilla
+// Public License v. 2.0. If a copy of the MPL was not distributed
+// with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+#ifndef EIGEN_EIGENXTYPES_H
+#define EIGEN_EIGENXTYPES_H
+
+// C++ includes
+#include <complex>
+
+namespace Eigen {
+
+// Generate all the convenience Eigen types MatrixXd, MatrixXf, VectorXd, etc.
+// using ColMajor=0 storage option, except for row vectors, where RowMajor=1
+// is used.
+
+#define EIGEN_MAKE_TYPEDEFS(Type, TypeSuffix, Size, SizeSuffix)   \
+typedef Matrix<Type, Size, Size, 0, Size, Size> Matrix##SizeSuffix##TypeSuffix;  \
+typedef Matrix<Type, Size, 1, 0, Size, 1>       Vector##SizeSuffix##TypeSuffix;  \
+typedef Matrix<Type, 1, Size, 1, 1, Size>       RowVector##SizeSuffix##TypeSuffix;
+
+#define EIGEN_MAKE_FIXED_TYPEDEFS(Type, TypeSuffix, Size)         \
+typedef Matrix<Type, Size, -1, 0, Size, -1> Matrix##Size##X##TypeSuffix;  \
+typedef Matrix<Type, -1, Size, 0, -1, Size> Matrix##X##Size##TypeSuffix;
+
+#define EIGEN_MAKE_TYPEDEFS_ALL_SIZES(Type, TypeSuffix) \
+EIGEN_MAKE_TYPEDEFS(Type, TypeSuffix, 2, 2) \
+EIGEN_MAKE_TYPEDEFS(Type, TypeSuffix, 3, 3) \
+EIGEN_MAKE_TYPEDEFS(Type, TypeSuffix, 4, 4) \
+EIGEN_MAKE_TYPEDEFS(Type, TypeSuffix, -1, X) \
+EIGEN_MAKE_FIXED_TYPEDEFS(Type, TypeSuffix, 2) \
+EIGEN_MAKE_FIXED_TYPEDEFS(Type, TypeSuffix, 3) \
+EIGEN_MAKE_FIXED_TYPEDEFS(Type, TypeSuffix, 4)
+
+EIGEN_MAKE_TYPEDEFS_ALL_SIZES(int,                  i)
+EIGEN_MAKE_TYPEDEFS_ALL_SIZES(long,                 l)
+EIGEN_MAKE_TYPEDEFS_ALL_SIZES(float,                f)
+EIGEN_MAKE_TYPEDEFS_ALL_SIZES(double,               d)
+EIGEN_MAKE_TYPEDEFS_ALL_SIZES(std::complex<float>,  cf)
+EIGEN_MAKE_TYPEDEFS_ALL_SIZES(std::complex<double>, cd)
+
+#undef EIGEN_MAKE_TYPEDEFS_ALL_SIZES
+#undef EIGEN_MAKE_TYPEDEFS
+#undef EIGEN_MAKE_FIXED_TYPEDEFS
+
+namespace internal {
+
+template<typename PlainObjectType>
+using MatrixRef = Ref<PlainObjectType, 0, OuterStride<-1>>;
+
+template<typename PlainObjectType>
+using VectorRef = Ref<PlainObjectType, 0, InnerStride<1>>;
+
+template<typename PlainObjectType>
+using StridedVectorRef = Ref<PlainObjectType, 0, InnerStride<-1>>;
+
+} // namespace internal
+
+using MatrixXiRef = internal::MatrixRef<MatrixXi>; ///< Alias to Eigen type Ref<MatrixXi> with default template arguments.
+using MatrixXlRef = internal::MatrixRef<MatrixXl>; ///< Alias to Eigen type Ref<MatrixXl> with default template arguments.
+using MatrixXfRef = internal::MatrixRef<MatrixXf>; ///< Alias to Eigen type Ref<MatrixXf> with default template arguments.
+using MatrixXdRef = internal::MatrixRef<MatrixXd>; ///< Alias to Eigen type Ref<MatrixXd> with default template arguments.
+using MatrixXcfRef = internal::MatrixRef<MatrixXcf>; ///< Alias to Eigen type Ref<MatrixXcf> with default template arguments.
+using MatrixXcdRef = internal::MatrixRef<MatrixXcd>; ///< Alias to Eigen type Ref<MatrixXcd> with default template arguments.
+
+using MatrixXiConstRef = internal::MatrixRef<const MatrixXi>; ///< Alias to Eigen type Ref<const MatrixXi> with default template arguments.
+using MatrixXlConstRef = internal::MatrixRef<const MatrixXl>; ///< Alias to Eigen type Ref<const MatrixXl> with default template arguments.
+using MatrixXfConstRef = internal::MatrixRef<const MatrixXf>; ///< Alias to Eigen type Ref<const MatrixXf> with default template arguments.
+using MatrixXdConstRef = internal::MatrixRef<const MatrixXd>; ///< Alias to Eigen type Ref<const MatrixXd> with default template arguments.
+using MatrixXcfConstRef = internal::MatrixRef<const MatrixXcf>; ///< Alias to Eigen type Ref<const MatrixXcf> with default template arguments.
+using MatrixXcdConstRef = internal::MatrixRef<const MatrixXcd>; ///< Alias to Eigen type Ref<const MatrixXcd> with default template arguments.
+
+using VectorXiRef = internal::VectorRef<VectorXi>; ///< Alias to Eigen type Ref<VectorXi> with default template arguments.
+using VectorXlRef = internal::VectorRef<VectorXl>; ///< Alias to Eigen type Ref<VectorXl> with default template arguments.
+using VectorXfRef = internal::VectorRef<VectorXf>; ///< Alias to Eigen type Ref<VectorXf> with default template arguments.
+using VectorXdRef = internal::VectorRef<VectorXd>; ///< Alias to Eigen type Ref<VectorXd> with default template arguments.
+using VectorXcfRef = internal::VectorRef<VectorXcf>; ///< Alias to Eigen type Ref<VectorXcf> with default template arguments.
+using VectorXcdRef = internal::VectorRef<VectorXcd>; ///< Alias to Eigen type Ref<VectorXcd> with default template arguments.
+
+using VectorXiConstRef = internal::VectorRef<const VectorXi>; ///< Alias to Eigen type Ref<const VectorXi> with default template arguments.
+using VectorXlConstRef = internal::VectorRef<const VectorXl>; ///< Alias to Eigen type Ref<const VectorXl> with default template arguments.
+using VectorXfConstRef = internal::VectorRef<const VectorXf>; ///< Alias to Eigen type Ref<const VectorXf> with default template arguments.
+using VectorXdConstRef = internal::VectorRef<const VectorXd>; ///< Alias to Eigen type Ref<const VectorXd> with default template arguments.
+using VectorXcfConstRef = internal::VectorRef<const VectorXcf>; ///< Alias to Eigen type Ref<const VectorXcf> with default template arguments.
+using VectorXcdConstRef = internal::VectorRef<const VectorXcd>; ///< Alias to Eigen type Ref<const VectorXcd> with default template arguments.
+
+using RowVectorXiRef = internal::VectorRef<RowVectorXi>; ///< Alias to Eigen type Ref<RowVectorXi> with default template arguments.
+using RowVectorXlRef = internal::VectorRef<RowVectorXl>; ///< Alias to Eigen type Ref<RowVectorXl> with default template arguments.
+using RowVectorXfRef = internal::VectorRef<RowVectorXf>; ///< Alias to Eigen type Ref<RowVectorXf> with default template arguments.
+using RowVectorXdRef = internal::VectorRef<RowVectorXd>; ///< Alias to Eigen type Ref<RowVectorXd> with default template arguments.
+using RowVectorXcfRef = internal::VectorRef<RowVectorXcf>; ///< Alias to Eigen type Ref<RowVectorXcf> with default template arguments.
+using RowVectorXcdRef = internal::VectorRef<RowVectorXcd>; ///< Alias to Eigen type Ref<RowVectorXcd> with default template arguments.
+
+using RowVectorXiConstRef = internal::VectorRef<const RowVectorXi>; ///< Alias to Eigen type Ref<const RowVectorXi> with default template arguments.
+using RowVectorXlConstRef = internal::VectorRef<const RowVectorXl>; ///< Alias to Eigen type Ref<const RowVectorXl> with default template arguments.
+using RowVectorXfConstRef = internal::VectorRef<const RowVectorXf>; ///< Alias to Eigen type Ref<const RowVectorXf> with default template arguments.
+using RowVectorXdConstRef = internal::VectorRef<const RowVectorXd>; ///< Alias to Eigen type Ref<const RowVectorXd> with default template arguments.
+using RowVectorXcfConstRef = internal::VectorRef<const RowVectorXcf>; ///< Alias to Eigen type Ref<const RowVectorXcf> with default template arguments.
+using RowVectorXcdConstRef = internal::VectorRef<const RowVectorXcd>; ///< Alias to Eigen type Ref<const RowVectorXcd> with default template arguments.
+
+using StridedVectorXiRef = internal::StridedVectorRef<VectorXi>; ///< Alias to Eigen type Ref<VectorXi> with more flexible stride argument.
+using StridedVectorXlRef = internal::StridedVectorRef<VectorXl>; ///< Alias to Eigen type Ref<VectorXl> with more flexible stride argument.
+using StridedVectorXfRef = internal::StridedVectorRef<VectorXf>; ///< Alias to Eigen type Ref<VectorXf> with more flexible stride argument.
+using StridedVectorXdRef = internal::StridedVectorRef<VectorXd>; ///< Alias to Eigen type Ref<VectorXd> with more flexible stride argument.
+using StridedVectorXcfRef = internal::StridedVectorRef<VectorXcf>; ///< Alias to Eigen type Ref<VectorXcf> with more flexible stride argument.
+using StridedVectorXcdRef = internal::StridedVectorRef<VectorXcd>; ///< Alias to Eigen type Ref<VectorXcd> with more flexible stride argument.
+
+using StridedVectorXiConstRef = internal::StridedVectorRef<const VectorXi>; ///< Alias to Eigen type Ref<const VectorXi> with more flexible stride argument.
+using StridedVectorXlConstRef = internal::StridedVectorRef<const VectorXl>; ///< Alias to Eigen type Ref<const VectorXl> with more flexible stride argument.
+using StridedVectorXfConstRef = internal::StridedVectorRef<const VectorXf>; ///< Alias to Eigen type Ref<const VectorXf> with more flexible stride argument.
+using StridedVectorXdConstRef = internal::StridedVectorRef<const VectorXd>; ///< Alias to Eigen type Ref<const VectorXd> with more flexible stride argument.
+using StridedVectorXcfConstRef = internal::StridedVectorRef<const VectorXcf>; ///< Alias to Eigen type Ref<const VectorXcf> with more flexible stride argument.
+using StridedVectorXcdConstRef = internal::StridedVectorRef<const VectorXcd>; ///< Alias to Eigen type Ref<const VectorXcd> with more flexible stride argument.
+
+} // namespace Eigen
+
+#endif // EIGEN_EIGENXTYPES_H

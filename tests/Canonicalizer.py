@@ -38,13 +38,13 @@ def assemble_matrix_A_with_two_linearly_dependent_rows(m, n, nf=0):
 
 def assemble_matrix_A_with_one_basic_fixed_variable(m, n, nf=0):
     A = eigen.random(m, n)
-    A[-1, -nf] = 0.0 
+    A[-1, -nf] = 0.0
     return A
 
 def assemble_matrix_A_with_two_basic_fixed_variables(m, n, nf=0):
     A = eigen.random(m, n)
-    A[-2, -nf] = 0.0 
-    A[-1, -nf] = 0.0 
+    A[-2, -nf] = 0.0
+    A[-1, -nf] = 0.0
     return A
 
 tested_matrices_A = [
@@ -67,17 +67,17 @@ def check_canonical_form(canonicalizer, A):
     R = canonicalizer.R()
     Q = canonicalizer.Q()
     C = canonicalizer.C()
-    
+
     # Check R*A*Q == C
     assert norm(R.dot(A[:,Q]) - C) / norm(C) == approx(0.0)
 
     # Assemble Qtr, the transpose of the permutation matrix Q
     Qtr = arange(n)
     Qtr[Q] = arange(n)
-    
+
     # Calculate the invR, the inverse of matrix R
     Rinv = inv(R)
-    
+
     # Check inv(R) * C * tr(Q) == A
     assert Rinv.dot(C[:, Qtr]) == approx(A)
 
@@ -108,8 +108,8 @@ def check_canonicalizer(canonicalizer, A):
     #---------------------------------------------------------------------------
     # Perform a series of basis swap operations and check the canonical form
     #---------------------------------------------------------------------------
-    for i in xrange(nb):
-        for j in xrange(n - nb):
+    for i in range(nb):
+        for j in range(n - nb):
             canonicalizer.updateWithSwapBasicVariable(i, j)
             check_canonical_form(canonicalizer, A)
 
@@ -129,8 +129,8 @@ def check_canonicalizer(canonicalizer, A):
 def test_canonicalizer(assemble_A):
     m = 4
     n = 6
-    
+
     A = assemble_A(m, n)
-    
+
     canonicalizer = Canonicalizer(A)
     check_canonicalizer(canonicalizer, A)

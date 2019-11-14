@@ -18,17 +18,18 @@
 // C++ includes
 #include <iostream>
 
-// Eigen includes
-#include <Eigenx/Core>
-#include <Eigen/LU>
-using namespace Eigen;
-
 // Optima includes
+#include <Optima/Matrix.hpp>
 #include <Optima/SaddlePointMatrix.hpp>
 #include <Optima/SaddlePointOptions.hpp>
 #include <Optima/Result.hpp>
 #include <Optima/SaddlePointSolver.hpp>
 using namespace Optima;
+
+// Eigen includes
+#include <eigenx/Eigen/LU>
+using Eigen::PartialPivLU;
+using Eigen::FullPivLU;
 
 Index samples = 10;
 

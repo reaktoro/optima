@@ -17,9 +17,6 @@
 
 #include "OptimumStepper.hpp"
 
-using namespace Eigen;
-using Eigen::placeholders::all;
-
 // Optima includes
 #include <Optima/Exception.hpp>
 #include <Optima/IpSaddlePointMatrix.hpp>

@@ -32,7 +32,6 @@
 #include <Optima/SaddlePointMatrix.hpp>
 #include <Optima/Timing.hpp>
 #include <Optima/Utils.hpp>
-using namespace Eigen;
 
 namespace Optima {
 namespace {

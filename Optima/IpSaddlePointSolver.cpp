@@ -28,8 +28,6 @@
 #include <Optima/SaddlePointSolver.hpp>
 #include <Optima/Utils.hpp>
 #include <Optima/VariantMatrix.hpp>
-using namespace Eigen;
-using namespace Eigen::placeholders;
 
 namespace Optima {
 

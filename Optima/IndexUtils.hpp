@@ -21,14 +21,15 @@
 #include <algorithm>
 
 // Optima includes
+#include <Optima/Matrix.hpp>
 #include <Optima/Index.hpp>
 
 namespace Optima {
 
 /// Return a vector of indices with values from 0 up to a given length.
-inline auto indices(Index length) -> decltype(Eigen::linspace<Index>(length))
+inline auto indices(Index length) -> decltype(linspace<Index>(length))
 {
-    return Eigen::linspace<Index>(length);
+    return linspace<Index>(length);
 }
 
 /// Return `true` if a given index `i` is contained in vector `indices`.

@@ -2,7 +2,7 @@
 
 ## Creator & Maintainer
 
-* Allan Leal <allan.leal@psi.ch>
+* Allan Leal (<allan.leal@erdw.ethz.ch>)
 
 ## Contributors
 

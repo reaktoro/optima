@@ -21,14 +21,11 @@
 #include <cassert>
 
 // Eigen includes
-#include <eigenx/Eigen/Core>
-#include <eigenx/Eigen/LU>
-using namespace Eigen;
+#include <Optima/deps/eigen3/Eigen/Dense>
 
 // Optima includes
 #include <Optima/IndexUtils.hpp>
 #include <Optima/Utils.hpp>
-using namespace Eigen;
 
 namespace Optima {
 

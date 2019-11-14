@@ -1,0 +1,27 @@
+name: optima
+
+dependencies:
+  # C++ compilers
+  - gxx_linux-64=7.3.0  # [linux]
+  - clangxx_osx-64=9.0.0  # [osx]
+
+  # C++ libraries
+  - eigen
+  - pybind11
+  - catch2
+
+  # Python
+  - python
+  - numpy
+  - pip
+  - pip:
+    - mkdocs
+    - mkdocs-material
+    - mkdocs-macros-plugin
+    - pytest-regressions
+
+  # Applications
+  - cmake>=3.13
+  - ninja
+  - ccache  # [unix]
+  - clcache  # [win]
