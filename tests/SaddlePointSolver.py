@@ -83,23 +83,23 @@ def test_saddle_point_solver(args):
 
     assemble_A, structure_H, structure_D, structure_G, jf, variable_condition, method = args
 
-    if method == SaddlePointMethod.Rangespace and structure_H == 'dense':
-        return
-
     t = m + n
 
     nf = len(jf)
 
-    expected = linspace(1, t, t);
+    expected = linspace(1, t, t)
 
     A = assemble_A(m, n, nf)
 
-    H = eigen.random(n, n) if structure_H == 'dense' else eigen.diag(eigen.random(n))
+    H = eigen.random(n, n)
     D = eigen.random(n) if structure_D == 'diagonal' else eigen.vector()
     G = eigen.random(m, m) if structure_G == 'dense' else eigen.matrix()
 
+    if method == SaddlePointMethod.Rangespace:
+        H = eigen.diag(eigen.random(n))
+
     # The diagonal entries of the Hessian matrix
-    Hdiag = H[diag_indices(n)] if structure_H == 'dense' else H
+    Hdiag = H[diag_indices(n)]
 
     # The sequence along the diagonal that is affected to control the number of pivot variables
     seq = slice(m) if variable_condition == 'some-variables-pivot' else slice(n)

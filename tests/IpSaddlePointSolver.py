@@ -91,9 +91,6 @@ testdata = product(tested_dimensions,
 def test_ip_saddle_point_solver(args):
     dimensions, assemble_A, structure_H, jf, method = args
 
-    if method == SaddlePointMethod.Rangespace and structure_H == 'dense':
-        return
-
     m, ns, nl, nu, nz, nw = dimensions
 
     n = ns + nl + nu + nz + nw
@@ -102,11 +99,14 @@ def test_ip_saddle_point_solver(args):
     nf = len(jf)
 
     A = assemble_A(m, n, nf)
-    H = eigen.random(n, n) if structure_H == 'dense' else eigen.diag(eigen.random(n))
+    H = eigen.random(n, n)
     Z = eigen.random(n)
     W = eigen.random(n)
     L = eigen.random(n)
     U = eigen.random(n)
+
+    if method == SaddlePointMethod.Rangespace:
+        H = eigen.diag(eigen.random(n))
 
     if nl > 0: L[:nl] = 1.0e-3; Z[:nl] = 1.0
     if nu > 0: U[:nu] = 1.0e-3; W[:nu] = 1.0

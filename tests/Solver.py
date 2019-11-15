@@ -76,7 +76,7 @@ testdata = product(tested_matrices_A,
 def objective(x, f):
     f.value = sum((x - 0.5) ** 2)
     f.gradient = 2.0 * (x - 0.5)
-    f.hessian = 2.0 * ones(len(x))
+    f.hessian = 2.0 * eye(len(x))
 
 
 @mark.parametrize("args", testdata)
