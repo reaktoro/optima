@@ -59,18 +59,13 @@ SaddlePointMatrix::operator Matrix() const
 
     Matrix res = zeros(t, t);
 
-    switch(matrixStructure(H)) {
-    case MatrixStructure::Dense:
-        res.topLeftCorner(n, n) = H;
+    res.topLeftCorner(n, n) <<= H;
+
+    if(isDenseMatrix(H))
+    {
         res.topLeftCorner(n, n)(jf, all).fill(0.0);
         res.topLeftCorner(n, n)(all, jf).fill(0.0);
         res.topLeftCorner(n, n).diagonal()(jf).fill(1.0);
-        break;
-    case MatrixStructure::Diagonal:
-        res.topLeftCorner(n, n).diagonal() = H.col(0);
-        break;
-    case MatrixStructure::Zero:
-        break;
     }
 
     // Add the D contribution if D is non-empty
@@ -83,7 +78,7 @@ SaddlePointMatrix::operator Matrix() const
     res.topRightCorner(n, m)(jf, all).fill(0.0);
 
     res.bottomLeftCorner(m, n) = A;
-    res.bottomRightCorner(m, m) << G;
+    res.bottomRightCorner(m, m) <<= G;
 
     return res;
 }

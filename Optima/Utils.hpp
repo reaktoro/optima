@@ -134,7 +134,7 @@ auto isDiagonalMatrix(MatrixConstRef mat) -> bool;
 auto isDenseMatrix(MatrixConstRef mat) -> bool;
 
 /// Assign a matrix with another that may be square or a single column representing a diagonal matrix.
-auto operator<<(MatrixRef mat, MatrixConstRef other) -> MatrixRef;
+auto operator<<=(MatrixRef mat, MatrixConstRef other) -> MatrixRef;
 
 /// Resize a matrix if its current dimension is inferior to a given one.
 /// If both given number of rows and columns are less than the current values,

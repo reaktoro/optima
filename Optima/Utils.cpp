@@ -391,7 +391,7 @@ auto isDenseMatrix(MatrixConstRef mat) -> bool
     return mat.size() > 1 && mat.rows() == mat.cols();
 }
 
-auto operator<<(MatrixRef mat, MatrixConstRef other) -> MatrixRef
+auto operator<<=(MatrixRef mat, MatrixConstRef other) -> MatrixRef
 {
     switch(matrixStructure(other)) {
     case MatrixStructure::Dense: mat = other; break;
