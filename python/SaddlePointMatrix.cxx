@@ -32,14 +32,14 @@ void exportSaddlePointMatrix(py::module& m)
         .def_readonly("A", &SaddlePointMatrix::A)
         .def_readonly("G", &SaddlePointMatrix::G)
         .def_readonly("jf", &SaddlePointMatrix::jf)
-        .def(py::init<VariantMatrixConstRef, VectorConstRef, MatrixConstRef, IndicesConstRef>(), py::arg("H"), py::arg("D"), py::arg("A"), py::arg("jf"))
-        .def(py::init<VariantMatrixConstRef, VectorConstRef, MatrixConstRef, MatrixConstRef, IndicesConstRef>(), py::arg("H"), py::arg("D"), py::arg("A"), py::arg("G"), py::arg("jf"))
+        .def(py::init<MatrixConstRef, VectorConstRef, MatrixConstRef, IndicesConstRef>(), py::arg("H"), py::arg("D"), py::arg("A"), py::arg("jf"))
+        .def(py::init<MatrixConstRef, VectorConstRef, MatrixConstRef, MatrixConstRef, IndicesConstRef>(), py::arg("H"), py::arg("D"), py::arg("A"), py::arg("G"), py::arg("jf"))
 
-        // IMPORTANT: Constructors below are needed to allow 1d numpy arrays to be converted to VariantMatrixConstRef
+        // IMPORTANT: Constructors below are needed to allow 1d numpy arrays to be converted to MatrixConstRef
         .def(py::init<VectorConstRef, VectorConstRef, MatrixConstRef, IndicesConstRef>(), py::arg("H"), py::arg("D"), py::arg("A"), py::arg("jf"))
         .def(py::init<VectorConstRef, VectorConstRef, MatrixConstRef, MatrixConstRef, IndicesConstRef>(), py::arg("H"), py::arg("D"), py::arg("A"), py::arg("G"), py::arg("jf"))
 
-        // IMPORTANT: Constructors below are needed to allow 2d numpy arrays to be converted to VariantMatrixConstRef
+        // IMPORTANT: Constructors below are needed to allow 2d numpy arrays to be converted to MatrixConstRef
         .def(py::init<MatrixConstRef, VectorConstRef, MatrixConstRef, IndicesConstRef>(), py::arg("H"), py::arg("D"), py::arg("A"), py::arg("jf"))
         .def(py::init<MatrixConstRef, VectorConstRef, MatrixConstRef, MatrixConstRef, IndicesConstRef>(), py::arg("H"), py::arg("D"), py::arg("A"), py::arg("G"), py::arg("jf"))
         .def("array", [](SaddlePointMatrix self) { return Matrix(self); })

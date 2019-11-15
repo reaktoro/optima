@@ -22,11 +22,11 @@
 #include <Optima/Exception.hpp>
 #include <Optima/IndexUtils.hpp>
 #include <Optima/IpSaddlePointMatrix.hpp>
+#include <Optima/Matrix.hpp>
 #include <Optima/SaddlePointMatrix.hpp>
 #include <Optima/SaddlePointOptions.hpp>
 #include <Optima/SaddlePointSolver.hpp>
 #include <Optima/Utils.hpp>
-#include <Optima/VariantMatrix.hpp>
 
 namespace Optima {
 

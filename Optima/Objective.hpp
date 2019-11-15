@@ -22,7 +22,6 @@
 
 // Optima includes
 #include <Optima/Matrix.hpp>
-#include <Optima/VariantMatrix.hpp>
 
 namespace Optima {
 

@@ -32,26 +32,26 @@ tested_matrices_A = Canonicalizer.tested_matrices_A
 
 # Tested cases for the structure of matrix H
 tested_structures_H = [
-    'dense', 
+    'dense',
     'diagonal'
 ]
 
 # Tested cases for the structure of matrix D
 tested_structures_D = [
-    'diagonal', 
+    'diagonal',
     'zero'
 ]
 
 # Tested cases for the structure of matrix G
 tested_structures_G = [
-    'dense', 
+    'dense',
     'zero'
 ]
 
 # Tested cases for the indices of fixed variables
 tested_jf = [
-    arange(0), 
-    arange(1), 
+    arange(0),
+    arange(1),
     array([1, 3, 7, 9])
 ]
 
@@ -83,15 +83,18 @@ def test_saddle_point_solver(args):
 
     assemble_A, structure_H, structure_D, structure_G, jf, variable_condition, method = args
 
+    if method == SaddlePointMethod.Rangespace and structure_H == 'dense':
+        return
+
     t = m + n
-    
+
     nf = len(jf)
 
     expected = linspace(1, t, t);
 
     A = assemble_A(m, n, nf)
 
-    H = eigen.random(n, n) if structure_H == 'dense' else eigen.random(n)
+    H = eigen.random(n, n) if structure_H == 'dense' else eigen.diag(eigen.random(n))
     D = eigen.random(n) if structure_D == 'diagonal' else eigen.vector()
     G = eigen.random(m, m) if structure_G == 'dense' else eigen.matrix()
 
@@ -99,23 +102,23 @@ def test_saddle_point_solver(args):
     Hdiag = H[diag_indices(n)] if structure_H == 'dense' else H
 
     # The sequence along the diagonal that is affected to control the number of pivot variables
-    seq = slice(m) if variable_condition == 'some-variables-pivot' else slice(n)  
+    seq = slice(m) if variable_condition == 'some-variables-pivot' else slice(n)
 
     # The factor multiplied by the entries in the diagonal of the Hessian matrix
     factor = 1e-6 if variable_condition == 'all-variables-nonpivot' else 1e6
-    
+
     # Adjust the diagonal entries to control number of pivot variables
-    Hdiag[seq] = factor * Hdiag[seq] 
+    Hdiag[seq] = factor * Hdiag[seq]
 
     # Create the SaddlePointMatrix object
     lhs = SaddlePointMatrix(H, D, A, G, jf)
-    
+
     # Use the SaddlePointMatrix object to create an array M
     M = lhs.array()
-    
+
     # Compute the right-hand side vector r = M * expected
     r = M.dot(expected)
-    
+
     # The solution vector
     s = zeros(t)
 

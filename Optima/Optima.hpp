@@ -41,4 +41,3 @@
 #include <Optima/Structure.hpp>
 #include <Optima/Timing.hpp>
 #include <Optima/Utils.hpp>
-#include <Optima/VariantMatrix.hpp>

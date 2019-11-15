@@ -40,7 +40,6 @@ void exportIpSaddlePointSolver(py::module& m);
 void exportIpSaddlePointMatrix(py::module& m);
 void exportTiming(py::module& m);
 void exportUtils(py::module& m);
-void exportVariantMatrix(py::module& m);
 
 PYBIND11_MODULE(optima, m)
 {
@@ -65,5 +64,4 @@ PYBIND11_MODULE(optima, m)
     exportIpSaddlePointMatrix(m);
     exportTiming(m);
     exportUtils(m);
-    exportVariantMatrix(m);
 }
