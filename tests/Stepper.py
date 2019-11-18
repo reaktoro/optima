@@ -32,8 +32,8 @@ tested_matrices_A = Canonicalizer.tested_matrices_A
 
 # Tested cases for the structure of matrix H
 tested_structures_H = [
-    'dense',
-    'diagonal'
+    'denseH',
+    'diagonalH'
 ]
 
 # Tested cases for the indices of fixed variables
@@ -101,8 +101,7 @@ def test_optimum_stepper(args):
 
     f = ObjectiveResult()
     f.gradient = linspace(1, n, n)
-    # f.hessian = abs(eigen.random(n, n)) if structure_H == 'dense' else abs(eigen.random(n))
-    f.hessian = abs(eigen.random(n, n))
+    f.hessian = eigen.randomSPD(n)
 
     if method == SaddlePointMethod.Rangespace:
         f.hessian = abs(eigen.diag(eigen.random(n)))

@@ -32,20 +32,20 @@ tested_matrices_A = Canonicalizer.tested_matrices_A
 
 # Tested cases for the structure of matrix H
 tested_structures_H = [
-    'dense',
-    'diagonal'
+    'denseH',
+    'diagonalH'
 ]
 
 # Tested cases for the structure of matrix D
 tested_structures_D = [
-    'diagonal',
-    'zero'
+    'diagonalD',
+    'zeroD'
 ]
 
 # Tested cases for the structure of matrix G
 tested_structures_G = [
-    'dense',
-    'zero'
+    'denseG',
+    'zeroG'
 ]
 
 # Tested cases for the indices of fixed variables
@@ -91,12 +91,12 @@ def test_saddle_point_solver(args):
 
     A = assemble_A(m, n, nf)
 
-    H = eigen.random(n, n)
-    D = eigen.random(n) if structure_D == 'diagonal' else eigen.vector()
-    G = eigen.random(m, m) if structure_G == 'dense' else eigen.matrix()
+    H = eigen.randomSPD(n)
+    D = eigen.random(n) if structure_D == 'diagonalD' else eigen.vector()
+    G = eigen.random(m, m) if structure_G == 'denseG' else eigen.matrix()
 
     if method == SaddlePointMethod.Rangespace:
-        H = eigen.diag(eigen.random(n))
+        H = abs(eigen.diag(eigen.random(n)))
 
     # The diagonal entries of the Hessian matrix
     Hdiag = H[diag_indices(n)]
