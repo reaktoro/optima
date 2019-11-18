@@ -35,6 +35,7 @@ void exportEigen(py::module& m)
     eigen.def("zeros", [](int m, int n) -> Matrix { return Eigen::zeros(m, n); });
     eigen.def("random", [](int n) -> Vector { return Eigen::random(n); });
     eigen.def("random", [](int m, int n) -> Matrix { return Eigen::random(m, n); });
+    eigen.def("randomSPD", [](int n) -> Matrix { Matrix A = Eigen::random(n, n); return tr(A) * A; }, "Return a random symmetric positive definite matrix.");
     eigen.def("eye", [](int n) -> Matrix { return Eigen::identity(n, n); });
     eigen.def("diag", [](VectorConstRef x) -> Matrix { return x.asDiagonal(); });
     eigen.def("vector", [](int n=0) -> Vector { return Vector(n); }, py::arg("n")=0);
