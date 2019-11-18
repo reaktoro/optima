@@ -20,6 +20,9 @@ using namespace Optima;
 
 int main(int argc, char **argv)
 {
+    // Problem problem;
+    // problem.setEqualityConstraintMatrix(A);
+
     // Structure structure;
 
     // Solver solver(structure);

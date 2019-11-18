@@ -24,8 +24,10 @@ def test_optimum_structure():
     n = 10
     m = 5
 
-    structure = Structure(n, m)
-    structure.A = eigen.random(m, n)
+    A = eigen.random(m, n)
+
+    structure = Structure(n)
+    structure.setEqualityConstraintMatrix(A)
 
     structure.setVariablesWithLowerBounds([0, 2])
     assert structure.variablesWithLowerBounds() == approx([0, 2])

@@ -90,11 +90,11 @@ def test_optimum_solver(args):
 
     A = assemble_A(m, n, nf)
 
-    structure = Structure(n, m)
+    structure = Structure(n)
     structure.setVariablesWithFixedValues(jf)
     structure.setVariablesWithLowerBounds(jl)
     structure.setVariablesWithUpperBounds(ju)
-    structure.A = A
+    structure.setEqualityConstraintMatrix(A)
 
     y_expected = linspace(1, m, m)
 
@@ -169,7 +169,7 @@ def test_optimum_solver(args):
 #     nl = len(jl)
 #     nu = len(ju)
 #
-#     structure = Structure(n, m)
+#     structure = Structure(n)
 #     structure.setVariablesWithFixedValues(jf)
 #     structure.setVariablesWithLowerBounds(jl)
 #     structure.setVariablesWithUpperBounds(ju)

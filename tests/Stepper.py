@@ -87,11 +87,11 @@ def test_optimum_stepper(args):
 
     A = assemble_A(m, n, nfixed)
 
-    structure = Structure(n, m)
+    structure = Structure(n)
     structure.setVariablesWithFixedValues(jfixed)
     structure.setVariablesWithLowerBounds(jlower)
     structure.setVariablesWithUpperBounds(jupper)
-    structure.A = A
+    structure.setEqualityConstraintMatrix(A)
 
     state = State()
     state.x = linspace(1, n, n)
@@ -107,7 +107,7 @@ def test_optimum_stepper(args):
         f.hessian = abs(eigen.diag(eigen.random(n)))
 
     params = Params()
-    params.b = structure.A.dot(state.x)  # *** IMPORTANT *** b = A*x is essential here when A has linearly dependent rows, because it ensures a consistent set of values for vector b (see note in the documentation of SaddlePointSolver class).
+    params.b = A.dot(state.x)  # *** IMPORTANT *** b = A*x is essential here when A has linearly dependent rows, because it ensures a consistent set of values for vector b (see note in the documentation of SaddlePointSolver class).
     params.xfixed = linspace(1, nfixed, nfixed)
     params.xlower = eigen.zeros(nlower)
     params.xupper = eigen.ones(nupper)

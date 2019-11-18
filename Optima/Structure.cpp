@@ -23,12 +23,26 @@
 
 namespace Optima {
 
-Structure::Structure(Index n, Index m)
+Structure::Structure(Index n)
 : n(n), nlower(0), nupper(0), nfixed(0),
   lowerpartition(indices(n)),
   upperpartition(indices(n)),
   fixedpartition(indices(n))
 {}
+
+auto Structure::setEqualityConstraintMatrix(MatrixConstRef Ae_) -> void
+{
+    Assert(Ae_.cols() == n, "Could not set the equality constraint matrix.", "Mismatch number of columns and number of variables.");
+    Assert(Ae_.rows() <= n, "Could not set the equality constraint matrix.", "More linear equality constraints than number of variables.");
+    Ae = Ae_;
+}
+
+auto Structure::setInequalityConstraintMatrix(MatrixConstRef Ai_) -> void
+{
+    Assert(Ai_.cols() == n, "Could not set the inequality constraint matrix.", "Mismatch number of columns and number of variables.");
+    Assert(Ai_.rows() <= n, "Could not set the inequality constraint matrix.", "More linear inequality constraints than number of variables.");
+    Ai = Ai_;
+}
 
 auto Structure::setVariablesWithLowerBounds(IndicesConstRef inds) -> void
 {
@@ -67,7 +81,22 @@ auto Structure::numVariables() const -> Index
 
 auto Structure::numEqualityConstraints() const -> Index
 {
-    return A.rows();
+    return Ae.rows();
+}
+
+auto Structure::numInequalityConstraints() const -> Index
+{
+    return Ai.rows();
+}
+
+auto Structure::equalityConstraintMatrix() const -> MatrixConstRef
+{
+    return Ae;
+}
+
+auto Structure::inequalityConstraintMatrix() const -> MatrixConstRef
+{
+    return Ai;
 }
 
 auto Structure::variablesWithLowerBounds() const -> IndicesConstRef

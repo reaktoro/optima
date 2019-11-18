@@ -88,7 +88,8 @@ struct Stepper::Impl
         s = zeros(t);
 
         // Initialize the saddle point solver
-        solver.initialize(structure.A);
+        auto A = structure.equalityConstraintMatrix();
+        solver.initialize(A);
     }
 
     /// Decompose the interior-point saddle point matrix for diagonal Hessian matrices.
@@ -113,8 +114,11 @@ struct Stepper::Impl
         // Ensure entries in U are negative in case x[i] == upperbound[i]
 		for(Index i : iupper) U[i] = U[i] < 0.0 ? U[i] : -options.mu;
 
+        // The matrix A in the interior-point saddle point matrix
+        auto A = structure.equalityConstraintMatrix();
+
         // Define the interior-point saddle point matrix
-        IpSaddlePointMatrix spm(f.hessian, structure.A, Z, W, L, U, ifixed);
+        IpSaddlePointMatrix spm(f.hessian, A, Z, W, L, U, ifixed);
 
         // Decompose the interior-point saddle point matrix
         solver.decompose(spm);
@@ -133,7 +137,7 @@ struct Stepper::Impl
         VectorConstRef g = f.gradient;
 
         // Alias to structure variables
-        MatrixConstRef A = structure.A;
+        auto A = structure.equalityConstraintMatrix();
 
         // The indices of the variables with lower and upper bounds and fixed values
         IndicesConstRef ilower = structure.variablesWithLowerBounds();
@@ -190,8 +194,11 @@ struct Stepper::Impl
         // The indices of the variables with fixed values
         IndicesConstRef ifixed = structure.variablesWithFixedValues();
 
+        // The matrix A in the interior-point saddle point matrix
+        auto A = structure.equalityConstraintMatrix();
+
         // Define the interior-point saddle point matrix
-        return IpSaddlePointMatrix(f.hessian, structure.A, Z, W, L, U, ifixed);
+        return IpSaddlePointMatrix(f.hessian, A, Z, W, L, U, ifixed);
     }
 };
 
