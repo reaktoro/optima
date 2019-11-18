@@ -18,124 +18,83 @@
 #pragma once
 
 // Optima includes
-#include <Optima/Params.hpp>
-#include <Optima/Structure.hpp>
+#include <Optima/Constraints.hpp>
+#include <Optima/Objective.hpp>
 
 namespace Optima {
 
-/// The parameters of an optimization problem that change with more frequency.
+/// The definition of the optimization problem.
 class Problem
 {
 public:
    /// Construct a default Problem instance.
-   /// @param structure The structure of the optimization problem.
-   Problem(const Structure& structure);
+   Problem();
 
-   /// Return right-hand side vector of the equality constraint \eq{Ax = b}.
-   auto b() -> VectorRef { return m_b; }
+   /// Construct a Problem instance with given objective and constraints.
+   /// @param objective The objective function of the optimization problem.
+   /// @param constraints The constraints of the optimization problem.
+   Problem(const ObjectiveFunction& objective, const Constraints& constraints);
 
-   /// Return right-hand side vector of the equality constraint \eq{Ax = b}.
-   auto b() const -> VectorConstRef { return m_b; }
+   // /// Return right-hand side vector of the equality constraint \eq{Ax = b}.
+   // auto b() -> VectorRef { return m_b; }
 
-   /// Set a common lower bound value for the variables \eq{x}.
-   auto xlower(double val) -> void;
+   // /// Return right-hand side vector of the equality constraint \eq{Ax = b}.
+   // auto b() const -> VectorConstRef { return m_b; }
 
-   /// Set the lower bounds of the variables \eq{x}.
-   /// @param values The values of the lower bounds.
-   auto xlower(VectorConstRef values) -> void;
+   // /// Set a common lower bound value for the variables \eq{x}.
+   // auto xlower(double val) -> void;
 
-   /// Set the lower bounds of selected variables in \eq{x}.
-   /// @param indices The indices of the variables in \eq{x} with lower bounds.
-   /// @param values The values of the lower bounds.
-   auto xlower(IndicesConstRef indices, VectorConstRef values) -> void;
+   // /// Set the lower bounds of the variables \eq{x}.
+   // /// @param values The values of the lower bounds.
+   // auto xlower(VectorConstRef values) -> void;
 
-   /// Return the lower bounds of the variables \eq{x}.
-   auto xlower() const -> VectorConstRef;
+   // /// Set the lower bounds of selected variables in \eq{x}.
+   // /// @param indices The indices of the variables in \eq{x} with lower bounds.
+   // /// @param values The values of the lower bounds.
+   // auto xlower(IndicesConstRef indices, VectorConstRef values) -> void;
 
-   /// Set a common upper bound value for the variables \eq{x}.
-   auto xupper(double val) -> void;
+   // /// Return the lower bounds of the variables \eq{x}.
+   // auto xlower() const -> VectorConstRef;
 
-   /// Set the upper bounds of the variables \eq{x}.
-   /// @param values The values of the upper bounds.
-   auto xupper(VectorConstRef values) -> void;
+   // /// Set a common upper bound value for the variables \eq{x}.
+   // auto xupper(double val) -> void;
 
-   /// Set the upper bounds of selected variables in \eq{x}.
-   /// @param indices The indices of the variables in \eq{x} with upper bounds.
-   /// @param values The values of the upper bounds.
-   auto xupper(IndicesConstRef indices, VectorConstRef values) -> void;
+   // /// Set the upper bounds of the variables \eq{x}.
+   // /// @param values The values of the upper bounds.
+   // auto xupper(VectorConstRef values) -> void;
 
-   /// Return the upper bounds of the variables \eq{x}.
-   auto xupper() const -> VectorConstRef;
+   // /// Set the upper bounds of selected variables in \eq{x}.
+   // /// @param indices The indices of the variables in \eq{x} with upper bounds.
+   // /// @param values The values of the upper bounds.
+   // auto xupper(IndicesConstRef indices, VectorConstRef values) -> void;
 
-   /// Set a common value for the fixed variables in \eq{x}.
-   auto xfixed(double val) -> void;
+   // /// Return the upper bounds of the variables \eq{x}.
+   // auto xupper() const -> VectorConstRef;
 
-   /// Set the values of the fixed variables in \eq{x}.
-   /// @param values The values of the fixed variables.
-   auto xfixed(VectorConstRef values) -> void;
+   // /// Set a common value for the fixed variables in \eq{x}.
+   // auto xfixed(double val) -> void;
 
-   /// Set the fixed values of selected variables in \eq{x}.
-   /// @param indices The indices of the fixed variables in \eq{x}.
-   /// @param values The values of the fixed variables.
-   auto xfixed(IndicesConstRef indices, VectorConstRef values) -> void;
+   // /// Set the values of the fixed variables in \eq{x}.
+   // /// @param values The values of the fixed variables.
+   // auto xfixed(VectorConstRef values) -> void;
 
-   /// Return the values of the fixed variables in \eq{x}.
-   auto xfixed() const -> VectorConstRef;
+   // /// Set the fixed values of selected variables in \eq{x}.
+   // /// @param indices The indices of the fixed variables in \eq{x}.
+   // /// @param values The values of the fixed variables.
+   // auto xfixed(IndicesConstRef indices, VectorConstRef values) -> void;
 
-   /// Return the indices of the variables with lower bounds.
-   auto iwithlower() const -> IndicesConstRef;
-
-   /// Return the indices of the variables with upper bounds.
-   auto variablesWithUpperBounds() const -> IndicesConstRef;
-
-   /// Return the indices of the variables with fixed values.
-   auto variablesWithFixedValues() const -> IndicesConstRef;
-
-   /// Return the indices of the variables without lower bounds.
-   auto variablesWithoutLowerBounds() const -> IndicesConstRef;
-
-   /// Return the indices of the variables without upper bounds.
-   auto variablesWithoutUpperBounds() const -> IndicesConstRef;
-
-   /// Return the indices of the variables without fixed values.
-   auto variablesWithoutFixedValues() const -> IndicesConstRef;
-
-   /// Return the indices of the variables partitioned in [with, without] lower bounds.
-   auto lowerpartition() const -> IndicesConstRef;
-
-   /// Return the indices of the variables partitioned in [with, without] upper bounds.
-   auto upperpartition() const -> IndicesConstRef;
-
-   /// Return the indices of the variables partitioned in [with, without] fixed values.
-   auto fixedpartition() const -> IndicesConstRef;
+   // /// Return the values of the fixed variables in \eq{x}.
+   // auto xfixed() const -> VectorConstRef;
 
 private:
-   /// The number of variables.
-   Index m_n;
+   /// The objective function.
+   ObjectiveFunction m_objective;
 
-   /// The number of equality constraints.
-   Index m_m;
+   /// The objective function.
+   Constraints m_constraints;
 
-   /// The number of variables with lower bounds.
-   Index m_nlower;
-
-   /// The number of variables with upper bounds.
-   Index m_nupper;
-
-   /// The number of variables with fixed values.
-   Index m_nfixed;
-
-   /// The right-hand side vector of the linear equality constraint \eq{Ax = b}.
-   Vector m_b;
-
-   /// The indices of the variables partitioned in [with, without] lower bounds.
-   Indices m_lowerpartition;
-
-   /// The indices of the variables partitioned in [with, without] upper bounds.
-   Indices m_upperpartition;
-
-   /// The indices of the variables partitioned in [with, without] fixed values.
-   Indices m_fixedpartition;
+   /// The right-hand side vector of the linear equality constraint \eq{A_{e}x = b_{e}}.
+   Vector m_be;
 
    /// The lower bounds of the variables \eq{x}.
    Vector m_xlower;
@@ -145,7 +104,6 @@ private:
 
    /// The values of the variables in \eq{x} that are fixed.
    Vector m_xfixed;
-
 };
 
 } // namespace Optima
