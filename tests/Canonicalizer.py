@@ -22,30 +22,35 @@ from pytest import approx, mark
 
 
 def assemble_matrix_A_with_linearly_independent_rows_only(m, n, nf=0):
-    A = eigen.random(m, n)
-    return A
+    A = eigen.randomSPD(n)
+    return A[:m, :]
+
 
 def assemble_matrix_A_with_one_linearly_dependent_row(m, n, nf=0):
-    A = eigen.random(m, n)
+    A = assemble_matrix_A_with_linearly_independent_rows_only(m, n, nf)
     A[2, :] = 2*A[0, :] + A[1, :]
     return A
 
+
 def assemble_matrix_A_with_two_linearly_dependent_rows(m, n, nf=0):
-    A = eigen.random(m, n)
+    A = assemble_matrix_A_with_linearly_independent_rows_only(m, n, nf)
     A[2, :] = 2*A[0, :] + A[1, :]
     A[3, :] = A[1, :]
     return A
 
+
 def assemble_matrix_A_with_one_basic_fixed_variable(m, n, nf=0):
-    A = eigen.random(m, n)
+    A = assemble_matrix_A_with_linearly_independent_rows_only(m, n, nf)
     A[-1, -nf] = 0.0
     return A
 
+
 def assemble_matrix_A_with_two_basic_fixed_variables(m, n, nf=0):
-    A = eigen.random(m, n)
+    A = assemble_matrix_A_with_linearly_independent_rows_only(m, n, nf)
     A[-2, -nf] = 0.0
     A[-1, -nf] = 0.0
     return A
+
 
 tested_matrices_A = [
     assemble_matrix_A_with_linearly_independent_rows_only,
@@ -55,7 +60,9 @@ tested_matrices_A = [
     assemble_matrix_A_with_two_basic_fixed_variables,
 ]
 
+
 testdata = tested_matrices_A
+
 
 def reverse(list):
     return list[::-1]
