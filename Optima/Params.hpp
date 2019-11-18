@@ -27,8 +27,8 @@ namespace Optima {
 class Params
 {
 public:
-    /// The right-hand side vector of the linear equality constraint \eq{Ax = b}.
-    Vector b;
+    /// The right-hand side vector of the linear equality constraint \eq{A_{e}x = b_{e}}.
+    Vector be;
 
     /// The lower bounds of the variables in \eq{x} that have lower bounds.
     Vector xlower;
@@ -38,9 +38,6 @@ public:
 
     /// The values of the variables in \eq{x} that are fixed.
     Vector xfixed;
-
-    /// The objective function of the optimization calculation.
-    ObjectiveFunction objective;
 };
 
 } // namespace Optima

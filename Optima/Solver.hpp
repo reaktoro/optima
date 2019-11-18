@@ -38,16 +38,19 @@ class Structure;
 class Solver
 {
 public:
-    /// Construct an Solver instance with given optimization structure.
-    Solver(const Structure& structure);
+    /// Construct a default Solver instance.
+    Solver();
 
-    /// Construct a copy of an Solver instance.
+    /// Construct a Solver instance with given optimization problem.
+    explicit Solver(const Structure& structure);
+
+    /// Construct a copy of a Solver instance.
     Solver(const Solver& other);
 
     /// Destroy this Solver instance.
     virtual ~Solver();
 
-    /// Assign an Solver instance to this.
+    /// Assign a Solver instance to this.
     auto operator=(Solver other) -> Solver&;
 
     /// Set the options for the optimization calculation.

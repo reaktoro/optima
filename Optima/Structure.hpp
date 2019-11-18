@@ -20,6 +20,7 @@
 // Optima includes
 #include <Optima/Index.hpp>
 #include <Optima/Matrix.hpp>
+#include <Optima/Objective.hpp>
 
 namespace Optima {
 
@@ -30,6 +31,9 @@ public:
     /// Construct an Structure instance with given number of variables.
     /// @param n The number of variables in \eq{x} in the optimization problem.
     Structure(Index n);
+
+    /// Set the objective function of the optimization problem.
+    auto setObjectiveFunction(const ObjectiveFunction& objective) -> void;
 
     /// Set the equality constraint matrix \eq{A_e}.
     auto setEqualityConstraintMatrix(MatrixConstRef Ae) -> void;
@@ -60,6 +64,9 @@ public:
 
     /// Return the number of linear inequality constraints.
     auto numInequalityConstraints() const -> Index;
+
+    /// Return the objective function of the optimization problem.
+    auto objectiveFunction() const -> const ObjectiveFunction&;
 
     /// Return the equality constraint matrix \eq{A_e}.
     auto equalityConstraintMatrix() const -> MatrixConstRef;
@@ -97,6 +104,9 @@ public:
 private:
     /// The number of variables in the optimization problem.
     Index n;
+
+    /// The objective function of the optimization problem.
+    ObjectiveFunction objective;
 
     /// The coefficient matrix of the linear equality constraint equations \eq{A_{e}x=b_{e}}.
     Matrix Ae;

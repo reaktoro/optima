@@ -157,7 +157,7 @@ struct Stepper::Impl
         a(ifixed).fill(0.0);
 
         // Calculate the feasibility residual vector b
-        b.noalias() = -(A * x - params.b);
+        b.noalias() = -(A * x - params.be);
 
         // Calculate the centrality residual vectors c and d
         for(Index i : ilower) c[i] = options.mu - L[i] * z[i]; // TODO Check if mu is still needed. Maybe this algorithm no longer needs perturbation.

@@ -107,7 +107,7 @@ def test_optimum_stepper(args):
         f.hessian = abs(eigen.diag(eigen.random(n)))
 
     params = Params()
-    params.b = A.dot(state.x)  # *** IMPORTANT *** b = A*x is essential here when A has linearly dependent rows, because it ensures a consistent set of values for vector b (see note in the documentation of SaddlePointSolver class).
+    params.be = A.dot(state.x)  # *** IMPORTANT *** b = A*x is essential here when A has linearly dependent rows, because it ensures a consistent set of values for vector b (see note in the documentation of SaddlePointSolver class).
     params.xfixed = linspace(1, nfixed, nfixed)
     params.xlower = eigen.zeros(nlower)
     params.xupper = eigen.ones(nupper)

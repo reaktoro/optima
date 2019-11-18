@@ -17,7 +17,6 @@
 
 // pybind11 includes
 #include <pybind11/pybind11.h>
-#include <pybind11/functional.h>
 #include <pybind11/eigen.h>
 namespace py = pybind11;
 
@@ -27,31 +26,11 @@ using namespace Optima;
 
 void exportParams(py::module& m)
 {
-	using ObjectiveFunctionPtr =
-		std::function<void(VectorConstRef, ObjectiveResult*)>;
-
-	// This is a workaround to let Python callback change the state of ObjectiveResult, and not a copy
-	auto get_objective = [](const Params& self)
-	{
-		return [&](VectorConstRef x, ObjectiveResult* f) {
-			self.objective(x, *f);
-		};
-	};
-
-	// This is a workaround to let Python callback change the state of ObjectiveResult, and not a copy
-	auto set_objective = [](Params& self, const ObjectiveFunctionPtr& objectiveptr)
-	{
-		self.objective = [=](VectorConstRef x, ObjectiveResult& f) {
-			objectiveptr(x, &f);
-		};
-	};
-
     py::class_<Params>(m, "Params")
         .def(py::init<>())
-        .def_readwrite("b", &Params::b)
+        .def_readwrite("be", &Params::be)
         .def_readwrite("xlower", &Params::xlower)
         .def_readwrite("xupper", &Params::xupper)
         .def_readwrite("xfixed", &Params::xfixed)
-        .def_property("objective", get_objective, set_objective)
         ;
 }

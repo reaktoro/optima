@@ -30,6 +30,11 @@ Structure::Structure(Index n)
   fixedpartition(indices(n))
 {}
 
+auto Structure::setObjectiveFunction(const ObjectiveFunction& objective_) -> void
+{
+    objective = objective_;
+}
+
 auto Structure::setEqualityConstraintMatrix(MatrixConstRef Ae_) -> void
 {
     Assert(Ae_.cols() == n, "Could not set the equality constraint matrix.", "Mismatch number of columns and number of variables.");
@@ -87,6 +92,11 @@ auto Structure::numEqualityConstraints() const -> Index
 auto Structure::numInequalityConstraints() const -> Index
 {
     return Ai.rows();
+}
+
+auto Structure::objectiveFunction() const -> const ObjectiveFunction&
+{
+    return objective;
 }
 
 auto Structure::equalityConstraintMatrix() const -> MatrixConstRef

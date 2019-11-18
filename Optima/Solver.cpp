@@ -266,10 +266,12 @@ struct Solver::Impl
         f.requires.gradient = true;
         f.requires.hessian = true;
 
-        // Evaluate the objective function
+        // Pre-allocate memory if needed
         f.gradient.resize(n);
         f.hessian.resize(n, n);
-        params.objective(state.x, f);
+
+        // Evaluate the objective function
+        structure.objectiveFunction()(state.x, f);
 	}
 
     // The function that computes the Newton step
@@ -328,7 +330,9 @@ struct Solver::Impl
 //		f.requires.H = false;
 //
 //		// Evaluate the objective function at the trial iterate
-//		f = params.objective(xtrial);
+
+
+//		f = objective(xtrial);
 //
 //		state.f = f.f;
 //		state.g = f.g;
@@ -350,7 +354,9 @@ struct Solver::Impl
 //			f.requires.f = true;
 //			f.requires.g = false;
 //			f.requires.H = false;
-//			f = params.objective(xtrial);
+
+
+//			f = objective(xtrial);
 //
 //			state.f = f.f;
 //			state.g = f.g;
@@ -371,7 +377,9 @@ struct Solver::Impl
 //		f.requires.f = false;
 //		f.requires.g = true;
 //		f.requires.H = true;
-//		f = params.objective(x);
+
+
+//		f = objective(x);
 //
 //		state.f = f.f;
 //		state.g = f.g;
@@ -476,7 +484,9 @@ struct Solver::Impl
 //			f.requires.f = true;
 //			f.requires.g = false;
 //			f.requires.H = false;
-//			f = params.objective(xtrial);
+
+
+//			f = objective(xtrial);
 //
 //			state.f = f.f;
 //			state.g = f.g;
@@ -510,7 +520,9 @@ struct Solver::Impl
 //		f.requires.f = false;
 //		f.requires.g = true;
 //		f.requires.H = true;
-//		f = params.objective(x);
+
+
+//		f = objective(x);
 //
 //		state.f = f.f;
 //		state.g = f.g;

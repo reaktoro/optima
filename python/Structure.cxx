@@ -17,6 +17,7 @@
 
 // pybind11 includes
 #include <pybind11/pybind11.h>
+#include <pybind11/functional.h>
 #include <pybind11/eigen.h>
 namespace py = pybind11;
 
@@ -26,8 +27,24 @@ using namespace Optima;
 
 void exportStructure(py::module& m)
 {
+    using ObjectiveFunctionPtr = std::function<void(VectorConstRef, ObjectiveResult*)>;
+
+	// This is a workaround to let Python callback change the state of ObjectiveResult, and not a copy
+	auto set_objective = [](Structure& self, const ObjectiveFunctionPtr& objectiveptr)
+	{
+		self.setObjectiveFunction([=](VectorConstRef x, ObjectiveResult& f) { objectiveptr(x, &f); });
+    };
+
+	// This is a workaround to let Python callback change the state of ObjectiveResult, and not a copy
+	auto get_objective = [](const Structure& self)
+	{
+        auto obj = self.objectiveFunction();
+		return [=](VectorConstRef x, ObjectiveResult* f) { obj(x, *f); };
+	};
+
     py::class_<Structure>(m, "Structure")
         .def(py::init<Index>(), py::arg("n"), "Construct a Structure object with given number of variables")
+        .def("setObjectiveFunction", set_objective, "Set the objective function of the optimization problem.")
         .def("setEqualityConstraintMatrix", &Structure::setEqualityConstraintMatrix, "Set the equality constraint matrix Ae.")
         .def("setInequalityConstraintMatrix", &Structure::setInequalityConstraintMatrix, "Set the inequality constraint matrix Ai.")
         .def("setVariablesWithLowerBounds", &Structure::setVariablesWithLowerBounds, "Set the indices of the variables in `x` with lower bounds.")
@@ -38,6 +55,7 @@ void exportStructure(py::module& m)
         .def("numVariables", &Structure::numVariables, "Return the number of variables.")
         .def("numEqualityConstraints", &Structure::numEqualityConstraints, "Return the number of linear equality constraints.")
         .def("numInequalityConstraints", &Structure::numInequalityConstraints, "Return the number of linear inequality constraints.")
+        .def("objectiveFunction", get_objective, py::return_value_policy::reference_internal, "Return the objective function of the optimization problem.")
         .def("equalityConstraintMatrix", &Structure::equalityConstraintMatrix, py::return_value_policy::reference_internal, "Return the equality constraint matrix Ae.")
         .def("inequalityConstraintMatrix", &Structure::inequalityConstraintMatrix, py::return_value_policy::reference_internal, "Return the inequality constraint matrix Ai.")
         .def("variablesWithLowerBounds", &Structure::variablesWithLowerBounds, py::return_value_policy::reference_internal, "Return the indices of the variables with lower bounds.")

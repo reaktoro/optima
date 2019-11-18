@@ -91,6 +91,7 @@ def test_optimum_solver(args):
     A = assemble_A(m, n, nf)
 
     structure = Structure(n)
+    structure.setObjectiveFunction(objective)
     structure.setVariablesWithFixedValues(jf)
     structure.setVariablesWithLowerBounds(jl)
     structure.setVariablesWithUpperBounds(ju)
@@ -118,14 +119,13 @@ def test_optimum_solver(args):
     x_expected[jf] = linspace(1, nf, nf)
 
     params = Params()
-    params.b = A.dot(x_expected)  # Use expected values of x to compute b
+    params.be = A.dot(x_expected)  # Use expected values of x to compute b
     # Use expected values of x for the fixed values
     params.xfixed = x_expected[jf]
     # Use expected values of x for the lower bounds
     params.xlower = x_expected[jl]
     # Use expected values of x for the upper bounds
     params.xupper = x_expected[ju]
-    params.objective = objective
 
     state = State()
 
@@ -208,7 +208,7 @@ def test_optimum_solver(args):
 #     x_expected[jf] = linspace(1, nf, nf)
 #
 #     params = Params()
-#     params.b = A.dot(x_expected)  # Use expected values of x to compute b
+#     params.be = A.dot(x_expected)  # Use expected values of x to compute b
 #     params.xfixed = x_expected[jf]
 #     params.xlower = x_expected[jl]
 #     params.xupper = x_expected[ju]
