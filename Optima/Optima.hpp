@@ -19,6 +19,7 @@
 
 // Optima includes
 #include <Optima/Canonicalizer.hpp>
+#include <Optima/Constraints.hpp>
 #include <Optima/Exception.hpp>
 #include <Optima/Index.hpp>
 #include <Optima/IndexUtils.hpp>
@@ -38,6 +39,5 @@
 #include <Optima/Solver.hpp>
 #include <Optima/State.hpp>
 #include <Optima/Stepper.hpp>
-#include <Optima/Structure.hpp>
 #include <Optima/Timing.hpp>
 #include <Optima/Utils.hpp>

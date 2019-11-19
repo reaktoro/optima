@@ -17,9 +17,6 @@
 
 #include "State.hpp"
 
-// Optima includes
-#include <Optima/Structure.hpp>
-
 namespace Optima {
 
 

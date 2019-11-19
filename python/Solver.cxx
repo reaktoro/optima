@@ -32,12 +32,12 @@ using namespace Optima;
 
 void exportSolver(py::module& m)
 {
-    using ObjectiveFunctionPtr = std::function<void(VectorConstRef, ObjectiveResult*)>;
+    using ObjectivePtr = std::function<void(VectorConstRef, ObjectiveResult*)>;
 
 	// This is a workaround to let Python callback change the state of ObjectiveResult, and not a copy
-    auto createSolver = [](const ObjectiveFunctionPtr& pyobjective, const Constraints& constraints)
+    auto createSolver = [](const ObjectivePtr& pyobjective, const Constraints& constraints)
     {
-        ObjectiveFunction objective = [=](VectorConstRef x, ObjectiveResult& f) { pyobjective(x, &f); };
+        Objective objective = [=](VectorConstRef x, ObjectiveResult& f) { pyobjective(x, &f); };
         return Solver(objective, constraints);
     };
 

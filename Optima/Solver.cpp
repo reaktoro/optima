@@ -73,7 +73,7 @@ auto isfinite(const ObjectiveResult& res) -> bool
 struct Solver::Impl
 {
     /// The objective function of the optimization problem
-    ObjectiveFunction objective;
+    Objective objective;
 
     /// The constraints of the optimization problem
     Constraints constraints;
@@ -122,7 +122,7 @@ struct Solver::Impl
     {}
 
     /// Initialize the optimization solver with the objective and constraints of the problem.
-    Impl(const ObjectiveFunction& objective, const Constraints& constraints)
+    Impl(const Objective& objective, const Constraints& constraints)
     : objective(objective), constraints(constraints), stepper(constraints)
     {
         // Initialize the members related to number of variables and constraints
@@ -249,7 +249,7 @@ struct Solver::Impl
         state.w(ifixed).fill(0.0);
 
         // Evaluate the objective function
-        evaluateObjectiveFunction(params, state);
+        evaluateObjective(params, state);
 
         // Assert the objective function produces finite numbers at this point
         Assert(isfinite(f),
@@ -266,7 +266,7 @@ struct Solver::Impl
 	}
 
     // Evaluate the objective function
-    auto evaluateObjectiveFunction(const Params& params, State& state) -> void
+    auto evaluateObjective(const Params& params, State& state) -> void
 	{
         // Establish the current needs for the objective function evaluation
         f.requires.value = true;
@@ -583,7 +583,7 @@ struct Solver::Impl
             if((succeeded = converged()))
                 break;
 
-            evaluateObjectiveFunction(params, state);
+            evaluateObjective(params, state);
 			computeNewtonStep(params, state);
 			updateResultErrors();
         }
@@ -620,7 +620,7 @@ Solver::Solver()
 : pimpl(new Impl())
 {}
 
-Solver::Solver(const ObjectiveFunction& objective, const Constraints& constraints)
+Solver::Solver(const Objective& objective, const Constraints& constraints)
 : pimpl(new Impl(objective, constraints))
 {}
 

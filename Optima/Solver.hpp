@@ -42,7 +42,7 @@ public:
     /// Construct a Solver instance with given objective and constraints.
     /// @param objective The objective function of the optimization problem.
     /// @param constraints The constraints of the optimization problem.
-    Solver(const ObjectiveFunction& objective, const Constraints& constraints);
+    Solver(const Objective& objective, const Constraints& constraints);
 
     /// Construct a copy of a Solver instance.
     Solver(const Solver& other);

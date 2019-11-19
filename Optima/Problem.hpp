@@ -35,7 +35,7 @@ public:
     /// Construct a Problem instance with given objective and constraints.
     /// @param objective The objective function of the optimization problem.
     /// @param constraints The constraints of the optimization problem.
-    Problem(const ObjectiveFunction &objective, const Constraints &constraints);
+    Problem(const Objective &objective, const Constraints &constraints);
 
     /// Set the right-hand side vector \eq{b_{e}} of the equality constraint equation \eq{A_{e}x=b_{e}}.
     auto setEqualityConstraintVector(VectorConstRef be) -> void;
@@ -62,7 +62,7 @@ public:
     auto setFixedValues(VectorConstRef xfixed) -> void;
 
     /// Return the objective function of the optimization problem.
-    auto objective() const -> const ObjectiveFunction &;
+    auto objective() const -> const Objective &;
 
     /// Return the constraints of the optimization problem.
     auto constraints() const -> const Constraints &;
@@ -84,7 +84,7 @@ public:
 
 private:
     /// The objective function of the optimization problem.
-    ObjectiveFunction m_objective;
+    Objective m_objective;
 
     /// The constraints of the optimization problem.
     Constraints m_constraints;
