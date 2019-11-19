@@ -127,7 +127,7 @@ struct Solver::Impl
     {
         // Initialize the members related to number of variables and constraints
         n = constraints.numVariables();
-        m = constraints.numEqualityConstraints();
+        m = constraints.numLinearEqualityConstraints();
 
         // Initialize the number of fixed and free variables in x
         nf = constraints.variablesWithFixedValues().size();

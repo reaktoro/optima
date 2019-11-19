@@ -41,11 +41,25 @@ auto Constraints::setEqualityConstraintMatrix(MatrixConstRef Ae_) -> void
     Ae = Ae_;
 }
 
+auto Constraints::setEqualityConstraintFunction(const ConstraintFunction& he_, Index m_he_) -> void
+{
+    Assert(m_he_ <= n, "Could not set the equality constraint function.", "More non-linear equality constraints than number of variables.");
+    he = he_;
+    m_he = m_he_;
+}
+
 auto Constraints::setInequalityConstraintMatrix(MatrixConstRef Ai_) -> void
 {
     Assert(Ai_.cols() == n, "Could not set the inequality constraint matrix.", "Mismatch number of columns and number of variables.");
     Assert(Ai_.rows() <= n, "Could not set the inequality constraint matrix.", "More linear inequality constraints than number of variables.");
     Ai = Ai_;
+}
+
+auto Constraints::setInequalityConstraintFunction(const ConstraintFunction& hi_, Index m_hi_) -> void
+{
+    Assert(m_hi_ <= n, "Could not set the inequality constraint function.", "More non-linear inequality constraints than number of variables.");
+    hi = hi_;
+    m_hi = m_hi_;
 }
 
 auto Constraints::setVariablesWithLowerBounds(IndicesConstRef inds) -> void
@@ -83,14 +97,24 @@ auto Constraints::numVariables() const -> Index
     return n;
 }
 
-auto Constraints::numEqualityConstraints() const -> Index
+auto Constraints::numLinearEqualityConstraints() const -> Index
 {
     return Ae.rows();
 }
 
-auto Constraints::numInequalityConstraints() const -> Index
+auto Constraints::numLinearInequalityConstraints() const -> Index
 {
     return Ai.rows();
+}
+
+auto Constraints::numNonLinearEqualityConstraints() const -> Index
+{
+    return m_he;
+}
+
+auto Constraints::numNonLinearInequalityConstraints() const -> Index
+{
+    return m_hi;
 }
 
 auto Constraints::equalityConstraintMatrix() const -> MatrixConstRef
@@ -98,9 +122,19 @@ auto Constraints::equalityConstraintMatrix() const -> MatrixConstRef
     return Ae;
 }
 
+auto Constraints::equalityConstraintFunction() const -> const ConstraintFunction&
+{
+    return he;
+}
+
 auto Constraints::inequalityConstraintMatrix() const -> MatrixConstRef
 {
     return Ai;
+}
+
+auto Constraints::inequalityConstraintFunction() const -> const ConstraintFunction&
+{
+    return hi;
 }
 
 auto Constraints::variablesWithLowerBounds() const -> IndicesConstRef

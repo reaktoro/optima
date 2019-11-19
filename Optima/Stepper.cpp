@@ -72,7 +72,7 @@ struct Stepper::Impl
     {
         // Initialize the members related to number of variables and constraints
         n  = constraints.numVariables();
-        m  = constraints.numEqualityConstraints();
+        m  = constraints.numLinearEqualityConstraints();
         nf = constraints.variablesWithFixedValues().size();
         nx = n - nf;
         t  = 3*n + m;

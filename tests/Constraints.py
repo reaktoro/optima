@@ -48,7 +48,7 @@ def test_constraints():
     assert constraints.variablesWithUpperBounds() == approx(arange(n))
 
     assert constraints.numVariables() == n
-    assert constraints.numEqualityConstraints() == m
+    assert constraints.numLinearEqualityConstraints() == m
 
     # Assert orderingLowerBounds = [without lower bounds, with lower bounds]
     assert list(constraints.orderingLowerBounds()) == \
