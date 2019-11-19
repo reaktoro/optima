@@ -79,11 +79,8 @@ public:
     auto wrtNonLinearInequalityConstraints() -> VectorRef;
 
 private:
-    /// The number of original primal variables with lower bound constraints.
-    Index mxl = 0;
-
-    /// The number of original primal variables with upper bound constraints.
-    Index mxu = 0;
+    /// The number of primal variables in the original optimization problem.
+    Index n = 0;
 
     /// The number of linear inequality constraints in the original optimization problem.
     Index mli = 0;

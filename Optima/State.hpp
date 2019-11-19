@@ -19,6 +19,10 @@
 
 // Optima includes
 #include <Optima/Matrix.hpp>
+#include <Optima/Constraints.hpp>
+#include <Optima/PrimalVariables.hpp>
+#include <Optima/LagrangeMultipliers.hpp>
+#include <Optima/ComplementarityVariables.hpp>
 
 namespace Optima {
 
@@ -26,17 +30,30 @@ namespace Optima {
 class State
 {
 public:
-    /// The primal solution of the optimization problem.
-    Vector x;
+    explicit State(const Constraints& constraints)
+    : x(constraints), y(constraints), z(constraints)
+    {}
 
-    /// The dual solution of the optimization problem with respect to the equality constraints.
-    Vector y;
+// private:
+    /// The primal variables of the optimization problem.
+    PrimalVariables x;
 
-    /// The dual solution of the optimization problem with respect to the lower bound constraints.
-    Vector z;
+    /// The Lagrange multipliers of the optimization problem.
+    LagrangeMultipliers y;
 
-    /// The dual solution of the optimization problem with respect to the upper bound constraints.
-    Vector w;
+    /// The complementarity variables of the optimization problem.
+    ComplementarityVariables z;
+    // /// The primal solution of the optimization problem.
+    // Vector x;
+
+    // /// The dual solution of the optimization problem with respect to the equality constraints.
+    // Vector y;
+
+    // /// The dual solution of the optimization problem with respect to the lower bound constraints.
+    // Vector z;
+
+    // /// The dual solution of the optimization problem with respect to the upper bound constraints.
+    // Vector w;
 };
 
 } // namespace Optima

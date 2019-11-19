@@ -159,6 +159,12 @@ struct Solver::Impl
     {
         if(!options.output.active) return;
 
+        // Aliases to canonical variables
+        auto x = state.x.canonicalPrimalVariables();
+        auto y = state.y.canonicalMultipliers();
+        auto z = state.z.wrtCanonicalLowerBounds();
+        auto w = state.z.wrtCanonicalUpperBounds();
+
         outputter.addEntry("Iteration");
         outputter.addEntry("f(x)");
         outputter.addEntry("Error");
@@ -176,10 +182,10 @@ struct Solver::Impl
         outputter.addValue(result.iterations);
         outputter.addValue(f.value);
         outputter.addValue(result.error);
-        outputter.addValues(state.x);
-        outputter.addValues(state.y);
-        outputter.addValues(state.z);
-        outputter.addValues(state.w);
+        outputter.addValues(x);
+        outputter.addValues(y);
+        outputter.addValues(z);
+        outputter.addValues(w);
         outputter.addValues(abs(stepper.residual().a));
         outputter.addValue(result.error_optimality);
         outputter.addValue(result.error_feasibility);
@@ -193,13 +199,19 @@ struct Solver::Impl
     {
         if(!options.output.active) return;
 
+        // Aliases to canonical variables
+        auto x = state.x.canonicalPrimalVariables();
+        auto y = state.y.canonicalMultipliers();
+        auto z = state.z.wrtCanonicalLowerBounds();
+        auto w = state.z.wrtCanonicalUpperBounds();
+
         outputter.addValue(result.iterations);
         outputter.addValue(f.value);
         outputter.addValue(result.error);
-        outputter.addValues(state.x);
-        outputter.addValues(state.y);
-        outputter.addValues(state.z);
-        outputter.addValues(state.w);
+        outputter.addValues(x);
+        outputter.addValues(y);
+        outputter.addValues(z);
+        outputter.addValues(w);
         outputter.addValues(abs(stepper.residual().a));
         outputter.addValue(result.error_optimality);
         outputter.addValue(result.error_feasibility);
@@ -214,6 +226,12 @@ struct Solver::Impl
         // Clear previous state of the Outputter instance
         outputter.clear();
 
+        // Aliases to canonical variables
+        auto x = state.x.canonicalPrimalVariables();
+        auto y = state.y.canonicalMultipliers();
+        auto z = state.z.wrtCanonicalLowerBounds();
+        auto w = state.z.wrtCanonicalUpperBounds();
+
         // The indices of variables with lower/upper bounds and fixed values
         IndicesConstRef ilower = constraints.variablesWithLowerBounds();
         IndicesConstRef iupper = constraints.variablesWithUpperBounds();
@@ -224,29 +242,29 @@ struct Solver::Impl
         xupper(iupper) = params.xupper;
 
         // Ensure the initial guesses for x, y, z, w have proper dimensions
-        if(state.x.size() != n) state.x = zeros(n);
-        if(state.y.size() != m) state.y = zeros(m);
-        if(state.z.size() != n) state.z = zeros(n);
-        if(state.w.size() != n) state.w = zeros(n);
+        Assert(x.size() == n, "Cannot solve the optimization problem.", "The size of vector x has not been properly initialized.");
+        Assert(y.size() == m, "Cannot solve the optimization problem.", "The size of vector y has not been properly initialized.");
+        Assert(z.size() == n, "Cannot solve the optimization problem.", "The size of vector z has not been properly initialized.");
+        Assert(w.size() == n, "Cannot solve the optimization problem.", "The size of vector w has not been properly initialized.");
 
         // Ensure the initial guess for `x` does not violate lower/upper bounds
-        for(Index i : ilower) state.x[i] = std::max(state.x[i], xlower[i] + options.mu);
-        for(Index i : iupper) state.x[i] = std::min(state.x[i], xupper[i] - options.mu);
+        for(Index i : ilower) x[i] = std::max(x[i], xlower[i] + options.mu);
+        for(Index i : iupper) x[i] = std::min(x[i], xupper[i] - options.mu);
 
         // Ensure z = mu/(x - xlower) for variables with lower bounds
         for(Index i : ilower)
-        	state.z[i] = state.x[i] == xlower[i] ?
-        		+1.0 : options.mu / (state.x[i] - xlower[i]);
+        	z[i] = x[i] == xlower[i] ?
+        		+1.0 : options.mu / (x[i] - xlower[i]);
 
         // Ensure w = mu/(xupper - x) for variables with upper bounds
         for(Index i : iupper)
-        	state.w[i] = state.x[i] == xupper[i] ?
-        		-1.0 : options.mu / (state.x[i] - xupper[i]);
+        	w[i] = x[i] == xupper[i] ?
+        		-1.0 : options.mu / (x[i] - xupper[i]);
 
         // Set the values of x, z, w corresponding to fixed variables
-        state.x(ifixed) = params.xfixed;
-        state.z(ifixed).fill(0.0);
-        state.w(ifixed).fill(0.0);
+        x(ifixed) = params.xfixed;
+        z(ifixed).fill(0.0);
+        w(ifixed).fill(0.0);
 
         // Evaluate the objective function
         evaluateObjective(params, state);
@@ -278,7 +296,7 @@ struct Solver::Impl
         f.hessian.resize(n, n);
 
         // Evaluate the objective function
-        objective(state.x, f);
+        objective(state.x.originalPrimalVariables(), f);
 	}
 
     // The function that computes the Newton step
@@ -286,11 +304,23 @@ struct Solver::Impl
     {
     	Timer timer;
 
+        StepperProblem problem{
+            state.x.canonicalPrimalVariables(),
+            state.y.canonicalMultipliers(),
+            state.z.wrtCanonicalLowerBounds(),
+            state.z.wrtCanonicalUpperBounds(),
+            params.xlower,
+            params.xupper,
+            params.be,
+            f.gradient,
+            f.hessian,
+        };
+
     	// Decompose the Jacobian matrix and calculate a Newton step
-        stepper.decompose(params, state, f);
+        stepper.decompose(problem);
 
         // Calculate the Newton step
-        stepper.solve(params, state, f);
+        stepper.solve(problem);
 
         // Update the time spent in linear systems
 		result.time_linear_systems += timer.elapsed();
@@ -397,11 +427,11 @@ struct Solver::Impl
 	// Update the variables (x, y, z, w) with an aggressive Newton stepping scheme
 	auto applyNewtonSteppingAggressive(const Params& params, State& state) -> void
 	{
-		// Aliases to variables x, y, z, w
-		VectorRef x = state.x;
-		VectorRef y = state.y;
-		VectorRef z = state.z;
-		VectorRef w = state.w;
+        // Aliases to canonical variables
+        auto x = state.x.canonicalPrimalVariables();
+        auto y = state.y.canonicalMultipliers();
+        auto z = state.z.wrtCanonicalLowerBounds();
+        auto w = state.z.wrtCanonicalUpperBounds();
 
 		// Aliases to Newton steps calculated before
 		VectorConstRef dx = stepper.step().x;

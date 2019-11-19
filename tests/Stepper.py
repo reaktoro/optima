@@ -93,36 +93,37 @@ def test_stepper(args):
     constraints.setVariablesWithUpperBounds(jupper)
     constraints.setEqualityConstraintMatrix(A)
 
-    state = State()
-    state.x = linspace(1, n, n)
-    state.y = linspace(1, m, m)
-    state.z = linspace(1, n, n)
-    state.w = linspace(1, n, n)
+    x = linspace(1, n, n)
+    y = linspace(1, m, m)
+    z = linspace(1, n, n)
+    w = linspace(1, n, n)
 
-    f = ObjectiveResult()
-    f.gradient = linspace(1, n, n)
-    f.hessian = eigen.randomSPD(n)
+    xfixed = linspace(1, nfixed, nfixed)
+    xlower = eigen.zeros(nlower)
+    xupper = eigen.ones(nupper)
+
+    b = A @ x  # *** IMPORTANT *** b = A*x is essential here when A has linearly dependent rows, because it ensures a consistent set of values for vector b (see note in the documentation of SaddlePointSolver class).
+    g = linspace(1, n, n)
+    H = eigen.randomSPD(n)
 
     if method == SaddlePointMethod.Rangespace:
-        f.hessian = abs(eigen.diag(eigen.random(n)))
+        H = abs(eigen.diag(eigen.random(n)))
 
-    params = Params()
-    params.be = A.dot(state.x)  # *** IMPORTANT *** b = A*x is essential here when A has linearly dependent rows, because it ensures a consistent set of values for vector b (see note in the documentation of SaddlePointSolver class).
-    params.xfixed = linspace(1, nfixed, nfixed)
-    params.xlower = eigen.zeros(nlower)
-    params.xupper = eigen.ones(nupper)
+    problem = StepperProblem(x, y, z, w, xlower, xupper, b, g, H)
 
     options = Options()
     options.kkt.method = method
 
     stepper = Stepper(constraints)
     stepper.setOptions(options)
-    stepper.decompose(params, state, f)
-    M = stepper.matrix(params, state, f).array()
+    stepper.decompose(problem)
+
+    M = stepper.matrix(problem).array()
+
     expected = linspace(1, t, t)
     rhs = M.dot(expected)
 
-    stepper.solve(params, state, f)
+    stepper.solve(problem)
 
     s = stepper.step().array()
     r = stepper.residual().array()

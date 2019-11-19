@@ -23,10 +23,7 @@
 #include <Optima/IpSaddlePointMatrix.hpp>
 #include <Optima/IpSaddlePointSolver.hpp>
 #include <Optima/Matrix.hpp>
-#include <Optima/Objective.hpp>
 #include <Optima/Options.hpp>
-#include <Optima/Params.hpp>
-#include <Optima/State.hpp>
 
 namespace Optima {
 
@@ -97,20 +94,28 @@ struct Stepper::Impl
     }
 
     /// Decompose the interior-point saddle point matrix for diagonal Hessian matrices.
-    auto decompose(const Params& params, const State& state, const ObjectiveResult& f) -> void
+    auto decompose(const StepperProblem& problem) -> void
     {
+        // Auxiliary references
+        const auto x = problem.x;
+        const auto z = problem.z;
+        const auto w = problem.w;
+        const auto H = problem.H;
+        const auto xlower = problem.xlower;
+        const auto xupper = problem.xupper;
+
         // The indices of the variables with lower and upper bounds and fixed values
         IndicesConstRef ilower = constraints.variablesWithLowerBounds();
         IndicesConstRef iupper = constraints.variablesWithUpperBounds();
         IndicesConstRef ifixed = constraints.variablesWithFixedValues();
 
         // Update Z and L for the variables with lower bounds
-        Z(ilower) = state.z(ilower);
-		L(ilower) = state.x(ilower) - params.xlower;
+        Z(ilower) = z(ilower);
+		L(ilower) = x(ilower) - xlower;
 
         // Update W and U for the variables with upper bounds
-        W(iupper) = state.w(iupper);
-        U(iupper) = state.x(iupper) - params.xupper;
+        W(iupper) = w(iupper);
+        U(iupper) = x(iupper) - xupper;
 
         // Ensure entries in L are positive in case x[i] == lowerbound[i]
 		for(Index i : ilower) L[i] = L[i] > 0.0 ? L[i] : options.mu;
@@ -122,23 +127,21 @@ struct Stepper::Impl
         auto A = constraints.equalityConstraintMatrix();
 
         // Define the interior-point saddle point matrix
-        IpSaddlePointMatrix spm(f.hessian, A, Z, W, L, U, ifixed);
+        IpSaddlePointMatrix spm(H, A, Z, W, L, U, ifixed);
 
         // Decompose the interior-point saddle point matrix
         solver.decompose(spm);
     }
 
     /// Solve the interior-point saddle point matrix.
-    auto solve(const Params& params, const State& state, const ObjectiveResult& f) -> void
+    auto solve(const StepperProblem& problem) -> void
     {
-        // Alias to state variables
-        VectorConstRef x = state.x;
-        VectorConstRef y = state.y;
-        VectorConstRef z = state.z;
-        VectorConstRef w = state.w;
-
-        // Alias to objective variables
-        VectorConstRef g = f.gradient;
+        // Auxiliary references
+        auto x = problem.x;
+        auto y = problem.y;
+        auto z = problem.z;
+        auto w = problem.w;
+        auto g = problem.g;
 
         // Alias to constraints variables
         auto A = constraints.equalityConstraintMatrix();
@@ -161,7 +164,7 @@ struct Stepper::Impl
         a(ifixed).fill(0.0);
 
         // Calculate the feasibility residual vector b
-        b.noalias() = -(A * x - params.be);
+        b.noalias() = -(A*x - problem.b);
 
         // Calculate the centrality residual vectors c and d
         for(Index i : ilower) c[i] = options.mu - L[i] * z[i]; // TODO Check if mu is still needed. Maybe this algorithm no longer needs perturbation.
@@ -193,8 +196,11 @@ struct Stepper::Impl
     }
 
     /// Return the assembled interior-point saddle point matrix.
-    auto matrix(const Params& params, const State& state, const ObjectiveResult& f) -> IpSaddlePointMatrix
+    auto matrix(const StepperProblem& problem) -> IpSaddlePointMatrix
     {
+        // Auxiliary references
+        auto H = problem.H;
+
         // The indices of the variables with fixed values
         IndicesConstRef ifixed = constraints.variablesWithFixedValues();
 
@@ -202,7 +208,7 @@ struct Stepper::Impl
         auto A = constraints.equalityConstraintMatrix();
 
         // Define the interior-point saddle point matrix
-        return IpSaddlePointMatrix(f.hessian, A, Z, W, L, U, ifixed);
+        return IpSaddlePointMatrix(H, A, Z, W, L, U, ifixed);
     }
 };
 
@@ -233,19 +239,19 @@ auto Stepper::setOptions(const Options& options) -> void
     pimpl->solver.setOptions(options.kkt);
 }
 
-auto Stepper::decompose(const Params& params, const State& state, const ObjectiveResult& f) -> void
+auto Stepper::decompose(const StepperProblem& problem) -> void
 {
-    return pimpl->decompose(params, state, f);
+    return pimpl->decompose(problem);
 }
 
-auto Stepper::solve(const Params& params, const State& state, const ObjectiveResult& f) -> void
+auto Stepper::solve(const StepperProblem& problem) -> void
 {
-    return pimpl->solve(params, state, f);
+    return pimpl->solve(problem);
 }
 
-auto Stepper::matrix(const Params& params, const State& state, const ObjectiveResult& f) -> IpSaddlePointMatrix
+auto Stepper::matrix(const StepperProblem& problem) -> IpSaddlePointMatrix
 {
-    return pimpl->matrix(params, state, f);
+    return pimpl->matrix(problem);
 }
 
 auto Stepper::step() const -> IpSaddlePointVector

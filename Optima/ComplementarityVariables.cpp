@@ -26,12 +26,11 @@ ComplementarityVariables::ComplementarityVariables()
 {}
 
 ComplementarityVariables::ComplementarityVariables(const Constraints& constraints)
-: mxl(constraints.variablesWithLowerBounds().size()),
-  mxu(constraints.variablesWithUpperBounds().size()),
+: n(constraints.numVariables()),
   mli(constraints.numLinearInequalityConstraints()),
   mni(constraints.numNonLinearInequalityConstraints()),
-  data_lower(mxl + mli + mni),
-  data_upper(mxu)
+  data_lower(zeros(n + mli + mni)),
+  data_upper(zeros(n))
 {
 }
 
@@ -60,34 +59,34 @@ auto ComplementarityVariables::wrtCanonicalUpperBounds() -> VectorRef
 
 auto ComplementarityVariables::wrtLowerBounds() const -> VectorConstRef
 {
-    return data_lower.head(mxl);
+    return data_lower.head(n);
 }
 
 auto ComplementarityVariables::wrtLowerBounds() -> VectorRef
 {
-    return data_lower.head(mxl);
+    return data_lower.head(n);
 }
 
 
 auto ComplementarityVariables::wrtUpperBounds() const -> VectorConstRef
 {
-    return data_upper.head(mxu);
+    return data_upper.head(n);
 }
 
 auto ComplementarityVariables::wrtUpperBounds() -> VectorRef
 {
-    return data_upper.head(mxu);
+    return data_upper.head(n);
 }
 
 
 auto ComplementarityVariables::wrtLinearInequalityConstraints() const -> VectorConstRef
 {
-    return data_lower.segment(mxl, mli);
+    return data_lower.segment(n, mli);
 }
 
 auto ComplementarityVariables::wrtLinearInequalityConstraints() -> VectorRef
 {
-    return data_lower.segment(mxl, mli);
+    return data_lower.segment(n, mli);
 }
 
 

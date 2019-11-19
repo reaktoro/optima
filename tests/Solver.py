@@ -126,7 +126,7 @@ def test_solver(args):
     # Use expected values of x for the upper bounds
     params.xupper = x_expected[ju]
 
-    state = State()
+    state = State(constraints)
 
     options = Options()
 #     options.output.active = True

@@ -29,7 +29,7 @@ PrimalVariables::PrimalVariables(const Constraints& constraints)
 : nx(constraints.numVariables()),
   nxli(constraints.numLinearInequalityConstraints()),
   nxni(constraints.numNonLinearInequalityConstraints()),
-  data(nx + nxli + nxni)
+  data(zeros(nx + nxli + nxni))
 {
 }
 

@@ -30,7 +30,7 @@ LagrangeMultipliers::LagrangeMultipliers(const Constraints& constraints)
   mne(constraints.numNonLinearEqualityConstraints()),
   mli(constraints.numLinearInequalityConstraints()),
   mni(constraints.numNonLinearInequalityConstraints()),
-  data(mle + mli + mne + mni)
+  data(zeros(mle + mli + mne + mni))
 {
 }
 
