@@ -75,7 +75,7 @@ testdata = product(tested_matrices_A,
                    tested_methods)
 
 @mark.parametrize("args", testdata)
-def test_optimum_stepper(args):
+def test_stepper(args):
 
     assemble_A, structure_H, jfixed, jlower, jupper, method = args
 

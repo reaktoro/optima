@@ -80,7 +80,7 @@ def objective(x, f):
 
 
 @mark.parametrize("args", testdata)
-def test_optimum_solver(args):
+def test_solver(args):
 
     assemble_A, structure_H, jf, jl, ju, method = args
 
@@ -142,7 +142,7 @@ def test_optimum_solver(args):
 
 
 #
-# def test_optimum_solver():
+# def test_solver():
 #
 #     set_printoptions(linewidth=1000)
 #
