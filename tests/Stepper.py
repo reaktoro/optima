@@ -87,11 +87,11 @@ def test_optimum_stepper(args):
 
     A = assemble_A(m, n, nfixed)
 
-    structure = Structure(n)
-    structure.setVariablesWithFixedValues(jfixed)
-    structure.setVariablesWithLowerBounds(jlower)
-    structure.setVariablesWithUpperBounds(jupper)
-    structure.setEqualityConstraintMatrix(A)
+    constraints = Constraints(n)
+    constraints.setVariablesWithFixedValues(jfixed)
+    constraints.setVariablesWithLowerBounds(jlower)
+    constraints.setVariablesWithUpperBounds(jupper)
+    constraints.setEqualityConstraintMatrix(A)
 
     state = State()
     state.x = linspace(1, n, n)
@@ -115,7 +115,7 @@ def test_optimum_stepper(args):
     options = Options()
     options.kkt.method = method
 
-    stepper = Stepper(structure)
+    stepper = Stepper(constraints)
     stepper.setOptions(options)
     stepper.decompose(params, state, f)
     M = stepper.matrix(params, state, f).array()

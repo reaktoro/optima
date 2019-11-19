@@ -19,91 +19,90 @@
 
 // Optima includes
 #include <Optima/Constraints.hpp>
+#include <Optima/Matrix.hpp>
 #include <Optima/Objective.hpp>
 
-namespace Optima {
+namespace Optima
+{
 
 /// The definition of the optimization problem.
 class Problem
 {
 public:
-   /// Construct a default Problem instance.
-   Problem();
+    /// Construct a default Problem instance.
+    Problem();
 
-   /// Construct a Problem instance with given objective and constraints.
-   /// @param objective The objective function of the optimization problem.
-   /// @param constraints The constraints of the optimization problem.
-   Problem(const ObjectiveFunction& objective, const Constraints& constraints);
+    /// Construct a Problem instance with given objective and constraints.
+    /// @param objective The objective function of the optimization problem.
+    /// @param constraints The constraints of the optimization problem.
+    Problem(const ObjectiveFunction &objective, const Constraints &constraints);
 
-   // /// Return right-hand side vector of the equality constraint \eq{Ax = b}.
-   // auto b() -> VectorRef { return m_b; }
+    /// Set the right-hand side vector \eq{b_{e}} of the equality constraint equation \eq{A_{e}x=b_{e}}.
+    auto setEqualityConstraintVector(VectorConstRef be) -> void;
 
-   // /// Return right-hand side vector of the equality constraint \eq{Ax = b}.
-   // auto b() const -> VectorConstRef { return m_b; }
+    /// Set the right-hand side vector \eq{b_{i}} of the equality constraint equation \eq{A_{i}x\geq b_{i}}.
+    auto setInequalityConstraintVector(VectorConstRef bi) -> void;
 
-   // /// Set a common lower bound value for the variables \eq{x}.
-   // auto xlower(double val) -> void;
+    /// Set a common lower bound value for all variables in \eq{x} that have lower bounds.
+    auto setLowerBound(double val) -> void;
 
-   // /// Set the lower bounds of the variables \eq{x}.
-   // /// @param values The values of the lower bounds.
-   // auto xlower(VectorConstRef values) -> void;
+    /// Set the lower bound values for all variables in \eq{x} that have lower bounds.
+    auto setLowerBounds(VectorConstRef xlower) -> void;
 
-   // /// Set the lower bounds of selected variables in \eq{x}.
-   // /// @param indices The indices of the variables in \eq{x} with lower bounds.
-   // /// @param values The values of the lower bounds.
-   // auto xlower(IndicesConstRef indices, VectorConstRef values) -> void;
+    /// Set a common upper bound value for all variables in \eq{x} that have upper bounds.
+    auto setUpperBound(double val) -> void;
 
-   // /// Return the lower bounds of the variables \eq{x}.
-   // auto xlower() const -> VectorConstRef;
+    /// Set the upper bound values for all variables in \eq{x} that have upper bounds.
+    auto setUpperBounds(VectorConstRef xupper) -> void;
 
-   // /// Set a common upper bound value for the variables \eq{x}.
-   // auto xupper(double val) -> void;
+    /// Set a common fixed value for all variables in \eq{x} that have fixed values.
+    auto setFixedValue(double val) -> void;
 
-   // /// Set the upper bounds of the variables \eq{x}.
-   // /// @param values The values of the upper bounds.
-   // auto xupper(VectorConstRef values) -> void;
+    /// Set the fixed values of all variables in \eq{x} that have fixed values.
+    auto setFixedValues(VectorConstRef xfixed) -> void;
 
-   // /// Set the upper bounds of selected variables in \eq{x}.
-   // /// @param indices The indices of the variables in \eq{x} with upper bounds.
-   // /// @param values The values of the upper bounds.
-   // auto xupper(IndicesConstRef indices, VectorConstRef values) -> void;
+    /// Return the objective function of the optimization problem.
+    auto objective() const -> const ObjectiveFunction &;
 
-   // /// Return the upper bounds of the variables \eq{x}.
-   // auto xupper() const -> VectorConstRef;
+    /// Return the constraints of the optimization problem.
+    auto constraints() const -> const Constraints &;
 
-   // /// Set a common value for the fixed variables in \eq{x}.
-   // auto xfixed(double val) -> void;
+    /// Return right-hand side vector \eq{b_{e}} of the equality constraint equation \eq{A_{e}x=b_{e}}.
+    auto equalityConstraintVector() const -> VectorConstRef;
 
-   // /// Set the values of the fixed variables in \eq{x}.
-   // /// @param values The values of the fixed variables.
-   // auto xfixed(VectorConstRef values) -> void;
+    /// Return the right-hand side vector \eq{b_{i}} of the equality constraint equation \eq{A_{i}x\geq b_{i}}.
+    auto inequalityConstraintVector() const -> VectorConstRef;
 
-   // /// Set the fixed values of selected variables in \eq{x}.
-   // /// @param indices The indices of the fixed variables in \eq{x}.
-   // /// @param values The values of the fixed variables.
-   // auto xfixed(IndicesConstRef indices, VectorConstRef values) -> void;
+    /// Return the lower bound values of the variables in \eq{x} that have lower bounds.
+    auto lowerBounds() const -> VectorConstRef;
 
-   // /// Return the values of the fixed variables in \eq{x}.
-   // auto xfixed() const -> VectorConstRef;
+    /// Return the upper bound values of the variables in \eq{x} that have upper bounds.
+    auto upperBounds() const -> VectorConstRef;
+
+    /// Return the fixed values of the variables in \eq{x} that have fixed values.
+    auto fixedValues() const -> VectorConstRef;
 
 private:
-   /// The objective function.
-   ObjectiveFunction m_objective;
+    /// The objective function of the optimization problem.
+    ObjectiveFunction m_objective;
 
-   /// The objective function.
-   Constraints m_constraints;
+    /// The constraints of the optimization problem.
+    Constraints m_constraints;
 
-   /// The right-hand side vector of the linear equality constraint \eq{A_{e}x = b_{e}}.
-   Vector m_be;
+    /// The right-hand side vector of the linear equality constraint \eq{A_{e}x = b_{e}}.
+    Vector m_be;
 
-   /// The lower bounds of the variables \eq{x}.
-   Vector m_xlower;
+    /// The right-hand side vector of the linear inequality constraint \eq{A_{i}x\ge b_{i}}.
+    Vector m_bi;
 
-   /// The upper bounds of the variables \eq{x}.
-   Vector m_xupper;
+    /// The lower bounds of the variables \eq{x}.
+    Vector m_xlower;
 
-   /// The values of the variables in \eq{x} that are fixed.
-   Vector m_xfixed;
+    /// The upper bounds of the variables \eq{x}.
+    Vector m_xupper;
+
+    /// The values of the variables in \eq{x} that are fixed.
+    Vector m_xfixed;
 };
 
 } // namespace Optima

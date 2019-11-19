@@ -21,7 +21,7 @@
 #include <memory>
 
 // Optima includes
-#include <Optima/Matrix.hpp>
+#include <Optima/Constraints.hpp>
 #include <Optima/Objective.hpp>
 
 namespace Optima {
@@ -29,20 +29,20 @@ namespace Optima {
 // Forward declarations
 class Options;
 class Params;
-class Problem;
 class Result;
 class State;
-class Structure;
 
-/// The class that implements the IpNewton algorithm using an interior-point method.
+/// The solver for optimization problems.
 class Solver
 {
 public:
     /// Construct a default Solver instance.
     Solver();
 
-    /// Construct a Solver instance with given optimization problem.
-    explicit Solver(const Structure& structure);
+    /// Construct a Solver instance with given objective and constraints.
+    /// @param objective The objective function of the optimization problem.
+    /// @param constraints The constraints of the optimization problem.
+    Solver(const ObjectiveFunction& objective, const Constraints& constraints);
 
     /// Construct a copy of a Solver instance.
     Solver(const Solver& other);

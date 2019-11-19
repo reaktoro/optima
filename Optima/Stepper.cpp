@@ -18,6 +18,7 @@
 #include "Stepper.hpp"
 
 // Optima includes
+#include <Optima/Constraints.hpp>
 #include <Optima/Exception.hpp>
 #include <Optima/IpSaddlePointMatrix.hpp>
 #include <Optima/IpSaddlePointSolver.hpp>
@@ -26,14 +27,13 @@
 #include <Optima/Options.hpp>
 #include <Optima/Params.hpp>
 #include <Optima/State.hpp>
-#include <Optima/Structure.hpp>
 
 namespace Optima {
 
 struct Stepper::Impl
 {
-    /// The structure of the optimization calculation
-    Structure structure;
+    /// The constraints of the optimization calculation
+    Constraints constraints;
 
     /// The options for the optimization calculation
     Options options;
@@ -62,14 +62,18 @@ struct Stepper::Impl
     /// The interior-point saddle point solver.
     IpSaddlePointSolver solver;
 
-    /// Construct a Stepper::Impl instance with given optimization problem structure.
-    Impl(const Structure& structure)
-    : structure(structure)
+    /// Construct a default Stepper::Impl instance.
+    Impl()
+    {}
+
+    /// Construct a Stepper::Impl instance with given optimization problem constraints.
+    Impl(const Constraints& constraints)
+    : constraints(constraints)
     {
         // Initialize the members related to number of variables and constraints
-        n  = structure.numVariables();
-        m  = structure.numEqualityConstraints();
-        nf = structure.variablesWithFixedValues().size();
+        n  = constraints.numVariables();
+        m  = constraints.numEqualityConstraints();
+        nf = constraints.variablesWithFixedValues().size();
         nx = n - nf;
         t  = 3*n + m;
 
@@ -88,7 +92,7 @@ struct Stepper::Impl
         s = zeros(t);
 
         // Initialize the saddle point solver
-        auto A = structure.equalityConstraintMatrix();
+        auto A = constraints.equalityConstraintMatrix();
         solver.initialize(A);
     }
 
@@ -96,9 +100,9 @@ struct Stepper::Impl
     auto decompose(const Params& params, const State& state, const ObjectiveResult& f) -> void
     {
         // The indices of the variables with lower and upper bounds and fixed values
-        IndicesConstRef ilower = structure.variablesWithLowerBounds();
-        IndicesConstRef iupper = structure.variablesWithUpperBounds();
-        IndicesConstRef ifixed = structure.variablesWithFixedValues();
+        IndicesConstRef ilower = constraints.variablesWithLowerBounds();
+        IndicesConstRef iupper = constraints.variablesWithUpperBounds();
+        IndicesConstRef ifixed = constraints.variablesWithFixedValues();
 
         // Update Z and L for the variables with lower bounds
         Z(ilower) = state.z(ilower);
@@ -115,7 +119,7 @@ struct Stepper::Impl
 		for(Index i : iupper) U[i] = U[i] < 0.0 ? U[i] : -options.mu;
 
         // The matrix A in the interior-point saddle point matrix
-        auto A = structure.equalityConstraintMatrix();
+        auto A = constraints.equalityConstraintMatrix();
 
         // Define the interior-point saddle point matrix
         IpSaddlePointMatrix spm(f.hessian, A, Z, W, L, U, ifixed);
@@ -136,13 +140,13 @@ struct Stepper::Impl
         // Alias to objective variables
         VectorConstRef g = f.gradient;
 
-        // Alias to structure variables
-        auto A = structure.equalityConstraintMatrix();
+        // Alias to constraints variables
+        auto A = constraints.equalityConstraintMatrix();
 
         // The indices of the variables with lower and upper bounds and fixed values
-        IndicesConstRef ilower = structure.variablesWithLowerBounds();
-        IndicesConstRef iupper = structure.variablesWithUpperBounds();
-        IndicesConstRef ifixed = structure.variablesWithFixedValues();
+        IndicesConstRef ilower = constraints.variablesWithLowerBounds();
+        IndicesConstRef iupper = constraints.variablesWithUpperBounds();
+        IndicesConstRef ifixed = constraints.variablesWithFixedValues();
 
         // Views to the sub-vectors in r = [a b c d]
         auto a = r.head(n);
@@ -192,18 +196,22 @@ struct Stepper::Impl
     auto matrix(const Params& params, const State& state, const ObjectiveResult& f) -> IpSaddlePointMatrix
     {
         // The indices of the variables with fixed values
-        IndicesConstRef ifixed = structure.variablesWithFixedValues();
+        IndicesConstRef ifixed = constraints.variablesWithFixedValues();
 
         // The matrix A in the interior-point saddle point matrix
-        auto A = structure.equalityConstraintMatrix();
+        auto A = constraints.equalityConstraintMatrix();
 
         // Define the interior-point saddle point matrix
         return IpSaddlePointMatrix(f.hessian, A, Z, W, L, U, ifixed);
     }
 };
 
-Stepper::Stepper(const Structure& structure)
-: pimpl(new Impl(structure))
+Stepper::Stepper()
+: pimpl(new Impl())
+{}
+
+Stepper::Stepper(const Constraints& constraints)
+: pimpl(new Impl(constraints))
 {}
 
 Stepper::Stepper(const Stepper& other)

@@ -17,22 +17,33 @@
 
 // pybind11 includes
 #include <pybind11/pybind11.h>
+#include <pybind11/functional.h>
 #include <pybind11/eigen.h>
 namespace py = pybind11;
 
 // Optima includes
+#include <Optima/Constraints.hpp>
 #include <Optima/Options.hpp>
 #include <Optima/Params.hpp>
 #include <Optima/Result.hpp>
 #include <Optima/Solver.hpp>
 #include <Optima/State.hpp>
-#include <Optima/Structure.hpp>
 using namespace Optima;
 
 void exportSolver(py::module& m)
 {
+    using ObjectiveFunctionPtr = std::function<void(VectorConstRef, ObjectiveResult*)>;
+
+	// This is a workaround to let Python callback change the state of ObjectiveResult, and not a copy
+    auto createSolver = [](const ObjectiveFunctionPtr& pyobjective, const Constraints& constraints)
+    {
+        ObjectiveFunction objective = [=](VectorConstRef x, ObjectiveResult& f) { pyobjective(x, &f); };
+        return Solver(objective, constraints);
+    };
+
     py::class_<Solver>(m, "Solver")
-        .def(py::init<const Structure&>())
+        .def(py::init<>())
+        .def(py::init(createSolver))
         .def("setOptions", &Solver::setOptions)
         .def("solve", &Solver::solve)
         .def("dxdp", &Solver::dxdp)

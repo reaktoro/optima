@@ -26,20 +26,23 @@
 namespace Optima {
 
 // Forward declarations
+class Constraints;
 class IpSaddlePointMatrix;
 class IpSaddlePointVector;
 class ObjectiveResult;
 class Options;
 class Params;
 class State;
-class Structure;
 
 /// The class that implements the step calculation.
 class Stepper
 {
 public:
-    /// Construct a Stepper instance with given optimization structure.
-    Stepper(const Structure& structure);
+    /// Construct a default Stepper instance.
+    Stepper();
+
+    /// Construct a Stepper instance with given constraints.
+    explicit Stepper(const Constraints& constraints);
 
     /// Construct a copy of an Stepper instance.
     Stepper(const Stepper& other);

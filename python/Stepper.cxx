@@ -21,19 +21,20 @@
 namespace py = pybind11;
 
 // Optima includes
+#include <Optima/Constraints.hpp>
 #include <Optima/IpSaddlePointMatrix.hpp>
 #include <Optima/Options.hpp>
 #include <Optima/Params.hpp>
 #include <Optima/State.hpp>
 #include <Optima/Stepper.hpp>
-#include <Optima/Structure.hpp>
 #include <Optima/Result.hpp>
 using namespace Optima;
 
 void exportStepper(py::module& m)
 {
     py::class_<Stepper>(m, "Stepper")
-        .def(py::init<const Structure&>())
+        .def(py::init<>())
+        .def(py::init<const Constraints&>())
         .def("setOptions", &Stepper::setOptions)
         .def("decompose", &Stepper::decompose)
         .def("solve", &Stepper::solve)

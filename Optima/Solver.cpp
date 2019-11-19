@@ -18,6 +18,7 @@
 #include "Solver.hpp"
 
 // Optima includes
+#include <Optima/Constraints.hpp>
 #include <Optima/Exception.hpp>
 #include <Optima/IpSaddlePointMatrix.hpp>
 #include <Optima/Objective.hpp>
@@ -28,7 +29,6 @@
 #include <Optima/SaddlePointMatrix.hpp>
 #include <Optima/State.hpp>
 #include <Optima/Stepper.hpp>
-#include <Optima/Structure.hpp>
 #include <Optima/Timing.hpp>
 #include <Optima/Utils.hpp>
 
@@ -72,8 +72,11 @@ auto isfinite(const ObjectiveResult& res) -> bool
 
 struct Solver::Impl
 {
-    /// The structure of the optimization problem
-    Structure structure;
+    /// The objective function of the optimization problem
+    ObjectiveFunction objective;
+
+    /// The constraints of the optimization problem
+    Constraints constraints;
 
     /// The calculator of the Newton step (dx, dy, dz, dw)
     Stepper stepper;
@@ -114,16 +117,20 @@ struct Solver::Impl
     /// The total number of variables (x, y, z, w).
     Index t;
 
-    /// Initialize the optimization solver with the structure of the problem.
-    Impl(const Structure& structure)
-    : structure(structure), stepper(structure)
+    /// Initialize the optimization solver with the objective and constraints of the problem.
+    Impl()
+    {}
+
+    /// Initialize the optimization solver with the objective and constraints of the problem.
+    Impl(const ObjectiveFunction& objective, const Constraints& constraints)
+    : objective(objective), constraints(constraints), stepper(constraints)
     {
         // Initialize the members related to number of variables and constraints
-        n = structure.numVariables();
-        m = structure.numEqualityConstraints();
+        n = constraints.numVariables();
+        m = constraints.numEqualityConstraints();
 
         // Initialize the number of fixed and free variables in x
-        nf = structure.variablesWithFixedValues().size();
+        nf = constraints.variablesWithFixedValues().size();
         nx = n - nf;
 
         // Allocate memory
@@ -208,9 +215,9 @@ struct Solver::Impl
         outputter.clear();
 
         // The indices of variables with lower/upper bounds and fixed values
-        IndicesConstRef ilower = structure.variablesWithLowerBounds();
-        IndicesConstRef iupper = structure.variablesWithUpperBounds();
-        IndicesConstRef ifixed = structure.variablesWithFixedValues();
+        IndicesConstRef ilower = constraints.variablesWithLowerBounds();
+        IndicesConstRef iupper = constraints.variablesWithUpperBounds();
+        IndicesConstRef ifixed = constraints.variablesWithFixedValues();
 
         // Initialize xlower and xupper with the given lower and upper bounds
         xlower(ilower) = params.xlower;
@@ -271,7 +278,7 @@ struct Solver::Impl
         f.hessian.resize(n, n);
 
         // Evaluate the objective function
-        structure.objectiveFunction()(state.x, f);
+        objective(state.x, f);
 	}
 
     // The function that computes the Newton step
@@ -403,9 +410,9 @@ struct Solver::Impl
 		VectorConstRef dw = stepper.step().w;
 
         // The indices of variables with lower/upper bounds and fixed values
-        IndicesConstRef ilower = structure.variablesWithLowerBounds();
-        IndicesConstRef iupper = structure.variablesWithUpperBounds();
-        IndicesConstRef ifixed = structure.variablesWithFixedValues();
+        IndicesConstRef ilower = constraints.variablesWithLowerBounds();
+        IndicesConstRef iupper = constraints.variablesWithUpperBounds();
+        IndicesConstRef ifixed = constraints.variablesWithFixedValues();
 
 		// Update xtrial with the calculated Newton step
 		xtrial = x + dx;
@@ -461,9 +468,9 @@ struct Solver::Impl
 //		VectorConstRef dw = stepper.step().w;
 //
 //		// The indices of variables with lower/upper bounds and fixed values
-//		IndicesConstRef ilower = structure.variablesWithLowerBounds();
-//		IndicesConstRef iupper = structure.variablesWithUpperBounds();
-//		IndicesConstRef ifixed = structure.variablesWithFixedValues();
+//		IndicesConstRef ilower = constraints.variablesWithLowerBounds();
+//		IndicesConstRef iupper = constraints.variablesWithUpperBounds();
+//		IndicesConstRef ifixed = constraints.variablesWithFixedValues();
 //
 //		// Initialize the step length factor
 //		double alphax = xStepLength(x, dx, xlower, xupper, tau);
@@ -609,8 +616,12 @@ struct Solver::Impl
     }
 };
 
-Solver::Solver(const Structure& structure)
-: pimpl(new Impl(structure))
+Solver::Solver()
+: pimpl(new Impl())
+{}
+
+Solver::Solver(const ObjectiveFunction& objective, const Constraints& constraints)
+: pimpl(new Impl(objective, constraints))
 {}
 
 Solver::Solver(const Solver& other)

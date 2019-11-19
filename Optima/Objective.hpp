@@ -25,9 +25,6 @@
 
 namespace Optima {
 
-// Forward declarations
-class Structure;
-
 /// The requirements in the evaluation of the objective function.
 class ObjectiveRequirement
 {

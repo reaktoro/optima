@@ -22,8 +22,40 @@ namespace py = pybind11;
 
 // Optima includes
 #include <Optima/Problem.hpp>
-//using namespace Optima;
+using namespace Optima;
 
 void exportProblem(py::module& m)
 {
+    // using ObjectiveFunctionPtr = std::function<void(VectorConstRef, ObjectiveResult*)>;
+
+	// // This is a workaround to let Python callback change the state of ObjectiveResult, and not a copy
+    // auto createProblem = [](const ObjectiveFunctionPtr& pyobjective, const Constraints& constraints)
+    // {
+    //     ObjectiveFunction objective = [=](VectorConstRef x, ObjectiveResult& f) { pyobjective(x, &f); };
+    //     return Problem(objective, constraints);
+    // };
+
+	// // This is a workaround to let Python callback change the state of ObjectiveResult, and not a copy
+	// auto get_objective = [](const Problem& self)
+	// {
+    //     auto obj = self.objective();
+	// 	return [=](VectorConstRef x, ObjectiveResult* f) { obj(x, *f); };
+	// };
+
+    // py::class_<Problem>(m, "Problem")
+    //     .def(py::init(createProblem), "Construct a Problem instance with given objective and constraints.")
+    //     .def("setEqualityConstraintVector", &Problem::setEqualityConstraintVector, "Set the right-hand side vector be of the equality constraint equation Ae x = be.")
+    //     .def("setInequalityConstraintVector", &Problem::setInequalityConstraintVector, "Set the right-hand side vector bi of the equality constraint equation Ai x >= bi.")
+    //     .def("setLowerBound", &Problem::setLowerBound, "Set a common lower bound value for all variables in x that have lower bounds.")
+    //     .def("setLowerBounds", &Problem::setLowerBounds, "Set the lower bound values for all variables in x that have lower bounds.")
+    //     .def("setUpperBound", &Problem::setUpperBound, "Set a common upper bound value for all variables in x that have upper bounds.")
+    //     .def("setUpperBounds", &Problem::setUpperBounds, "Set the upper bound values for all variables in x that have upper bounds.")
+    //     .def("setFixedValue", &Problem::setFixedValue, "Set a common fixed value for all variables in x that have fixed values.")
+    //     .def("setFixedValues", &Problem::setFixedValues, "Set the fixed values of all variables in x that have fixed values.")
+    //     .def("equalityConstraintVector", &Problem::equalityConstraintVector, py::return_value_policy::reference_internal, "Return right-hand side vector be of the equality constraint equation Ae x = be.")
+    //     .def("inequalityConstraintVector", &Problem::inequalityConstraintVector, py::return_value_policy::reference_internal, "Return the right-hand side vector bi of the equality constraint equation Aix >= bi.")
+    //     .def("lowerBounds", &Problem::lowerBounds, py::return_value_policy::reference_internal, "Return the lower bound values of the variables in x that have lower bounds.")
+    //     .def("upperBounds", &Problem::upperBounds, py::return_value_policy::reference_internal, "Return the upper bound values of the variables in x that have upper bounds.")
+    //     .def("fixedValues", &Problem::fixedValues, py::return_value_policy::reference_internal, "Return the fixed values of the variables in x that have fixed values.")
+    //     ;
 }

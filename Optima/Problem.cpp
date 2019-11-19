@@ -17,6 +17,9 @@
 
 #include "Problem.hpp"
 
+// Optima includes
+#include <Optima/Exception.hpp>
+
 namespace Optima {
 
 Problem::Problem()
@@ -26,79 +29,94 @@ Problem::Problem(const ObjectiveFunction& objective, const Constraints& constrai
 : m_objective(objective), m_constraints(constraints)
 {}
 
-// auto Problem::xlower(double val) -> void
-// {
-//    m_xlower.fill(val);
-//    m_nlower = m_n;
-// }
+auto Problem::setEqualityConstraintVector(VectorConstRef be) -> void
+{
+    const auto me = m_constraints.equalityConstraintMatrix().rows();
+    Assert(be.size() == me, "Problem::setEqualityConstraintVector(VectorConstRef)",
+        "Mismatch number of equality constraint equations and size of given vector be.");
+    m_be = be;
+}
 
-// auto Problem::xlower(VectorConstRef values) -> void
-// {
-//    m_xlower.head(m_n) = values;
-//    m_nlower = m_n;
-// }
+auto Problem::setInequalityConstraintVector(VectorConstRef bi) -> void
+{
+    const auto mi = m_constraints.inequalityConstraintMatrix().rows();
+    Assert(bi.size() == mi, "Problem::setInequalityConstraintVector(VectorConstRef)",
+        "Mismatch number of inequality constraint equations and size of given vector bi.");
+    m_bi = bi;
+}
 
-// auto Problem::xlower(IndicesConstRef indices, VectorConstRef values) -> void
-// {
-//    m_xlower(indices) = values;
-//    m_nlower = indices.size();
-//    m_lowerpartition.setLinSpaced(m_n, 0, m_n - 1);
-//    m_lowerpartition.head(m_nlower).swap(m_lowerpartition(indices));
-// }
+auto Problem::setLowerBound(double val) -> void
+{
+    m_xlower.fill(val);
+}
 
-// auto Problem::xlower() const -> VectorConstRef
-// {
-//    return m_xlower.head(m_nlower);
-// }
+auto Problem::setLowerBounds(VectorConstRef xlower) -> void
+{
+    const auto nl = m_constraints.variablesWithLowerBounds().size();
+    Assert(xlower.size() == nl, "Problem::setLowerBounds(VectorConstRef)",
+        "Mismatch number of variables with lower bounds and given values to set in xlower.");
+    m_xlower = xlower;
+}
 
-// auto Problem::xupper(double val) -> void
-// {
-//    m_xupper.fill(val);
-//    m_nupper = m_n;
-// }
+auto Problem::setUpperBound(double val) -> void
+{
+    m_xupper.fill(val);
+}
 
-// auto Problem::xupper(VectorConstRef values) -> void
-// {
-//    m_xupper.head(m_n) = values;
-//    m_nupper = m_n;
-// }
+auto Problem::setUpperBounds(VectorConstRef xupper) -> void
+{
+    const auto nu = m_constraints.variablesWithUpperBounds().size();
+    Assert(xupper.size() == nu, "Problem::setUpperBounds(VectorConstRef)",
+        "Mismatch number of variables with upper bounds and given values to set in xupper.");
+    m_xupper = xupper;
+}
 
-// auto Problem::xupper(IndicesConstRef indices, VectorConstRef values) -> void
-// {
-//    m_xupper(indices) = values;
-//    m_nupper = indices.size();
-//    m_upperpartition.setLinSpaced(m_n, 0, m_n - 1);
-//    m_upperpartition.head(m_nlower).swap(m_upperpartition(indices));
-// }
+auto Problem::setFixedValue(double val) -> void
+{
+    m_xfixed.fill(val);
+}
 
-// auto Problem::xupper() const -> VectorConstRef
-// {
-//    return m_xupper.head(m_nupper);
-// }
+auto Problem::setFixedValues(VectorConstRef xfixed) -> void
+{
+    const auto nf = m_constraints.variablesWithFixedValues().size();
+    Assert(xfixed.size() == nf, "Problem::setFixedValues(VectorConstRef)",
+        "Mismatch number of fixed variables and given values to set in xfixed.");
+    m_xfixed = xfixed;
+}
 
-// auto Problem::xfixed(double val) -> void
-// {
-//    m_xfixed.fill(val);
-//    m_nfixed = m_n;
-// }
+auto Problem::objective() const -> const ObjectiveFunction&
+{
+    return m_objective;
+}
 
-// auto Problem::xfixed(VectorConstRef values) -> void
-// {
-//    m_xfixed.head(m_n) = values;
-//    m_nfixed = m_n;
-// }
+auto Problem::constraints() const -> const Constraints&
+{
+    return m_constraints;
+}
 
-// auto Problem::xfixed(IndicesConstRef indices, VectorConstRef values) -> void
-// {
-//    m_xfixed(indices) = values;
-//    m_nfixed = indices.size();
-//    m_fixedpartition.setLinSpaced(m_n, 0, m_n - 1);
-//    m_fixedpartition.head(m_nlower).swap(m_fixedpartition(indices));
-// }
+auto Problem::equalityConstraintVector() const -> VectorConstRef
+{
+    return m_be;
+}
 
-// auto Problem::xfixed() const -> VectorConstRef
-// {
-//    return m_xfixed.head(m_nfixed);
-// }
+auto Problem::inequalityConstraintVector() const -> VectorConstRef
+{
+    return m_bi;
+}
+
+auto Problem::lowerBounds() const -> VectorConstRef
+{
+    return m_xlower;
+}
+
+auto Problem::upperBounds() const -> VectorConstRef
+{
+    return m_xupper;
+}
+
+auto Problem::fixedValues() const -> VectorConstRef
+{
+    return m_xfixed;
+}
 
 } // namespace Optima

@@ -90,12 +90,11 @@ def test_optimum_solver(args):
 
     A = assemble_A(m, n, nf)
 
-    structure = Structure(n)
-    structure.setObjectiveFunction(objective)
-    structure.setVariablesWithFixedValues(jf)
-    structure.setVariablesWithLowerBounds(jl)
-    structure.setVariablesWithUpperBounds(ju)
-    structure.setEqualityConstraintMatrix(A)
+    constraints = Constraints(n)
+    constraints.setVariablesWithFixedValues(jf)
+    constraints.setVariablesWithLowerBounds(jl)
+    constraints.setVariablesWithUpperBounds(ju)
+    constraints.setEqualityConstraintMatrix(A)
 
     y_expected = linspace(1, m, m)
 
@@ -105,7 +104,7 @@ def test_optimum_solver(args):
     w_expected = zeros(n)
     w_expected[ju] = -1.0  # Slack variables w are -1 at active upper bounds
 
-    jx = structure.variablesWithoutFixedValues()
+    jx = constraints.variablesWithoutFixedValues()
 
     Ax = A[:, jx]  # The columns of A corresponding to free variables
     Atx = array(transpose(Ax))
@@ -133,7 +132,7 @@ def test_optimum_solver(args):
 #     options.output.active = True
     options.kkt.method = method
 
-    solver = Solver(structure)
+    solver = Solver(objective, constraints)
     solver.setOptions(options)
     res = solver.solve(params, state)
 
