@@ -31,7 +31,7 @@ class State
 {
 public:
     explicit State(const Constraints& constraints)
-    : x(constraints), y(constraints), z(constraints)
+    : x(constraints), y(constraints), z(constraints), w(constraints)
     {}
 
 // private:
@@ -43,6 +43,9 @@ public:
 
     /// The complementarity variables of the optimization problem.
     ComplementarityVariables z;
+
+    /// The complementarity variables of the optimization problem.
+    ComplementarityVariables w;
     // /// The primal solution of the optimization problem.
     // Vector x;
 

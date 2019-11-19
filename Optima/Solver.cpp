@@ -160,10 +160,10 @@ struct Solver::Impl
         if(!options.output.active) return;
 
         // Aliases to canonical variables
-        auto x = state.x.canonicalPrimalVariables();
-        auto y = state.y.canonicalMultipliers();
-        auto z = state.z.wrtCanonicalLowerBounds();
-        auto w = state.z.wrtCanonicalUpperBounds();
+        auto x = state.x.canonical();
+        auto y = state.y.canonical();
+        auto z = state.z.canonical();
+        auto w = state.w.canonical();
 
         outputter.addEntry("Iteration");
         outputter.addEntry("f(x)");
@@ -200,10 +200,10 @@ struct Solver::Impl
         if(!options.output.active) return;
 
         // Aliases to canonical variables
-        auto x = state.x.canonicalPrimalVariables();
-        auto y = state.y.canonicalMultipliers();
-        auto z = state.z.wrtCanonicalLowerBounds();
-        auto w = state.z.wrtCanonicalUpperBounds();
+        auto x = state.x.canonical();
+        auto y = state.y.canonical();
+        auto z = state.z.canonical();
+        auto w = state.w.canonical();
 
         outputter.addValue(result.iterations);
         outputter.addValue(f.value);
@@ -227,10 +227,10 @@ struct Solver::Impl
         outputter.clear();
 
         // Aliases to canonical variables
-        auto x = state.x.canonicalPrimalVariables();
-        auto y = state.y.canonicalMultipliers();
-        auto z = state.z.wrtCanonicalLowerBounds();
-        auto w = state.z.wrtCanonicalUpperBounds();
+        auto x = state.x.canonical();
+        auto y = state.y.canonical();
+        auto z = state.z.canonical();
+        auto w = state.w.canonical();
 
         // The indices of variables with lower/upper bounds and fixed values
         IndicesConstRef ilower = constraints.variablesWithLowerBounds();
@@ -296,7 +296,7 @@ struct Solver::Impl
         f.hessian.resize(n, n);
 
         // Evaluate the objective function
-        objective(state.x.originalPrimalVariables(), f);
+        objective(state.x.original(), f);
 	}
 
     // The function that computes the Newton step
@@ -305,10 +305,10 @@ struct Solver::Impl
     	Timer timer;
 
         StepperProblem problem{
-            state.x.canonicalPrimalVariables(),
-            state.y.canonicalMultipliers(),
-            state.z.wrtCanonicalLowerBounds(),
-            state.z.wrtCanonicalUpperBounds(),
+            state.x.canonical(),
+            state.y.canonical(),
+            state.z.canonical(),
+            state.w.canonical(),
             params.xlower,
             params.xupper,
             params.be,
@@ -428,10 +428,10 @@ struct Solver::Impl
 	auto applyNewtonSteppingAggressive(const Params& params, State& state) -> void
 	{
         // Aliases to canonical variables
-        auto x = state.x.canonicalPrimalVariables();
-        auto y = state.y.canonicalMultipliers();
-        auto z = state.z.wrtCanonicalLowerBounds();
-        auto w = state.z.wrtCanonicalUpperBounds();
+        auto x = state.x.canonical();
+        auto y = state.y.canonical();
+        auto z = state.z.canonical();
+        auto w = state.w.canonical();
 
 		// Aliases to Newton steps calculated before
 		VectorConstRef dx = stepper.step().x;

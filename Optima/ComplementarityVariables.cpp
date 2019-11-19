@@ -29,75 +29,52 @@ ComplementarityVariables::ComplementarityVariables(const Constraints& constraint
 : n(constraints.numVariables()),
   mli(constraints.numLinearInequalityConstraints()),
   mni(constraints.numNonLinearInequalityConstraints()),
-  data_lower(zeros(n + mli + mni)),
-  data_upper(zeros(n))
+  data(zeros(n + mli + mni))
 {
 }
 
 
-auto ComplementarityVariables::wrtCanonicalLowerBounds() const -> VectorConstRef
+auto ComplementarityVariables::canonical() const -> VectorConstRef
 {
-    return data_lower;
+    return data;
 }
 
-auto ComplementarityVariables::wrtCanonicalLowerBounds() -> VectorRef
+auto ComplementarityVariables::canonical() -> VectorRef
 {
-    return data_lower;
-}
-
-
-auto ComplementarityVariables::wrtCanonicalUpperBounds() const -> VectorConstRef
-{
-    return data_upper;
-}
-
-auto ComplementarityVariables::wrtCanonicalUpperBounds() -> VectorRef
-{
-    return data_upper;
+    return data;
 }
 
 
-auto ComplementarityVariables::wrtLowerBounds() const -> VectorConstRef
+auto ComplementarityVariables::original() const -> VectorConstRef
 {
-    return data_lower.head(n);
+    return data.head(n);
 }
 
-auto ComplementarityVariables::wrtLowerBounds() -> VectorRef
+auto ComplementarityVariables::original() -> VectorRef
 {
-    return data_lower.head(n);
-}
-
-
-auto ComplementarityVariables::wrtUpperBounds() const -> VectorConstRef
-{
-    return data_upper.head(n);
-}
-
-auto ComplementarityVariables::wrtUpperBounds() -> VectorRef
-{
-    return data_upper.head(n);
+    return data.head(n);
 }
 
 
 auto ComplementarityVariables::wrtLinearInequalityConstraints() const -> VectorConstRef
 {
-    return data_lower.segment(n, mli);
+    return data.segment(n, mli);
 }
 
 auto ComplementarityVariables::wrtLinearInequalityConstraints() -> VectorRef
 {
-    return data_lower.segment(n, mli);
+    return data.segment(n, mli);
 }
 
 
 auto ComplementarityVariables::wrtNonLinearInequalityConstraints() const -> VectorConstRef
 {
-    return data_lower.tail(mni);
+    return data.tail(mni);
 }
 
 auto ComplementarityVariables::wrtNonLinearInequalityConstraints() -> VectorRef
 {
-    return data_lower.tail(mni);
+    return data.tail(mni);
 }
 
 

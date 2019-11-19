@@ -27,10 +27,10 @@ using namespace Optima;
 
 void exportPrimalVariables(py::module& m)
 {
-    auto canonicalPrimalVariables1 = py::overload_cast<>(&PrimalVariables::canonicalPrimalVariables);
-    auto canonicalPrimalVariables2 = py::overload_cast<>(&PrimalVariables::canonicalPrimalVariables, py::const_);
-    auto originalPrimalVariables1 = py::overload_cast<>(&PrimalVariables::originalPrimalVariables);
-    auto originalPrimalVariables2 = py::overload_cast<>(&PrimalVariables::originalPrimalVariables, py::const_);
+    auto canonical1 = py::overload_cast<>(&PrimalVariables::canonical);
+    auto canonical2 = py::overload_cast<>(&PrimalVariables::canonical, py::const_);
+    auto original1 = py::overload_cast<>(&PrimalVariables::original);
+    auto original2 = py::overload_cast<>(&PrimalVariables::original, py::const_);
     auto slackVariablesLinearInequalityConstraints1 = py::overload_cast<>(&PrimalVariables::slackVariablesLinearInequalityConstraints);
     auto slackVariablesLinearInequalityConstraints2 = py::overload_cast<>(&PrimalVariables::slackVariablesLinearInequalityConstraints, py::const_);
     auto slackVariablesNonLinearInequalityConstraints1 = py::overload_cast<>(&PrimalVariables::slackVariablesNonLinearInequalityConstraints);
@@ -41,10 +41,10 @@ void exportPrimalVariables(py::module& m)
     py::class_<PrimalVariables>(m, "PrimalVariables")
         .def(py::init<>())
         .def(py::init<const Constraints&>())
-        .def("canonicalPrimalVariables", canonicalPrimalVariables1, rvp, "Return the primal variables of the canonical optimization problem.")
-        .def("canonicalPrimalVariables", canonicalPrimalVariables2, rvp, "Return the primal variables of the canonical optimization problem.")
-        .def("originalPrimalVariables", originalPrimalVariables1, rvp, "Return the primal variables of the original optimization problem.")
-        .def("originalPrimalVariables", originalPrimalVariables2, rvp, "Return the primal variables of the original optimization problem.")
+        .def("canonical", canonical1, rvp, "Return the primal variables of the canonical optimization problem.")
+        .def("canonical", canonical2, rvp, "Return the primal variables of the canonical optimization problem.")
+        .def("original", original1, rvp, "Return the primal variables of the original optimization problem.")
+        .def("original", original2, rvp, "Return the primal variables of the original optimization problem.")
         .def("slackVariablesLinearInequalityConstraints", slackVariablesLinearInequalityConstraints1, rvp, "Return the primal variables of the canonical optimization problem with respect to linear inequality constraints.")
         .def("slackVariablesLinearInequalityConstraints", slackVariablesLinearInequalityConstraints2, rvp, "Return the primal variables of the canonical optimization problem with respect to linear inequality constraints.")
         .def("slackVariablesNonLinearInequalityConstraints", slackVariablesNonLinearInequalityConstraints1, rvp, "Return the primal variables of the canonical optimization problem with respect to non-linear inequality constraints.")

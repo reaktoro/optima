@@ -38,10 +38,10 @@ public:
 
 
     /// Return the Lagrange multipliers of the canonical optimization problem.
-    auto canonicalMultipliers() const -> VectorConstRef;
+    auto canonical() const -> VectorConstRef;
 
     /// Return the Lagrange multipliers of the canonical optimization problem.
-    auto canonicalMultipliers() -> VectorRef;
+    auto canonical() -> VectorRef;
 
 
     /// Return the Lagrange multipliers with respect to the linear equality constraints of the original optimization problem.

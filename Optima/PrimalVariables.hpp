@@ -37,16 +37,16 @@ public:
     PrimalVariables(const Constraints& constraints);
 
     /// Return the primal variables of the canonical optimization problem.
-    auto canonicalPrimalVariables() const -> VectorConstRef;
+    auto canonical() const -> VectorConstRef;
 
     /// Return the primal variables of the canonical optimization problem.
-    auto canonicalPrimalVariables() -> VectorRef;
+    auto canonical() -> VectorRef;
 
     /// Return the primal variables of the original optimization problem.
-    auto originalPrimalVariables() const -> VectorConstRef;
+    auto original() const -> VectorConstRef;
 
     /// Return the primal variables of the original optimization problem.
-    auto originalPrimalVariables() -> VectorRef;
+    auto original() -> VectorRef;
 
     /// Return the primal variables of the canonical optimization problem with respect to linear inequality constraints.
     auto slackVariablesLinearInequalityConstraints() const -> VectorConstRef;

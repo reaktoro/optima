@@ -27,8 +27,8 @@ using namespace Optima;
 
 void exportLagrangeMultipliers(py::module& m)
 {
-    auto canonicalMultipliers1 = py::overload_cast<>(&LagrangeMultipliers::canonicalMultipliers);
-    auto canonicalMultipliers2 = py::overload_cast<>(&LagrangeMultipliers::canonicalMultipliers, py::const_);
+    auto canonical1 = py::overload_cast<>(&LagrangeMultipliers::canonical);
+    auto canonical2 = py::overload_cast<>(&LagrangeMultipliers::canonical, py::const_);
     auto wrtLinearEqualityConstraints1 = py::overload_cast<>(&LagrangeMultipliers::wrtLinearEqualityConstraints);
     auto wrtLinearEqualityConstraints2 = py::overload_cast<>(&LagrangeMultipliers::wrtLinearEqualityConstraints, py::const_);
     auto wrtNonLinearEqualityConstraints1 = py::overload_cast<>(&LagrangeMultipliers::wrtNonLinearEqualityConstraints);
@@ -43,8 +43,8 @@ void exportLagrangeMultipliers(py::module& m)
     py::class_<LagrangeMultipliers>(m, "LagrangeMultipliers")
         .def(py::init<>())
         .def(py::init<const Constraints&>())
-        .def("canonicalMultipliers", canonicalMultipliers1, rvp, "Return the Lagrange multipliers of the canonical optimization problem.")
-        .def("canonicalMultipliers", canonicalMultipliers2, rvp, "Return the Lagrange multipliers of the canonical optimization problem.")
+        .def("canonical", canonical1, rvp, "Return the Lagrange multipliers of the canonical optimization problem.")
+        .def("canonical", canonical2, rvp, "Return the Lagrange multipliers of the canonical optimization problem.")
         .def("wrtLinearEqualityConstraints", wrtLinearEqualityConstraints1, rvp, "Return the Lagrange multipliers with respect to the linear equality constraints of the original optimization problem.")
         .def("wrtLinearEqualityConstraints", wrtLinearEqualityConstraints2, rvp, "Return the Lagrange multipliers with respect to the linear equality constraints of the original optimization problem.")
         .def("wrtNonLinearEqualityConstraints", wrtNonLinearEqualityConstraints1, rvp, "Return the Lagrange multipliers with respect to the non-linear equality constraints of the original optimization problem.")

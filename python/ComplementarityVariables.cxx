@@ -27,14 +27,10 @@ using namespace Optima;
 
 void exportComplementarityVariables(py::module& m)
 {
-    auto wrtCanonicalLowerBounds1 = py::overload_cast<>(&ComplementarityVariables::wrtCanonicalLowerBounds);
-    auto wrtCanonicalLowerBounds2 = py::overload_cast<>(&ComplementarityVariables::wrtCanonicalLowerBounds, py::const_);
-    auto wrtCanonicalUpperBounds1 = py::overload_cast<>(&ComplementarityVariables::wrtCanonicalUpperBounds);
-    auto wrtCanonicalUpperBounds2 = py::overload_cast<>(&ComplementarityVariables::wrtCanonicalUpperBounds, py::const_);
-    auto wrtLowerBounds1 = py::overload_cast<>(&ComplementarityVariables::wrtLowerBounds);
-    auto wrtLowerBounds2 = py::overload_cast<>(&ComplementarityVariables::wrtLowerBounds, py::const_);
-    auto wrtUpperBounds1 = py::overload_cast<>(&ComplementarityVariables::wrtUpperBounds);
-    auto wrtUpperBounds2 = py::overload_cast<>(&ComplementarityVariables::wrtUpperBounds, py::const_);
+    auto canonical1 = py::overload_cast<>(&ComplementarityVariables::canonical);
+    auto canonical2 = py::overload_cast<>(&ComplementarityVariables::canonical, py::const_);
+    auto original1 = py::overload_cast<>(&ComplementarityVariables::original);
+    auto original2 = py::overload_cast<>(&ComplementarityVariables::original, py::const_);
     auto wrtLinearInequalityConstraints1 = py::overload_cast<>(&ComplementarityVariables::wrtLinearInequalityConstraints);
     auto wrtLinearInequalityConstraints2 = py::overload_cast<>(&ComplementarityVariables::wrtLinearInequalityConstraints, py::const_);
     auto wrtNonLinearInequalityConstraints1 = py::overload_cast<>(&ComplementarityVariables::wrtNonLinearInequalityConstraints);
@@ -45,14 +41,10 @@ void exportComplementarityVariables(py::module& m)
     py::class_<ComplementarityVariables>(m, "ComplementarityVariables")
         .def(py::init<>())
         .def(py::init<const Constraints&>())
-        .def("wrtCanonicalLowerBounds", wrtCanonicalLowerBounds1, rvp, "Return the complementarity variables with respect to the lower bound constraints of the canonical optimization problem.")
-        .def("wrtCanonicalLowerBounds", wrtCanonicalLowerBounds2, rvp, "Return the complementarity variables with respect to the lower bound constraints of the canonical optimization problem.")
-        .def("wrtCanonicalUpperBounds", wrtCanonicalUpperBounds1, rvp, "Return the complementarity variables with respect to the upper bound constraints of the canonical optimization problem.")
-        .def("wrtCanonicalUpperBounds", wrtCanonicalUpperBounds2, rvp, "Return the complementarity variables with respect to the upper bound constraints of the canonical optimization problem.")
-        .def("wrtLowerBounds", wrtLowerBounds1, rvp, "Return the complementarity variables with respect to the lower bound constraints of the original optimization problem.")
-        .def("wrtLowerBounds", wrtLowerBounds2, rvp, "Return the complementarity variables with respect to the lower bound constraints of the original optimization problem.")
-        .def("wrtUpperBounds", wrtUpperBounds1, rvp, "Return the complementarity variables with respect to the upper bound constraints of the original optimization problem.")
-        .def("wrtUpperBounds", wrtUpperBounds2, rvp, "Return the complementarity variables with respect to the upper bound constraints of the original optimization problem.")
+        .def("canonical", canonical1, rvp, "Return the complementarity variables with respect to the bound constraints of the canonical optimization problem.")
+        .def("canonical", canonical2, rvp, "Return the complementarity variables with respect to the bound constraints of the canonical optimization problem.")
+        .def("original", original1, rvp, "Return the complementarity variables with respect to the bound constraints of the original optimization problem.")
+        .def("original", original2, rvp, "Return the complementarity variables with respect to the bound constraints of the original optimization problem.")
         .def("wrtLinearInequalityConstraints", wrtLinearInequalityConstraints1, rvp, "Return the complementarity variables with respect to the linear inequality constraints of the original optimization problem.")
         .def("wrtLinearInequalityConstraints", wrtLinearInequalityConstraints2, rvp, "Return the complementarity variables with respect to the linear inequality constraints of the original optimization problem.")
         .def("wrtNonLinearInequalityConstraints", wrtNonLinearInequalityConstraints1, rvp, "Return the complementarity variables with respect to the non-linear inequality constraints of the original optimization problem.")

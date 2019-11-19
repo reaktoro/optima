@@ -33,22 +33,22 @@ PrimalVariables::PrimalVariables(const Constraints& constraints)
 {
 }
 
-auto PrimalVariables::canonicalPrimalVariables() const -> VectorConstRef
+auto PrimalVariables::canonical() const -> VectorConstRef
 {
     return data;
 }
 
-auto PrimalVariables::canonicalPrimalVariables() -> VectorRef
+auto PrimalVariables::canonical() -> VectorRef
 {
     return data;
 }
 
-auto PrimalVariables::originalPrimalVariables() const -> VectorConstRef
+auto PrimalVariables::original() const -> VectorConstRef
 {
     return data.head(nx);
 }
 
-auto PrimalVariables::originalPrimalVariables() -> VectorRef
+auto PrimalVariables::original() -> VectorRef
 {
     return data.head(nx);
 }

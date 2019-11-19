@@ -37,32 +37,18 @@ public:
     ComplementarityVariables(const Constraints& constraints);
 
 
-    /// Return the complementarity variables with respect to the lower bound constraints of the canonical optimization problem.
-    auto wrtCanonicalLowerBounds() const -> VectorConstRef;
+    /// Return the complementarity variables with respect to the bound constraints of the canonical optimization problem.
+    auto canonical() const -> VectorConstRef;
 
-    /// Return the complementarity variables with respect to the lower bound constraints of the canonical optimization problem.
-    auto wrtCanonicalLowerBounds() -> VectorRef;
-
-
-    /// Return the complementarity variables with respect to the upper bound constraints of the canonical optimization problem.
-    auto wrtCanonicalUpperBounds() const -> VectorConstRef;
-
-    /// Return the complementarity variables with respect to the upper bound constraints of the canonical optimization problem.
-    auto wrtCanonicalUpperBounds() -> VectorRef;
+    /// Return the complementarity variables with respect to the bound constraints of the canonical optimization problem.
+    auto canonical() -> VectorRef;
 
 
-    /// Return the complementarity variables with respect to the lower bound constraints of the original optimization problem.
-    auto wrtLowerBounds() const -> VectorConstRef;
+    /// Return the complementarity variables with respect to the bound constraints of the original optimization problem.
+    auto original() const -> VectorConstRef;
 
-    /// Return the complementarity variables with respect to the lower bound constraints of the original optimization problem.
-    auto wrtLowerBounds() -> VectorRef;
-
-
-    /// Return the complementarity variables with respect to the upper bound constraints of the original optimization problem.
-    auto wrtUpperBounds() const -> VectorConstRef;
-
-    /// Return the complementarity variables with respect to the upper bound constraints of the original optimization problem.
-    auto wrtUpperBounds() -> VectorRef;
+    /// Return the complementarity variables with respect to the bound constraints of the original optimization problem.
+    auto original() -> VectorRef;
 
 
     /// Return the complementarity variables with respect to the linear inequality constraints of the original optimization problem.
@@ -88,11 +74,8 @@ private:
     /// The number of non-linear inequality constraints in the original optimization problem.
     Index mni = 0;
 
-    /// The vector containing the complementarity variables of the canonical optimization problem (canonical lower bounds).
-    Vector data_lower;
-
-    /// The vector containing the complementarity variables of the canonical optimization problem (canonical upper bounds).
-    Vector data_upper;
+    /// The vector containing the complementarity variables of the canonical optimization problem.
+    Vector data;
 };
 
 } // namespace Optima

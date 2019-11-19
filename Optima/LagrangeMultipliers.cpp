@@ -34,12 +34,12 @@ LagrangeMultipliers::LagrangeMultipliers(const Constraints& constraints)
 {
 }
 
-auto LagrangeMultipliers::canonicalMultipliers() const -> VectorConstRef
+auto LagrangeMultipliers::canonical() const -> VectorConstRef
 {
     return data;
 }
 
-auto LagrangeMultipliers::canonicalMultipliers() -> VectorRef
+auto LagrangeMultipliers::canonical() -> VectorRef
 {
     return data;
 }
