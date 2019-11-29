@@ -49,16 +49,16 @@ public:
     auto original() -> VectorRef;
 
     /// Return the primal variables of the canonical optimization problem with respect to linear inequality constraints.
-    auto slackVariablesLinearInequalityConstraints() const -> VectorConstRef;
+    auto wrtLinearInequalityConstraints() const -> VectorConstRef;
 
     /// Return the primal variables of the canonical optimization problem with respect to linear inequality constraints.
-    auto slackVariablesLinearInequalityConstraints() -> VectorRef;
+    auto wrtLinearInequalityConstraints() -> VectorRef;
 
     /// Return the primal variables of the canonical optimization problem with respect to non-linear inequality constraints.
-    auto slackVariablesNonLinearInequalityConstraints() const -> VectorConstRef;
+    auto wrtNonLinearInequalityConstraints() const -> VectorConstRef;
 
     /// Return the primal variables of the canonical optimization problem with respect to non-linear inequality constraints.
-    auto slackVariablesNonLinearInequalityConstraints() -> VectorRef;
+    auto wrtNonLinearInequalityConstraints() -> VectorRef;
 
 private:
     /// The number of primal variables in the optimization problem

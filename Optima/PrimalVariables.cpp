@@ -53,22 +53,22 @@ auto PrimalVariables::original() -> VectorRef
     return data.head(nx);
 }
 
-auto PrimalVariables::slackVariablesLinearInequalityConstraints() const -> VectorConstRef
+auto PrimalVariables::wrtLinearInequalityConstraints() const -> VectorConstRef
 {
     return data.segment(nx, nxli);
 }
 
-auto PrimalVariables::slackVariablesLinearInequalityConstraints() -> VectorRef
+auto PrimalVariables::wrtLinearInequalityConstraints() -> VectorRef
 {
     return data.segment(nx, nxli);
 }
 
-auto PrimalVariables::slackVariablesNonLinearInequalityConstraints() const -> VectorConstRef
+auto PrimalVariables::wrtNonLinearInequalityConstraints() const -> VectorConstRef
 {
     return data.tail(nxni);
 }
 
-auto PrimalVariables::slackVariablesNonLinearInequalityConstraints() -> VectorRef
+auto PrimalVariables::wrtNonLinearInequalityConstraints() -> VectorRef
 {
     return data.tail(nxni);
 }

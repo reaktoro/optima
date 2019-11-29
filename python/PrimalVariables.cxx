@@ -31,10 +31,10 @@ void exportPrimalVariables(py::module& m)
     auto canonical2 = py::overload_cast<>(&PrimalVariables::canonical, py::const_);
     auto original1 = py::overload_cast<>(&PrimalVariables::original);
     auto original2 = py::overload_cast<>(&PrimalVariables::original, py::const_);
-    auto slackVariablesLinearInequalityConstraints1 = py::overload_cast<>(&PrimalVariables::slackVariablesLinearInequalityConstraints);
-    auto slackVariablesLinearInequalityConstraints2 = py::overload_cast<>(&PrimalVariables::slackVariablesLinearInequalityConstraints, py::const_);
-    auto slackVariablesNonLinearInequalityConstraints1 = py::overload_cast<>(&PrimalVariables::slackVariablesNonLinearInequalityConstraints);
-    auto slackVariablesNonLinearInequalityConstraints2 = py::overload_cast<>(&PrimalVariables::slackVariablesNonLinearInequalityConstraints, py::const_);
+    auto wrtLinearInequalityConstraints1 = py::overload_cast<>(&PrimalVariables::wrtLinearInequalityConstraints);
+    auto wrtLinearInequalityConstraints2 = py::overload_cast<>(&PrimalVariables::wrtLinearInequalityConstraints, py::const_);
+    auto wrtNonLinearInequalityConstraints1 = py::overload_cast<>(&PrimalVariables::wrtNonLinearInequalityConstraints);
+    auto wrtNonLinearInequalityConstraints2 = py::overload_cast<>(&PrimalVariables::wrtNonLinearInequalityConstraints, py::const_);
 
     auto rvp = py::return_value_policy::reference_internal;
 
@@ -45,9 +45,9 @@ void exportPrimalVariables(py::module& m)
         .def("canonical", canonical2, rvp, "Return the primal variables of the canonical optimization problem.")
         .def("original", original1, rvp, "Return the primal variables of the original optimization problem.")
         .def("original", original2, rvp, "Return the primal variables of the original optimization problem.")
-        .def("slackVariablesLinearInequalityConstraints", slackVariablesLinearInequalityConstraints1, rvp, "Return the primal variables of the canonical optimization problem with respect to linear inequality constraints.")
-        .def("slackVariablesLinearInequalityConstraints", slackVariablesLinearInequalityConstraints2, rvp, "Return the primal variables of the canonical optimization problem with respect to linear inequality constraints.")
-        .def("slackVariablesNonLinearInequalityConstraints", slackVariablesNonLinearInequalityConstraints1, rvp, "Return the primal variables of the canonical optimization problem with respect to non-linear inequality constraints.")
-        .def("slackVariablesNonLinearInequalityConstraints", slackVariablesNonLinearInequalityConstraints2, rvp, "Return the primal variables of the canonical optimization problem with respect to non-linear inequality constraints.")
+        .def("wrtLinearInequalityConstraints", wrtLinearInequalityConstraints1, rvp, "Return the primal variables of the canonical optimization problem with respect to linear inequality constraints.")
+        .def("wrtLinearInequalityConstraints", wrtLinearInequalityConstraints2, rvp, "Return the primal variables of the canonical optimization problem with respect to linear inequality constraints.")
+        .def("wrtNonLinearInequalityConstraints", wrtNonLinearInequalityConstraints1, rvp, "Return the primal variables of the canonical optimization problem with respect to non-linear inequality constraints.")
+        .def("wrtNonLinearInequalityConstraints", wrtNonLinearInequalityConstraints2, rvp, "Return the primal variables of the canonical optimization problem with respect to non-linear inequality constraints.")
         ;
 }
