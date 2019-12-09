@@ -45,8 +45,11 @@ public:
     /// The diagonal matrix \eq{D} in the saddle point matrix.
     VectorConstRef D;
 
-    /// The Jacobian matrix \eq{A} in the saddle point matrix.
-    MatrixConstRef A;
+    /// The top-block of the Jacobian matrix \eq{A} in the saddle point matrix that always remain constant.
+    MatrixConstRef At;
+
+    /// The bottom-block of the Jacobian matrix \eq{A} in the saddle point matrix that is variable.
+    MatrixConstRef Ab;
 
     /// The negative semi-definite matrix \eq{G} in the saddle point matrix.
     MatrixConstRef G;
@@ -57,17 +60,19 @@ public:
     /// Construct a SaddlePointMatrix instance.
     /// @param H The \eq{H} matrix in the saddle point matrix.
     /// @param D The \eq{D} matrix in the saddle point matrix.
-    /// @param A The \eq{A} matrix in the saddle point matrix.
+    /// @param At The top-block of \eq{A} matrix in the saddle point matrix.
+    /// @param Ab The bottom-block of \eq{A} matrix in the saddle point matrix.
     /// @param jf The indices of the fixed variables.
-    SaddlePointMatrix(MatrixConstRef H, VectorConstRef D, MatrixConstRef A, IndicesConstRef jf);
+    SaddlePointMatrix(MatrixConstRef H, VectorConstRef D, MatrixConstRef At, MatrixConstRef Ab, IndicesConstRef jf);
 
     /// Construct a SaddlePointMatrix instance.
     /// @param H The \eq{H} matrix in the saddle point matrix.
     /// @param D The \eq{D} matrix in the saddle point matrix.
-    /// @param A The \eq{A} matrix in the saddle point matrix.
+    /// @param At The top-block of \eq{A} matrix in the saddle point matrix.
+    /// @param Ab The bottom-block of \eq{A} matrix in the saddle point matrix.
     /// @param G The \eq{G} matrix in the saddle point matrix.
     /// @param jf The indices of the fixed variables.
-    SaddlePointMatrix(MatrixConstRef H, VectorConstRef D, MatrixConstRef A, MatrixConstRef G, IndicesConstRef jf);
+    SaddlePointMatrix(MatrixConstRef H, VectorConstRef D, MatrixConstRef At, MatrixConstRef Ab, MatrixConstRef G, IndicesConstRef jf);
 
     /// Convert this SaddlePointMatrix instance into a Matrix instance.
     operator Matrix() const;
