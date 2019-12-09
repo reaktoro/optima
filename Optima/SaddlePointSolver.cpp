@@ -21,7 +21,7 @@
 #include <Optima/deps/eigen3/Eigen/Dense>
 
 // Optima includes
-#include <Optima/Canonicalizer.hpp>
+#include <Optima/CanonicalizerAdvanced.hpp>
 #include <Optima/Exception.hpp>
 #include <Optima/IndexUtils.hpp>
 #include <Optima/Matrix.hpp>
@@ -34,7 +34,7 @@ namespace Optima {
 struct SaddlePointSolver::Impl
 {
     /// The canonicalizer of the Jacobian matrix *A*.
-    Canonicalizer canonicalizer;
+    CanonicalizerAdvanced canonicalizer;
 
     /// The options used to solve the saddle point problems.
     SaddlePointOptions options;
@@ -175,7 +175,7 @@ struct SaddlePointSolver::Impl
         weights(jf).noalias() = -linspace(nf, 1, nf);
 
         // Update the canonical form and the ordering of the variables
-        canonicalizer.updateWithPriorityWeights(weights);
+        canonicalizer.update(lhs.Ab, weights);
 
         // Get the updated indices of basic and non-basic variables
         const auto ibasic = canonicalizer.indicesBasicVariables();

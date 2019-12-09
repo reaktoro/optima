@@ -23,38 +23,50 @@
 
 namespace Optima {
 
-SaddlePointMatrix::SaddlePointMatrix(MatrixConstRef H, VectorConstRef D, MatrixConstRef A, IndicesConstRef jf)
-: SaddlePointMatrix(H, D, A, Matrix{}, jf)
+SaddlePointMatrix::SaddlePointMatrix(MatrixConstRef H, VectorConstRef D, MatrixConstRef At, MatrixConstRef Ab, IndicesConstRef jf)
+: SaddlePointMatrix(H, D, At, Ab, Matrix{}, jf)
 {}
 
-SaddlePointMatrix::SaddlePointMatrix(MatrixConstRef H, VectorConstRef D, MatrixConstRef A, MatrixConstRef G, IndicesConstRef jf)
-: H(H), D(D), A(A), G(G), jf(jf)
+SaddlePointMatrix::SaddlePointMatrix(MatrixConstRef H, VectorConstRef D, MatrixConstRef At, MatrixConstRef Ab, MatrixConstRef G, IndicesConstRef jf)
+: H(H), D(D), At(At), Ab(Ab), G(G), jf(jf)
 {
+    const auto mt = At.rows();
+    const auto mb = Ab.rows();
+    const auto m = mt + mb;
+    const auto n = At.cols();
+    const auto t = m + n;
+
     Assert(H.rows() == H.cols() || H.cols() == 1,
         "Could not create a SaddlePointMatrix object.",
             "Matrix H is neither a square n-by-n matrix or a diagonal n-by-1 matrix.");
 
-    Assert(H.rows() == A.cols(),
+    Assert(H.rows() == At.cols(),
         "Could not create a SaddlePointMatrix object.",
-            "Matrix A must have the same number of columns as there are rows in H.");
+            "Matrix At must have the same number of columns as there are rows in H.");
 
-    Assert(D.rows() == 0 || D.rows() == A.cols(),
+    Assert(H.rows() == Ab.cols() || Ab.size() == 0,
+        "Could not create a SaddlePointMatrix object.",
+            "Matrix Ab must have the same number of columns as there are rows in H (if it is not empty).");
+
+    Assert(D.rows() == 0 || D.rows() == At.cols(),
         "Could not create a SaddlePointMatrix object.",
             "Matrix D must be an empty vector or have the same number of rows as there are rows in H.");
 
-    Assert(A.rows() < A.cols(),
+    Assert(m < n,
         "Could not create a SaddlePointMatrix object.",
-            "Matrix A must have less number of rows than number of columns.");
+            "Matrix A = [At Ab] must have less number of rows than number of columns.");
 
-    Assert(G.size() == 0 || G.rows() == A.rows(),
+    Assert(G.size() == 0 || G.rows() == m,
         "Could not create a SaddlePointMatrix object.",
-            "Matrix G, when non-zero, must have the same number of rows and columns as there are rows in A.");
+            "Matrix G, when non-zero, must have the same number of rows and columns as there are rows in A = [At Ab].");
 }
 
 SaddlePointMatrix::operator Matrix() const
 {
-    const auto m = A.rows();
-    const auto n = A.cols();
+    const auto mt = At.rows();
+    const auto mb = Ab.rows();
+    const auto m = mt + mb;
+    const auto n = At.cols();
     const auto t = m + n;
 
     Matrix res = zeros(t, t);
@@ -74,10 +86,12 @@ SaddlePointMatrix::operator Matrix() const
     // Set all entries in H + D block corresponding to fixed variables
     res.topLeftCorner(n, n).diagonal()(jf).fill(1.0);
 
-    res.topRightCorner(n, m) = tr(A);
+    res.topRightCorner(n, m).leftCols(mt) = tr(At);
+    res.topRightCorner(n, m).rightCols(mb) = tr(Ab);
     res.topRightCorner(n, m)(jf, all).fill(0.0);
 
-    res.bottomLeftCorner(m, n) = A;
+    res.bottomLeftCorner(m, n).topRows(mt) = At;
+    res.bottomLeftCorner(m, n).bottomRows(mb) = Ab;
     res.bottomRightCorner(m, m) <<= G;
 
     return res;
