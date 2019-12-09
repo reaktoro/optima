@@ -5,6 +5,10 @@
 # Conda files
 environment.yml
 
+# LyX backup files
+*.lyx#
+*.lyx~
+
 # Eclipse IDE related files
 .cproject
 .project

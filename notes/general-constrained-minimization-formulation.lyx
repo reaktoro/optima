@@ -91,6 +91,34 @@
 \begin_layout Standard
 \begin_inset Formula 
 \[
+\min_{x}f(x,p)\quad\text{subject to}\quad\left\{ \begin{array}{c}
+Ax+Bq=b\\
+Cx+Dq\geq c\\
+g(x,p)=0\\
+h(x,p)\geq0\\
+l\leq x\leq u
+\end{array}\right.
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\min_{x}f(x,p)\quad\text{subject to}\quad\left\{ \begin{array}{c}
+Ax+Bq=b\\
+Cx+Dq-u=c\\
+g(x,p)=0\\
+h(x,p)-v=0\\
+l\leq x\leq u
+\end{array}\right.
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
 \min_{x}f(x)\quad\text{subject to}\quad\left\{ \begin{array}{c}
 A_{e}x=b_{e}\\
 A_{i}x\geq b_{i}\\
@@ -184,6 +212,234 @@ A\bar{x}=b\\
 h(\bar{x})=0\\
 \bar{x}_{l}\leq\bar{x}\leq\bar{x}_{u}
 \end{array}\right.
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Inverse Optimization Formulation
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{alignat*}{1}
+\begin{aligned}\min_{x}f(x,p) & \quad & \text{subject to} & \quad\end{aligned}
+ & \left\{ \begin{array}{c}
+A_{e}x+B_{e}q=b_{e}\\
+A_{i}x+B_{i}q\geq b_{i}\\
+h_{e}(x,p)=0\\
+h_{i}(x,p)\geq0\\
+x_{l}\leq x\leq x_{u}
+\end{array}\right.
+\end{alignat*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{alignat*}{1}
+\begin{aligned}\min_{x}f(x,p) & \quad & \text{subject to} & \quad\end{aligned}
+ & \left\{ \begin{array}{c}
+A_{e}x+B_{e}q=b_{e}\\
+A_{i}x+B_{i}q-u_{i}=b_{i}\\
+h_{e}(x,p)=0\\
+h_{i}(x,p)-v_{i}=0\\
+x_{l}\leq x\leq x_{u}\\
+u_{i}\geq0\\
+v_{i}\geq0
+\end{array}\right.
+\end{alignat*}
+
+\end_inset
+
+
+\begin_inset Formula 
+\begin{alignat*}{1}
+\begin{aligned}\min_{x}f(x,p) & \quad & \text{subject to} & \quad\end{aligned}
+ & \left\{ \begin{array}{c}
+A_{e}x+B_{e}q=b_{e}\\
+A_{i}x+B_{i}q-u_{i}=b_{i}\\
+h_{e}(x,p)=0\\
+h_{i}(x,p)-v_{i}=0\\
+x_{l}\leq x\leq x_{u}\\
+u_{i}\geq0\\
+v_{i}\geq0
+\end{array}\right.
+\end{alignat*}
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\bar{x}=\begin{bmatrix}x\\
+u_{i}\\
+v_{i}
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+A=\begin{bmatrix}A_{e} & 0 & 0\\
+A_{i} & -I_{i} & 0
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+b=\begin{bmatrix}b_{e}\\
+b_{i}
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+h(\bar{x},p)=\begin{bmatrix}h_{e}(x,p)\\
+h_{i}(x,p)-v_{i}
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\bar{x}_{l}=\begin{bmatrix}x_{l}\\
+0\\
+0
+\end{bmatrix}\qquad\bar{x}_{u}=\begin{bmatrix}x_{u}\\
+\infty\\
+\infty
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\bar{g}=\begin{bmatrix}g\\
+0\\
+0
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{alignat*}{1}
+\begin{aligned}\min_{x}f(x,p) & \quad & \text{subject to} & \quad\end{aligned}
+ & \left\{ \begin{array}{c}
+\begin{aligned}Ax+Bq & =b\\
+h(x,p) & =0
+\end{aligned}
+\\
+x_{l}\leq x\leq x_{u}
+\end{array}\right.
+\end{alignat*}
+
+\end_inset
+
+
+\begin_inset Formula 
+\begin{align*}
+g+A^{T}y_{l}+J^{T}y_{n}-z+w & =0\\
+Ax+Bq & =b\\
+h(x,p) & =0
+\end{align*}
+
+\end_inset
+
+
+\begin_inset Formula 
+\begin{align*}
+g+A^{T}y_{l}+J^{T}y_{n}-z+w & =0\\
+Ax+Bq & =b\\
+h(x,p) & =0\\
+XZe & =0\\
+XWe & =0\\
+M_{l}y_{l} & =c_{l}\\
+M_{n}y_{n} & =c_{n}
+\end{align*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\begin{bmatrix}H & A^{T} & J^{T} & -I & I & 0 & 0\\
+A & 0 & 0 & 0 & 0 & B & 0\\
+J & 0 & 0 & 0 & 0 & 0 & J_{p}\\
+Z & 0 & 0 & X & 0 & 0 & 0\\
+W & 0 & 0 & 0 & X & 0 & 0\\
+0 & M_{l} & 0 & 0 & 0 & 0 & 0\\
+0 & 0 & M_{n} & 0 & 0 & 0 & 0
+\end{bmatrix}\begin{bmatrix}\Delta x\\
+\Delta y_{l}\\
+\Delta y_{n}\\
+\Delta z\\
+\Delta w\\
+\Delta q\\
+\Delta p
+\end{bmatrix}=-F
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\begin{bmatrix}H & A^{T} & 0\\
+A & G & B\\
+0 & C & 0
+\end{bmatrix}\begin{bmatrix}x\\
+y\\
+z
+\end{bmatrix}=\begin{bmatrix}r\\
+s\\
+t
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\begin{bmatrix}H & 0 & 0 & A^{T}\\
+A & 0 & B & G\\
+J_{x} & J_{p} & 0\\
+0 &  & C & 0
+\end{bmatrix}\begin{bmatrix}x\\
+p\\
+q\\
+y
+\end{bmatrix}=\begin{bmatrix}r\\
+s\\
+t
+\end{bmatrix}
 \]
 
 \end_inset
