@@ -489,253 +489,6 @@ J & G_{JA} & G_{JJ}
 \end_inset
 
 
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula 
-\[
-R_{A}AQ_{A}=\begin{bmatrix}I_{A} & S_{A}\end{bmatrix}
-\]
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula 
-\[
-JQ_{A}=\begin{bmatrix}J_{b} & J_{n}\end{bmatrix}
-\]
-
-\end_inset
-
-
-\begin_inset Formula 
-\[
-(J-J_{b}R_{A}A)Q_{A}=\begin{bmatrix}0 & J_{n}^{\prime}\end{bmatrix}=\begin{bmatrix}0 & J_{n}-J_{b}S_{A}\end{bmatrix}
-\]
-
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Formula 
-\[
-\begin{bmatrix}R_{A} & 0\\
--J_{b}R_{A} & I_{J}
-\end{bmatrix}\begin{bmatrix}A\\
-J
-\end{bmatrix}Q_{A}=\begin{bmatrix}I_{A} & S_{A}\\
-0 & J_{n}-J_{b}S_{A}
-\end{bmatrix}
-\]
-
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Formula 
-\[
-R_{J_{n}^{\prime}}J_{n}^{\prime}Q_{J_{n}^{\prime}}=\begin{bmatrix}I_{J_{n}^{\prime}} & S_{J_{n}^{\prime}}\end{bmatrix}
-\]
-
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Formula 
-\[
-J(I-Q_{A,b}R_{A}A)Q_{A}=\begin{bmatrix}0 & J_{n}^{\prime}\end{bmatrix}=\begin{bmatrix}0 & J_{n}-J_{b}S_{A}\end{bmatrix}
-\]
-
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Formula 
-\[
-S_{A}Q_{J_{n}^{\prime}}=\begin{bmatrix}S_{A,b} & S_{A,n}\end{bmatrix}
-\]
-
-\end_inset
-
-
-\begin_inset Formula 
-\[
-(S_{A}-S_{A,b}R_{J_{n}^{\prime}}J_{n}^{\prime})Q_{J_{n}^{\prime}}=\begin{bmatrix}0 & S_{A}^{\prime}\end{bmatrix}=\begin{bmatrix}0 & S_{A,n}-S_{A,b}S_{J_{n}^{\prime}}\end{bmatrix}
-\]
-
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Formula 
-\[
-R\begin{bmatrix}A\\
-J
-\end{bmatrix}Q=\begin{bmatrix}I & S\end{bmatrix}=\begin{bmatrix}I_{A} & 0 & S_{A}^{\prime}\\
-0 & I_{J} & S_{J}^{\prime}
-\end{bmatrix}
-\]
-
-\end_inset
-
-
-\begin_inset Formula 
-\begin{align*}
-S_{A}^{\prime} & =S_{A,n}-S_{A,b}S_{J_{n}^{\prime}}\\
-S_{J}^{\prime} & =S_{J_{n}^{\prime}}
-\end{align*}
-
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Formula 
-\begin{align*}
-AQ & =\begin{bmatrix}A_{b} & A_{nb} & A_{nn}\end{bmatrix}\\
-JQ & =\begin{bmatrix}J_{b} & J_{nb} & J_{nn}\end{bmatrix}
-\end{align*}
-
-\end_inset
-
-
-\begin_inset Formula 
-\[
-R=\begin{bmatrix}R_{AA} & R_{AJ}\\
-R_{JA} & R_{JJ}
-\end{bmatrix}=\begin{bmatrix}R_{AA} & R_{AJ}\\
-R_{JA} & R_{JJ}
-\end{bmatrix}
-\]
-
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Formula 
-\begin{align*}
-\begin{bmatrix}I_{A} & 0 & S_{A}^{\prime}\end{bmatrix} & =\begin{bmatrix}R_{A}AQ_{A,b} & (S_{A}-S_{A,b}R_{J_{n}^{\prime}}J_{n}^{\prime})Q_{J_{n}^{\prime}}\end{bmatrix}\\
- & =\begin{bmatrix}R_{A}AQ_{A,b} & (R_{A}AQ_{A,n}-R_{A}AQ_{A,n}Q_{J_{n}^{\prime},b}R_{J_{n}^{\prime}}J_{n}^{\prime})Q_{J_{n}^{\prime}}\end{bmatrix}\\
- & =\begin{bmatrix}R_{A}AQ_{A,b} & (R_{A}AQ_{A,n}-R_{A}AQ_{A,n}Q_{J_{n}^{\prime},b}R_{J_{n}^{\prime}}J_{n}^{\prime})Q_{J_{n}^{\prime}}\end{bmatrix}
-\end{align*}
-
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Formula 
-\begin{align*}
-(S_{A}-S_{A,b}R_{J_{n}^{\prime}}J_{n}^{\prime})Q_{J_{n}^{\prime}} & =(R_{A}AQ_{A,n}-R_{A}AQ_{A,n}Q_{J_{n}^{\prime},b}R_{J_{n}^{\prime}}J_{n}^{\prime})Q_{J_{n}^{\prime}}\\
-\end{align*}
-
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Formula 
-\[
-R_{J}JQ_{J}=\begin{bmatrix}I_{J} & S_{J}\end{bmatrix}
-\]
-
-\end_inset
-
-
-\begin_inset Formula 
-\[
-\begin{bmatrix}R_{A}\\
-R_{J}
-\end{bmatrix}\begin{bmatrix}A\\
-J
-\end{bmatrix}\begin{bmatrix}Q_{A} & 0\\
-0 & Q_{J}
-\end{bmatrix}=\begin{bmatrix}I_{A} & S_{A}\\
-I_{J} & S_{J}
-\end{bmatrix}
-\]
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula 
-\[
-R_{J}JQ_{A}=\begin{bmatrix}S_{J,b} & I_{J} & S_{J,n}\end{bmatrix}
-\]
-
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-
 \begin_inset Newline newline
 \end_inset
 
@@ -759,6 +512,156 @@ J
 \end{bmatrix}Q=\begin{bmatrix}I & S\end{bmatrix}
 \]
 
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+R_{A}AQ_{A}=\begin{bmatrix}I_{A} & S_{A}\end{bmatrix}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+JQ_{A}=\begin{bmatrix}J_{1} & J_{2}\end{bmatrix}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+(J-J_{1}R_{A}A)Q_{A}=\begin{bmatrix}0 & J_{2}-J_{1}S_{A}\end{bmatrix}
+\]
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\begin{bmatrix}R_{A} & 0\\
+-J_{1}R_{A} & I_{J}
+\end{bmatrix}\begin{bmatrix}A\\
+J
+\end{bmatrix}Q_{A}=\begin{bmatrix}I_{A} & S_{A}\\
+0 & J_{2}-J_{1}S_{A}
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\begin{bmatrix}\bar{A}\\
+\bar{J}
+\end{bmatrix}=\begin{bmatrix}I_{A} & S_{A}\\
+0 & J_{2}-J_{1}S_{A}
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula 
+\[
+R_{\bar{J}}\bar{J}Q_{\bar{J}}=\begin{bmatrix}0 & I_{\bar{J}} & S_{\bar{J}}\end{bmatrix}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\bar{A}Q_{\bar{J}}=\begin{bmatrix}I_{A} & S_{A,1} & S_{A,2}\end{bmatrix}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+(\bar{A}-S_{A,1}R_{\bar{J}}\bar{J})Q_{\bar{J}}=\begin{bmatrix}I_{A} & 0 & S_{A,2}-S_{A,1}S_{\bar{J}}\end{bmatrix}=\begin{bmatrix}I_{A} & 0 & S_{\bar{A}}\end{bmatrix}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\begin{bmatrix}I_{A} & -S_{A,1}R_{\bar{J}}\\
+0 & R_{\bar{J}}
+\end{bmatrix}\begin{bmatrix}\bar{A}\\
+\bar{J}
+\end{bmatrix}Q_{\bar{J}}=\begin{bmatrix}I_{A} & 0 & S_{\bar{A}}\\
+0 & I_{\bar{J}} & S_{\bar{J}}
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula 
+\[
+R=\begin{bmatrix}I_{A} & -S_{A,1}R_{\bar{J}}\\
+0 & R_{\bar{J}}
+\end{bmatrix}\begin{bmatrix}R_{A} & 0\\
+-J_{1}R_{A} & I_{J}
+\end{bmatrix}=\begin{bmatrix}(I_{A}+S_{A,1}R_{\bar{J}}J_{1})R_{A} & -S_{A,1}R_{\bar{J}}\\
+-R_{\bar{J}}J_{1}R_{A} & R_{\bar{J}}
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+S=\begin{bmatrix}S_{\bar{A}}\\
+S_{\bar{J}}
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+Q=Q_{A}Q_{\bar{J}}
+\]
+
+\end_inset
+
+
+\begin_inset Newline newline
 \end_inset
 
 

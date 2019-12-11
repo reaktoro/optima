@@ -26,24 +26,24 @@
 
 namespace Optima {
 
-/// Used to describe a matrix \eq{A=\begin{bmatrix}A_{t}\\A_{b}\end{bmatrix}} in canonical form.
+/// Used to describe a matrix \eq{\begin{bmatrix}A\\J\end{bmatrix}} in canonical form.
 /// The canonical form of a matrix \eq{A} is represented as:
 /// \eqq{C = RAQ = \begin{bmatrix}I & S\end{bmatrix},}
 /// where \eq{Q} is a permutation matrix, and \eq{R} is the *canonicalizer matrix* of \eq{A}.
-/// The matrices \eq{A_t} and \eq{A_b} that compose \eq{A} have a behavior in which \eq{A_t}
-/// is always constant, whereas \eq{A_b} varies more often. This more advanced canonicalization
-/// class permits a more efficient update of the canonical form of \eq{A} when \eq{A_b} changes.
+/// The matrices \eq{A} and \eq{J} have a behavior in which \eq{A}
+/// is always constant, whereas \eq{J} varies more often. This more advanced canonicalization
+/// class permits a more efficient update of the canonical form of \eq{[A; J]} when \eq{J} changes.
 /// This happens when an optimization problem has a non-linear equality constraint, whose Jacobian
-/// changes in every iteration. The matrix \eq{A_t}, on the other hand, is related to the linear
-/// equality constraint whose coefficient matrix remains the same throughout the calculation.
+/// changes in every iteration (the matrix \eq{J}). The matrix \eq{A}, on the other hand, is related
+/// to the linear equality constraint whose coefficient matrix remains the same throughout the calculation.
 class CanonicalizerAdvanced
 {
 public:
     /// Construct a default CanonicalizerAdvanced instance.
     CanonicalizerAdvanced();
 
-    /// Construct a CanonicalizerAdvanced instance with given top and bottom matrices.
-    CanonicalizerAdvanced(MatrixConstRef At, MatrixConstRef Ab);
+    /// Construct a CanonicalizerAdvanced instance with given matrix \eq{A}.
+    CanonicalizerAdvanced(MatrixConstRef A);
 
     /// Construct a copy of a CanonicalizerAdvanced instance.
     CanonicalizerAdvanced(const CanonicalizerAdvanced& other);
@@ -76,7 +76,7 @@ public:
     /// This method returns the indices (ordering) of the variables after canonicalization.
     auto Q() const -> IndicesConstRef;
 
-    /// Return the canonicalized matrix \eq{C = RAQ = [I\quad S]}`.
+    /// Return the canonicalized matrix \eq{C = R[A; J]Q = [I\quad S]}`.
     auto C() const -> Matrix;
 
     /// Return the indices of the linearly independent rows of the original matrix.
@@ -88,11 +88,11 @@ public:
     /// Return the indices of the non-basic variables.
     auto indicesNonBasicVariables() const -> IndicesConstRef;
 
-    /// Compute the canonical matrix with given top and bottom matrices.
-    auto compute(MatrixConstRef At, MatrixConstRef Ab) -> void;
+    /// Compute the canonical matrix with given matrix \eq{A}.
+    auto compute(MatrixConstRef A) -> void;
 
-    /// Update the canonical form with given new bottom matrix and priority weights for the variables.
-    auto update(MatrixConstRef Ab, VectorConstRef weights) -> void;
+    /// Update the canonical form with given matrix \eq{J} and priority weights for the variables.
+    auto update(MatrixConstRef J, VectorConstRef weights) -> void;
 
 private:
     struct Impl;
