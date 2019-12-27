@@ -67,6 +67,21 @@ struct Canonicalizer::Impl
     /// The threshold used to compare numbers.
     double threshold;
 
+    /// Return the number of basic variables, which is also the the rank of matrix A.
+    auto numBasicVariables() -> Index
+    {
+        // Check if max pivot is very small
+        if(lu.maxPivot() < 10*std::numeric_limits<double>::epsilon())
+        {
+            const auto previous_threshold = lu.threshold();
+            lu.setThreshold(1.0); // In this case, set threshold to 1, to effectively obtain an absolute comparion instead of relative
+            const auto r = lu.rank();
+            lu.setThreshold(previous_threshold);
+            return r;
+        }
+        else return lu.rank();
+    }
+
     /// Compute the canonical matrix of the given matrix.
     auto compute(MatrixConstRef A) -> void
     {
@@ -85,7 +100,7 @@ struct Canonicalizer::Impl
         lu.compute(A);
 
         // Get the rank of matrix A
-        const Index r = lu.rank();
+        const Index r = numBasicVariables();
 
         // Get the LU factors of matrix A
         const auto L   = lu.matrixLU().leftCols(m).triangularView<Eigen::UnitLower>();
@@ -135,13 +150,16 @@ struct Canonicalizer::Impl
     /// Swap a basic variable by a non-basic variable.
     auto updateWithSwapBasicVariable(Index ib, Index in) -> void
     {
+        // Get the rank of matrix A
+        const Index r = numBasicVariables();
+
         // Check if ib < rank(A)
-        assert(ib < lu.rank() &&
+        assert(ib < r &&
             "Could not swap basic and non-basic variables. "
                 "Expecting an index of basic variable below `r`, where `r = rank(A)`.");
 
         // Check if in < n - rank(A)
-        assert(in < lu.cols() - lu.rank() &&
+        assert(in < lu.cols() - r &&
             "Could not swap basic and non-basic variables. "
                 "Expecting an index of non-basic variable below `n - r`, where `r = rank(A)`.");
 
@@ -182,7 +200,7 @@ struct Canonicalizer::Impl
                 "Mismatch number of variables and given priority weights.");
 
         // The rank and number of columns of matrix A
-        const Index r = lu.rank();
+        const Index r = numBasicVariables();
         const Index n = lu.cols();
 
         // The number of basic and non-basic variables
@@ -282,7 +300,7 @@ auto Canonicalizer::numEquations() const -> Index
 
 auto Canonicalizer::numBasicVariables() const -> Index
 {
-    return pimpl->lu.rank();
+    return pimpl->numBasicVariables();
 }
 
 auto Canonicalizer::numNonBasicVariables() const -> Index
