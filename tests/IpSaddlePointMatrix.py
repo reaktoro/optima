@@ -20,28 +20,37 @@ from numpy import *
 from pytest import approx, mark
 from itertools import product
 
+
+# The number of variables
+n = 15
+
 # Tested cases for the structure of matrix H
 tested_structures_H = ['dense', 'diagonal']
 
 # Tested cases for the indices of fixed variables
 tested_jf = [
-    arange(0), 
-    arange(1), 
+    arange(0),
+    arange(1),
     array([1, 3, 7, 9])
 ]
 
+# Tested number of rows in matrix Au and Al (upper and lower blocks of A)
+tested_mu = [7, 1, 0]
+tested_ml = [5, 1, 0]
+
 # Combination of all tested cases
 testdata = product(tested_structures_H,
-                   tested_jf)
+                   tested_jf,
+                   tested_mu,
+                   tested_ml)
 
 
 @mark.parametrize("args", testdata)
 def test_ip_saddle_point_matrix(args):
 
-    structure_H, jf = args
+    structure_H, jf, mu, ml = args
 
-    m = 5
-    n = 15
+    m = mu + ml  # the number of rows of matrix A = [Au; Al]
     t = 3*n + m
 
     # Create matrices H, A, L, U, Z, W
@@ -52,8 +61,12 @@ def test_ip_saddle_point_matrix(args):
     Z = eigen.random(n)
     W = eigen.random(n)
 
+    # The upper and lower blocks of matrix A
+    Au = A[:mu, :]
+    Al = A[mu:, :]
+
     # Create the IpSaddlePointMatrix object
-    mat = IpSaddlePointMatrix(H, A, Z, W, L, U, jf).array()
+    mat = IpSaddlePointMatrix(H, Au, Al, Z, W, L, U, jf).array()
 
     # Use a dense matrix for H from this point on (for convenience)
     H = H if structure_H == 'dense' else eigen.diag(H)
@@ -63,7 +76,7 @@ def test_ip_saddle_point_matrix(args):
     U = eigen.diag(U)
     Z = eigen.diag(Z)
     W = eigen.diag(W)
-    
+
     # Assemble the tr(A) matrix block, with zeros on rows corresponding to fixed variables
     trA = transpose(A.copy())
     trA[jf, :] = 0.0
@@ -80,24 +93,24 @@ def test_ip_saddle_point_matrix(args):
 
     # Set to zero the diagonal entries in Z and W corresponding to fixed variables
     Z[jf, jf] = W[jf, jf] = 0.0
-    
+
     # Assemble an identity matrix of dimension n by n
     Inn = eigen.eye(n)
-    
+
     # Set to zero the entries in Inn corresponding to fixed variables
     Inn[jf, jf] = 0.0
 
     # Assemble zero matrices of dimensions n by m and n by n
     Onm = eigen.zeros(n, m)
     Onn = eigen.zeros(n, n)
-    
-    # Assemble the big saddle point matrix M 
+
+    # Assemble the big saddle point matrix M
     M = eigen.zeros(t, t)
     M[0:n, :] = concatenate([H, trA, -Inn, -Inn], 1)
     M[n:n + m, 0:n] = A
     M[n + m:n + m + n, :] = concatenate([Z, Onm, L, Onn], 1)
     M[n + m + n:, :] = concatenate([W, Onm, Onn, U], 1)
-    
+
     assert mat == approx(M)
 
 

@@ -24,19 +24,22 @@ namespace Optima {
 
 IpSaddlePointMatrix::IpSaddlePointMatrix(
     MatrixConstRef H,
-    MatrixConstRef A,
+    MatrixConstRef Au,
+    MatrixConstRef Al,
     VectorConstRef Z,
     VectorConstRef W,
     VectorConstRef L,
     VectorConstRef U,
     IndicesConstRef jf)
-: H(H), A(A), Z(Z), W(W), L(L), U(U), jf(jf)
+: H(H), Au(Au), Al(Al), Z(Z), W(W), L(L), U(U), jf(jf)
 {}
 
 IpSaddlePointMatrix::operator Matrix() const
 {
-    const auto m = A.rows();
-    const auto n = A.cols();
+    const auto mu = Au.rows();
+    const auto ml = Al.rows();
+    const auto m = mu + ml;
+    const auto n = Au.cols();
     const auto t = 3*n + m;
 
     Matrix res = zeros(t, t);
@@ -53,13 +56,30 @@ IpSaddlePointMatrix::operator Matrix() const
     case MatrixStructure::Zero:
         break;
     }
+    // res.topLeftCorner(n, n) <<= H;
     res.topLeftCorner(n, n)(all, jf).fill(0.0);
     res.topLeftCorner(n, n)(jf, all).fill(0.0);
     res.topLeftCorner(n, n).diagonal()(jf).fill(1.0);
 
-    // Block: tr(A)
-    res.middleCols(n, m).topRows(n) = tr(A);
-    res.middleCols(n, m).topRows(n)(jf, all).fill(0.0);
+    if(mu > 0)
+    {
+        // Block: tr(Au)
+        res.middleCols(n, m).topLeftCorner(n, mu) = tr(Au);
+        res.middleCols(n, m).topLeftCorner(n, mu)(jf, all).fill(0.0);
+
+        // Block: Au
+        res.middleRows(n, m).topLeftCorner(mu, n) = Au;
+    }
+
+    if(ml > 0)
+    {
+        // Block: tr(Al)
+        res.middleCols(n, m).topRightCorner(n, ml) = tr(Al);
+        res.middleCols(n, m).topRightCorner(n, ml)(jf, all).fill(0.0);
+
+        // Block: Al
+        res.middleRows(n, m).bottomLeftCorner(ml, n) = Al;
+    }
 
     // Block: -I
     res.middleCols(n + m, n).diagonal().fill(-1.0);
@@ -68,9 +88,6 @@ IpSaddlePointMatrix::operator Matrix() const
     // Block: -I
     res.rightCols(n).diagonal().fill(-1.0);
     res.rightCols(n).diagonal()(jf).fill(0.0);
-
-    // Block: A
-    res.middleRows(n, m).leftCols(n) = A;
 
     // Block: Z
     res.middleRows(n + m, n).leftCols(n).diagonal() = Z;

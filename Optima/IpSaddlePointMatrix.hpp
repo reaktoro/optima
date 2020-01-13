@@ -41,8 +41,11 @@ public:
     /// The Hessian matrix \eq{H} in the saddle point matrix.
     MatrixConstRef H;
 
-    /// The Jacobian matrix \eq{A} in the saddle point matrix.
-    MatrixConstRef A;
+    /// The top block matrix \eq{A_t} of the Jacobian matrix \eq{A} in the saddle point matrix.
+    MatrixConstRef Au;
+
+    /// The bottom block matrix \eq{A_b} Jacobian matrix \eq{A} in the saddle point matrix.
+    MatrixConstRef Al;
 
     /// The diagonal matrix \eq{Z} in the saddle point matrix.
     VectorConstRef Z;
@@ -69,7 +72,8 @@ public:
     /// @param jf The indices of the fixed variables.
     IpSaddlePointMatrix(    // TODO: This constructor can be deleted. This class can be a struct.
         MatrixConstRef H,
-        MatrixConstRef A,
+        MatrixConstRef Au,
+        MatrixConstRef Al,
         VectorConstRef Z,
         VectorConstRef W,
         VectorConstRef L,

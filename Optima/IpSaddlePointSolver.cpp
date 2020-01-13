@@ -71,15 +71,18 @@ struct IpSaddlePointSolver::Impl
     /// The total number of variables (x, y, z, w).
     Index t;
 
+    /// The boolean flag that indices if the solver has been initialized
+    bool initialized = false;
+
     /// Initialize the stepper with the structure of the optimization problem.
-    auto initialize(MatrixConstRef A) -> void
+    auto initialize(IpSaddlePointMatrix lhs) -> void
     {
-        // Create a copy of matrix A
-        this->A = A;
+        // Update the initialized status of the solver
+        initialized = true;
 
         // Initialize the members related to number of variables and constraints
-        n  = A.cols();
-        m  = A.rows();
+        n  = lhs.H.rows();
+        m  = lhs.Au.rows() + lhs.Al.rows();
         nx = n;
         nf = 0;
         ns = n;
@@ -100,14 +103,15 @@ struct IpSaddlePointSolver::Impl
         U = zeros(n);
         r = zeros(t);
         s = zeros(t);
-
-        // Initialize the saddle point solver
-        spsolver.initialize(A);
     }
 
     /// Update the partitioning of the free variables into (s, l, u, z, w)
     auto updatePartitioning(IpSaddlePointMatrix lhs) -> void
     {
+        // Initialize the solver if not yet
+        if(!initialized)
+            initialize(lhs);
+
         // Initialize the number of free and fixed variables
         nf = lhs.jf.size();
         nx = n - nf;
@@ -145,8 +149,15 @@ struct IpSaddlePointSolver::Impl
         nl = il - iu;
         ns = is - il;
 
-        // Initialize A, Z, W, L and U according to iordering
-        A.noalias() = lhs.A(all, iordering);
+        // Initialize A according to iordering
+        const auto mu = lhs.Au.rows();
+        const auto ml = lhs.Al.rows();
+        const auto m = mu + ml;
+        A.resize(m, n);
+        A.topRows(mu) = lhs.Au(all, iordering);
+        A.bottomRows(ml) = lhs.Al(all, iordering);
+
+        // Initialize Z, W, L and U according to iordering
         Z.noalias() = lhs.Z(iordering);
         W.noalias() = lhs.W(iordering);
         L.noalias() = lhs.L(iordering);
@@ -185,7 +196,7 @@ struct IpSaddlePointSolver::Impl
         const auto jzwf = iordering.tail(nz + nw + nf);
 
         // Define the saddle point matrix in original ordering
-        SaddlePointMatrix spm(lhs.H, D, lhs.A, jzwf);
+        SaddlePointMatrix spm(lhs.H, D, lhs.Au, lhs.Al, jzwf);
 
         // Decompose the saddle point matrix
         spsolver.decompose(spm);
@@ -213,7 +224,7 @@ struct IpSaddlePointSolver::Impl
         const auto jzwf = iordering.tail(nz + nw + nf);
 
         // Define the saddle point matrix in original ordering
-        SaddlePointMatrix spm(lhs.H, D, lhs.A, jzwf);
+        SaddlePointMatrix spm(lhs.H, D, lhs.Au, lhs.Al, jzwf);
 
         // Decompose the saddle point matrix
         spsolver.decompose(spm);
@@ -656,11 +667,6 @@ auto IpSaddlePointSolver::setOptions(const SaddlePointOptions& options) -> void
 auto IpSaddlePointSolver::options() const -> const SaddlePointOptions&
 {
     return pimpl->spsolver.options();
-}
-
-auto IpSaddlePointSolver::initialize(MatrixConstRef A) -> void
-{
-    return pimpl->initialize(A);
 }
 
 auto IpSaddlePointSolver::decompose(IpSaddlePointMatrix lhs) -> void

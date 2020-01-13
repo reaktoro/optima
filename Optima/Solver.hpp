@@ -20,15 +20,12 @@
 // C++ includes
 #include <memory>
 
-// Optima includes
-#include <Optima/Constraints.hpp>
-#include <Optima/Objective.hpp>
-
 namespace Optima {
 
 // Forward declarations
 class Options;
 class Params;
+class Problem;
 class Result;
 class State;
 
@@ -39,10 +36,8 @@ public:
     /// Construct a default Solver instance.
     Solver();
 
-    /// Construct a Solver instance with given objective and constraints.
-    /// @param objective The objective function of the optimization problem.
-    /// @param constraints The constraints of the optimization problem.
-    Solver(const Objective& objective, const Constraints& constraints);
+    /// Construct a Solver instance with given optimization problem.
+    Solver(const Problem& problem);
 
     /// Construct a copy of a Solver instance.
     Solver(const Solver& other);

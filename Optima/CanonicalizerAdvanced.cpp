@@ -1,6 +1,6 @@
 // Optima is a C++ library for solving linear and non-linear constrained optimization problems
 //
-// Copyright (C) 2014-2018 Allan Leal
+// Copyright (C) 2014-2018 Jlan Leal
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -45,12 +45,97 @@ struct CanonicalizerAdvanced::Impl
     }
 
     /// Construct a CanonicalizerAdvanced::Impl object with given matrix A
-    Impl(MatrixConstRef A)
-    : canonicalizerA(A)
+    Impl(MatrixConstRef A, MatrixConstRef J)
     {
-        R = canonicalizerA.R();
-        S = canonicalizerA.S();
-        Q = canonicalizerA.Q();
+        compute(A, J);
+    }
+
+    /// Compute the canonical matrix with given upper and lower matrix blocks \eq{A} and \eq{J}.
+    auto compute(MatrixConstRef A, MatrixConstRef J) -> void
+    {
+        canonicalizerA.compute(A);
+        auto weights = ones(A.cols());
+        update(J, weights);
+    }
+
+    /// Update the canonical form with given matrix J and priority weights for the variables.
+    auto update(MatrixConstRef J, VectorConstRef weights) -> void
+    {
+        canonicalizerA.updateWithPriorityWeights(weights);
+
+        if(J.size() == 0)
+        {
+            R = canonicalizerA.R();
+            S = canonicalizerA.S();
+            Q = canonicalizerA.Q();
+        }
+        else
+        {
+            const auto& RA = canonicalizerA.R();
+            const auto& SA = canonicalizerA.S();
+            const auto& QA = canonicalizerA.Q();
+
+            const auto n = canonicalizerA.numVariables();
+            const auto nbA = canonicalizerA.numBasicVariables();
+            const auto nnA = canonicalizerA.numNonBasicVariables();
+
+            const auto mA = canonicalizerA.numEquations();
+            const auto mJ = J.rows();
+            const auto m = mA + mJ;
+
+            Matrix J12 = J * QA.asPermutation();
+            auto J1 = J12.leftCols(nbA);
+            auto J2 = J12.rightCols(nnA);
+            J2 -= J1 * SA;
+
+            Vector w = weights(QA.tail(nnA));  // w has the weights only for non-basic variables wrt A
+            canonicalizerJ.compute(J2);
+            canonicalizerJ.updateWithPriorityWeights(w);
+
+            const auto nbJ = canonicalizerJ.numBasicVariables();
+            const auto nnJ = canonicalizerJ.numNonBasicVariables();
+
+            const auto RJ = canonicalizerJ.R();
+            const auto SJ = canonicalizerJ.S();
+            const auto QJ = canonicalizerJ.Q();
+
+            Q.resize(n);
+            Q.head(nbA) = QA.head(nbA);
+            Q.tail(nnA) = QA.tail(nnA)(QJ);
+
+            Matrix SA12 = SA;
+            QJ.asPermutation().applyThisOnTheRight(SA12);
+            auto SA1 = SA12.leftCols(nbJ);
+            auto SA2 = SA12.rightCols(nnJ);
+            SA2 -= SA1 * SJ;
+
+            S.resize(nbA + nbJ, nnJ);
+            S.topRows(nbA) = SA2;
+            S.bottomRows(nbJ) = SJ;
+
+            const auto RAt = RA.topRows(nbA);
+            const auto RAb = RA.bottomRows(mA - nbA);
+
+            const auto RJt = RJ.topRows(nbJ);
+            const auto RJb = RJ.bottomRows(mJ - nbJ);
+
+            R.resize(m, m);
+
+            auto Rt = R.topRows(nbA + nbJ);
+            auto Rb = R.bottomRows(m - nbA - nbJ);
+
+            Rt.topLeftCorner(nbA, mA) = RAt + SA1*RJt*J1*RAt;
+            Rb.topLeftCorner(mA - nbA, mA) = RAb;
+
+            Rt.topRightCorner(nbA, mJ) = -SA1*RJt;
+            Rb.topRightCorner(mA - nbA, mJ).fill(0.0);
+
+            Rt.bottomLeftCorner(nbJ, mA) = -RJt*J1*RAt;
+            Rb.bottomLeftCorner(mJ - nbJ, mA) = -RJb*J1*RAt;
+
+            Rt.bottomRightCorner(nbJ, mJ) = RJt;
+            Rb.bottomRightCorner(mJ - nbJ, mJ) = RJb;
+        }
     }
 };
 
@@ -59,8 +144,8 @@ CanonicalizerAdvanced::CanonicalizerAdvanced()
 {
 }
 
-CanonicalizerAdvanced::CanonicalizerAdvanced(MatrixConstRef A)
-: pimpl(new Impl(A))
+CanonicalizerAdvanced::CanonicalizerAdvanced(MatrixConstRef A, MatrixConstRef J)
+: pimpl(new Impl(A, J))
 {
 }
 
@@ -84,21 +169,17 @@ auto CanonicalizerAdvanced::numVariables() const -> Index
 
 auto CanonicalizerAdvanced::numEquations() const -> Index
 {
-    return pimpl->R.rows();
+    return pimpl->canonicalizerA.numEquations() + pimpl->canonicalizerJ.numEquations();
 }
 
 auto CanonicalizerAdvanced::numBasicVariables() const -> Index
 {
-    const auto nbA = pimpl->canonicalizerA.numBasicVariables();
-    const auto nbJ = pimpl->canonicalizerJ.numBasicVariables();
-    return nbA + nbJ;
+    return pimpl->S.rows();
 }
 
 auto CanonicalizerAdvanced::numNonBasicVariables() const -> Index
 {
-    const auto nnA = pimpl->canonicalizerA.numNonBasicVariables();
-    const auto nnJ = pimpl->canonicalizerJ.numNonBasicVariables();
-    return nnA + nnJ;
+    return numVariables() - numBasicVariables();
 }
 
 auto CanonicalizerAdvanced::S() const -> MatrixConstRef
@@ -118,11 +199,13 @@ auto CanonicalizerAdvanced::Q() const -> IndicesConstRef
 
 auto CanonicalizerAdvanced::C() const -> Matrix
 {
+    const auto n = numVariables();
+    const auto m = numEquations();
     const auto nb = numBasicVariables();
     const auto nn = numNonBasicVariables();
-    Matrix res(nb, nb + nn);
-    res.leftCols(nb).setIdentity(nb, nb);
-    res.rightCols(nb) = pimpl->S;
+    Matrix res = zeros(m, n);
+    res.topLeftCorner(nb, nb).setIdentity(nb, nb);
+    res.topRightCorner(nb, nn) = S();
     return res;
 }
 
@@ -138,74 +221,14 @@ auto CanonicalizerAdvanced::indicesNonBasicVariables() const -> IndicesConstRef
     return pimpl->Q.tail(nn);
 }
 
-auto CanonicalizerAdvanced::compute(MatrixConstRef A) -> void
+auto CanonicalizerAdvanced::compute(MatrixConstRef A, MatrixConstRef J) -> void
 {
-    pimpl->canonicalizerA.compute(A);
+    pimpl->compute(A, J);
 }
 
 auto CanonicalizerAdvanced::update(MatrixConstRef J, VectorConstRef weights) -> void
 {
-    auto& canonicalizerA = pimpl->canonicalizerA;
-    auto& canonicalizerJ = pimpl->canonicalizerJ;
-    auto& R = pimpl->R;
-    auto& S = pimpl->S;
-    auto& Q = pimpl->Q;
-
-    canonicalizerA.updateWithPriorityWeights(weights);
-
-    if(J.size() == 0)
-    {
-        R = canonicalizerA.R();
-        S = canonicalizerA.S();
-        Q = canonicalizerA.Q();
-    }
-    else
-    {
-        const auto& RA = canonicalizerA.R();
-        const auto& SA = canonicalizerA.S();
-        const auto& QA = canonicalizerA.Q();
-
-        const auto n = canonicalizerA.numVariables();
-        const auto nbA = canonicalizerA.numBasicVariables();
-        const auto nnA = canonicalizerA.numNonBasicVariables();
-
-        Matrix J12 = J * QA.asPermutation();
-        auto J1 = J12.leftCols(nbA);
-        auto J2 = J12.rightCols(nnA);
-        J2 -= J1 * SA;
-
-        Vector w = weights(QA.tail(nnA));  // w has the weights only for non-basic variables wrt A
-        canonicalizerJ.compute(J2);
-        canonicalizerJ.updateWithPriorityWeights(w);
-
-        const auto nbJ = canonicalizerJ.numBasicVariables();
-        const auto nnJ = canonicalizerJ.numNonBasicVariables();
-
-        const auto RJ = canonicalizerJ.R();
-        const auto SJ = canonicalizerJ.S();
-        const auto QJ = canonicalizerJ.Q();
-
-        // Q = QA;
-        // Q.tail(nnA).applyOnTheRight(QJ);
-        Q.head(nbA) = QA.head(nbA);
-        Q.tail(nnA) = QA.tail(nnA)(QJ);
-
-        Matrix SA12 = SA;
-        QJ.asPermutation().applyThisOnTheLeft(SA12);
-        auto SA1 = SA12.leftCols(nbJ);
-        auto SA2 = SA12.rightCols(nnJ);
-        SA2 -= SA1 * SJ;
-
-        S.resize(nbA + nbJ, nnJ);
-        S.topRows(nbA) = SA2;
-        S.bottomRows(nbJ) = SJ;
-
-        R.resize(nbA + nbJ, nbA + nbJ);
-        R.topLeftCorner(nbA, nbA) = RA + SA1*RJ*J1*RA;
-        R.topRightCorner(nbA, nbJ) = -SA1*RJ;
-        R.bottomLeftCorner(nbJ, nbA) = -RJ*J1*RA;
-        R.bottomRightCorner(nbJ, nbJ) = RJ;
-    }
+    pimpl->update(J, weights);
 }
 
 } // namespace Optima

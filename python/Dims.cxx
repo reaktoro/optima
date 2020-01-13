@@ -17,35 +17,23 @@
 
 // pybind11 includes
 #include <pybind11/pybind11.h>
-#include <pybind11/functional.h>
-#include <pybind11/eigen.h>
 namespace py = pybind11;
 
 // Optima includes
-#include <Optima/Constraints.hpp>
-#include <Optima/Options.hpp>
-#include <Optima/Params.hpp>
-#include <Optima/Result.hpp>
-#include <Optima/Solver.hpp>
-#include <Optima/State.hpp>
+#include <Optima/Dims.hpp>
 using namespace Optima;
 
-void exportSolver(py::module& m)
+void exportDims(py::module& m)
 {
-    using ObjectivePtr = std::function<void(VectorConstRef, ObjectiveResult*)>;
-
-	// This is a workaround to let Python callback change the state of ObjectiveResult, and not a copy
-    auto createSolver = [](const ObjectivePtr& pyobjective, const Constraints& constraints)
-    {
-        ObjectiveFunction objective = [=](VectorConstRef x, ObjectiveResult& f) { pyobjective(x, &f); };
-        return Solver(objective, constraints);
-    };
-
-    py::class_<Solver>(m, "Solver")
+    py::class_<Dims>(m, "Dims")
         .def(py::init<>())
-        .def(py::init(createSolver))
-        .def("setOptions", &Solver::setOptions)
-        .def("solve", &Solver::solve)
-        .def("dxdp", &Solver::dxdp)
+        .def_readwrite("x", &Dims::x)
+        .def_readwrite("be", &Dims::be)
+        .def_readwrite("bi", &Dims::bi)
+        .def_readwrite("he", &Dims::he)
+        .def_readwrite("hi", &Dims::hi)
+        .def_readwrite("xlower", &Dims::xlower)
+        .def_readwrite("xupper", &Dims::xupper)
+        .def_readwrite("xfixed", &Dims::xfixed)
         ;
 }

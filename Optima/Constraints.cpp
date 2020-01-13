@@ -23,6 +23,30 @@
 
 namespace Optima {
 
+namespace internal {
+
+const auto defaultConstraintFunction = [](VectorConstRef x, ConstraintResult& res)
+{
+};
+
+} // namespace internal
+
+Constraints2::Constraints2()
+: Constraints2(Dims{})
+{}
+
+Constraints2::Constraints2(const Dims& dims)
+: Ae(dims.be, dims.x),
+  Ai(dims.bi, dims.x),
+  he(internal::defaultConstraintFunction),
+  hi(internal::defaultConstraintFunction),
+  ilower(indices(dims.xlower)),
+  iupper(indices(dims.xupper)),
+  ifixed(indices(dims.xfixed))
+{
+}
+
+
 Constraints::Constraints()
 : Constraints(0)
 {}

@@ -25,6 +25,7 @@
 #include <Optima/Options.hpp>
 #include <Optima/Outputter.hpp>
 #include <Optima/Params.hpp>
+#include <Optima/Problem.hpp>
 #include <Optima/Result.hpp>
 #include <Optima/SaddlePointMatrix.hpp>
 #include <Optima/State.hpp>
@@ -68,21 +69,109 @@ auto isfinite(const ObjectiveResult& res) -> bool
 //    return alpha;
 //}
 
-} // namespace
 
-struct Solver::Impl
+/// The state of the solution of a basic optimization problem.
+struct BasicState
 {
-    /// The objective function of the optimization problem
-    Objective objective;
+    /// The primal variables of the basic optimization problem.
+    Vector x;
 
-    /// The constraints of the optimization problem
-    Constraints constraints;
+    /// The Lagrange multipliers with respect to the linear equality constraints \eq{Ax=b}.
+    Vector yb;
+
+    /// The Lagrange multipliers with respect to the non-linear equality constraints \eq{h(x)=0}.
+    Vector yh;
+
+    /// The slack variables with respect to the lower bounds of the primal variables,
+    Vector z;
+
+    /// The slack variables with respect to the upper bounds of the primal variables,
+    Vector w;
+};
+
+/// The dimensions of variables and constraints in a basic optimization problem.
+struct BasicDims
+{
+    /// The number of variables (equivalent to the dimension of vector \eq{x}).
+    Index x = 0;
+
+    /// The number of linear equality constraint equations (equivalent to the dimension of vector \eq{b}).
+    Index b = 0;
+
+    /// The number of non-linear equality constraint equations (equivalent to the dimension of vector \eq{h}).
+    Index h = 0;
+
+    /// The number of variables with lower bounds (equivalent to the dimension of vector of lower bounds \eq{x_\mathrm{l}}).
+    Index xlower = 0;
+
+    /// The number of variables with upper bounds (equivalent to the dimension of vector of upper bounds \eq{x_\mathrm{u}}).
+    Index xupper = 0;
+
+    /// The number of variables with fixed values (equivalent to the dimension of vector \eq{x_\mathrm{f}}).
+    Index xfixed = 0;
+};
+
+/// The constraints in a basic optimization problem.
+struct BasicConstraints
+{
+    /// The coefficient matrix of the linear equality constraint equations \eq{Ax=b}.
+    Matrix A;
+
+    /// The constraint function in the non-linear equality constraint equations \eq{h(x) = 0}.
+    ConstraintFunction h;
+
+    /// The indices of the variables with lower bounds.
+    Indices ilower;
+
+    /// The indices of the variables with upper bounds.
+    Indices iupper;
+
+    /// The indices of the variables with fixed values.
+    Indices ifixed;
+};
+
+/// The definition of a basic optimization problem.
+struct BasicProblem
+{
+    /// The dimensions of the basic optimization problem.
+    BasicDims dims;
+
+    /// The objective function of the basic optimization problem.
+    ObjectiveFunction objective;
+
+    /// The constraints of the basic optimization problem.
+    BasicConstraints constraints;
+};
+
+/// The solver for basic optimization problems.
+struct BasicSolver
+{
+    /// The optimization problem
+    Problem problem;
 
     /// The calculator of the Newton step (dx, dy, dz, dw)
     Stepper stepper;
 
+    /// The matrix A = [Ae; Ai] of the linear constraints
+    Matrix A;
+
+    /// The vector b = [be; bi] of the linear constraints
+    Vector b;
+
+    /// The vector h = [he; hi] of the non-linear constraints
+    Vector h;
+
+    /// The matrix J = [Je; Ji] of the non-linear constraints
+    Matrix J;
+
     /// The evaluated result of the objective function.
     ObjectiveResult f;
+
+    /// The evaluated result of the equality constraint function.
+    ConstraintResult he;
+
+    /// The evaluated result of the inequality constraint function.
+    ConstraintResult hi;
 
     /// The result of the optimization problem
     Result result;
@@ -111,7 +200,88 @@ struct Solver::Impl
     /// The number free and fixed variables.
     Index nx, nf;
 
-    /// The number of equality constraints.
+    /// The number of linear constraints.
+    Index ml;
+
+    /// The number of non-linear constraints.
+    Index mn;
+
+    /// The number of constraints.
+    Index m;
+
+    /// The total number of variables (x, y, z, w).
+    Index t;
+};
+
+
+
+
+
+} // namespace
+
+struct Solver::Impl
+{
+    /// The optimization problem
+    Problem problem;
+
+    /// The calculator of the Newton step (dx, dy, dz, dw)
+    Stepper stepper;
+
+    /// The matrix A = [Ae; Ai] of the linear constraints
+    Matrix A;
+
+    /// The vector b = [be; bi] of the linear constraints
+    Vector b;
+
+    /// The vector h = [he; hi] of the non-linear constraints
+    Vector h;
+
+    /// The matrix J = [Je; Ji] of the non-linear constraints
+    Matrix J;
+
+    /// The evaluated result of the objective function.
+    ObjectiveResult f;
+
+    /// The evaluated result of the equality constraint function.
+    ConstraintResult he;
+
+    /// The evaluated result of the inequality constraint function.
+    ConstraintResult hi;
+
+    /// The result of the optimization problem
+    Result result;
+
+    /// The trial iterate x(trial)
+    Vector xtrial;
+
+    /// The trial Newton step dx(trial)
+    Vector dxtrial;
+
+    /// The lower bounds for each variable x (-inf with no lower bound)
+    Vector xlower;
+
+    /// The upper bounds for each variable x (+inf with no lower bound)
+    Vector xupper;
+
+    /// The outputter instance
+    Outputter outputter;
+
+    /// The options for the optimization calculation
+    Options options;
+
+    /// The number of variables
+    Index n;
+
+    /// The number free and fixed variables.
+    Index nx, nf;
+
+    /// The number of linear constraints.
+    Index ml;
+
+    /// The number of non-linear constraints.
+    Index mn;
+
+    /// The number of constraints.
     Index m;
 
     /// The total number of variables (x, y, z, w).
@@ -121,17 +291,44 @@ struct Solver::Impl
     Impl()
     {}
 
+    // /// Initialize the optimization solver with the objective and constraints of the problem.
+    // Impl(const ObjectiveFunction& objective, const Constraints& constraints)
+    // : objective(objective), constraints(constraints)
+    // {
+    //     // Initialize the members related to number of variables and constraints
+    //     n = constraints.numVariables();
+    //     m = constraints.numLinearEqualityConstraints();
+
+    //     // Initialize the number of fixed and free variables in x
+    //     nf = constraints.variablesWithFixedValues().size();
+    //     nx = n - nf;
+
+    //     // Allocate memory
+    //     xtrial.resize(n);
+
+    //     // Initialize xlower and xupper with -inf and +inf
+    //     xlower = constants(n, -infinity());
+    //     xupper = constants(n,  infinity());
+    // }
+
     /// Initialize the optimization solver with the objective and constraints of the problem.
-    Impl(const Objective& objective, const Constraints& constraints)
-    : objective(objective), constraints(constraints), stepper(constraints)
+    Impl(const Problem& problem)
+    : problem(problem)
     {
         // Initialize the members related to number of variables and constraints
-        n = constraints.numVariables();
-        m = constraints.numLinearEqualityConstraints();
+        n = problem.dims.x;
+        ml = problem.dims.be + problem.dims.bi;
+        mn = problem.dims.he + problem.dims.hi;
+        m = ml + mn;
 
         // Initialize the number of fixed and free variables in x
-        nf = constraints.variablesWithFixedValues().size();
+        nf = problem.constraints.ifixed.size();
         nx = n - nf;
+
+        b.resize(ml);
+        h.resize(mn);
+        A.resize(ml, n);
+        J.resize(mn, n);
 
         // Allocate memory
         xtrial.resize(n);
@@ -233,9 +430,9 @@ struct Solver::Impl
         auto w = state.w.canonical();
 
         // The indices of variables with lower/upper bounds and fixed values
-        IndicesConstRef ilower = constraints.variablesWithLowerBounds();
-        IndicesConstRef iupper = constraints.variablesWithUpperBounds();
-        IndicesConstRef ifixed = constraints.variablesWithFixedValues();
+        const auto ilower = problem.constraints.ilower;
+        const auto iupper = problem.constraints.iupper;
+        const auto ifixed = problem.constraints.ifixed;
 
         // Initialize xlower and xupper with the given lower and upper bounds
         xlower(ilower) = params.xlower;
@@ -269,6 +466,9 @@ struct Solver::Impl
         // Evaluate the objective function
         evaluateObjective(params, state);
 
+        // Evaluate the constraint function
+        evaluateObjective(params, state);
+
         // Assert the objective function produces finite numbers at this point
         Assert(isfinite(f),
 			"Failure evaluating the objective function.", "The evaluation of "
@@ -299,6 +499,18 @@ struct Solver::Impl
         objective(state.x.original(), f);
 	}
 
+    // Evaluate the equality constraint function
+    auto evaluateEqualityConstraintFunction(const Params& params, State& state) -> void
+	{
+        const auto x = state.x.original();
+
+        problem.constraints.he(x, he);
+        problem.constraints.hi(x, hi);
+
+        h << he.value, hi.value;
+        J << he.jacobian, hi.jacobian;
+	}
+
     // The function that computes the Newton step
     auto computeNewtonStep(const Params& params, State& state) -> void
     {
@@ -312,6 +524,8 @@ struct Solver::Impl
             params.xlower,
             params.xupper,
             params.be,
+            h.value,
+            h.jacobian,
             f.gradient,
             f.hessian,
         };
@@ -650,7 +864,7 @@ Solver::Solver()
 : pimpl(new Impl())
 {}
 
-Solver::Solver(const Objective& objective, const Constraints& constraints)
+Solver::Solver(const ObjectiveFunction& objective, const Constraints& constraints)
 : pimpl(new Impl(objective, constraints))
 {}
 

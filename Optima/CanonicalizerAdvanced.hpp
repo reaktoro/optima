@@ -42,8 +42,8 @@ public:
     /// Construct a default CanonicalizerAdvanced instance.
     CanonicalizerAdvanced();
 
-    /// Construct a CanonicalizerAdvanced instance with given matrix \eq{A}.
-    CanonicalizerAdvanced(MatrixConstRef A);
+    /// Construct a CanonicalizerAdvanced instance with given upper and lower matrix blocks \eq{A} and \eq{J}.
+    CanonicalizerAdvanced(MatrixConstRef A, MatrixConstRef J);
 
     /// Construct a copy of a CanonicalizerAdvanced instance.
     CanonicalizerAdvanced(const CanonicalizerAdvanced& other);
@@ -79,19 +79,16 @@ public:
     /// Return the canonicalized matrix \eq{C = R[A; J]Q = [I\quad S]}`.
     auto C() const -> Matrix;
 
-    /// Return the indices of the linearly independent rows of the original matrix.
-    auto indicesLinearlyIndependentEquations() const -> IndicesConstRef;
-
     /// Return the indices of the basic variables.
     auto indicesBasicVariables() const -> IndicesConstRef;
 
     /// Return the indices of the non-basic variables.
     auto indicesNonBasicVariables() const -> IndicesConstRef;
 
-    /// Compute the canonical matrix with given matrix \eq{A}.
-    auto compute(MatrixConstRef A) -> void;
+    /// Compute the canonical matrix with given upper and lower matrix blocks \eq{A} and \eq{J}.
+    auto compute(MatrixConstRef A, MatrixConstRef J) -> void;
 
-    /// Update the canonical form with given matrix \eq{J} and priority weights for the variables.
+    /// Update the canonical form with given lower matrix block \eq{J} and priority weights for the variables.
     auto update(MatrixConstRef J, VectorConstRef weights) -> void;
 
 private:

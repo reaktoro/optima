@@ -26,7 +26,6 @@
 namespace Optima {
 
 // Forward declarations
-class Constraints;
 class IpSaddlePointMatrix;
 class IpSaddlePointVector;
 class Options;
@@ -46,20 +45,38 @@ struct StepperProblem
     /// The current state of the complementarity variables of the upper bounds of the canonical optimization problem.
     VectorConstRef w;
 
-    /// The lower bound values of the canonical optimization problem.
-    VectorConstRef xlower;
-
-    /// The upper bound values of the canonical optimization problem.
-    VectorConstRef xupper;
+    /// The coefficient matrix of the linear equality constraints of the canonical optimization problem.
+    MatrixConstRef A;
 
     /// The right-hand side vector of the linear equality constraints of the canonical optimization problem.
     VectorConstRef b;
+
+    /// The value of the equality constraint function.
+    VectorConstRef h;
+
+    /// The Jacobian of the equality constraint function.
+    MatrixConstRef J;
 
     /// The gradient of the objective function.
     VectorConstRef g;
 
     /// The Hessian of the objective function.
     MatrixConstRef H;
+
+    /// The values of the lower bounds of the variables constrained with lower bounds.
+    VectorConstRef xlower;
+
+    /// The values of the upper bounds of the variables constrained with upper bounds.
+    VectorConstRef xupper;
+
+    /// The indices of the variables with lower bounds.
+    IndicesConstRef ilower;
+
+    /// The indices of the variables with upper bounds.
+    IndicesConstRef iupper;
+
+    /// The indices of the variables with fixed values.
+    IndicesConstRef ifixed;
 };
 
 /// The class that implements the step calculation.
@@ -68,9 +85,6 @@ class Stepper
 public:
     /// Construct a default Stepper instance.
     Stepper();
-
-    /// Construct a Stepper instance with given constraints.
-    explicit Stepper(const Constraints& constraints);
 
     /// Construct a copy of an Stepper instance.
     Stepper(const Stepper& other);

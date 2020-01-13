@@ -23,50 +23,54 @@
 
 namespace Optima {
 
-SaddlePointMatrix::SaddlePointMatrix(MatrixConstRef H, VectorConstRef D, MatrixConstRef At, MatrixConstRef Ab, IndicesConstRef jf)
-: SaddlePointMatrix(H, D, At, Ab, Matrix{}, jf)
+SaddlePointMatrix::SaddlePointMatrix(MatrixConstRef H, VectorConstRef D, MatrixConstRef Au, MatrixConstRef Al, IndicesConstRef jf)
+: SaddlePointMatrix(H, D, Au, Al, Matrix{}, jf)
 {}
 
-SaddlePointMatrix::SaddlePointMatrix(MatrixConstRef H, VectorConstRef D, MatrixConstRef At, MatrixConstRef Ab, MatrixConstRef G, IndicesConstRef jf)
-: H(H), D(D), At(At), Ab(Ab), G(G), jf(jf)
+SaddlePointMatrix::SaddlePointMatrix(MatrixConstRef H, VectorConstRef D, MatrixConstRef Au, MatrixConstRef Al, MatrixConstRef G, IndicesConstRef jf)
+: H(H), D(D), Au(Au), Al(Al), G(G), jf(jf)
 {
-    const auto mt = At.rows();
-    const auto mb = Ab.rows();
-    const auto m = mt + mb;
-    const auto n = At.cols();
+    const auto n = H.rows();
+    const auto mu = Au.rows();
+    const auto ml = Al.rows();
+    const auto m = mu + ml;
     const auto t = m + n;
+
+    Assert(n > 0,
+        "Could not create a SaddlePointMatrix object.",
+            "Matrix H is empty.");
+
+    Assert(m < n,
+        "Could not create a SaddlePointMatrix object.",
+            "Matrix A = [Au; Al] must have less number of rows than number of columns.");
 
     Assert(H.rows() == H.cols() || H.cols() == 1,
         "Could not create a SaddlePointMatrix object.",
             "Matrix H is neither a square n-by-n matrix or a diagonal n-by-1 matrix.");
 
-    Assert(H.rows() == At.cols(),
+    Assert(Au.size() == 0 || Au.cols() == n,
         "Could not create a SaddlePointMatrix object.",
-            "Matrix At must have the same number of columns as there are rows in H.");
+            "Matrix Au must have the same number of columns as there are rows in H.");
 
-    Assert(H.rows() == Ab.cols() || Ab.size() == 0,
+    Assert(Al.size() == 0 || Al.cols() == n,
         "Could not create a SaddlePointMatrix object.",
-            "Matrix Ab must have the same number of columns as there are rows in H (if it is not empty).");
+            "Matrix Al must have the same number of columns as there are rows in H.");
 
-    Assert(D.rows() == 0 || D.rows() == At.cols(),
+    Assert(D.size() == 0 || D.rows() == n,
         "Could not create a SaddlePointMatrix object.",
             "Matrix D must be an empty vector or have the same number of rows as there are rows in H.");
 
-    Assert(m < n,
-        "Could not create a SaddlePointMatrix object.",
-            "Matrix A = [At Ab] must have less number of rows than number of columns.");
-
     Assert(G.size() == 0 || G.rows() == m,
         "Could not create a SaddlePointMatrix object.",
-            "Matrix G, when non-zero, must have the same number of rows and columns as there are rows in A = [At Ab].");
+            "Matrix G, when non-zero, must have the same number of rows and columns as there are rows in A = [Au Al].");
 }
 
 SaddlePointMatrix::operator Matrix() const
 {
-    const auto mt = At.rows();
-    const auto mb = Ab.rows();
-    const auto m = mt + mb;
-    const auto n = At.cols();
+    const auto n = H.rows();
+    const auto mu = Au.rows();
+    const auto ml = Al.rows();
+    const auto m = mu + ml;
     const auto t = m + n;
 
     Matrix res = zeros(t, t);
@@ -86,12 +90,22 @@ SaddlePointMatrix::operator Matrix() const
     // Set all entries in H + D block corresponding to fixed variables
     res.topLeftCorner(n, n).diagonal()(jf).fill(1.0);
 
-    res.topRightCorner(n, m).leftCols(mt) = tr(At);
-    res.topRightCorner(n, m).rightCols(mb) = tr(Ab);
+    if(mu > 0)
+    {
+        res.topRightCorner(n, m).leftCols(mu) = tr(Au);
+        res.bottomLeftCorner(m, n).topRows(mu) = Au;
+    }
+
+    if(ml > 0)
+    {
+        res.topRightCorner(n, m).rightCols(ml) = tr(Al);
+        res.bottomLeftCorner(m, n).bottomRows(ml) = Al;
+    }
+
+    /// Fill with zeros all rows in the tr(A) block corresponding to fixed variables
     res.topRightCorner(n, m)(jf, all).fill(0.0);
 
-    res.bottomLeftCorner(m, n).topRows(mt) = At;
-    res.bottomLeftCorner(m, n).bottomRows(mb) = Ab;
+    /// Set the G block in the matrix
     res.bottomRightCorner(m, m) <<= G;
 
     return res;

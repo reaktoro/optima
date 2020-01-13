@@ -29,19 +29,20 @@ void exportSaddlePointMatrix(py::module& m)
     py::class_<SaddlePointMatrix>(m, "SaddlePointMatrix")
         .def_readonly("H", &SaddlePointMatrix::H)
         .def_readonly("D", &SaddlePointMatrix::D)
-        .def_readonly("A", &SaddlePointMatrix::A)
+        .def_readonly("Au", &SaddlePointMatrix::Au)
+        .def_readonly("Al", &SaddlePointMatrix::Al)
         .def_readonly("G", &SaddlePointMatrix::G)
         .def_readonly("jf", &SaddlePointMatrix::jf)
-        .def(py::init<MatrixConstRef, VectorConstRef, MatrixConstRef, IndicesConstRef>(), py::arg("H"), py::arg("D"), py::arg("A"), py::arg("jf"))
-        .def(py::init<MatrixConstRef, VectorConstRef, MatrixConstRef, MatrixConstRef, IndicesConstRef>(), py::arg("H"), py::arg("D"), py::arg("A"), py::arg("G"), py::arg("jf"))
+        .def(py::init<MatrixConstRef, VectorConstRef, MatrixConstRef, MatrixConstRef, IndicesConstRef>(), py::arg("H"), py::arg("D"), py::arg("Au"), py::arg("Al"), py::arg("jf"))
+        .def(py::init<MatrixConstRef, VectorConstRef, MatrixConstRef, MatrixConstRef, MatrixConstRef, IndicesConstRef>(), py::arg("H"), py::arg("D"), py::arg("Au"), py::arg("Al"), py::arg("G"), py::arg("jf"))
 
         // IMPORTANT: Constructors below are needed to allow 1d numpy arrays to be converted to MatrixConstRef
-        .def(py::init<VectorConstRef, VectorConstRef, MatrixConstRef, IndicesConstRef>(), py::arg("H"), py::arg("D"), py::arg("A"), py::arg("jf"))
-        .def(py::init<VectorConstRef, VectorConstRef, MatrixConstRef, MatrixConstRef, IndicesConstRef>(), py::arg("H"), py::arg("D"), py::arg("A"), py::arg("G"), py::arg("jf"))
+        .def(py::init<VectorConstRef, VectorConstRef, MatrixConstRef, MatrixConstRef, IndicesConstRef>(), py::arg("H"), py::arg("D"), py::arg("Au"), py::arg("Al"), py::arg("jf"))
+        .def(py::init<VectorConstRef, VectorConstRef, MatrixConstRef, MatrixConstRef, MatrixConstRef, IndicesConstRef>(), py::arg("H"), py::arg("D"), py::arg("Au"), py::arg("Al"), py::arg("G"), py::arg("jf"))
 
         // IMPORTANT: Constructors below are needed to allow 2d numpy arrays to be converted to MatrixConstRef
-        .def(py::init<MatrixConstRef, VectorConstRef, MatrixConstRef, IndicesConstRef>(), py::arg("H"), py::arg("D"), py::arg("A"), py::arg("jf"))
-        .def(py::init<MatrixConstRef, VectorConstRef, MatrixConstRef, MatrixConstRef, IndicesConstRef>(), py::arg("H"), py::arg("D"), py::arg("A"), py::arg("G"), py::arg("jf"))
+        .def(py::init<MatrixConstRef, VectorConstRef, MatrixConstRef, MatrixConstRef, IndicesConstRef>(), py::arg("H"), py::arg("D"), py::arg("Au"), py::arg("Al"), py::arg("jf"))
+        .def(py::init<MatrixConstRef, VectorConstRef, MatrixConstRef, MatrixConstRef, MatrixConstRef, IndicesConstRef>(), py::arg("H"), py::arg("D"), py::arg("Au"), py::arg("Al"), py::arg("G"), py::arg("jf"))
         .def("array", [](SaddlePointMatrix self) { return Matrix(self); })
         ;
 

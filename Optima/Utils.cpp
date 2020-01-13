@@ -388,7 +388,7 @@ auto isDiagonalMatrix(MatrixConstRef mat) -> bool
 
 auto isDenseMatrix(MatrixConstRef mat) -> bool
 {
-    return mat.size() > 1 && mat.rows() == mat.cols();
+    return mat.size() > 0 && mat.rows() == mat.cols();
 }
 
 auto operator<<=(MatrixRef mat, MatrixConstRef other) -> MatrixRef

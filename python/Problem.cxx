@@ -31,7 +31,7 @@ void exportProblem(py::module& m)
 	// // This is a workaround to let Python callback change the state of ObjectiveResult, and not a copy
     // auto createProblem = [](const ObjectivePtr& pyobjective, const Constraints& constraints)
     // {
-    //     Objective objective = [=](VectorConstRef x, ObjectiveResult& f) { pyobjective(x, &f); };
+    //     ObjectiveFunction objective = [=](VectorConstRef x, ObjectiveResult& f) { pyobjective(x, &f); };
     //     return Problem(objective, constraints);
     // };
 

@@ -68,12 +68,15 @@ public:
     /// Return the current saddle point options.
     auto options() const -> const SaddlePointOptions&;
 
-    /// Initialize the saddle point solver with the coefficient matrix \eq{A} of the saddle point problem.
-    /// @note This method should be called before the @ref decompose method. However, it does not
-    /// need to be called again if matrix \eq{A} of the saddle point problem is the same as in the
-    /// last call to @ref initialize.
-    /// @param A The coefficient matrix \eq{A} of the saddle point problem.
-    auto initialize(MatrixConstRef A) -> void;
+    // /// Initialize the saddle point solver with the coefficient matrix \eq{A} of the saddle point problem.
+    // /// This method initializes the solver with the matrix \eq{A=\begin{bmatrix}A_{u}\\A_{l}\end{bmatrix}}.
+    // /// The upper and lower blocks \eq{A_u} and \eq{A_l}, respectively, are required as parameters.
+    // /// The upper block is expected to remain constant throughout many decompose and solve operations, whereas
+    // /// the lower block \eq{A_l} can be changed more often (resulting from non-linear constraints).
+    // /// @note This method should be called once and before method @ref decompose. It should be called again only if the upper block of \eq{A}, that is, \eq{A_u}, changes.
+    // /// @param Au The upper block \eq{A_u} of the coefficient matrix \eq{A=\begin{bmatrix}A_{u}\\A_{l}\end{bmatrix}}.
+    // /// @param Al The lower block \eq{A_l} of the coefficient matrix \eq{A=\begin{bmatrix}A_{u}\\A_{l}\end{bmatrix}}.
+    // auto initialize(Index n, Index mMatrixConstRef Au, MatrixConstRef Al) -> void;
 
     /// Decompose the coefficient matrix of the saddle point problem.
     /// @note This method should be called before the @ref solve method and after @ref canonicalize.

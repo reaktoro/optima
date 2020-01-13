@@ -18,7 +18,7 @@
 #pragma once
 
 // Optima includes
-#include <Optima/Index.hpp>
+#include <Optima/Dims.hpp>
 #include <Optima/Matrix.hpp>
 
 namespace Optima {
@@ -31,10 +31,44 @@ struct ConstraintResult
 
     /// The Jacobian matrix of the evaluated constraint function.
     Matrix jacobian;
+
+    /// The boolean flag that indicates if the constraint function evaluation failed.
+    bool failed = false;
 };
 
 /// The signature of a constraint function.
 using ConstraintFunction = std::function<void(VectorConstRef, ConstraintResult&)>;
+
+/// The constraints in an optimization problem.
+struct Constraints2
+{
+    /// Construct a default Constraints2 object.
+    Constraints2();
+
+    /// Construct a Constraints2 object with given problem dimensions.
+    Constraints2(const Dims& dims);
+
+    /// The coefficient matrix of the linear equality constraint equations \eq{A_{e}x=b_{e}}.
+    Matrix Ae;
+
+    /// The coefficient matrix of the linear inequality constraint equations \eq{A_{i}x\geq b_{i}}.
+    Matrix Ai;
+
+    /// The constraint function in the non-linear equality constraint equations \eq{h_{e}(x) = 0}.
+    ConstraintFunction he;
+
+    /// The constraint function in the non-linear inequality constraint equations \eq{h_{i}(x) \geq 0}.
+    ConstraintFunction hi;
+
+    /// The indices of the variables with lower bounds.
+    Indices ilower;
+
+    /// The indices of the variables with upper bounds.
+    Indices iupper;
+
+    /// The indices of the variables with fixed values.
+    Indices ifixed;
+};
 
 /// The constraints in an optimization problem.
 class Constraints

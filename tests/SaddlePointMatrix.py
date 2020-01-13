@@ -20,6 +20,10 @@ from numpy import *
 from pytest import approx, mark
 from itertools import product
 
+
+# The number of variables
+n = 15
+
 # Tested cases for the structure of matrix H
 tested_structures_H = ['dense', 'diagonal']
 
@@ -30,34 +34,43 @@ tested_structures_D = ['diagonal', 'zero']
 tested_structures_G = ['dense', 'zero']
 
 # Tested cases for the indices of fixed variables
-tested_jf = [arange(0), 
-             arange(1), 
+tested_jf = [arange(0),
+             arange(1),
              array([1, 3, 7, 9])]
+
+# Tested number of rows in matrix Au and Al (upper and lower blocks of A)
+tested_mu = [7, 1, 0]
+tested_ml = [5, 1, 0]
 
 # Combination of all tested cases
 testdata = product(tested_structures_H,
                    tested_structures_D,
                    tested_structures_G,
-                   tested_jf)
+                   tested_jf,
+                   tested_mu,
+                   tested_ml)
 
 
 @mark.parametrize("args", testdata)
 def test_saddle_point_matrix(args):
 
-    structure_H, structure_D, structure_G, jf = args
+    structure_H, structure_D, structure_G, jf, mu, ml = args
 
-    m = 5
-    n = 15
+    m = mu + ml  # the number of rows of matrix A = [Au; Al]
     t = n + m
 
-    # Create matrices H, A, G
+    # Create matrices H, A = [Au; Al], and G
     H = eigen.random(n, n) if structure_H == 'dense' else eigen.random(n)
     D = eigen.random(n) if structure_D == 'diagonal' else eigen.vector()
-    A = eigen.random(m, n)
     G = eigen.random(m, m) if structure_G == 'dense' else eigen.matrix()
+    A = eigen.random(m, n)
+
+    # The upper and lower blocks of matrix A
+    Au = A[:mu, :]
+    Al = A[mu:, :]
 
     # Create the SaddlePointMatrix object
-    mat = SaddlePointMatrix(H, D, A, G, jf)
+    mat = SaddlePointMatrix(H, D, Au, Al, G, jf)
 
     # Use a dense matrix for H from this point on (for convenience)
     Haux = H if structure_H == 'dense' else eigen.diag(H)
@@ -82,13 +95,13 @@ def test_saddle_point_matrix(args):
     # Set to zero the diagonal entries in D corresponding to fixed variables
     Daux[jf, jf] = 0.0
 
-    # Assemble the big saddle point matrix M 
+    # Assemble the big saddle point matrix M
     M = eigen.zeros(t, t)
-    M[0:n, 0:n] = Haux + Daux
-    M[0:n, n:n + m] = trA
+    M[:n, :n] = Haux + Daux
+    M[:n, n:n + m] = trA
     M[n:, :n] = A
     M[n:, n:] = Gaux
-    
+
     assert mat.array() == approx(M)
 
 

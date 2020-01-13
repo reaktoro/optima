@@ -28,19 +28,20 @@ void exportIpSaddlePointMatrix(py::module& m)
 {
     py::class_<IpSaddlePointMatrix>(m, "IpSaddlePointMatrix")
         .def_readonly("H", &IpSaddlePointMatrix::H)
-        .def_readonly("A", &IpSaddlePointMatrix::A)
+        .def_readonly("Au", &IpSaddlePointMatrix::Au)
+        .def_readonly("Al", &IpSaddlePointMatrix::Al)
         .def_readonly("Z", &IpSaddlePointMatrix::Z)
         .def_readonly("W", &IpSaddlePointMatrix::W)
         .def_readonly("L", &IpSaddlePointMatrix::L)
         .def_readonly("U", &IpSaddlePointMatrix::U)
         .def_readonly("jf", &IpSaddlePointMatrix::jf)
-        .def(py::init<MatrixConstRef, MatrixConstRef, VectorConstRef, VectorConstRef, VectorConstRef, VectorConstRef, IndicesConstRef>(), py::arg("H"), py::arg("A"), py::arg("Z"), py::arg("W"), py::arg("L"), py::arg("U"), py::arg("jf"))
+        .def(py::init<MatrixConstRef, MatrixConstRef, MatrixConstRef, VectorConstRef, VectorConstRef, VectorConstRef, VectorConstRef, IndicesConstRef>(), py::arg("H"), py::arg("Au"), py::arg("Al"), py::arg("Z"), py::arg("W"), py::arg("L"), py::arg("U"), py::arg("jf"))
 
         // IMPORTANT: Constructors below are needed to allow 1d numpy arrays to be converted to MatrixConstRef
-        .def(py::init<VectorConstRef, MatrixConstRef, VectorConstRef, VectorConstRef, VectorConstRef, VectorConstRef, IndicesConstRef>(), py::arg("H"), py::arg("A"), py::arg("Z"), py::arg("W"), py::arg("L"), py::arg("U"), py::arg("jf"))
+        .def(py::init<VectorConstRef, MatrixConstRef, MatrixConstRef, VectorConstRef, VectorConstRef, VectorConstRef, VectorConstRef, IndicesConstRef>(), py::arg("H"), py::arg("Au"), py::arg("Al"), py::arg("Z"), py::arg("W"), py::arg("L"), py::arg("U"), py::arg("jf"))
 
         // IMPORTANT: Constructors below are needed to allow 2d numpy arrays to be converted to MatrixConstRef
-        .def(py::init<MatrixConstRef, MatrixConstRef, VectorConstRef, VectorConstRef, VectorConstRef, VectorConstRef, IndicesConstRef>(), py::arg("H"), py::arg("A"), py::arg("Z"), py::arg("W"), py::arg("L"), py::arg("U"), py::arg("jf"))
+        .def(py::init<MatrixConstRef, MatrixConstRef, MatrixConstRef, VectorConstRef, VectorConstRef, VectorConstRef, VectorConstRef, IndicesConstRef>(), py::arg("H"), py::arg("Au"), py::arg("Al"), py::arg("Z"), py::arg("W"), py::arg("L"), py::arg("U"), py::arg("jf"))
 
         .def("array", [](IpSaddlePointMatrix self) { return Matrix(self); })
         ;

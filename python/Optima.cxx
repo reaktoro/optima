@@ -21,7 +21,9 @@ namespace py = pybind11;
 
 void exportEigen(py::module& m);
 void exportCanonicalizer(py::module& m);
+void exportCanonicalizerAdvanced(py::module& m);
 void exportConstraints(py::module& m);
+void exportDims(py::module& m);
 void exportIndexUtils(py::module& m);
 void exportOutputter(py::module& m);
 void exportComplementarityVariables(py::module& m);
@@ -48,7 +50,9 @@ PYBIND11_MODULE(optima, m)
 {
     exportEigen(m);
     exportCanonicalizer(m);
+    exportCanonicalizerAdvanced(m);
     exportConstraints(m);
+    exportDims(m);
     exportIndexUtils(m);
     exportOutputter(m);
     exportComplementarityVariables(m);

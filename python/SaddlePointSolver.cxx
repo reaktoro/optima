@@ -33,7 +33,6 @@ void exportSaddlePointSolver(py::module& m)
         .def(py::init<>())
         .def("setOptions", &SaddlePointSolver::setOptions)
         .def("options", &SaddlePointSolver::options)
-        .def("initialize", &SaddlePointSolver::initialize)
         .def("decompose", &SaddlePointSolver::decompose)
         .def("solve", &SaddlePointSolver::solve)
         ;

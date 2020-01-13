@@ -87,6 +87,9 @@ struct SaddlePointSolver::Impl
     /// The LU decomposition solver.
     Eigen::PartialPivLU<Matrix> lu;
 
+    /// The boolean flag that indicates whether the saddle point solver has been initialized.
+    bool initialized = false;
+
     /// The boolean flag that indicates that the decomposed saddle point matrix was degenerate with no free variables.
     bool degenerate = false;
 
@@ -96,12 +99,17 @@ struct SaddlePointSolver::Impl
     /// 2) Use Nullspace if Rangespace is specified, but the structure of matrix H is dense.
     SaddlePointMethod best_method;
 
-    /// Canonicalize the coefficient matrix *A* of the saddle point problem.
-    auto initialize(MatrixConstRef A) -> void
+    /// Initialize the saddle point solver.
+    auto initialize(SaddlePointMatrix lhs) -> void
     {
-        // Set the number of rows and columns in A
-        m = A.rows();
-        n = A.cols();
+        /// Update initialization status
+        initialized = true;
+
+        // Set the number of variables
+        n = lhs.H.rows();
+
+        // Set the number of rows in the matrix A = [Au; Al]
+        m = lhs.Au.rows() + lhs.Al.rows();
 
         // Allocate auxiliary memory
         a.resize(n);
@@ -109,47 +117,22 @@ struct SaddlePointSolver::Impl
         mat.resize(n + m, n + m);
         vec.resize(n + m);
         weights.resize(n);
-        iordering.resize(n);
         H.resize(n, n);
 
-        // Compute the canonical form of matrix A
-        canonicalizer.compute(A);
+        // Initialize the initial ordering of the variables
+        iordering = indices(n);
 
-        // Set the number of basic and non-basic variables
-        nb = canonicalizer.numBasicVariables();
-        nn = canonicalizer.numNonBasicVariables();
-
-        // Set the number of linearly dependent rows in A
-        nl = m - nb;
-
-        // Set the number of free and fixed variables
-        nx = n;
-        nf = 0;
-
-        // Set the number of free and fixed basic variables
-        nbx = nb;
-        nbf = 0;
-
-        // Set the number of free and fixed non-basic variables
-        nnx = nn;
-        nnf = 0;
-
-        // Set the number of pivot free basic variables.
-        nb1 = nbx;
-        nn1 = nnx;
-
-        // Set the number of non-pivot free non-basic variables.
-        nb2 = 0;
-        nn2 = 0;
-
-        // Initialize the ordering of the variables
-        iordering.head(nb) = canonicalizer.indicesBasicVariables();
-        iordering.tail(nn) = canonicalizer.indicesNonBasicVariables();
+        // Compute the canonical form of the uppper block matrix Au in A = [Au; Al]
+        canonicalizer.compute(lhs.Au, lhs.Al);
     }
 
     /// Update the canonical form of the coefficient matrix *A* of the saddle point problem.
     auto updateCanonicalForm(SaddlePointMatrix lhs) -> void
     {
+        /// Initialize the solver if not yet
+        if(!initialized)
+            initialize(lhs);
+
         // Update the number of fixed and free variables
         nf = lhs.jf.size();
         nx = n - nf;
@@ -175,7 +158,18 @@ struct SaddlePointSolver::Impl
         weights(jf).noalias() = -linspace(nf, 1, nf);
 
         // Update the canonical form and the ordering of the variables
-        canonicalizer.update(lhs.Ab, weights);
+        canonicalizer.update(lhs.Al, weights);
+
+        // Update the number of basic and non-basic variables
+        nb = canonicalizer.numBasicVariables();
+        nn = canonicalizer.numNonBasicVariables();
+
+        // Update the number of linearly dependent rows in A = [Au; Al]
+        nl = m - nb;
+
+        // Initialize the ordering of the variables
+        iordering.head(nb) = canonicalizer.indicesBasicVariables();
+        iordering.tail(nn) = canonicalizer.indicesNonBasicVariables();
 
         // Get the updated indices of basic and non-basic variables
         const auto ibasic = canonicalizer.indicesBasicVariables();
@@ -1283,11 +1277,6 @@ auto SaddlePointSolver::setOptions(const SaddlePointOptions& options) -> void
 auto SaddlePointSolver::options() const -> const SaddlePointOptions&
 {
     return pimpl->options;
-}
-
-auto SaddlePointSolver::initialize(MatrixConstRef A) -> void
-{
-    return pimpl->initialize(A);
 }
 
 auto SaddlePointSolver::decompose(SaddlePointMatrix lhs) -> void

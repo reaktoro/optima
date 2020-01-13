@@ -39,6 +39,8 @@ void exportStepper(py::module& m)
             VectorConstRef,  // xlower
             VectorConstRef,  // xupper
             VectorConstRef,  // b
+            VectorConstRef,  // h
+            MatrixConstRef,  // J
             VectorConstRef,  // g
             MatrixConstRef   // H
         >())
@@ -49,6 +51,8 @@ void exportStepper(py::module& m)
         .def_readonly("xlower", &StepperProblem::xlower, "The lower bound values of the canonical optimization problem.")
         .def_readonly("xupper", &StepperProblem::xupper, "The upper bound values of the canonical optimization problem.")
         .def_readonly("b", &StepperProblem::b, "The right-hand side vector of the linear equality constraints of the canonical optimization problem.")
+        .def_readonly("h", &StepperProblem::h, "The value of the equality constraint function.")
+        .def_readonly("J", &StepperProblem::J, "The Jacobian of the equality constraint function.")
         .def_readonly("g", &StepperProblem::g, "The gradient of the objective function.")
         .def_readonly("H", &StepperProblem::H, "The Hessian of the objective function.")
         ;

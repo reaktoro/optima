@@ -18,6 +18,7 @@
 // pybind11 includes
 #include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
+#include <pybind11/stl.h>
 namespace py = pybind11;
 
 // Optima includes
@@ -29,8 +30,10 @@ void exportParams(py::module& m)
     py::class_<Params>(m, "Params")
         .def(py::init<>())
         .def_readwrite("be", &Params::be)
+        .def_readwrite("bi", &Params::bi)
         .def_readwrite("xlower", &Params::xlower)
         .def_readwrite("xupper", &Params::xupper)
         .def_readwrite("xfixed", &Params::xfixed)
+        .def_readwrite("extra", &Params::extra)
         ;
 }

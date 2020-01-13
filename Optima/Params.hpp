@@ -17,6 +17,9 @@
 
 #pragma once
 
+// C++ includes
+#include <any>
+
 // Optima includes
 #include <Optima/Matrix.hpp>
 #include <Optima/Objective.hpp>
@@ -27,8 +30,11 @@ namespace Optima {
 class Params
 {
 public:
-    /// The right-hand side vector of the linear equality constraint \eq{A_{e}x = b_{e}}.
+    /// The right-hand side vector of the linear equality constraints \eq{A_{\mathrm{e}}x = b_{\mathrm{e}}}.
     Vector be;
+
+    /// The right-hand side vector of the linear inequality constraints \eq{A_{\mathrm{i}}x = b_{\mathrm{i}}}.
+    Vector bi;
 
     /// The lower bounds of the variables in \eq{x} that have lower bounds.
     Vector xlower;
@@ -38,6 +44,9 @@ public:
 
     /// The values of the variables in \eq{x} that are fixed.
     Vector xfixed;
+
+    /// The extra parameters in the problem.
+    std::any extra;
 };
 
 } // namespace Optima

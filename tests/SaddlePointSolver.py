@@ -23,9 +23,9 @@ from itertools import product
 
 import Canonicalizer
 
-# The number of variables and number of equality constraints
-n = 10
-m = 5
+
+# The number of variables
+n = 15
 
 # Tested cases for the matrix A
 tested_matrices_A = Canonicalizer.tested_matrices_A
@@ -55,6 +55,10 @@ tested_jf = [
     array([1, 3, 7, 9])
 ]
 
+# Tested number of rows in matrix Au (upper block of A)
+tested_mu = [6, 4]
+tested_ml = [3, 1, 0]
+
 # Tested cases for the conditions of the variables in terms of pivot variables
 tested_variable_conditions = [
     'all-variables-pivot',
@@ -75,13 +79,17 @@ testdata = product(tested_matrices_A,
                    tested_structures_D,
                    tested_structures_G,
                    tested_jf,
+                   tested_mu,
+                   tested_ml,
                    tested_variable_conditions,
                    tested_methods)
 
 @mark.parametrize("args", testdata)
 def test_saddle_point_solver(args):
 
-    assemble_A, structure_H, structure_D, structure_G, jf, variable_condition, method = args
+    assemble_A, structure_H, structure_D, structure_G, jf, mu, ml, variable_condition, method = args
+
+    m = mu + ml
 
     t = m + n
 
@@ -90,6 +98,9 @@ def test_saddle_point_solver(args):
     expected = linspace(1, t, t)
 
     A = assemble_A(m, n, nf)
+
+    Au = A[:mu, :]  # extract the upper block of A
+    Al = A[mu:, :]  # extract the lower block of A
 
     H = eigen.randomSPD(n)
     D = eigen.random(n) if structure_D == 'diagonalD' else eigen.vector()
@@ -111,7 +122,7 @@ def test_saddle_point_solver(args):
     Hdiag[seq] = factor * Hdiag[seq]
 
     # Create the SaddlePointMatrix object
-    lhs = SaddlePointMatrix(H, D, A, G, jf)
+    lhs = SaddlePointMatrix(H, D, Au, Al, G, jf)
 
     # Use the SaddlePointMatrix object to create an array M
     M = lhs.array()
@@ -133,7 +144,6 @@ def test_saddle_point_solver(args):
     # Create a SaddlePointSolver to solve the saddle point problem
     solver = SaddlePointSolver()
     solver.setOptions(options)
-    solver.initialize(lhs.A)
     solver.decompose(lhs)
     solver.solve(rhs, sol)
 

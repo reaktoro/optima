@@ -25,7 +25,7 @@ namespace Optima {
 Problem::Problem()
 {}
 
-Problem::Problem(const Objective& objective, const Constraints& constraints)
+Problem::Problem(const ObjectiveFunction& objective, const Constraints& constraints)
 : m_objective(objective), m_constraints(constraints)
 {}
 
@@ -84,7 +84,7 @@ auto Problem::setFixedValues(VectorConstRef xfixed) -> void
     m_xfixed = xfixed;
 }
 
-auto Problem::objective() const -> const Objective&
+auto Problem::objective() const -> const ObjectiveFunction&
 {
     return m_objective;
 }

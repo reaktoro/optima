@@ -47,12 +47,12 @@ def print_state(M, r, s, m, n):
 
 # Tested number of variables in (s, l, u, z, w) partitions
 tested_dimensions = [
-#    m   ns  nl  nu  nz  nw
-    (5, 10, 0, 0, 0, 0),
-    (5, 8, 2, 0, 0, 0),
-    (5, 8, 0, 2, 0, 0),
-    (5, 8, 0, 0, 2, 0),
-    (5, 8, 0, 0, 0, 2),
+#    ns  nl  nu  nz  nw
+    (15,  0,  0,  0,  0),
+    (13,  2,  0,  0,  0),
+    (13,  0,  2,  0,  0),
+    (13,  0,  0,  2,  0),
+    (13,  0,  0,  0,  2),
 ]
 
 # Tested cases for the matrix A
@@ -71,6 +71,10 @@ tested_jf = [
     array([1, 3, 7, 9])
 ]
 
+# Tested number of rows in matrix Au (upper block of A)
+tested_mu = [6, 4]
+tested_ml = [3, 1, 0]
+
 # Tested cases for the saddle point methods
 tested_methods = [
     SaddlePointMethod.Fullspace,
@@ -83,15 +87,19 @@ testdata = product(tested_dimensions,
                    tested_matrices_A,
                    tested_structures_H,
                    tested_jf,
+                   tested_mu,
+                   tested_ml,
                    tested_methods
                    )
 
 
 @mark.parametrize("args", testdata)
 def test_ip_saddle_point_solver(args):
-    dimensions, assemble_A, structure_H, jf, method = args
+    dimensions, assemble_A, structure_H, jf, mu, ml, method = args
 
-    m, ns, nl, nu, nz, nw = dimensions
+    ns, nl, nu, nz, nw = dimensions
+
+    m = mu + ml
 
     n = ns + nl + nu + nz + nw
     t = 3 * n + m
@@ -104,6 +112,9 @@ def test_ip_saddle_point_solver(args):
     W = eigen.random(n)
     L = eigen.random(n)
     U = eigen.random(n)
+
+    Au = A[:mu, :]  # extract the upper block of A
+    Al = A[mu:, :]  # extract the lower block of A
 
     if method == SaddlePointMethod.Rangespace:
         H = eigen.diag(eigen.random(n))
@@ -123,7 +134,7 @@ def test_ip_saddle_point_solver(args):
     r = eigen.zeros(t)
 
     # The left-hand side coefficient matrix
-    lhs = IpSaddlePointMatrix(H, A, Z, W, L, U, jf)
+    lhs = IpSaddlePointMatrix(H, Au, Al, Z, W, L, U, jf)
 
     # The dense matrix assembled from lhs
     M = lhs.array()
@@ -139,7 +150,6 @@ def test_ip_saddle_point_solver(args):
     # Solve the interior-poin saddle point problem
     solver = IpSaddlePointSolver()
     solver.setOptions(options)
-    solver.initialize(A)
     solver.decompose(lhs)
     solver.solve(rhs, sol)
 

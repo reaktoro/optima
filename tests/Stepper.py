@@ -23,9 +23,8 @@ from itertools import product
 
 import Canonicalizer
 
-# The number of variables and number of equality constraints
-n = 10
-m = 5
+# The number of variables
+n = 15
 
 # Tested cases for the matrix A
 tested_matrices_A = Canonicalizer.tested_matrices_A
@@ -66,26 +65,38 @@ tested_methods = [
     SaddlePointMethod.Rangespace,
     ]
 
+# Tested number of rows in matrix A and J
+tested_mA = [6, 4]
+tested_mJ = [3, 1, 0]
+
 # Combination of all tested cases
 testdata = product(tested_matrices_A,
                    tested_structures_H,
+                   tested_mA,
+                   tested_mJ,
                    tested_jfixed,
                    tested_jlower,
                    tested_jupper,
                    tested_methods)
 
+
 @mark.parametrize("args", testdata)
 def test_stepper(args):
 
-    assemble_A, structure_H, jfixed, jlower, jupper, method = args
+    assemble_A, structure_H, mA, mJ, jfixed, jlower, jupper, method = args
 
     nfixed = len(jfixed)
     nlower = len(jlower)
     nupper = len(jupper)
 
+    m = mA + mJ
+
     t = 3*n + m
 
-    A = assemble_A(m, n, nfixed)
+    M = assemble_A(m, n, nfixed)
+
+    A = M[:mA, :]
+    J = M[mA:, :]
 
     constraints = Constraints(n)
     constraints.setVariablesWithFixedValues(jfixed)
@@ -103,29 +114,27 @@ def test_stepper(args):
     xupper = eigen.ones(nupper)
 
     b = A @ x  # *** IMPORTANT *** b = A*x is essential here when A has linearly dependent rows, because it ensures a consistent set of values for vector b (see note in the documentation of SaddlePointSolver class).
+    h = zeros(mJ)
+
     g = linspace(1, n, n)
     H = eigen.randomSPD(n)
 
     if method == SaddlePointMethod.Rangespace:
         H = abs(eigen.diag(eigen.random(n)))
 
-    problem = StepperProblem(x, y, z, w, xlower, xupper, b, g, H)
+    problem = StepperProblem(x, y, z, w, xlower, xupper, b, h, J, g, H)
 
     options = Options()
     options.kkt.method = method
 
     stepper = Stepper(constraints)
+
     stepper.setOptions(options)
     stepper.decompose(problem)
-
-    M = stepper.matrix(problem).array()
-
-    expected = linspace(1, t, t)
-    rhs = M.dot(expected)
-
     stepper.solve(problem)
 
+    M = stepper.matrix(problem).array()
     s = stepper.step().array()
     r = stepper.residual().array()
 
-    assert norm(M.dot(s) - r) / norm(r) == approx(0.0)
+    assert norm(M @ s - r) / norm(r) == approx(0.0)
