@@ -30,7 +30,7 @@ void exportComplementarityVariables(py::module& m);
 void exportIpSaddlePointMatrix(py::module& m);
 void exportIpSaddlePointSolver(py::module& m);
 void exportLagrangeMultipliers(py::module& m);
-void exportObjective(py::module& m);
+void exportObjectiveFunction(py::module& m);
 void exportOptions(py::module& m);
 void exportParams(py::module& m);
 void exportPartition(py::module& m);
@@ -59,7 +59,7 @@ PYBIND11_MODULE(optima, m)
     exportIpSaddlePointMatrix(m);
     exportIpSaddlePointSolver(m);
     exportLagrangeMultipliers(m);
-    exportObjective(m);
+    exportObjectiveFunction(m);
     exportOptions(m);
     exportParams(m);
     exportPartition(m);

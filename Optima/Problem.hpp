@@ -20,7 +20,7 @@
 // Optima includes
 #include <Optima/Constraints.hpp>
 #include <Optima/Matrix.hpp>
-#include <Optima/Objective.hpp>
+#include <Optima/ObjectiveFunction.hpp>
 
 namespace Optima {
 

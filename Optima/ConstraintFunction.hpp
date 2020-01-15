@@ -17,36 +17,25 @@
 
 #pragma once
 
-// C++ includes
-#include <any>
-
 // Optima includes
 #include <Optima/Matrix.hpp>
-#include <Optima/ObjectiveFunction.hpp>
 
 namespace Optima {
 
-/// The parameters of an optimization problem that change with more frequency.
-class Params
+/// The result of the evaluation of a constraint function.
+struct ConstraintResult
 {
-public:
-    /// The right-hand side vector of the linear equality constraints \eq{A_{\mathrm{e}}x = b_{\mathrm{e}}}.
-    Vector be;
+    /// The value of the evaluated constraint function.
+    VectorRef h;
 
-    /// The right-hand side vector of the linear inequality constraints \eq{A_{\mathrm{i}}x = b_{\mathrm{i}}}.
-    Vector bi;
+    /// The Jacobian matrix of the evaluated constraint function.
+    MatrixRef J;
 
-    /// The lower bounds of the variables in \eq{x} that have lower bounds.
-    Vector xlower;
-
-    /// The upper bounds of the variables \eq{x} that have upper bounds.
-    Vector xupper;
-
-    /// The values of the variables in \eq{x} that are fixed.
-    Vector xfixed;
-
-    /// The extra parameters in the problem.
-    std::any extra;
+    /// The boolean flag that indicates if the constraint function evaluation failed.
+    bool failed = false;
 };
+
+/// The signature of a constraint function.
+using ConstraintFunction = std::function<void(VectorConstRef, ConstraintResult&)>;
 
 } // namespace Optima

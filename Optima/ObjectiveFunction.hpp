@@ -30,13 +30,13 @@ class ObjectiveRequirement
 {
 public:
     /// The boolean flag that indicates the need for the objective value.
-    bool value = true;
+    bool f = true;
 
     /// The boolean flag that indicates the need for the objective gradient.
-    bool gradient = true;
+    bool g = true;
 
     /// The boolean flag that indicates the need for the objective Hessian.
-    bool hessian = true;
+    bool H = true;
 };
 
 /// The result of the evaluation of an objective function.
@@ -44,14 +44,16 @@ public:
 class ObjectiveResult
 {
 public:
+    ObjectiveResult(VectorRef g, MatrixRef H) : g(g), H(H) {}
+
     /// The evaluated value of the objective function.
-    double value = 0.0;
+    double f = {};
 
     /// The evaluated gradient of the objective function.
-    Vector gradient;
+    VectorRef g;
 
     /// The evaluated Hessian of the objective function.
-    Matrix hessian;
+    MatrixRef H;
 
     /// The requirements in the evaluation of the objective function.
     ObjectiveRequirement requires;

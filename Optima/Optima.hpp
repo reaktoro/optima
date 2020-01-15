@@ -26,7 +26,7 @@
 #include <Optima/IpSaddlePointMatrix.hpp>
 #include <Optima/IpSaddlePointSolver.hpp>
 #include <Optima/Matrix.hpp>
-#include <Optima/Objective.hpp>
+#include <Optima/ObjectiveFunction.hpp>
 #include <Optima/Options.hpp>
 #include <Optima/Outputter.hpp>
 #include <Optima/Params.hpp>

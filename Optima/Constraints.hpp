@@ -19,25 +19,10 @@
 
 // Optima includes
 #include <Optima/Dims.hpp>
+#include <Optima/ConstraintFunction.hpp>
 #include <Optima/Matrix.hpp>
 
 namespace Optima {
-
-/// The result of the evaluation of a constraint function.
-struct ConstraintResult
-{
-    /// The value of the evaluated constraint function.
-    Vector value;
-
-    /// The Jacobian matrix of the evaluated constraint function.
-    Matrix jacobian;
-
-    /// The boolean flag that indicates if the constraint function evaluation failed.
-    bool failed = false;
-};
-
-/// The signature of a constraint function.
-using ConstraintFunction = std::function<void(VectorConstRef, ConstraintResult&)>;
 
 /// The constraints in an optimization problem.
 struct Constraints2
