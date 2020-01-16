@@ -31,8 +31,6 @@ namespace Optima {
 
 // Forward declarations
 class Options;
-class Params;
-class Problem;
 class Result;
 
 /// The state of the solution of a basic optimization problem.
