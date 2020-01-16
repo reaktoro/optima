@@ -88,40 +88,28 @@ public:
 class IpSaddlePointVector
 {
 public:
-    /// The saddle point sub-vector \eq{x}.
-    VectorConstRef x;
-
-    /// The saddle point sub-vector \eq{y}.
-    VectorConstRef y;
-
-    /// The saddle point sub-vector \eq{z}.
-    VectorConstRef z;
-
-    /// The saddle point sub-vector \eq{w}.
-    VectorConstRef w;
-
-    /// The saddle point right-hand side sub-vector \eq{a} *(this is an alias to x)*.
+    /// The saddle point right-hand side sub-vector \eq{a}.
     VectorConstRef a;
 
-    /// The saddle point right-hand side sub-vector \eq{b} *(this is an alias to y)*.
+    /// The saddle point right-hand side sub-vector \eq{b}.
     VectorConstRef b;
 
-    /// The saddle point right-hand side sub-vector \eq{c} *(this is an alias to z)*.
+    /// The saddle point right-hand side sub-vector \eq{c}.
     VectorConstRef c;
 
-    /// The saddle point right-hand side sub-vector \eq{d} *(this is an alias to w)*.
+    /// The saddle point right-hand side sub-vector \eq{d}.
     VectorConstRef d;
 
     /// Construct an IpSaddlePointVector instance with given \eq{(a,b,c,d)} vectors.
-    /// @param x The saddle point sub-vector \eq{x}.
-    /// @param y The saddle point sub-vector \eq{y}.
-    /// @param z The saddle point sub-vector \eq{z}.
-    /// @param w The saddle point sub-vector \eq{w}.
+    /// @param a The saddle point sub-vector \eq{x}.
+    /// @param b The saddle point sub-vector \eq{y}.
+    /// @param c The saddle point sub-vector \eq{z}.
+    /// @param d The saddle point sub-vector \eq{w}.
     IpSaddlePointVector(
-        VectorConstRef x,
-        VectorConstRef y,
-        VectorConstRef z,
-        VectorConstRef w);
+        VectorConstRef a,
+        VectorConstRef b,
+        VectorConstRef c,
+        VectorConstRef d);
 
     /// Construct an IpSaddlePointVector instance with given vector.
     /// @param r The vector \eq{r=\begin{bmatrix}x & y & z & w\end{bmatrix}}.
