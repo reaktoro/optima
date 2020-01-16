@@ -493,10 +493,10 @@ struct BasicSolver::Impl
         auto w = state.w;
 
 		// Aliases to Newton steps calculated before
-		VectorConstRef dx = stepper.step().x;
-		VectorConstRef dy = stepper.step().y;
-		VectorConstRef dz = stepper.step().z;
-		VectorConstRef dw = stepper.step().w;
+		VectorConstRef dx = stepper.step().a;
+		VectorConstRef dy = stepper.step().b;
+		VectorConstRef dz = stepper.step().c;
+		VectorConstRef dw = stepper.step().d;
 
         // The indices of variables with lower/upper bounds and fixed values
         auto ilower = problem.constraints.ilower;
@@ -632,7 +632,7 @@ struct BasicSolver::Impl
     auto converged() const -> bool
     {
         // Check if the calculation should stop based on max variation of x
-        if(options.tolerancex && max(abs(stepper.step().x)) < options.tolerancex)
+        if(options.tolerancex && max(abs(stepper.step().a)) < options.tolerancex)
             return true;
 
         // todo you want to make sure the test for convergence should consider the residual of

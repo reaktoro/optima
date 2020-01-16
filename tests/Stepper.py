@@ -122,12 +122,27 @@ def test_stepper(args):
     if method == SaddlePointMethod.Rangespace:
         H = abs(eigen.diag(eigen.random(n)))
 
-    problem = StepperProblem(x, y, z, w, xlower, xupper, b, h, J, g, H)
+    problem = StepperProblem(
+        x,
+        y,
+        z,
+        w,
+        A,
+        b,
+        h,
+        J,
+        g,
+        H,
+        xlower,
+        xupper,
+        jlower,
+        jupper,
+        jfixed)
 
     options = Options()
     options.kkt.method = method
 
-    stepper = Stepper(constraints)
+    stepper = Stepper()
 
     stepper.setOptions(options)
     stepper.decompose(problem)

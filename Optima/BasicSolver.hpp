@@ -91,9 +91,8 @@ struct BasicConstraints
 };
 
 /// The parameters of a basic optimization problem.
-class BasicParams
+struct BasicParams
 {
-public:
     /// The right-hand side vector of the linear equality constraints \eq{Ax = b}.
     Vector b;
 
