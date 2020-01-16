@@ -76,12 +76,6 @@ struct BasicSolver::Impl
     /// The calculator of the Newton step (dx, dy, dz, dw)
     Stepper stepper;
 
-    /// The matrix A of the linear equality constraints Ax = b
-    Matrix A;
-
-    /// The vector b of the linear equality constraints Ax = b
-    Vector b;
-
     /// The result of the non-linear equality constraint function h(x)
     Vector h;
 
@@ -175,8 +169,6 @@ struct BasicSolver::Impl
         nx = n - nf;
 
         // Allocate memory
-        b.resize(mb);
-        A.resize(mb, n);
         h.resize(mh);
         J.resize(mh, n);
         g.resize(n);
