@@ -27,34 +27,85 @@ namespace py = pybind11;
 #include <Optima/Result.hpp>
 using namespace Optima;
 
-/// An workaround to expose ObjectiveFunction to python because of ObjectiveResult reference argument.
-using ObjectiveFunction4Py = std::function<void(VectorConstRef, ObjectiveResult*)>;
+/// A workaround to expose BasicConstraints to python because of ConstraintFunction.
+struct BasicConstraints4py
+{
+    /// The coefficient matrix of the linear equality constraint equations \eq{Ax=b}.
+    Matrix A;
 
-/// An workaround to expose BasicProblem to python because of ObjectiveFunction.
-struct BasicProblem4Py
+    /// The constraint function in the non-linear equality constraint equations \eq{h(x) = 0}.
+    ConstraintFunction4py h;
+
+    /// The indices of the variables with lower bounds.
+    Indices ilower;
+
+    /// The indices of the variables with upper bounds.
+    Indices iupper;
+
+    /// The indices of the variables with fixed values.
+    Indices ifixed;
+};
+
+/// A workaround to expose BasicProblem to python because of ObjectiveFunction.
+struct BasicProblem4py
 {
     /// The dimensions of the basic optimization problem.
     BasicDims dims;
 
     /// The constraints of the basic optimization problem.
-    BasicConstraints constraints;
+    BasicConstraints4py constraints;
 
     /// The objective function of the basic optimization problem.
-    ObjectiveFunction4Py objective;
+    ObjectiveFunction4py objective;
 };
 
-/// Convert an ObjectiveFunction4Py function to an ObjectiveFunction function.
-auto convert(const ObjectiveFunction4Py& obj4py)
+/// Convert an ObjectiveFunction4py function to an ObjectiveFunction function.
+auto convert(const ObjectiveFunction4py& obj4py) -> ObjectiveFunction
 {
-    return [=](VectorConstRef x, ObjectiveResult& f) { obj4py(x, &f); };
+    if(obj4py == nullptr)
+        return {};
+
+    return [=](VectorConstRef x, ObjectiveResult& res)
+    {
+        ObjectiveResult4py res4py(res);
+        obj4py(x, &res4py);
+        res.f = res4py.f;
+        res.failed = res4py.failed;
+    };
 }
 
-/// Convert a BasicProblem4Py objecto to a BasicProblem object.
-auto convert(const BasicProblem4Py& problem4py)
+/// Convert a ConstraintFunction4py function to a ConstraintFunction function.
+auto convert(const ConstraintFunction4py& constraintfn4py) -> ConstraintFunction
+{
+    if(constraintfn4py == nullptr)
+        return {};
+
+    return [=](VectorConstRef x, ConstraintResult& res)
+    {
+        ConstraintResult4py res4py(res);
+        constraintfn4py(x, &res4py);
+        res.failed = res4py.failed;
+    };
+}
+
+/// Convert a BasicConstraints4py object to a BasicConstraints object.
+auto convert(const BasicConstraints4py& constraints4py)
+{
+    return BasicConstraints{
+        constraints4py.A,
+        convert(constraints4py.h),
+        constraints4py.ilower,
+        constraints4py.iupper,
+        constraints4py.ifixed
+    };
+}
+
+/// Convert a BasicProblem4py object to a BasicProblem object.
+auto convert(const BasicProblem4py& problem4py)
 {
     return BasicProblem{
         problem4py.dims,
-        problem4py.constraints,
+        convert(problem4py.constraints),
         convert(problem4py.objective)
     };
 }
@@ -63,6 +114,7 @@ void exportBasicSolver(py::module& m)
 {
     py::class_<BasicState>(m, "BasicState")
         .def(py::init<>())
+        .def(py::init<Index, Index>(), "Construct a BasicState object with given dimension values.", py::arg("n"), py::arg("m"))
         .def_readwrite("x", &BasicState::x, "The primal variables of the basic optimization problem.")
         .def_readwrite("y", &BasicState::y, "The Lagrange multipliers with respect to the equality constraints Ax = b and h(x) = 0.")
         .def_readwrite("z", &BasicState::z, "The slack variables with respect to the lower bounds of the primal variables.")
@@ -79,13 +131,13 @@ void exportBasicSolver(py::module& m)
         .def_readwrite("xfixed", &BasicDims::xfixed, "The number of variables with fixed values (equivalent to the dimension of vector xf).")
         ;
 
-    py::class_<BasicConstraints>(m, "BasicConstraints")
+    py::class_<BasicConstraints4py>(m, "BasicConstraints")
         .def(py::init<>())
-        .def_readwrite("A", &BasicConstraints::A, "The coefficient matrix of the linear equality constraint equations Ax = b.")
-        .def_readwrite("h", &BasicConstraints::h, "The constraint function in the non-linear equality constraint equations h(x) = 0.")
-        .def_readwrite("ilower", &BasicConstraints::ilower, "The indices of the variables with lower bounds.")
-        .def_readwrite("iupper", &BasicConstraints::iupper, "The indices of the variables with upper bounds.")
-        .def_readwrite("ifixed", &BasicConstraints::ifixed, "The indices of the variables with fixed values.")
+        .def_readwrite("A", &BasicConstraints4py::A, "The coefficient matrix of the linear equality constraint equations Ax = b.")
+        .def_readwrite("h", &BasicConstraints4py::h, "The constraint function in the non-linear equality constraint equations h(x) = 0.")
+        .def_readwrite("ilower", &BasicConstraints4py::ilower, "The indices of the variables with lower bounds.")
+        .def_readwrite("iupper", &BasicConstraints4py::iupper, "The indices of the variables with upper bounds.")
+        .def_readwrite("ifixed", &BasicConstraints4py::ifixed, "The indices of the variables with fixed values.")
         ;
 
     py::class_<BasicParams>(m, "BasicParams")
@@ -97,15 +149,15 @@ void exportBasicSolver(py::module& m)
         .def_readwrite("extra", &BasicParams::extra, "The extra parameters in the problem.")
         ;
 
-    py::class_<BasicProblem4Py>(m, "BasicProblem")
+    py::class_<BasicProblem4py>(m, "BasicProblem")
         .def(py::init<>())
-        .def_readwrite("dims", &BasicProblem4Py::dims, "The dimensions of the basic optimization problem.")
-        .def_readwrite("constraints", &BasicProblem4Py::constraints, "The constraints of the basic optimization problem.")
-        .def_readwrite("objective", &BasicProblem4Py::objective, "The objective function of the basic optimization problem.")
+        .def_readwrite("dims", &BasicProblem4py::dims, "The dimensions of the basic optimization problem.")
+        .def_readwrite("constraints", &BasicProblem4py::constraints, "The constraints of the basic optimization problem.")
+        .def_readwrite("objective", &BasicProblem4py::objective, "The objective function of the basic optimization problem.")
         ;
 
-	// A constructor function for BasicSolver that accepts BasicProblem4Py instead of BasicProblem.
-    auto initBasicSolver = [](const BasicProblem4Py& problem4py)
+	// A constructor function for BasicSolver that accepts BasicProblem4py instead of BasicProblem.
+    auto initBasicSolver = [](const BasicProblem4py& problem4py)
     {
         return BasicSolver(convert(problem4py));
     };

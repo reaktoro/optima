@@ -26,10 +26,10 @@ using namespace Optima;
 
 void exportConstraintFunction(py::module& m)
 {
-    py::class_<ConstraintResult>(m, "ConstraintResult")
-        .def(py::init<VectorRef, MatrixRef>())
-        .def_readwrite("h", &ConstraintResult::h, "The value of the evaluated constraint function.")
-        .def_readwrite("J", &ConstraintResult::J, "The Jacobian matrix of the evaluated constraint function.")
-        .def_readwrite("failed", &ConstraintResult::failed, "The boolean flag that indicates if the constraint function evaluation failed.")
+    py::class_<ConstraintResult4py>(m, "ConstraintResult")
+        .def(py::init<ConstraintResult&>())
+        .def_readwrite("h", &ConstraintResult4py::h, "The value of the evaluated constraint function.")
+        .def_readwrite("J", &ConstraintResult4py::J, "The Jacobian matrix of the evaluated constraint function.")
+        .def_readwrite("failed", &ConstraintResult4py::failed, "The boolean flag that indicates if the constraint function evaluation failed.")
         ;
 }

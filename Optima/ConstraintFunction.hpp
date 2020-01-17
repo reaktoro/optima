@@ -35,7 +35,26 @@ struct ConstraintResult
     bool failed = false;
 };
 
+/// The result of the evaluation of a constraint function in Python.
+struct ConstraintResult4py
+{
+    /// The value of the evaluated constraint function.
+    VectorRef h;
+
+    /// The Jacobian matrix of the evaluated constraint function.
+    MatrixRef4py J;
+
+    /// The boolean flag that indicates if the constraint function evaluation failed.
+    bool failed = false;
+
+    /// Construct a ConstraintResult4py object with given ConstraintResult object.
+    ConstraintResult4py(ConstraintResult& res) : h(res.h), J(res.J) {}
+};
+
 /// The signature of a constraint function.
 using ConstraintFunction = std::function<void(VectorConstRef, ConstraintResult&)>;
+
+/// The signature of a constraint function in Python.
+using ConstraintFunction4py = std::function<void(VectorConstRef, ConstraintResult4py*)>;
 
 } // namespace Optima

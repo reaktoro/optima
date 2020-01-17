@@ -47,6 +47,14 @@ struct BasicState
 
     /// The slack variables with respect to the upper bounds of the primal variables,
     Vector w;
+
+    /// Construct a default BasicState object.
+    BasicState() {}
+
+    /// Construct a BasicState object with given dimension values.
+    /// @param n The number of primary variables in \eq{x}
+    /// @param m The number of Lagrange multipliers in \eq{y=(y_{b},y_{h})}
+    BasicState(Index n, Index m) : x(zeros(n)), y(zeros(m)), z(zeros(n)), w(zeros(n)) {}
 };
 
 /// The dimensions of variables and constraints in a basic optimization problem.

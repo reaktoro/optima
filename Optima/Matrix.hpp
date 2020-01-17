@@ -26,4 +26,10 @@ namespace Optima {
 
 #include <Optima/deps/eigenx/Eigen/Typedefs>
 
+/// An alias for a more general Eigen matrix reference to be used in Python.
+/// The need for this special type is due to the different order in which Eigen matrices
+/// and numpy arrays arrange their memory, with Eigen using column-major order and numpy
+/// using row-major order. See this discussion [here](https://pybind11.readthedocs.io/en/stable/advanced/cast/eigen.html#storage-orders).
+using MatrixRef4py = Eigen::Ref<Matrix, 0, Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic>>;
+
 } // namespace Optima

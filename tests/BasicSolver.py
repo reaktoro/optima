@@ -106,6 +106,7 @@ def test_basic_solver(args):
 
     # Set the constraint information of the problem
     problem.constraints.A = A
+    # problem.constraints.h = constraint_fn
     problem.constraints.ilower = jlower
     problem.constraints.iupper = jupper
     problem.constraints.ifixed = jfixed
@@ -121,7 +122,7 @@ def test_basic_solver(args):
     w_expected = zeros(n)
     w_expected[jupper] = -1.0  # Slack variables w are -1 at active upper bounds
 
-    jx = constraints.variablesWithoutFixedValues()
+    jx = list(set(range(n)) - set(jfixed))
 
     Ax = A[:, jx]  # The columns of A corresponding to free variables
     Atx = array(transpose(Ax))
@@ -135,18 +136,15 @@ def test_basic_solver(args):
     x_expected[jfixed] = linspace(1, nfixed, nfixed)
 
     params = BasicParams()
-    params.be = A.dot(x_expected)  # Use expected values of x to compute b
-    # Use expected values of x for the fixed values
-    params.xfixed = x_expected[jfixed]
-    # Use expected values of x for the lower bounds
-    params.xlower = x_expected[jlower]
-    # Use expected values of x for the upper bounds
-    params.xupper = x_expected[jupper]
+    params.b      = A.dot(x_expected)  # Use expected values of x to compute b
+    params.xfixed = x_expected[jfixed] # Use expected values of x for the fixed values
+    params.xlower = x_expected[jlower] # Use expected values of x for the lower bounds
+    params.xupper = x_expected[jupper] # Use expected values of x for the upper bounds
 
-    state = BasicState()
+    state = BasicState(n, m)
 
     options = Options()
-#     options.output.active = True
+    # options.output.active = True
     options.kkt.method = method
 
     solver = BasicSolver(problem)

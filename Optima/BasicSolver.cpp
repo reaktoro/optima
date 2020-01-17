@@ -127,32 +127,12 @@ struct BasicSolver::Impl
     /// The number of constraints.
     Index m;
 
-    /// The total number of variables (x, yb, yh, z, w).
+    /// The total number of variables (x, y, z, w).
     Index t;
 
     /// Initialize the optimization solver with the objective and constraints of the problem.
     Impl()
     {}
-
-    // /// Initialize the optimization solver with the objective and constraints of the problem.
-    // Impl(const ObjectiveFunction& objective, const Constraints& constraints)
-    // : objective(objective), constraints(constraints)
-    // {
-    //     // Initialize the members related to number of variables and constraints
-    //     n = constraints.numVariables();
-    //     m = constraints.numLinearEqualityConstraints();
-
-    //     // Initialize the number of fixed and free variables in x
-    //     nf = constraints.variablesWithFixedValues().size();
-    //     nx = n - nf;
-
-    //     // Allocate memory
-    //     xtrial.resize(n);
-
-    //     // Initialize xlower and xupper with -inf and +inf
-    //     xlower = constants(n, -infinity());
-    //     xupper = constants(n,  infinity());
-    // }
 
     /// Initialize the optimization solver with the objective and constraints of the problem.
     Impl(const BasicProblem& problem)
@@ -178,6 +158,16 @@ struct BasicSolver::Impl
         // Initialize xlower and xupper with -inf and +inf
         xlower = constants(n, -infinity());
         xupper = constants(n,  infinity());
+
+        // Ensure the objective function has been set in the problem.
+        Assert(problem.objective != nullptr,
+            "Could not initialize BasicSolver.",
+                "No objective function given (BasicProblem::objective is empty).");
+
+        // Ensure the objective function has been set in the problem.
+        Assert(mh == 0 or problem.constraints.h != nullptr,
+            "Could not initialize BasicSolver.",
+                "No constraint function given (BasicProblem::BasicConstraints::h is empty).");
     }
 
     /// Set the options for the optimization calculation.
@@ -329,7 +319,7 @@ struct BasicSolver::Impl
     auto evaluateObjectiveFunction(const BasicParams& params, BasicState& state) -> void
 	{
         // Create an ObjectiveResult with f, g, H to be filled
-        ObjectiveResult res(g, H);
+        ObjectiveResult res(f, g, H);
 
         // Establish the current needs for the objective function evaluation
         res.requires.f = true;
@@ -338,13 +328,15 @@ struct BasicSolver::Impl
 
         // Evaluate the objective function f(x)
         problem.objective(state.x, res);
-
-        f = res.f;
 	}
 
     // Evaluate the equality constraint function
     auto evaluateConstraintFunction(const BasicParams& params, BasicState& state) -> void
 	{
+        // Skip if there are no non-linear equality constraints
+        if(mh == 0)
+            return;
+
         // Create a ConstraintResult with h and J to be filled
         ConstraintResult res{h, J};
 
@@ -487,16 +479,16 @@ struct BasicSolver::Impl
 	auto applyNewtonSteppingAggressive(const BasicParams& params, BasicState& state) -> void
 	{
         // Aliases to canonical variables
-        auto x = state.x;
-        auto y = state.y;
-        auto z = state.z;
-        auto w = state.w;
+        auto& x = state.x;
+        auto& y = state.y;
+        auto& z = state.z;
+        auto& w = state.w;
 
 		// Aliases to Newton steps calculated before
-		VectorConstRef dx = stepper.step().a;
-		VectorConstRef dy = stepper.step().b;
-		VectorConstRef dz = stepper.step().c;
-		VectorConstRef dw = stepper.step().d;
+		const auto& dx = stepper.step().a;
+		const auto& dy = stepper.step().b;
+		const auto& dz = stepper.step().c;
+		const auto& dw = stepper.step().d;
 
         // The indices of variables with lower/upper bounds and fixed values
         auto ilower = problem.constraints.ilower;
