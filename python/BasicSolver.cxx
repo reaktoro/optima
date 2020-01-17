@@ -18,6 +18,7 @@
 // pybind11 includes
 #include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
+#include <pybind11/functional.h>
 namespace py = pybind11;
 
 // Optima includes
@@ -61,6 +62,7 @@ auto convert(const BasicProblem4Py& problem4py)
 void exportBasicSolver(py::module& m)
 {
     py::class_<BasicState>(m, "BasicState")
+        .def(py::init<>())
         .def_readwrite("x", &BasicState::x, "The primal variables of the basic optimization problem.")
         .def_readwrite("y", &BasicState::y, "The Lagrange multipliers with respect to the equality constraints Ax = b and h(x) = 0.")
         .def_readwrite("z", &BasicState::z, "The slack variables with respect to the lower bounds of the primal variables.")
@@ -68,6 +70,7 @@ void exportBasicSolver(py::module& m)
         ;
 
     py::class_<BasicDims>(m, "BasicDims")
+        .def(py::init<>())
         .def_readwrite("x", &BasicDims::x, "The number of variables (equivalent to the dimension of vector x).")
         .def_readwrite("b", &BasicDims::b, "The number of linear equality constraint equations (equivalent to the dimension of vector b).")
         .def_readwrite("h", &BasicDims::h, "The number of non-linear equality constraint equations (equivalent to the dimension of vector h).")
@@ -77,6 +80,7 @@ void exportBasicSolver(py::module& m)
         ;
 
     py::class_<BasicConstraints>(m, "BasicConstraints")
+        .def(py::init<>())
         .def_readwrite("A", &BasicConstraints::A, "The coefficient matrix of the linear equality constraint equations Ax = b.")
         .def_readwrite("h", &BasicConstraints::h, "The constraint function in the non-linear equality constraint equations h(x) = 0.")
         .def_readwrite("ilower", &BasicConstraints::ilower, "The indices of the variables with lower bounds.")
@@ -85,6 +89,7 @@ void exportBasicSolver(py::module& m)
         ;
 
     py::class_<BasicParams>(m, "BasicParams")
+        .def(py::init<>())
         .def_readwrite("b", &BasicParams::b, "The right-hand side vector of the linear equality constraints Ax = b.")
         .def_readwrite("xlower", &BasicParams::xlower, "The lower bounds of the variables in x that have lower bounds.")
         .def_readwrite("xupper", &BasicParams::xupper, "The upper bounds of the variables x that have upper bounds.")
@@ -93,6 +98,7 @@ void exportBasicSolver(py::module& m)
         ;
 
     py::class_<BasicProblem4Py>(m, "BasicProblem")
+        .def(py::init<>())
         .def_readwrite("dims", &BasicProblem4Py::dims, "The dimensions of the basic optimization problem.")
         .def_readwrite("constraints", &BasicProblem4Py::constraints, "The constraints of the basic optimization problem.")
         .def_readwrite("objective", &BasicProblem4Py::objective, "The objective function of the basic optimization problem.")
