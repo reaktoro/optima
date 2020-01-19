@@ -21,11 +21,11 @@ from numpy.linalg import norm
 from pytest import approx, mark
 from itertools import product
 
-import Canonicalizer
+from utils.matrices import testing_matrix_structures
 
 
 def print_state(M, r, s, m, n):
-    set_printoptions(linewidth=1000, precision=10, threshold='nan')
+    set_printoptions(linewidth=1000, precision=10, threshold=10000)
     slu = eigen.solve(M, r)
     print( 'M = \n', M )
     print( 'r        = ', r )
@@ -56,7 +56,7 @@ tested_dimensions = [
 ]
 
 # Tested cases for the matrix A
-tested_matrices_A = Canonicalizer.tested_matrices_A
+tested_matrices_A = testing_matrix_structures
 
 # Tested cases for the structure of matrix H
 tested_structures_H = [
@@ -106,7 +106,9 @@ def test_ip_saddle_point_solver(args):
 
     nf = len(jf)
 
-    A = assemble_A(m, n, nf)
+    jx = list(set(range(n)) - set(jf))  # indices of free variables
+
+    A = assemble_A(m, n, jf)
     H = eigen.random(n, n)
     Z = eigen.random(n)
     W = eigen.random(n)
@@ -119,11 +121,11 @@ def test_ip_saddle_point_solver(args):
     if method == SaddlePointMethod.Rangespace:
         H = eigen.diag(eigen.random(n))
 
-    if nl > 0: L[:nl] = 1.0e-3; Z[:nl] = 1.0
-    if nu > 0: U[:nu] = 1.0e-3; W[:nu] = 1.0
+    if nl > 0: L[jx[:nl]] = 1.0e-3; Z[jx[:nl]] = 1.0  # jx[:nl] means last nl free variables
+    if nu > 0: U[jx[:nu]] = 1.0e-3; W[jx[:nu]] = 1.0  # jx[:nu] means last nl free variables
 
-    if nz > 0: L[nl:nz] = 1.0e-18; Z[nl:nz] = 1.0
-    if nw > 0: U[nu:nw] = 1.0e-18; W[nu:nw] = 1.0
+    if nz > 0: L[jx[nl:nz]] = 1.0e-18; Z[jx[nl:nz]] = 1.0  # jx[nl:nz] means free variables in the inverval (nl:nz)
+    if nw > 0: U[jx[nu:nw]] = 1.0e-18; W[jx[nu:nw]] = 1.0  # jx[nu:nw] means free variables in the inverval (nu:nw)
 
     expected = linspace(1, t, t)
 
@@ -154,8 +156,18 @@ def test_ip_saddle_point_solver(args):
     solver.solve(rhs, sol)
 
     # Comment out line below to get further insight of the results when an error happens
-#     print_state(M, r, s, m, n)
+    # print_state(M, r, s, m, n)
 
     # Check the residual of the equation M * s = r
+    if norm(M.dot(s) - r) / norm(r) != approx(0.0):
+        print_state(M, r, s, m, n)
+        print(f"dimensions = {dimensions}")
+        print(f"assemble_A = {assemble_A}")
+        print(f"structure_H = {structure_H}")
+        print(f"jf = {jf}")
+        print(f"mu = {mu}")
+        print(f"ml = {ml}")
+        print(f"method = {method}")
+
     assert norm(M.dot(s) - r) / norm(r) == approx(0.0)
 

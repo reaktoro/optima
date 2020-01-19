@@ -21,14 +21,14 @@ from numpy.linalg import norm
 from pytest import approx, mark
 from itertools import product
 
-import Canonicalizer
+from utils.matrices import testing_matrix_structures
 
 
 # The number of variables
 n = 15
 
 # Tested cases for the matrix A
-tested_matrices_A = Canonicalizer.tested_matrices_A
+tested_matrices_A = testing_matrix_structures
 
 # Tested cases for the structure of matrix H
 tested_structures_H = [
@@ -97,7 +97,7 @@ def test_saddle_point_solver(args):
 
     expected = linspace(1, t, t)
 
-    A = assemble_A(m, n, nf)
+    A = assemble_A(m, n, jf)
 
     Au = A[:mu, :]  # extract the upper block of A
     Al = A[mu:, :]  # extract the lower block of A

@@ -21,14 +21,14 @@ from numpy.linalg import norm
 from pytest import approx, mark
 from itertools import product
 
-import Canonicalizer
+from utils.matrices import testing_matrix_structures
 
 # The number of variables and number of equality constraints
-n = 10
+n = 15
 m = 5
 
 # Tested cases for the matrix A
-tested_matrices_A = Canonicalizer.tested_matrices_A
+tested_matrices_A = testing_matrix_structures
 
 # Tested cases for the structure of matrix H
 tested_structures_H = [
@@ -92,7 +92,7 @@ def test_basic_solver(args):
     nupper = len(jupper)
     nfixed = len(jfixed)
 
-    A = assemble_A(m, n, nfixed)
+    A = assemble_A(m, n, jfixed)
 
     problem = BasicProblem()
 
@@ -152,6 +152,20 @@ def test_basic_solver(args):
     res = solver.solve(params, state)
 
 #     print state.x
+
+    if not res.succeeded:
+        set_printoptions(linewidth=100000)
+        print(f"A = \n{A}")
+
+        state = BasicState(n, m)
+
+        options = Options()
+        options.output.active = True
+        options.kkt.method = method
+
+        solver = BasicSolver(problem)
+        solver.setOptions(options)
+        res = solver.solve(params, state)
 
     assert res.succeeded
 

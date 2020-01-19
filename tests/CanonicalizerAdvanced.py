@@ -21,7 +21,7 @@ from numpy.linalg import norm, inv
 from pytest import approx, mark
 from itertools import product
 
-import Canonicalizer
+from utils.matrices import testing_matrix_structures
 
 
 def check_canonical_form(canonicalizer, A, J):
@@ -33,14 +33,11 @@ def check_canonical_form(canonicalizer, A, J):
     C = canonicalizer.C()
 
     # Check R*[A; J]*Q == C
-    print(f'R.shape = {R.shape}')
-    print(f'M.shape = {M.shape}')
-    print(f'C.shape = {C.shape}')
     # assert norm(R @ M[:,Q] - C) / norm(C) == approx(0.0)
     aux = R @ M[:,Q]
 
-    print(f'aux\n{aux}')
-    print(f'C\n{C}')
+    print(f"aux = \n{aux}")
+    print(f"C = \n{C}")
 
     assert allclose(aux, C)
 
@@ -92,10 +89,8 @@ def check_canonicalizer(canonicalizer, A, J):
     # check_canonical_ordering(canonicalizer, weigths)
 
 
-
-
 # Tested cases for the matrix A
-tested_matrices_A = Canonicalizer.tested_matrices_A
+tested_matrices_A = testing_matrix_structures
 
 # Tested number of rows in matrix Au and Al (upper and lower blocks of A)
 tested_mu = [7, 3]
@@ -109,7 +104,7 @@ testdata = product(tested_matrices_A,
 @mark.parametrize("args", testdata)
 def test_canonicalizer(args):
 
-    set_printoptions(linewidth=100000, precision=6, floatmode='fixed')
+    set_printoptions(linewidth=100000, precision=6, floatmode='fixed', threshold=100000)
 
 
     assemble_A, mu, ml = args

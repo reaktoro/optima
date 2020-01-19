@@ -21,13 +21,13 @@ from numpy.linalg import norm
 from pytest import approx, mark
 from itertools import product
 
-import Canonicalizer
+from utils.matrices import testing_matrix_structures
 
 # The number of variables
 n = 15
 
 # Tested cases for the matrix A
-tested_matrices_A = Canonicalizer.tested_matrices_A
+tested_matrices_A = testing_matrix_structures
 
 # Tested cases for the structure of matrix H
 tested_structures_H = [
@@ -93,7 +93,7 @@ def test_stepper(args):
 
     t = 3*n + m
 
-    M = assemble_A(m, n, nfixed)
+    M = assemble_A(m, n, jfixed)
 
     A = M[:mA, :]
     J = M[mA:, :]

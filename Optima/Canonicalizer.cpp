@@ -24,6 +24,7 @@
 #include <Optima/deps/eigen3/Eigen/Dense>
 
 // Optima includes
+#include <Optima/Exception.hpp>
 #include <Optima/IndexUtils.hpp>
 #include <Optima/Utils.hpp>
 
@@ -154,18 +155,18 @@ struct Canonicalizer::Impl
         const Index r = numBasicVariables();
 
         // Check if ib < rank(A)
-        assert(ib < r &&
-            "Could not swap basic and non-basic variables. "
+        Assert(ib < r,
+            "Could not swap basic and non-basic variables.",
                 "Expecting an index of basic variable below `r`, where `r = rank(A)`.");
 
         // Check if in < n - rank(A)
-        assert(in < lu.cols() - r &&
-            "Could not swap basic and non-basic variables. "
+        Assert(in < lu.cols() - r,
+            "Could not swap basic and non-basic variables.",
                 "Expecting an index of non-basic variable below `n - r`, where `r = rank(A)`.");
 
         // Check if S(ib, in) is different than zero
-        assert(std::abs(S(ib, in)) > threshold &&
-            "Could not swap basic and non-basic variables. "
+        Assert(std::abs(S(ib, in)) > threshold,
+            "Could not swap basic and non-basic variables.",
                 "Expecting a non-basic variable with non-zero pivot.");
 
         // Initialize the matrix M

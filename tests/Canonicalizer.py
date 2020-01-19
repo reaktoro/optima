@@ -19,49 +19,25 @@ from optima import *
 from numpy import *
 from numpy.linalg import norm, inv
 from pytest import approx, mark
+from itertools import product
+
+from utils.matrices import testing_matrix_structures
 
 
-def assemble_matrix_A_with_linearly_independent_rows_only(m, n, nf=0):
-    A = eigen.randomSPD(n)
-    return A[:m, :]
+# Tested cases for the structures of matrix A
+tested_matrices_A = testing_matrix_structures
 
-
-def assemble_matrix_A_with_one_linearly_dependent_row(m, n, nf=0):
-    A = assemble_matrix_A_with_linearly_independent_rows_only(m, n, nf)
-    A[2, :] = 2*A[0, :] + A[1, :]
-    return A
-
-
-def assemble_matrix_A_with_two_linearly_dependent_rows(m, n, nf=0):
-    A = assemble_matrix_A_with_linearly_independent_rows_only(m, n, nf)
-    A[2, :] = 2*A[0, :] + A[1, :]
-    A[3, :] = A[1, :]
-    return A
-
-
-def assemble_matrix_A_with_one_basic_fixed_variable(m, n, nf=0):
-    A = assemble_matrix_A_with_linearly_independent_rows_only(m, n, nf)
-    A[-1, -nf] = 0.0
-    return A
-
-
-def assemble_matrix_A_with_two_basic_fixed_variables(m, n, nf=0):
-    A = assemble_matrix_A_with_linearly_independent_rows_only(m, n, nf)
-    A[-2, -nf] = 0.0
-    A[-1, -nf] = 0.0
-    return A
-
-
-tested_matrices_A = [
-    assemble_matrix_A_with_linearly_independent_rows_only,
-    assemble_matrix_A_with_one_linearly_dependent_row,
-    assemble_matrix_A_with_two_linearly_dependent_rows,
-    assemble_matrix_A_with_one_basic_fixed_variable,
-    assemble_matrix_A_with_two_basic_fixed_variables,
+# Tested cases for the indices of fixed variables
+tested_jfixed = [
+    arange(0),
+    array([0]),
+    array([0, 1, 2])
 ]
 
-
-testdata = tested_matrices_A
+# Combination of all tested cases
+testdata = product(
+    tested_matrices_A,
+    tested_jfixed)
 
 
 def reverse(list):
@@ -75,8 +51,14 @@ def check_canonical_form(canonicalizer, A):
     Q = canonicalizer.Q()
     C = canonicalizer.C()
 
+    aux = R @ A[:,Q]
+
+    set_printoptions(linewidth=100000, precision=4)
+    print(f"A = \n{A}")
+    print(f"aux = \n{aux}")
+    print(f"C = \n{C}")
     # Check R*A*Q == C
-    assert norm(R.dot(A[:,Q]) - C) / norm(C) == approx(0.0)
+    assert norm(aux - C) / norm(C) == approx(0.0)
 
     # Assemble Qtr, the transpose of the permutation matrix Q
     Qtr = arange(n)
@@ -117,8 +99,10 @@ def check_canonicalizer(canonicalizer, A):
     #---------------------------------------------------------------------------
     for i in range(nb):
         for j in range(n - nb):
-            canonicalizer.updateWithSwapBasicVariable(i, j)
-            check_canonical_form(canonicalizer, A)
+            S = canonicalizer.S()
+            if abs(S[i, j]) > 1e-12:  # new basic variable needs to have sufficiently large pivot value
+                canonicalizer.updateWithSwapBasicVariable(i, j)
+                check_canonical_form(canonicalizer, A)
 
     #---------------------------------------------------------------------------
     # Set weights for the variables to update the basic/non-basic partition
@@ -132,12 +116,17 @@ def check_canonicalizer(canonicalizer, A):
     check_canonical_ordering(canonicalizer, weigths)
 
 
-@mark.parametrize("assemble_A", tested_matrices_A)
-def test_canonicalizer(assemble_A):
-    m = 4
-    n = 6
+@mark.parametrize("args", testdata)
+def test_canonicalizer(args):
 
-    A = assemble_A(m, n)
+    assemble_A, jfixed = args
+
+    m = 12
+    n = 15
+
+    A = assemble_A(m, n, jfixed)
+    # A = eigen.randomSPD(n)[:m]
+    # A = 1 + log(A)
 
     canonicalizer = Canonicalizer(A)
     check_canonicalizer(canonicalizer, A)

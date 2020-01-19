@@ -16,59 +16,88 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from optima import *
+from numpy import *
 
 
-def matrix_with_linearly_independent_rows_only(m, n, nfixed=0):
-    """Return a matrix with linearly independent rows only.
+def matrix_with_linearly_independent_rows_only(m, n, ifixed=[]):
+    """Return a matrix with linearly independent rows only based on Pascal triangle.
 
     Arguments:
         m {int} -- The number of rows in the matrix
         n {int} -- The number of columns in the matrix
 
     Keyword Arguments:
-        nfixed {int} -- The number of fixed (default: {0})
+        ifixed {int list} -- The indices of the fixed variables (default: {[]})
 
     Returns:
-        [type] -- [description]
+        [array] -- The matrix with asked structure.
     """
-    A = eigen.randomSPD(n)
-    return A[:m, :]
+    A = ones((m, n))
+    for i in range(1, m):
+        for j in range(1, n):
+            A[i, j] = A[i, j - 1] + A[i - 1, j]
+    return A
 
 
-def matrix_with_one_linearly_dependent_row(m, n, nfixed=0):
-    A = matrix_with_linearly_independent_rows_only(m, n, nfixed)
+def matrix_with_one_linearly_dependent_row(m, n, ifixed=[]):
+    """Return a matrix with one linearly dependent row.
+
+    Arguments:
+        m {int} -- The number of rows in the matrix
+        n {int} -- The number of columns in the matrix
+
+    Keyword Arguments:
+        ifixed {int list} -- The indices of the fixed variables (default: {[]})
+
+    Returns:
+        [array] -- The matrix with asked structure.
+    """
+    A = matrix_with_linearly_independent_rows_only(m, n, ifixed)
     A[2, :] = 2*A[0, :] + A[1, :]
     return A
 
 
-def matrix_with_two_linearly_dependent_rows(m, n, nfixed=0):
-    A = matrix_with_linearly_independent_rows_only(m, n, nfixed)
+def matrix_with_two_linearly_dependent_rows(m, n, ifixed=[]):
+    """Return a matrix with two linearly dependent rows.
+
+    Arguments:
+        m {int} -- The number of rows in the matrix
+        n {int} -- The number of columns in the matrix
+
+    Keyword Arguments:
+        ifixed {int list} -- The indices of the fixed variables (default: {[]})
+
+    Returns:
+        [array] -- The matrix with asked structure.
+    """
+    A = matrix_with_linearly_independent_rows_only(m, n, ifixed)
     A[2, :] = 2*A[0, :] + A[1, :]
     A[3, :] = A[1, :]
     return A
 
 
-def matrix_with_one_basic_fixed_variable(m, n, nfixed=0):
-    A = matrix_with_linearly_independent_rows_only(m, n, nfixed)
-    A[-1, -nfixed] = 0.0
+def matrix_with_one_basic_fixed_variable(m, n, ifixed=[]):
+    A = matrix_with_linearly_independent_rows_only(m, n, ifixed)
+    if len(ifixed) != 0:
+        ifree = list(set(range(n)) - set(ifixed))  # indices of free variables
+        A[-1, ifree] = 0.0
     return A
 
 
-def matrix_with_two_basic_fixed_variables(m, n, nfixed=0):
-    A = matrix_with_linearly_independent_rows_only(m, n, nfixed)
-    A[-2, -nfixed] = 0.0
-    A[-1, -nfixed] = 0.0
+def matrix_with_two_basic_fixed_variables(m, n, ifixed=[]):
+    A = matrix_with_linearly_independent_rows_only(m, n, ifixed)
+    if len(ifixed) != 0:
+        ifree = list(set(range(n)) - set(ifixed))  # indices of free variables
+        A[-2, ifree] = 0.0
+        A[-1, ifree] = 0.0
     return A
 
 
-tested_matrices_A = [
+# The functions that create matrices with different structures
+testing_matrix_structures = [
     matrix_with_linearly_independent_rows_only,
     matrix_with_one_linearly_dependent_row,
     matrix_with_two_linearly_dependent_rows,
     matrix_with_one_basic_fixed_variable,
-    matrix_with_two_basic_fixed_variables,
+    matrix_with_two_basic_fixed_variables
 ]
-
-
-testdata = tested_matrices_A
-
