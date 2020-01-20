@@ -17,9 +17,6 @@
 
 #include "Canonicalizer.hpp"
 
-// C++ includes
-#include <cassert>
-
 // Eigen includes
 #include <Optima/deps/eigen3/Eigen/Dense>
 
