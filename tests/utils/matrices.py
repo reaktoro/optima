@@ -18,8 +18,24 @@
 from optima import *
 from numpy import *
 
+from utils.data import formula_matrix
 
-def matrix_with_linearly_independent_rows_only(m, n, ifixed=[]):
+
+def pascal_matrix(m, n):
+    """Return a Pascal matrix with given dimensions.
+
+    Arguments:
+        m {int} -- The number of rows in the matrix
+        n {int} -- The number of columns in the matrix
+    """
+    A = ones((m, n))
+    for i in range(1, m):
+        for j in range(1, n):
+            A[i, j] = A[i, j - 1] + A[i - 1, j]
+    return A
+
+
+def matrix_A_with_linearly_independent_rows_only(m, n, ifixed=[]):
     """Return a matrix with linearly independent rows only based on Pascal triangle.
 
     Arguments:
@@ -32,14 +48,14 @@ def matrix_with_linearly_independent_rows_only(m, n, ifixed=[]):
     Returns:
         [array] -- The matrix with asked structure.
     """
-    A = ones((m, n))
-    for i in range(1, m):
-        for j in range(1, n):
-            A[i, j] = A[i, j - 1] + A[i - 1, j]
-    return A
+    assert m <= n
+    # return eigen.convert(formula_matrix[:m, :n])
+    # q,r = linalg.qr(pascal_matrix(n, n))
+    # return eigen.convert(q[:m, :])
+    return eigen.convert(eye(m, n))
 
 
-def matrix_with_one_linearly_dependent_row(m, n, ifixed=[]):
+def matrix_A_with_one_linearly_dependent_row(m, n, ifixed=[]):
     """Return a matrix with one linearly dependent row.
 
     Arguments:
@@ -52,12 +68,12 @@ def matrix_with_one_linearly_dependent_row(m, n, ifixed=[]):
     Returns:
         [array] -- The matrix with asked structure.
     """
-    A = matrix_with_linearly_independent_rows_only(m, n, ifixed)
+    A = matrix_A_with_linearly_independent_rows_only(m, n, ifixed)
     A[2, :] = 2*A[0, :] + A[1, :]
     return A
 
 
-def matrix_with_two_linearly_dependent_rows(m, n, ifixed=[]):
+def matrix_A_with_two_linearly_dependent_rows(m, n, ifixed=[]):
     """Return a matrix with two linearly dependent rows.
 
     Arguments:
@@ -70,22 +86,22 @@ def matrix_with_two_linearly_dependent_rows(m, n, ifixed=[]):
     Returns:
         [array] -- The matrix with asked structure.
     """
-    A = matrix_with_linearly_independent_rows_only(m, n, ifixed)
+    A = matrix_A_with_linearly_independent_rows_only(m, n, ifixed)
     A[2, :] = 2*A[0, :] + A[1, :]
     A[3, :] = A[1, :]
     return A
 
 
-def matrix_with_one_basic_fixed_variable(m, n, ifixed=[]):
-    A = matrix_with_linearly_independent_rows_only(m, n, ifixed)
+def matrix_A_with_one_basic_fixed_variable(m, n, ifixed=[]):
+    A = matrix_A_with_linearly_independent_rows_only(m, n, ifixed)
     if len(ifixed) != 0:
         ifree = list(set(range(n)) - set(ifixed))  # indices of free variables
         A[-1, ifree] = 0.0
     return A
 
 
-def matrix_with_two_basic_fixed_variables(m, n, ifixed=[]):
-    A = matrix_with_linearly_independent_rows_only(m, n, ifixed)
+def matrix_A_with_two_basic_fixed_variables(m, n, ifixed=[]):
+    A = matrix_A_with_linearly_independent_rows_only(m, n, ifixed)
     if len(ifixed) != 0:
         ifree = list(set(range(n)) - set(ifixed))  # indices of free variables
         A[-2, ifree] = 0.0
@@ -93,11 +109,17 @@ def matrix_with_two_basic_fixed_variables(m, n, ifixed=[]):
     return A
 
 
+def matrix_H_with_linearly_independent_rows(n):
+    u,s,vh = linalg.svd(pascal_matrix(n, n))
+    s = linspace(1.0, n, num=n)
+    q = u @ diag(s) @ vh
+    return eigen.convert(q)
+
 # The functions that create matrices with different structures
-testing_matrix_structures = [
-    matrix_with_linearly_independent_rows_only,
-    matrix_with_one_linearly_dependent_row,
-    matrix_with_two_linearly_dependent_rows,
-    matrix_with_one_basic_fixed_variable,
-    matrix_with_two_basic_fixed_variables
+testing_matrices_A = [
+    matrix_A_with_linearly_independent_rows_only,
+    matrix_A_with_one_linearly_dependent_row,
+    matrix_A_with_two_linearly_dependent_rows,
+    matrix_A_with_one_basic_fixed_variable,
+    matrix_A_with_two_basic_fixed_variables
 ]

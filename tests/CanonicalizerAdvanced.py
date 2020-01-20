@@ -21,7 +21,7 @@ from numpy.linalg import norm, inv
 from pytest import approx, mark
 from itertools import product
 
-from utils.matrices import testing_matrix_structures
+from utils.matrices import testing_matrices_A
 
 
 def check_canonical_form(canonicalizer, A, J):
@@ -34,12 +34,9 @@ def check_canonical_form(canonicalizer, A, J):
 
     # Check R*[A; J]*Q == C
     # assert norm(R @ M[:,Q] - C) / norm(C) == approx(0.0)
-    aux = R @ M[:,Q]
+    Cstar = R @ M[:,Q]
 
-    print(f"aux = \n{aux}")
-    print(f"C = \n{C}")
-
-    assert allclose(aux, C)
+    assert allclose(Cstar, C)
 
     # Assemble Qtr, the transpose of the permutation matrix Q
     Qtr = arange(n)
@@ -49,7 +46,7 @@ def check_canonical_form(canonicalizer, A, J):
     Rinv = inv(R)
 
     # Check inv(R) * C * tr(Q) == [A; J]
-    assert Rinv.dot(C[:, Qtr]) == approx(M)
+    assert Rinv @ C[:, Qtr] == approx(M)
 
 
 def check_canonical_ordering(canonicalizer, weigths):
@@ -90,7 +87,7 @@ def check_canonicalizer(canonicalizer, A, J):
 
 
 # Tested cases for the matrix A
-tested_matrices_A = testing_matrix_structures
+tested_matrices_A = testing_matrices_A
 
 # Tested number of rows in matrix Au and Al (upper and lower blocks of A)
 tested_mu = [7, 3]

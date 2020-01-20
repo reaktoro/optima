@@ -21,11 +21,11 @@ from numpy.linalg import norm, inv
 from pytest import approx, mark
 from itertools import product
 
-from utils.matrices import testing_matrix_structures
+from utils.matrices import testing_matrices_A
 
 
 # Tested cases for the structures of matrix A
-tested_matrices_A = testing_matrix_structures
+tested_matrices_A = testing_matrices_A
 
 # Tested cases for the indices of fixed variables
 tested_jfixed = [
@@ -40,10 +40,6 @@ testdata = product(
     tested_jfixed)
 
 
-def reverse(list):
-    return list[::-1]
-
-
 def check_canonical_form(canonicalizer, A):
     # Auxiliary varibles
     m, n = A.shape
@@ -51,14 +47,14 @@ def check_canonical_form(canonicalizer, A):
     Q = canonicalizer.Q()
     C = canonicalizer.C()
 
-    aux = R @ A[:,Q]
+    Cstar = R @ A[:,Q]
 
-    set_printoptions(linewidth=100000, precision=4)
-    print(f"A = \n{A}")
-    print(f"aux = \n{aux}")
-    print(f"C = \n{C}")
+    # set_printoptions(linewidth=10000)
+    # print(f"Cstar = \n{Cstar}")
+
     # Check R*A*Q == C
-    assert norm(aux - C) / norm(C) == approx(0.0)
+    # assert norm(Cstar - C) / norm(C) == approx(0.0)
+    assert norm(Cstar - C) == approx(0.0)
 
     # Assemble Qtr, the transpose of the permutation matrix Q
     Qtr = arange(n)
@@ -68,7 +64,7 @@ def check_canonical_form(canonicalizer, A):
     Rinv = inv(R)
 
     # Check inv(R) * C * tr(Q) == A
-    assert Rinv.dot(C[:, Qtr]) == approx(A)
+    assert Rinv @ C[:, Qtr] == approx(A)
 
 
 def check_canonical_ordering(canonicalizer, weigths):
@@ -125,8 +121,6 @@ def test_canonicalizer(args):
     n = 15
 
     A = assemble_A(m, n, jfixed)
-    # A = eigen.randomSPD(n)[:m]
-    # A = 1 + log(A)
 
     canonicalizer = Canonicalizer(A)
     check_canonicalizer(canonicalizer, A)

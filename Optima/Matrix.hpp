@@ -32,4 +32,6 @@ namespace Optima {
 /// using row-major order. See this discussion [here](https://pybind11.readthedocs.io/en/stable/advanced/cast/eigen.html#storage-orders).
 using MatrixRef4py = Eigen::Ref<Matrix, 0, Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic>>;
 
+using MatrixConstRef4py = Eigen::Ref<const Matrix, 0, Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic>>;
+
 } // namespace Optima

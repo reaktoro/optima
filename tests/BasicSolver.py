@@ -21,14 +21,14 @@ from numpy.linalg import norm
 from pytest import approx, mark
 from itertools import product
 
-from utils.matrices import testing_matrix_structures
+from utils.matrices import testing_matrices_A
 
 # The number of variables and number of equality constraints
 n = 15
 m = 5
 
 # Tested cases for the matrix A
-tested_matrices_A = testing_matrix_structures
+tested_matrices_A = testing_matrices_A
 
 # Tested cases for the structure of matrix H
 tested_structures_H = [

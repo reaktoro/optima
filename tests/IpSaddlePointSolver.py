@@ -21,13 +21,16 @@ from numpy.linalg import norm
 from pytest import approx, mark
 from itertools import product
 
-from utils.matrices import testing_matrix_structures
+from utils.matrices import testing_matrices_A
 
 
 def print_state(M, r, s, m, n):
-    set_printoptions(linewidth=1000, precision=10, threshold=10000)
     slu = eigen.solve(M, r)
-    print( 'M = \n', M )
+    print( 'M = \n' )
+    for i in range(M.shape[0]):
+        for j in range(M.shape[1]):
+            print(M[i, j], end = ', ')
+        print()
     print( 'r        = ', r )
     print( 'x        = ', s[:n] )
     print( 'x(lu)    = ', slu[:n] )
@@ -48,15 +51,15 @@ def print_state(M, r, s, m, n):
 # Tested number of variables in (s, l, u, z, w) partitions
 tested_dimensions = [
 #    ns  nl  nu  nz  nw
-    (15,  0,  0,  0,  0),
-    (13,  2,  0,  0,  0),
-    (13,  0,  2,  0,  0),
-    (13,  0,  0,  2,  0),
-    (13,  0,  0,  0,  2),
+    (20,  0,  0,  0,  0),
+    (18,  2,  0,  0,  0),
+    (18,  0,  2,  0,  0),
+    (18,  0,  0,  2,  0),
+    (18,  0,  0,  0,  2),
 ]
 
 # Tested cases for the matrix A
-tested_matrices_A = testing_matrix_structures
+tested_matrices_A = testing_matrices_A
 
 # Tested cases for the structure of matrix H
 tested_structures_H = [
@@ -77,7 +80,7 @@ tested_ml = [3, 1, 0]
 
 # Tested cases for the saddle point methods
 tested_methods = [
-    SaddlePointMethod.Fullspace,
+    # SaddlePointMethod.Fullspace,
     SaddlePointMethod.Nullspace,
     SaddlePointMethod.Rangespace,
     ]
@@ -109,17 +112,23 @@ def test_ip_saddle_point_solver(args):
     jx = list(set(range(n)) - set(jf))  # indices of free variables
 
     A = assemble_A(m, n, jf)
-    H = eigen.random(n, n)
-    Z = eigen.random(n)
-    W = eigen.random(n)
-    L = eigen.random(n)
-    U = eigen.random(n)
+    # print(f"A = \n{A}")
+    # H = eigen.random(n, n)
+    # Z = eigen.random(n)
+    # W = eigen.random(n)
+    # L = eigen.random(n)
+    # U = eigen.random(n)
+    H = eigen.eye(n)
+    Z = eigen.ones(n)
+    W = eigen.ones(n)
+    L = eigen.ones(n)
+    U = eigen.ones(n)
 
     Au = A[:mu, :]  # extract the upper block of A
     Al = A[mu:, :]  # extract the lower block of A
 
     if method == SaddlePointMethod.Rangespace:
-        H = eigen.diag(eigen.random(n))
+        H = eigen.diag(eigen.ones(n))
 
     if nl > 0: L[jx[:nl]] = 1.0e-3; Z[jx[:nl]] = 1.0  # jx[:nl] means last nl free variables
     if nu > 0: U[jx[:nu]] = 1.0e-3; W[jx[:nu]] = 1.0  # jx[:nu] means last nl free variables
@@ -160,7 +169,8 @@ def test_ip_saddle_point_solver(args):
 
     # Check the residual of the equation M * s = r
     if norm(M.dot(s) - r) / norm(r) != approx(0.0):
-        print_state(M, r, s, m, n)
+        set_printoptions(linewidth=1000, threshold=2000)
+        print()
         print(f"dimensions = {dimensions}")
         print(f"assemble_A = {assemble_A}")
         print(f"structure_H = {structure_H}")
@@ -168,6 +178,9 @@ def test_ip_saddle_point_solver(args):
         print(f"mu = {mu}")
         print(f"ml = {ml}")
         print(f"method = {method}")
+        print()
+        print(f"A = \n{A}")
+        print_state(M, r, s, m, n)
 
     assert norm(M.dot(s) - r) / norm(r) == approx(0.0)
 

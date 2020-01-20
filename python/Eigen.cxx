@@ -29,6 +29,7 @@ void exportEigen(py::module& m)
 {
     auto eigen = m.def_submodule("eigen");
 
+    eigen.def("convert", [](MatrixConstRef4py M) -> Matrix { return M; });
     eigen.def("ones", [](int n) -> Vector { return Eigen::ones(n); });
     eigen.def("ones", [](int m, int n) -> Matrix { return Eigen::ones(m, n); });
     eigen.def("zeros", [](int n) -> Vector { return Eigen::zeros(n); });
