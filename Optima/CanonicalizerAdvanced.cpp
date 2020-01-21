@@ -39,6 +39,12 @@ struct CanonicalizerAdvanced::Impl
     /// The permutation matrix Q in the canonicalization R*[A; J]*Q = [I S]
     Indices Q;
 
+    /// The permutation matrix `Kb` used in the update method with priority weights.
+    PermutationMatrix Kb;
+
+    /// The permutation matrix `Kn` used in the update method with priority weights.
+    PermutationMatrix Kn;
+
     /// Construct a default CanonicalizerAdvanced::Impl object
     Impl()
     {
@@ -55,11 +61,11 @@ struct CanonicalizerAdvanced::Impl
     {
         canonicalizerA.compute(A);
         auto weights = ones(A.cols());
-        update(J, weights);
+        updateWithPriorityWeights(J, weights);
     }
 
     /// Update the canonical form with given matrix J and priority weights for the variables.
-    auto update(MatrixConstRef J, VectorConstRef weights) -> void
+    auto updateWithPriorityWeights(MatrixConstRef J, VectorConstRef weights) -> void
     {
         canonicalizerA.updateWithPriorityWeights(weights);
 
@@ -135,6 +141,44 @@ struct CanonicalizerAdvanced::Impl
 
             Rt.bottomRightCorner(nbJ, mJ) = RJt;
             Rb.bottomRightCorner(mJ - nbJ, mJ) = RJb;
+
+            //---------------------------------------------------------------------------
+            // Start sorting of basic and non-basic variables according to their weights
+            //---------------------------------------------------------------------------
+
+            // Initialize the permutation matrices Kb and Kn
+            auto nb = nbA + nbJ;
+            auto nn = n - nb;
+
+            Kb.setIdentity(nb);
+            Kn.setIdentity(nn);
+
+            // The indices of the basic and non-basic variables
+            auto ibasic = Q.head(nb);
+            auto inonbasic = Q.tail(nn);
+
+            // Sort the basic variables in descend order of weights
+            std::sort(Kb.indices().data(), Kb.indices().data() + nb,
+                [&](Index l, Index r) { return weights[ibasic[l]] > weights[ibasic[r]]; });
+
+            // Sort the non-basic variables in descend order of weights
+            std::sort(Kn.indices().data(), Kn.indices().data() + nn,
+                [&](Index l, Index r) { return weights[inonbasic[l]] > weights[inonbasic[r]]; });
+
+            // Rearrange the rows of S based on the new order of basic variables
+            Kb.transpose().applyThisOnTheLeft(S);
+
+            // Rearrange the columns of S based on the new order of non-basic variables
+            Kn.applyThisOnTheRight(S);
+
+            // Rearrange the top `nb` rows of R based on the new order of basic variables
+            Kb.transpose().applyThisOnTheLeft(Rt);
+
+            // Rearrange the permutation matrix Q based on the new order of basic variables
+            Kb.transpose().applyThisOnTheLeft(ibasic);
+
+            // Rearrange the permutation matrix Q based on the new order of non-basic variables
+            Kn.transpose().applyThisOnTheLeft(inonbasic);
         }
     }
 };
@@ -226,9 +270,9 @@ auto CanonicalizerAdvanced::compute(MatrixConstRef A, MatrixConstRef J) -> void
     pimpl->compute(A, J);
 }
 
-auto CanonicalizerAdvanced::update(MatrixConstRef J, VectorConstRef weights) -> void
+auto CanonicalizerAdvanced::updateWithPriorityWeights(MatrixConstRef J, VectorConstRef weights) -> void
 {
-    pimpl->update(J, weights);
+    pimpl->updateWithPriorityWeights(J, weights);
 }
 
 } // namespace Optima

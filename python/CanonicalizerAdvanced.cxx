@@ -40,6 +40,6 @@ void exportCanonicalizerAdvanced(py::module& m)
         .def("indicesBasicVariables", &CanonicalizerAdvanced::indicesBasicVariables, py::return_value_policy::reference_internal)
         .def("indicesNonBasicVariables", &CanonicalizerAdvanced::indicesNonBasicVariables, py::return_value_policy::reference_internal)
         .def("compute", &CanonicalizerAdvanced::compute)
-        .def("update", &CanonicalizerAdvanced::update)
+        .def("updateWithPriorityWeights", &CanonicalizerAdvanced::updateWithPriorityWeights)
         ;
 }

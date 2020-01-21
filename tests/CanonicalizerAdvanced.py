@@ -75,15 +75,15 @@ def check_canonicalizer(canonicalizer, A, J):
     #---------------------------------------------------------------------------
     # Set weights for the variables to update the basic/non-basic partition
     #---------------------------------------------------------------------------
-    weigths = abs(random.rand(n)) + 1.0
+    weigths = random.rand(n)
 
     Jnew = J + J
 
-    canonicalizer.update(Jnew, weigths)
+    canonicalizer.updateWithPriorityWeights(Jnew, weigths)
 
     check_canonical_form(canonicalizer, A, Jnew)
 
-    # check_canonical_ordering(canonicalizer, weigths)
+    check_canonical_ordering(canonicalizer, weigths)
 
 
 # Tested cases for the matrix A

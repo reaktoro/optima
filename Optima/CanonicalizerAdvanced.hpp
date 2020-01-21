@@ -89,7 +89,7 @@ public:
     auto compute(MatrixConstRef A, MatrixConstRef J) -> void;
 
     /// Update the canonical form with given lower matrix block \eq{J} and priority weights for the variables.
-    auto update(MatrixConstRef J, VectorConstRef weights) -> void;
+    auto updateWithPriorityWeights(MatrixConstRef J, VectorConstRef weights) -> void;
 
 private:
     struct Impl;
