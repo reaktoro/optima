@@ -103,7 +103,7 @@ def check_canonicalizer(canonicalizer, A):
     #---------------------------------------------------------------------------
     # Set weights for the variables to update the basic/non-basic partition
     #---------------------------------------------------------------------------
-    weigths = abs(random.rand(n)) + 1.0
+    weigths = random.rand(n)
 
     canonicalizer.updateWithPriorityWeights(weigths)
 
