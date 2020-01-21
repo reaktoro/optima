@@ -17,9 +17,6 @@
 
 #include "SaddlePointSolver.hpp"
 
-// C++ includes
-#include <iostream>
-
 // Eigen includes
 #include <Optima/deps/eigen3/Eigen/Dense>
 
@@ -161,7 +158,7 @@ struct SaddlePointSolver::Impl
         weights(jf).noalias() = -linspace(nf, 1, nf);
 
         // Update the canonical form and the ordering of the variables
-        canonicalizer.update(lhs.Al, weights);
+        canonicalizer.updateWithPriorityWeights(lhs.Al, weights);
 
         // Update the number of basic and non-basic variables
         nb = canonicalizer.numBasicVariables();
@@ -170,70 +167,44 @@ struct SaddlePointSolver::Impl
         // Update the number of linearly dependent rows in A = [Au; Al]
         nl = m - nb;
 
+        // Get the updated indices of basic and non-basic variables
+        const auto ibasic = canonicalizer.indicesBasicVariables();
+        const auto inonbasic = canonicalizer.indicesNonBasicVariables();
+
         // Get the S matrix of the canonical form of A
         const auto S = canonicalizer.S();
 
-        // Alias to the indices of basic and non-basic variables in iordering
-        auto ib = iordering.head(nb);
-        auto in = iordering.tail(nn);
-
-        // Initialize the ordering of the variables
-        ib = canonicalizer.indicesBasicVariables();
-        in = canonicalizer.indicesNonBasicVariables();
-
         // Find the number of fixed basic variables (those with weights below zero)
-        // nbf = 0; while(nbf < nb && weights[ibasic[nb - nbf - 1]] <= 0.0) ++nbf;
-        // nbf = 0; for(auto i : ibasic) if(weights[i] < 0.0) ++nbf;
+        // Walk from last to first basic variable, since the fixed basic variables are at the end of ibasic
+        nbf = 0; while(nbf < nb && weights[ibasic[nb - nbf - 1]] < 0.0) ++nbf;
 
-        auto is_free_variable = [=](Index i) { return weights[i] >= 0.0; };
+        // Find the number of fixed non-basic variables (those with weights below zero)
+        // Walk from last to first non-basic variable, since the fixed non-basic variables are at the end of inonbasic
+        nnf = 0; while(nnf < nn && weights[inonbasic[nn - nnf - 1]] < 0.0) ++nnf;
 
-        nbx = std::partition(ib.data(), ib.data() + nb, is_free_variable) - ib.data();
-        nnx = std::partition(in.data(), in.data() + nn, is_free_variable) - in.data();
+        // Update the number of free basic and free non-basic variables
+        nbx = nb - nbf;
+        nnx = nn - nnf;
 
-        nbf = nb - nbx;
-        nnf = nn - nnx;
+        // Update the number of non-pivot free basic variables.
+        // Walk from first to last basic variable, since the free basic variables are at the beginning of ibasic
+        nb2 = 0; while(nb2 < nbx && weights[ibasic[nb2]] > 1.0) ++nb2;
 
-        auto ibx = ib.head(nbx);
-        auto inx = in.head(nnx);
+        // Update the number of non-pivot free non-basic variables.
+        // Walk from first to last non-basic variable, since the free non-basic variables are at the beginning of inonbasic
+        nn2 = 0; while(nn2 < nnx && weights[inonbasic[nn2]] > norminf(S.col(nn2))) ++nn2;
 
-        auto index = [=](Index i) { return std::find(in.data(), in.data() + nn, i) - in.data(); };
-
-        auto is_non_pivot_basic_variable = [=](Index i) { return weights[i] > 1.0; };
-        auto is_non_pivot_nonbasic_variable = [=](Index i) { return weights[i] > norminf(S.col(index(i))); };
-
-        nb2 = std::partition(ibx.data(), ibx.data() + nbx, is_non_pivot_basic_variable) - ibx.data();
-        nn2 = std::partition(inx.data(), inx.data() + nnx, is_non_pivot_nonbasic_variable) - inx.data();
-
-        // Update the number of non-pivot free basic and non-basic variables.
+        // Update the number of pivot free basic and non-basic variables.
         nb1 = nbx - nb2;
         nn1 = nnx - nn2;
 
-
-        // nnx = std::partition(in.data(), in.data() + nn, is_free_variable) - in.data();
-
-        // // Find the number of fixed non-basic variables (those with weights below zero)
-        // // nnf = 0; while(nnf < nn && weights[inonbasic[nn - nnf - 1]] <= 0.0) ++nnf;
-        // nnf = 0; for(auto i : inonbasic) if(weights[i] < 0.0) ++nnf;
-
-        // // Update the number of free basic and free non-basic variables
-        // nbx = nb - nbf;
-        // nnx = nn - nnf;
-
-        // Update the number of non-pivot free basic variables.
-        // nb2 = 0; while(nb2 < nbx && weights[ibasic[nb2]] > 1.0) ++nb2;
-        // nb2 = 0; for(auto i : ibasic) if(weights[i] > 1.0) ++nb2;
-
-        // Update the number of non-pivot free non-basic variables.
-        // nn2 = 0; while(nn2 < nnx && weights[inonbasic[nn2]] > norminf(S.col(nn2))) ++nn2;
-        // nn2 = 0; for(auto i : inonbasic) if(weights[i] > norminf(S.col(nn2))) ++nn2;
-
         // Update the ordering of the free variables as xx = [xbx xnx]
-        // iordering.head(nx).head(nbx) = ibasic.head(nbx);
-        // iordering.head(nx).tail(nnx) = inonbasic.head(nnx);
+        iordering.head(nx).head(nbx) = ibasic.head(nbx);
+        iordering.head(nx).tail(nnx) = inonbasic.head(nnx);
 
-        // // Update the ordering of the fixed variables as xf = [xbf xnf]
-        // iordering.tail(nf).head(nbf) = ibasic.tail(nbf);
-        // iordering.tail(nf).tail(nnf) = inonbasic.tail(nnf);
+        // Update the ordering of the fixed variables as xf = [xbf xnf]
+        iordering.tail(nf).head(nbf) = ibasic.tail(nbf);
+        iordering.tail(nf).tail(nnf) = inonbasic.tail(nnf);
     }
 
     /// Decompose the coefficient matrix of the saddle point problem.
@@ -332,24 +303,16 @@ struct SaddlePointSolver::Impl
         // Alias to the matrices of the canonicalization process
         auto Sbn   = canonicalizer.S();
         auto Sbxnx = Sbn.topLeftCorner(nbx, nnx);
-        auto Sbxnf = Sbn.topRightCorner(nbx, nnf);
-        auto Sbfnf = Sbn.bottomRightCorner(nbf, nnf);
 
         auto R = canonicalizer.R();
 
-        auto Rbx = R.topRows(nbx);
-
         auto Ibxbx = identity(nbx, nbx);
-        auto Obxbf = zeros(nbx, nbf);
-        auto Obfbx = zeros(nbf, nbx);
-        auto Obfnx = zeros(nbf, nnx);
+
+        // Initialize workspace with zeros
+        mat.fill(0.0);
 
         // Create a view to the M block of the auxiliary matrix `mat` where the canonical saddle point matrix is defined
         auto M = mat.topLeftCorner(m + nx, m + nx);
-        // auto M = mat.topLeftCorner(nbx + nx, nbx + nx);
-
-        M.fill(0.0);
-
 
         // Set the H + D block of the canonical saddle point matrix
         M.topLeftCorner(nx, nx) = lhs.H(jx, jx);
@@ -361,17 +324,12 @@ struct SaddlePointSolver::Impl
         M.middleCols(nx, nbx).topRows(nx) << Ibxbx, tr(Sbxnx);
         M.middleRows(nx, nbx).leftCols(nx) << Ibxbx, Sbxnx;
 
-        // M.topRightCorner(nx, nbx) << Ibxbx, tr(Sbxnx);
-        // M.bottomLeftCorner(nbx, nx) << Ibxbx, Sbxnx;
-
         // Set the zero blocks of M on the top-right and bottom-left corners
         M.topRightCorner(nx, nbf + nl).setZero();
         M.bottomLeftCorner(nbf + nl, nx).setZero();
 
         // Set the G block of M on the bottom-right corner
         M.bottomRightCorner(m, m) = R * G * tr(R);
-        // M.bottomRightCorner(nbx, nbx).topRows(nbx) = Rbx * G * tr(Rbx);
-        // M.bottomRightCorner(nbx, nbx).bottomRows(m - nbx) = G;
 
         // Compute the LU decomposition of M.
         lu.compute(M);
@@ -428,6 +386,7 @@ struct SaddlePointSolver::Impl
         // The auxiliary matrix Bn1bx = inv(Hn1n1) * tr(Sbxn1)
         auto Bn1bx = mat.rightCols(nbx).middleRows(nbx, nn1);
 
+        // Initialize workspace with zeros
         mat.fill(0.0);
 
         // The matrix M of the system of linear equations
@@ -452,19 +411,13 @@ struct SaddlePointSolver::Impl
         // Computing the auxiliary matrix Bn1bx = inv(Hn1n1) * tr(Sbxn1)
         Bn1bx.noalias() = diag(inv(Hn1n1)) * tr(Sbxn1);
 
-        std::cout << "M = (Bn1bx.noalias() = diag(inv(Hn1n1)) * tr(Sbxn1);)\n" << Matrix(M) << std::endl;
-
         // Computing the auxiliary matrix Tbxbx = Sbxn1 * Bn1bx
         Tbxbx.noalias() = Sbxn1 * Bn1bx;
-
-        std::cout << "M = (Tbxbx.noalias() = Sbxn1 * Bn1bx;)\n" << Matrix(M) << std::endl;
 
         // Setting the columns of M with dimension nn2
         Mn2n2           = diag(Hn2n2);
         Mb1n2.noalias() = Sb1n2;
         Mb2n2.noalias() = Sb2n2;
-
-        std::cout << "M = (Mn2n2           = diag(Hn2n2))\n" << Matrix(M) << std::endl;
 
         // Setting the columns of M with dimension nb1
         Mn2b1.noalias()   = tr(Sb1n2);
@@ -472,15 +425,11 @@ struct SaddlePointSolver::Impl
         Mb1b1.diagonal() -= inv(Hb1b1);
         Mb2b1.noalias()   = -Tb2b1;
 
-        std::cout << "M = (Mn2b1.noalias()   = tr(Sb1n2))\n" << Matrix(M) << std::endl;
-
         // Setting the columns of M with dimension nb2
         Mn2b2.noalias()   = -tr(Sb2n2) * diag(Hb2b2);
         Mb1b2.noalias()   = Tb1b2*diag(Hb2b2);
         Mb2b2.noalias()   = Tb2b2*diag(Hb2b2);
         Mb2b2.diagonal() += ones(nb2);
-
-        std::cout << "M = (Mn2b2.noalias()   = -tr(Sb2n2) * diag(Hb2b2))\n" << Matrix(M) << std::endl;
 
         // Computing the LU decomposition of matrix M
         lu.compute(M);
@@ -748,9 +697,11 @@ struct SaddlePointSolver::Impl
         const auto Obfnx = zeros(nbf, nnx);
         const auto Oblnx = zeros(nl, nnx);
 
+        // Initialize workspace with zeros
+        mat.fill(0.0);
+
         // The matrix M where we setup the coefficient matrix of the equations
         auto M   = mat.topLeftCorner(nnx + m, nnx + m);
-        M.fill(0.0);
         auto Mnx = M.topRows(nnx);
         auto Mbx = M.middleRows(nnx, nbx);
         auto Mbf = M.middleRows(nnx + nbx, nbf);
@@ -898,11 +849,10 @@ struct SaddlePointSolver::Impl
         auto y = sol.y;
 
         // Alias to the matrices of the canonicalization process
+        auto S = canonicalizer.S();
         auto R = canonicalizer.R();
-        auto Rbx = R.topRows(nbx);
 
         // Alias to the matrices of the canonicalization process
-        auto S = canonicalizer.S();
         auto Sbxnf = S.topRightCorner(nbx, nnf);
         auto Sbfnf = S.bottomRightCorner(nbf, nnf);
 
@@ -921,7 +871,6 @@ struct SaddlePointSolver::Impl
 
         // Calculate b' = R * b
         b.noalias() = R * rhs.b;
-        // b.noalias() = Rbx * rhs.b;
 
         // Calculate bbx'' = bbx' - Sbxnf*anf
         bbx -= Sbxnf * anf;
@@ -931,11 +880,9 @@ struct SaddlePointSolver::Impl
 
         // View to the right-hand side vector r of the system of linear equations
         auto r = vec.head(nx + m);
-        // auto r = vec.head(nx + nbx);
 
         // Update the vector r = [ax b]
         r << ax, b;
-        // r << ax, bbx;
 
         // Solve the system of linear equations using the LU decomposition of M.
         r.noalias() = lu.solve(r);
@@ -948,7 +895,6 @@ struct SaddlePointSolver::Impl
 
         // Compute y = tr(R) * y'
         y.noalias() = tr(R)*yp;
-        // y.noalias() = tr(Rbx)*yp;
 
         // Permute back the variables x to their original ordering
         x(iordering).noalias() = a;
@@ -1038,8 +984,6 @@ struct SaddlePointSolver::Impl
 
         // Permute back the variables `x` to their original ordering
         x(iordering).noalias() = a;
-
-        std::cout << "x = " << x << std::endl;
     }
 
     /// Solve the saddle point problem using a rangespace diagonal method.
