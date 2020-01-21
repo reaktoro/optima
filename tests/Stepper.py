@@ -21,7 +21,7 @@ from numpy.linalg import norm
 from pytest import approx, mark
 from itertools import product
 
-from utils.matrices import testing_matrices_A
+from utils.matrices import testing_matrices_A, matrix_non_singular
 
 # The number of variables
 n = 15
@@ -63,7 +63,7 @@ tested_methods = [
     SaddlePointMethod.Fullspace,
     SaddlePointMethod.Nullspace,
     SaddlePointMethod.Rangespace,
-    ]
+]
 
 # Tested number of rows in matrix A and J
 tested_mA = [6, 4]
@@ -98,12 +98,6 @@ def test_stepper(args):
     A = M[:mA, :]
     J = M[mA:, :]
 
-    constraints = Constraints(n)
-    constraints.setVariablesWithFixedValues(jfixed)
-    constraints.setVariablesWithLowerBounds(jlower)
-    constraints.setVariablesWithUpperBounds(jupper)
-    constraints.setEqualityConstraintMatrix(A)
-
     x = linspace(1, n, n)
     y = linspace(1, m, m)
     z = linspace(1, n, n)
@@ -117,10 +111,10 @@ def test_stepper(args):
     h = zeros(mJ)
 
     g = linspace(1, n, n)
-    H = eigen.randomSPD(n)
+    H = matrix_non_singular(n)
 
     if method == SaddlePointMethod.Rangespace:
-        H = abs(eigen.diag(eigen.random(n)))
+        H = abs(eigen.diag(linspace(1, n, num=n)))
 
     problem = StepperProblem(
         x,

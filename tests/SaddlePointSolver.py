@@ -21,7 +21,7 @@ from numpy.linalg import norm
 from pytest import approx, mark
 from itertools import product
 
-from utils.matrices import testing_matrices_A, matrix_H_with_linearly_independent_rows
+from utils.matrices import testing_matrices_A, matrix_non_singular
 
 
 def print_state(M, r, s, m, n):
@@ -52,13 +52,13 @@ tested_structures_H = [
 
 # Tested cases for the structure of matrix D
 tested_structures_D = [
-    # 'diagonalD',
+    'diagonalD',
     'zeroD'
 ]
 
 # Tested cases for the structure of matrix G
 tested_structures_G = [
-    # 'denseG', # currently, nullspace method + dense G + two fixed basic variables produces more residual error than the other cases
+    # 'denseG', # TODO: currently, dense G tests produces more residual error than the other cases (I think it is because of R*G*tr(R) terms, Allan, 21.01.20).
     'zeroG'
 ]
 
@@ -71,9 +71,7 @@ tested_jf = [
 
 # Tested number of rows in matrix Au (upper block of A)
 tested_mu = [6, 4]
-# tested_ml = [3, 1, 0]
-# tested_ml = [1]
-tested_ml = [1]
+tested_ml = [3, 1, 0]
 
 # Tested cases for the conditions of the variables in terms of pivot variables
 tested_variable_conditions = [
@@ -84,10 +82,10 @@ tested_variable_conditions = [
 
 # Tested cases for the saddle point methods
 tested_methods = [
-    # SaddlePointMethod.Fullspace,
-    # SaddlePointMethod.Nullspace,
-    SaddlePointMethod.Rangespace,
-    ]
+    SaddlePointMethod.Fullspace,
+    SaddlePointMethod.Nullspace,
+    SaddlePointMethod.Rangespace
+]
 
 # Combination of all tested cases
 testdata = product(tested_matrices_A,
@@ -118,18 +116,12 @@ def test_saddle_point_solver(args):
     Au = A[:mu, :]  # extract the upper block of A
     Al = A[mu:, :]  # extract the lower block of A
 
-    # H = eigen.randomSPD(n)
-    # H = matrix_H_with_linearly_independent_rows(n)
-    H = eigen.eye(n)
+    H = matrix_non_singular(n)
+    G = matrix_non_singular(m) if structure_G == 'denseG' else eigen.matrix()
     D = eigen.ones(n) if structure_D == 'diagonalD' else eigen.vector()
-    G = eigen.eye(m) if structure_G == 'denseG' else eigen.matrix()
-    # D = eigen.random(n) if structure_D == 'diagonalD' else eigen.vector()
-    # G = eigen.random(m, m) if structure_G == 'denseG' else eigen.matrix()
 
     if method == SaddlePointMethod.Rangespace:
-        H = eigen.eye(n)
-        # H = abs(eigen.diag(linspace(1, n, num=n)))
-        # H = abs(eigen.diag(eigen.random(n)))
+        H = abs(eigen.diag(linspace(1, n, num=n)))
 
     # The diagonal entries of the Hessian matrix
     Hdiag = H[diag_indices(n)]
@@ -170,7 +162,7 @@ def test_saddle_point_solver(args):
     solver.solve(rhs, sol)
 
     # Check the residual of the equation M * s = r
-    succeeded = norm(M.dot(s) - r) / norm(r) == approx(0.0)
+    succeeded = norm(M @ s - r) / norm(r) == approx(0.0)
 
     if not succeeded:
         set_printoptions(linewidth=1000)

@@ -33,7 +33,6 @@ def check_canonical_form(canonicalizer, A, J):
     C = canonicalizer.C()
 
     # Check R*[A; J]*Q == C
-    # assert norm(R @ M[:,Q] - C) / norm(C) == approx(0.0)
     Cstar = R @ M[:,Q]
 
     assert allclose(Cstar, C)
@@ -46,7 +45,9 @@ def check_canonical_form(canonicalizer, A, J):
     Rinv = inv(R)
 
     # Check inv(R) * C * tr(Q) == [A; J]
-    assert Rinv @ C[:, Qtr] == approx(M)
+    Mstar = Rinv @ C[:, Qtr]
+
+    assert allclose(Mstar, M)
 
 
 def check_canonical_ordering(canonicalizer, weigths):

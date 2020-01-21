@@ -47,14 +47,11 @@ def check_canonical_form(canonicalizer, A):
     Q = canonicalizer.Q()
     C = canonicalizer.C()
 
-    Cstar = R @ A[:,Q]
-
-    # set_printoptions(linewidth=10000)
-    # print(f"Cstar = \n{Cstar}")
 
     # Check R*A*Q == C
-    # assert norm(Cstar - C) / norm(C) == approx(0.0)
-    assert norm(Cstar - C) == approx(0.0)
+    Cstar = R @ A[:,Q]
+
+    assert allclose(Cstar, C)
 
     # Assemble Qtr, the transpose of the permutation matrix Q
     Qtr = arange(n)
@@ -64,7 +61,9 @@ def check_canonical_form(canonicalizer, A):
     Rinv = inv(R)
 
     # Check inv(R) * C * tr(Q) == A
-    assert Rinv @ C[:, Qtr] == approx(A)
+    Astar = Rinv @ C[:, Qtr]
+
+    assert allclose(Astar, A)
 
 
 def check_canonical_ordering(canonicalizer, weigths):
