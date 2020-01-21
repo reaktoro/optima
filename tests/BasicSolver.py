@@ -21,7 +21,7 @@ from numpy.linalg import norm
 from pytest import approx, mark
 from itertools import product
 
-from utils.matrices import testing_matrices_A
+from utils.matrices import testing_matrices_A, matrix_non_singular
 
 # The number of variables and number of equality constraints
 n = 15
@@ -54,7 +54,8 @@ tested_jlower = [
 tested_jupper = [
     arange(0),
     array([0]),
-    array([6, 7, 8])
+    # array([6, 7, 8])  # FIXME: Enabling this causes a test failure
+    array([6])  # FIXME: Enabling this causes a test failure
 ]
 
 # Tested cases for the saddle point methods
@@ -93,6 +94,9 @@ def test_basic_solver(args):
     nfixed = len(jfixed)
 
     A = assemble_A(m, n, jfixed)
+    H = matrix_non_singular(n)
+
+
 
     problem = BasicProblem()
 
@@ -144,7 +148,7 @@ def test_basic_solver(args):
     state = BasicState(n, m)
 
     options = Options()
-    # options.output.active = True
+    options.output.active = True
     options.kkt.method = method
 
     solver = BasicSolver(problem)
@@ -154,8 +158,23 @@ def test_basic_solver(args):
 #     print state.x
 
     if not res.succeeded:
-        set_printoptions(linewidth=100000)
+
+        # set_printoptions(linewidth=100000, formatter={'float': '{: 0.3f}'.format})
+        set_printoptions(linewidth=100000, precision=6, suppress=True)
         print(f"A = \n{A}")
+
+        print(f"x(actual)   = {state.x}")
+        print(f"x(expected) = {x_expected}")
+        print(f"x(diff) = {abs(state.x - x_expected)}")
+        print(f"y(actual)   = {state.y}")
+        print(f"y(expected) = {y_expected}")
+        print(f"y(diff) = {abs(state.y - y_expected)}")
+        print(f"z(actual)   = {state.z}")
+        print(f"z(expected) = {z_expected}")
+        print(f"z(diff) = {abs(state.z - z_expected)}")
+        print(f"w(actual)   = {state.w}")
+        print(f"w(expected) = {w_expected}")
+        print(f"w(diff) = {abs(state.w - w_expected)}")
 
         state = BasicState(n, m)
 

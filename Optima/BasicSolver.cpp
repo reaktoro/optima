@@ -189,10 +189,10 @@ struct BasicSolver::Impl
         if(!options.output.active) return;
 
         // Aliases to canonical variables
-        auto x  = state.x;
-        auto y  = state.y;
-        auto z  = state.z;
-        auto w  = state.w;
+        const auto& x = state.x;
+        const auto& y = state.y;
+        const auto& z = state.z;
+        const auto& w = state.w;
 
         outputter.addEntry("Iteration");
         outputter.addEntry("f(x)");
@@ -229,10 +229,10 @@ struct BasicSolver::Impl
         if(!options.output.active) return;
 
         // Aliases to canonical variables
-        auto x  = state.x;
-        auto y  = state.y;
-        auto z  = state.z;
-        auto w  = state.w;
+        const auto& x = state.x;
+        const auto& y = state.y;
+        const auto& z = state.z;
+        const auto& w = state.w;
 
         outputter.addValue(result.iterations);
         outputter.addValue(f);
@@ -256,10 +256,10 @@ struct BasicSolver::Impl
         outputter.clear();
 
         // Aliases to canonical variables
-        auto x  = state.x;
-        auto y  = state.y;
-        auto z  = state.z;
-        auto w  = state.w;
+        auto& x = state.x;
+        auto& y = state.y;
+        auto& z = state.z;
+        auto& w = state.w;
 
         // The indices of variables with lower/upper bounds and fixed values
         const auto ilower = problem.constraints.ilower;
