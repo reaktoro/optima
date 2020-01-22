@@ -20,6 +20,7 @@
 namespace py = pybind11;
 
 void exportEigen(py::module& m);
+void exportActiveStepper(py::module& m);
 void exportBasicSolver(py::module& m);
 void exportCanonicalizer(py::module& m);
 void exportCanonicalizerAdvanced(py::module& m);
@@ -51,6 +52,7 @@ void exportUtils(py::module& m);
 PYBIND11_MODULE(optima, m)
 {
     exportEigen(m);
+    exportActiveStepper(m);
     exportBasicSolver(m);
     exportCanonicalizer(m);
     exportCanonicalizerAdvanced(m);
