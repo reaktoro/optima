@@ -77,9 +77,6 @@ struct ActiveStepper::Impl
     /// The ordering of the variables with actual lower and upper bounds as (lower/upper unstable, stable)
     Indices ilower, iupper;
 
-    /// The assembled saddle point matrix.
-    Matrix M;
-
     /// Construct a default ActiveStepper::Impl instance.
     Impl()
     {}

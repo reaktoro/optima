@@ -75,14 +75,14 @@ tested_methods = [
 ]
 
 # Tested number of rows in matrix A and J
-tested_mA = [6, 4]
-tested_mJ = [3, 1, 0]
+tested_ml = [6, 4]
+tested_mn = [3, 1, 0]
 
 # Combination of all tested cases
 testdata = product(tested_matrices_A,
                    tested_structures_H,
-                   tested_mA,
-                   tested_mJ,
+                   tested_ml,
+                   tested_mn,
                    tested_jfixed,
                    tested_jlower,
                    tested_jupper,
@@ -92,18 +92,27 @@ testdata = product(tested_matrices_A,
 @mark.parametrize("args", testdata)
 def test_active_stepper(args):
 
-    assemble_A, structure_H, mA, mJ, jfixed, jlower, jupper, method = args
+    assemble_A, structure_H, ml, mn, jfixed, jlower, jupper, method = args
 
+    # Ensure no fixed variable is a lower/upper unstable variable
+    jlower = list(set(jlower) - set(jfixed))
+    jupper = list(set(jupper) - set(jfixed))
+
+    # Count the number of each variable with fixed value, lower bound, and upper bound
     nfixed = len(jfixed)
     nlower = len(jlower)
     nupper = len(jupper)
 
-    m = mA + mJ
+    # The total number of rows in W = [A; J]
+    m = ml + mn
 
-    M = assemble_A(m, n, jfixed)
+    # The total number of variables x and y
+    t = n + m
 
-    A = M[:mA, :]
-    J = M[mA:, :]
+    W = assemble_A(m, n, jfixed)  # W = [A; J]
+
+    A = W[:ml, :]
+    J = W[ml:, :]
 
     x = linspace(1, n, n)
     y = linspace(1, m, m)
@@ -116,31 +125,59 @@ def test_active_stepper(args):
     x[jupper] = xupper
 
     b = A @ x  # *** IMPORTANT *** b = A*x is essential here when A has linearly dependent rows, because it ensures a consistent set of values for vector b (see note in the documentation of SaddlePointSolver class).
-    h = zeros(mJ)
+    h = zeros(mn)
 
     g = linspace(1, n, n)
     H = matrix_non_singular(n)
 
+    # Set gradient vector so that lower/upper variables are recognized unstable
     g[jlower] =  float('inf')  # ensure the jlower variables are marked lower unstable (when x[i] == xlower[i] and z[i] > 0, where z = g + tr(A)*y)
     g[jupper] = -float('inf')  # ensure the jupper variables are marked upper unstable (when x[i] == xupper[i] and z[i] < 0, where z = g + tr(A)*y)
 
+    # Ensure off-diagonal entries are zero if Rangespace method is used
     if method == SaddlePointMethod.Rangespace:
         H = eigen.diag(diag(H))
 
+    # Set options for the step calculation
     options = Options()
     options.kkt.method = method
 
+    # Create a stepper calculator
     stepper = ActiveStepper(n, m, A, xlower, xupper, jlower, jupper, jfixed)
     stepper.setOptions(options)
     stepper.decompose(x, y, J, g, H)
 
-    dx, dy, rx, ry, z = zeros() ?????????
+    # The solution of the step calculation
+    dx = zeros(n)
+    dy = zeros(m)
+    rx = zeros(n)
+    ry = zeros(m)
+    z  = zeros(n)
+
     stepper.solve(x, y, b, h, g, dx, dy, rx, ry, z)
 
-    M = stepper.matrix(problem).array()
-    s = stepper.step().array()
-    r = stepper.residual().array()
+    # Assemble the matrix M = [H, W.T; W, 0] setting rows/cols wrt jfixed to zero
+    M = zeros((t, t))
+    M[:n, :] = concatenate([H, W.T], axis=1)
+    M[n:t, :n] = W
 
+    # Assemble the right-hand side vector of the step calculation
+    r = zeros(t)
+    r[:n]       = -(g + W.T @ y)
+    r[n:t][:ml] = -(A @ x - b)
+    r[n:t][ml:] = -(h)
+
+    # Collect the indices of the lower/upper unstable variables and fixed variables
+    indices = list(set(jlower) | set(jupper) | set(jfixed))
+
+    # Set rows/cols wrt to unstable and fixed variables to zero (one in the diagonal)
+    M[indices, :] = 0.0
+    M[:, indices] = 0.0
+    M[indices, indices] = 1.0
+    r[indices]   = 0.0
+
+    # Calculate r* = M * [dx; dy]
+    s = concatenate([dx, dy])
     rstar = M @ s
 
     assert allclose(rstar, r)
