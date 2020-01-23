@@ -90,7 +90,7 @@ testdata = product(tested_matrices_A,
 
 
 @mark.parametrize("args", testdata)
-def test_stepper(args):
+def test_active_stepper(args):
 
     assemble_A, structure_H, mA, mJ, jfixed, jlower, jupper, method = args
 
@@ -99,8 +99,6 @@ def test_stepper(args):
     nupper = len(jupper)
 
     m = mA + mJ
-
-    t = 3*n + m
 
     M = assemble_A(m, n, jfixed)
 
@@ -123,21 +121,11 @@ def test_stepper(args):
     g = linspace(1, n, n)
     H = matrix_non_singular(n)
 
-    if len(jlower) > 0:
-        print(jlower)
-        print(ones(len(jlower)))
-        print(A[:, jlower])
-        g[jlower] =  ones(len(jlower)) - A[:, jlower].transpose() @ y
-
-    if len(jupper) > 0:
-        print(jupper)
-        print(ones(len(jupper)))
-        print(A[:, jupper])
-        print(y)
-        g[jupper] = -ones(len(jupper)) - A[:, jupper].transpose() @ y
+    g[jlower] =  float('inf')  # ensure the jlower variables are marked lower unstable (when x[i] == xlower[i] and z[i] > 0, where z = g + tr(A)*y)
+    g[jupper] = -float('inf')  # ensure the jupper variables are marked upper unstable (when x[i] == xupper[i] and z[i] < 0, where z = g + tr(A)*y)
 
     if method == SaddlePointMethod.Rangespace:
-        H = abs(eigen.diag(linspace(1, n, num=n)))
+        H = eigen.diag(diag(H))
 
     problem = ActiveStepperProblem(
         x,
@@ -167,4 +155,6 @@ def test_stepper(args):
     s = stepper.step().array()
     r = stepper.residual().array()
 
-    assert norm(M @ s - r) / norm(r) == approx(0.0)
+    rstar = M @ s
+
+    assert allclose(rstar, r)

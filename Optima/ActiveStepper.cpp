@@ -23,6 +23,7 @@
 #include <Optima/SaddlePointMatrix.hpp>
 #include <Optima/SaddlePointSolver.hpp>
 #include <Optima/Options.hpp>
+#include <Optima/Utils.hpp>
 
 namespace Optima {
 
@@ -67,11 +68,12 @@ struct ActiveStepper::Impl
     /// The ordering of the variables as (stable, lower unstable, upper unstable, fixed)
     Indices iordering;
 
-    /// The ordering of the variables with lower bounds as (lower unstable, stable)
-    Indices ilower;
+    /// Auxiliary vector with lower and upper bounds for all variables,
+    /// even those do not actually have bounds (needed to simplify indexing operations!)
+    Vector xlower, xupper;
 
-    /// The ordering of the variables with upper bounds as (upper unstable, stable)
-    Indices iupper;
+    /// The ordering of the variables with actual lower and upper bounds as (lower/upper unstable, stable)
+    Indices ilower, iupper;
 
     /// The boolean flag that indices if the solver has been initialized
     bool initialized = false;
@@ -91,8 +93,6 @@ struct ActiveStepper::Impl
         const auto H = problem.H;
         const auto A = problem.A;
         const auto J = problem.J;
-        const auto xlower = problem.xlower;
-        const auto xupper = problem.xupper;
         const auto ifixed = problem.ifixed;
 
         // Initialize the members related to number of variables and constraints
@@ -106,18 +106,20 @@ struct ActiveStepper::Impl
         nf = ifixed.rows();
         nx = n - nf;
 
-        // Initialize auxiliary vectors.
-        z = zeros(t);
-        r = zeros(t);
-        s = zeros(t);
+        // Initialize auxiliary vectors
+        z      = zeros(n);
+        r      = zeros(t);
+        s      = zeros(t);
+        xlower = constants(n, -infinity());
+        xupper = constants(n, +infinity());
+
+        // Initialize the indices of variables with lower/upper bounds removing those with fixed values
+        ilower = difference(problem.ilower, ifixed);
+        iupper = difference(problem.iupper, ifixed);
 
         // Initialize the initial ordering of the variables as (free variables, fixed variables)
         iordering = indices(n);
         partitionRight(iordering, ifixed);
-
-        // Initialize the initial ordering of the variables with lower and upper bounds
-        ilower = problem.ilower;
-        iupper = problem.iupper;
     }
 
     /// Decompose the saddle point matrix for diagonal Hessian matrices.
@@ -134,12 +136,14 @@ struct ActiveStepper::Impl
         const auto H = problem.H;
         const auto A = problem.A;
         const auto J = problem.J;
-        const auto xlower = problem.xlower;
-        const auto xupper = problem.xupper;
 
         // The Lagrange multipliers with respect to linear and non-linear constraints
         const auto yl = y.head(ml);
         const auto yn = y.tail(mn);
+
+        // Update the lower/upper bounds of the variables in ilower and iupper
+        xlower(problem.ilower) = problem.xlower;
+        xupper(problem.iupper) = problem.xupper;
 
         // Calculate the slack variables z
         z.noalias() = g + tr(A)*yl + tr(J)*yn;
