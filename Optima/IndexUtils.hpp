@@ -44,53 +44,57 @@ inline auto contains(IndicesConstRef indices, Index i) -> bool
 /// Partition `base` into (`group1`, `group2`) so that indices in `p` and `group1` are the same.
 /// @param base The base vector to be partitioned.
 /// @param p The indices in base vector to be moved to the left.
+/// @return The index of the first entry in `group2`
 /// @see partitionRight
-inline auto partitionLeft(IndicesRef base, IndicesConstRef p) -> void
+inline auto partitionLeft(IndicesRef base, IndicesConstRef p) -> Index
 {
     // The lambda function that returns true if variable i is in p
     auto in_group1 = [=](Index i) { return contains(p, i); };
 
     // The partitioning of base as (group1, group2)
-    std::partition(base.data(), base.data() + base.size(), in_group1);
+    return std::partition(base.begin(), base.end(), in_group1) - base.begin();
 }
 
 /// Partition `base` into (`group1`, `group2`) so that indices in `p` and `group2` are the same.
 /// @param base The base vector to be partitioned.
 /// @param p The indices in base vector to be moved to the right.
+/// @return The index of the first entry in `group2`
 /// @see partitionLeft
-inline auto partitionRight(IndicesRef base, IndicesConstRef p) -> void
+inline auto partitionRight(IndicesRef base, IndicesConstRef p) -> Index
 {
     // The lambda function that returns true if variable i is not in p
     auto in_group1 = [=](Index i) { return !contains(p, i); };
 
     // The partitioning of base as (group1, group2)
-    std::partition(base.data(), base.data() + base.size(), in_group1);
+    return std::partition(base.begin(), base.end(), in_group1) - base.begin();
 }
 
 /// Partition `base` into (`group1`, `group2`) so that indices in `p` and `group1` are the same and **have the same order**.
 /// @param base The base vector to be partitioned.
 /// @param p The indices in base vector to be moved to the left.
+/// @return The index of the first entry in `group2`
 /// @see partitionRight
-inline auto partitionLeftStable(IndicesRef base, IndicesConstRef p) -> void
+inline auto partitionLeftStable(IndicesRef base, IndicesConstRef p) -> Index
 {
     // The lambda function that returns true if variable i is in p
     auto in_group1 = [=](Index i) { return contains(p, i); };
 
     // The partitioning of base as (group1, group2) and keep order of p in group1
-    std::stable_partition(base.data(), base.data() + base.size(), in_group1);
+    return std::stable_partition(base.begin(), base.end(), in_group1) - base.begin();
 }
 
 /// Partition `base` into (`group1`, `group2`) so that indices in `p` and `group2` are the same and **have the same order**.
 /// @param base The base vector to be partitioned.
 /// @param p The indices in base vector to be moved to the right.
+/// @return The index of the first entry in `group2`
 /// @see partitionLeft
-inline auto partitionRightStable(IndicesRef base, IndicesConstRef p) -> void
+inline auto partitionRightStable(IndicesRef base, IndicesConstRef p) -> Index
 {
     // The lambda function that returns true if variable i is not in p
     auto in_group1 = [=](Index i) { return !contains(p, i); };
 
     // The partitioning of base as (group1, group2) and keep order of p in group2
-    std::stable_partition(base.data(), base.data() + base.size(), in_group1);
+    return std::stable_partition(base.begin(), base.end(), in_group1) - base.begin();
 }
 
 } // namespace Optima
