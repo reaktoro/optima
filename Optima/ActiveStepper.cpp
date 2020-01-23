@@ -32,13 +32,16 @@ struct ActiveStepper::Impl
     /// The options for the optimization calculation
     Options options;
 
-    /// The slack vector `z = g + tr(A)*yl + tr(J)*yn`.
+    /// The coefficient matrix W = [A; J] of the linear/nonlinear equality constraints.
+    Matrix W;
+
+    /// The instability measures of the variables defined as `z = g + tr(W)*y`.
     Vector z;
 
-    /// The solution vector `s = [dx dy]`.
+    /// The solution vector `s = [dx dy]` for the saddle point problem.
     Vector s;
 
-    /// The right-hand side residual vector `r = [rx ry]`.
+    /// The right-hand side residual vector `r = [rx ry]`  for the saddle point problem.
     Vector r;
 
     /// The number of variables in x.
@@ -68,85 +71,75 @@ struct ActiveStepper::Impl
     /// The ordering of the variables as (stable, lower unstable, upper unstable, fixed)
     Indices iordering;
 
-    /// Auxiliary vector with lower and upper bounds for all variables,
-    /// even those do not actually have bounds (needed to simplify indexing operations!)
+    /// Auxiliary vector with lower and upper bounds for all variables, even those do not actually have bounds (needed to simplify indexing operations!)
     Vector xlower, xupper;
 
     /// The ordering of the variables with actual lower and upper bounds as (lower/upper unstable, stable)
     Indices ilower, iupper;
 
-    /// The boolean flag that indices if the solver has been initialized
-    bool initialized = false;
+    /// The assembled saddle point matrix.
+    Matrix M;
 
     /// Construct a default ActiveStepper::Impl instance.
     Impl()
     {}
 
-    /// Initialize the stepper with the structure of the optimization problem.
-    auto initialize(const ActiveStepperProblem& problem) -> void
+    /// Construct a ActiveStepper::Impl instance.
+    Impl(const ActiveStepperInitArgs& args)
+    : n(args.n), m(args.m), W(args.m, args.n)
     {
-        // Update the initialized status of the solver
-        initialized = true;
-
-        // Auxiliary references
-        const auto x = problem.x;
-        const auto H = problem.H;
-        const auto A = problem.A;
-        const auto J = problem.J;
-        const auto ifixed = problem.ifixed;
-
-        // Initialize the members related to number of variables and constraints
-        n  = H.rows();
-        ml = A.rows();
-        mn = J.rows();
-        m  = ml + mn;
-        t  = n + m;
-
-        // Initialize the number of fixed and free variables
-        nf = ifixed.rows();
+        // Initialize number of fixed and free variables
+        nf = args.ifixed.rows();
         nx = n - nf;
 
+        // Initialize number of linear and nonlinear equality constraints
+        ml = args.A.rows();
+        mn = m - ml;
+
+        // Initialize the matrix W = [A; J], with J=0 at this initialization time (updated at each decompose call)
+        W << args.A, zeros(mn, n);
+
+        // Initialize total number of variables x and y
+        t  = n + m;
+
         // Initialize auxiliary vectors
-        z      = zeros(n);
-        r      = zeros(t);
-        s      = zeros(t);
-        xlower = constants(n, -infinity());
-        xupper = constants(n, +infinity());
+        z = zeros(n);
+        r = zeros(t);
+        s = zeros(t);
 
         // Initialize the indices of variables with lower/upper bounds removing those with fixed values
-        ilower = difference(problem.ilower, ifixed);
-        iupper = difference(problem.iupper, ifixed);
+        ilower = difference(args.ilower, args.ifixed);
+        iupper = difference(args.iupper, args.ifixed);
+
+        // Initialize the lower bounds of the variables in ilower
+        xlower = constants(n, -infinity());
+        xlower(args.ilower) = args.xlower;
+
+        // Initialize the upper bounds of the variables in ilower
+        xupper = constants(n, +infinity());
+        xupper(args.iupper) = args.xupper;
 
         // Initialize the initial ordering of the variables as (free variables, fixed variables)
         iordering = indices(n);
-        partitionRight(iordering, ifixed);
+        partitionRight(iordering, args.ifixed);
     }
 
     /// Decompose the saddle point matrix for diagonal Hessian matrices.
-    auto decompose(const ActiveStepperProblem& problem) -> void
+    auto decompose(const ActiveStepperDecomposeArgs& args) -> void
     {
-        // Initialize the solver if not yet
-        if(!initialized)
-            initialize(problem);
-
         // Auxiliary references
-        const auto x = problem.x;
-        const auto y = problem.y;
-        const auto g = problem.g;
-        const auto H = problem.H;
-        const auto A = problem.A;
-        const auto J = problem.J;
+        const auto x = args.x;
+        const auto y = args.y;
+        const auto g = args.g;
+        const auto H = args.H;
+        const auto J = args.J;
+        const auto A = W.topRows(ml);
 
-        // The Lagrange multipliers with respect to linear and non-linear constraints
-        const auto yl = y.head(ml);
-        const auto yn = y.tail(mn);
+        // Update the coefficient matrix W = [A; J] with the updated J block
+        W.bottomRows(mn) = J;
 
-        // Update the lower/upper bounds of the variables in ilower and iupper
-        xlower(problem.ilower) = problem.xlower;
-        xupper(problem.iupper) = problem.xupper;
-
-        // Calculate the slack variables z
-        z.noalias() = g + tr(A)*yl + tr(J)*yn;
+        // Calculate the optimality residuals
+        z.noalias() = g + tr(W)*y;
 
         // Update the ordering of the variables with lower and upper bounds
         auto is_lower_unstable = [&](Index i) { return x[i] == xlower[i] && z[i] > 0.0; };
@@ -160,11 +153,13 @@ struct ActiveStepper::Impl
         nu = nul + nuu;
         ns = nx - nu;
 
-        // Get the indices of the lower and upper unstable variables
+        // The indices of the lower and upper unstable variables
+        // Remember: ilower and iupper are organized in the order [unstable variables, stable variables]!
         auto iul = ilower.head(nul);
         auto iuu = iupper.head(nuu);
 
         // The indices of the free variables
+        // Remember: iordering is organized in the order [free variables, fixed variables]!
         auto ixx = iordering.head(nx);
 
         // Move all upper unstable variables to the right among the free variables
@@ -176,82 +171,52 @@ struct ActiveStepper::Impl
         // The indices of the unstable and fixed variables
         auto iuf = iordering.tail(nu + nf);
 
-        // Setup the saddle point matrix with unstable variables considered "fixed" variables in the problem,
-        // together with the actual original fixed variables in `ifixed`
+        // Setup the saddle point matrix.
+        // Consider lower/upper unstable variables as "fixed" variables in the saddle point problem.
+        // These are in addition to the original fixed variables in `ifixed`.
+        // Reason: we do not need to compute Newton steps for the currently unstable and fixed variables!
         SaddlePointMatrix spm(H, zeros(n), A, J, iuf);
 
-        // Decompose the saddle point matrix
+        // Decompose the saddle point matrix (this decomposition is later used in method solve, possibly many times!)
         solver.decompose(spm);
     }
 
-    /// Solve the saddle point matrix.
-    auto solve(const ActiveStepperProblem& problem) -> void
+    /// Solve the saddle point problem.
+    auto solve(const ActiveStepperSolveArgs& args, ActiveStepperSolution sol) -> void
     {
         // Auxiliary references
-        const auto x = problem.x;
-        const auto y = problem.y;
-        const auto g = problem.g;
-        const auto h = problem.h;
-        const auto A = problem.A;
-        const auto J = problem.J;
-
-        // The Lagrange multipliers with respect to linear and non-linear constraints
-        const auto yl = y.head(ml);
-        const auto yn = y.tail(mn);
+        const auto x = args.x;
+        const auto y = args.y;
+        const auto b = args.b;
+        const auto g = args.g;
+        const auto h = args.h;
+        const auto A = W.topRows(ml);
 
         // The indices of the unstable and fixed variables
         auto iuf = iordering.tail(nu + nf);
 
-        // Views to the sub-vectors in `r = [ra rb]`
-        auto ra = r.head(n);
-        auto rb = r.tail(m);
+        // Calculate the instability measure of the variables.
+        sol.z.noalias() = g + tr(W)*y;
 
-        // Views to the sub-vectors in `rb = [rbl rbn]`
-        auto rbl = rb.head(ml);
-        auto rbn = rb.tail(mn);
+        // Calculate the residuals of the first-order optimality conditions
+        sol.rx = -sol.z;
+        sol.rx(iuf).fill(0.0); // unstable and fixed variables have zero right-hand side values!
 
-        // Calculate the right-hand side vector `ra`
-        // Note this is similar to the slack variables `z`,
-        // which may have changed since `decompose`, say,
-        // in a backtracking linear search operation.
-        ra.noalias() = -(g + tr(A)*yl + tr(J)*yn);
-
-        // Set entries in `a` coresponding to unstable and fixed variables to zero
-        ra(iuf).fill(0.0);
-
-        // Calculate the right-hand side vector `rb = [rbl rbn]`
-        rbl.noalias() = -(A*x - problem.b);
-        rbn.noalias() = -h;
-
-        // The right-hand side vector `r` of the saddle point problem
-        SaddlePointVector rhs(r, n, m);
-
-        // The solution vector of the saddle point problem
-        SaddlePointSolution sol(s, n, m);
+        // Calculate the residuals of the feasibility conditions
+        sol.ry.head(ml).noalias() = -(A*x - b);
+        sol.ry.tail(mn).noalias() = -h;
 
         // Solve the saddle point problem
-        solver.solve(rhs, sol);
-    }
-
-    /// Return the calculated Newton step vector.
-    auto step() const -> SaddlePointVector
-    {
-        return SaddlePointVector(s, n, m);
-    }
-
-    /// Return the calculated residual vector for the current optimum state.
-    auto residual() const -> SaddlePointVector
-    {
-        return SaddlePointVector(r, n, m);
+        solver.solve({sol.rx, sol.ry}, {sol.dx, sol.dy});
     }
 
     /// Return the assembled saddle point matrix.
-    auto matrix(const ActiveStepperProblem& problem) -> SaddlePointMatrix
+    auto matrix(const ActiveStepperDecomposeArgs& args) -> SaddlePointMatrix
     {
-        // Auxiliary references
-        const auto H = problem.H;
-        const auto A = problem.A;
-        const auto J = problem.J;
+        decompose(args);
+        const auto H = args.H;
+        const auto J = args.J;
+        const auto A = W.topRows(ml);
         const auto iuf = iordering.tail(nu + nf);
         return SaddlePointMatrix(H, zeros(n), A, J, iuf);
     }
@@ -259,6 +224,10 @@ struct ActiveStepper::Impl
 
 ActiveStepper::ActiveStepper()
 : pimpl(new Impl())
+{}
+
+ActiveStepper::ActiveStepper(const ActiveStepperInitArgs& args)
+: pimpl(new Impl(args))
 {}
 
 ActiveStepper::ActiveStepper(const ActiveStepper& other)
@@ -280,29 +249,19 @@ auto ActiveStepper::setOptions(const Options& options) -> void
     pimpl->solver.setOptions(options.kkt);
 }
 
-auto ActiveStepper::decompose(const ActiveStepperProblem& problem) -> void
+auto ActiveStepper::decompose(const ActiveStepperDecomposeArgs& args) -> void
 {
-    return pimpl->decompose(problem);
+    return pimpl->decompose(args);
 }
 
-auto ActiveStepper::solve(const ActiveStepperProblem& problem) -> void
+auto ActiveStepper::solve(const ActiveStepperSolveArgs& args, ActiveStepperSolution sol) -> void
 {
-    return pimpl->solve(problem);
+    return pimpl->solve(args, sol);
 }
 
-auto ActiveStepper::matrix(const ActiveStepperProblem& problem) -> SaddlePointMatrix
+auto ActiveStepper::matrix(const ActiveStepperDecomposeArgs& args) -> SaddlePointMatrix
 {
-    return pimpl->matrix(problem);
-}
-
-auto ActiveStepper::step() const -> SaddlePointVector
-{
-    return pimpl->step();
-}
-
-auto ActiveStepper::residual() const -> SaddlePointVector
-{
-    return pimpl->residual();
+    return pimpl->matrix(args);
 }
 
 } // namespace Optima

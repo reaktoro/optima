@@ -31,47 +31,47 @@ class SaddlePointMatrix;
 class SaddlePointVector;
 class Options;
 
-/// The problem data needed to calculate a step using ActiveStepper.
-struct ActiveStepperProblem
+/// The arguments for the construction of a ActiveStepper object.
+struct ActiveStepperInitArgs
 {
-    /// The current state of the primal variables of the canonical optimization problem.
-    VectorConstRef x;
+    Index n;                ///< The number of primal variables *x*.
+    Index m;                ///< The number of Lagrange multipliers *y*.
+    MatrixConstRef A;       ///< The coefficient matrix of the linear equality constraints.
+    VectorConstRef xlower;  ///< The values of the lower bounds of the variables constrained with lower bounds.
+    VectorConstRef xupper;  ///< The values of the upper bounds of the variables constrained with upper bounds.
+    IndicesConstRef ilower; ///< The indices of the variables with lower bounds.
+    IndicesConstRef iupper; ///< The indices of the variables with upper bounds.
+    IndicesConstRef ifixed; ///< The indices of the variables with fixed values.
+};
 
-    /// The current state of the Lagrange multipliers of the canonical optimization problem.
-    VectorConstRef y;
+/// The arguments for the decomposition calculation in a ActiveStepper object.
+struct ActiveStepperDecomposeArgs
+{
+    VectorConstRef x; ///< The current state of the primal variables.
+    VectorConstRef y; ///< The current state of the Lagrange multipliers.
+    MatrixConstRef J; ///< The Jacobian of the equality constraint function.
+    VectorConstRef g; ///< The gradient of the objective function.
+    MatrixConstRef H; ///< The Hessian of the objective function.
+};
 
-    /// The coefficient matrix of the linear equality constraints of the canonical optimization problem.
-    MatrixConstRef A;
+/// The arguments for the solve calculation in a ActiveStepper object.
+struct ActiveStepperSolveArgs
+{
+    VectorConstRef x; ///< The current state of the primal variables.
+    VectorConstRef y; ///< The current state of the Lagrange multipliers.
+    VectorConstRef b; ///< The right-hand side vector of the linear equality constraints.
+    VectorConstRef h; ///< The value of the equality constraint function.
+    VectorConstRef g; ///< The gradient of the objective function.
+};
 
-    /// The right-hand side vector of the linear equality constraints of the canonical optimization problem.
-    VectorConstRef b;
-
-    /// The value of the equality constraint function.
-    VectorConstRef h;
-
-    /// The Jacobian of the equality constraint function.
-    MatrixConstRef J;
-
-    /// The gradient of the objective function.
-    VectorConstRef g;
-
-    /// The Hessian of the objective function.
-    MatrixConstRef H;
-
-    /// The values of the lower bounds of the variables constrained with lower bounds.
-    VectorConstRef xlower;
-
-    /// The values of the upper bounds of the variables constrained with upper bounds.
-    VectorConstRef xupper;
-
-    /// The indices of the variables with lower bounds.
-    IndicesConstRef ilower;
-
-    /// The indices of the variables with upper bounds.
-    IndicesConstRef iupper;
-
-    /// The indices of the variables with fixed values.
-    IndicesConstRef ifixed;
+/// The solution of the step problem.
+struct ActiveStepperSolution
+{
+    VectorRef dx; ///< The calculated step for the primal variables *x*.
+    VectorRef dy; ///< The calculated step for the Lagrange multipliers *y*.
+    VectorRef rx; ///< The calculated residuals of the first-order optimality conditions.
+    VectorRef ry; ///< The calculated residuals of the linear/nonlinear feasibility conditions.
+    VectorRef z;  ///< The calculated *unstabilities* of the variables defined as `z = g + tr(W)*y`.
 };
 
 /// The class that implements the step calculation.
@@ -80,6 +80,9 @@ class ActiveStepper
 public:
     /// Construct a default ActiveStepper instance.
     ActiveStepper();
+
+    /// Construct a ActiveStepper instance with given initialization data.
+    explicit ActiveStepper(const ActiveStepperInitArgs& args);
 
     /// Construct a copy of an ActiveStepper instance.
     ActiveStepper(const ActiveStepper& other);
@@ -93,24 +96,15 @@ public:
     /// Set the options for the step calculation.
     auto setOptions(const Options& options) -> void;
 
-    /// Decompose the interior-point saddle point matrix used to compute the step vectors.
-    auto decompose(const ActiveStepperProblem& problem) -> void;
+    /// Decompose the saddle point matrix used to compute the Newton steps for *x* and *y*.
+    auto decompose(const ActiveStepperDecomposeArgs& args) -> void;
 
-    /// Solve the interior-point saddle point matrix used to compute the step vectors.
+    /// Solve the saddle point problem to compute the Newton steps for *x* and *y*.
     /// @note Method ActiveStepper::decompose needs to be called first.
-    auto solve(const ActiveStepperProblem& problem) -> void;
+    auto solve(const ActiveStepperSolveArgs& args, ActiveStepperSolution sol) -> void;
 
-    /// Return the calculated Newton step vector.
-    /// @note Method ActiveStepper::solve needs to be called first.
-    auto step() const -> SaddlePointVector;
-
-    /// Return the calculated residual vector for the current optimum state.
-    /// @note Method ActiveStepper::solve needs to be called first.
-    auto residual() const -> SaddlePointVector;
-
-    /// Return the assembled interior-point saddle point matrix.
-    /// @note Method ActiveStepper::decompose needs to be called first.
-    auto matrix(const ActiveStepperProblem& problem) -> SaddlePointMatrix;
+    /// Return the saddle point matrix of the Newton step problem.
+    auto matrix(const ActiveStepperDecomposeArgs& args) -> SaddlePointMatrix;
 
 private:
     struct Impl;

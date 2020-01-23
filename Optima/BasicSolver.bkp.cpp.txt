@@ -18,13 +18,14 @@
 #include "BasicSolver.hpp"
 
 // Optima includes
-#include <Optima/ActiveStepper.hpp>
 #include <Optima/Constraints.hpp>
 #include <Optima/Exception.hpp>
+#include <Optima/IpSaddlePointMatrix.hpp>
 #include <Optima/Options.hpp>
 #include <Optima/Outputter.hpp>
 #include <Optima/Result.hpp>
 #include <Optima/SaddlePointMatrix.hpp>
+#include <Optima/Stepper.hpp>
 #include <Optima/Timing.hpp>
 #include <Optima/Utils.hpp>
 
@@ -73,10 +74,7 @@ struct BasicSolver::Impl
     BasicProblem problem;
 
     /// The calculator of the Newton step (dx, dy, dz, dw)
-    ActiveStepper stepper;
-
-    /// The options for the optimization calculation
-    Options options;
+    Stepper stepper;
 
     /// The result of the non-linear equality constraint function h(x)
     Vector h;
@@ -96,21 +94,6 @@ struct BasicSolver::Impl
     /// The result of the optimization problem
     Result result;
 
-    /// The Newton step for the primal variables *x*.
-    Vector dx;
-
-    /// The Newton step for the Lagrange multipliers *y*.
-    Vector dy;
-
-    /// The residuals of the first-order optimality conditions.
-    Vector rx;
-
-    /// The residuals of the linear/nonlinear feasibility conditions.
-    Vector ry;
-
-    /// The *unstabilities* of the variables defined as `z = g + tr(W)*y`.
-    Vector z;
-
     /// The trial iterate x(trial)
     Vector xtrial;
 
@@ -122,6 +105,12 @@ struct BasicSolver::Impl
 
     /// The upper bounds for each variable x (+inf with no lower bound)
     Vector xupper;
+
+    /// The outputter instance
+    Outputter outputter;
+
+    /// The options for the optimization calculation
+    Options options;
 
     /// The number of variables
     Index n;
@@ -140,9 +129,6 @@ struct BasicSolver::Impl
 
     /// The total number of variables (x, y, z, w).
     Index t;
-
-    /// The outputter instance
-    Outputter outputter;
 
     /// Initialize the optimization solver with the objective and constraints of the problem.
     Impl()
@@ -214,9 +200,12 @@ struct BasicSolver::Impl
         outputter.addEntries(options.output.xprefix, n, options.output.xnames);
         outputter.addEntries(options.output.yprefix, m, options.output.ynames);
         outputter.addEntries(options.output.zprefix, n, options.output.xnames);
+        outputter.addEntries(options.output.wprefix, n, options.output.xnames);
         outputter.addEntries("r", n, options.output.xnames);
         outputter.addEntry("Optimality");
         outputter.addEntry("Feasibility");
+        outputter.addEntry("CentralityLower");
+        outputter.addEntry("CentralityUpper");
 
         outputter.outputHeader();
         outputter.addValue(result.iterations);
@@ -225,9 +214,12 @@ struct BasicSolver::Impl
         outputter.addValues(x);
         outputter.addValues(y);
         outputter.addValues(z);
-        outputter.addValues(abs(rx));
+        outputter.addValues(w);
+        outputter.addValues(abs(stepper.residual().a));
         outputter.addValue(result.error_optimality);
         outputter.addValue(result.error_feasibility);
+        outputter.addValue(result.error_complementarity_lower);
+        outputter.addValue(result.error_complementarity_upper);
         outputter.outputState();
     };
 
@@ -240,6 +232,7 @@ struct BasicSolver::Impl
         const auto& x = state.x;
         const auto& y = state.y;
         const auto& z = state.z;
+        const auto& w = state.w;
 
         outputter.addValue(result.iterations);
         outputter.addValue(f);
@@ -247,9 +240,12 @@ struct BasicSolver::Impl
         outputter.addValues(x);
         outputter.addValues(y);
         outputter.addValues(z);
-        outputter.addValues(abs(rx));
+        outputter.addValues(w);
+        outputter.addValues(abs(stepper.residual().a));
         outputter.addValue(result.error_optimality);
         outputter.addValue(result.error_feasibility);
+        outputter.addValue(result.error_complementarity_lower);
+        outputter.addValue(result.error_complementarity_upper);
         outputter.outputState();
     };
 
@@ -262,6 +258,8 @@ struct BasicSolver::Impl
         // Aliases to canonical variables
         auto& x = state.x;
         auto& y = state.y;
+        auto& z = state.z;
+        auto& w = state.w;
 
         // The indices of variables with lower/upper bounds and fixed values
         const auto ilower = problem.constraints.ilower;
@@ -275,13 +273,27 @@ struct BasicSolver::Impl
         // Ensure the initial guesses for x, y, z, w have proper dimensions
         Assert(x.size() == n, "Cannot solve the optimization problem.", "The size of vector x has not been properly initialized.");
         Assert(y.size() == m, "Cannot solve the optimization problem.", "The size of vector y has not been properly initialized.");
+        Assert(z.size() == n, "Cannot solve the optimization problem.", "The size of vector z has not been properly initialized.");
+        Assert(w.size() == n, "Cannot solve the optimization problem.", "The size of vector w has not been properly initialized.");
 
         // Ensure the initial guess for `x` does not violate lower/upper bounds
-        for(Index i : ilower) x[i] = std::max(x[i], xlower[i]);
-        for(Index i : iupper) x[i] = std::min(x[i], xupper[i]);
+        for(Index i : ilower) x[i] = std::max(x[i], xlower[i] + options.mu);
+        for(Index i : iupper) x[i] = std::min(x[i], xupper[i] - options.mu);
+
+        // Ensure z = mu/(x - xlower) for variables with lower bounds
+        for(Index i : ilower)
+        	z[i] = x[i] == xlower[i] ?
+        		+1.0 : options.mu / (x[i] - xlower[i]);
+
+        // Ensure w = mu/(xupper - x) for variables with upper bounds
+        for(Index i : iupper)
+        	w[i] = x[i] == xupper[i] ?
+        		-1.0 : options.mu / (x[i] - xupper[i]);
 
         // Set the values of x, z, w corresponding to fixed variables
         x(ifixed) = params.xfixed;
+        z(ifixed).fill(0.0);
+        w(ifixed).fill(0.0);
 
         // Evaluate the objective function
         evaluateObjectiveFunction(params, state);
@@ -333,19 +345,33 @@ struct BasicSolver::Impl
 	}
 
     // The function that computes the Newton step
-    auto computeNewtonStep(const BasicParams& params, const BasicState& state) -> void
+    auto computeNewtonStep(const BasicParams& params, BasicState& state) -> void
     {
     	Timer timer;
 
-        const auto& x = state.x;
-        const auto& y = state.y;
-        const auto& b = params.b;
+        StepperProblem stepperproblem{
+            state.x,
+            state.y,
+            state.z,
+            state.w,
+            problem.constraints.A,
+            params.b,
+            h,
+            J,
+            g,
+            H,
+            params.xlower,
+            params.xupper,
+            problem.constraints.ilower,
+            problem.constraints.iupper,
+            problem.constraints.ifixed,
+        };
 
     	// Decompose the Jacobian matrix and calculate a Newton step
-        stepper.decompose({x, y, J, g, H});
+        stepper.decompose(stepperproblem);
 
         // Calculate the Newton step
-        stepper.solve({x, y, b, h, g}, {dx, dy, rx, ry, z});
+        stepper.solve(stepperproblem);
 
         // Update the time spent in linear systems
 		result.time_linear_systems += timer.elapsed();
@@ -355,13 +381,17 @@ struct BasicSolver::Impl
 	auto updateResultErrors() -> void
 	{
 		// Update the current optimality, feasibility and complementarity errors
-		result.error_optimality  = norminf(rx);
-		result.error_feasibility = norminf(ry);
+		result.error_optimality            = norminf(stepper.residual().a);
+		result.error_feasibility           = norminf(stepper.residual().b);
+		result.error_complementarity_lower = norminf(stepper.residual().c);
+		result.error_complementarity_upper = norminf(stepper.residual().d);
 
 		// Update the current maximum error of the optimization calculation
 		result.error = std::max({
 			result.error_optimality,
-			result.error_feasibility
+			result.error_feasibility,
+			result.error_complementarity_lower,
+			result.error_complementarity_upper
 		});
 	}
 
@@ -451,6 +481,14 @@ struct BasicSolver::Impl
         // Aliases to canonical variables
         auto& x = state.x;
         auto& y = state.y;
+        auto& z = state.z;
+        auto& w = state.w;
+
+		// Aliases to Newton steps calculated before
+		const auto& dx = stepper.step().a;
+		const auto& dy = stepper.step().b;
+		const auto& dz = stepper.step().c;
+		const auto& dw = stepper.step().d;
 
         // The indices of variables with lower/upper bounds and fixed values
         auto ilower = problem.constraints.ilower;
@@ -460,12 +498,28 @@ struct BasicSolver::Impl
 		// Update xtrial with the calculated Newton step
 		xtrial = x + dx;
 
-        // Ensure the initial guess for `x` does not violate lower/upper bounds
-        for(Index i : ilower) xtrial[i] = std::max(xtrial[i], xlower[i]);
-        for(Index i : iupper) xtrial[i] = std::min(xtrial[i], xupper[i]);
+		// Update x for variables with violated lower bounds
+		for(Index i : ilower)
+			if(xtrial[i] <= xlower[i])
+				xtrial[i] = x[i] - (x[i] - xlower[i]) * options.tau;
+
+		// Update x for variables with violated upper bounds
+		for(Index i : iupper)
+			if(xtrial[i] >= xupper[i])
+				xtrial[i] = x[i] + (xupper[i] - x[i]) * options.tau;
 
 		// Calculate the trial Newton step for the aggressive mode
 		dxtrial = xtrial - x;
+
+		// Update the z-Lagrange multipliers for variables with lower bounds
+		for(Index i : ilower)
+			z[i] += (z[i] + dz[i] > 0.0) ?
+				dz[i] : -options.tau * z[i];
+
+		// Update the w-Lagrange multipliers for variables with upper bounds
+		for(Index i : iupper)
+			w[i] += (w[i] + dw[i] < 0.0) ?
+				dw[i] : -options.tau * w[i];
 
 		// Update the x variables
 		x = xtrial;
@@ -475,6 +529,8 @@ struct BasicSolver::Impl
 
 		// Set the values of x, z, w corresponding to fixed variables
 		x(ifixed) = params.xfixed;
+		z(ifixed).fill(0.0);
+		w(ifixed).fill(0.0);
 	};
 
 	// Update the variables (x, y, z, w) with a conservative Newton stepping scheme
@@ -567,7 +623,14 @@ struct BasicSolver::Impl
 	/// Return true if the calculation converged.
     auto converged() const -> bool
     {
-        // Check if the calculation should stop based on optimality/feasibility errors
+        // Check if the calculation should stop based on max variation of x
+        if(options.tolerancex && max(abs(stepper.step().a)) < options.tolerancex)
+            return true;
+
+        // todo you want to make sure the test for convergence should consider the residual of
+        // unstable variables in a special way!
+
+        // Check if the calculation should stop based on optimality condititions
         return result.error < options.tolerance;
     };
 

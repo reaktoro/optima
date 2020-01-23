@@ -28,44 +28,26 @@ using namespace Optima;
 
 void exportActiveStepper(py::module& m)
 {
-    py::class_<ActiveStepperProblem>(m, "ActiveStepperProblem")
-        .def(py::init<
-            VectorConstRef,  // x
-            VectorConstRef,  // y
-            MatrixConstRef,  // A
-            VectorConstRef,  // b
-            VectorConstRef,  // h
-            MatrixConstRef,  // J
-            VectorConstRef,  // g
-            MatrixConstRef,  // H
-            VectorConstRef,  // xlower
-            VectorConstRef,  // xupper
-            IndicesConstRef, // ilower
-            IndicesConstRef, // iupper
-            IndicesConstRef  // ifixed
-        >())
-        .def_readonly("x", &ActiveStepperProblem::x, "The current state of the primal variables of the canonical optimization problem.")
-        .def_readonly("y", &ActiveStepperProblem::y, "The current state of the Lagrange multipliers of the canonical optimization problem.")
-        .def_readonly("A", &ActiveStepperProblem::A, "The coefficient matrix of the linear equality constraints of the canonical optimization problem.")
-        .def_readonly("b", &ActiveStepperProblem::b, "The right-hand side vector of the linear equality constraints of the canonical optimization problem.")
-        .def_readonly("h", &ActiveStepperProblem::h, "The value of the equality constraint function.")
-        .def_readonly("J", &ActiveStepperProblem::J, "The Jacobian of the equality constraint function.")
-        .def_readonly("g", &ActiveStepperProblem::g, "The gradient of the objective function.")
-        .def_readonly("H", &ActiveStepperProblem::H, "The Hessian of the objective function.")
-        .def_readonly("xlower", &ActiveStepperProblem::xlower, "The values of the lower bounds of the variables constrained with lower bounds.")
-        .def_readonly("xupper", &ActiveStepperProblem::xupper, "The values of the upper bounds of the variables constrained with upper bounds.")
-        .def_readonly("ilower", &ActiveStepperProblem::ilower, "The indices of the variables with lower bounds.")
-        .def_readonly("iupper", &ActiveStepperProblem::iupper, "The indices of the variables with upper bounds.")
-        .def_readonly("ifixed", &ActiveStepperProblem::ifixed, "The indices of the variables with fixed values.")
-        ;
+    auto init = [](Index n, Index m, MatrixConstRef A, VectorConstRef xlower, VectorConstRef xupper, IndicesConstRef ilower, IndicesConstRef iupper, IndicesConstRef ifixed) -> ActiveStepper
+    {
+        return ActiveStepper({n, m, A, xlower, xupper, ilower, iupper, ifixed});
+    };
+
+    auto decompose = [](ActiveStepper& self, VectorConstRef x, VectorConstRef y, MatrixConstRef J, VectorConstRef g, MatrixConstRef H)
+    {
+        return self.decompose({x, y, J, g, H});
+    };
+
+    auto solve = [](ActiveStepper& self,  VectorConstRef x, VectorConstRef y, VectorConstRef b, VectorConstRef h, VectorConstRef g, VectorRef dx, VectorRef dy, VectorRef rx, VectorRef ry, VectorRef z)
+    {
+        self.solve({x, y, b, h, g}, {dx, dy, rx, ry, z});
+    };
 
     py::class_<ActiveStepper>(m, "ActiveStepper")
         .def(py::init<>())
+        .def(py::init(init))
         .def("setOptions", &ActiveStepper::setOptions)
-        .def("decompose", &ActiveStepper::decompose)
-        .def("solve", &ActiveStepper::solve)
-        .def("step", &ActiveStepper::step)
-        .def("residual", &ActiveStepper::residual)
-        .def("matrix", &ActiveStepper::matrix)
+        .def("decompose", decompose)
+        .def("solve", solve)
         ;
 }

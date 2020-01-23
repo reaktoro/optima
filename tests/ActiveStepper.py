@@ -127,29 +127,15 @@ def test_active_stepper(args):
     if method == SaddlePointMethod.Rangespace:
         H = eigen.diag(diag(H))
 
-    problem = ActiveStepperProblem(
-        x,
-        y,
-        A,
-        b,
-        h,
-        J,
-        g,
-        H,
-        xlower,
-        xupper,
-        jlower,
-        jupper,
-        jfixed)
-
     options = Options()
     options.kkt.method = method
 
-    stepper = ActiveStepper()
-
+    stepper = ActiveStepper(n, m, A, xlower, xupper, jlower, jupper, jfixed)
     stepper.setOptions(options)
-    stepper.decompose(problem)
-    stepper.solve(problem)
+    stepper.decompose(x, y, J, g, H)
+
+    dx, dy, rx, ry, z = zeros() ?????????
+    stepper.solve(x, y, b, h, g, dx, dy, rx, ry, z)
 
     M = stepper.matrix(problem).array()
     s = stepper.step().array()
