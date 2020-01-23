@@ -97,4 +97,20 @@ inline auto partitionRightStable(IndicesRef base, IndicesConstRef p) -> Index
     return std::stable_partition(base.begin(), base.end(), in_group1) - base.begin();
 }
 
+/// Return the indices in `indices1` that are not in `indices2`.
+inline auto difference(IndicesConstRef indices1, IndicesConstRef indices2) -> Indices
+{
+    Indices tmp(indices1);
+    const auto idx = partitionRight(tmp, indices2);
+    return tmp.head(idx);
+}
+
+/// Return the indices in `indices1` that are in `indices2`.
+inline auto intersect(IndicesConstRef indices1, IndicesConstRef indices2) -> Indices
+{
+    Indices tmp(indices1);
+    const auto idx = partitionRight(tmp, indices2);
+    return tmp.tail(tmp.size() - idx);
+}
+
 } // namespace Optima

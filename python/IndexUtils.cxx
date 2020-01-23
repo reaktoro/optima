@@ -32,4 +32,6 @@ void exportIndexUtils(py::module& m)
     m.def("partitionRight", &partitionRight);
     m.def("partitionLeftStable", &partitionLeftStable);
     m.def("partitionRightStable", &partitionRightStable);
+    m.def("difference", &difference);
+    m.def("intersect", &intersect);
 }
