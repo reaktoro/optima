@@ -23,10 +23,12 @@ from pytest import approx
 def test_index_utils():
     n = 10
 
-    assert contains([1, 3, 6], 1)
-    assert contains([1, 3, 6], 3)
-    assert contains([1, 3, 6], 6)
-    assert not contains([1, 3, 6], 7)
+    # assert indices(5) == approx([0, 1, 2, 3, 4, 5])
+
+    assert contains(1, [1, 3, 6])
+    assert contains(3, [1, 3, 6])
+    assert contains(6, [1, 3, 6])
+    assert not contains(7, [1, 3, 6])
 
     inds = arange(n)
     partitionLeft(inds, [1, 3, 5, 7])
@@ -47,3 +49,12 @@ def test_index_utils():
     partitionRightStable(inds, [1, 3, 5, 7])
     assert inds[-4:] == approx([1, 3, 5, 7])
     assert inds[:-4] == approx([0, 2, 4, 6, 8, 9])
+
+    inds1 = [1, 2, 3, 4, 5]
+    inds2 = [4, 5, 6, 7]
+
+    assert set(difference(inds1, inds2)) == set([1, 2, 3])
+    assert set(difference(inds2, inds1)) == set([6, 7])
+
+    assert set(intersect(inds1, inds2)) == set([4, 5])
+    assert set(intersect(inds2, inds1)) == set([4, 5])

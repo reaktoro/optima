@@ -33,7 +33,7 @@ inline auto indices(Index length) -> decltype(linspace<Index>(length))
 }
 
 /// Return `true` if a given index `i` is contained in vector `indices`.
-inline auto contains(IndicesConstRef indices, Index i) -> bool
+inline auto contains(Index i, IndicesConstRef indices) -> bool
 {
     const auto size = indices.size();
     const auto begin = indices.data();
@@ -49,7 +49,7 @@ inline auto contains(IndicesConstRef indices, Index i) -> bool
 inline auto partitionLeft(IndicesRef base, IndicesConstRef p) -> Index
 {
     // The lambda function that returns true if variable i is in p
-    auto in_group1 = [=](Index i) { return contains(p, i); };
+    auto in_group1 = [=](Index i) { return contains(i, p); };
 
     // The partitioning of base as (group1, group2)
     return std::partition(base.begin(), base.end(), in_group1) - base.begin();
@@ -63,7 +63,7 @@ inline auto partitionLeft(IndicesRef base, IndicesConstRef p) -> Index
 inline auto partitionRight(IndicesRef base, IndicesConstRef p) -> Index
 {
     // The lambda function that returns true if variable i is not in p
-    auto in_group1 = [=](Index i) { return !contains(p, i); };
+    auto in_group1 = [=](Index i) { return !contains(i, p); };
 
     // The partitioning of base as (group1, group2)
     return std::partition(base.begin(), base.end(), in_group1) - base.begin();
@@ -77,7 +77,7 @@ inline auto partitionRight(IndicesRef base, IndicesConstRef p) -> Index
 inline auto partitionLeftStable(IndicesRef base, IndicesConstRef p) -> Index
 {
     // The lambda function that returns true if variable i is in p
-    auto in_group1 = [=](Index i) { return contains(p, i); };
+    auto in_group1 = [=](Index i) { return contains(i, p); };
 
     // The partitioning of base as (group1, group2) and keep order of p in group1
     return std::stable_partition(base.begin(), base.end(), in_group1) - base.begin();
@@ -91,7 +91,7 @@ inline auto partitionLeftStable(IndicesRef base, IndicesConstRef p) -> Index
 inline auto partitionRightStable(IndicesRef base, IndicesConstRef p) -> Index
 {
     // The lambda function that returns true if variable i is not in p
-    auto in_group1 = [=](Index i) { return !contains(p, i); };
+    auto in_group1 = [=](Index i) { return !contains(i, p); };
 
     // The partitioning of base as (group1, group2) and keep order of p in group2
     return std::stable_partition(base.begin(), base.end(), in_group1) - base.begin();
