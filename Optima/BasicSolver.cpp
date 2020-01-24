@@ -329,21 +329,17 @@ struct BasicSolver::Impl
         auto x         = args.x;
         auto y         = args.y;
         auto b         = args.b;
-        auto ilower    = args.ilower;
         auto xlower    = args.xlower;
-        auto iupper    = args.iupper;
         auto xupper    = args.xupper;
-        auto ifixed    = args.ifixed;
         auto iordering = args.iordering;
-        auto ns        = args.ns;
         auto nul       = args.nul;
         auto nuu       = args.nuu;
 
     	// Decompose the Jacobian matrix and calculate a Newton step
-        stepper.decompose({ x, y, J, g, H, ilower, xlower, iupper, xupper, iordering, ns, nul, nuu });
+        stepper.decompose({ x, y, g, H, J, xlower, xupper, iordering, nul, nuu });
 
         // Calculate the Newton step
-        stepper.solve({ x, y, b, h, g, dx, dy, rx, ry, z });
+        stepper.solve({ x, y, b, h, g, iordering, dx, dy, rx, ry, z });
 
         // Update the time spent in linear systems
 		result.time_linear_systems += timer.elapsed();
@@ -446,21 +442,16 @@ struct BasicSolver::Impl
 	// Update the variables (x, y, z, w) with an aggressive Newton stepping scheme
 	auto applyNewtonSteppingAggressive(BasicSolverSolveArgs args) -> void
 	{
-        // Aliases to canonical variables
+        // Auxiliary variables
         auto& x = args.x;
         auto& y = args.y;
-
-        // The indices of variables with lower/upper bounds and fixed values
-        auto ilower = args.ilower;
-        auto iupper = args.iupper;
-        auto ifixed = args.ifixed;
 
 		// Update xtrial with the calculated Newton step
 		xtrial = x + dx;
 
-        // Ensure the initial guess for `x` does not violate lower/upper bounds
-        for(Index i : ilower) xtrial[i] = std::max(xtrial[i], xlower[i]);
-        for(Index i : iupper) xtrial[i] = std::min(xtrial[i], xupper[i]);
+        // Ensure no entry in `x` violate lower/upper bounds
+        xtrial.noalias() = max(xtrial, xlower);
+        xtrial.noalias() = min(xtrial, xupper);
 
 		// Calculate the trial Newton step for the aggressive mode
 		dxtrial = xtrial - x;
@@ -470,9 +461,6 @@ struct BasicSolver::Impl
 
 		// Update the y-Lagrange multipliers
 		y += dy;
-
-		// Set the values of x, z, w corresponding to fixed variables
-		x(ifixed) = args.xfixed;
 	};
 
 	// Update the variables (x, y, z, w) with a conservative Newton stepping scheme

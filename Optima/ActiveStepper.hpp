@@ -28,8 +28,6 @@
 namespace Optima {
 
 // Forward declarations
-class SaddlePointMatrix;
-class SaddlePointVector;
 class Options;
 
 /// The arguments for the construction of a ActiveStepper object.
