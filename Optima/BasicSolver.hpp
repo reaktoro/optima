@@ -19,11 +19,11 @@
 
 // C++ includes
 #include <memory>
-#include <any>
 
 // Optima includes
 #include <Optima/ConstraintFunction.hpp>
 #include <Optima/Index.hpp>
+#include <Optima/Number.hpp>
 #include <Optima/Matrix.hpp>
 #include <Optima/ObjectiveFunction.hpp>
 
@@ -33,101 +33,28 @@ namespace Optima {
 class Options;
 class Result;
 
-/// The state of the solution of a basic optimization problem.
-struct BasicState
+/// The data needed in the constructor of class BasicSolver.
+struct BasicSolverInitArgs
 {
-    /// The primal variables of the basic optimization problem.
-    Vector x;
-
-    /// The Lagrange multipliers with respect to the equality constraints \eq{Ax=b} and \eq{h(x)=0}.
-    Vector y;
-
-    /// The slack variables with respect to the lower bounds of the primal variables,
-    Vector z;
-
-    /// The slack variables with respect to the upper bounds of the primal variables,
-    Vector w;
-
-    /// Construct a default BasicState object.
-    BasicState() {}
-
-    /// Construct a BasicState object with given dimension values.
-    /// @param n The number of primary variables in \eq{x}
-    /// @param m The number of Lagrange multipliers in \eq{y=(y_{b},y_{h})}
-    BasicState(Index n, Index m) : x(zeros(n)), y(zeros(m)), z(zeros(n)), w(zeros(n)) {}
+    Index n;          ///< The number of primal variables *x*.
+    Index m;          ///< The number of linear and nonlinear equality constraints in *Ax = b* and *h(x) = 0*.
+    MatrixConstRef A; ///< The coefficient matrix *A* of the linear equality constraints.
 };
 
-/// The dimensions of variables and constraints in a basic optimization problem.
-struct BasicDims
+/// The data needed in method BasicSolver::solve.
+struct BasicSolverSolveArgs
 {
-    /// The number of variables (equivalent to the dimension of vector \eq{x}).
-    Index x = 0;
-
-    /// The number of linear equality constraint equations (equivalent to the dimension of vector \eq{b}).
-    Index b = 0;
-
-    /// The number of non-linear equality constraint equations (equivalent to the dimension of vector \eq{h}).
-    Index h = 0;
-
-    /// The number of variables with lower bounds (equivalent to the dimension of vector of lower bounds \eq{x_\mathrm{l}}).
-    Index xlower = 0;
-
-    /// The number of variables with upper bounds (equivalent to the dimension of vector of upper bounds \eq{x_\mathrm{u}}).
-    Index xupper = 0;
-
-    /// The number of variables with fixed values (equivalent to the dimension of vector \eq{x_\mathrm{f}}).
-    Index xfixed = 0;
-};
-
-/// The constraints in a basic optimization problem.
-struct BasicConstraints
-{
-    /// The coefficient matrix of the linear equality constraint equations \eq{Ax=b}.
-    Matrix A;
-
-    /// The constraint function in the non-linear equality constraint equations \eq{h(x) = 0}.
-    ConstraintFunction h;
-
-    /// The indices of the variables with lower bounds.
-    Indices ilower;
-
-    /// The indices of the variables with upper bounds.
-    Indices iupper;
-
-    /// The indices of the variables with fixed values.
-    Indices ifixed;
-};
-
-/// The parameters of a basic optimization problem.
-struct BasicParams
-{
-    /// The right-hand side vector of the linear equality constraints \eq{Ax = b}.
-    Vector b;
-
-    /// The lower bounds of the variables in \eq{x} that have lower bounds.
-    Vector xlower;
-
-    /// The upper bounds of the variables \eq{x} that have upper bounds.
-    Vector xupper;
-
-    /// The values of the variables in \eq{x} that are fixed.
-    Vector xfixed;
-
-    /// The extra parameters in the problem.
-    std::any extra;
-};
-
-/// The definition of a basic optimization problem.
-struct BasicProblem
-{
-    /// The dimensions of the basic optimization problem.
-    BasicDims dims;
-
-    /// The constraints of the basic optimization problem.
-    BasicConstraints constraints;
-
-    /// The objective function of the basic optimization problem.
-    ObjectiveFunction objective;
+    ObjectiveFunction const& obj;  ///< The objective function *f(x)* of the basic optimization problem.
+    ConstraintFunction const& h;   ///< The nonlinear equality constraint function *h(x)*.
+    VectorConstRef b;              ///< The right-hand side vector *b* of the linear equality constraints *Ax = b*.
+    VectorConstRef xlower;         ///< The lower bounds of the primal variables.
+    VectorConstRef xupper;         ///< The upper bounds of the primal variables.
+    VectorRef x;                   ///< The output primal variables *x* of the basic optimization problem.
+    VectorRef y;                   ///< The output Lagrange multipliers *y* with respect to constraints *Ax = b* and *h(x) = 0*.
+    VectorRef z;                   ///< The output instability measures of the primal variables defined as *z = g + tr(A)yl + tr(J)yn*.
+    IndicesRef iordering;          ///< The output ordering of the variables as (*stable*, *lower unstable*, *upper unstable*).
+    IndexNumberRef nul;            ///< The output number of *lower unstable variables* (i.e. those active/attached at their lower bounds).
+    IndexNumberRef nuu;            ///< The output number of *upper unstable variables* (i.e. those active/attached at their upper bounds).
 };
 
 /// The solver for optimization problems in its basic form.
@@ -140,8 +67,8 @@ public:
     /// Construct a default BasicSolver instance.
     BasicSolver();
 
-    /// Construct a BasicSolver instance with given optimization problem.
-    BasicSolver(const BasicProblem& problem);
+    /// Construct a BasicSolver instance with given details of the optimization problem.
+    BasicSolver(BasicSolverInitArgs args);
 
     /// Construct a copy of a BasicSolver instance.
     BasicSolver(const BasicSolver& other);
@@ -155,10 +82,8 @@ public:
     /// Set the options for the optimization calculation.
     auto setOptions(const Options& options) -> void;
 
-    /// Solve an optimization problem.
-    /// @param params The parameters for the optimization calculation.
-    /// @param state[in,out] The initial guess and the final state of the optimization calculation.
-    auto solve(const BasicParams& params, BasicState& state) -> Result;
+    /// Solve the optimization problem.
+    auto solve(BasicSolverSolveArgs args) -> Result;
 
 private:
     struct Impl;

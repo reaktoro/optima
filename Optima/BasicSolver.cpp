@@ -17,6 +17,9 @@
 
 #include "BasicSolver.hpp"
 
+// C++ includes
+#include <cassert>
+
 // Optima includes
 #include <Optima/ActiveStepper.hpp>
 #include <Optima/Constraints.hpp>
@@ -69,9 +72,6 @@ auto isfinite(const ObjectiveResult& res) -> bool
 /// The implementation of the solver for basic optimization problems.
 struct BasicSolver::Impl
 {
-    /// The optimization problem
-    BasicProblem problem;
-
     /// The calculator of the Newton step (dx, dy, dz, dw)
     ActiveStepper stepper;
 
@@ -144,23 +144,22 @@ struct BasicSolver::Impl
     /// The outputter instance
     Outputter outputter;
 
-    /// Initialize the optimization solver with the objective and constraints of the problem.
+    /// Construct a default BasicSolver::Impl instance.
     Impl()
     {}
 
-    /// Initialize the optimization solver with the objective and constraints of the problem.
-    Impl(const BasicProblem& problem)
-    : problem(problem)
+    /// Construct a BasicSolver::Impl instance with given details of the optimization problem.
+    Impl(BasicSolverInitArgs args)
     {
         // Initialize the members related to number of variables and constraints
-        n  = problem.dims.x;
-        mb = problem.dims.b;
-        mh = problem.dims.h;
-        m  = mb + mh;
+        n  = args.n;
+        m  = args.m;
+        mb = args.A.rows();
+        mh = m - mb;
 
         // Initialize the number of fixed and free variables in x
-        nf = problem.constraints.ifixed.size();
-        nx = n - nf;
+        nf = 0;
+        nx = n;
 
         // Allocate memory
         h.resize(mh);
@@ -173,22 +172,15 @@ struct BasicSolver::Impl
         xlower = constants(n, -infinity());
         xupper = constants(n,  infinity());
 
-        // Ensure the objective function has been set in the problem.
-        Assert(problem.objective != nullptr,
-            "Could not initialize BasicSolver.",
-                "No objective function given (BasicProblem::objective is empty).");
-
-        // Ensure the objective function has been set in the problem.
-        Assert(mh == 0 or problem.constraints.h != nullptr,
-            "Could not initialize BasicSolver.",
-                "No constraint function given (BasicProblem::BasicConstraints::h is empty).");
+        // Initialize step calculator
+        stepper = ActiveStepper({n, m, args.A});
     }
 
     /// Set the options for the optimization calculation.
-    auto setOptions(const Options& _options) -> void
+    auto setOptions(const Options& opts) -> void
     {
     	// Set member options
-    	options = _options;
+    	options = opts;
 
         // Set the options of the optimization stepper
         stepper.setOptions(options);
@@ -198,15 +190,14 @@ struct BasicSolver::Impl
     }
 
     // Output the header and initial state of the solution
-    auto outputInitialState(const BasicState& state) -> void
+    auto outputInitialState(BasicSolverSolveArgs args) -> void
     {
         if(!options.output.active) return;
 
         // Aliases to canonical variables
-        const auto& x = state.x;
-        const auto& y = state.y;
-        const auto& z = state.z;
-        const auto& w = state.w;
+        const auto& x = args.x;
+        const auto& y = args.y;
+        const auto& z = args.z;
 
         outputter.addEntry("Iteration");
         outputter.addEntry("f(x)");
@@ -232,14 +223,14 @@ struct BasicSolver::Impl
     };
 
     // The function that outputs the current state of the solution
-    auto outputCurrentState(const BasicState& state) -> void
+    auto outputCurrentState(BasicSolverSolveArgs args) -> void
     {
         if(!options.output.active) return;
 
         // Aliases to canonical variables
-        const auto& x = state.x;
-        const auto& y = state.y;
-        const auto& z = state.z;
+        const auto& x = args.x;
+        const auto& y = args.y;
+        const auto& z = args.z;
 
         outputter.addValue(result.iterations);
         outputter.addValue(f);
@@ -254,40 +245,37 @@ struct BasicSolver::Impl
     };
 
     // Initialize internal state before calculation begins
-    auto initialize(const BasicParams& params, BasicState& state) -> void
+    auto initialize(BasicSolverSolveArgs args) -> void
 	{
+        // Auxiliary references
+        auto x         = args.x;
+        auto y         = args.y;
+        auto xlower    = args.xlower;
+        auto xupper    = args.xupper;
+        auto iordering = args.iordering;
+
+        // Ensure consistent dimensions of vectors/matrices.
+        assert(x.rows() == n);
+        assert(y.rows() == m);
+        assert(xlower.rows() == n);
+        assert(xupper.rows() == n);
+        assert(iordering.rows() == n);
+
         // Clear previous state of the Outputter instance
         outputter.clear();
 
-        // Aliases to canonical variables
-        auto& x = state.x;
-        auto& y = state.y;
-
-        // The indices of variables with lower/upper bounds and fixed values
-        const auto ilower = problem.constraints.ilower;
-        const auto iupper = problem.constraints.iupper;
-        const auto ifixed = problem.constraints.ifixed;
-
-        // Initialize xlower and xupper with the given lower and upper bounds
-        xlower(ilower) = params.xlower;
-        xupper(iupper) = params.xupper;
-
-        // Ensure the initial guesses for x, y, z, w have proper dimensions
-        Assert(x.size() == n, "Cannot solve the optimization problem.", "The size of vector x has not been properly initialized.");
-        Assert(y.size() == m, "Cannot solve the optimization problem.", "The size of vector y has not been properly initialized.");
-
         // Ensure the initial guess for `x` does not violate lower/upper bounds
-        for(Index i : ilower) x[i] = std::max(x[i], xlower[i]);
-        for(Index i : iupper) x[i] = std::min(x[i], xupper[i]);
+        x.noalias() = max(x, xlower);
+        x.noalias() = min(x, xupper);
 
-        // Set the values of x, z, w corresponding to fixed variables
-        x(ifixed) = params.xfixed;
+    	// Initialize the Newton step calculator once for the upcoming decompose/solve calls
+        stepper.initialize({xlower, xupper, iordering});
 
         // Evaluate the objective function
-        evaluateObjectiveFunction(params, state);
+        evaluateObjectiveFunction(args);
 
         // Evaluate the constraint function
-        evaluateConstraintFunction(params, state);
+        evaluateConstraintFunction(args);
 
         // Assert the objective function produces finite numbers at this point
         Assert(std::isfinite(f) && g.allFinite() && H.allFinite(),
@@ -297,14 +285,14 @@ struct BasicSolver::Impl
 			"such as `nan` and/or `inf`.");
 
         // Compute the Newton step for the current state
-        computeNewtonStep(params, state);
+        computeNewtonStep(args);
 
         // Update the optimality, feasibility and complementarity errors
         updateResultErrors();
 	}
 
     // Evaluate the objective function
-    auto evaluateObjectiveFunction(const BasicParams& params, BasicState& state) -> void
+    auto evaluateObjectiveFunction(BasicSolverSolveArgs args) -> void
 	{
         // Create an ObjectiveResult with f, g, H to be filled
         ObjectiveResult res(f, g, H);
@@ -315,11 +303,11 @@ struct BasicSolver::Impl
         res.requires.H = true;
 
         // Evaluate the objective function f(x)
-        problem.objective(state.x, res);
+        args.obj(args.x, res);
 	}
 
     // Evaluate the equality constraint function
-    auto evaluateConstraintFunction(const BasicParams& params, BasicState& state) -> void
+    auto evaluateConstraintFunction(BasicSolverSolveArgs args) -> void
 	{
         // Skip if there are no non-linear equality constraints
         if(mh == 0)
@@ -329,23 +317,33 @@ struct BasicSolver::Impl
         ConstraintResult res{h, J};
 
         // Evaluate the constraint function h(x)
-        problem.constraints.h(state.x, res);
+        args.h(args.x, res);
 	}
 
     // The function that computes the Newton step
-    auto computeNewtonStep(const BasicParams& params, const BasicState& state) -> void
+    auto computeNewtonStep(BasicSolverSolveArgs args) -> void
     {
     	Timer timer;
 
-        const auto& x = state.x;
-        const auto& y = state.y;
-        const auto& b = params.b;
+        // Auxiliary variables
+        auto x         = args.x;
+        auto y         = args.y;
+        auto b         = args.b;
+        auto ilower    = args.ilower;
+        auto xlower    = args.xlower;
+        auto iupper    = args.iupper;
+        auto xupper    = args.xupper;
+        auto ifixed    = args.ifixed;
+        auto iordering = args.iordering;
+        auto ns        = args.ns;
+        auto nul       = args.nul;
+        auto nuu       = args.nuu;
 
     	// Decompose the Jacobian matrix and calculate a Newton step
-        stepper.decompose({x, y, J, g, H});
+        stepper.decompose({ x, y, J, g, H, ilower, xlower, iupper, xupper, iordering, ns, nul, nuu });
 
         // Calculate the Newton step
-        stepper.solve({x, y, b, h, g}, {dx, dy, rx, ry, z});
+        stepper.solve({ x, y, b, h, g, dx, dy, rx, ry, z });
 
         // Update the time spent in linear systems
 		result.time_linear_systems += timer.elapsed();
@@ -366,11 +364,11 @@ struct BasicSolver::Impl
 	}
 
     // Update the variables (x, y, z, w) with a Newton stepping scheme
-    auto applyNewtonStepping(const BasicParams& params, BasicState& state) -> void
+    auto applyNewtonStepping(BasicSolverSolveArgs args) -> void
     {
         switch(options.step) {
-        case Aggressive: return applyNewtonSteppingAggressive(params, state);
-        default: return applyNewtonSteppingConservative(params, state);
+        case Aggressive: return applyNewtonSteppingAggressive(args);
+        default: return applyNewtonSteppingConservative(args);
         }
     };
 
@@ -392,9 +390,9 @@ struct BasicSolver::Impl
 
 //		f = objective(xtrial);
 //
-//		state.f = f.f;
-//		state.g = f.g;
-//		state.H = f.H;
+//		args.f = f.f;
+//		args.g = f.g;
+//		args.H = f.H;
 //
 //		// Initialize the step length factor
 //		double alpha = fractionToTheBoundary(x, dx, options.tau);
@@ -416,9 +414,9 @@ struct BasicSolver::Impl
 
 //			f = objective(xtrial);
 //
-//			state.f = f.f;
-//			state.g = f.g;
-//			state.H = f.H;
+//			args.f = f.f;
+//			args.g = f.g;
+//			args.H = f.H;
 //
 //			// Decrease the current step length
 //			alpha *= 0.5;
@@ -439,23 +437,23 @@ struct BasicSolver::Impl
 
 //		f = objective(x);
 //
-//		state.f = f.f;
-//		state.g = f.g;
-//		state.H = f.H;
+//		args.f = f.f;
+//		args.g = f.g;
+//		args.H = f.H;
 
 	}
 
 	// Update the variables (x, y, z, w) with an aggressive Newton stepping scheme
-	auto applyNewtonSteppingAggressive(const BasicParams& params, BasicState& state) -> void
+	auto applyNewtonSteppingAggressive(BasicSolverSolveArgs args) -> void
 	{
         // Aliases to canonical variables
-        auto& x = state.x;
-        auto& y = state.y;
+        auto& x = args.x;
+        auto& y = args.y;
 
         // The indices of variables with lower/upper bounds and fixed values
-        auto ilower = problem.constraints.ilower;
-        auto iupper = problem.constraints.iupper;
-        auto ifixed = problem.constraints.ifixed;
+        auto ilower = args.ilower;
+        auto iupper = args.iupper;
+        auto ifixed = args.ifixed;
 
 		// Update xtrial with the calculated Newton step
 		xtrial = x + dx;
@@ -474,17 +472,17 @@ struct BasicSolver::Impl
 		y += dy;
 
 		// Set the values of x, z, w corresponding to fixed variables
-		x(ifixed) = params.xfixed;
+		x(ifixed) = args.xfixed;
 	};
 
 	// Update the variables (x, y, z, w) with a conservative Newton stepping scheme
-	auto applyNewtonSteppingConservative(const BasicParams& params, BasicState& state) -> void
+	auto applyNewtonSteppingConservative(BasicSolverSolveArgs args) -> void
 	{
 //		// Aliases to variables x, y, z, w
-//		VectorRef x = state.x;
-//		VectorRef y = state.y;
-//		VectorRef z = state.z;
-//		VectorRef w = state.w;
+//		VectorRef x = args.x;
+//		VectorRef y = args.y;
+//		VectorRef z = args.z;
+//		VectorRef w = args.w;
 //
 //		// Aliases to Newton steps calculated before
 //		VectorConstRef dx = stepper.step().x;
@@ -520,9 +518,9 @@ struct BasicSolver::Impl
 
 //			f = objective(xtrial);
 //
-//			state.f = f.f;
-//			state.g = f.g;
-//			state.H = f.H;
+//			args.f = f.f;
+//			args.g = f.g;
+//			args.H = f.H;
 //
 //			// Leave the loop if f(xtrial) is finite
 //			if(isfinite(f))
@@ -556,9 +554,9 @@ struct BasicSolver::Impl
 
 //		f = objective(x);
 //
-//		state.f = f.f;
-//		state.g = f.g;
-//		state.H = f.H;
+//		args.f = f.f;
+//		args.g = f.g;
+//		args.H = f.H;
 //
 //		// Return true as found xtrial results in finite f(xtrial)
 //		return true;
@@ -571,10 +569,20 @@ struct BasicSolver::Impl
         return result.error < options.tolerance;
     };
 
-    auto solve(const BasicParams& params, BasicState& state) -> Result
+    auto solve(BasicSolverSolveArgs args) -> Result
     {
         // Start timing the calculation
         Timer timer;
+
+        // Ensure the objective function has been given.
+        Assert(args.obj != nullptr,
+            "Could not initialize BasicSolver.",
+                "No objective function given.");
+
+        // Ensure the objective function has been given if number of nonlinear constraints is positive.
+        Assert(mh == 0 or args.h != nullptr,
+            "Could not initialize BasicSolver.",
+                "No constraint function given.");
 
         // Finish the calculation if the problem has no variable
         if(n == 0)
@@ -590,19 +598,19 @@ struct BasicSolver::Impl
         auto& iterations = result.iterations;
         auto& succeeded = result.succeeded = false;
 
-        initialize(params, state);
-        outputInitialState(state);
+        initialize(args);
+        outputInitialState(args);
 
         for(iterations = 1; iterations <= maxiters && !succeeded; ++iterations)
         {
-            applyNewtonStepping(params, state);
-            outputCurrentState(state);
+            applyNewtonStepping(args);
+            outputCurrentState(args);
 
             if((succeeded = converged()))
                 break;
 
-            evaluateObjectiveFunction(params, state);
-			computeNewtonStep(params, state);
+            evaluateObjectiveFunction(args);
+			computeNewtonStep(args);
 			updateResultErrors();
         }
 
@@ -638,8 +646,8 @@ BasicSolver::BasicSolver()
 : pimpl(new Impl())
 {}
 
-BasicSolver::BasicSolver(const BasicProblem& problem)
-: pimpl(new Impl(problem))
+BasicSolver::BasicSolver(BasicSolverInitArgs args)
+: pimpl(new Impl(args))
 {}
 
 BasicSolver::BasicSolver(const BasicSolver& other)
@@ -660,9 +668,9 @@ auto BasicSolver::setOptions(const Options& options) -> void
 	pimpl->setOptions(options);
 }
 
-auto BasicSolver::solve(const BasicParams& params, BasicState& state) -> Result
+auto BasicSolver::solve(BasicSolverSolveArgs args) -> Result
 {
-    return pimpl->solve(params, state);
+    return pimpl->solve(args);
 }
 
 } // namespace Optima

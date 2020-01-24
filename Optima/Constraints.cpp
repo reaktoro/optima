@@ -89,7 +89,7 @@ auto Constraints::setInequalityConstraintFunction(const ConstraintFunction& hi_,
 auto Constraints::setVariablesWithLowerBounds(IndicesConstRef inds) -> void
 {
     nlower = inds.size();
-    partitionRightStable(lowerpartition, inds);
+    moveIntersectionRightStable(lowerpartition, inds);
 }
 
 auto Constraints::allVariablesHaveLowerBounds() -> void
@@ -101,7 +101,7 @@ auto Constraints::allVariablesHaveLowerBounds() -> void
 auto Constraints::setVariablesWithUpperBounds(IndicesConstRef inds) -> void
 {
     nupper = inds.size();
-    partitionRightStable(upperpartition, inds);
+    moveIntersectionRightStable(upperpartition, inds);
 }
 
 auto Constraints::allVariablesHaveUpperBounds() -> void
@@ -113,7 +113,7 @@ auto Constraints::allVariablesHaveUpperBounds() -> void
 auto Constraints::setVariablesWithFixedValues(IndicesConstRef inds) -> void
 {
     nfixed = inds.size();
-    partitionRightStable(fixedpartition, inds);
+    moveIntersectionRightStable(fixedpartition, inds);
 }
 
 auto Constraints::numVariables() const -> Index

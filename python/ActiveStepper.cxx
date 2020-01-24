@@ -28,25 +28,31 @@ using namespace Optima;
 
 void exportActiveStepper(py::module& m)
 {
-    auto init = [](Index n, Index m, MatrixConstRef A, VectorConstRef xlower, VectorConstRef xupper, IndicesConstRef ilower, IndicesConstRef iupper, IndicesConstRef ifixed) -> ActiveStepper
+    auto init = [](Index n, Index m, MatrixConstRef A) -> ActiveStepper
     {
-        return ActiveStepper({n, m, A, xlower, xupper, ilower, iupper, ifixed});
+        return ActiveStepper({n, m, A});
     };
 
-    auto decompose = [](ActiveStepper& self, VectorConstRef x, VectorConstRef y, MatrixConstRef J, VectorConstRef g, MatrixConstRef H)
+    auto initialize = [](ActiveStepper& self, VectorConstRef xlower, VectorConstRef xupper, IndicesRef iordering)
     {
-        return self.decompose({x, y, J, g, H});
+        return self.initialize({xlower, xupper, iordering});
     };
 
-    auto solve = [](ActiveStepper& self,  VectorConstRef x, VectorConstRef y, VectorConstRef b, VectorConstRef h, VectorConstRef g, VectorRef dx, VectorRef dy, VectorRef rx, VectorRef ry, VectorRef z)
+    auto decompose = [](ActiveStepper& self, VectorConstRef x, VectorConstRef y, VectorConstRef g, MatrixConstRef H, MatrixConstRef J, VectorConstRef xlower, VectorConstRef xupper, IndicesRef iordering, IndexNumberRef nul, IndexNumberRef nuu)
     {
-        self.solve({x, y, b, h, g}, {dx, dy, rx, ry, z});
+        return self.decompose({x, y, g, H, J, xlower, xupper, iordering, nul, nuu});
+    };
+
+    auto solve = [](ActiveStepper& self, VectorConstRef x, VectorConstRef y, VectorConstRef b, VectorConstRef h, VectorConstRef g, IndicesConstRef iordering, VectorRef dx, VectorRef dy, VectorRef rx, VectorRef ry, VectorRef z)
+    {
+        self.solve({x, y, b, h, g, iordering, dx, dy, rx, ry, z});
     };
 
     py::class_<ActiveStepper>(m, "ActiveStepper")
         .def(py::init<>())
         .def(py::init(init))
         .def("setOptions", &ActiveStepper::setOptions)
+        .def("initialize", initialize)
         .def("decompose", decompose)
         .def("solve", solve)
         ;

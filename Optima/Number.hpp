@@ -15,24 +15,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-// pybind11 includes
-#include <pybind11/pybind11.h>
-#include <pybind11/eigen.h>
-namespace py = pybind11;
+#pragma once
 
 // Optima includes
-#include <Optima/IndexUtils.hpp>
-using namespace Optima;
+#include <Optima/Index.hpp>
 
-void exportIndexUtils(py::module& m)
+namespace Optima {
+
+/// A wrapper for a number to be used as reference in functions.
+template<typename T>
+struct Number
 {
-    m.def("indices", &indices);
-    m.def("contains", &contains);
-    m.def("moveIntersectionLeft", &moveIntersectionLeft);
-    m.def("moveIntersectionRight", &moveIntersectionRight);
-    m.def("moveIntersectionLeftStable", &moveIntersectionLeftStable);
-    m.def("moveIntersectionRightStable", &moveIntersectionRightStable);
-    m.def("difference", &difference);
-    m.def("intersect", &intersect);
-    m.def("isIntersectionEmpty", &isIntersectionEmpty);
-}
+    T value = {};
+    Number() {}
+    Number(const T& val) : value(val) {}
+    auto operator=(const T& val) { value = val; return *this; }
+    operator T() const { return value; }
+};
+
+using DoubleNumber = Number<double>;
+using DoubleNumberRef = DoubleNumber&;
+
+using IndexNumber = Number<Index>;
+using IndexNumberRef = IndexNumber&;
+
+} // namespace Optima

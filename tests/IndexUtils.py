@@ -31,22 +31,22 @@ def test_index_utils():
     assert not contains(7, [1, 3, 6])
 
     inds = arange(n)
-    partitionLeft(inds, [1, 3, 5, 7])
+    moveIntersectionLeft(inds, [1, 3, 5, 7])
     assert set(inds[:4]) == set([1, 3, 5, 7])
     assert set(inds[4:]) == set([0, 2, 4, 6, 8, 9])
 
     inds = arange(n)
-    partitionRight(inds, [1, 3, 5, 7])
+    moveIntersectionRight(inds, [1, 3, 5, 7])
     assert set(inds[-4:]) == set([1, 3, 5, 7])
     assert set(inds[:-4]) == set([0, 2, 4, 6, 8, 9])
 
     inds = arange(n)
-    partitionLeftStable(inds, [1, 3, 5, 7])
+    moveIntersectionLeftStable(inds, [1, 3, 5, 7])
     assert inds[:4] == approx([1, 3, 5, 7])
     assert inds[4:] == approx([0, 2, 4, 6, 8, 9])
 
     inds = arange(n)
-    partitionRightStable(inds, [1, 3, 5, 7])
+    moveIntersectionRightStable(inds, [1, 3, 5, 7])
     assert inds[-4:] == approx([1, 3, 5, 7])
     assert inds[:-4] == approx([0, 2, 4, 6, 8, 9])
 
@@ -58,3 +58,9 @@ def test_index_utils():
 
     assert set(intersect(inds1, inds2)) == set([4, 5])
     assert set(intersect(inds2, inds1)) == set([4, 5])
+
+    assert set(isIntersectionEmpty([], []))
+    assert set(isIntersectionEmpty([1, 2], []))
+    assert set(isIntersectionEmpty([], [1, 2]))
+    assert set(isIntersectionEmpty([1, 2], [3, 4, 5]))
+    assert not set(isIntersectionEmpty([1, 2], [2, 3, 4, 5]))

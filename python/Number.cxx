@@ -21,18 +21,21 @@
 namespace py = pybind11;
 
 // Optima includes
-#include <Optima/IndexUtils.hpp>
+#include <Optima/Number.hpp>
 using namespace Optima;
 
-void exportIndexUtils(py::module& m)
+template<typename T>
+void exportNumberAux(py::module& m, const char* type)
 {
-    m.def("indices", &indices);
-    m.def("contains", &contains);
-    m.def("moveIntersectionLeft", &moveIntersectionLeft);
-    m.def("moveIntersectionRight", &moveIntersectionRight);
-    m.def("moveIntersectionLeftStable", &moveIntersectionLeftStable);
-    m.def("moveIntersectionRightStable", &moveIntersectionRightStable);
-    m.def("difference", &difference);
-    m.def("intersect", &intersect);
-    m.def("isIntersectionEmpty", &isIntersectionEmpty);
+    py::class_<Number<T>>(m, type)
+        .def(py::init<>())
+        .def(py::init<T>())
+        .def_readwrite("value", &Number<T>::value)
+        ;
+}
+
+void exportNumber(py::module& m)
+{
+    exportNumberAux<double>(m, "DoubleNumber");
+    exportNumberAux<Index>(m, "IndexNumber");
 }

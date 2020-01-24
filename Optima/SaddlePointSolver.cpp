@@ -145,7 +145,7 @@ struct SaddlePointSolver::Impl
             return;
 
         // The ordering of the variables as (free variables, fixed variables)
-        partitionRight(iordering, lhs.jf);
+        moveIntersectionRight(iordering, lhs.jf);
 
         // The indices of the fixed (jf) variables
         const auto jf = iordering.tail(nf);

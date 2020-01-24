@@ -21,18 +21,9 @@
 namespace py = pybind11;
 
 // Optima includes
-#include <Optima/IndexUtils.hpp>
+#include <Optima/Index.hpp>
 using namespace Optima;
 
-void exportIndexUtils(py::module& m)
+void exportIndex(py::module& m)
 {
-    m.def("indices", &indices);
-    m.def("contains", &contains);
-    m.def("moveIntersectionLeft", &moveIntersectionLeft);
-    m.def("moveIntersectionRight", &moveIntersectionRight);
-    m.def("moveIntersectionLeftStable", &moveIntersectionLeftStable);
-    m.def("moveIntersectionRightStable", &moveIntersectionRightStable);
-    m.def("difference", &difference);
-    m.def("intersect", &intersect);
-    m.def("isIntersectionEmpty", &isIntersectionEmpty);
 }

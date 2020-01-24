@@ -23,6 +23,7 @@
 // Optima includes
 #include <Optima/Index.hpp>
 #include <Optima/Matrix.hpp>
+#include <Optima/Number.hpp>
 
 namespace Optima {
 
@@ -37,41 +38,45 @@ struct ActiveStepperInitArgs
     Index n;                ///< The number of primal variables *x*.
     Index m;                ///< The number of Lagrange multipliers *y*.
     MatrixConstRef A;       ///< The coefficient matrix of the linear equality constraints.
-    VectorConstRef xlower;  ///< The values of the lower bounds of the variables constrained with lower bounds.
-    VectorConstRef xupper;  ///< The values of the upper bounds of the variables constrained with upper bounds.
-    IndicesConstRef ilower; ///< The indices of the variables with lower bounds.
-    IndicesConstRef iupper; ///< The indices of the variables with upper bounds.
-    IndicesConstRef ifixed; ///< The indices of the variables with fixed values.
 };
 
-/// The arguments for the decomposition calculation in a ActiveStepper object.
+/// The arguments for method ActiveStepper::initialize.
+struct ActiveStepperInitializeArgs
+{
+    VectorConstRef xlower;  ///< The lower bounds of the primal variables.
+    VectorConstRef xupper;  ///< The upper bounds of the primal variables.
+    IndicesRef iordering;   ///< The output ordering of the variables in ascending order (0, 1, 2, ...).
+};
+
+/// The arguments for method ActiveStepper::decompose.
 struct ActiveStepperDecomposeArgs
 {
-    VectorConstRef x; ///< The current state of the primal variables.
-    VectorConstRef y; ///< The current state of the Lagrange multipliers.
-    MatrixConstRef J; ///< The Jacobian of the equality constraint function.
-    VectorConstRef g; ///< The gradient of the objective function.
-    MatrixConstRef H; ///< The Hessian of the objective function.
+    VectorConstRef x;       ///< The current state of the primal variables.
+    VectorConstRef y;       ///< The current state of the Lagrange multipliers.
+    VectorConstRef g;       ///< The gradient of the objective function.
+    MatrixConstRef H;       ///< The Hessian of the objective function.
+    MatrixConstRef J;       ///< The Jacobian of the equality constraint function.
+    VectorConstRef xlower;  ///< The lower bounds of the primal variables.
+    VectorConstRef xupper;  ///< The upper bounds of the primal variables.
+    IndicesRef iordering;   ///< The output ordering of the variables as (*stable*, *lower unstable*, *upper unstable*).
+    IndexNumberRef nul;     ///< The output number of *lower unstable variables* (i.e. those active/attached at their lower bounds).
+    IndexNumberRef nuu;     ///< The output number of *upper unstable variables* (i.e. those active/attached at their upper bounds).
 };
 
-/// The arguments for the solve calculation in a ActiveStepper object.
+/// The arguments for method ActiveStepper::solve.
 struct ActiveStepperSolveArgs
 {
-    VectorConstRef x; ///< The current state of the primal variables.
-    VectorConstRef y; ///< The current state of the Lagrange multipliers.
-    VectorConstRef b; ///< The right-hand side vector of the linear equality constraints.
-    VectorConstRef h; ///< The value of the equality constraint function.
-    VectorConstRef g; ///< The gradient of the objective function.
-};
-
-/// The solution of the step problem.
-struct ActiveStepperSolution
-{
-    VectorRef dx; ///< The calculated step for the primal variables *x*.
-    VectorRef dy; ///< The calculated step for the Lagrange multipliers *y*.
-    VectorRef rx; ///< The calculated residuals of the first-order optimality conditions.
-    VectorRef ry; ///< The calculated residuals of the linear/nonlinear feasibility conditions.
-    VectorRef z;  ///< The calculated *unstabilities* of the variables defined as `z = g + tr(W)*y`.
+    VectorConstRef x;          ///< The current state of the primal variables.
+    VectorConstRef y;          ///< The current state of the Lagrange multipliers.
+    VectorConstRef b;          ///< The right-hand side vector *b* of the linear equality constraints *Ax = b*.
+    VectorConstRef h;          ///< The value of the equality constraint function.
+    VectorConstRef g;          ///< The gradient of the objective function.
+    IndicesConstRef iordering; ///< The output ordering of the variables as (*stable*, *lower unstable*, *upper unstable*).
+    VectorRef dx;              ///< The output step for the primal variables *x*.
+    VectorRef dy;              ///< The output step for the Lagrange multipliers *y*.
+    VectorRef rx;              ///< The output residuals of the first-order optimality conditions.
+    VectorRef ry;              ///< The output residuals of the linear/nonlinear feasibility conditions.
+    VectorRef z;               ///< The output *unstabilities* of the variables defined as *z = g + tr(W)y* where *W = [A; J]*.
 };
 
 /// The class that implements the step calculation.
@@ -82,7 +87,7 @@ public:
     ActiveStepper();
 
     /// Construct a ActiveStepper instance with given initialization data.
-    explicit ActiveStepper(const ActiveStepperInitArgs& args);
+    explicit ActiveStepper(ActiveStepperInitArgs args);
 
     /// Construct a copy of an ActiveStepper instance.
     ActiveStepper(const ActiveStepper& other);
@@ -96,15 +101,15 @@ public:
     /// Set the options for the step calculation.
     auto setOptions(const Options& options) -> void;
 
+    /// Initialize the Newton step solver.
+    auto initialize(ActiveStepperInitializeArgs args) -> void;
+
     /// Decompose the saddle point matrix used to compute the Newton steps for *x* and *y*.
-    auto decompose(const ActiveStepperDecomposeArgs& args) -> void;
+    auto decompose(ActiveStepperDecomposeArgs args) -> void;
 
     /// Solve the saddle point problem to compute the Newton steps for *x* and *y*.
     /// @note Method ActiveStepper::decompose needs to be called first.
-    auto solve(const ActiveStepperSolveArgs& args, ActiveStepperSolution sol) -> void;
-
-    /// Return the saddle point matrix of the Newton step problem.
-    auto matrix(const ActiveStepperDecomposeArgs& args) -> SaddlePointMatrix;
+    auto solve(ActiveStepperSolveArgs args) -> void;
 
 private:
     struct Impl;

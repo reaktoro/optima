@@ -117,7 +117,7 @@ struct IpSaddlePointSolver::Impl
         nx = n - nf;
 
         // Partition the variables into (free variables, fixed variables)
-        partitionRight(iordering, lhs.jf);
+        moveIntersectionRight(iordering, lhs.jf);
 
         // Auxiliary variables
         const double eps = std::numeric_limits<double>::epsilon();

@@ -41,40 +41,52 @@ inline auto contains(Index i, IndicesConstRef indices) -> bool
     return std::find(begin, end, i) < end;
 }
 
-/// Partition `base` into (`group1`, `group2`) so that indices in `p` and `group1` are the same.
-/// @param base The base vector to be partitioned.
-/// @param p The indices in base vector to be moved to the left.
-/// @return The index of the first entry in `group2`
-/// @see partitionRight
-inline auto partitionLeft(IndicesRef base, IndicesConstRef p) -> Index
+/// Partition `base` into (*group1*, *group2*) with *group1* formed with indices for which `predicate` is true.
+/// @param base The indices to be partitioned.
+/// @param predicate The predicate function that returns true if an index should be in *group1*.
+/// @return The number of indices in *group1*
+/// @see moveIntersectionRight
+inline auto moveLeftIf(IndicesRef base, const std::function<bool(Index)>& predicate) -> Index
 {
-    // The lambda function that returns true if variable i is in p
-    auto in_group1 = [=](Index i) { return contains(i, p); };
-
-    // The partitioning of base as (group1, group2)
-    return std::partition(base.begin(), base.end(), in_group1) - base.begin();
+    return std::partition(base.begin(), base.end(), predicate) - base.begin();
 }
 
-/// Partition `base` into (`group1`, `group2`) so that indices in `p` and `group2` are the same.
-/// @param base The base vector to be partitioned.
-/// @param p The indices in base vector to be moved to the right.
-/// @return The index of the first entry in `group2`
-/// @see partitionLeft
-inline auto partitionRight(IndicesRef base, IndicesConstRef p) -> Index
+/// Partition `base` into (*group1*, *group2*) so that *group1* is formed with indices in `p` only.
+/// @param base The indices to be partitioned.
+/// @param p The indices in base vector to be moved to *group1*.
+/// @return The number of indices in *group1*
+/// @see moveIntersectionRight
+inline auto moveIntersectionLeft(IndicesRef base, IndicesConstRef p) -> Index
 {
-    // The lambda function that returns true if variable i is not in p
-    auto in_group1 = [=](Index i) { return !contains(i, p); };
-
-    // The partitioning of base as (group1, group2)
-    return std::partition(base.begin(), base.end(), in_group1) - base.begin();
+    return moveLeftIf(base, [=](Index i) { return contains(i, p); });
 }
 
-/// Partition `base` into (`group1`, `group2`) so that indices in `p` and `group1` are the same and **have the same order**.
-/// @param base The base vector to be partitioned.
+/// Partition `base` into (*group1*, *group2*) with *group2* formed with indices for which `predicate` is true.
+/// @param base The indices to be partitioned.
+/// @param predicate The predicate function that returns true if an index should be in *group2*.
+/// @return The number of indices in *group1*
+/// @see moveIntersectionRight
+inline auto moveRightIf(IndicesRef base, const std::function<bool(Index)>& predicate) -> Index
+{
+    return std::partition(base.begin(), base.end(), [&](Index i) { return !predicate(i); }) - base.begin();
+}
+
+/// Partition `base` into (*group1*, *group2*) so that *group2* is formed with indices in `p` only.
+/// @param base The indices to be partitioned.
+/// @param p The indices in base vector to be moved to *group2*.
+/// @return The number of indices in *group1*
+/// @see moveIntersectionLeft
+inline auto moveIntersectionRight(IndicesRef base, IndicesConstRef p) -> Index
+{
+    return moveRightIf(base, [=](Index i) { return !contains(i, p); });
+}
+
+/// Partition `base` into (*group1*, *group2*) so that indices in `p` and *group1* are the same and **have the same order**.
+/// @param base The indices to be partitioned.
 /// @param p The indices in base vector to be moved to the left.
-/// @return The index of the first entry in `group2`
-/// @see partitionRight
-inline auto partitionLeftStable(IndicesRef base, IndicesConstRef p) -> Index
+/// @return The number of indices in *group1*
+/// @see moveIntersectionRight
+inline auto moveIntersectionLeftStable(IndicesRef base, IndicesConstRef p) -> Index
 {
     // The lambda function that returns true if variable i is in p
     auto in_group1 = [=](Index i) { return contains(i, p); };
@@ -83,12 +95,12 @@ inline auto partitionLeftStable(IndicesRef base, IndicesConstRef p) -> Index
     return std::stable_partition(base.begin(), base.end(), in_group1) - base.begin();
 }
 
-/// Partition `base` into (`group1`, `group2`) so that indices in `p` and `group2` are the same and **have the same order**.
-/// @param base The base vector to be partitioned.
+/// Partition `base` into (*group1*, *group2*) so that indices in `p` and *group2* are the same and **have the same order**.
+/// @param base The indices to be partitioned.
 /// @param p The indices in base vector to be moved to the right.
-/// @return The index of the first entry in `group2`
-/// @see partitionLeft
-inline auto partitionRightStable(IndicesRef base, IndicesConstRef p) -> Index
+/// @return The number of indices in *group1*
+/// @see moveIntersectionLeft
+inline auto moveIntersectionRightStable(IndicesRef base, IndicesConstRef p) -> Index
 {
     // The lambda function that returns true if variable i is not in p
     auto in_group1 = [=](Index i) { return !contains(i, p); };
@@ -101,7 +113,7 @@ inline auto partitionRightStable(IndicesRef base, IndicesConstRef p) -> Index
 inline auto difference(IndicesConstRef indices1, IndicesConstRef indices2) -> Indices
 {
     Indices tmp(indices1);
-    const auto idx = partitionRight(tmp, indices2);
+    const auto idx = moveIntersectionRight(tmp, indices2);
     return tmp.head(idx);
 }
 
@@ -109,8 +121,17 @@ inline auto difference(IndicesConstRef indices1, IndicesConstRef indices2) -> In
 inline auto intersect(IndicesConstRef indices1, IndicesConstRef indices2) -> Indices
 {
     Indices tmp(indices1);
-    const auto idx = partitionRight(tmp, indices2);
+    const auto idx = moveIntersectionRight(tmp, indices2);
     return tmp.tail(tmp.size() - idx);
+}
+
+/// Return the indices in `indices1` that are in `indices2`.
+inline auto isIntersectionEmpty(IndicesConstRef indices1, IndicesConstRef indices2) -> bool
+{
+    for(Index i : indices1)
+        if(contains(i, indices2))
+            return false;
+    return true;
 }
 
 } // namespace Optima
