@@ -78,7 +78,7 @@ inline auto moveRightIf(IndicesRef base, const std::function<bool(Index)>& predi
 /// @see moveIntersectionLeft
 inline auto moveIntersectionRight(IndicesRef base, IndicesConstRef p) -> Index
 {
-    return moveRightIf(base, [=](Index i) { return !contains(i, p); });
+    return moveRightIf(base, [=](Index i) { return contains(i, p); });
 }
 
 /// Partition `base` into (*group1*, *group2*) so that indices in `p` and *group1* are the same and **have the same order**.

@@ -45,26 +45,26 @@ tested_structures_H = [
 ]
 
 # Tested cases for the indices of fixed variables
-tested_jfixed = [
-    arange(0),
-    arange(1),
-    array([1, 3, 7, 9])
+tested_ifixed = [
+    [],
+    [1],
+    [1, 3, 7, 9]
 ]
 
 # Tested cases for the indices of variables with lower bounds
-tested_jlower = [
-    arange(0),
-    arange(1),
-    array([1, 3, 7, 9]),
-    arange(n)  # all variables with lower bounds
+tested_ilower = [
+    [],
+    [1],
+    [1, 3, 7, 9],
+    list(range(n))  # all variables with lower bounds
 ]
 
 # Tested cases for the indices of variables with upper bounds
-tested_jupper = [
-    arange(0),
-    arange(1),
-    array([1, 3, 7, 9]),
-    arange(n)  # all variables with upper bounds
+tested_iupper = [
+    [],
+    [1],
+    [1, 3, 7, 9],
+    list(range(n))  # all variables with upper bounds
 ]
 
 # Tested cases for the saddle point methods
@@ -83,21 +83,26 @@ testdata = product(tested_matrices_A,
                    tested_structures_H,
                    tested_ml,
                    tested_mn,
-                   tested_jfixed,
-                   tested_jlower,
-                   tested_jupper,
+                   tested_ifixed,
+                   tested_ilower,
+                   tested_iupper,
                    tested_methods)
 
 
 @mark.parametrize("args", testdata)
 def test_active_stepper(args):
 
-    assemble_A, structure_H, ml, mn, jfixed, jlower, jupper, method = args
+    assemble_A, structure_H, ml, mn, ifixed, ilower, iupper, method = args
+
+    # Add the indices of fixed variables to those that have lower and upper bounds
+    # since fixed variables are those that have identical lower and upper bounds
+    ilower = list(set(ilower + ifixed))
+    iupper = list(set(iupper + ifixed))
 
     # The number variables with finite lower and upper bounds, and fixed variables
-    nlower = len(jlower)
-    nupper = len(jupper)
-    nfixed = len(jfixed)
+    nlower = len(ilower)
+    nupper = len(iupper)
+    nfixed = len(ifixed)
 
     # The total number of rows in W = [A; J]
     m = ml + mn
@@ -106,7 +111,7 @@ def test_active_stepper(args):
     t = n + m
 
     # Assemble the coefficient matrix W = [A; J]
-    W = assemble_A(m, n, jfixed)
+    W = assemble_A(m, n, ifixed)
 
     # Create references to the A and J blocks in W
     A = W[:ml, :]
@@ -117,44 +122,82 @@ def test_active_stepper(args):
     xupper = full(n,  inf)
 
     # Set lower and upper bounds to negative and positive sequence respectively
-    xlower[jlower] = -arange(1.0, nlower)
-    xupper[jupper] =  arange(1.0, nupper)
+    xlower[ilower] = -linspace(1.0, nlower, nlower) * 100
+    xupper[iupper] =  linspace(1.0, nupper, nupper) * 100
 
     # Set lower and upper bounds to equal values for fixed variables
-    xlower[jfixed] = xupper[jfixed] = arange(1, len(jfixed)) * 10
+    xlower[ifixed] = xupper[ifixed] = linspace(1, nfixed, nfixed) * 10
 
     # Create vectors x and y
-    x = arange(1.0, n)
-    y = arange(1.0, m)
+    x = linspace(1.0, n, n)
+    y = linspace(1.0, m, m)
 
-    # Create the grandient vector *g* and Hessian matrix *H*
-    g = arange(1.0, n)
+    # Create the Hessian matrix *H*
     H = matrix_non_singular(n)
 
-    # Ensure the first and last variables with lower bounds are recognized as unstable
-    # Note: x[i] is lower unstable when x[i] == xlower[i] and z[i] > 0, where z = g + tr(W)*y
-    if nlower > 0:
-        x[jlower[ 0]] = xlower[jlower[ 0]]
-        x[jlower[-1]] = xlower[jlower[-1]]
-        g[jlower[ 0]] = inf
-        g[jlower[-1]] = inf
+    # Ensure off-diagonal entries are zero if Rangespace method is used
+    if method == SaddlePointMethod.Rangespace:
+        H = eigen.diag(diag(H))
 
-    # Ensure the first and last variables with upper bounds are recognized as unstable
-    # Note: x[i] is upper unstable when x[i] == xupper[i] and z[i] < 0, where z = g + tr(W)*y
-    if nupper > 0:
-        x[jupper[ 0]] = xupper[jupper[ 0]]
-        x[jupper[-1]] = xupper[jupper[-1]]
-        g[jupper[ 0]] = -inf
-        g[jupper[-1]] = -inf
+    # Auxiliary functions to get first and last of a sequence in a set
+    first = lambda seq: [seq[0]] if len(seq) > 0 else []
+    last = lambda seq: [seq[-1]] if len(seq) > 0 else []
 
-    # Ensure all fixed variables (which essentially has identical lower and upper bounds) are unstable
-    g[jfixed] = inf
+    # Set first and last variables with lower/upper bounds to be unstable
+    iunstable_lower = list(set(first(ilower) + last(ilower)))
+    iunstable_upper = list(set(first(iupper) + last(iupper)))
+    iunstable = list(set(iunstable_lower + iunstable_upper))
 
-    # Compute the right-hand side vector b in Ax = b
-    b = A @ x
+    # Create vector s = (dx, dy) with the expected Newton step values
+    s = linspace(1.0, t, t)
 
-    # Create the residual vector of the nonlinear equality constraints *h(x) = 0*
-    h = zeros(mn)
+    # Get references to the segments dx and dy in s
+    dx = s[:n]
+    dy = s[n:]
+
+    # Set to zero the entries in dx corresponding to lower/upper unstable variables
+    dx[iunstable] = 0.0
+
+    # Set lower/upper unstable variables in x to their respective lower/upper bounds
+    x[iunstable_lower] = xlower[iunstable_lower]
+    x[iunstable_upper] = xupper[iunstable_upper]
+
+    # Assemble the matrix M = [H, W.T; W, 0] setting rows/cols wrt ifixed to zero
+    M = zeros((t, t))
+    M[:n, :n] = H
+    M[:n, n:] = W.T
+    M[n:, :n] = W
+
+    # Set rows wrt to unstable variables to zero and one in the diagonal entry
+    M[iunstable, :] = 0.0
+    M[iunstable, iunstable] = 1.0
+
+    # Compute the right-hand side vector r = Ms
+    r = M @ s
+
+    # Get references to rx and ry in r where rx := -(g + tr(W)y) and ry := (ryl, ryn)
+    rx = r[:n]
+    ry = r[n:]
+
+    # Get references to ryl and ryn in ry where ryl := -(Ax - b) and ryn := -h
+    ryl = ry[:ml]
+    ryn = ry[ml:]
+
+    # Compute the gradient vector remembering that rx := -(g + tr(W)y) for stable variables, zero otherwise
+    g = -(rx + W.T @ y)
+
+    # Ensure g has values for lower/upper unstable variables that make these recognized as unstable indeed
+    # Note that:
+    #  - x[i] is lower unstable when x[i] == xlower[i] and z[i] > 0, where z = g + tr(W)*y
+    #  - x[i] is upper unstable when x[i] == xupper[i] and z[i] < 0, where z = g + tr(W)*y
+    g[iunstable_lower] =  inf
+    g[iunstable_upper] = -inf
+
+    # Compute the right-hand side vector b remembering that ry = -(Ax - b)
+    b = ryl + A @ x
+
+    # Compute the residual vector h of the nonlinear equality constraints h(x) = 0 knowing that ryn := -h
+    h = -ryn
 
     # Create the ordering vector that will order the
     # variables as (*stable*, *lower unstable*, *upper unstable*)
@@ -166,51 +209,47 @@ def test_active_stepper(args):
     nuu = IndexNumber()
 
     # The solution of the Newton step calculation
-    dx = zeros(n) # The Newton step for the primal variables *x*.
-    dy = zeros(m) # The Newton step for the Lagrange multipliers *y*.
-    rx = zeros(n) # The residuals of the first-order optimality conditions.
-    ry = zeros(m) # The residuals of the linear/nonlinear feasibility conditions.
-    z = zeros(n)  # The *unstabilities* of the variables defined as *z = g + tr(W)y* where *W = [A; J]*.
-
-    # Ensure off-diagonal entries are zero if Rangespace method is used
-    if method == SaddlePointMethod.Rangespace:
-        H = eigen.diag(diag(H))
+    sdx = zeros(n) # The Newton step for the primal variables *x*.
+    sdy = zeros(m) # The Newton step for the Lagrange multipliers *y*.
+    srx = zeros(n) # The residuals of the first-order optimality conditions.
+    sry = zeros(m) # The residuals of the linear/nonlinear feasibility conditions.
+    sz = zeros(n)  # The *unstabilities* of the variables defined as *z = g + tr(W)y* where *W = [A; J]*.
 
     # Set options for the Newton step calculation
     options = Options()
     options.kkt.method = method
 
     # Create a Newton step calculator
-    stepper = ActiveStepper(n, m, A, xlower, xupper, jlower, jupper, jfixed)
+    stepper = ActiveStepper(n, m, A)
     stepper.setOptions(options)
 
     # Initialize, decompose the saddle point matrix, and solve the Newton step
     stepper.initialize(xlower, xupper, iordering)
     stepper.decompose(x, y, g, H, J, xlower, xupper, iordering, nul, nuu)
-    stepper.solve(x, y, b, h, g, iordering, dx, dy, rx, ry, z)
+    stepper.solve(x, y, b, h, g, iordering, sdx, sdy, srx, sry, sz)
 
-    # Assemble the matrix M = [H, W.T; W, 0] setting rows/cols wrt jfixed to zero
-    M = zeros((t, t))
-    M[:n, :] = concatenate([H, W.T], axis=1)
-    M[n:t, :n] = W
+    sstar = concatenate([sdx, sdy])
+    rstar = M @ sstar
 
-    # Assemble the right-hand side vector of the Newton step calculation
-    r = zeros(t)
-    r[:n]       = -(g + W.T @ y)
-    r[n:t][:ml] = -(A @ x - b)
-    r[n:t][ml:] = -(h)
-
-    # Collect the indices of the lower/upper unstable variables and fixed variables
-    iu = arange(n)[abs(g) == inf]
-
-    # Set rows/cols wrt to unstable and fixed variables to zero (one in the diagonal)
-    M[iu, :]  = 0.0
-    M[:, iu]  = 0.0
-    M[iu, iu] = 1.0
-    r[iu]     = 0.0
-
-    # Calculate r(star) = M * [dx; dy]
-    s = concatenate([dx, dy])
-    rstar = M @ s
+    if not allclose(rstar, r):
+        set_printoptions(suppress=True, linewidth=1000, precision=3)
+        print()
+        print(f"assemble_A  = {assemble_A}")
+        print(f"structure_H = {structure_H}")
+        print(f"ml          = {ml}")
+        print(f"mn          = {mn}")
+        print(f"ifixed      = {ifixed}")
+        print(f"ilower      = {ilower}")
+        print(f"iupper      = {iupper}")
+        print(f"method      = {method}")
+        print()
+        print(f"M = \n{M}")
+        print(f"dx(sol)     = {sdx}")
+        print(f"dx(exp)     = {dx}")
+        print(f"dy(sol)     = {sdy}")
+        print(f"dy(exp)     = {dy}")
+        # print(f"r(actual)   = {rstar}")
+        # print(f"r(expected) = {r}")
+        print()
 
     assert allclose(rstar, r)
