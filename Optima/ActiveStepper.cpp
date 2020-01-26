@@ -121,8 +121,8 @@ struct ActiveStepper::Impl
         auto xlower    = args.xlower;
         auto xupper    = args.xupper;
         auto iordering = args.iordering;
-        auto nul       = args.nul;
-        auto nuu       = args.nuu;
+        auto& nul      = args.nul;
+        auto& nuu      = args.nuu;
         const auto A   = W.topRows(ml);
 
         // Ensure consistent dimensions of vectors/matrices.

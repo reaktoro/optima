@@ -149,7 +149,7 @@ def test_active_stepper(args):
     iunstable = list(set(iunstable_lower + iunstable_upper))
 
     # Create vector s = (dx, dy) with the expected Newton step values
-    s = linspace(1.0, t, t)
+    s = s_expected = linspace(1.0, t, t)  # Introduce `s` as an alias for `s_expected`
 
     # Get references to the segments dx and dy in s
     dx = s[:n]
@@ -173,7 +173,7 @@ def test_active_stepper(args):
     M[iunstable, iunstable] = 1.0
 
     # Compute the right-hand side vector r = Ms
-    r = M @ s
+    r = r_expected = M @ s  # Introduce `r` as an alias for `r_expected`
 
     # Get references to rx and ry in r where rx := -(g + tr(W)y) and ry := (ryl, ryn)
     rx = r[:n]
@@ -209,11 +209,11 @@ def test_active_stepper(args):
     nuu = IndexNumber()
 
     # The solution of the Newton step calculation
-    sdx = zeros(n) # The Newton step for the primal variables *x*.
-    sdy = zeros(m) # The Newton step for the Lagrange multipliers *y*.
-    srx = zeros(n) # The residuals of the first-order optimality conditions.
-    sry = zeros(m) # The residuals of the linear/nonlinear feasibility conditions.
-    sz = zeros(n)  # The *unstabilities* of the variables defined as *z = g + tr(W)y* where *W = [A; J]*.
+    dx = zeros(n) # The Newton step for the primal variables *x*.
+    dy = zeros(m) # The Newton step for the Lagrange multipliers *y*.
+    rx = zeros(n) # The residuals of the first-order optimality conditions.
+    ry = zeros(m) # The residuals of the linear/nonlinear feasibility conditions.
+    z = zeros(n)  # The *unstabilities* of the variables defined as *z = g + tr(W)y* where *W = [A; J]*.
 
     # Set options for the Newton step calculation
     options = Options()
@@ -226,30 +226,46 @@ def test_active_stepper(args):
     # Initialize, decompose the saddle point matrix, and solve the Newton step
     stepper.initialize(xlower, xupper, iordering)
     stepper.decompose(x, y, g, H, J, xlower, xupper, iordering, nul, nuu)
-    stepper.solve(x, y, b, h, g, iordering, sdx, sdy, srx, sry, sz)
+    stepper.solve(x, y, b, h, g, iordering, dx, dy, rx, ry, z)
 
-    sstar = concatenate([sdx, sdy])
-    rstar = M @ sstar
+    # Compare the actual and expected Newton steps
+    s_actual = concatenate([dx, dy])
 
-    if not allclose(rstar, r):
-        set_printoptions(suppress=True, linewidth=1000, precision=3)
-        print()
-        print(f"assemble_A  = {assemble_A}")
-        print(f"structure_H = {structure_H}")
-        print(f"ml          = {ml}")
-        print(f"mn          = {mn}")
-        print(f"ifixed      = {ifixed}")
-        print(f"ilower      = {ilower}")
-        print(f"iupper      = {iupper}")
-        print(f"method      = {method}")
-        print()
-        print(f"M = \n{M}")
-        print(f"dx(sol)     = {sdx}")
-        print(f"dx(exp)     = {dx}")
-        print(f"dy(sol)     = {sdy}")
-        print(f"dy(exp)     = {dy}")
-        # print(f"r(actual)   = {rstar}")
-        # print(f"r(expected) = {r}")
-        print()
+    assert allclose(M @ s_actual, M @ s_expected)
 
-    assert allclose(rstar, r)
+    # Compare the actual and expected right-hand side vector r of residuals
+    r_actual = concatenate([rx, ry])
+
+    assert allclose(r_actual, r_expected)
+
+    # Compare the actual and expected z vector
+    z_actual = z
+    z_expected = g + W.T @ y
+
+    assert allclose(z_actual, z_expected)
+
+    # Compare the actual and expected number of lower/upper unstable variables
+    assert nul.value == [x[i] == xlower[i] and z[i] > 0.0 for i in range(n)].count(True)
+    assert nuu.value == [x[i] == xupper[i] and z[i] < 0.0 for i in range(n)].count(True)
+
+    set_printoptions(suppress=True, linewidth=1000, precision=3)
+    print()
+    print(f"assemble_A  = {assemble_A}")
+    print(f"structure_H = {structure_H}")
+    print(f"ml          = {ml}")
+    print(f"mn          = {mn}")
+    print(f"ifixed      = {ifixed}")
+    print(f"ilower      = {ilower}")
+    print(f"iupper      = {iupper}")
+    print(f"method      = {method}")
+    print()
+    print(f"M = \n{M}")
+    print(f"dx(actual)   = {dx}")
+    print(f"dx(expected) = {s[:n]}")
+    print(f"dy(actual)   = {dy}")
+    print(f"dy(expected) = {s[n:]}")
+    print(f"rx(actual)   = {rx}")
+    print(f"rx(expected) = {r[:n]}")
+    print(f"ry(actual)   = {ry}")
+    print(f"ry(expected) = {r[n:]}")
+    print()
