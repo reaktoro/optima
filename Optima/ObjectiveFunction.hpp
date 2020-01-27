@@ -95,5 +95,15 @@ using ObjectiveFunction = std::function<void(VectorConstRef, ObjectiveResult&)>;
 /// @return An ObjectiveResult4py object with the evaluated result of the objective function.
 using ObjectiveFunction4py = std::function<void(VectorConstRef, ObjectiveResult4py*)>;
 
+/// Convert an ObjectiveFunction4Py function to an ObjectiveFunction function.
+inline auto convert(const ObjectiveFunction4py& obj4py)
+{
+    return [=](VectorConstRef x, ObjectiveResult& res)
+    {
+        ObjectiveResult4py res4py(res);
+        obj4py(x, &res4py);
+        res.f = res4py.f;
+    };
+}
 
 } // namespace Optima

@@ -37,25 +37,24 @@ tested_structures_H = [
 ]
 
 # Tested cases for the indices of fixed variables
-tested_jfixed = [
-    arange(0),
-    array([0]),
-    array([0, 1, 2])
+tested_ifixed = [
+    [],
+    [0],
+    [0, 1, 2]
 ]
 
 # Tested cases for the indices of variables with lower bounds
-tested_jlower = [
-    arange(0),
-    array([0]),
-    array([3, 4, 5])
+tested_ilower = [
+    [],
+    [0],
+    [3, 4, 5]
 ]
 
 # Tested cases for the indices of variables with upper bounds
-tested_jupper = [
-    arange(0),
-    array([0]),
-    # array([6, 7, 8])  # FIXME: Enabling this causes a test failure
-    array([6])  # FIXME: Enabling this causes a test failure
+tested_iupper = [
+    [],
+    [0],
+    [6, 7, 8]
 ]
 
 # Tested cases for the saddle point methods
@@ -68,239 +67,149 @@ tested_methods = [
 # Combination of all tested cases
 testdata = product(tested_matrices_A,
                    tested_structures_H,
-                   tested_jfixed,
-                   tested_jlower,
-                   tested_jupper,
+                   tested_ifixed,
+                   tested_ilower,
+                   tested_iupper,
                    tested_methods)
 
 
-def objective_fn(x, res):
-    res.f = sum((x - 0.5) ** 2)
-    res.g = 2.0 * (x - 0.5)
-    res.H = 2.0 * eye(len(x))
+def create_objective_fn(H, c):
+    def fn(x, res):
+        res.f = 0.5 * (x.T @ H @ x) + c.T @ x
+        res.g = H @ x + c
+        res.H = H
+    return fn
 
 
-def constraint_fn(x, res):
-    pass
+def create_constraint_fn():
+    def fn(x, res):
+        pass
+    return fn
 
 
 @mark.parametrize("args", testdata)
 def test_basic_solver(args):
 
-    assemble_A, structure_H, jfixed, jlower, jupper, method = args
+    assemble_A, structure_H, ifixed, ilower, iupper, method = args
 
-    nlower = len(jlower)
-    nupper = len(jupper)
-    nfixed = len(jfixed)
+    # Add the indices of fixed variables to those that have lower and upper bounds
+    # since fixed variables are those that have identical lower and upper bounds
+    ilower = list(set(ilower + ifixed))
+    iupper = list(set(iupper + ifixed))
 
-    A = assemble_A(m, n, jfixed)
+    # The number variables with finite lower and upper bounds, and fixed variables
+    nlower = len(ilower)
+    nupper = len(iupper)
+    nfixed = len(ifixed)
+
+    # The total number of variables x and y
+    t = n + m
+
+    # Assemble the coefficient matrix A in Ax = b
+    A = assemble_A(m, n, ifixed)
+
+    # Create vectors for the lower and upper bounds of the variables
+    xlower = full(n, -inf)
+    xupper = full(n,  inf)
+
+    # Set lower and upper bounds to negative and positive sequence respectively
+    xlower[ilower] = -linspace(1.0, nlower, nlower) * 100
+    xupper[iupper] =  linspace(1.0, nupper, nupper) * 100
+
+    # Set lower and upper bounds to equal values for fixed variables
+    xlower[ifixed] = xupper[ifixed] = linspace(1, nfixed, nfixed) * 1000
+
+    # Auxiliary functions to get head and tail of a sequence in a list (return empty list if empty sequence)
+    head = lambda seq: [seq[ 0]] if len(seq) > 0 else []
+    tail = lambda seq: [seq[-1]] if len(seq) > 0 else []
+
+    # Set head and tail variables with lower/upper bounds to be unstable as well as all fixed variables
+    iunstable_lower = list(set(head(ilower) + tail(ilower) + ifixed))
+    iunstable_upper = list(set(head(iupper) + tail(iupper) + ifixed))
+    iunstable = list(set(iunstable_lower + iunstable_upper))
+
+    # Create vector s = (x, y) with the expected solution of the optimization problem
+    s = linspace(1.0, t, t)
+
+    # Get references to the subvectors x and y in s
+    x = s[:n]
+    y = s[n:]
+
+    # Set lower/upper unstable variables in x to their respective lower/upper bounds
+    x[iunstable_lower] = xlower[iunstable_lower]
+    x[iunstable_upper] = xupper[iunstable_upper]
+
+    # Create the expected vector z = g + tr(A)yl + tr(J)yn
+    z = zeros(n)
+    z[iunstable_lower] =  123  # lower unstable variables have positive value for z
+    z[iunstable_upper] = -123  # upper unstable variables have negative value for z
+
+    # Assemble the coefficient matrix A in Ax = b
     H = matrix_non_singular(n)
 
+    # Zero out rows and columns in H corresponding to fixed variables for the sake of computing consistent c vector below
+    H[ifixed, :] = H[:, ifixed] = 0.0
 
+    # Compute the expected gradient vector at the solution using z = g + tr(A)yl + tr(J)yn
+    g = z - A.T @ y
 
-    problem = BasicProblem()
+    # Compute the c vector in f(x) = 1/2 tr(x)Hx + tr(c)x using g = H @ x + c
+    c = g - H @ x
 
-    # Set the dimension information of the problem
-    problem.dims.x = n
-    problem.dims.b = m
-    problem.dims.h = 0
-    problem.dims.xlower = nlower
-    problem.dims.xupper = nupper
-    problem.dims.xfixed = nfixed
+    # Create the objective function with assembled H and c
+    obj = create_objective_fn(H, c)
 
-    # Set the constraint information of the problem
-    problem.constraints.A = A
-    # problem.constraints.h = constraint_fn
-    problem.constraints.ilower = jlower
-    problem.constraints.iupper = jupper
-    problem.constraints.ifixed = jfixed
+    # Create the nonlinear equality constraint function h(x)
+    h = create_constraint_fn()
 
-    # Set the objective function of the problem
-    problem.objective = objective_fn
+    # Compute vector b in Ax = b
+    b = A @ x
 
-    y_expected = linspace(1, m, m)
+    # Create the ordering vector that will order the
+    # variables as (*stable*, *lower unstable*, *upper unstable*)
+    iordering = arange(n)
 
-    z_expected = zeros(n)
-    z_expected[jlower] = +1.0  # Slack variables z are +1 at active lower bounds
+    # Create the index numbers that will contain the number
+    # of *lower unstable* (nul) and *upper unstable* (nuu) variables
+    nul = IndexNumber()
+    nuu = IndexNumber()
 
-    w_expected = zeros(n)
-    w_expected[jupper] = -1.0  # Slack variables w are -1 at active upper bounds
+    # Keep references to current x, y, z as they are the expected solution
+    x_expected = x
+    y_expected = y
+    z_expected = z
 
-    jx = list(set(range(n)) - set(jfixed))
+    # Create vectors for the solution of the optimization problem
+    x = zeros(n)
+    y = zeros(m)
+    z = zeros(n)
 
-    Ax = A[:, jx]  # The columns of A corresponding to free variables
-    Atx = array(transpose(Ax))
-    zx = array(z_expected[jx])  # The rows of z corresponding to free variables
-    wx = array(w_expected[jx])  # The rows of w corresponding to free variables
-    gx = zx + wx - Atx.dot(y_expected)
-    xx = 0.5 * (gx + 1.0)
-
-    x_expected = zeros(n)
-    x_expected[jx] = xx
-    x_expected[jfixed] = linspace(1, nfixed, nfixed)
-
-    params = BasicParams()
-    params.b      = A.dot(x_expected)  # Use expected values of x to compute b
-    params.xfixed = x_expected[jfixed] # Use expected values of x for the fixed values
-    params.xlower = x_expected[jlower] # Use expected values of x for the lower bounds
-    params.xupper = x_expected[jupper] # Use expected values of x for the upper bounds
-
-    state = BasicState(n, m)
-
+    # Create the options for the optimization calculation
     options = Options()
     options.output.active = True
     options.kkt.method = method
 
-    solver = BasicSolver(problem)
+    # Solve the optimization problem
+    solver = BasicSolver(n, m, A)
     solver.setOptions(options)
-    res = solver.solve(params, state)
 
-#     print state.x
+    res = solver.solve(obj, h, b, xlower, xupper, x, y, z, iordering, nul, nuu)
 
     if not res.succeeded:
 
         # set_printoptions(linewidth=100000, formatter={'float': '{: 0.3f}'.format})
         set_printoptions(linewidth=100000, precision=6, suppress=True)
-        print(f"A = \n{A}")
-
-        print(f"x(actual)   = {state.x}")
+        print()
+        print(f"H = \n{H}\n")
+        print(f"A = \n{A}\n")
+        print(f"x(actual)   = {x}")
         print(f"x(expected) = {x_expected}")
-        print(f"x(diff) = {abs(state.x - x_expected)}")
-        print(f"y(actual)   = {state.y}")
+        print(f"x(diff) = {abs(x - x_expected)}")
+        print(f"y(actual)   = {y}")
         print(f"y(expected) = {y_expected}")
-        print(f"y(diff) = {abs(state.y - y_expected)}")
-        print(f"z(actual)   = {state.z}")
+        print(f"y(diff) = {abs(y - y_expected)}")
+        print(f"z(actual)   = {z}")
         print(f"z(expected) = {z_expected}")
-        print(f"z(diff) = {abs(state.z - z_expected)}")
-        print(f"w(actual)   = {state.w}")
-        print(f"w(expected) = {w_expected}")
-        print(f"w(diff) = {abs(state.w - w_expected)}")
-
-        state = BasicState(n, m)
-
-        options = Options()
-        options.output.active = True
-        options.kkt.method = method
-
-        solver = BasicSolver(problem)
-        solver.setOptions(options)
-        res = solver.solve(params, state)
+        print(f"z(diff) = {abs(z - z_expected)}")
 
     assert res.succeeded
-
-
-#
-# def test_basic_solver():
-#
-#     set_printoptions(linewidth=1000)
-#
-#     A = eigen.random(m, n)
-#
-# #     jfixed = []
-# #     jlower = []
-# #     jupper = [1,2, 3, 4]
-#
-# #     jfixed = []
-# #     jlower = []
-# #     jlower = [0, 1, 2]
-# #     jupper = [4, 5, 6]
-#
-#     jfixed = [9]
-#     jlower = [1, 2, 3]
-#     jupper = [4, 6]
-#
-# #     jlower = [2, 5, 7, 9]
-# #     jupper = [1, 3, 6]
-#
-#     nfixed = len(jfixed)
-#     nlower = len(jlower)
-#     nupper = len(jupper)
-#
-#     structure = Structure(n)
-#     structure.setVariablesWithFixedValues(jfixed)
-#     structure.setVariablesWithLowerBounds(jlower)
-#     structure.setVariablesWithUpperBounds(jupper)
-#     structure.A = A
-#
-#     print 'jlower =', jlower
-#     print 'structure.variablesWithLowerBounds() =', structure.variablesWithLowerBounds()
-#
-# #     factor = 10 ** ceil(log10(n))  # Used to have all x between 0 and 1 no matter the number of variables
-# # x_expected = linspace(1, n, n) / factor  # Variables x have values
-# # between 0 and 1
-#     y_expected = linspace(1, m, m)
-#     z_expected = zeros(n)
-#     w_expected = zeros(n)
-#
-# # x_expected[jfixed] = 10 * x_expected[jfixed]  # Fixed variables x have values
-# # greater than one
-#
-# #     x_expected[jlower] = 0.0  # Variables x active at lower bounds are zero
-# #     x_expected[jupper] = 1.0  # Variables x active at upper bounds are one
-#
-#     z_expected[jlower] = 1.0  # Slack variables z are one at active lower bounds
-#     w_expected[jupper] = 1.0  # Slack variables w are one at active upper bounds
-#
-#     jx = list(set(range(n)) - set(jfixed))  # The indices of the free variables
-#
-#     Ax = A[:, jx]  # The columns of A corresponding to free variables
-#     Atx = array(transpose(Ax))
-#     zx = array(z_expected[jx])  # The rows of z corresponding to free variables
-#     wx = array(w_expected[jx])  # The rows of w corresponding to free variables
-#     gx = zx - wx - Atx.dot(y_expected)
-#     xx = 0.5 * (gx + 1.0)
-#
-#     x_expected = zeros(n)
-#     x_expected[jx] = xx
-#     x_expected[jfixed] = linspace(1, nfixed, nfixed)
-#
-#     params = Params()
-#     params.be = A.dot(x_expected)  # Use expected values of x to compute b
-#     params.xfixed = x_expected[jfixed]
-#     params.xlower = x_expected[jlower]
-#     params.xupper = x_expected[jupper]
-#     params.objective = objective
-#
-#     print 'x_expected =', x_expected
-#     print 'y_expected =', y_expected
-#     print 'z_expected =', z_expected
-#     print 'w_expected =', w_expected
-#     print 'xlower     =', params.xlower
-#     print 'xupper     =', params.xupper
-#
-#     state = State()
-# #     state.x = 0.5 * eigen.ones(n)
-#
-#     options = Options()
-#     options.output.active = True
-#     options.max_iterations = 25
-# #     options.kkt.method = method
-#     options.kkt.method = SaddlePointMethod.Rangespace
-#
-#     solver = Solver(structure)
-#     solver.setOptions(options)
-#     res = solver.solve(params, state)
-#
-#     print 'x(calculated) =', state.x
-#     print 'x(expected)   =', x_expected
-#     print
-#     print 'y(calculated) =', state.y
-#     print 'y(eypected)   =', y_expected
-#     print
-#     print 'z(calculated) =', state.z
-#     print 'z(expected)   =', z_expected
-#     print
-#     print 'w(calculated) =', state.w
-#     print 'w(expected)   =', w_expected
-#     print
-#     print 'x(diff)       =', abs(state.x - x_expected)
-#     print 'y(diff)       =', abs(state.y - y_expected)
-#     print 'z(diff)       =', abs(state.z - z_expected)
-#     print 'w(diff)       =', abs(state.w - w_expected)
-#     print
-#     print 'norm(x(diff)) =', norm(abs(state.x - x_expected))
-#     print 'norm(y(diff)) =', norm(abs(state.y - y_expected))
-#     print 'norm(z(diff)) =', norm(abs(state.z - z_expected))
-#     print 'norm(w(diff)) =', norm(abs(state.w - w_expected))
-#
-#     assert res.succeeded

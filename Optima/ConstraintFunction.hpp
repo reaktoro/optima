@@ -57,4 +57,14 @@ using ConstraintFunction = std::function<void(VectorConstRef, ConstraintResult&)
 /// The signature of a constraint function in Python.
 using ConstraintFunction4py = std::function<void(VectorConstRef, ConstraintResult4py*)>;
 
+/// Convert an ConstraintFunction4Py function to a ConstraintFunction function.
+inline auto convert(const ConstraintFunction4py& obj4py)
+{
+    return [=](VectorConstRef x, ConstraintResult& res)
+    {
+        ConstraintResult4py res4py(res);
+        obj4py(x, &res4py);
+    };
+}
+
 } // namespace Optima

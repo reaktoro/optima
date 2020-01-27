@@ -34,8 +34,10 @@ void exportBasicSolver(py::module& m)
         return BasicSolver({n, m, A});
     };
 
-    auto solve = [](BasicSolver& self, const ObjectiveFunction& obj, const ConstraintFunction& h, VectorConstRef b, VectorConstRef xlower, VectorConstRef xupper, VectorRef x, VectorRef y, VectorRef z, IndicesRef iordering, IndexNumberRef nul, IndexNumberRef nuu) -> Result
+    auto solve = [](BasicSolver& self, const ObjectiveFunction4py& obj4py, const ConstraintFunction4py& h4py, VectorConstRef b, VectorConstRef xlower, VectorConstRef xupper, VectorRef x, VectorRef y, VectorRef z, IndicesRef iordering, IndexNumberRef nul, IndexNumberRef nuu) -> Result
     {
+        auto obj = convert(obj4py);
+        auto h = convert(h4py);
         return self.solve({ obj, h, b, xlower, xupper, x, y, z, iordering, nul, nuu });
     };
 

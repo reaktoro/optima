@@ -108,26 +108,14 @@ struct BasicSolver::Impl
     /// The residuals of the linear/nonlinear feasibility conditions.
     Vector ry;
 
-    /// The *unstabilities* of the variables defined as `z = g + tr(W)*y`.
-    Vector z;
-
     /// The trial iterate x(trial)
     Vector xtrial;
 
     /// The trial Newton step dx(trial)
     Vector dxtrial;
 
-    /// The lower bounds for each variable x (-inf with no lower bound)
-    Vector xlower;
-
-    /// The upper bounds for each variable x (+inf with no lower bound)
-    Vector xupper;
-
     /// The number of variables
     Index n;
-
-    /// The number free and fixed variables.
-    Index nx, nf;
 
     /// The number of linear equality constraints in Ax = b.
     Index mb;
@@ -157,20 +145,21 @@ struct BasicSolver::Impl
         mb = args.A.rows();
         mh = m - mb;
 
-        // Initialize the number of fixed and free variables in x
-        nf = 0;
-        nx = n;
+        // Ensure consistent dimensions of vectors/matrices.
+        assert(n > 0);
+        assert(mb <= m);
 
         // Allocate memory
-        h.resize(mh);
-        J.resize(mh, n);
-        g.resize(n);
-        H.resize(n, n);
-        xtrial.resize(n);
-
-        // Initialize xlower and xupper with -inf and +inf
-        xlower = constants(n, -infinity());
-        xupper = constants(n,  infinity());
+        h       = zeros(mh);
+        J       = zeros(mh, n);
+        g       = zeros(n);
+        H       = zeros(n, n);
+        dx      = zeros(n);
+        dy      = zeros(m);
+        rx      = zeros(n);
+        ry      = zeros(m);
+        xtrial  = zeros(n);
+        dxtrial = zeros(n);
 
         // Initialize step calculator
         stepper = ActiveStepper({n, m, args.A});
@@ -294,6 +283,9 @@ struct BasicSolver::Impl
     // Evaluate the objective function
     auto evaluateObjectiveFunction(BasicSolverSolveArgs args) -> void
 	{
+        // Ensure objective function is not empty.
+        assert(args.obj != nullptr);
+
         // Create an ObjectiveResult with f, g, H to be filled
         ObjectiveResult res(f, g, H);
 
@@ -313,6 +305,9 @@ struct BasicSolver::Impl
         if(mh == 0)
             return;
 
+        // Ensure constraint function is not empty.
+        assert(args.h != nullptr);
+
         // Create a ConstraintResult with h and J to be filled
         ConstraintResult res{h, J};
 
@@ -328,12 +323,22 @@ struct BasicSolver::Impl
         // Auxiliary variables
         auto x         = args.x;
         auto y         = args.y;
+        auto z         = args.z;
         auto b         = args.b;
         auto xlower    = args.xlower;
         auto xupper    = args.xupper;
         auto iordering = args.iordering;
-        auto nul       = args.nul;
-        auto nuu       = args.nuu;
+        auto& nul      = args.nul;
+        auto& nuu      = args.nuu;
+
+        // Ensure consistent dimensions of vectors/matrices.
+        assert(x.rows() == n);
+        assert(y.rows() == m);
+        assert(z.rows() == n);
+        assert(b.rows() == mb);
+        assert(xlower.rows() == n);
+        assert(xupper.rows() == n);
+        assert(iordering.rows() == n);
 
     	// Decompose the Jacobian matrix and calculate a Newton step
         stepper.decompose({ x, y, g, H, J, xlower, xupper, iordering, nul, nuu });
@@ -443,8 +448,16 @@ struct BasicSolver::Impl
 	auto applyNewtonSteppingAggressive(BasicSolverSolveArgs args) -> void
 	{
         // Auxiliary variables
-        auto& x = args.x;
-        auto& y = args.y;
+        auto x = args.x;
+        auto y = args.y;
+        auto xlower = args.xlower;
+        auto xupper = args.xupper;
+
+        // Ensure consistent dimensions of vectors/matrices.
+        assert(x.rows() == n);
+        assert(y.rows() == m);
+        assert(xlower.rows() == n);
+        assert(xupper.rows() == n);
 
 		// Update xtrial with the calculated Newton step
 		xtrial = x + dx;

@@ -139,13 +139,13 @@ def test_active_stepper(args):
     if method == SaddlePointMethod.Rangespace:
         H = eigen.diag(diag(H))
 
-    # Auxiliary functions to get first and last of a sequence in a set
-    first = lambda seq: [seq[0]] if len(seq) > 0 else []
-    last = lambda seq: [seq[-1]] if len(seq) > 0 else []
+    # Auxiliary functions to get head and tail of a sequence in a set
+    head = lambda seq: [seq[ 0]] if len(seq) > 0 else []
+    tail = lambda seq: [seq[-1]] if len(seq) > 0 else []
 
-    # Set first and last variables with lower/upper bounds to be unstable
-    iunstable_lower = list(set(first(ilower) + last(ilower)))
-    iunstable_upper = list(set(first(iupper) + last(iupper)))
+    # Set head and tail variables with lower/upper bounds to be unstable as well as all fixed variables
+    iunstable_lower = list(set(head(ilower) + tail(ilower) + ifixed))
+    iunstable_upper = list(set(head(iupper) + tail(iupper) + ifixed))
     iunstable = list(set(iunstable_lower + iunstable_upper))
 
     # Create vector s = (dx, dy) with the expected Newton step values

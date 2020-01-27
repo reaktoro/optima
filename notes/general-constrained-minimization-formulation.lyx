@@ -90,6 +90,316 @@
 
 \begin_layout Standard
 \begin_inset Formula 
+\begin{alignat*}{1}
+\begin{aligned}\min_{x}f(x) & \quad & \text{subject to} & \quad\end{aligned}
+ & \left\{ \begin{array}{c}
+\begin{aligned}Ax & =b\\
+h(x) & =0
+\end{aligned}
+\\
+x_{l}\leq x\leq x_{u}
+\end{array}\right.
+\end{alignat*}
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\min_{x}f(x)\quad\text{subject to}\quad\left\{ \begin{array}{c}
+Ax=b\\
+l\leq x\leq u
+\end{array}\right.
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\begin{bmatrix}H_{s} & 0 & A_{s}^{T}\\
+0 & I_{u} & 0\\
+A_{s} & A_{u} & 0
+\end{bmatrix}\begin{bmatrix}\Delta x_{s}\\
+\Delta x_{u}\\
+\Delta y
+\end{bmatrix}=-\begin{bmatrix}g_{s}+A_{s}^{T}y\\
+0\\
+A_{s}x_{s}+A_{u}x_{u}-b
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\begin{bmatrix}H_{s} & A_{s}^{T}\\
+A_{s} & 0
+\end{bmatrix}\begin{bmatrix}\Delta x_{s}\\
+\Delta y
+\end{bmatrix}=-\begin{bmatrix}g_{s}+A_{s}^{T}y\\
+A_{s}x_{s}+A_{u}x_{u}-b
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+z_{u}=g_{u}+A_{u}^{T}y
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+If 
+\begin_inset Formula $x_{i}=l_{i}$
+\end_inset
+
+ 
+\emph on
+(unstable at the lower bound)
+\emph default
+ and 
+\begin_inset Formula $z_{i}\leq0$
+\end_inset
+
+, compute 
+\begin_inset Formula $\Delta x_{i}$
+\end_inset
+
+, as there is a tendency for 
+\begin_inset Formula $x_{i}$
+\end_inset
+
+ to become stable (
+\begin_inset Formula $l_{i}<x_{i}<u_{i}$
+\end_inset
+
+).
+\end_layout
+
+\begin_layout Standard
+If 
+\begin_inset Formula $x_{i}=u_{i}$
+\end_inset
+
+ 
+\emph on
+(unstable at the upper bound)
+\emph default
+ and 
+\begin_inset Formula $z_{i}\geq0$
+\end_inset
+
+, compute 
+\begin_inset Formula $\Delta x_{i}$
+\end_inset
+
+, as there is a tendency for 
+\begin_inset Formula $x_{i}$
+\end_inset
+
+ to become stable (
+\begin_inset Formula $l_{i}<x_{i}<u_{i}$
+\end_inset
+
+).
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+W=\begin{bmatrix}A\\
+J
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+f(x)=\frac{1}{2}x^{T}Hx+c^{T}x
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+g=Hx+c
+\]
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\min_{x}f(x)\quad\text{subject to}\quad\left\{ \begin{array}{c}
+Ax=b\\
+l\leq x\leq u
+\end{array}\right.
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\begin{bmatrix}H_{s} & 0 & A_{s}^{T}\\
+0 & I_{u} & 0\\
+A_{s} & A_{u} & 0
+\end{bmatrix}\begin{bmatrix}\Delta x_{s}\\
+\Delta x_{u}\\
+\Delta y
+\end{bmatrix}=-\begin{bmatrix}g_{s}+A_{s}^{T}y\\
+0\\
+A_{s}x_{s}+A_{u}x_{u}-b
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\begin{bmatrix}H_{s} & A_{s}^{T}\\
+A_{s} & 0
+\end{bmatrix}\begin{bmatrix}\Delta x_{s}\\
+\Delta y
+\end{bmatrix}=-\begin{bmatrix}g_{s}+A_{s}^{T}y\\
+A_{s}x_{s}+A_{u}x_{u}-b
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+z_{u}=g_{u}+A_{u}^{T}y
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+If 
+\begin_inset Formula $x_{i}=l_{i}$
+\end_inset
+
+ 
+\emph on
+(unstable at the lower bound)
+\emph default
+ and 
+\begin_inset Formula $z_{i}\leq0$
+\end_inset
+
+, compute 
+\begin_inset Formula $\Delta x_{i}$
+\end_inset
+
+, as there is a tendency for 
+\begin_inset Formula $x_{i}$
+\end_inset
+
+ to become stable (
+\begin_inset Formula $l_{i}<x_{i}<u_{i}$
+\end_inset
+
+).
+\end_layout
+
+\begin_layout Standard
+If 
+\begin_inset Formula $x_{i}=u_{i}$
+\end_inset
+
+ 
+\emph on
+(unstable at the upper bound)
+\emph default
+ and 
+\begin_inset Formula $z_{i}\geq0$
+\end_inset
+
+, compute 
+\begin_inset Formula $\Delta x_{i}$
+\end_inset
+
+, as there is a tendency for 
+\begin_inset Formula $x_{i}$
+\end_inset
+
+ to become stable (
+\begin_inset Formula $l_{i}<x_{i}<u_{i}$
+\end_inset
+
+).
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+W=\begin{bmatrix}A\\
+J
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+f(x)=\frac{1}{2}x^{T}Hx+c^{T}x
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+g=Hx+c
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
 \[
 \min_{x}f(x,p)\quad\text{subject to}\quad\left\{ \begin{array}{c}
 Ax+Bq=b\\
