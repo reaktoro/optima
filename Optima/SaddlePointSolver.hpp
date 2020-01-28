@@ -32,6 +32,44 @@ class SaddlePointOptions;
 class SaddlePointSolution;
 class SaddlePointVector;
 
+/// The arguments for method SaddlePointSolver::decompose.
+struct SaddlePointSolverDecomposeArgs
+{
+    /// The Hessian matrix *H* in the saddle point problem.
+    MatrixConstRef H;
+
+    /// The upper and constant block of the Jacobian matrix *A* in the saddle point problem.
+    MatrixConstRef Au;
+
+    /// The lower and variable block of the Jacobian matrix *A* in the saddle point problem.
+    MatrixConstRef Al;
+
+    /// The negative semi-definite matrix *G* in the saddle point problem.
+    MatrixConstRef G;
+
+    /// The indices of the fixed variables.
+    IndicesConstRef ifixed;
+};
+
+/// The arguments for method SaddlePointSolver::solve.
+struct SaddlePointSolverSolveArgs
+{
+    /// The Hessian matrix *H* in the saddle point problem.
+    MatrixConstRef H;
+
+    /// The upper and constant block of the Jacobian matrix *A* in the saddle point problem.
+    MatrixConstRef Au;
+
+    /// The lower and variable block of the Jacobian matrix *A* in the saddle point problem.
+    MatrixConstRef Al;
+
+    /// The negative semi-definite matrix *G* in the saddle point problem.
+    MatrixConstRef G;
+
+    /// The indices of the fixed variables.
+    IndicesConstRef ifixed;
+};
+
 /// Used to solve saddle point problems.
 /// Use this class to solve saddle point problems.
 ///
