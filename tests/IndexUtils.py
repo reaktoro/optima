@@ -59,8 +59,8 @@ def test_index_utils():
     assert set(intersect(inds1, inds2)) == set([4, 5])
     assert set(intersect(inds2, inds1)) == set([4, 5])
 
-    assert set(isIntersectionEmpty([], []))
-    assert set(isIntersectionEmpty([1, 2], []))
-    assert set(isIntersectionEmpty([], [1, 2]))
-    assert set(isIntersectionEmpty([1, 2], [3, 4, 5]))
-    assert not set(isIntersectionEmpty([1, 2], [2, 3, 4, 5]))
+    assert isIntersectionEmpty([], [])
+    assert isIntersectionEmpty([1, 2], [])
+    assert isIntersectionEmpty([], [1, 2])
+    assert isIntersectionEmpty([1, 2], [3, 4, 5])
+    assert not isIntersectionEmpty([1, 2], [2, 3, 4, 5])
