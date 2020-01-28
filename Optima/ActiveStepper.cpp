@@ -228,6 +228,48 @@ struct ActiveStepper::Impl
         // Solve the saddle point problem
         solver.solve({rx, ry}, {dx, dy});
     }
+
+    /// Compute the sensitivity derivatives of the saddle point problem.
+    auto sensitivities(ActiveStepperSensitivitiesArgs args) -> void
+    {
+        // Auxiliary references
+        auto dxdp = args.dxdp;
+        auto dydp = args.dydp;
+        auto dzdp = args.dzdp;
+        auto dgdp = args.dgdp;
+        auto dbdp = args.dbdp;
+        auto dhdp = args.dhdp;
+
+        // The number of parameters for sensitiviry computation
+        auto np = dxdp.cols();
+
+        // Ensure consistent dimensions of vectors/matrices.
+        assert(dxdp.rows() == n);
+        assert(dydp.rows() == m);
+        assert(dzdp.rows() == n);
+        assert(dgdp.rows() == n);
+        assert(dbdp.rows() == ml);
+        assert(dhdp.rows() == mn);
+        assert(dydp.cols() == np);
+        assert(dzdp.cols() == np);
+        assert(dgdp.cols() == np);
+        assert(dbdp.cols() == np);
+        assert(dhdp.cols() == np);
+
+        // Calculate the residuals of the first-order optimality conditions
+        dxdp = -dgdp;
+
+        // Calculate the residuals of the feasibility conditions
+        dydp.topRows(ml) = dbdp;
+        dydp.bottomRows(mn) = dhdp;
+
+        // Solve the saddle point problem
+        for(Index i = 0; i < dxdp.cols(); ++i)
+            solver.solve({ dxdp.col(i), dydp.col(i) }, { dxdp.col(i), dydp.col(i) });
+
+        // Calculate the instability measure of the variables.
+        dzdp.noalias() = dgdp + tr(W)*dydp;
+    }
 };
 
 ActiveStepper::ActiveStepper()
@@ -270,6 +312,11 @@ auto ActiveStepper::decompose(ActiveStepperDecomposeArgs args) -> void
 auto ActiveStepper::solve(ActiveStepperSolveArgs args) -> void
 {
     return pimpl->solve(args);
+}
+
+auto ActiveStepper::sensitivities(ActiveStepperSensitivitiesArgs args) -> void
+{
+    return pimpl->sensitivities(args);
 }
 
 } // namespace Optima

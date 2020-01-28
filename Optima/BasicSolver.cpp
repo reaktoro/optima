@@ -32,42 +32,6 @@
 #include <Optima/Utils.hpp>
 
 namespace Optima {
-namespace {
-
-auto isfinite(const ObjectiveResult& res) -> bool
-{
-    return std::isfinite(res.f) && res.g.allFinite();
-}
-
-//auto xStepLength(VectorConstRef x, VectorConstRef dx, VectorConstRef l, VectorConstRef u, double tau) -> double
-//{
-//    double alpha = 1.0;
-//    const Index size = x.size();
-//    for(Index i = 0; i < size; ++i)
-//        alpha = (dx[i] < 0.0) ? std::min(alpha, tau*(l[i] - x[i])/dx[i]) :
-//                (dx[i] > 0.0) ? std::min(alpha, tau*(u[i] - x[i])/dx[i]) : alpha;
-//    return alpha;
-//}
-//
-//auto zStepLength(VectorConstRef z, VectorConstRef dz, double tau) -> double
-//{
-//    double alpha = 1.0;
-//    const Index size = z.size();
-//    for(Index i = 0; i < size; ++i)
-//        if(dz[i] < 0.0) alpha = std::min(alpha, -tau*z[i]/dz[i]);
-//    return alpha;
-//}
-//
-//auto wStepLength(VectorConstRef w, VectorConstRef dw, double tau) -> double
-//{
-//    double alpha = 1.0;
-//    const Index size = w.size();
-//    for(Index i = 0; i < size; ++i)
-//        if(dw[i] > 0.0) alpha = std::min(alpha, -tau*w[i]/dw[i]);
-//    return alpha;
-//}
-
-} // namespace
 
 /// The implementation of the solver for basic optimization problems.
 struct BasicSolver::Impl
@@ -570,6 +534,7 @@ struct BasicSolver::Impl
         return result.error < options.tolerance;
     };
 
+    /// Solve the optimization problem.
     auto solve(BasicSolverSolveArgs args) -> Result
     {
         // Start timing the calculation
@@ -624,23 +589,19 @@ struct BasicSolver::Impl
         return result;
     }
 
-//     /// Calculate the sensitivity of the optimal solution with respect to parameters.
-//     auto dxdp(VectorConstRef dgdp, VectorConstRef dbdp) -> Matrix
-//     {
-//     	// TODO Implement the calculation of sensitivity derivatives
-// //        // Initialize the right-hand side of the KKT equations
-// //        rhs.rx.noalias() = -dgdp;
-// //        rhs.ry.noalias() =  dbdp;
-// //        rhs.rz.fill(0.0);
-// //
-// //        // Solve the KKT equations to get the derivatives
-// //        kkt.solve(rhs, sol);
+    /// Compute the sensitivity derivatives of the optimal solution.
+    auto sensitivities(BasicSolverSensitivitiesArgs args) -> Result
+    {
+        Timer timer;
 
-//         assert(false);
+        auto [dgdp, dhdp, dbdp, dxdp, dydp, dzdp] = args;
 
-//         // Return the calculated sensitivity vector
-//         return {};
-//     }
+        stepper.sensitivities({ dgdp, dhdp, dbdp, dxdp, dydp, dzdp} );
+
+        result.time_sensitivities = timer.elapsed();
+
+        return result;
+    }
 };
 
 BasicSolver::BasicSolver()
@@ -672,6 +633,11 @@ auto BasicSolver::setOptions(const Options& options) -> void
 auto BasicSolver::solve(BasicSolverSolveArgs args) -> Result
 {
     return pimpl->solve(args);
+}
+
+auto BasicSolver::sensitivities(BasicSolverSensitivitiesArgs args) -> Result
+{
+    return pimpl->sensitivities(args);
 }
 
 } // namespace Optima

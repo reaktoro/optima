@@ -57,6 +57,17 @@ struct BasicSolverSolveArgs
     IndexNumberRef nuu;            ///< The output number of *upper unstable variables* (i.e. those active/attached at their upper bounds).
 };
 
+/// The arguments for method BasicSolver::sensitivities.
+struct BasicSolverSensitivitiesArgs
+{
+    MatrixConstRef dgdp; ///< The derivatives *∂g/∂p*.
+    MatrixConstRef dhdp; ///< The derivatives *∂h/∂p*.
+    MatrixConstRef dbdp; ///< The derivatives *∂b/∂p*.
+    MatrixRef dxdp;      ///< The output sensitivity derivatives *∂x/∂p*.
+    MatrixRef dydp;      ///< The output sensitivity derivatives *∂y/∂p*.
+    MatrixRef dzdp;      ///< The output sensitivity derivatives *∂z/∂p*.
+};
+
 /// The solver for optimization problems in its basic form.
 ///
 /// @eqc{\min_{x}f(x)\quad\text{subject to\ensuremath{\quad\left\{ \begin{array}{c}Ax=b\\h(x)=0\\x_{l}\leq x\leq x_{u}\end{array}\right.}}}
@@ -84,6 +95,10 @@ public:
 
     /// Solve the optimization problem.
     auto solve(BasicSolverSolveArgs args) -> Result;
+
+    /// Compute the sensitivity derivatives of the optimal solution.
+    /// @note Method BasicSolver::solve needs to be called first.
+    auto sensitivities(BasicSolverSensitivitiesArgs args) -> Result;
 
 private:
     struct Impl;

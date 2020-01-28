@@ -77,6 +77,17 @@ struct ActiveStepperSolveArgs
     VectorRef z;               ///< The output *unstabilities* of the variables defined as *z = g + tr(W)y* where *W = [A; J]*.
 };
 
+/// The arguments for method ActiveStepper::sensitivities.
+struct ActiveStepperSensitivitiesArgs
+{
+    MatrixConstRef dgdp; ///< The derivatives *∂g/∂p*.
+    MatrixConstRef dhdp; ///< The derivatives *∂h/∂p*.
+    MatrixConstRef dbdp; ///< The derivatives *∂b/∂p*.
+    MatrixRef dxdp;      ///< The output sensitivity derivatives *∂x/∂p*.
+    MatrixRef dydp;      ///< The output sensitivity derivatives *∂y/∂p*.
+    MatrixRef dzdp;      ///< The output sensitivity derivatives *∂z/∂p*.
+};
+
 /// The class that implements the step calculation.
 class ActiveStepper
 {
@@ -108,6 +119,10 @@ public:
     /// Solve the saddle point problem to compute the Newton steps for *x* and *y*.
     /// @note Method ActiveStepper::decompose needs to be called first.
     auto solve(ActiveStepperSolveArgs args) -> void;
+
+    /// Compute the sensitivity derivatives of the saddle point problem.
+    /// @note Method ActiveStepper::solve needs to be called first.
+    auto sensitivities(ActiveStepperSensitivitiesArgs args) -> void;
 
 private:
     struct Impl;

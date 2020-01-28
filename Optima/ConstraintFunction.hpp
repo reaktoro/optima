@@ -25,10 +25,10 @@ namespace Optima {
 /// The result of the evaluation of a constraint function.
 struct ConstraintResult
 {
-    /// The value of the evaluated constraint function.
+    /// The evaluated value of the constraint function.
     VectorRef h;
 
-    /// The Jacobian matrix of the evaluated constraint function.
+    /// The evaluated Jacobian matrix of the constraint function.
     MatrixRef J;
 
     /// The boolean flag that indicates if the constraint function evaluation failed.

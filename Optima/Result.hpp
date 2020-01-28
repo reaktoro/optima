@@ -65,6 +65,9 @@ public:
     /// The wall time spent for all linear system solutions (in units of s).
     double time_linear_systems = 0;
 
+    /// The wall time spent for computing the sensitivity derivatives (in units of s).
+    double time_sensitivities = 0;
+
     /// Update this Result instance with another by addition.
     auto operator+=(const Result& other) -> Result&;
 };

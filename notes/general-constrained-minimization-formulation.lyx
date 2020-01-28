@@ -838,7 +838,7 @@ R_{A}AQ_{A}=\begin{bmatrix}I_{A} & S_{A}\end{bmatrix}
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Section
 \begin_inset Formula 
 \[
 JQ_{A}=\begin{bmatrix}J_{1} & J_{2}\end{bmatrix}
@@ -972,6 +972,84 @@ Q=Q_{A}Q_{\bar{J}}
 
 
 \begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Sensitivity Calculation
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{alignat*}{1}
+\begin{aligned}\min_{x}f(x) & \quad & \text{subject to} & \quad\end{aligned}
+ & \left\{ \begin{array}{c}
+\begin{aligned}Ax & =b\\
+h(x) & =0
+\end{aligned}
+\\
+x_{l}\leq x\leq x_{u}
+\end{array}\right.
+\end{alignat*}
+
+\end_inset
+
+
+\begin_inset Formula 
+\begin{align*}
+g_{s}+A_{s}^{T}y_{l}+J_{s}^{T}y_{n} & =0\\
+Ax & =b\\
+h(x) & =0
+\end{align*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Compute 
+\begin_inset Formula $\partial x/\partial p$
+\end_inset
+
+ and 
+\begin_inset Formula $\partial y/\partial p$
+\end_inset
+
+: 
+\begin_inset Formula 
+\begin{align*}
+H_{s}\frac{\partial x_{s}}{\partial p}+A_{s}^{T}\frac{\partial y_{l}}{\partial p}+J_{s}^{T}\frac{\partial y_{n}}{\partial p} & =-\frac{\partial g_{s}}{\partial p}\\
+A\frac{\partial x_{s}}{\partial p} & =\frac{\partial b}{\partial p}\\
+J\frac{\partial x_{s}}{\partial p} & =-\frac{\partial h}{\partial p}
+\end{align*}
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+z_{u}=g_{u}+A_{u}^{T}y
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\frac{\partial x_{u}}{\partial p}=0
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\boxed{\frac{\partial z_{u}}{\partial p}=\frac{\partial g_{u}}{\partial p}+A_{u}^{T}\frac{\partial y}{\partial p}}
+\]
+
 \end_inset
 
 

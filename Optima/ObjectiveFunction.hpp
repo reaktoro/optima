@@ -28,13 +28,13 @@ namespace Optima {
 /// The requirements in the evaluation of the objective function.
 struct ObjectiveRequirement
 {
-    /// The boolean flag that indicates the need for the objective value.
+    /// The boolean flag indicating the objective value is needed.
     bool f = true;
 
-    /// The boolean flag that indicates the need for the objective gradient.
+    /// The boolean flag indicating the objective gradient is needed.
     bool g = true;
 
-    /// The boolean flag that indicates the need for the objective Hessian.
+    /// The boolean flag indicating the objective Hessian is needed.
     bool H = true;
 };
 
