@@ -21,14 +21,14 @@
 # from pytest import approx, mark
 # from itertools import product
 
-# from utils.matrices import testing_matrices_A
+# from utils.matrices import testing_matrices_W
 
 # # The number of variables and number of equality constraints
 # n = 10
 # m = 5
 
-# # Tested cases for the matrix A
-# tested_matrices_A = testing_matrices_A
+# # Tested cases for the matrix W
+# tested_matrices_W = testing_matrices_W
 
 # # Tested cases for the structure of matrix H
 # tested_structures_H = [
@@ -65,7 +65,7 @@
 # ]
 
 # # Combination of all tested cases
-# testdata = product(tested_matrices_A,
+# testdata = product(tested_matrices_W,
 #                    tested_structures_H,
 #                    tested_jfixed,
 #                    tested_jlower,
@@ -82,13 +82,13 @@
 # @mark.parametrize("args", testdata)
 # def test_solver(args):
 
-#     assemble_A, structure_H, jf, jl, ju, method = args
+#     assemble_W, structure_H, jf, jl, ju, method = args
 
 #     nf = len(jf)
 #     nl = len(jl)
 #     nu = len(ju)
 
-#     A = assemble_A(m, n, jf)
+#     A = assemble_W(m, n, jf)
 
 #     constraints = Constraints(n)
 #     constraints.setVariablesWithFixedValues(jf)

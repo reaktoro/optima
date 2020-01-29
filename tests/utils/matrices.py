@@ -28,11 +28,11 @@ def pascal_matrix(m, n):
         m {int} -- The number of rows in the matrix
         n {int} -- The number of columns in the matrix
     """
-    A = ones((m, n))
+    W = ones((m, n))
     for i in range(1, m):
         for j in range(1, n):
-            A[i, j] = A[i, j - 1] + A[i - 1, j]
-    return A
+            W[i, j] = W[i, j - 1] + W[i - 1, j]
+    return W
 
 
 def matrix_with_linearly_independent_rows_only(m, n, ifixed=[]):
@@ -68,9 +68,9 @@ def matrix_with_one_linearly_dependent_row(m, n, ifixed=[]):
     Returns:
         [array] -- The matrix with asked structure.
     """
-    A = matrix_with_linearly_independent_rows_only(m, n, ifixed)
-    A[2, :] = 2*A[0, :] + A[1, :]
-    return A
+    W = matrix_with_linearly_independent_rows_only(m, n, ifixed)
+    W[2, :] = 2*W[0, :] + W[1, :]
+    return W
 
 
 def matrix_with_two_linearly_dependent_rows(m, n, ifixed=[]):
@@ -86,27 +86,27 @@ def matrix_with_two_linearly_dependent_rows(m, n, ifixed=[]):
     Returns:
         [array] -- The matrix with asked structure.
     """
-    A = matrix_with_linearly_independent_rows_only(m, n, ifixed)
-    A[2, :] = 2*A[0, :] + A[1, :]
-    A[3, :] = A[1, :]
-    return A
+    W = matrix_with_linearly_independent_rows_only(m, n, ifixed)
+    W[2, :] = 2*W[0, :] + W[1, :]
+    W[3, :] = W[1, :]
+    return W
 
 
 def matrix_with_one_basic_fixed_variable(m, n, ifixed=[]):
-    A = matrix_with_linearly_independent_rows_only(m, n, ifixed)
+    W = matrix_with_linearly_independent_rows_only(m, n, ifixed)
     if len(ifixed) != 0:
         ifree = list(set(range(n)) - set(ifixed))  # indices of free variables
-        A[-1, ifree] = 0.0
-    return A
+        W[-1, ifree] = 0.0
+    return W
 
 
 def matrix_with_two_basic_fixed_variables(m, n, ifixed=[]):
-    A = matrix_with_linearly_independent_rows_only(m, n, ifixed)
+    W = matrix_with_linearly_independent_rows_only(m, n, ifixed)
     if len(ifixed) != 0:
         ifree = list(set(range(n)) - set(ifixed))  # indices of free variables
-        A[-2, ifree] = 0.0
-        A[-1, ifree] = 0.0
-    return A
+        W[-2, ifree] = 0.0
+        W[-1, ifree] = 0.0
+    return W
 
 
 def matrix_non_singular(n):
@@ -117,7 +117,7 @@ def matrix_non_singular(n):
 
 
 # The functions that create matrices with different structures
-testing_matrices_A = [
+testing_matrices_W = [
     matrix_with_linearly_independent_rows_only,
     matrix_with_one_linearly_dependent_row,
     matrix_with_two_linearly_dependent_rows,

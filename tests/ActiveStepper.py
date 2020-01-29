@@ -21,7 +21,7 @@ from numpy.linalg import norm
 from pytest import approx, mark
 from itertools import product
 
-from utils.matrices import testing_matrices_A, matrix_non_singular
+from utils.matrices import testing_matrices_W, matrix_non_singular
 
 
 from enum import Enum
@@ -35,8 +35,8 @@ class MatrixStructure(Enum):
 # The number of variables
 n = 15
 
-# Tested cases for the matrix A
-tested_matrices_A = testing_matrices_A
+# Tested cases for the matrix W
+tested_matrices_W = testing_matrices_W
 
 # Tested cases for the structure of matrix H
 tested_structures_H = [
@@ -79,7 +79,7 @@ tested_ml = [6, 4]
 tested_mn = [3, 1, 0]
 
 # Combination of all tested cases
-testdata = product(tested_matrices_A,
+testdata = product(tested_matrices_W,
                    tested_structures_H,
                    tested_ml,
                    tested_mn,
@@ -92,7 +92,7 @@ testdata = product(tested_matrices_A,
 @mark.parametrize("args", testdata)
 def test_active_stepper(args):
 
-    assemble_A, structure_H, ml, mn, ifixed, ilower, iupper, method = args
+    assemble_W, structure_H, ml, mn, ifixed, ilower, iupper, method = args
 
     # Add the indices of fixed variables to those that have lower and upper bounds
     # since fixed variables are those that have identical lower and upper bounds
@@ -111,7 +111,7 @@ def test_active_stepper(args):
     t = n + m
 
     # Assemble the coefficient matrix W = [A; J]
-    W = assemble_A(m, n, ifixed)
+    W = assemble_W(m, n, ifixed)
 
     # Create references to the A and J blocks in W
     A = W[:ml, :]
@@ -250,7 +250,7 @@ def test_active_stepper(args):
 
     set_printoptions(suppress=True, linewidth=1000, precision=3)
     print()
-    print(f"assemble_A  = {assemble_A}")
+    print(f"assemble_W  = {assemble_W}")
     print(f"structure_H = {structure_H}")
     print(f"ml          = {ml}")
     print(f"mn          = {mn}")

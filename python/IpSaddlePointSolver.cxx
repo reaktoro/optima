@@ -29,11 +29,11 @@ using namespace Optima;
 
 void exportIpSaddlePointSolver(py::module& m)
 {
-    py::class_<IpSaddlePointSolver>(m, "IpSaddlePointSolver")
-        .def(py::init<>())
-        .def("setOptions", &IpSaddlePointSolver::setOptions)
-        .def("options", &IpSaddlePointSolver::options)
-        .def("decompose", &IpSaddlePointSolver::decompose)
-        .def("solve", &IpSaddlePointSolver::solve)
-        ;
+    // py::class_<IpSaddlePointSolver>(m, "IpSaddlePointSolver")
+    //     .def(py::init<>())
+    //     .def("setOptions", &IpSaddlePointSolver::setOptions)
+    //     .def("options", &IpSaddlePointSolver::options)
+    //     .def("decompose", &IpSaddlePointSolver::decompose)
+    //     .def("solve", &IpSaddlePointSolver::solve)
+    //     ;
 }

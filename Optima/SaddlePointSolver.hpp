@@ -27,10 +27,7 @@
 namespace Optima {
 
 // Forward declarations
-class SaddlePointMatrix;
 class SaddlePointOptions;
-class SaddlePointSolution;
-class SaddlePointVector;
 
 /// The arguments for method SaddlePointSolver::decompose.
 struct SaddlePointSolverDecomposeArgs
@@ -38,11 +35,11 @@ struct SaddlePointSolverDecomposeArgs
     /// The Hessian matrix *H* in the saddle point problem.
     MatrixConstRef H;
 
-    /// The upper and constant block of the Jacobian matrix *A* in the saddle point problem.
-    MatrixConstRef Au;
+    /// The upper and constant block of the Jacobian matrix *W = [A; J]* in the saddle point problem.
+    MatrixConstRef A;
 
-    /// The lower and variable block of the Jacobian matrix *A* in the saddle point problem.
-    MatrixConstRef Al;
+    /// The lower and variable block of the Jacobian matrix *W = [A; J]* in the saddle point problem.
+    MatrixConstRef J;
 
     /// The negative semi-definite matrix *G* in the saddle point problem.
     MatrixConstRef G;
@@ -54,20 +51,17 @@ struct SaddlePointSolverDecomposeArgs
 /// The arguments for method SaddlePointSolver::solve.
 struct SaddlePointSolverSolveArgs
 {
-    /// The Hessian matrix *H* in the saddle point problem.
-    MatrixConstRef H;
+    /// The right-hand side vector *a* in the saddle point problem.
+    VectorConstRef a;
 
-    /// The upper and constant block of the Jacobian matrix *A* in the saddle point problem.
-    MatrixConstRef Au;
+    /// The right-hand side vector *b* in the saddle point problem.
+    VectorConstRef b;
 
-    /// The lower and variable block of the Jacobian matrix *A* in the saddle point problem.
-    MatrixConstRef Al;
+    /// The solution vector *x* in the saddle point problem.
+    VectorRef x;
 
-    /// The negative semi-definite matrix *G* in the saddle point problem.
-    MatrixConstRef G;
-
-    /// The indices of the fixed variables.
-    IndicesConstRef ifixed;
+    /// The solution vector *y* in the saddle point problem.
+    VectorRef y;
 };
 
 /// Used to solve saddle point problems.
@@ -119,14 +113,11 @@ public:
     /// Decompose the coefficient matrix of the saddle point problem.
     /// @note This method should be called before the @ref solve method and after @ref canonicalize.
     /// @param lhs The coefficient matrix of the saddle point problem.
-    auto decompose(SaddlePointMatrix lhs) -> void;
+    auto decompose(SaddlePointSolverDecomposeArgs args) -> void;
 
     /// Solve the saddle point problem.
-    /// @note This method expects that a call to method @ref decompose has already been performed.
-    /// @param lhs The coefficient matrix of the saddle point problem.
-    /// @param rhs The right-hand side vector of the saddle point problem.
-    /// @param sol The solution of the saddle point problem.
-    auto solve(SaddlePointVector rhs, SaddlePointSolution sol) -> void;
+    /// @note Method SaddlePointSolver::decompose needs to be called first.
+    auto solve(SaddlePointSolverSolveArgs args) -> void;
 
 private:
     struct Impl;

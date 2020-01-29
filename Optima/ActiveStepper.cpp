@@ -175,13 +175,10 @@ struct ActiveStepper::Impl
         // The indices of the lower and upper unstable variables
         auto iu = iordering.tail(nu);
 
-        // Setup the saddle point matrix.
+        // Decompose the saddle point matrix (this decomposition is later used in method solve, possibly many times!)
         // Consider lower/upper unstable variables as "fixed" variables in the saddle point problem.
         // Reason: we do not need to compute Newton steps for the currently unstable variables!
-        SaddlePointMatrix spm(H, zeros(n), A, J, iu);
-
-        // Decompose the saddle point matrix (this decomposition is later used in method solve, possibly many times!)
-        solver.decompose(spm);
+        solver.decompose({ H, A, J, Matrix{}, iu });
     }
 
     /// Solve the saddle point problem.
@@ -226,7 +223,7 @@ struct ActiveStepper::Impl
         ry.tail(mn).noalias() = -h;
 
         // Solve the saddle point problem
-        solver.solve({rx, ry}, {dx, dy});
+        solver.solve({ rx, ry, dx, dy });
     }
 
     /// Compute the sensitivity derivatives of the saddle point problem.
@@ -265,7 +262,7 @@ struct ActiveStepper::Impl
 
         // Solve the saddle point problem
         for(Index i = 0; i < dxdp.cols(); ++i)
-            solver.solve({ dxdp.col(i), dydp.col(i) }, { dxdp.col(i), dydp.col(i) });
+            solver.solve({ dxdp.col(i), dydp.col(i), dxdp.col(i), dydp.col(i) });
 
         // Calculate the instability measure of the variables.
         dzdp.noalias() = dgdp + tr(W)*dydp;

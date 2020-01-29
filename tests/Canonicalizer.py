@@ -21,11 +21,11 @@ from numpy.linalg import norm, inv
 from pytest import approx, mark
 from itertools import product
 
-from utils.matrices import testing_matrices_A
+from utils.matrices import testing_matrices_W
 
 
-# Tested cases for the structures of matrix A
-tested_matrices_A = testing_matrices_A
+# Tested cases for the structures of matrix W = [A; J]
+tested_matrices_W = testing_matrices_W
 
 # Tested cases for the indices of fixed variables
 tested_jfixed = [
@@ -36,7 +36,7 @@ tested_jfixed = [
 
 # Combination of all tested cases
 testdata = product(
-    tested_matrices_A,
+    tested_matrices_W,
     tested_jfixed)
 
 
@@ -114,12 +114,12 @@ def check_canonicalizer(canonicalizer, A):
 @mark.parametrize("args", testdata)
 def test_canonicalizer(args):
 
-    assemble_A, jfixed = args
+    assemble_W, jfixed = args
 
     m = 12
     n = 15
 
-    A = assemble_A(m, n, jfixed)
+    A = assemble_W(m, n, jfixed)
 
     canonicalizer = Canonicalizer(A)
     check_canonicalizer(canonicalizer, A)

@@ -21,14 +21,14 @@ from numpy.linalg import norm
 from pytest import approx, mark
 from itertools import product
 
-from utils.matrices import testing_matrices_A, matrix_non_singular
+from utils.matrices import testing_matrices_W, matrix_non_singular
 
 # The number of variables and number of equality constraints
 n = 15
 m = 5
 
-# Tested cases for the matrix A
-tested_matrices_A = testing_matrices_A
+# Tested cases for the matrix W
+tested_matrices_W = testing_matrices_W
 
 # Tested cases for the structure of matrix H
 tested_structures_H = [
@@ -65,7 +65,7 @@ tested_methods = [
 ]
 
 # Combination of all tested cases
-testdata = product(tested_matrices_A,
+testdata = product(tested_matrices_W,
                    tested_structures_H,
                    tested_ifixed,
                    tested_ilower,
@@ -90,7 +90,7 @@ def create_constraint_fn():
 @mark.parametrize("args", testdata)
 def test_basic_solver(args):
 
-    assemble_A, structure_H, ifixed, ilower, iupper, method = args
+    assemble_W, structure_H, ifixed, ilower, iupper, method = args
 
     # Add the indices of fixed variables to those that have lower and upper bounds
     # since fixed variables are those that have identical lower and upper bounds
@@ -105,8 +105,11 @@ def test_basic_solver(args):
     # The total number of variables x and y
     t = n + m
 
-    # Assemble the coefficient matrix A in Ax = b
-    A = assemble_A(m, n, ifixed)
+    # Assemble the coefficient matrix W = [A; J]
+    W = assemble_W(m, n, ifixed)
+
+    # For the moment, set A in Ax = B to W
+    A = W
 
     # Create vectors for the lower and upper bounds of the variables
     xlower = full(n, -inf)

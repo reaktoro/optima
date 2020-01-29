@@ -25,7 +25,6 @@
 #include <Optima/Exception.hpp>
 #include <Optima/IndexUtils.hpp>
 #include <Optima/Matrix.hpp>
-#include <Optima/SaddlePointMatrix.hpp>
 #include <Optima/SaddlePointOptions.hpp>
 #include <Optima/Utils.hpp>
 
@@ -33,19 +32,19 @@ namespace Optima {
 
 struct SaddlePointSolver::Impl
 {
-    /// The canonicalizer of the Jacobian matrix *A*.
+    /// The canonicalizer of the Jacobian matrix *W = [A; J]*.
     CanonicalizerAdvanced canonicalizer;
 
     /// The options used to solve the saddle point problems.
     SaddlePointOptions options;
 
-    /// The number of rows and columns in the Jacobian matrix *A*
+    /// The number of rows and columns in the Jacobian matrix *W = [A; J]*
     Index m, n;
 
     /// The number of basic and non-basic variables.
     Index nb, nn;
 
-    /// The number of linearly dependent rows in *A*
+    /// The number of linearly dependent rows in *W = [A; J]*
     Index nl;
 
     /// The number of free and fixed variables.
@@ -100,16 +99,16 @@ struct SaddlePointSolver::Impl
     SaddlePointMethod best_method;
 
     /// Initialize the saddle point solver.
-    auto initialize(SaddlePointMatrix lhs) -> void
+    auto initialize(SaddlePointSolverDecomposeArgs args) -> void
     {
         /// Update initialization status
         initialized = true;
 
         // Set the number of variables
-        n = lhs.H.rows();
+        n = args.H.rows();
 
-        // Set the number of rows in the matrix A = [Au; Al]
-        m = lhs.Au.rows() + lhs.Al.rows();
+        // Set the number of rows in the matrix *W = [A; J]*
+        m = args.A.rows() + args.J.rows();
 
         // Allocate auxiliary memory
         a.resize(n);
@@ -122,19 +121,19 @@ struct SaddlePointSolver::Impl
         // Initialize the initial ordering of the variables
         iordering = indices(n);
 
-        // Compute the canonical form of the uppper block matrix Au in A = [Au; Al]
-        canonicalizer.compute(lhs.Au, lhs.Al);
+        // Compute the canonical form of the uppper block matrix A in *W = [A; J]*
+        canonicalizer.compute(args.A, args.J);
     }
 
-    /// Update the canonical form of the coefficient matrix *A* of the saddle point problem.
-    auto updateCanonicalForm(SaddlePointMatrix lhs) -> void
+    /// Update the canonical form of the coefficient matrix *W = [A; J]* of the saddle point problem.
+    auto updateCanonicalForm(SaddlePointSolverDecomposeArgs args) -> void
     {
         /// Initialize the solver if not yet
         if(!initialized)
-            initialize(lhs);
+            initialize(args);
 
         // Update the number of fixed and free variables
-        nf = lhs.jf.size();
+        nf = args.ifixed.size();
         nx = n - nf;
 
         // Determine if the saddle point matrix is degenerate
@@ -145,33 +144,31 @@ struct SaddlePointSolver::Impl
             return;
 
         // The ordering of the variables as (free variables, fixed variables)
-        moveIntersectionRight(iordering, lhs.jf);
+        moveIntersectionRight(iordering, args.ifixed);
 
-        // The indices of the fixed (jf) variables
-        const auto jf = iordering.tail(nf);
+        // The indices of the fixed (ifixed) variables
+        const auto ifixed = iordering.tail(nf);
 
         // Update the priority weights for the update of the canonical form
-        weights.noalias() = lhs.H.diagonal();
-        if(lhs.D.size()) weights += lhs.D;
-
+        weights.noalias() = args.H.diagonal();
         weights.noalias() = abs(inv(weights));
-        weights(jf).noalias() = -linspace(nf, 1, nf);
+        weights(ifixed).noalias() = -linspace(nf, 1, nf);
 
         // Update the canonical form and the ordering of the variables
-        canonicalizer.updateWithPriorityWeights(lhs.Al, weights);
+        canonicalizer.updateWithPriorityWeights(args.J, weights);
 
         // Update the number of basic and non-basic variables
         nb = canonicalizer.numBasicVariables();
         nn = canonicalizer.numNonBasicVariables();
 
-        // Update the number of linearly dependent rows in A = [Au; Al]
+        // Update the number of linearly dependent rows in *W = [A; J]*
         nl = m - nb;
 
         // Get the updated indices of basic and non-basic variables
         const auto ibasic = canonicalizer.indicesBasicVariables();
         const auto inonbasic = canonicalizer.indicesNonBasicVariables();
 
-        // Get the S matrix of the canonical form of A
+        // Get the S matrix of the canonical form of *W = [A; J]*
         const auto S = canonicalizer.S();
 
         // Find the number of fixed basic variables (those with weights below zero)
@@ -208,33 +205,33 @@ struct SaddlePointSolver::Impl
     }
 
     /// Decompose the coefficient matrix of the saddle point problem.
-    auto decompose(SaddlePointMatrix lhs) -> void
+    auto decompose(SaddlePointSolverDecomposeArgs args) -> void
     {
-        // Update the canonical form of the matrix A
-        updateCanonicalForm(lhs);
+        // Update the canonical form of the matrix *W = [A; J]*
+        updateCanonicalForm(args);
 
         // Check if the saddle point matrix is degenerate, with no free variables.
         if(degenerate)
-            decomposeDegenerateCase(lhs);
+            decomposeDegenerateCase(args);
 
         else switch(options.method)
         {
-        case SaddlePointMethod::Nullspace: decomposeNullspace(lhs); break;
-        case SaddlePointMethod::Rangespace: decomposeRangespace(lhs); break;
-        default: decomposeFullspace(lhs); break;
+        case SaddlePointMethod::Nullspace: decomposeNullspace(args); break;
+        case SaddlePointMethod::Rangespace: decomposeRangespace(args); break;
+        default: decomposeFullspace(args); break;
         }
     }
 
     /// Decompose the saddle point matrix for the degenerate case of no free variables.
-    auto decomposeDegenerateCase(SaddlePointMatrix lhs) -> void
+    auto decomposeDegenerateCase(SaddlePointSolverDecomposeArgs args) -> void
     {
-        if(isDenseMatrix(lhs.G))
+        if(isDenseMatrix(args.G))
         {
             // Set the G matrix to dense structure
             G.resize(m, m);
 
             // Set the G matrix from the given saddle point matrix
-            G = lhs.G;
+            G = args.G;
 
             // Compute the LU decomposition of G.
             lu.compute(G);
@@ -242,14 +239,14 @@ struct SaddlePointSolver::Impl
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a LU decomposition method.
-    auto decomposeFullspace(SaddlePointMatrix lhs) -> void
+    auto decomposeFullspace(SaddlePointSolverDecomposeArgs args) -> void
     {
-        if(isZeroMatrix(lhs.G)) decomposeFullspaceZeroG(lhs);
-        else decomposeFullspaceDenseG(lhs);
+        if(isZeroMatrix(args.G)) decomposeFullspaceZeroG(args);
+        else decomposeFullspaceDenseG(args);
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a LU decomposition method.
-    auto decomposeFullspaceZeroG(SaddlePointMatrix lhs) -> void
+    auto decomposeFullspaceZeroG(SaddlePointSolverDecomposeArgs args) -> void
     {
         // Set the G matrix to an empty matrix
         G = {};
@@ -276,17 +273,14 @@ struct SaddlePointSolver::Impl
         M.bottomRightCorner(nbx, nbx).setZero();
 
         // Set the H + D block of the canonical saddle point matrix
-        M.topLeftCorner(nx, nx) = lhs.H(jx, jx);
-
-        // Add the D contribution from the free variables to the H + D block
-        if(lhs.D.size()) M.diagonal().head(nx) += lhs.D(jx);
+        M.topLeftCorner(nx, nx) = args.H(jx, jx);
 
         // Compute the LU decomposition of M.
         lu.compute(M);
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a LU decomposition method.
-    auto decomposeFullspaceDenseG(SaddlePointMatrix lhs) -> void
+    auto decomposeFullspaceDenseG(SaddlePointSolverDecomposeArgs args) -> void
     {
         // Set the H matrix to a dense structure
         H.resize(n, n);
@@ -295,7 +289,7 @@ struct SaddlePointSolver::Impl
         G.resize(m, m);
 
         // Set the G matrix from the given saddle point matrix
-        G = lhs.G;
+        G = args.G;
 
         // The indices of the free variables
         auto jx = iordering.head(nx);
@@ -315,10 +309,7 @@ struct SaddlePointSolver::Impl
         auto M = mat.topLeftCorner(m + nx, m + nx);
 
         // Set the H + D block of the canonical saddle point matrix
-        M.topLeftCorner(nx, nx) = lhs.H(jx, jx);
-
-        // Add the D contribution from the free variables to the H + D block
-        if(lhs.D.size()) M.diagonal().head(nx) += lhs.D(jx);
+        M.topLeftCorner(nx, nx) = args.H(jx, jx);
 
         // Set the Sx and tr(Sx) blocks in the canonical saddle point matrix
         M.middleCols(nx, nbx).topRows(nx) << Ibxbx, tr(Sbxnx);
@@ -336,14 +327,14 @@ struct SaddlePointSolver::Impl
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a rangespace diagonal method.
-    auto decomposeRangespace(SaddlePointMatrix lhs) -> void
+    auto decomposeRangespace(SaddlePointSolverDecomposeArgs args) -> void
     {
-        if(isZeroMatrix(lhs.G)) decomposeRangespaceZeroG(lhs);
-        else decomposeRangespaceDenseG(lhs);
+        if(isZeroMatrix(args.G)) decomposeRangespaceZeroG(args);
+        else decomposeRangespaceDenseG(args);
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a rangespace diagonal method.
-    auto decomposeRangespaceZeroG(SaddlePointMatrix lhs) -> void
+    auto decomposeRangespaceZeroG(SaddlePointSolverDecomposeArgs args) -> void
     {
         // Set the G matrix to an empty matrix
         G = {};
@@ -371,10 +362,7 @@ struct SaddlePointSolver::Impl
         auto jx = iordering.head(nx);
 
         // Retrieve the entries in H corresponding to free variables.
-        Hx.noalias() = lhs.H.diagonal()(jx);
-
-        // Add the D contribution from the free variables to the H + D block
-        if(lhs.D.size()) Hx.noalias() += lhs.D(jx);
+        Hx.noalias() = args.H.diagonal()(jx);
 
         // The auxiliary matrix Tbxbx = Sbxn1 * Bn1bx and its submatrices
         auto Tbxbx = mat.topRightCorner(nbx, nbx);
@@ -436,10 +424,10 @@ struct SaddlePointSolver::Impl
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a rangespace diagonal method.
-    auto decomposeRangespaceDenseG(SaddlePointMatrix lhs) -> void
+    auto decomposeRangespaceDenseG(SaddlePointSolverDecomposeArgs args) -> void
     {
         // Set the G matrix from the given saddle point matrix
-        G = lhs.G;
+        G = args.G;
 
         // Alias to the matrices of the canonicalization process
         auto S = canonicalizer.S();
@@ -493,13 +481,10 @@ struct SaddlePointSolver::Impl
         auto jx = iordering.head(nx);
 
         // Retrieve the entries in H corresponding to free variables.
-        Hx.noalias() = lhs.H.diagonal()(jx);
-
-        // Add the D contribution from the free variables to the H + D block
-        if(lhs.D.size()) Hx.noalias() += lhs.D(jx);
+        Hx.noalias() = args.H.diagonal()(jx);
 
         // Calculate matrix G' = R * G * tr(R)
-        G = R * G * tr(R);  // TODO: Try R * lhs.G * tr(R)
+        G = R * G * tr(R);  // TODO: Try R * args.G * tr(R)
 
         // The auxiliary matrix Tbxbx = Sbxn1 * Bn1bx and its submatrices
         auto Tbxbx = mat.topRightCorner(nbx, nbx);
@@ -598,14 +583,14 @@ struct SaddlePointSolver::Impl
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a nullspace method.
-    auto decomposeNullspace(SaddlePointMatrix lhs) -> void
+    auto decomposeNullspace(SaddlePointSolverDecomposeArgs args) -> void
     {
-        if(isZeroMatrix(lhs.G)) decomposeNullspaceZeroG(lhs);
-        else decomposeNullspaceDenseG(lhs);
+        if(isZeroMatrix(args.G)) decomposeNullspaceZeroG(args);
+        else decomposeNullspaceDenseG(args);
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a nullspace method.
-    auto decomposeNullspaceZeroG(SaddlePointMatrix lhs) -> void
+    auto decomposeNullspaceZeroG(SaddlePointSolverDecomposeArgs args) -> void
     {
         // Set the G matrix to an empty matrix
         G = {};
@@ -628,10 +613,7 @@ struct SaddlePointSolver::Impl
         auto jx = iordering.head(nx);
 
         // Retrieve the entries in H corresponding to free variables.
-        Hx = lhs.H(jx, jx);
-
-        // Add the D contribution from the free variables to the H + D block
-        if(lhs.D.size()) Hx.diagonal().noalias() += lhs.D(jx);
+        Hx = args.H(jx, jx);
 
         // The matrix M where we setup the coefficient matrix of the equations
         auto M = mat.topLeftCorner(nnx, nnx);
@@ -647,10 +629,10 @@ struct SaddlePointSolver::Impl
     }
 
     /// Decompose the coefficient matrix of the saddle point problem using a nullspace method.
-    auto decomposeNullspaceDenseG(SaddlePointMatrix lhs) -> void
+    auto decomposeNullspaceDenseG(SaddlePointSolverDecomposeArgs args) -> void
     {
         // Set the G matrix from the given saddle point matrix
-        G = lhs.G;
+        G = args.G;
 
         // Alias to the matrices of the canonicalization process
         auto S = canonicalizer.S();
@@ -684,13 +666,10 @@ struct SaddlePointSolver::Impl
         auto jx = iordering.head(nx);
 
         // Retrieve the entries in H corresponding to free variables.
-        Hx = lhs.H(jx, jx);
-
-        // Add the D contribution from the free variables to the H + D block
-        if(lhs.D.size()) Hx.diagonal().noalias() += lhs.D(jx);
+        Hx = args.H(jx, jx);
 
         // Calculate matrix G' = R * G * tr(R)
-        G = R * G * tr(R); // TODO: Try G = R * lhs.G * tr(R)
+        G = R * G * tr(R); // TODO: Try G = R * args.G * tr(R)
 
         // Auxliary matrix expressions
         const auto Ibxbx = identity(nbx, nbx);
@@ -752,42 +731,42 @@ struct SaddlePointSolver::Impl
     }
 
     /// Solve the saddle point problem with diagonal Hessian matrix.
-    auto solve(SaddlePointVector rhs, SaddlePointSolution sol) -> void
+    auto solve(SaddlePointSolverSolveArgs args) -> void
     {
         // Check if the saddle point matrix is degenerate, with no free variables.
         if(degenerate)
-            solveDegenerateCase(rhs, sol);
+            solveDegenerateCase(args);
 
         else switch(options.method)
         {
-        case SaddlePointMethod::Nullspace: solveNullspace(rhs, sol); break;
-        case SaddlePointMethod::Rangespace: solveRangespace(rhs, sol); break;
-        default: solveFullspace(rhs, sol); break;
+        case SaddlePointMethod::Nullspace: solveNullspace(args); break;
+        case SaddlePointMethod::Rangespace: solveRangespace(args); break;
+        default: solveFullspace(args); break;
         }
     }
 
     /// Solve the saddle point problem for the degenerate case of no free variables.
-    auto solveDegenerateCase(SaddlePointVector rhs, SaddlePointSolution sol) -> void
+    auto solveDegenerateCase(SaddlePointSolverSolveArgs args) -> void
     {
-        sol.x = rhs.a;
+        args.x = args.a;
 
-        if(isZeroMatrix(G)) sol.y.fill(0.0);
-        else sol.y.noalias() = lu.solve(rhs.b);
+        if(isZeroMatrix(G)) args.y.fill(0.0);
+        else args.y.noalias() = lu.solve(args.b);
     }
 
     /// Solve the saddle point problem using a LU decomposition method.
-    auto solveFullspace(SaddlePointVector rhs, SaddlePointSolution sol) -> void
+    auto solveFullspace(SaddlePointSolverSolveArgs args) -> void
     {
-        if(isZeroMatrix(G)) solveFullspaceZeroG(rhs, sol);
-        else solveFullspaceDenseG(rhs, sol);
+        if(isZeroMatrix(G)) solveFullspaceZeroG(args);
+        else solveFullspaceDenseG(args);
     }
 
     /// Solve the saddle point problem using a LU decomposition method.
-    auto solveFullspaceZeroG(SaddlePointVector rhs, SaddlePointSolution sol) -> void
+    auto solveFullspaceZeroG(SaddlePointSolverSolveArgs args) -> void
     {
         // Alias to members of the saddle point vector solution.
-        auto x = sol.x;
-        auto y = sol.y;
+        auto x = args.x;
+        auto y = args.y;
 
         // Alias to the matrices of the canonicalization process
         auto S = canonicalizer.S();
@@ -808,10 +787,10 @@ struct SaddlePointSolver::Impl
         auto bbf = b.segment(nbx, nbf);
 
         // Retrieve the values of a using the ordering of the free and fixed variables
-        a.noalias() = rhs.a(iordering);
+        a.noalias() = args.a(iordering);
 
         // Calculate b' = R * b
-        b.noalias() = R * rhs.b;
+        b.noalias() = R * args.b;
 
         // Calculate bbx'' = bbx' - Sbxnf*anf
         bbx -= Sbxnf * anf;
@@ -842,11 +821,11 @@ struct SaddlePointSolver::Impl
     }
 
     /// Solve the saddle point problem using a LU decomposition method.
-    auto solveFullspaceDenseG(SaddlePointVector rhs, SaddlePointSolution sol) -> void
+    auto solveFullspaceDenseG(SaddlePointSolverSolveArgs args) -> void
     {
         // Alias to members of the saddle point vector solution.
-        auto x = sol.x;
-        auto y = sol.y;
+        auto x = args.x;
+        auto y = args.y;
 
         // Alias to the matrices of the canonicalization process
         auto S = canonicalizer.S();
@@ -867,10 +846,10 @@ struct SaddlePointSolver::Impl
         auto bbf = b.segment(nbx, nbf);
 
         // Retrieve the values of a using the ordering of the free and fixed variables
-        a.noalias() = rhs.a(iordering);
+        a.noalias() = args.a(iordering);
 
         // Calculate b' = R * b
-        b.noalias() = R * rhs.b;
+        b.noalias() = R * args.b;
 
         // Calculate bbx'' = bbx' - Sbxnf*anf
         bbx -= Sbxnf * anf;
@@ -901,18 +880,18 @@ struct SaddlePointSolver::Impl
     }
 
     /// Solve the saddle point problem using a rangespace diagonal method.
-    auto solveRangespace(SaddlePointVector rhs, SaddlePointSolution sol) -> void
+    auto solveRangespace(SaddlePointSolverSolveArgs args) -> void
     {
-        if(isZeroMatrix(G)) solveRangespaceZeroG(rhs, sol);
-        else solveRangespaceDenseG(rhs, sol);
+        if(isZeroMatrix(G)) solveRangespaceZeroG(args);
+        else solveRangespaceDenseG(args);
     }
 
     /// Solve the saddle point problem using a rangespace diagonal method.
-    auto solveRangespaceZeroG(SaddlePointVector rhs, SaddlePointSolution sol) -> void
+    auto solveRangespaceZeroG(SaddlePointSolverSolveArgs args) -> void
     {
         // Alias to members of the saddle point vector solution.
-        auto x = sol.x;
-        auto y = sol.y;
+        auto x = args.x;
+        auto y = args.y;
 
         // Alias to the matrices of the canonicalization process
         auto S = canonicalizer.S();
@@ -947,9 +926,9 @@ struct SaddlePointSolver::Impl
         auto bb1 = bbx.tail(nb1);
         auto bb2 = bbx.head(nb2);
 
-        a.noalias() = rhs.a(iordering);
+        a.noalias() = args.a(iordering);
 
-        b.noalias() = R * rhs.b;
+        b.noalias() = R * args.b;
 
         anx -= tr(Sb2nx) * ab2;
         bbx -= Sbxnf * anf;
@@ -987,11 +966,11 @@ struct SaddlePointSolver::Impl
     }
 
     /// Solve the saddle point problem using a rangespace diagonal method.
-    auto solveRangespaceDenseG(SaddlePointVector rhs, SaddlePointSolution sol) -> void
+    auto solveRangespaceDenseG(SaddlePointSolverSolveArgs args) -> void
     {
         // Alias to members of the saddle point vector solution.
-        auto x = sol.x;
-        auto y = sol.y;
+        auto x = args.x;
+        auto y = args.y;
 
         // Alias to the matrices of the canonicalization process
         auto S = canonicalizer.S();
@@ -1044,9 +1023,9 @@ struct SaddlePointSolver::Impl
         auto bb1 = bbx.tail(nb1);
         auto bb2 = bbx.head(nb2);
 
-        a.noalias() = rhs.a(iordering);
+        a.noalias() = args.a(iordering);
 
-        b.noalias() = R * rhs.b;
+        b.noalias() = R * args.b;
 
         anx -= tr(Sb2nx) * ab2;
         bbx -= Sbxnf * anf;
@@ -1093,14 +1072,14 @@ struct SaddlePointSolver::Impl
     }
 
     /// Solve the saddle point problem using a nullspace method.
-    auto solveNullspace(SaddlePointVector rhs, SaddlePointSolution sol) -> void
+    auto solveNullspace(SaddlePointSolverSolveArgs args) -> void
     {
-        if(isZeroMatrix(G)) solveNullspaceZeroG(rhs, sol);
-        else solveNullspaceDenseG(rhs, sol);
+        if(isZeroMatrix(G)) solveNullspaceZeroG(args);
+        else solveNullspaceDenseG(args);
     }
 
     /// Solve the saddle point problem using a nullspace method.
-    auto solveNullspaceZeroG(SaddlePointVector rhs, SaddlePointSolution sol) -> void
+    auto solveNullspaceZeroG(SaddlePointSolverSolveArgs args) -> void
     {
         // Alias to the matrices of the canonicalization process
         auto S = canonicalizer.S();
@@ -1136,10 +1115,10 @@ struct SaddlePointSolver::Impl
         auto ypbl = yp.tail(nl);
 
         // Set vectors `ax` and `af` using values from `a`
-        a.noalias() = rhs.a(iordering);
+        a.noalias() = args.a(iordering);
 
         // Calculate b' = R*b
-        b.noalias() = R*rhs.b;
+        b.noalias() = R*args.b;
 
         // Calculate bbx'' = bbx' - Sbxnf*anf
         bbx -= Sbxnf*anf;
@@ -1160,8 +1139,8 @@ struct SaddlePointSolver::Impl
         if(nnx) anx.noalias() = lu.solve(anx);
 
         // Alias to solution vectors x and y
-        auto x = sol.x;
-        auto y = sol.y;
+        auto x = args.x;
+        auto y = args.y;
 
         // Calculate xbx and store in abx
         abx.noalias() = bbx - Sbxnx*anx;
@@ -1179,7 +1158,7 @@ struct SaddlePointSolver::Impl
     }
 
     /// Solve the saddle point problem using a nullspace method.
-    auto solveNullspaceDenseG(SaddlePointVector rhs, SaddlePointSolution sol) -> void
+    auto solveNullspaceDenseG(SaddlePointSolverSolveArgs args) -> void
     {
         // Alias to the matrices of the canonicalization process
         auto S = canonicalizer.S();
@@ -1213,7 +1192,7 @@ struct SaddlePointSolver::Impl
 
         // The indices of the free and fixed variables
         auto jx = iordering.head(nx);
-        auto jf = iordering.tail(nf);
+        auto ifixed = iordering.tail(nf);
 
         // The right-hand side vector r = [rnx rbx rbf rbl]
         auto r = vec.head(nnx + m);
@@ -1224,11 +1203,11 @@ struct SaddlePointSolver::Impl
         auto rbl = rb.tail(nl);
 
         // Set vectors `ax` and `af` using values from `a`
-        ax.noalias() = rhs.a(jx);
-        af.noalias() = rhs.a(jf);
+        ax.noalias() = args.a(jx);
+        af.noalias() = args.a(ifixed);
 
         // Calculate b' = R*b
-        b.noalias() = R*rhs.b;
+        b.noalias() = R*args.b;
 
         // Calculate bbx'' = bbx' - Sbxnf*anf
         bbx -= Sbxnf*anf;
@@ -1246,8 +1225,8 @@ struct SaddlePointSolver::Impl
         r.noalias() = lu.solve(r);
 
         // Alias to solution vectors x and y
-        auto x = sol.x;
-        auto y = sol.y;
+        auto x = args.x;
+        auto y = args.y;
 
         // Calculate y = tr(R) * y'
         y.noalias() = tr(R) * rb;
@@ -1288,14 +1267,14 @@ auto SaddlePointSolver::options() const -> const SaddlePointOptions&
     return pimpl->options;
 }
 
-auto SaddlePointSolver::decompose(SaddlePointMatrix lhs) -> void
+auto SaddlePointSolver::decompose(SaddlePointSolverDecomposeArgs args) -> void
 {
-    return pimpl->decompose(lhs);
+    return pimpl->decompose(args);
 }
 
-auto SaddlePointSolver::solve(SaddlePointVector rhs, SaddlePointSolution sol) -> void
+auto SaddlePointSolver::solve(SaddlePointSolverSolveArgs args) -> void
 {
-    return pimpl->solve(rhs, sol);
+    return pimpl->solve(args);
 }
 
 } // namespace Optima

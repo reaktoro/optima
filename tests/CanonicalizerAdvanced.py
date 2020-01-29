@@ -21,7 +21,7 @@ from numpy.linalg import norm, inv
 from pytest import approx, mark
 from itertools import product
 
-from utils.matrices import testing_matrices_A
+from utils.matrices import testing_matrices_W
 
 
 def check_canonical_form(canonicalizer, A, J):
@@ -87,15 +87,15 @@ def check_canonicalizer(canonicalizer, A, J):
     check_canonical_ordering(canonicalizer, weigths)
 
 
-# Tested cases for the matrix A
-tested_matrices_A = testing_matrices_A
+# Tested cases for the matrix W
+tested_matrices_W = testing_matrices_W
 
 # Tested number of rows in matrix Au and Al (upper and lower blocks of A)
 tested_mu = [7, 3]
 tested_ml = [5, 1]
 
 # Combination of all tested cases
-testdata = product(tested_matrices_A,
+testdata = product(tested_matrices_W,
                    tested_mu,
                    tested_ml)
 
@@ -105,15 +105,15 @@ def test_canonicalizer(args):
     set_printoptions(linewidth=100000, precision=6, floatmode='fixed', threshold=100000)
 
 
-    assemble_A, mu, ml = args
+    assemble_W, mu, ml = args
 
     n = 15
     m = mu + ml
 
-    M = assemble_A(m, n)
+    W = assemble_W(m, n)
 
-    A = M[:mu, :]
-    J = M[mu:, :]
+    A = W[:mu, :]
+    J = W[mu:, :]
 
     canonicalizer = CanonicalizerAdvanced(A, J)
     check_canonicalizer(canonicalizer, A, J)

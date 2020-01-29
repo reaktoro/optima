@@ -29,11 +29,21 @@ using namespace Optima;
 
 void exportSaddlePointSolver(py::module& m)
 {
+    auto decompose = [](SaddlePointSolver& self, MatrixConstRef H, MatrixConstRef A, MatrixConstRef J, MatrixConstRef G, IndicesConstRef ifixed)
+    {
+        return self.decompose({H, A, J, G, ifixed});
+    };
+
+    auto solve = [](SaddlePointSolver& self, VectorConstRef a, VectorConstRef b, VectorRef x, VectorRef y)
+    {
+        self.solve({a, b, x, y});
+    };
+
     py::class_<SaddlePointSolver>(m, "SaddlePointSolver")
         .def(py::init<>())
         .def("setOptions", &SaddlePointSolver::setOptions)
         .def("options", &SaddlePointSolver::options)
-        .def("decompose", &SaddlePointSolver::decompose)
-        .def("solve", &SaddlePointSolver::solve)
+        .def("decompose", decompose)
+        .def("solve", solve)
         ;
 }

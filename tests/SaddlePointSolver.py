@@ -21,10 +21,11 @@ from numpy.linalg import norm
 from pytest import approx, mark
 from itertools import product
 
-from utils.matrices import testing_matrices_A, matrix_non_singular
+from utils.matrices import testing_matrices_W, matrix_non_singular
 
 
 def print_state(M, r, s, m, n):
+    set_printoptions(linewidth=1000, suppress=True)
     slu = eigen.solve(M, r)
     print( 'M        = \n', M )
     print( 'r        = ', r )
@@ -41,19 +42,13 @@ def print_state(M, r, s, m, n):
 # The number of variables
 n = 20
 
-# Tested cases for the matrix A
-tested_matrices_A = testing_matrices_A
+# Tested cases for the matrix W = [A; J]
+tested_matrices_W = testing_matrices_W
 
 # Tested cases for the structure of matrix H
 tested_structures_H = [
     'denseH',
     'diagonalH'
-]
-
-# Tested cases for the structure of matrix D
-tested_structures_D = [
-    'diagonalD',
-    'zeroD'
 ]
 
 # Tested cases for the structure of matrix G
@@ -63,13 +58,13 @@ tested_structures_G = [
 ]
 
 # Tested cases for the indices of fixed variables
-tested_jf = [
+tested_ifixed = [
     arange(0),
     arange(1),
     array([1, 3, 7, 9])
 ]
 
-# Tested number of rows in matrix Au (upper block of A)
+# Tested number of rows in matrix A (upper block of W)
 tested_mu = [6, 4]
 tested_ml = [3, 1, 0]
 
@@ -88,11 +83,10 @@ tested_methods = [
 ]
 
 # Combination of all tested cases
-testdata = product(tested_matrices_A,
+testdata = product(tested_matrices_W,
                    tested_structures_H,
-                   tested_structures_D,
                    tested_structures_G,
-                   tested_jf,
+                   tested_ifixed,
                    tested_mu,
                    tested_ml,
                    tested_variable_conditions,
@@ -101,24 +95,23 @@ testdata = product(tested_matrices_A,
 @mark.parametrize("args", testdata)
 def test_saddle_point_solver(args):
 
-    assemble_A, structure_H, structure_D, structure_G, jf, mu, ml, variable_condition, method = args
+    assemble_W, structure_H, structure_G, ifixed, ml, mn, variable_condition, method = args
 
-    m = mu + ml
+    m = ml + mn
 
     t = m + n
 
-    nf = len(jf)
+    nf = len(ifixed)
 
     expected = linspace(1, t, t)
 
-    A = assemble_A(m, n, jf)
+    W = assemble_W(m, n, ifixed)
 
-    Au = A[:mu, :]  # extract the upper block of A
-    Al = A[mu:, :]  # extract the lower block of A
+    A = W[:ml, :]  # extract the upper block of W = [A; J]
+    J = W[ml:, :]  # extract the lower block of W = [A; J]
 
-    H = matrix_non_singular(n)
-    G = matrix_non_singular(m) if structure_G == 'denseG' else eigen.matrix()
-    D = eigen.ones(n) if structure_D == 'diagonalD' else eigen.vector()
+    H =  matrix_non_singular(n)
+    G = -matrix_non_singular(m) if structure_G == 'denseG' else eigen.zeros(m, m)
 
     if method == SaddlePointMethod.Rangespace:
         H = abs(eigen.diag(linspace(1, n, num=n)))
@@ -135,21 +128,27 @@ def test_saddle_point_solver(args):
     # Adjust the diagonal entries to control number of pivot variables
     Hdiag[seq] = factor * Hdiag[seq]
 
-    # Create the SaddlePointMatrix object
-    lhs = SaddlePointMatrix(H, D, Au, Al, G, jf)
+    # Assemble the coefficient matrix [[H, tr(W)], [W, G]]
+    M = block([[H, W.T], [W, G]])
 
-    # Use the SaddlePointMatrix object to create an array M
-    M = lhs.array()
+    M[ifixed, :] = 0.0       # zero out rows in M corresponding to fixed variables
+    M[:n, ifixed] = 0.0      # zero out cols in M in the top-left block corresponding to fixed variables
+    M[ifixed, ifixed] = 1.0  # set to one the diagonal entries in M corresponding to fixed variables
 
     # Compute the right-hand side vector r = M * expected
     r = M @ expected
 
-    # The solution vector
-    s = zeros(t)
+    # The right-hand side vectors a and b
+    a = r[:n]
+    b = r[n:]
 
-    # The right-hand side and solution saddle point vectors
-    rhs = SaddlePointVector(r, n, m)
-    sol = SaddlePointSolution(s, n, m)
+    # The solution vectors x and y
+    x = zeros(n)
+    y = zeros(m)
+
+    # Set G to empty in case it is zero
+    if structure_G == 'zeroG':
+        G = eigen.matrix()
 
     # Specify the saddle point method for the current test
     options = SaddlePointOptions()
@@ -158,22 +157,23 @@ def test_saddle_point_solver(args):
     # Create a SaddlePointSolver to solve the saddle point problem
     solver = SaddlePointSolver()
     solver.setOptions(options)
-    solver.decompose(lhs)
-    solver.solve(rhs, sol)
+    solver.decompose(H, A, J, G, ifixed)
+    solver.solve(a, b, x, y)
+
+    # Create solution vector s = [x, y]
+    s = concatenate([x, y])
 
     # Check the residual of the equation M * s = r
     succeeded = norm(M @ s - r) / norm(r) == approx(0.0)
 
     if not succeeded:
-        set_printoptions(linewidth=1000)
         print()
-        print(f"assemble_A = {assemble_A}")
+        print(f"assemble_W = {assemble_W}")
         print(f"structure_H = {structure_H}")
-        print(f"structure_D = {structure_D}")
         print(f"structure_G = {structure_G}")
-        print(f"jf = {jf}")
-        print(f"mu = {mu}")
+        print(f"ifixed = {ifixed}")
         print(f"ml = {ml}")
+        print(f"mn = {mn}")
         print(f"variable_condition = {variable_condition}")
         print(f"method = {method}")
         print()
