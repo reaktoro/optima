@@ -28,24 +28,36 @@ using namespace Optima;
 
 void exportActiveStepper(py::module& m)
 {
-    auto init = [](Index n, Index m, MatrixConstRef A) -> ActiveStepper
+    auto init = [](Index n, Index m, MatrixConstRef4py A) -> ActiveStepper
     {
         return ActiveStepper({n, m, A});
     };
 
-    auto initialize = [](ActiveStepper& self, VectorConstRef xlower, VectorConstRef xupper, IndicesRef iordering)
+    auto initialize = [](ActiveStepper& self, VectorConstRef xlower, VectorConstRef xupper)
     {
-        return self.initialize({xlower, xupper, iordering});
+        return self.initialize({xlower, xupper});
     };
 
-    auto decompose = [](ActiveStepper& self, VectorConstRef x, VectorConstRef y, VectorConstRef g, MatrixConstRef H, MatrixConstRef J, VectorConstRef xlower, VectorConstRef xupper, IndicesRef iordering, IndexNumberRef nul, IndexNumberRef nuu)
+    auto decompose = [](ActiveStepper& self, VectorConstRef x, VectorConstRef y, VectorConstRef g, MatrixConstRef4py H, MatrixConstRef4py J, VectorConstRef xlower, VectorConstRef xupper, IndicesRef iordering, IndexNumberRef nul, IndexNumberRef nuu)
     {
         return self.decompose({x, y, g, H, J, xlower, xupper, iordering, nul, nuu});
     };
 
-    auto solve = [](ActiveStepper& self, VectorConstRef x, VectorConstRef y, VectorConstRef b, VectorConstRef h, VectorConstRef g, IndicesConstRef iordering, VectorRef dx, VectorRef dy, VectorRef rx, VectorRef ry, VectorRef z)
+    auto solve = [](ActiveStepper& self, VectorConstRef x, VectorConstRef y, VectorConstRef b, VectorConstRef h, VectorConstRef g, VectorRef dx, VectorRef dy, VectorRef rx, VectorRef ry, VectorRef z)
     {
-        self.solve({x, y, b, h, g, iordering, dx, dy, rx, ry, z});
+        self.solve({x, y, b, h, g, dx, dy, rx, ry, z});
+    };
+
+    Matrix tmp_dxdp, tmp_dydp, tmp_dzdp;
+    auto sensitivities = [=](ActiveStepper& self, MatrixConstRef4py dgdp, MatrixConstRef4py dhdp, MatrixConstRef4py dbdp, MatrixRef4py dxdp, MatrixRef4py dydp, MatrixRef4py dzdp) mutable
+    {
+        tmp_dxdp.resize(dxdp.rows(), dxdp.cols());
+        tmp_dydp.resize(dydp.rows(), dydp.cols());
+        tmp_dzdp.resize(dzdp.rows(), dzdp.cols());
+        self.sensitivities({dgdp, dhdp, dbdp, tmp_dxdp, tmp_dydp, tmp_dzdp});
+        dxdp = tmp_dxdp;
+        dydp = tmp_dydp;
+        dzdp = tmp_dzdp;
     };
 
     py::class_<ActiveStepper>(m, "ActiveStepper")
@@ -55,5 +67,6 @@ void exportActiveStepper(py::module& m)
         .def("initialize", initialize)
         .def("decompose", decompose)
         .def("solve", solve)
+        .def("sensitivities", sensitivities)
         ;
 }

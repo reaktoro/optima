@@ -41,10 +41,23 @@ void exportBasicSolver(py::module& m)
         return self.solve({ obj, h, b, xlower, xupper, x, y, z, iordering, nul, nuu });
     };
 
+    Matrix tmp_dxdp, tmp_dydp, tmp_dzdp;
+    auto sensitivities = [=](BasicSolver& self, MatrixConstRef4py dgdp, MatrixConstRef4py dhdp, MatrixConstRef4py dbdp, MatrixRef4py dxdp, MatrixRef4py dydp, MatrixRef4py dzdp) mutable
+    {
+        tmp_dxdp.resize(dxdp.rows(), dxdp.cols());
+        tmp_dydp.resize(dydp.rows(), dydp.cols());
+        tmp_dzdp.resize(dzdp.rows(), dzdp.cols());
+        self.sensitivities({dgdp, dhdp, dbdp, tmp_dxdp, tmp_dydp, tmp_dzdp});
+        dxdp = tmp_dxdp;
+        dydp = tmp_dydp;
+        dzdp = tmp_dzdp;
+    };
+
     py::class_<BasicSolver>(m, "BasicSolver")
         .def(py::init<>())
         .def(py::init(init))
         .def("setOptions", &BasicSolver::setOptions)
         .def("solve", solve)
+        .def("sensitivities", sensitivities)
         ;
 }

@@ -47,6 +47,7 @@ struct ActiveStepper::Impl
     Index m      = 0;         ///< The number of equality constraints (m = ml + mn).
     Index t      = 0;         ///< The total number of variables in x and y (t = n + m).
     SaddlePointSolver solver; ///< The saddle point solver.
+    Indices iordering;        ///< The ordering of the variables as (*stable*, *lower unstable*, *upper unstable*).
     Indices ilowerpartition;  ///< The ordering of the variables as (with lower bounds, without lower bounds, fixed)
     Indices iupperpartition;  ///< The ordering of the variables as (with upper bounds, without upper bounds, fixed)
 
@@ -76,6 +77,9 @@ struct ActiveStepper::Impl
         z = zeros(n);
         r = zeros(t);
         s = zeros(t);
+
+        // Initialize the initial ordering of the variables
+        iordering = indices(n);
     }
 
     /// Initialize the step calculator before calling decompose multiple times.
@@ -84,15 +88,11 @@ struct ActiveStepper::Impl
         // Auxiliary references
         auto xlower = args.xlower;
         auto xupper = args.xupper;
-        auto iordering = args.iordering;
 
         // Ensure consistent dimensions of vectors/matrices.
         assert(xlower.rows() == n);
         assert(xupper.rows() == n);
         assert(iordering.rows() == n);
-
-        // Initialize the initial ordering of the variables
-        iordering = indices(n);
 
         // Update the ordering of the variables with lower and upper bounds
         auto has_lower_bound = [&](Index i) -> bool { return !std::isinf(xlower[i]); };
@@ -113,17 +113,17 @@ struct ActiveStepper::Impl
             "ActiveStepper object not initialized.");
 
         // Auxiliary references
-        auto x         = args.x;
-        auto y         = args.y;
-        auto g         = args.g;
-        auto H         = args.H;
-        auto J         = args.J;
-        auto xlower    = args.xlower;
-        auto xupper    = args.xupper;
-        auto iordering = args.iordering;
-        auto& nul      = args.nul;
-        auto& nuu      = args.nuu;
-        const auto A   = W.topRows(ml);
+        auto x          = args.x;
+        auto y          = args.y;
+        auto g          = args.g;
+        auto H          = args.H;
+        auto J          = args.J;
+        auto xlower     = args.xlower;
+        auto xupper     = args.xupper;
+        auto ivariables = args.iordering;
+        auto& nul       = args.nul;
+        auto& nuu       = args.nuu;
+        const auto A    = W.topRows(ml);
 
         // Ensure consistent dimensions of vectors/matrices.
         assert(x.rows() == n);
@@ -133,11 +133,12 @@ struct ActiveStepper::Impl
         assert(H.cols() == n);
         assert(J.rows() == mn);
         assert(J.cols() == n || mn == 0);
-        assert(A.rows() == ml);
-        assert(A.cols() == n || ml == 0);
-        assert(iordering.rows() == n);
         assert(xlower.rows() == n);
         assert(xupper.rows() == n);
+        assert(ivariables.rows() == n);
+        assert(iordering.rows() == n);
+        assert(W.rows() == m);
+        assert(W.cols() == n || m == 0);
 
         // Update the coefficient matrix W = [A; J] with the updated J block
         W.bottomRows(mn) = J;
@@ -179,24 +180,26 @@ struct ActiveStepper::Impl
         // Consider lower/upper unstable variables as "fixed" variables in the saddle point problem.
         // Reason: we do not need to compute Newton steps for the currently unstable variables!
         solver.decompose({ H, A, J, Matrix{}, iu });
+
+        // Export the updated ordering of the variables
+        ivariables = iordering;
     }
 
     /// Solve the saddle point problem.
     auto solve(ActiveStepperSolveArgs args) -> void
     {
         // Auxiliary references
-        auto x         = args.x;
-        auto y         = args.y;
-        auto b         = args.b;
-        auto g         = args.g;
-        auto h         = args.h;
-        auto iordering = args.iordering;
-        auto dx        = args.dx;
-        auto dy        = args.dy;
-        auto rx        = args.rx;
-        auto ry        = args.ry;
-        auto z         = args.z;
-        const auto A   = W.topRows(ml);
+        auto x       = args.x;
+        auto y       = args.y;
+        auto b       = args.b;
+        auto g       = args.g;
+        auto h       = args.h;
+        auto dx      = args.dx;
+        auto dy      = args.dy;
+        auto rx      = args.rx;
+        auto ry      = args.ry;
+        auto z       = args.z;
+        const auto A = W.topRows(ml);
 
         // Ensure consistent dimensions of vectors/matrices.
         assert(x.rows() == n);
@@ -237,7 +240,7 @@ struct ActiveStepper::Impl
         auto dbdp = args.dbdp;
         auto dhdp = args.dhdp;
 
-        // The number of parameters for sensitiviry computation
+        // The number of parameters for sensitivity computation
         auto np = dxdp.cols();
 
         // Ensure consistent dimensions of vectors/matrices.
@@ -253,19 +256,25 @@ struct ActiveStepper::Impl
         assert(dbdp.cols() == np);
         assert(dhdp.cols() == np);
 
-        // Calculate the residuals of the first-order optimality conditions
-        dxdp = -dgdp;
+        // The indices of the stable and unstable variables
+        auto is = iordering.head(ns);
+        auto iu = iordering.tail(nu);
 
-        // Calculate the residuals of the feasibility conditions
+        // Assemble the right-hand side matrix (zero for unstable variables!)
+        dxdp(is, all) = -dgdp(is, all);
+        dxdp(iu, all).fill(0.0);
+
+        // Assemble the right-hand side matrix with dbdp and -dhdp contributions
         dydp.topRows(ml) = dbdp;
-        dydp.bottomRows(mn) = dhdp;
+        dydp.bottomRows(mn) = -dhdp;
 
-        // Solve the saddle point problem
-        for(Index i = 0; i < dxdp.cols(); ++i)
-            solver.solve({ dxdp.col(i), dydp.col(i), dxdp.col(i), dydp.col(i) });
+        // Solve the saddle point problem for each parameter to compute the corresponding sensitivity derivatives
+        for(Index i = 0; i < np; ++i)
+            solver.solve({ dxdp.col(i), dydp.col(i) });
 
-        // Calculate the instability measure of the variables.
-        dzdp.noalias() = dgdp + tr(W)*dydp;
+        // Calculate the sensitivity derivatives dzdp (zero for stable variables!).
+        dzdp(is, all).fill(0.0);
+        dzdp(iu, all) = dgdp(iu, all) + tr(W(all, iu)) * dydp;
     }
 };
 

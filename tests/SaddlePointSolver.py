@@ -53,7 +53,7 @@ tested_structures_H = [
 
 # Tested cases for the structure of matrix G
 tested_structures_G = [
-    # 'denseG', # TODO: currently, dense G tests produces more residual error than the other cases (I think it is because of R*G*tr(R) terms, Allan, 21.01.20).
+    'denseG', # TODO: currently, dense G tests produces more residual error than the other cases (I think it is because of R*G*tr(R) terms, Allan, 21.01.20).
     'zeroG'
 ]
 
@@ -143,8 +143,8 @@ def test_saddle_point_solver(args):
     b = r[n:]
 
     # The solution vectors x and y
-    x = zeros(n)
-    y = zeros(m)
+    x = a.copy()
+    y = b.copy()
 
     # Set G to empty in case it is zero
     if structure_G == 'zeroG':
@@ -158,13 +158,16 @@ def test_saddle_point_solver(args):
     solver = SaddlePointSolver()
     solver.setOptions(options)
     solver.decompose(H, A, J, G, ifixed)
-    solver.solve(a, b, x, y)
+    solver.solve(x, y)
 
     # Create solution vector s = [x, y]
     s = concatenate([x, y])
 
     # Check the residual of the equation M * s = r
-    succeeded = norm(M @ s - r) / norm(r) == approx(0.0)
+
+    tol = 1e-9 if structure_G == 'denseG' else 1e-14
+
+    succeeded = norm(M @ s - r) / norm(r) < tol
 
     if not succeeded:
         print()
@@ -177,6 +180,7 @@ def test_saddle_point_solver(args):
         print(f"variable_condition = {variable_condition}")
         print(f"method = {method}")
         print()
+
         print_state(M, r, s, m, n)
 
-    assert norm(M @ s - r) / norm(r) == approx(0.0)
+    assert norm(M @ s - r) / norm(r) < tol

@@ -34,9 +34,14 @@ void exportSaddlePointSolver(py::module& m)
         return self.decompose({H, A, J, G, ifixed});
     };
 
-    auto solve = [](SaddlePointSolver& self, VectorConstRef a, VectorConstRef b, VectorRef x, VectorRef y)
+    auto solve1 = [](SaddlePointSolver& self, VectorConstRef a, VectorConstRef b, VectorRef x, VectorRef y)
     {
         self.solve({a, b, x, y});
+    };
+
+    auto solve2 = [](SaddlePointSolver& self, VectorRef x, VectorRef y)
+    {
+        self.solve({x, y});
     };
 
     py::class_<SaddlePointSolver>(m, "SaddlePointSolver")
@@ -44,6 +49,7 @@ void exportSaddlePointSolver(py::module& m)
         .def("setOptions", &SaddlePointSolver::setOptions)
         .def("options", &SaddlePointSolver::options)
         .def("decompose", decompose)
-        .def("solve", solve)
+        .def("solve", solve1)
+        .def("solve", solve2)
         ;
 }

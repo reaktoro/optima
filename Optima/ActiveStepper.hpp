@@ -43,7 +43,6 @@ struct ActiveStepperInitializeArgs
 {
     VectorConstRef xlower;  ///< The lower bounds of the primal variables.
     VectorConstRef xupper;  ///< The upper bounds of the primal variables.
-    IndicesRef iordering;   ///< The output ordering of the variables in ascending order (0, 1, 2, ...).
 };
 
 /// The arguments for method ActiveStepper::decompose.
@@ -69,7 +68,6 @@ struct ActiveStepperSolveArgs
     VectorConstRef b;          ///< The right-hand side vector *b* of the linear equality constraints *Ax = b*.
     VectorConstRef h;          ///< The value of the equality constraint function.
     VectorConstRef g;          ///< The gradient of the objective function.
-    IndicesConstRef iordering; ///< The output ordering of the variables as (*stable*, *lower unstable*, *upper unstable*).
     VectorRef dx;              ///< The output step for the primal variables *x*.
     VectorRef dy;              ///< The output step for the Lagrange multipliers *y*.
     VectorRef rx;              ///< The output residuals of the first-order optimality conditions.

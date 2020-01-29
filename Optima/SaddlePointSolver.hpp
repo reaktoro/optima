@@ -64,6 +64,16 @@ struct SaddlePointSolverSolveArgs
     VectorRef y;
 };
 
+/// The arguments for method SaddlePointSolver::solve.
+struct SaddlePointSolverSolveAlternativeArgs
+{
+    /// The right-hand side vector *a* (as input) and solution vector *x* (as output) in the saddle point problem.
+    VectorRef x;
+
+    /// The right-hand side vector *b* (as input) and solution vector *y* (as output) in the saddle point problem.
+    VectorRef y;
+};
+
 /// Used to solve saddle point problems.
 /// Use this class to solve saddle point problems.
 ///
@@ -118,6 +128,10 @@ public:
     /// Solve the saddle point problem.
     /// @note Method SaddlePointSolver::decompose needs to be called first.
     auto solve(SaddlePointSolverSolveArgs args) -> void;
+
+    /// Solve the saddle point problem.
+    /// @note Method SaddlePointSolver::decompose needs to be called first.
+    auto solve(SaddlePointSolverSolveAlternativeArgs args) -> void;
 
 private:
     struct Impl;

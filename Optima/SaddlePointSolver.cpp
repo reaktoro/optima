@@ -1277,4 +1277,10 @@ auto SaddlePointSolver::solve(SaddlePointSolverSolveArgs args) -> void
     return pimpl->solve(args);
 }
 
+auto SaddlePointSolver::solve(SaddlePointSolverSolveAlternativeArgs args) -> void
+{
+    auto [x, y] = args;
+    return pimpl->solve({x, y, x, y});
+}
+
 } // namespace Optima

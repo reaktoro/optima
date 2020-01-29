@@ -222,7 +222,7 @@ struct BasicSolver::Impl
         x.noalias() = min(x, xupper);
 
     	// Initialize the Newton step calculator once for the upcoming decompose/solve calls
-        stepper.initialize({xlower, xupper, iordering});
+        stepper.initialize({xlower, xupper});
 
         // Evaluate the objective function
         evaluateObjectiveFunction(args);
@@ -308,7 +308,7 @@ struct BasicSolver::Impl
         stepper.decompose({ x, y, g, H, J, xlower, xupper, iordering, nul, nuu });
 
         // Calculate the Newton step
-        stepper.solve({ x, y, b, h, g, iordering, dx, dy, rx, ry, z });
+        stepper.solve({ x, y, b, h, g, dx, dy, rx, ry, z });
 
         // Update the time spent in linear systems
 		result.time_linear_systems += timer.elapsed();

@@ -147,6 +147,10 @@ def test_active_stepper(args):
     iunstable_lower = list(set(head(ilower) + tail(ilower) + ifixed))
     iunstable_upper = list(set(head(iupper) + tail(iupper) + ifixed))
     iunstable = list(set(iunstable_lower + iunstable_upper))
+    istable = list(set(range(n)) - set(iunstable))
+
+    # The number of unstable variables
+    nu = len(iunstable)
 
     # Create vector s = (dx, dy) with the expected Newton step values
     s = s_expected = linspace(1.0, t, t)  # Introduce `s` as an alias for `s_expected`
@@ -224,9 +228,74 @@ def test_active_stepper(args):
     stepper.setOptions(options)
 
     # Initialize, decompose the saddle point matrix, and solve the Newton step
-    stepper.initialize(xlower, xupper, iordering)
+    stepper.initialize(xlower, xupper)
     stepper.decompose(x, y, g, H, J, xlower, xupper, iordering, nul, nuu)
-    stepper.solve(x, y, b, h, g, iordering, dx, dy, rx, ry, z)
+    stepper.solve(x, y, b, h, g, dx, dy, rx, ry, z)
+
+    # Compute the sensitivity derivatives of the optimal solution
+    np = 5  # the number of parameters
+
+    dsdp_expected = linspace(1.0, t*np, t*np).reshape((t, np))
+
+    dxdp_expected = dsdp_expected[:n, :]
+    dydp_expected = dsdp_expected[n:, :]
+
+    # Set rows in dxdp corresponding to unstable variables to zero
+    dxdp_expected[iunstable, :] = 0.0
+
+    drdp_expected = M @ dsdp_expected
+
+    # Get the H block in M (which is possibly different than original H, because of fixed variables!)
+    dgdp = -drdp_expected[:n, :]
+    dbdp =  drdp_expected[n:n + ml, :]
+    dhdp = -drdp_expected[n + ml:, :]
+
+    # Set the rows of dgdp corresponding to unstable variables
+    dgdp[iunstable, :] = linspace(1.0, nu*np, nu*np).reshape((nu, np))
+
+    # The solution of the sensitivity derivatives calculation
+    dxdp = zeros((n, np))
+    dydp = zeros((m, np))
+    dzdp = zeros((n, np))
+
+    stepper.sensitivities(dgdp, dhdp, dbdp, dxdp, dydp, dzdp)
+
+    # Assemble dsdp = [dxdp; dydp] and compute drdp = M*dsdp
+    dsdp = block([[dxdp], [dydp]])
+    drdp = M @ dsdp
+
+    # Calculate the expected sensitivity derivatives dzdp = dgdp + tr(W)dydp
+    dzdp_expected = dgdp + W.T @ dydp  # do not use dydp_expected here; causes failure when there are basic fixed variables (degeneracy)!!!
+    dzdp_expected[istable, :] = 0.0  # dzdp is zero for stable variables
+
+    # Print state variables
+    set_printoptions(suppress=True, linewidth=1000, precision=3)
+    print()
+    print(f"assemble_W  = {assemble_W}")
+    print(f"structure_H = {structure_H}")
+    print(f"ml          = {ml}")
+    print(f"mn          = {mn}")
+    print(f"ifixed      = {ifixed}")
+    print(f"ilower      = {ilower}")
+    print(f"iupper      = {iupper}")
+    print(f"method      = {method}")
+    print()
+    print(f"M = \n{M}")
+    print(f"dx(actual)   = {dx}")
+    print(f"dx(expected) = {s[:n]}")
+    print(f"dy(actual)   = {dy}")
+    print(f"dy(expected) = {s[n:]}")
+    print(f"rx(actual)   = {rx}")
+    print(f"rx(expected) = {r[:n]}")
+    print(f"ry(actual)   = {ry}")
+    print(f"ry(expected) = {r[n:]}")
+    print(f"dxdp(actual) = \n{dxdp}")
+    print(f"dxdp(expected) = \n{dxdp_expected}")
+    print(f"dydp(actual) = \n{dydp}")
+    print(f"dydp(expected) = \n{dydp_expected}")
+    print(f"dzdp(actual) = \n{dzdp}")
+    print(f"dzdp(expected) = \n{dzdp_expected}")
+    print()
 
     # Compare the actual and expected Newton steps
     s_actual = concatenate([dx, dy])
@@ -248,24 +317,6 @@ def test_active_stepper(args):
     assert nul.value == [x[i] == xlower[i] and z[i] > 0.0 for i in range(n)].count(True)
     assert nuu.value == [x[i] == xupper[i] and z[i] < 0.0 for i in range(n)].count(True)
 
-    set_printoptions(suppress=True, linewidth=1000, precision=3)
-    print()
-    print(f"assemble_W  = {assemble_W}")
-    print(f"structure_H = {structure_H}")
-    print(f"ml          = {ml}")
-    print(f"mn          = {mn}")
-    print(f"ifixed      = {ifixed}")
-    print(f"ilower      = {ilower}")
-    print(f"iupper      = {iupper}")
-    print(f"method      = {method}")
-    print()
-    print(f"M = \n{M}")
-    print(f"dx(actual)   = {dx}")
-    print(f"dx(expected) = {s[:n]}")
-    print(f"dy(actual)   = {dy}")
-    print(f"dy(expected) = {s[n:]}")
-    print(f"rx(actual)   = {rx}")
-    print(f"rx(expected) = {r[:n]}")
-    print(f"ry(actual)   = {ry}")
-    print(f"ry(expected) = {r[n:]}")
-    print()
+    # Compare the actual and expected sensitivity derivatives
+    assert allclose(drdp_expected, drdp)
+    assert allclose(dzdp_expected, dzdp)
