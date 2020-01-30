@@ -41,5 +41,5 @@ void exportEigen(py::module& m)
     eigen.def("diag", [](VectorConstRef x) -> Matrix { return x.asDiagonal(); });
     eigen.def("vector", [](int n=0) -> Vector { return Vector(n); }, py::arg("n")=0);
     eigen.def("matrix", [](int m=0, int n=0) -> Matrix { return Matrix(m, n); }, py::arg("m")=0, py::arg("n")=0);
-    eigen.def("solve", [](MatrixConstRef A, VectorConstRef b) -> Vector { return A.fullPivLu().solve(b); });
+    eigen.def("solve", [](MatrixConstRef4py A, VectorConstRef b) -> Vector { return A.fullPivLu().solve(b); });
 }

@@ -26,9 +26,24 @@ using namespace Optima;
 
 void exportCanonicalizerAdvanced(py::module& m)
 {
+    auto init = [](MatrixConstRef4py A, MatrixConstRef4py J) -> CanonicalizerAdvanced
+    {
+        return CanonicalizerAdvanced(A, J);
+    };
+
+    auto compute = [](CanonicalizerAdvanced& self, MatrixConstRef4py A, MatrixConstRef4py J)
+    {
+        return self.compute(A, J);
+    };
+
+    auto updateWithPriorityWeights = [](CanonicalizerAdvanced& self, MatrixConstRef4py J, VectorConstRef weights)
+    {
+        return self.updateWithPriorityWeights(J, weights);
+    };
+
     py::class_<CanonicalizerAdvanced>(m, "CanonicalizerAdvanced")
         .def(py::init<>())
-        .def(py::init<MatrixConstRef, MatrixConstRef>())
+        .def(py::init(init))
         .def("numVariables", &CanonicalizerAdvanced::numVariables)
         .def("numEquations", &CanonicalizerAdvanced::numEquations)
         .def("numBasicVariables", &CanonicalizerAdvanced::numBasicVariables)
@@ -39,7 +54,7 @@ void exportCanonicalizerAdvanced(py::module& m)
         .def("C", &CanonicalizerAdvanced::C)
         .def("indicesBasicVariables", &CanonicalizerAdvanced::indicesBasicVariables, py::return_value_policy::reference_internal)
         .def("indicesNonBasicVariables", &CanonicalizerAdvanced::indicesNonBasicVariables, py::return_value_policy::reference_internal)
-        .def("compute", &CanonicalizerAdvanced::compute)
-        .def("updateWithPriorityWeights", &CanonicalizerAdvanced::updateWithPriorityWeights)
+        .def("compute", compute)
+        .def("updateWithPriorityWeights", updateWithPriorityWeights)
         ;
 }

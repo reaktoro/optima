@@ -26,9 +26,19 @@ using namespace Optima;
 
 void exportCanonicalizer(py::module& m)
 {
+    auto init = [](MatrixConstRef4py A) -> Canonicalizer
+    {
+        return Canonicalizer(A);
+    };
+
+    auto compute = [](Canonicalizer& self, MatrixConstRef4py A)
+    {
+        return self.compute(A);
+    };
+
     py::class_<Canonicalizer>(m, "Canonicalizer")
         .def(py::init<>())
-        .def(py::init<MatrixConstRef>())
+        .def(py::init(init))
         .def("numVariables", &Canonicalizer::numVariables)
         .def("numEquations", &Canonicalizer::numEquations)
         .def("numBasicVariables", &Canonicalizer::numBasicVariables)
@@ -40,7 +50,7 @@ void exportCanonicalizer(py::module& m)
         .def("indicesLinearlyIndependentEquations", &Canonicalizer::indicesLinearlyIndependentEquations)
         .def("indicesBasicVariables", &Canonicalizer::indicesBasicVariables, py::return_value_policy::reference_internal)
         .def("indicesNonBasicVariables", &Canonicalizer::indicesNonBasicVariables, py::return_value_policy::reference_internal)
-        .def("compute", &Canonicalizer::compute)
+        .def("compute", compute)
         .def("updateWithSwapBasicVariable", &Canonicalizer::updateWithSwapBasicVariable)
         .def("updateWithPriorityWeights", &Canonicalizer::updateWithPriorityWeights)
         .def("rationalize", &Canonicalizer::rationalize)

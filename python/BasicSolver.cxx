@@ -29,7 +29,7 @@ using namespace Optima;
 
 void exportBasicSolver(py::module& m)
 {
-    auto init = [](Index n, Index m, MatrixConstRef A) -> BasicSolver
+    auto init = [](Index n, Index m, MatrixConstRef4py A) -> BasicSolver
     {
         return BasicSolver({n, m, A});
     };
