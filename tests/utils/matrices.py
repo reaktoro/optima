@@ -49,10 +49,8 @@ def matrix_with_linearly_independent_rows_only(m, n, ifixed=[]):
         [array] -- The matrix with asked structure.
     """
     assert m <= n
-    # return eigen.convert(formula_matrix[:m, :n])
     q,r = linalg.qr(pascal_matrix(n, n))
-    return eigen.convert(q[:m, :])
-    # return eigen.convert(eye(m, n))
+    return q[:m, :]
 
 
 def matrix_with_one_linearly_dependent_row(m, n, ifixed=[]):
@@ -113,7 +111,7 @@ def matrix_non_singular(n):
     u,s,vh = linalg.svd(pascal_matrix(n, n))
     s = linspace(1.0, n, num=n)
     q = u @ diag(s) @ vh
-    return eigen.convert(q)
+    return q
 
 
 # The functions that create matrices with different structures

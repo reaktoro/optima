@@ -137,7 +137,7 @@ def test_active_stepper(args):
 
     # Ensure off-diagonal entries are zero if Rangespace method is used
     if method == SaddlePointMethod.Rangespace:
-        H = eigen.diag(diag(H))
+        H = diag(diag(H))
 
     # Auxiliary functions to get head and tail of a sequence in a set
     head = lambda seq: [seq[ 0]] if len(seq) > 0 else []

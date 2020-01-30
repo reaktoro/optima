@@ -111,10 +111,10 @@ def test_saddle_point_solver(args):
     J = W[ml:, :]  # extract the lower block of W = [A; J]
 
     H =  matrix_non_singular(n)
-    G = -matrix_non_singular(m) if structure_G == 'denseG' else eigen.zeros(m, m)
+    G = -matrix_non_singular(m) if structure_G == 'denseG' else zeros((m, m))
 
     if method == SaddlePointMethod.Rangespace:
-        H = abs(eigen.diag(linspace(1, n, num=n)))
+        H = abs(diag(linspace(1, n, num=n)))
 
     # The diagonal entries of the Hessian matrix
     Hdiag = H[diag_indices(n)]
@@ -148,16 +148,16 @@ def test_saddle_point_solver(args):
 
     # Set G to empty in case it is zero
     if structure_G == 'zeroG':
-        G = eigen.matrix()
+        G = zeros((0, 0))
 
     # Specify the saddle point method for the current test
     options = SaddlePointOptions()
     options.method = method
 
     # Create a SaddlePointSolver to solve the saddle point problem
-    solver = SaddlePointSolver()
+    solver = SaddlePointSolver(n, m, A)
     solver.setOptions(options)
-    solver.decompose(H, A, J, G, ifixed)
+    solver.decompose(H, J, G, ifixed)
     solver.solve(x, y)
 
     # Create solution vector s = [x, y]
