@@ -17,6 +17,9 @@
 
 #include "SaddlePointSolver.hpp"
 
+// C++ includes
+#include <cassert>
+
 // Eigen includes
 #include <Optima/deps/eigen3/Eigen/Dense>
 
@@ -32,83 +35,65 @@ namespace Optima {
 
 struct SaddlePointSolver::Impl
 {
-    /// The canonicalizer of the Jacobian matrix *W = [A; J]*.
-    CanonicalizerAdvanced canonicalizer;
+    CanonicalizerAdvanced canonicalizer; ///< The canonicalizer of the Jacobian matrix *W = [A; J]*.
 
-    /// The options used to solve the saddle point problems.
-    SaddlePointOptions options;
+    SaddlePointOptions options; ///< The options used to solve the saddle point problems.
 
-    /// The number of rows and columns in the Jacobian matrix *W = [A; J]*
-    Index m, n;
+    Index n   = 0; ///< The number of columns in the Jacobian matrix *W = [A; J]*
+    Index m   = 0; ///< The number of rows in the Jacobian matrix *W = [A; J]*
+    Index ml  = 0; ///< The number of rows in matrix *A*.
+    Index mn  = 0; ///< The number of rows in matrix *J*.
+    Index nb  = 0; ///< The number of basic variables.
+    Index nn  = 0; ///< The number of non-basic variables.
+    Index nl  = 0; ///< The number of linearly dependent rows in *W = [A; J]*
+    Index nx  = 0; ///< The number of *free* variables.
+    Index nf  = 0; ///< The number of *fixed* variables.
+    Index nbx = 0; ///< The number of *free basic* variables.
+    Index nbf = 0; ///< The number of *fixed basic* variables.
+    Index nnx = 0; ///< The number of *free non-basic* variables.
+    Index nnf = 0; ///< The number of *fixed non-basic* variables.
+    Index nb1 = 0; ///< The number of *pivot free basic* variables.
+    Index nn1 = 0; ///< The number of *pivot free non-basic* variables.
+    Index nb2 = 0; ///< The number of *non-pivot free basic* variables.
+    Index nn2 = 0; ///< The number of *non-pivot free non-basic* variables.
 
-    /// The number of basic and non-basic variables.
-    Index nb, nn;
+    Vector weights; ///< The priority weights for the selection of basic variables.
 
-    /// The number of linearly dependent rows in *W = [A; J]*
-    Index nl;
+    Matrix H; ///< The 'H' matrix in the saddle point matrix.
+    Matrix G; ///< The 'G' matrix in the saddle point matrix.
 
-    /// The number of free and fixed variables.
-    Index nx, nf;
+    Vector a; ///< The workspace for the right-hand side vectors a and b
+    Vector b; ///< The workspace for the right-hand side vectors a and b
 
-    /// The number of free and fixed basic variables.
-    Index nbx, nbf;
+    Matrix mat; ///< The matrix used as a workspace for the decompose and solve methods.
+    Vector vec; ///< The vector used as a workspace for the decompose and solve methods.
 
-    /// The number of free and fixed non-basic variables.
-    Index nnx, nnf;
+    Indices iordering; ///< The ordering of the variables as (free-basic, free-non-basic, fixed-basic, fixed-non-basic)
 
-    /// The number of pivot free basic variables.
-    Index nb1, nn1;
+    Eigen::PartialPivLU<Matrix> lu; ///< The LU decomposition solver.
 
-    /// The number of non-pivot free non-basic variables.
-    Index nb2, nn2;
+    bool initialized = false; ///< The boolean flag that indicates whether the saddle point solver has been initialized.
+    bool degenerate = false;  ///< The boolean flag that indicates that the decomposed saddle point matrix was degenerate with no free variables.
 
-    /// The priority weights for the selection of basic variables.
-    Vector weights;
+    /// Construct a default SaddlePointSolver::Impl instance.
+    Impl()
+    {}
 
-    /// The 'H' matrix in the saddle point matrix.
-    Matrix H;
-
-    /// The 'G' matrix in the saddle point matrix.
-    Matrix G;
-
-    /// The workspace for the right-hand side vectors a and b
-    Vector a, b;
-
-    /// The matrix used as a workspace for the decompose and solve methods.
-    Matrix mat;
-
-    /// The vector used as a workspace for the decompose and solve methods.
-    Vector vec;
-
-    /// The ordering of the variables as (free-basic, free-non-basic, fixed-basic, fixed-non-basic)
-    Indices iordering;
-
-    /// The LU decomposition solver.
-    Eigen::PartialPivLU<Matrix> lu;
-
-    /// The boolean flag that indicates whether the saddle point solver has been initialized.
-    bool initialized = false;
-
-    /// The boolean flag that indicates that the decomposed saddle point matrix was degenerate with no free variables.
-    bool degenerate = false;
-
-    /// The saddle point method most appropriate for the structure of the H matrix.
-    /// The user provided method is replaced according to the following conditions:
-    /// 1) Use Rangespace if Fullspace or Nullspace is specified, but the structure of matrix H is diagonal.
-    /// 2) Use Nullspace if Rangespace is specified, but the structure of matrix H is dense.
-    SaddlePointMethod best_method;
-
-    /// Initialize the saddle point solver.
-    auto initialize(SaddlePointSolverDecomposeArgs args) -> void
+    /// Construct a SaddlePointSolver::Impl instance with given data.
+    Impl(SaddlePointSolverInitArgs args)
+    : n(args.n), m(args.m)
     {
+        // Ensure consistent and proper dimensions
+        assert(args.n > 0);
+        assert(args.A.rows() == 0 || args.A.rows() <= m);
+        assert(args.A.rows() == 0 || args.A.cols() == n);
+
+        // Set the number of rows in matrices *A* and *J*
+        ml = args.A.rows();
+        mn = m - ml;
+
         /// Update initialization status
         initialized = true;
-
-        // Set the number of variables
-        n = args.H.rows();
-
-        // Set the number of rows in the matrix *W = [A; J]*
-        m = args.A.rows() + args.J.rows();
 
         // Allocate auxiliary memory
         a.resize(n);
@@ -121,17 +106,13 @@ struct SaddlePointSolver::Impl
         // Initialize the initial ordering of the variables
         iordering = indices(n);
 
-        // Compute the canonical form of the uppper block matrix A in *W = [A; J]*
-        canonicalizer.compute(args.A, args.J);
+        // Compute the canonical form of *W = [A; J]* with *J* set to zero for the sake of initialization only.
+        canonicalizer.compute(args.A, zeros(mn, n));
     }
 
     /// Update the canonical form of the coefficient matrix *W = [A; J]* of the saddle point problem.
     auto updateCanonicalForm(SaddlePointSolverDecomposeArgs args) -> void
     {
-        /// Initialize the solver if not yet
-        if(!initialized)
-            initialize(args);
-
         // Update the number of fixed and free variables
         nf = args.ifixed.size();
         nx = n - nf;
@@ -207,6 +188,9 @@ struct SaddlePointSolver::Impl
     /// Decompose the coefficient matrix of the saddle point problem.
     auto decompose(SaddlePointSolverDecomposeArgs args) -> void
     {
+        // Ensure initialization has happened.
+        assert(n > 0);
+
         // Update the canonical form of the matrix *W = [A; J]*
         updateCanonicalForm(args);
 
@@ -1242,6 +1226,10 @@ struct SaddlePointSolver::Impl
 
 SaddlePointSolver::SaddlePointSolver()
 : pimpl(new Impl())
+{}
+
+SaddlePointSolver::SaddlePointSolver(SaddlePointSolverInitArgs args)
+: pimpl(new Impl(args))
 {}
 
 SaddlePointSolver::SaddlePointSolver(const SaddlePointSolver& other)

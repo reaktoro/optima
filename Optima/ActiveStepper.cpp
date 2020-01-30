@@ -57,7 +57,7 @@ struct ActiveStepper::Impl
 
     /// Construct a ActiveStepper::Impl instance.
     Impl(ActiveStepperInitArgs args)
-    : n(args.n), m(args.m), W(args.m, args.n)
+    : n(args.n), m(args.m), W(args.m, args.n), solver({args.n, args.m, args.A})
     {
         // Ensure the step calculator is initialized with a positive number of variables.
         Assert(n > 0, "Could not proceed with ActiveStepper initialization.",
@@ -179,7 +179,7 @@ struct ActiveStepper::Impl
         // Decompose the saddle point matrix (this decomposition is later used in method solve, possibly many times!)
         // Consider lower/upper unstable variables as "fixed" variables in the saddle point problem.
         // Reason: we do not need to compute Newton steps for the currently unstable variables!
-        solver.decompose({ H, A, J, Matrix{}, iu });
+        solver.decompose({ H, J, Matrix{}, iu });
 
         // Export the updated ordering of the variables
         ivariables = iordering;

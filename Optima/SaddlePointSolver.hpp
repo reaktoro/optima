@@ -29,14 +29,24 @@ namespace Optima {
 // Forward declarations
 class SaddlePointOptions;
 
+/// The arguments for constructor of class SaddlePointSolver.
+struct SaddlePointSolverInitArgs
+{
+    /// The dimension of vector *x* in the saddle point problem (i.e. the number of columns in matrix *W = [A; J]*).
+    Index n = 0;
+
+    /// The dimension of vector *y* in the saddle point problem (i.e. the number of rows in matrix *W = [A; J]*).
+    Index m = 0;
+
+    /// The upper and constant block of the Jacobian matrix *W = [A; J]* in the saddle point problem.
+    MatrixConstRef A;
+};
+
 /// The arguments for method SaddlePointSolver::decompose.
 struct SaddlePointSolverDecomposeArgs
 {
     /// The Hessian matrix *H* in the saddle point problem.
     MatrixConstRef H;
-
-    /// The upper and constant block of the Jacobian matrix *W = [A; J]* in the saddle point problem.
-    MatrixConstRef A;
 
     /// The lower and variable block of the Jacobian matrix *W = [A; J]* in the saddle point problem.
     MatrixConstRef J;
@@ -95,6 +105,9 @@ public:
     /// Construct a default SaddlePointSolver instance.
     SaddlePointSolver();
 
+    /// Construct a SaddlePointSolver instance with given data.
+    SaddlePointSolver(SaddlePointSolverInitArgs args);
+
     /// Construct a copy of a SaddlePointSolver instance.
     SaddlePointSolver(const SaddlePointSolver& other);
 
@@ -109,16 +122,6 @@ public:
 
     /// Return the current saddle point options.
     auto options() const -> const SaddlePointOptions&;
-
-    // /// Initialize the saddle point solver with the coefficient matrix \eq{A} of the saddle point problem.
-    // /// This method initializes the solver with the matrix \eq{A=\begin{bmatrix}A_{u}\\A_{l}\end{bmatrix}}.
-    // /// The upper and lower blocks \eq{A_u} and \eq{A_l}, respectively, are required as parameters.
-    // /// The upper block is expected to remain constant throughout many decompose and solve operations, whereas
-    // /// the lower block \eq{A_l} can be changed more often (resulting from non-linear constraints).
-    // /// @note This method should be called once and before method @ref decompose. It should be called again only if the upper block of \eq{A}, that is, \eq{A_u}, changes.
-    // /// @param Au The upper block \eq{A_u} of the coefficient matrix \eq{A=\begin{bmatrix}A_{u}\\A_{l}\end{bmatrix}}.
-    // /// @param Al The lower block \eq{A_l} of the coefficient matrix \eq{A=\begin{bmatrix}A_{u}\\A_{l}\end{bmatrix}}.
-    // auto initialize(Index n, Index mMatrixConstRef Au, MatrixConstRef Al) -> void;
 
     /// Decompose the coefficient matrix of the saddle point problem.
     /// @note This method should be called before the @ref solve method and after @ref canonicalize.
