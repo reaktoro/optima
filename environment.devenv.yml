@@ -25,3 +25,9 @@ dependencies:
   - ninja
   - ccache  # [unix]
   - clcache  # [win]
+
+environment:
+
+  PYTHONPATH:
+    - {{ root }}/build/release/python  # [unix]
+    - {{ root }}\build\release\python  # [win]

@@ -11,6 +11,10 @@ To build and install Optima, issue the following commands from within its root d
     mkdir build && cd build
     cmake .. -DCMAKE_BUILD_TYPE=Release
     sudo make -j install
+    
+Alternatively, you can also install Optima running:
+    
+    cmake -P install
 
 The previous steps for installing Optima should compile and install it in the default installation directory of your system (e.g, `/usr/local/` or `/opt/local/`).
 
