@@ -93,6 +93,23 @@
 \begin{alignat*}{1}
 \begin{aligned}\min_{x}f(x) & \quad & \text{subject to} & \quad\end{aligned}
  & \left\{ \begin{array}{c}
+\begin{aligned}A_{e}x & =b_{e}\\
+A_{i}x & \geq b_{i}\\
+h_{e}(x) & =0\\
+h_{i}(x) & \geq0
+\end{aligned}
+\\
+x_{l}\leq x\leq x_{u}
+\end{array}\right.
+\end{alignat*}
+
+\end_inset
+
+
+\begin_inset Formula 
+\begin{alignat*}{1}
+\begin{aligned}\min_{x}f(x) & \quad & \text{subject to} & \quad\end{aligned}
+ & \left\{ \begin{array}{c}
 \begin{aligned}Ax & =b\\
 h(x) & =0
 \end{aligned}
@@ -838,7 +855,7 @@ R_{A}AQ_{A}=\begin{bmatrix}I_{A} & S_{A}\end{bmatrix}
 
 \end_layout
 
-\begin_layout Section
+\begin_layout Standard
 \begin_inset Formula 
 \[
 JQ_{A}=\begin{bmatrix}J_{1} & J_{2}\end{bmatrix}
