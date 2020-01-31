@@ -19,44 +19,61 @@
 
 // Optima includes
 #include <Optima/Matrix.hpp>
-#include <Optima/Constraints.hpp>
-#include <Optima/PrimalVariables.hpp>
-#include <Optima/LagrangeMultipliers.hpp>
-#include <Optima/ComplementarityVariables.hpp>
 
 namespace Optima {
 
-/// Used to describe the state of an optimization calculation.
-class State
+/// The state of the optimization variables.
+struct State
 {
-public:
-    explicit State(const Constraints& constraints)
-    : x(constraints), y(constraints), z(constraints), w(constraints)
+    /// The variables \eq{x} of the optimization problem.
+    Vector x;
+
+    /// The Lagrange multipliers \eq{y} of the optimization problem.
+    Vector y;
+
+    /// The instability measures of variables \eq{x} defined as \eq{z = g + W^{T}y}.
+    Vector z;
+
+    /// The sensitivity derivatives \eq{\partial x/\partial p} with respect to parameters \eq{p}.
+    Matrix dxdp;
+
+    /// The sensitivity derivatives \eq{\partial y/\partial p} with respect to parameters \eq{p}.
+    Matrix dydp;
+
+    /// The sensitivity derivatives \eq{\partial z/\partial p} with respect to parameters \eq{p}.
+    Matrix dzdp;
+};
+
+/// The state of the optimization variables.
+struct StateRef
+{
+    /// The variables \eq{x} of the optimization problem.
+    VectorRef x;
+
+    /// The Lagrange multipliers \eq{y} of the optimization problem.
+    VectorRef y;
+
+    /// The instability measures of variables \eq{x} defined as \eq{z = g + W^{T}y}.
+    VectorRef z;
+
+    /// The sensitivity derivatives \eq{\partial x/\partial p} with respect to parameters \eq{p}.
+    MatrixRef dxdp;
+
+    /// The sensitivity derivatives \eq{\partial y/\partial p} with respect to parameters \eq{p}.
+    MatrixRef dydp;
+
+    /// The sensitivity derivatives \eq{\partial z/\partial p} with respect to parameters \eq{p}.
+    MatrixRef dzdp;
+
+    /// Construct a StateRef instance with a given State instance.
+    StateRef(State& state)
+    : x(state.x),
+      y(state.y),
+      z(state.z),
+      dxdp(state.dxdp),
+      dydp(state.dydp),
+      dzdp(state.dzdp)
     {}
-
-// private:
-    /// The primal variables of the optimization problem.
-    PrimalVariables x;
-
-    /// The Lagrange multipliers of the optimization problem.
-    LagrangeMultipliers y;
-
-    /// The complementarity variables of the optimization problem.
-    ComplementarityVariables z;
-
-    /// The complementarity variables of the optimization problem.
-    ComplementarityVariables w;
-    // /// The primal solution of the optimization problem.
-    // Vector x;
-
-    // /// The dual solution of the optimization problem with respect to the equality constraints.
-    // Vector y;
-
-    // /// The dual solution of the optimization problem with respect to the lower bound constraints.
-    // Vector z;
-
-    // /// The dual solution of the optimization problem with respect to the upper bound constraints.
-    // Vector w;
 };
 
 } // namespace Optima

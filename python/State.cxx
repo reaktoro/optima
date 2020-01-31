@@ -27,7 +27,7 @@ using namespace Optima;
 void exportState(py::module& m)
 {
     py::class_<State>(m, "State")
-        .def(py::init<const Constraints&>())
+        .def(py::init<>())
         .def_readwrite("x", &State::x)
         .def_readwrite("y", &State::y)
         .def_readwrite("z", &State::z)

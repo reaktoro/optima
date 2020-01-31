@@ -51,20 +51,16 @@ struct CanonicalizerAdvanced::Impl
     }
 
     /// Construct a CanonicalizerAdvanced::Impl object with given matrix A
-    Impl(MatrixConstRef A, MatrixConstRef J)
+    Impl(MatrixConstRef A)
     {
-        compute(A, J);
-    }
-
-    /// Compute the canonical matrix with given upper and lower matrix blocks \eq{A} and \eq{J}.
-    auto compute(MatrixConstRef A, MatrixConstRef J) -> void
-    {
+        // Initialize the canonicalizer for A (wait until J is provided to initialize canonicalizerJ)
         canonicalizerA.compute(A);
-        auto weights = ones(A.cols());
-        updateWithPriorityWeights(J, weights);
+        R = canonicalizerA.R();
+        S = canonicalizerA.S();
+        Q = canonicalizerA.Q();
     }
 
-    /// Update the canonical form with given matrix J and priority weights for the variables.
+    /// Update the canonical form with given variable matrix J in W = [A; J] and priority weights for the variables.
     auto updateWithPriorityWeights(MatrixConstRef J, VectorConstRef weights) -> void
     {
         canonicalizerA.updateWithPriorityWeights(weights);
@@ -75,111 +71,109 @@ struct CanonicalizerAdvanced::Impl
             S = canonicalizerA.S();
             Q = canonicalizerA.Q();
         }
-        else
-        {
-            const auto& RA = canonicalizerA.R();
-            const auto& SA = canonicalizerA.S();
-            const auto& QA = canonicalizerA.Q();
 
-            const auto n = canonicalizerA.numVariables();
-            const auto nbA = canonicalizerA.numBasicVariables();
-            const auto nnA = canonicalizerA.numNonBasicVariables();
+        const auto& RA = canonicalizerA.R();
+        const auto& SA = canonicalizerA.S();
+        const auto& QA = canonicalizerA.Q();
 
-            const auto mA = canonicalizerA.numEquations();
-            const auto mJ = J.rows();
-            const auto m = mA + mJ;
+        const auto n = canonicalizerA.numVariables();
+        const auto nbA = canonicalizerA.numBasicVariables();
+        const auto nnA = canonicalizerA.numNonBasicVariables();
 
-            Matrix J12 = J * QA.asPermutation();
-            auto J1 = J12.leftCols(nbA);
-            auto J2 = J12.rightCols(nnA);
-            J2 -= J1 * SA;
+        const auto mA = canonicalizerA.numEquations();
+        const auto mJ = J.rows();
+        const auto m = mA + mJ;
 
-            Vector w = weights(QA.tail(nnA));  // w has the weights only for non-basic variables wrt A
-            canonicalizerJ.compute(J2);
-            canonicalizerJ.updateWithPriorityWeights(w);
+        Matrix J12 = J * QA.asPermutation();
+        auto J1 = J12.leftCols(nbA);
+        auto J2 = J12.rightCols(nnA);
+        J2 -= J1 * SA;
 
-            const auto nbJ = canonicalizerJ.numBasicVariables();
-            const auto nnJ = canonicalizerJ.numNonBasicVariables();
+        Vector w = weights(QA.tail(nnA));  // w has the weights only for non-basic variables wrt A
+        canonicalizerJ.compute(J2);
+        canonicalizerJ.updateWithPriorityWeights(w);
 
-            const auto RJ = canonicalizerJ.R();
-            const auto SJ = canonicalizerJ.S();
-            const auto QJ = canonicalizerJ.Q();
+        const auto nbJ = canonicalizerJ.numBasicVariables();
+        const auto nnJ = canonicalizerJ.numNonBasicVariables();
 
-            Q.resize(n);
-            Q.head(nbA) = QA.head(nbA);
-            Q.tail(nnA) = QA.tail(nnA)(QJ);
+        const auto RJ = canonicalizerJ.R();
+        const auto SJ = canonicalizerJ.S();
+        const auto QJ = canonicalizerJ.Q();
 
-            Matrix SA12 = SA;
-            QJ.asPermutation().applyThisOnTheRight(SA12);
-            auto SA1 = SA12.leftCols(nbJ);
-            auto SA2 = SA12.rightCols(nnJ);
-            SA2 -= SA1 * SJ;
+        Q.resize(n);
+        Q.head(nbA) = QA.head(nbA);
+        Q.tail(nnA) = QA.tail(nnA)(QJ);
 
-            S.resize(nbA + nbJ, nnJ);
-            S.topRows(nbA) = SA2;
-            S.bottomRows(nbJ) = SJ;
+        Matrix SA12 = SA;
+        QJ.asPermutation().applyThisOnTheRight(SA12);
+        auto SA1 = SA12.leftCols(nbJ);
+        auto SA2 = SA12.rightCols(nnJ);
+        SA2 -= SA1 * SJ;
 
-            const auto RAt = RA.topRows(nbA);
-            const auto RAb = RA.bottomRows(mA - nbA);
+        S.resize(nbA + nbJ, nnJ);
+        S.topRows(nbA) = SA2;
+        S.bottomRows(nbJ) = SJ;
 
-            const auto RJt = RJ.topRows(nbJ);
-            const auto RJb = RJ.bottomRows(mJ - nbJ);
+        const auto RAt = RA.topRows(nbA);
+        const auto RAb = RA.bottomRows(mA - nbA);
 
-            R.resize(m, m);
+        const auto RJt = RJ.topRows(nbJ);
+        const auto RJb = RJ.bottomRows(mJ - nbJ);
 
-            auto Rt = R.topRows(nbA + nbJ);
-            auto Rb = R.bottomRows(m - nbA - nbJ);
+        R.resize(m, m);
 
-            Rt.topLeftCorner(nbA, mA) = RAt + SA1*RJt*J1*RAt;
-            Rb.topLeftCorner(mA - nbA, mA) = RAb;
+        auto Rt = R.topRows(nbA + nbJ);
+        auto Rb = R.bottomRows(m - nbA - nbJ);
 
-            Rt.topRightCorner(nbA, mJ) = -SA1*RJt;
-            Rb.topRightCorner(mA - nbA, mJ).fill(0.0);
+        Rt.topLeftCorner(nbA, mA) = RAt + SA1*RJt*J1*RAt;
+        Rb.topLeftCorner(mA - nbA, mA) = RAb;
 
-            Rt.bottomLeftCorner(nbJ, mA) = -RJt*J1*RAt;
-            Rb.bottomLeftCorner(mJ - nbJ, mA) = -RJb*J1*RAt;
+        Rt.topRightCorner(nbA, mJ) = -SA1*RJt;
+        Rb.topRightCorner(mA - nbA, mJ).fill(0.0);
 
-            Rt.bottomRightCorner(nbJ, mJ) = RJt;
-            Rb.bottomRightCorner(mJ - nbJ, mJ) = RJb;
+        Rt.bottomLeftCorner(nbJ, mA) = -RJt*J1*RAt;
+        Rb.bottomLeftCorner(mJ - nbJ, mA) = -RJb*J1*RAt;
 
-            //---------------------------------------------------------------------------
-            // Start sorting of basic and non-basic variables according to their weights
-            //---------------------------------------------------------------------------
+        Rt.bottomRightCorner(nbJ, mJ) = RJt;
+        Rb.bottomRightCorner(mJ - nbJ, mJ) = RJb;
 
-            // Initialize the permutation matrices Kb and Kn
-            auto nb = nbA + nbJ;
-            auto nn = n - nb;
+        //---------------------------------------------------------------------------
+        // Start sorting of basic and non-basic variables according to their weights
+        //---------------------------------------------------------------------------
 
-            Kb.setIdentity(nb);
-            Kn.setIdentity(nn);
+        // Initialize the permutation matrices Kb and Kn
+        auto nb = nbA + nbJ;
+        auto nn = n - nb;
 
-            // The indices of the basic and non-basic variables
-            auto ibasic = Q.head(nb);
-            auto inonbasic = Q.tail(nn);
+        Kb.setIdentity(nb);
+        Kn.setIdentity(nn);
 
-            // Sort the basic variables in descend order of weights
-            std::sort(Kb.indices().data(), Kb.indices().data() + nb,
-                [&](Index l, Index r) { return weights[ibasic[l]] > weights[ibasic[r]]; });
+        // The indices of the basic and non-basic variables
+        auto ibasic = Q.head(nb);
+        auto inonbasic = Q.tail(nn);
 
-            // Sort the non-basic variables in descend order of weights
-            std::sort(Kn.indices().data(), Kn.indices().data() + nn,
-                [&](Index l, Index r) { return weights[inonbasic[l]] > weights[inonbasic[r]]; });
+        // Sort the basic variables in descend order of weights
+        std::sort(Kb.indices().data(), Kb.indices().data() + nb,
+            [&](Index l, Index r) { return weights[ibasic[l]] > weights[ibasic[r]]; });
 
-            // Rearrange the rows of S based on the new order of basic variables
-            Kb.transpose().applyThisOnTheLeft(S);
+        // Sort the non-basic variables in descend order of weights
+        std::sort(Kn.indices().data(), Kn.indices().data() + nn,
+            [&](Index l, Index r) { return weights[inonbasic[l]] > weights[inonbasic[r]]; });
 
-            // Rearrange the columns of S based on the new order of non-basic variables
-            Kn.applyThisOnTheRight(S);
+        // Rearrange the rows of S based on the new order of basic variables
+        Kb.transpose().applyThisOnTheLeft(S);
 
-            // Rearrange the top `nb` rows of R based on the new order of basic variables
-            Kb.transpose().applyThisOnTheLeft(Rt);
+        // Rearrange the columns of S based on the new order of non-basic variables
+        Kn.applyThisOnTheRight(S);
 
-            // Rearrange the permutation matrix Q based on the new order of basic variables
-            Kb.transpose().applyThisOnTheLeft(ibasic);
+        // Rearrange the top `nb` rows of R based on the new order of basic variables
+        Kb.transpose().applyThisOnTheLeft(Rt);
 
-            // Rearrange the permutation matrix Q based on the new order of non-basic variables
-            Kn.transpose().applyThisOnTheLeft(inonbasic);
-        }
+        // Rearrange the permutation matrix Q based on the new order of basic variables
+        Kb.transpose().applyThisOnTheLeft(ibasic);
+
+        // Rearrange the permutation matrix Q based on the new order of non-basic variables
+        Kn.transpose().applyThisOnTheLeft(inonbasic);
     }
 };
 
@@ -188,8 +182,8 @@ CanonicalizerAdvanced::CanonicalizerAdvanced()
 {
 }
 
-CanonicalizerAdvanced::CanonicalizerAdvanced(MatrixConstRef A, MatrixConstRef J)
-: pimpl(new Impl(A, J))
+CanonicalizerAdvanced::CanonicalizerAdvanced(MatrixConstRef A)
+: pimpl(new Impl(A))
 {
 }
 
@@ -263,11 +257,6 @@ auto CanonicalizerAdvanced::indicesNonBasicVariables() const -> IndicesConstRef
 {
     const auto nn = numNonBasicVariables();
     return pimpl->Q.tail(nn);
-}
-
-auto CanonicalizerAdvanced::compute(MatrixConstRef A, MatrixConstRef J) -> void
-{
-    pimpl->compute(A, J);
 }
 
 auto CanonicalizerAdvanced::updateWithPriorityWeights(MatrixConstRef J, VectorConstRef weights) -> void

@@ -81,7 +81,7 @@ struct SaddlePointSolver::Impl
 
     /// Construct a SaddlePointSolver::Impl instance with given data.
     Impl(SaddlePointSolverInitArgs args)
-    : n(args.n), m(args.m)
+    : n(args.n), m(args.m), canonicalizer(args.A)
     {
         // Ensure consistent and proper dimensions
         assert(args.n > 0);
@@ -105,9 +105,6 @@ struct SaddlePointSolver::Impl
 
         // Initialize the initial ordering of the variables
         iordering = indices(n);
-
-        // Compute the canonical form of *W = [A; J]* with *J* set to zero for the sake of initialization only.
-        canonicalizer.compute(args.A, zeros(mn, n));
     }
 
     /// Update the canonical form of the coefficient matrix *W = [A; J]* of the saddle point problem.

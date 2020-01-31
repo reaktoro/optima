@@ -26,6 +26,15 @@ using namespace Optima;
 
 void exportProblem(py::module& m)
 {
+    py::class_<Dims>(m, "Dims")
+        .def(py::init<>())
+        .def_readwrite("x", &Dims::x)
+        .def_readwrite("be", &Dims::be)
+        .def_readwrite("bg", &Dims::bg)
+        .def_readwrite("he", &Dims::he)
+        .def_readwrite("hg", &Dims::hg)
+        ;
+
     // using ObjectivePtr = std::function<void(VectorConstRef, ObjectiveResult*)>;
 
 	// // This is a workaround to let Python callback change the state of ObjectiveResult, and not a copy

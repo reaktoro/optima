@@ -42,8 +42,8 @@ public:
     /// Construct a default CanonicalizerAdvanced instance.
     CanonicalizerAdvanced();
 
-    /// Construct a CanonicalizerAdvanced instance with given matrices *A* and *J* in *W = [A; J]*.
-    CanonicalizerAdvanced(MatrixConstRef A, MatrixConstRef J);
+    /// Construct a CanonicalizerAdvanced instance with given invariable matrix *A* in *W = [A; J]*.
+    CanonicalizerAdvanced(MatrixConstRef A);
 
     /// Construct a copy of a CanonicalizerAdvanced instance.
     CanonicalizerAdvanced(const CanonicalizerAdvanced& other);
@@ -84,9 +84,6 @@ public:
 
     /// Return the indices of the non-basic variables.
     auto indicesNonBasicVariables() const -> IndicesConstRef;
-
-    /// Compute the canonical matrix with given matrices *A* and *J* in *W = [A; J]*.
-    auto compute(MatrixConstRef A, MatrixConstRef J) -> void;
 
     /// Update the canonical form with given lower matrix block *J* and priority weights for the variables.
     auto updateWithPriorityWeights(MatrixConstRef J, VectorConstRef weights) -> void;

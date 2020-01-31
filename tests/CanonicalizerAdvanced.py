@@ -69,8 +69,12 @@ def check_canonicalizer(canonicalizer, A, J):
     nb = canonicalizer.numBasicVariables()
 
     #---------------------------------------------------------------------------
-    # Check the computed canonical form
+    # Check the computed canonical form with certain weights
     #---------------------------------------------------------------------------
+    weigths = random.rand(n)
+
+    canonicalizer.updateWithPriorityWeights(J, weigths)
+
     check_canonical_form(canonicalizer, A, J)
 
     #---------------------------------------------------------------------------
@@ -115,5 +119,5 @@ def test_canonicalizer(args):
     A = W[:mu, :]
     J = W[mu:, :]
 
-    canonicalizer = CanonicalizerAdvanced(A, J)
+    canonicalizer = CanonicalizerAdvanced(A)
     check_canonicalizer(canonicalizer, A, J)

@@ -20,34 +20,34 @@
 #include <pybind11/eigen.h>
 namespace py = pybind11;
 
-// Optima includes
-#include <Optima/Constraints.hpp>
-#include <Optima/PrimalVariables.hpp>
-using namespace Optima;
+// // Optima includes
+// #include <Optima/Constraints.hpp>
+// #include <Optima/PrimalVariables.hpp>
+// using namespace Optima;
 
 void exportPrimalVariables(py::module& m)
 {
-    auto canonical1 = py::overload_cast<>(&PrimalVariables::canonical);
-    auto canonical2 = py::overload_cast<>(&PrimalVariables::canonical, py::const_);
-    auto original1 = py::overload_cast<>(&PrimalVariables::original);
-    auto original2 = py::overload_cast<>(&PrimalVariables::original, py::const_);
-    auto wrtLinearInequalityConstraints1 = py::overload_cast<>(&PrimalVariables::wrtLinearInequalityConstraints);
-    auto wrtLinearInequalityConstraints2 = py::overload_cast<>(&PrimalVariables::wrtLinearInequalityConstraints, py::const_);
-    auto wrtNonLinearInequalityConstraints1 = py::overload_cast<>(&PrimalVariables::wrtNonLinearInequalityConstraints);
-    auto wrtNonLinearInequalityConstraints2 = py::overload_cast<>(&PrimalVariables::wrtNonLinearInequalityConstraints, py::const_);
+    // auto canonical1 = py::overload_cast<>(&PrimalVariables::canonical);
+    // auto canonical2 = py::overload_cast<>(&PrimalVariables::canonical, py::const_);
+    // auto original1 = py::overload_cast<>(&PrimalVariables::original);
+    // auto original2 = py::overload_cast<>(&PrimalVariables::original, py::const_);
+    // auto wrtLinearInequalityConstraints1 = py::overload_cast<>(&PrimalVariables::wrtLinearInequalityConstraints);
+    // auto wrtLinearInequalityConstraints2 = py::overload_cast<>(&PrimalVariables::wrtLinearInequalityConstraints, py::const_);
+    // auto wrtNonLinearInequalityConstraints1 = py::overload_cast<>(&PrimalVariables::wrtNonLinearInequalityConstraints);
+    // auto wrtNonLinearInequalityConstraints2 = py::overload_cast<>(&PrimalVariables::wrtNonLinearInequalityConstraints, py::const_);
 
-    auto rvp = py::return_value_policy::reference_internal;
+    // auto rvp = py::return_value_policy::reference_internal;
 
-    py::class_<PrimalVariables>(m, "PrimalVariables")
-        .def(py::init<>())
-        .def(py::init<const Constraints&>())
-        .def("canonical", canonical1, rvp, "Return the primal variables of the canonical optimization problem.")
-        .def("canonical", canonical2, rvp, "Return the primal variables of the canonical optimization problem.")
-        .def("original", original1, rvp, "Return the primal variables of the original optimization problem.")
-        .def("original", original2, rvp, "Return the primal variables of the original optimization problem.")
-        .def("wrtLinearInequalityConstraints", wrtLinearInequalityConstraints1, rvp, "Return the primal variables of the canonical optimization problem with respect to linear inequality constraints.")
-        .def("wrtLinearInequalityConstraints", wrtLinearInequalityConstraints2, rvp, "Return the primal variables of the canonical optimization problem with respect to linear inequality constraints.")
-        .def("wrtNonLinearInequalityConstraints", wrtNonLinearInequalityConstraints1, rvp, "Return the primal variables of the canonical optimization problem with respect to non-linear inequality constraints.")
-        .def("wrtNonLinearInequalityConstraints", wrtNonLinearInequalityConstraints2, rvp, "Return the primal variables of the canonical optimization problem with respect to non-linear inequality constraints.")
-        ;
+    // py::class_<PrimalVariables>(m, "PrimalVariables")
+    //     .def(py::init<>())
+    //     .def(py::init<const Constraints&>())
+    //     .def("canonical", canonical1, rvp, "Return the primal variables of the canonical optimization problem.")
+    //     .def("canonical", canonical2, rvp, "Return the primal variables of the canonical optimization problem.")
+    //     .def("original", original1, rvp, "Return the primal variables of the original optimization problem.")
+    //     .def("original", original2, rvp, "Return the primal variables of the original optimization problem.")
+    //     .def("wrtLinearInequalityConstraints", wrtLinearInequalityConstraints1, rvp, "Return the primal variables of the canonical optimization problem with respect to linear inequality constraints.")
+    //     .def("wrtLinearInequalityConstraints", wrtLinearInequalityConstraints2, rvp, "Return the primal variables of the canonical optimization problem with respect to linear inequality constraints.")
+    //     .def("wrtNonLinearInequalityConstraints", wrtNonLinearInequalityConstraints1, rvp, "Return the primal variables of the canonical optimization problem with respect to non-linear inequality constraints.")
+    //     .def("wrtNonLinearInequalityConstraints", wrtNonLinearInequalityConstraints2, rvp, "Return the primal variables of the canonical optimization problem with respect to non-linear inequality constraints.")
+    //     ;
 }

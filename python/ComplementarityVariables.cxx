@@ -20,34 +20,34 @@
 #include <pybind11/eigen.h>
 namespace py = pybind11;
 
-// Optima includes
-#include <Optima/Constraints.hpp>
-#include <Optima/ComplementarityVariables.hpp>
-using namespace Optima;
+// // Optima includes
+// #include <Optima/Constraints.hpp>
+// #include <Optima/ComplementarityVariables.hpp>
+// using namespace Optima;
 
 void exportComplementarityVariables(py::module& m)
 {
-    auto canonical1 = py::overload_cast<>(&ComplementarityVariables::canonical);
-    auto canonical2 = py::overload_cast<>(&ComplementarityVariables::canonical, py::const_);
-    auto original1 = py::overload_cast<>(&ComplementarityVariables::original);
-    auto original2 = py::overload_cast<>(&ComplementarityVariables::original, py::const_);
-    auto wrtLinearInequalityConstraints1 = py::overload_cast<>(&ComplementarityVariables::wrtLinearInequalityConstraints);
-    auto wrtLinearInequalityConstraints2 = py::overload_cast<>(&ComplementarityVariables::wrtLinearInequalityConstraints, py::const_);
-    auto wrtNonLinearInequalityConstraints1 = py::overload_cast<>(&ComplementarityVariables::wrtNonLinearInequalityConstraints);
-    auto wrtNonLinearInequalityConstraints2 = py::overload_cast<>(&ComplementarityVariables::wrtNonLinearInequalityConstraints, py::const_);
+    // auto canonical1 = py::overload_cast<>(&ComplementarityVariables::canonical);
+    // auto canonical2 = py::overload_cast<>(&ComplementarityVariables::canonical, py::const_);
+    // auto original1 = py::overload_cast<>(&ComplementarityVariables::original);
+    // auto original2 = py::overload_cast<>(&ComplementarityVariables::original, py::const_);
+    // auto wrtLinearInequalityConstraints1 = py::overload_cast<>(&ComplementarityVariables::wrtLinearInequalityConstraints);
+    // auto wrtLinearInequalityConstraints2 = py::overload_cast<>(&ComplementarityVariables::wrtLinearInequalityConstraints, py::const_);
+    // auto wrtNonLinearInequalityConstraints1 = py::overload_cast<>(&ComplementarityVariables::wrtNonLinearInequalityConstraints);
+    // auto wrtNonLinearInequalityConstraints2 = py::overload_cast<>(&ComplementarityVariables::wrtNonLinearInequalityConstraints, py::const_);
 
-    auto rvp = py::return_value_policy::reference_internal;
+    // auto rvp = py::return_value_policy::reference_internal;
 
-    py::class_<ComplementarityVariables>(m, "ComplementarityVariables")
-        .def(py::init<>())
-        .def(py::init<const Constraints&>())
-        .def("canonical", canonical1, rvp, "Return the complementarity variables with respect to the bound constraints of the canonical optimization problem.")
-        .def("canonical", canonical2, rvp, "Return the complementarity variables with respect to the bound constraints of the canonical optimization problem.")
-        .def("original", original1, rvp, "Return the complementarity variables with respect to the bound constraints of the original optimization problem.")
-        .def("original", original2, rvp, "Return the complementarity variables with respect to the bound constraints of the original optimization problem.")
-        .def("wrtLinearInequalityConstraints", wrtLinearInequalityConstraints1, rvp, "Return the complementarity variables with respect to the linear inequality constraints of the original optimization problem.")
-        .def("wrtLinearInequalityConstraints", wrtLinearInequalityConstraints2, rvp, "Return the complementarity variables with respect to the linear inequality constraints of the original optimization problem.")
-        .def("wrtNonLinearInequalityConstraints", wrtNonLinearInequalityConstraints1, rvp, "Return the complementarity variables with respect to the non-linear inequality constraints of the original optimization problem.")
-        .def("wrtNonLinearInequalityConstraints", wrtNonLinearInequalityConstraints2, rvp, "Return the complementarity variables with respect to the non-linear inequality constraints of the original optimization problem.")
-        ;
+    // py::class_<ComplementarityVariables>(m, "ComplementarityVariables")
+    //     .def(py::init<>())
+    //     .def(py::init<const Constraints&>())
+    //     .def("canonical", canonical1, rvp, "Return the complementarity variables with respect to the bound constraints of the canonical optimization problem.")
+    //     .def("canonical", canonical2, rvp, "Return the complementarity variables with respect to the bound constraints of the canonical optimization problem.")
+    //     .def("original", original1, rvp, "Return the complementarity variables with respect to the bound constraints of the original optimization problem.")
+    //     .def("original", original2, rvp, "Return the complementarity variables with respect to the bound constraints of the original optimization problem.")
+    //     .def("wrtLinearInequalityConstraints", wrtLinearInequalityConstraints1, rvp, "Return the complementarity variables with respect to the linear inequality constraints of the original optimization problem.")
+    //     .def("wrtLinearInequalityConstraints", wrtLinearInequalityConstraints2, rvp, "Return the complementarity variables with respect to the linear inequality constraints of the original optimization problem.")
+    //     .def("wrtNonLinearInequalityConstraints", wrtNonLinearInequalityConstraints1, rvp, "Return the complementarity variables with respect to the non-linear inequality constraints of the original optimization problem.")
+    //     .def("wrtNonLinearInequalityConstraints", wrtNonLinearInequalityConstraints2, rvp, "Return the complementarity variables with respect to the non-linear inequality constraints of the original optimization problem.")
+    //     ;
 }

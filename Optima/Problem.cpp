@@ -1,122 +1,85 @@
-// // Optima is a C++ library for solving linear and non-linear constrained optimization problems
-// //
-// // Copyright (C) 2014-2018 Allan Leal
-// //
-// // This program is free software: you can redistribute it and/or modify
-// // it under the terms of the GNU General Public License as published by
-// // the Free Software Foundation, either version 3 of the License, or
-// // (at your option) any later version.
-// //
-// // This program is distributed in the hope that it will be useful,
-// // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// // GNU General Public License for more details.
-// //
-// // You should have received a copy of the GNU General Public License
-// // along with this program. If not, see <http://www.gnu.org/licenses/>.
+// Optima is a C++ library for solving linear and non-linear constrained optimization problems
+//
+// Copyright (C) 2014-2018 Allan Leal
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-// #include "Problem.hpp"
+#include "Problem.hpp"
 
-// // Optima includes
-// #include <Optima/Exception.hpp>
+// Optima includes
+#include <Optima/Utils.hpp>
 
-// namespace Optima {
+namespace Optima {
 
-// Problem::Problem()
-// {}
+struct Problem::Impl
+{
+    /// The coefficient matrix \eq{A_{\mathrm{e}}} in the linear equality constraints \eq{A_{\mathrm{e}}x=b_{\mathrm{e}}}.
+    Matrix Ae;
 
-// Problem::Problem(const ObjectiveFunction& objective, const Constraints& constraints)
-// : m_objective(objective), m_constraints(constraints)
-// {}
+    /// The coefficient matrix \eq{A_{\mathrm{g}}} in the linear inequality constraints \eq{A_{\mathrm{g}}x\ge b_{\mathrm{g}}}.
+    Matrix Ag;
 
-// auto Problem::setEqualityConstraintVector(VectorConstRef be) -> void
-// {
-//     const auto me = m_constraints.equalityConstraintMatrix().rows();
-//     Assert(be.size() == me, "Problem::setEqualityConstraintVector(VectorConstRef)",
-//         "Mismatch number of equality constraint equations and size of given vector be.");
-//     m_be = be;
-// }
+    /// The right-hand side vector \eq{b_{\mathrm{e}}} in the linear equality constraints \eq{A_{\mathrm{e}}x=b_{\mathrm{e}}}.
+    Vector be;
 
-// auto Problem::setInequalityConstraintVector(VectorConstRef bi) -> void
-// {
-//     const auto mi = m_constraints.inequalityConstraintMatrix().rows();
-//     Assert(bi.size() == mi, "Problem::setInequalityConstraintVector(VectorConstRef)",
-//         "Mismatch number of inequality constraint equations and size of given vector bi.");
-//     m_bi = bi;
-// }
+    /// The right-hand side vector \eq{b_{\mathrm{g}}} in the linear inequality constraints \eq{A_{\mathrm{g}}x\ge b_{\mathrm{g}}}.
+    Vector bg;
 
-// auto Problem::setLowerBound(double val) -> void
-// {
-//     m_xlower.fill(val);
-// }
+    /// The lower bounds of the variables \eq{x}.
+    Vector xlower;
 
-// auto Problem::setLowerBounds(VectorConstRef xlower) -> void
-// {
-//     const auto nl = m_constraints.variablesWithLowerBounds().size();
-//     Assert(xlower.size() == nl, "Problem::setLowerBounds(VectorConstRef)",
-//         "Mismatch number of variables with lower bounds and given values to set in xlower.");
-//     m_xlower = xlower;
-// }
+    /// The upper bounds of the variables \eq{x}.
+    Vector xupper;
 
-// auto Problem::setUpperBound(double val) -> void
-// {
-//     m_xupper.fill(val);
-// }
+    /// Construct a default Problem::Impl instance.
+    Impl()
+    {}
 
-// auto Problem::setUpperBounds(VectorConstRef xupper) -> void
-// {
-//     const auto nu = m_constraints.variablesWithUpperBounds().size();
-//     Assert(xupper.size() == nu, "Problem::setUpperBounds(VectorConstRef)",
-//         "Mismatch number of variables with upper bounds and given values to set in xupper.");
-//     m_xupper = xupper;
-// }
+    /// Construct a Problem::Impl instance with given number of variables.
+    Impl(const Dims& dims)
+    : Ae(zeros(dims.be, dims.x)),
+      Ag(zeros(dims.bg, dims.x)),
+      be(zeros(dims.be)),
+      bg(zeros(dims.bg)),
+      xlower(constants(dims.x, -infinity())),
+      xupper(constants(dims.x, infinity()))
+    {}
+};
 
-// auto Problem::setFixedValue(double val) -> void
-// {
-//     m_xfixed.fill(val);
-// }
+Problem::Problem(const Dims& dims)
+: pimpl(new Impl(dims)),
+  dims(dims),
+  Ae(pimpl->Ae),
+  Ag(pimpl->Ag),
+  be(pimpl->be),
+  bg(pimpl->bg),
+  xlower(pimpl->xlower),
+  xupper(pimpl->xupper)
+{}
 
-// auto Problem::setFixedValues(VectorConstRef xfixed) -> void
-// {
-//     const auto nf = m_constraints.variablesWithFixedValues().size();
-//     Assert(xfixed.size() == nf, "Problem::setFixedValues(VectorConstRef)",
-//         "Mismatch number of fixed variables and given values to set in xfixed.");
-//     m_xfixed = xfixed;
-// }
+Problem::Problem(const Problem& other)
+: pimpl(new Impl(*other.pimpl)),
+  dims(other.dims),
+  Ae(pimpl->Ae),
+  Ag(pimpl->Ag),
+  be(pimpl->be),
+  bg(pimpl->bg),
+  xlower(pimpl->xlower),
+  xupper(pimpl->xupper)
+{}
 
-// auto Problem::objective() const -> const ObjectiveFunction&
-// {
-//     return m_objective;
-// }
+Problem::~Problem()
+{}
 
-// auto Problem::constraints() const -> const Constraints&
-// {
-//     return m_constraints;
-// }
-
-// auto Problem::equalityConstraintVector() const -> VectorConstRef
-// {
-//     return m_be;
-// }
-
-// auto Problem::inequalityConstraintVector() const -> VectorConstRef
-// {
-//     return m_bi;
-// }
-
-// auto Problem::lowerBounds() const -> VectorConstRef
-// {
-//     return m_xlower;
-// }
-
-// auto Problem::upperBounds() const -> VectorConstRef
-// {
-//     return m_xupper;
-// }
-
-// auto Problem::fixedValues() const -> VectorConstRef
-// {
-//     return m_xfixed;
-// }
-
-// } // namespace Optima
+} // namespace Optima

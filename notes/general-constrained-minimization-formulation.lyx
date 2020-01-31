@@ -1072,5 +1072,160 @@ z_{u}=g_{u}+A_{u}^{T}y
 
 \end_layout
 
+\begin_layout Section
+From general to basic optimization problem
+\end_layout
+
+\begin_layout Standard
+How do we transform:
+\begin_inset Formula 
+\begin{alignat*}{1}
+\begin{aligned}\min_{x}f(\bar{x}) & \quad & \text{subject to} & \quad\end{aligned}
+ & \left\{ \begin{array}{c}
+\begin{aligned}A_{\mathrm{e}}x & =b_{\mathrm{e}}\\
+A_{\mathrm{g}}x & \geq b_{\mathrm{g}}\\
+h_{\mathrm{e}}(x) & =0\\
+h_{\mathrm{g}}(x) & \geq0
+\end{aligned}
+\\
+x_{l}\leq x\leq x_{u}
+\end{array}\right.
+\end{alignat*}
+
+\end_inset
+
+into:
+\begin_inset Formula 
+\begin{alignat*}{1}
+\begin{aligned}\min_{\bar{x}}\bar{f}(\bar{x}) & \quad & \text{subject to} & \quad\end{aligned}
+ & \left\{ \begin{array}{c}
+\begin{aligned}A\bar{x} & =b\\
+h(\bar{x}) & =0
+\end{aligned}
+\\
+\bar{x}_{l}\leq\bar{x}\leq\bar{x}_{u}
+\end{array}\right.?
+\end{alignat*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align*}
+A_{\mathrm{g}}x-u & =b_{\mathrm{g}}\\
+u & \geq0
+\end{align*}
+
+\end_inset
+
+
+\begin_inset Formula 
+\begin{align*}
+h_{\mathrm{g}}(x)-v & =0\\
+v & \geq0
+\end{align*}
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\bar{x}=(x,u,v)
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+A=\begin{bmatrix}A_{\mathrm{e}} & 0 & 0\\
+A_{\mathrm{g}} & -I & 0
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+b=\begin{bmatrix}b_{\mathrm{e}}\\
+b_{\mathrm{g}}
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+h(\bar{x})=\begin{bmatrix}h_{\mathrm{e}}(x)\\
+h_{\mathrm{g}}(x)-v
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+J(\bar{x})=\begin{bmatrix}J_{\mathrm{e}} & 0 & 0\\
+J_{\mathrm{g}} & 0 & -I
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\bar{x}_{l}=(x_{l},0,0)
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\bar{x}_{u}=(x_{u},\infty,\infty)
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\bar{f}(\bar{x})=f(x)
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\bar{g}(\bar{x})=\begin{bmatrix}g(x)\\
+0\\
+0
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\bar{H}(\bar{x})=\begin{bmatrix}H(x) & 0 & 0\\
+0 & 0 & 0\\
+0 & 0 & 0
+\end{bmatrix}
+\]
+
+\end_inset
+
+
+\end_layout
+
 \end_body
 \end_document
