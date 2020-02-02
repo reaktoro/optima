@@ -15,14 +15,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include "CanonicalizerAdvanced.hpp"
+#include "ExtendedCanonicalizer.hpp"
 
 // Optima includes
 #include <Optima/Canonicalizer.hpp>
 
 namespace Optima {
 
-struct CanonicalizerAdvanced::Impl
+struct ExtendedCanonicalizer::Impl
 {
     /// The canonicalizer for matrix A
     Canonicalizer canonicalizerA;
@@ -45,12 +45,12 @@ struct CanonicalizerAdvanced::Impl
     /// The permutation matrix `Kn` used in the update method with priority weights.
     PermutationMatrix Kn;
 
-    /// Construct a default CanonicalizerAdvanced::Impl object
+    /// Construct a default ExtendedCanonicalizer::Impl object
     Impl()
     {
     }
 
-    /// Construct a CanonicalizerAdvanced::Impl object with given matrix A
+    /// Construct a ExtendedCanonicalizer::Impl object with given matrix A
     Impl(MatrixConstRef A)
     {
         // Initialize the canonicalizer for A (wait until J is provided to initialize canonicalizerJ)
@@ -177,65 +177,65 @@ struct CanonicalizerAdvanced::Impl
     }
 };
 
-CanonicalizerAdvanced::CanonicalizerAdvanced()
+ExtendedCanonicalizer::ExtendedCanonicalizer()
 : pimpl(new Impl())
 {
 }
 
-CanonicalizerAdvanced::CanonicalizerAdvanced(MatrixConstRef A)
+ExtendedCanonicalizer::ExtendedCanonicalizer(MatrixConstRef A)
 : pimpl(new Impl(A))
 {
 }
 
-CanonicalizerAdvanced::CanonicalizerAdvanced(const CanonicalizerAdvanced& other)
+ExtendedCanonicalizer::ExtendedCanonicalizer(const ExtendedCanonicalizer& other)
 : pimpl(new Impl(*other.pimpl))
 {}
 
-CanonicalizerAdvanced::~CanonicalizerAdvanced()
+ExtendedCanonicalizer::~ExtendedCanonicalizer()
 {}
 
-auto CanonicalizerAdvanced::operator=(CanonicalizerAdvanced other) -> CanonicalizerAdvanced&
+auto ExtendedCanonicalizer::operator=(ExtendedCanonicalizer other) -> ExtendedCanonicalizer&
 {
     pimpl = std::move(other.pimpl);
     return *this;
 }
 
-auto CanonicalizerAdvanced::numVariables() const -> Index
+auto ExtendedCanonicalizer::numVariables() const -> Index
 {
     return pimpl->Q.rows();
 }
 
-auto CanonicalizerAdvanced::numEquations() const -> Index
+auto ExtendedCanonicalizer::numEquations() const -> Index
 {
     return pimpl->canonicalizerA.numEquations() + pimpl->canonicalizerJ.numEquations();
 }
 
-auto CanonicalizerAdvanced::numBasicVariables() const -> Index
+auto ExtendedCanonicalizer::numBasicVariables() const -> Index
 {
     return pimpl->S.rows();
 }
 
-auto CanonicalizerAdvanced::numNonBasicVariables() const -> Index
+auto ExtendedCanonicalizer::numNonBasicVariables() const -> Index
 {
     return numVariables() - numBasicVariables();
 }
 
-auto CanonicalizerAdvanced::S() const -> MatrixConstRef
+auto ExtendedCanonicalizer::S() const -> MatrixConstRef
 {
     return pimpl->S;
 }
 
-auto CanonicalizerAdvanced::R() const -> MatrixConstRef
+auto ExtendedCanonicalizer::R() const -> MatrixConstRef
 {
     return pimpl->R;
 }
 
-auto CanonicalizerAdvanced::Q() const -> IndicesConstRef
+auto ExtendedCanonicalizer::Q() const -> IndicesConstRef
 {
     return pimpl->Q;
 }
 
-auto CanonicalizerAdvanced::C() const -> Matrix
+auto ExtendedCanonicalizer::C() const -> Matrix
 {
     const auto n = numVariables();
     const auto m = numEquations();
@@ -247,19 +247,19 @@ auto CanonicalizerAdvanced::C() const -> Matrix
     return res;
 }
 
-auto CanonicalizerAdvanced::indicesBasicVariables() const -> IndicesConstRef
+auto ExtendedCanonicalizer::indicesBasicVariables() const -> IndicesConstRef
 {
     const auto nb = numBasicVariables();
     return pimpl->Q.head(nb);
 }
 
-auto CanonicalizerAdvanced::indicesNonBasicVariables() const -> IndicesConstRef
+auto ExtendedCanonicalizer::indicesNonBasicVariables() const -> IndicesConstRef
 {
     const auto nn = numNonBasicVariables();
     return pimpl->Q.tail(nn);
 }
 
-auto CanonicalizerAdvanced::updateWithPriorityWeights(MatrixConstRef J, VectorConstRef weights) -> void
+auto ExtendedCanonicalizer::updateWithPriorityWeights(MatrixConstRef J, VectorConstRef weights) -> void
 {
     pimpl->updateWithPriorityWeights(J, weights);
 }

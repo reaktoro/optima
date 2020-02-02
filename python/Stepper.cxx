@@ -21,57 +21,51 @@
 namespace py = pybind11;
 
 // Optima includes
-#include <Optima/Constraints.hpp>
-#include <Optima/IpSaddlePointMatrix.hpp>
-#include <Optima/Options.hpp>
 #include <Optima/Stepper.hpp>
-#include <Optima/Result.hpp>
+#include <Optima/Options.hpp>
 using namespace Optima;
 
 void exportStepper(py::module& m)
 {
-    // py::class_<StepperProblem>(m, "StepperProblem")
-    //     .def(py::init<
-    //         VectorConstRef,  // x
-    //         VectorConstRef,  // y
-    //         VectorConstRef,  // z
-    //         VectorConstRef,  // w
-    //         MatrixConstRef,  // A
-    //         VectorConstRef,  // b
-    //         VectorConstRef,  // h
-    //         MatrixConstRef,  // J
-    //         VectorConstRef,  // g
-    //         MatrixConstRef,  // H
-    //         VectorConstRef,  // xlower
-    //         VectorConstRef,  // xupper
-    //         IndicesConstRef, // ilower
-    //         IndicesConstRef, // iupper
-    //         IndicesConstRef  // ifixed
-    //     >())
-    //     .def_readonly("x", &StepperProblem::x, "The current state of the primal variables of the canonical optimization problem.")
-    //     .def_readonly("y", &StepperProblem::y, "The current state of the Lagrange multipliers of the canonical optimization problem.")
-    //     .def_readonly("z", &StepperProblem::z, "The current state of the complementarity variables of the lower bounds of the canonical optimization problem.")
-    //     .def_readonly("w", &StepperProblem::w, "The current state of the complementarity variables of the upper bounds of the canonical optimization problem.")
-    //     .def_readonly("A", &StepperProblem::A, "The coefficient matrix of the linear equality constraints of the canonical optimization problem.")
-    //     .def_readonly("b", &StepperProblem::b, "The right-hand side vector of the linear equality constraints of the canonical optimization problem.")
-    //     .def_readonly("h", &StepperProblem::h, "The value of the equality constraint function.")
-    //     .def_readonly("J", &StepperProblem::J, "The Jacobian of the equality constraint function.")
-    //     .def_readonly("g", &StepperProblem::g, "The gradient of the objective function.")
-    //     .def_readonly("H", &StepperProblem::H, "The Hessian of the objective function.")
-    //     .def_readonly("xlower", &StepperProblem::xlower, "The values of the lower bounds of the variables constrained with lower bounds.")
-    //     .def_readonly("xupper", &StepperProblem::xupper, "The values of the upper bounds of the variables constrained with upper bounds.")
-    //     .def_readonly("ilower", &StepperProblem::ilower, "The indices of the variables with lower bounds.")
-    //     .def_readonly("iupper", &StepperProblem::iupper, "The indices of the variables with upper bounds.")
-    //     .def_readonly("ifixed", &StepperProblem::ifixed, "The indices of the variables with fixed values.")
-    //     ;
+    auto init = [](Index n, Index m, MatrixConstRef4py A) -> Stepper
+    {
+        return Stepper({n, m, A});
+    };
 
-    // py::class_<Stepper>(m, "Stepper")
-    //     .def(py::init<>())
-    //     .def("setOptions", &Stepper::setOptions)
-    //     .def("decompose", &Stepper::decompose)
-    //     .def("solve", &Stepper::solve)
-    //     .def("step", &Stepper::step)
-    //     .def("residual", &Stepper::residual)
-    //     .def("matrix", &Stepper::matrix)
-    //     ;
+    auto initialize = [](Stepper& self, VectorConstRef xlower, VectorConstRef xupper)
+    {
+        return self.initialize({xlower, xupper});
+    };
+
+    auto decompose = [](Stepper& self, VectorConstRef x, VectorConstRef y, VectorConstRef g, MatrixConstRef4py H, MatrixConstRef4py J, VectorConstRef xlower, VectorConstRef xupper, IndicesRef iordering, IndexNumberRef nul, IndexNumberRef nuu)
+    {
+        return self.decompose({x, y, g, H, J, xlower, xupper, iordering, nul, nuu});
+    };
+
+    auto solve = [](Stepper& self, VectorConstRef x, VectorConstRef y, VectorConstRef b, VectorConstRef h, VectorConstRef g, VectorRef dx, VectorRef dy, VectorRef rx, VectorRef ry, VectorRef z)
+    {
+        self.solve({x, y, b, h, g, dx, dy, rx, ry, z});
+    };
+
+    Matrix tmp_dxdp, tmp_dydp, tmp_dzdp;
+    auto sensitivities = [=](Stepper& self, MatrixConstRef4py dgdp, MatrixConstRef4py dhdp, MatrixConstRef4py dbdp, MatrixRef4py dxdp, MatrixRef4py dydp, MatrixRef4py dzdp) mutable
+    {
+        tmp_dxdp.resize(dxdp.rows(), dxdp.cols());
+        tmp_dydp.resize(dydp.rows(), dydp.cols());
+        tmp_dzdp.resize(dzdp.rows(), dzdp.cols());
+        self.sensitivities({dgdp, dhdp, dbdp, tmp_dxdp, tmp_dydp, tmp_dzdp});
+        dxdp = tmp_dxdp;
+        dydp = tmp_dydp;
+        dzdp = tmp_dzdp;
+    };
+
+    py::class_<Stepper>(m, "Stepper")
+        .def(py::init<>())
+        .def(py::init(init))
+        .def("setOptions", &Stepper::setOptions)
+        .def("initialize", initialize)
+        .def("decompose", decompose)
+        .def("solve", solve)
+        .def("sensitivities", sensitivities)
+        ;
 }

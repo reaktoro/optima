@@ -24,8 +24,8 @@
 #include <Optima/deps/eigen3/Eigen/Dense>
 
 // Optima includes
-#include <Optima/CanonicalizerAdvanced.hpp>
 #include <Optima/Exception.hpp>
+#include <Optima/ExtendedCanonicalizer.hpp>
 #include <Optima/IndexUtils.hpp>
 #include <Optima/Matrix.hpp>
 #include <Optima/SaddlePointOptions.hpp>
@@ -35,7 +35,7 @@ namespace Optima {
 
 struct SaddlePointSolver::Impl
 {
-    CanonicalizerAdvanced canonicalizer; ///< The canonicalizer of the Jacobian matrix *W = [A; J]*.
+    ExtendedCanonicalizer canonicalizer; ///< The canonicalizer of the Jacobian matrix *W = [A; J]*.
 
     SaddlePointOptions options; ///< The options used to solve the saddle point problems.
 

@@ -21,13 +21,11 @@
 #include <cassert>
 
 // Optima includes
-#include <Optima/ActiveStepper.hpp>
-#include <Optima/Constraints.hpp>
+#include <Optima/Stepper.hpp>
 #include <Optima/Exception.hpp>
 #include <Optima/Options.hpp>
 #include <Optima/Outputter.hpp>
 #include <Optima/Result.hpp>
-#include <Optima/SaddlePointMatrix.hpp>
 #include <Optima/Timing.hpp>
 #include <Optima/Utils.hpp>
 
@@ -37,7 +35,7 @@ namespace Optima {
 struct BasicSolver::Impl
 {
     /// The calculator of the Newton step (dx, dy, dz, dw)
-    ActiveStepper stepper;
+    Stepper stepper;
 
     /// The options for the optimization calculation
     Options options;
@@ -126,7 +124,7 @@ struct BasicSolver::Impl
         dxtrial = zeros(n);
 
         // Initialize step calculator
-        stepper = ActiveStepper({n, m, args.A});
+        stepper = Stepper({n, m, args.A});
     }
 
     /// Set the options for the optimization calculation.

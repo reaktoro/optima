@@ -1,268 +1,327 @@
-// // Optima is a C++ library for solving linear and non-linear constrained optimization problems
-// //
-// // Copyright (C) 2014-2018 Allan Leal
-// //
-// // This program is free software: you can redistribute it and/or modify
-// // it under the terms of the GNU General Public License as published by
-// // the Free Software Foundation, either version 3 of the License, or
-// // (at your option) any later version.
-// //
-// // This program is distributed in the hope that it will be useful,
-// // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// // GNU General Public License for more details.
-// //
-// // You should have received a copy of the GNU General Public License
-// // along with this program. If not, see <http://www.gnu.org/licenses/>.
+// Optima is a C++ library for solving linear and non-linear constrained optimization problems
+//
+// Copyright (C) 2014-2018 Allan Leal
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-// #include "Stepper.hpp"
+#include "Stepper.hpp"
 
-// // Optima includes
-// #include <Optima/Exception.hpp>
-// #include <Optima/IpSaddlePointMatrix.hpp>
-// #include <Optima/IpSaddlePointSolver.hpp>
-// #include <Optima/Options.hpp>
+// C++ includes
+#include <cassert>
 
-// namespace Optima {
+// Optima includes
+#include <Optima/Exception.hpp>
+#include <Optima/IndexUtils.hpp>
+#include <Optima/SaddlePointSolver.hpp>
+#include <Optima/Options.hpp>
+#include <Optima/Utils.hpp>
 
-// struct Stepper::Impl
-// {
-//     /// The options for the optimization calculation
-//     Options options;
+namespace Optima {
 
-//     /// The solution vector `s = [dx dy dz dw]`.
-//     Vector s;
+struct Stepper::Impl
+{
+    Options options;          ///< The options for the optimization calculation
+    Matrix W;                 ///< The coefficient matrix W = [A; J] of the linear/nonlinear equality constraints.
+    Vector z;                 ///< The instability measures of the variables defined as `z = g + tr(W)*y`.
+    Vector s;                 ///< The solution vector `s = [dx dy]` for the saddle point problem.
+    Vector r;                 ///< The right-hand side residual vector `r = [rx ry]`  for the saddle point problem.
+    Index n      = 0;         ///< The number of variables in x.
+    Index ns     = 0;         ///< The number of stable variables in x.
+    Index nu     = 0;         ///< The number of unstable (lower/upper) variables in x.
+    Index nlower = 0;         ///< The number of variables with lower bounds.
+    Index nupper = 0;         ///< The number of variables with upper bounds.
+    Index ml     = 0;         ///< The number of linear equality constraints.
+    Index mn     = 0;         ///< The number of non-linear equality constraints.
+    Index m      = 0;         ///< The number of equality constraints (m = ml + mn).
+    Index t      = 0;         ///< The total number of variables in x and y (t = n + m).
+    SaddlePointSolver solver; ///< The saddle point solver.
+    Indices iordering;        ///< The ordering of the variables as (*stable*, *lower unstable*, *upper unstable*).
+    Indices ilowerpartition;  ///< The ordering of the variables as (with lower bounds, without lower bounds, fixed)
+    Indices iupperpartition;  ///< The ordering of the variables as (with upper bounds, without upper bounds, fixed)
 
-//     /// The right-hand side residual vector `r = [rx ry rz rw]`.
-//     Vector r;
+    /// Construct a default Stepper::Impl instance.
+    Impl()
+    {}
 
-//     /// The matrices Z, W, L, U assuming the ordering x = [x(free) x(fixed)].
-//     Vector Z, W, L, U;
+    /// Construct a Stepper::Impl instance.
+    Impl(StepperInitArgs args)
+    : n(args.n), m(args.m), W(args.m, args.n), solver({args.n, args.m, args.A})
+    {
+        // Ensure the step calculator is initialized with a positive number of variables.
+        Assert(n > 0, "Could not proceed with Stepper initialization.",
+            "The number of variables is zero.");
 
-//     /// The number of variables.
-//     Index n;
+        // Initialize number of linear and nonlinear equality constraints
+        ml = args.A.rows();
+        mn = m - ml;
 
-//     /// The number of free and fixed variables.
-//     Index nx, nf;
+        // Initialize the matrix W = [A; J], with J=0 at this initialization time (updated at each decompose call)
+        W << args.A, zeros(mn, n);
 
-//     /// The number of equality constraints.
-//     Index m;
+        // Initialize total number of variables x and y
+        t  = n + m;
 
-//     /// The total number of variables (x, y, z, w).
-//     Index t;
+        // Initialize auxiliary vectors
+        z = zeros(n);
+        r = zeros(t);
+        s = zeros(t);
 
-//     /// The interior-point saddle point solver.
-//     IpSaddlePointSolver solver;
+        // Initialize the initial ordering of the variables
+        iordering = indices(n);
+    }
 
-//     /// The boolean flag that indices if the solver has been initialized
-//     bool initialized = false;
+    /// Initialize the step calculator before calling decompose multiple times.
+    auto initialize(StepperInitializeArgs args) -> void
+    {
+        // Auxiliary references
+        auto xlower = args.xlower;
+        auto xupper = args.xupper;
 
-//     /// Construct a default Stepper::Impl instance.
-//     Impl()
-//     {}
+        // Ensure consistent dimensions of vectors/matrices.
+        assert(xlower.rows() == n);
+        assert(xupper.rows() == n);
+        assert(iordering.rows() == n);
 
-//     /// Initialize the stepper with the structure of the optimization problem.
-//     auto initialize(const StepperProblem& problem) -> void
-//     {
-//         // Update the initialized status of the solver
-//         initialized = true;
+        // Update the ordering of the variables with lower and upper bounds
+        auto has_lower_bound = [&](Index i) -> bool { return !std::isinf(xlower[i]); };
+        auto has_upper_bound = [&](Index i) -> bool { return !std::isinf(xupper[i]); };
 
-//         // Auxiliary references
-//         const auto H = problem.H;
-//         const auto A = problem.A;
-//         const auto J = problem.J;
-//         const auto ifixed = problem.ifixed;
+        ilowerpartition = iordering;
+        iupperpartition = iordering;
 
-//         // Initialize the members related to number of variables and constraints
-//         n  = H.rows();
-//         m  = A.rows() + J.rows();
-//         t  = 3*n + m;
+        nlower = moveLeftIf(ilowerpartition, has_lower_bound);
+        nupper = moveLeftIf(iupperpartition, has_upper_bound);
+    }
 
-//         // Initialize the number of fixed and free variables
-//         nf = ifixed.rows();
-//         nx = n - nf;
+    /// Decompose the saddle point matrix for diagonal Hessian matrices.
+    auto decompose(StepperDecomposeArgs args) -> void
+    {
+        // Ensure the step calculator has been initialized.
+        Assert(n != 0, "Could not proceed with Stepper::decompose.",
+            "Stepper object not initialized.");
 
-//         // Initialize Z and W with zeros (the dafault value for variables
-//         // with fixed values or no lower/upper bounds).
-//         Z = zeros(n);
-//         W = zeros(n);
+        // Auxiliary references
+        auto x          = args.x;
+        auto y          = args.y;
+        auto g          = args.g;
+        auto H          = args.H;
+        auto J          = args.J;
+        auto xlower     = args.xlower;
+        auto xupper     = args.xupper;
+        auto ivariables = args.iordering;
+        auto& nul       = args.nul;
+        auto& nuu       = args.nuu;
+        const auto A    = W.topRows(ml);
 
-//         // Initialize L and U with ones (the dafault value for variables
-//         // with fixed values or no lower/upper bounds).
-//         L = ones(n);
-//         U = ones(n);
+        // Ensure consistent dimensions of vectors/matrices.
+        assert(x.rows() == n);
+        assert(y.rows() == m);
+        assert(g.rows() == n);
+        assert(H.rows() == n);
+        assert(H.cols() == n);
+        assert(J.rows() == mn);
+        assert(J.cols() == n || mn == 0);
+        assert(xlower.rows() == n);
+        assert(xupper.rows() == n);
+        assert(ivariables.rows() == n);
+        assert(iordering.rows() == n);
+        assert(W.rows() == m);
+        assert(W.cols() == n || m == 0);
 
-//         // Initialize r and s with zeros.
-//         r = zeros(t);
-//         s = zeros(t);
-//     }
+        // Update the coefficient matrix W = [A; J] with the updated J block
+        W.bottomRows(mn) = J;
 
-//     /// Decompose the interior-point saddle point matrix for diagonal Hessian matrices.
-//     auto decompose(const StepperProblem& problem) -> void
-//     {
-//         // Initialize the solver if not yet
-//         if(!initialized)
-//             initialize(problem);
+        // Calculate the optimality residuals
+        z.noalias() = g + tr(W)*y;
 
-//         // Auxiliary references
-//         const auto x = problem.x;
-//         const auto z = problem.z;
-//         const auto w = problem.w;
-//         const auto H = problem.H;
-//         const auto A = problem.A;
-//         const auto J = problem.J;
-//         const auto xlower = problem.xlower;
-//         const auto xupper = problem.xupper;
-//         const auto ilower = problem.ilower;
-//         const auto iupper = problem.iupper;
-//         const auto ifixed = problem.ifixed;
+        // The indices of the variables with lower bounds (ilower) and upper bounds (iupper)
+        auto ilower = ilowerpartition.head(nlower);
+        auto iupper = iupperpartition.head(nupper);
 
-//         // Update Z and L for the variables with lower bounds
-//         Z(ilower) = z(ilower);
-// 		L(ilower) = x(ilower) - xlower;
+        // Update the ordering of the variables with lower and upper bounds
+        auto is_lower_unstable = [&](Index i) { return x[i] == xlower[i] && z[i] > 0.0; };
+        auto is_upper_unstable = [&](Index i) { return x[i] == xupper[i] && z[i] < 0.0; };
 
-//         // Update W and U for the variables with upper bounds
-//         W(iupper) = w(iupper);
-//         U(iupper) = x(iupper) - xupper;
+        // Organize ilower and iupper as (unstable, stable)
+        nul = moveLeftIf(ilower, is_lower_unstable);
+        nuu = moveLeftIf(iupper, is_upper_unstable);
 
-//         // Ensure entries in L are positive in case x[i] == lowerbound[i]
-// 		for(Index i : ilower) L[i] = L[i] > 0.0 ? L[i] : options.mu;
+        // Update the number of unstable and stable variables
+        nu = nul + nuu;
+        ns = n - nu;
 
-//         // Ensure entries in U are negative in case x[i] == upperbound[i]
-// 		for(Index i : iupper) U[i] = U[i] < 0.0 ? U[i] : -options.mu;
+        // The indices of the lower and upper unstable variables
+        // Remember: ilower and iupper are organized in the order [unstable variables, stable variables]!
+        auto iul = ilower.head(nul);
+        auto iuu = iupper.head(nuu);
 
-//         // Define the interior-point saddle point matrix
-//         IpSaddlePointMatrix spm(H, A, J, Z, W, L, U, ifixed);
+        // Move all upper unstable variables to the right in iordering
+        moveIntersectionRight(iordering, iuu);
 
-//         // Decompose the interior-point saddle point matrix
-//         solver.decompose(spm);
-//     }
+        // Move all lower unstable variables to the right in iordering, but before the unstable variables
+        moveIntersectionRight(iordering.head(n - nuu), iul);
 
-//     /// Solve the interior-point saddle point matrix.
-//     auto solve(const StepperProblem& problem) -> void
-//     {
-//         // Auxiliary references
-//         const auto x = problem.x;
-//         const auto y = problem.y;
-//         const auto z = problem.z;
-//         const auto w = problem.w;
-//         const auto g = problem.g;
-//         const auto h = problem.h;
-//         const auto A = problem.A;
-//         const auto J = problem.J;
-//         const auto ilower = problem.ilower;
-//         const auto iupper = problem.iupper;
-//         const auto ifixed = problem.ifixed;
+        // The indices of the lower and upper unstable variables
+        auto iu = iordering.tail(nu);
 
-//         const auto yA = y.head(A.rows());
-//         const auto yJ = y.tail(J.rows());
+        // Decompose the saddle point matrix (this decomposition is later used in method solve, possibly many times!)
+        // Consider lower/upper unstable variables as "fixed" variables in the saddle point problem.
+        // Reason: we do not need to compute Newton steps for the currently unstable variables!
+        solver.decompose({ H, J, Matrix{}, iu });
 
-//         // Views to the sub-vectors in r = [a b c d]
-//         auto a = r.head(n);
-//         auto b = r.segment(n, m);
-//         auto c = r.segment(n + m, n);
-//         auto d = r.tail(n);
+        // Export the updated ordering of the variables
+        ivariables = iordering;
+    }
 
-//         auto bA = b.head(A.rows());
-//         auto bJ = b.tail(J.rows());
+    /// Solve the saddle point problem.
+    auto solve(StepperSolveArgs args) -> void
+    {
+        // Auxiliary references
+        auto x       = args.x;
+        auto y       = args.y;
+        auto b       = args.b;
+        auto g       = args.g;
+        auto h       = args.h;
+        auto dx      = args.dx;
+        auto dy      = args.dy;
+        auto rx      = args.rx;
+        auto ry      = args.ry;
+        auto z       = args.z;
+        const auto A = W.topRows(ml);
 
-//         // Calculate the optimality residual vector a
-//         a.noalias() = -(g + tr(A) * yA + tr(J) * yJ - z - w);
+        // Ensure consistent dimensions of vectors/matrices.
+        assert(x.rows() == n);
+        assert(y.rows() == m);
+        assert(g.rows() == n);
+        assert(A.rows() == ml);
+        assert(A.cols() == n || ml == 0);
+        assert(iordering.rows() == n);
 
-//         // Set a to zero for fixed variables
-//         a(ifixed).fill(0.0);
+        // The indices of the lower and upper unstable variables
+        auto iu = iordering.tail(nu);
 
-//         // Calculate the feasibility residual vector b
-//         bA.noalias() = -(A*x - problem.b);
-//         bJ.noalias() = -h;
+        // Calculate the instability measure of the variables.
+        z.noalias() = g + tr(W)*y;
 
-//         // Calculate the centrality residual vectors c and d
-//         for(Index i : ilower) c[i] = options.mu - L[i] * z[i]; // TODO Check if mu is still needed. Maybe this algorithm no longer needs perturbation.
-//         for(Index i : iupper) d[i] = options.mu - U[i] * w[i];
+        // Calculate the residuals of the first-order optimality conditions
+        rx = -z;
 
-// //        c.fill(0.0); // TODO For example, there is no mu here and this seems to work
-// //        d.fill(0.0);
+        // Set residuals wrt unstable variables to zero
+        rx(iu).fill(0.0);
 
-//         // The right-hand side vector of the interior-point saddle point problem
-//         IpSaddlePointVector rhs(r, n, m);
+        // Calculate the residuals of the feasibility conditions
+        ry.head(ml).noalias() = -(A*x - b);
+        ry.tail(mn).noalias() = -h;
 
-//         // The solution vector of the interior-point saddle point problem
-//         IpSaddlePointSolution sol(s, n, m);
+        // Solve the saddle point problem
+        solver.solve({ rx, ry, dx, dy });
+    }
 
-//         // Solve the saddle point problem
-//         solver.solve(rhs, sol);
-//     }
+    /// Compute the sensitivity derivatives of the saddle point problem.
+    auto sensitivities(StepperSensitivitiesArgs args) -> void
+    {
+        // Auxiliary references
+        auto dxdp = args.dxdp;
+        auto dydp = args.dydp;
+        auto dzdp = args.dzdp;
+        auto dgdp = args.dgdp;
+        auto dbdp = args.dbdp;
+        auto dhdp = args.dhdp;
 
-//     /// Return the calculated Newton step vector.
-//     auto step() const -> IpSaddlePointVector
-//     {
-//         return IpSaddlePointVector(s, n, m);
-//     }
+        // The number of parameters for sensitivity computation
+        auto np = dxdp.cols();
 
-//     /// Return the calculated residual vector for the current optimum state.
-//     auto residual() const -> IpSaddlePointVector
-//     {
-//         return IpSaddlePointVector(r, n, m);
-//     }
+        // Ensure consistent dimensions of vectors/matrices.
+        assert(dxdp.rows() == n);
+        assert(dydp.rows() == m);
+        assert(dzdp.rows() == n);
+        assert(dgdp.rows() == n);
+        assert(dbdp.rows() == ml);
+        assert(dhdp.rows() == mn);
+        assert(dydp.cols() == np);
+        assert(dzdp.cols() == np);
+        assert(dgdp.cols() == np);
+        assert(dbdp.cols() == np);
+        assert(dhdp.cols() == np);
 
-//     /// Return the assembled interior-point saddle point matrix.
-//     auto matrix(const StepperProblem& problem) -> IpSaddlePointMatrix
-//     {
-//         // Auxiliary references
-//         const auto H = problem.H;
-//         const auto A = problem.A;
-//         const auto J = problem.J;
-//         const auto ifixed = problem.ifixed;
-//         return IpSaddlePointMatrix(H, A, J, Z, W, L, U, ifixed);
-//     }
-// };
+        // The indices of the stable and unstable variables
+        auto is = iordering.head(ns);
+        auto iu = iordering.tail(nu);
 
-// Stepper::Stepper()
-// : pimpl(new Impl())
-// {}
+        // Assemble the right-hand side matrix (zero for unstable variables!)
+        dxdp(is, all) = -dgdp(is, all);
+        dxdp(iu, all).fill(0.0);
 
-// Stepper::Stepper(const Stepper& other)
-// : pimpl(new Impl(*other.pimpl))
-// {}
+        // Assemble the right-hand side matrix with dbdp and -dhdp contributions
+        dydp.topRows(ml) = dbdp;
+        dydp.bottomRows(mn) = -dhdp;
 
-// Stepper::~Stepper()
-// {}
+        // Solve the saddle point problem for each parameter to compute the corresponding sensitivity derivatives
+        for(Index i = 0; i < np; ++i)
+            solver.solve({ dxdp.col(i), dydp.col(i) });
 
-// auto Stepper::operator=(Stepper other) -> Stepper&
-// {
-//     pimpl = std::move(other.pimpl);
-//     return *this;
-// }
+        // Calculate the sensitivity derivatives dzdp (zero for stable variables!).
+        dzdp(is, all).fill(0.0);
+        dzdp(iu, all) = dgdp(iu, all) + tr(W(all, iu)) * dydp;
+    }
+};
 
-// auto Stepper::setOptions(const Options& options) -> void
-// {
-//     pimpl->options = options;
-//     pimpl->solver.setOptions(options.kkt);
-// }
+Stepper::Stepper()
+: pimpl(new Impl())
+{}
 
-// auto Stepper::decompose(const StepperProblem& problem) -> void
-// {
-//     return pimpl->decompose(problem);
-// }
+Stepper::Stepper(StepperInitArgs args)
+: pimpl(new Impl(args))
+{}
 
-// auto Stepper::solve(const StepperProblem& problem) -> void
-// {
-//     return pimpl->solve(problem);
-// }
+Stepper::Stepper(const Stepper& other)
+: pimpl(new Impl(*other.pimpl))
+{}
 
-// auto Stepper::matrix(const StepperProblem& problem) -> IpSaddlePointMatrix
-// {
-//     return pimpl->matrix(problem);
-// }
+Stepper::~Stepper()
+{}
 
-// auto Stepper::step() const -> IpSaddlePointVector
-// {
-//     return pimpl->step();
-// }
+auto Stepper::operator=(Stepper other) -> Stepper&
+{
+    pimpl = std::move(other.pimpl);
+    return *this;
+}
 
-// auto Stepper::residual() const -> IpSaddlePointVector
-// {
-//     return pimpl->residual();
-// }
+auto Stepper::setOptions(const Options& options) -> void
+{
+    pimpl->options = options;
+    pimpl->solver.setOptions(options.kkt);
+}
 
-// } // namespace Optima
+auto Stepper::initialize(StepperInitializeArgs args) -> void
+{
+    return pimpl->initialize(args);
+}
+
+auto Stepper::decompose(StepperDecomposeArgs args) -> void
+{
+    return pimpl->decompose(args);
+}
+
+auto Stepper::solve(StepperSolveArgs args) -> void
+{
+    return pimpl->solve(args);
+}
+
+auto Stepper::sensitivities(StepperSensitivitiesArgs args) -> void
+{
+    return pimpl->sensitivities(args);
+}
+
+} // namespace Optima

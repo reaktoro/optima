@@ -21,7 +21,6 @@
 #include <Optima/BasicSolver.hpp>
 #include <Optima/Exception.hpp>
 #include <Optima/IndexUtils.hpp>
-#include <Optima/Result.hpp>
 #include <Optima/Options.hpp>
 #include <Optima/Problem.hpp>
 #include <Optima/Result.hpp>
@@ -55,37 +54,62 @@ auto initBasicSolver(const Problem& problem) -> BasicSolver
 
 struct Solver::Impl
 {
-    /// The basic optimization solver
+    /// The basic optimization solver.
     BasicSolver solver;
 
     /// The dimension information of variables and constraints in the optimization problem.
     Dims dims;
 
-    /// The number of variables in bar(x) = (x, u, v)
+    /// The number of variables in bar(x) = (x, u, v).
     Index n = 0;
 
-    /// The number of variables x in bar(x) = (x, u, v)
+    /// The number of variables x in bar(x) = (x, u, v).
     Index nx = 0;
 
-    /// The number of variables u in bar(x) = (x, u, v)
+    /// The number of variables u in bar(x) = (x, u, v).
     Index nu = 0;
 
-    /// The number of variables v in bar(x) = (x, u, v)
+    /// The number of variables v in bar(x) = (x, u, v).
     Index nv = 0;
 
-    /// The dimension of vector b = [be, bg]
+    /// The dimension of vector b = [be, bg].
     Index mb = 0;
 
-    /// The dimension of vector h = [he, hg]
+    /// The dimension of vector h = [he, hg].
     Index mh = 0;
 
-    /// The dimension of number m = mb + mh
+    /// The dimension of number m = mb + mh.
     Index m = 0;
+
+    /// The vector bar(x) = [x, u, v] in the basic optimization problem.
+    Vector xbar;
+
+    /// The vector bar(z) = [zx, zu, zv] in the basic optimization problem.
+    Vector zbar;
+
+    /// The right-hand side vector b = [be, bg] in the basic optimization problem.
+    Vector b;
+
+    /// The lower bounds of vector bar(x) = [x, u, v] in the basic optimization problem.
+    Vector xbar_lower;
+
+    /// The upper bounds of vector bar(x) = [x, u, v] in the basic optimization problem.
+    Vector xbar_upper;
+
+    /// The ordering of the variables bar(x) = [x, u, v] as (*stable*, *lower unstable*, *upper unstable*).
+    Indices iordering;
+
+    /// The number of lower unstable variables in bar(x) = [x, u, v].
+    IndexNumber nul;
+
+    /// The number of upper unstable variables in bar(x) = [x, u, v].
+    IndexNumber nuu;
 
     /// Construct a Solver instance with given optimization problem.
     Impl(const Problem& problem)
     : solver(detail::initBasicSolver(problem)), dims(problem.dims)
     {
+        // Initialize dimension variables
         nx = dims.x;
         nu = dims.bg;
         nv = dims.hg;
@@ -93,6 +117,16 @@ struct Solver::Impl
         mb = dims.be + dims.bg;
         mh = dims.he + dims.hg;
         m  = mb + mh;
+
+        // Initialize vectors
+        xbar.resize(n);
+        zbar.resize(n);
+        xbar_lower.resize(n);
+        xbar_upper.resize(n);
+        b.resize(m);
+
+        // Initialize the ordering of the variables.
+        iordering = indices(n);
     }
 
     /// Set the options for the optimization calculation.
@@ -148,33 +182,26 @@ struct Solver::Impl
             res.failed = re.failed || rg.failed;
         };
 
-        Vector xbar;
-        Vector zbar;
-        Vector b;
-        Vector xbarlower;
-        Vector xbarupper;
-
-        xbar = zeros(n);
-        zbar = zeros(n);
-        b.resize(m);
-        xbarlower = zeros(n);
-        xbarupper = constants(n, infinity());
-
+        // Initialize vector bar(x) = [x, u, v]
         xbar.head(nx) = state.x;
+        xbar.tail(nu + nv).fill(0.0);
 
+        // Initialize vector with lower bounds for bar(x) = [x, u, v]
+        xbar_lower.head(nx) = problem.xlower;
+        xbar_lower.tail(nu + nv).fill(0.0);
+
+        // Initialize vector with upper bounds for bar(x) = [x, u, v]
+        xbar_upper.head(nx) = problem.xupper;
+        xbar_lower.tail(nu + nv).fill(infinity());
+
+        // Initialize vector b = [be, bg]
         b << problem.be, problem.bg;
 
-        xbarlower.head(nx) = problem.xlower;
-        xbarupper.head(nx) = problem.xupper;
-
+        // Create alias for y vector
         auto y = state.y;
 
-        Indices iordering = indices(n);
-
-        IndexNumber nul;
-        IndexNumber nuu;
-
-        auto result = solver.solve({ f, h, b, xbarlower, xbarupper, xbar, y, zbar, iordering, nul, nuu });
+        // Solve the constructed basic optimization problem
+        auto result = solver.solve({ f, h, b, xbar_lower, xbar_upper, xbar, y, zbar, iordering, nul, nuu });
 
         return result;
     }

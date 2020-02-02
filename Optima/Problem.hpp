@@ -64,7 +64,7 @@ public:
     auto operator=(Problem other) -> Problem& = delete;
 
     /// The dimension information of variables and constraints in the optimization problem.
-    Dims const& dims;
+    Dims const dims;
 
     /// The coefficient matrix \eq{A_{\mathrm{e}}} in the linear equality constraints \eq{A_{\mathrm{e}}x=b_{\mathrm{e}}}.
     MatrixRef Ae;
@@ -101,6 +101,15 @@ public:
 
     /// The derivatives *∂b/∂p*.
     Matrix dbdp;
+
+    /// The nonlinear equality constraint function \eq{h_{\mathrm{e}}(x)=0} (to be used in python only!).
+    ConstraintFunction4py __4py_he;
+
+    /// The nonlinear inequality constraint function \eq{h_{\mathrm{g}}(x)\geq0} (to be used in python only!).
+    ConstraintFunction4py __4py_hg;
+
+    /// The objective function \eq{f(x)} of the optimization problem (to be used in python only!).
+    ObjectiveFunction4py __4py_f;
 
 private:
     struct Impl;

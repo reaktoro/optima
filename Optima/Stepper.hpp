@@ -1,127 +1,131 @@
-// // Optima is a C++ library for solving linear and non-linear constrained optimization problems
-// //
-// // Copyright (C) 2014-2018 Allan Leal
-// //
-// // This program is free software: you can redistribute it and/or modify
-// // it under the terms of the GNU General Public License as published by
-// // the Free Software Foundation, either version 3 of the License, or
-// // (at your option) any later version.
-// //
-// // This program is distributed in the hope that it will be useful,
-// // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// // GNU General Public License for more details.
-// //
-// // You should have received a copy of the GNU General Public License
-// // along with this program. If not, see <http://www.gnu.org/licenses/>.
+// Optima is a C++ library for solving linear and non-linear constrained optimization problems
+//
+// Copyright (C) 2014-2018 Allan Leal
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-// #pragma once
+#pragma once
 
-// // C++ includes
-// #include <memory>
+// C++ includes
+#include <memory>
 
-// // Optima includes
-// #include <Optima/Index.hpp>
-// #include <Optima/Matrix.hpp>
+// Optima includes
+#include <Optima/Index.hpp>
+#include <Optima/Matrix.hpp>
+#include <Optima/Number.hpp>
 
-// namespace Optima {
+namespace Optima {
 
-// // Forward declarations
-// class IpSaddlePointMatrix;
-// class IpSaddlePointVector;
-// class Options;
+// Forward declarations
+class Options;
 
-// /// The problem data needed to calculate a step using Stepper.
-// struct StepperProblem
-// {
-//     /// The current state of the primal variables of the canonical optimization problem.
-//     VectorConstRef x;
+/// The arguments for the construction of a Stepper object.
+struct StepperInitArgs
+{
+    Index n;                ///< The number of primal variables *x*.
+    Index m;                ///< The number of Lagrange multipliers *y*.
+    MatrixConstRef A;       ///< The coefficient matrix of the linear equality constraints.
+};
 
-//     /// The current state of the Lagrange multipliers of the canonical optimization problem.
-//     VectorConstRef y;
+/// The arguments for method Stepper::initialize.
+struct StepperInitializeArgs
+{
+    VectorConstRef xlower;  ///< The lower bounds of the primal variables.
+    VectorConstRef xupper;  ///< The upper bounds of the primal variables.
+};
 
-//     /// The current state of the complementarity variables of the lower bounds of the canonical optimization problem.
-//     VectorConstRef z;
+/// The arguments for method Stepper::decompose.
+struct StepperDecomposeArgs
+{
+    VectorConstRef x;       ///< The current state of the primal variables.
+    VectorConstRef y;       ///< The current state of the Lagrange multipliers.
+    VectorConstRef g;       ///< The gradient of the objective function.
+    MatrixConstRef H;       ///< The Hessian of the objective function.
+    MatrixConstRef J;       ///< The Jacobian of the equality constraint function.
+    VectorConstRef xlower;  ///< The lower bounds of the primal variables.
+    VectorConstRef xupper;  ///< The upper bounds of the primal variables.
+    IndicesRef iordering;   ///< The output ordering of the variables as (*stable*, *lower unstable*, *upper unstable*).
+    IndexNumberRef nul;     ///< The output number of *lower unstable variables* (i.e. those active/attached at their lower bounds).
+    IndexNumberRef nuu;     ///< The output number of *upper unstable variables* (i.e. those active/attached at their upper bounds).
+};
 
-//     /// The current state of the complementarity variables of the upper bounds of the canonical optimization problem.
-//     VectorConstRef w;
+/// The arguments for method Stepper::solve.
+struct StepperSolveArgs
+{
+    VectorConstRef x;          ///< The current state of the primal variables.
+    VectorConstRef y;          ///< The current state of the Lagrange multipliers.
+    VectorConstRef b;          ///< The right-hand side vector *b* of the linear equality constraints *Ax = b*.
+    VectorConstRef h;          ///< The value of the equality constraint function.
+    VectorConstRef g;          ///< The gradient of the objective function.
+    VectorRef dx;              ///< The output step for the primal variables *x*.
+    VectorRef dy;              ///< The output step for the Lagrange multipliers *y*.
+    VectorRef rx;              ///< The output residuals of the first-order optimality conditions.
+    VectorRef ry;              ///< The output residuals of the linear/nonlinear feasibility conditions.
+    VectorRef z;               ///< The output *unstabilities* of the variables defined as *z = g + tr(W)y* where *W = [A; J]*.
+};
 
-//     /// The coefficient matrix of the linear equality constraints of the canonical optimization problem.
-//     MatrixConstRef A;
+/// The arguments for method Stepper::sensitivities.
+struct StepperSensitivitiesArgs
+{
+    MatrixConstRef dgdp; ///< The derivatives *∂g/∂p*.
+    MatrixConstRef dhdp; ///< The derivatives *∂h/∂p*.
+    MatrixConstRef dbdp; ///< The derivatives *∂b/∂p*.
+    MatrixRef dxdp;      ///< The output sensitivity derivatives *∂x/∂p*.
+    MatrixRef dydp;      ///< The output sensitivity derivatives *∂y/∂p*.
+    MatrixRef dzdp;      ///< The output sensitivity derivatives *∂z/∂p*.
+};
 
-//     /// The right-hand side vector of the linear equality constraints of the canonical optimization problem.
-//     VectorConstRef b;
+/// The class that implements the step calculation.
+class Stepper
+{
+public:
+    /// Construct a default Stepper instance.
+    Stepper();
 
-//     /// The value of the equality constraint function.
-//     VectorConstRef h;
+    /// Construct a Stepper instance with given initialization data.
+    explicit Stepper(StepperInitArgs args);
 
-//     /// The Jacobian of the equality constraint function.
-//     MatrixConstRef J;
+    /// Construct a copy of a Stepper instance.
+    Stepper(const Stepper& other);
 
-//     /// The gradient of the objective function.
-//     VectorConstRef g;
+    /// Destroy this Stepper instance.
+    virtual ~Stepper();
 
-//     /// The Hessian of the objective function.
-//     MatrixConstRef H;
+    /// Assign a Stepper instance to this.
+    auto operator=(Stepper other) -> Stepper&;
 
-//     /// The values of the lower bounds of the variables constrained with lower bounds.
-//     VectorConstRef xlower;
+    /// Set the options for the step calculation.
+    auto setOptions(const Options& options) -> void;
 
-//     /// The values of the upper bounds of the variables constrained with upper bounds.
-//     VectorConstRef xupper;
+    /// Initialize the Newton step solver.
+    auto initialize(StepperInitializeArgs args) -> void;
 
-//     /// The indices of the variables with lower bounds.
-//     IndicesConstRef ilower;
+    /// Decompose the saddle point matrix used to compute the Newton steps for *x* and *y*.
+    auto decompose(StepperDecomposeArgs args) -> void;
 
-//     /// The indices of the variables with upper bounds.
-//     IndicesConstRef iupper;
+    /// Solve the saddle point problem to compute the Newton steps for *x* and *y*.
+    /// @note Method Stepper::decompose needs to be called first.
+    auto solve(StepperSolveArgs args) -> void;
 
-//     /// The indices of the variables with fixed values.
-//     IndicesConstRef ifixed;
-// };
+    /// Compute the sensitivity derivatives of the saddle point problem.
+    /// @note Method Stepper::solve needs to be called first.
+    auto sensitivities(StepperSensitivitiesArgs args) -> void;
 
-// /// The class that implements the step calculation.
-// class Stepper
-// {
-// public:
-//     /// Construct a default Stepper instance.
-//     Stepper();
+private:
+    struct Impl;
 
-//     /// Construct a copy of an Stepper instance.
-//     Stepper(const Stepper& other);
+    std::unique_ptr<Impl> pimpl;
+};
 
-//     /// Destroy this Stepper instance.
-//     virtual ~Stepper();
-
-//     /// Assign an Stepper instance to this.
-//     auto operator=(Stepper other) -> Stepper&;
-
-//     /// Set the options for the step calculation.
-//     auto setOptions(const Options& options) -> void;
-
-//     /// Decompose the interior-point saddle point matrix used to compute the step vectors.
-//     auto decompose(const StepperProblem& problem) -> void;
-
-//     /// Solve the interior-point saddle point matrix used to compute the step vectors.
-//     /// @note Method Stepper::decompose needs to be called first.
-//     auto solve(const StepperProblem& problem) -> void;
-
-//     /// Return the calculated Newton step vector.
-//     /// @note Method Stepper::solve needs to be called first.
-//     auto step() const -> IpSaddlePointVector;
-
-//     /// Return the calculated residual vector for the current optimum state.
-//     /// @note Method Stepper::solve needs to be called first.
-//     auto residual() const -> IpSaddlePointVector;
-
-//     /// Return the assembled interior-point saddle point matrix.
-//     /// @note Method Stepper::decompose needs to be called first.
-//     auto matrix(const StepperProblem& problem) -> IpSaddlePointMatrix;
-
-// private:
-//     struct Impl;
-
-//     std::unique_ptr<Impl> pimpl;
-// };
-
-// } // namespace Optima
+} // namespace Optima

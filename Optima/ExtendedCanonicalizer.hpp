@@ -36,23 +36,23 @@ namespace Optima {
 /// This happens when an optimization problem has a non-linear equality constraint, whose Jacobian
 /// changes in every iteration (the matrix \eq{J}). The matrix \eq{A}, on the other hand, is related
 /// to the linear equality constraint whose coefficient matrix remains the same throughout the calculation.
-class CanonicalizerAdvanced
+class ExtendedCanonicalizer
 {
 public:
-    /// Construct a default CanonicalizerAdvanced instance.
-    CanonicalizerAdvanced();
+    /// Construct a default ExtendedCanonicalizer instance.
+    ExtendedCanonicalizer();
 
-    /// Construct a CanonicalizerAdvanced instance with given invariable matrix *A* in *W = [A; J]*.
-    CanonicalizerAdvanced(MatrixConstRef A);
+    /// Construct a ExtendedCanonicalizer instance with given invariable matrix *A* in *W = [A; J]*.
+    ExtendedCanonicalizer(MatrixConstRef A);
 
-    /// Construct a copy of a CanonicalizerAdvanced instance.
-    CanonicalizerAdvanced(const CanonicalizerAdvanced& other);
+    /// Construct a copy of a ExtendedCanonicalizer instance.
+    ExtendedCanonicalizer(const ExtendedCanonicalizer& other);
 
-    /// Destroy this CanonicalizerAdvanced instance.
-    virtual ~CanonicalizerAdvanced();
+    /// Destroy this ExtendedCanonicalizer instance.
+    virtual ~ExtendedCanonicalizer();
 
-    /// Assign a CanonicalizerAdvanced instance to this.
-    auto operator=(CanonicalizerAdvanced other) -> CanonicalizerAdvanced&;
+    /// Assign a ExtendedCanonicalizer instance to this.
+    auto operator=(ExtendedCanonicalizer other) -> ExtendedCanonicalizer&;
 
     /// Return the number of variables.
     auto numVariables() const -> Index;

@@ -18,22 +18,21 @@
 #pragma once
 
 // Optima includes
+#include <Optima/BasicSolver.hpp>
 #include <Optima/Canonicalizer.hpp>
-#include <Optima/Constraints.hpp>
+#include <Optima/ConstraintFunction.hpp>
 #include <Optima/Exception.hpp>
+#include <Optima/ExtendedCanonicalizer.hpp>
 #include <Optima/Index.hpp>
 #include <Optima/IndexUtils.hpp>
-#include <Optima/IpSaddlePointMatrix.hpp>
-#include <Optima/IpSaddlePointSolver.hpp>
 #include <Optima/Matrix.hpp>
+#include <Optima/Number.hpp>
 #include <Optima/ObjectiveFunction.hpp>
 #include <Optima/Options.hpp>
 #include <Optima/Outputter.hpp>
-#include <Optima/Params.hpp>
 #include <Optima/Partition.hpp>
 #include <Optima/Problem.hpp>
 #include <Optima/Result.hpp>
-#include <Optima/SaddlePointMatrix.hpp>
 #include <Optima/SaddlePointOptions.hpp>
 #include <Optima/SaddlePointSolver.hpp>
 #include <Optima/Solver.hpp>

@@ -26,12 +26,16 @@ namespace Optima {
 
 #include <Optima/deps/eigenx/Eigen/Typedefs>
 
-/// An alias for a more general Eigen matrix reference to be used in Python.
-/// The need for this special type is due to the different order in which Eigen matrices
-/// and numpy arrays arrange their memory, with Eigen using column-major order and numpy
-/// using row-major order. See this discussion [here](https://pybind11.readthedocs.io/en/stable/advanced/cast/eigen.html#storage-orders).
-using MatrixRef4py = Eigen::Ref<Matrix, 0, Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic>>;
+/// An Eigen matrix type to be used with numpy, which expects row-major order.
+/// See this discussion [here](https://pybind11.readthedocs.io/en/stable/advanced/cast/eigen.html#storage-orders).
+using Matrix4py = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor, Eigen::Dynamic, Eigen::Dynamic>;
 
-using MatrixConstRef4py = Eigen::Ref<const Matrix, 0, Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic>>;
+/// An Eigen reference matrix type to be used with numpy arrays.
+/// See this discussion [here](https://pybind11.readthedocs.io/en/stable/advanced/cast/eigen.html#storage-orders).
+using MatrixRef4py = Eigen::Ref<Eigen::MatrixXd, 0, Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic>>;
+
+/// An Eigen constant reference matrix type to be used with numpy arrays.
+/// See this discussion [here](https://pybind11.readthedocs.io/en/stable/advanced/cast/eigen.html#storage-orders).
+using MatrixConstRef4py = Eigen::Ref<const Eigen::MatrixXd, 0, Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic>>;
 
 } // namespace Optima

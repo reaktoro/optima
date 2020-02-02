@@ -119,5 +119,5 @@ def test_canonicalizer(args):
     A = W[:mu, :]
     J = W[mu:, :]
 
-    canonicalizer = CanonicalizerAdvanced(A)
+    canonicalizer = ExtendedCanonicalizer(A)
     check_canonicalizer(canonicalizer, A, J)
