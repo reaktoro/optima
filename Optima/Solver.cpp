@@ -136,7 +136,7 @@ struct Solver::Impl
     }
 
     /// Solve the optimization problem.
-    auto solve(StateRef state, const Problem& problem) -> Result
+    auto solve(State& state, const Problem& problem) -> Result
     {
         // Create the objective function for the basic problem
         auto f = [&](VectorConstRef xbar, ObjectiveResult& res)
@@ -197,11 +197,15 @@ struct Solver::Impl
         // Initialize vector b = [be, bg]
         b << problem.be, problem.bg;
 
-        // Create alias for y vector
-        auto y = state.y;
+        // Create reference for y vector
+        auto& y = state.y;
 
         // Solve the constructed basic optimization problem
         auto result = solver.solve({ f, h, b, xbar_lower, xbar_upper, xbar, y, zbar, iordering, nul, nuu });
+
+        // Set back the calculated variables to state
+        state.x = xbar.head(nx);
+        state.z = zbar.head(nx);
 
         return result;
     }
@@ -229,7 +233,7 @@ auto Solver::setOptions(const Options& options) -> void
 	pimpl->setOptions(options);
 }
 
-auto Solver::solve(StateRef state, const Problem& problem) -> Result
+auto Solver::solve(State& state, const Problem& problem) -> Result
 {
     return pimpl->solve(state, problem);
 }

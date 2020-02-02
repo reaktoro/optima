@@ -29,7 +29,7 @@ namespace Optima {
 class Options;
 class Problem;
 class Result;
-class StateRef;
+class State;
 
 /// The solver for optimization problems.
 class Solver
@@ -51,7 +51,7 @@ public:
     auto setOptions(const Options& options) -> void;
 
     /// Solve the optimization problem.
-    auto solve(StateRef state, const Problem& problem) -> Result;
+    auto solve(State& state, const Problem& problem) -> Result;
 
 private:
     struct Impl;

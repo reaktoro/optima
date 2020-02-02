@@ -44,36 +44,4 @@ struct State
     Matrix dzdp;
 };
 
-/// The state of the optimization variables.
-struct StateRef
-{
-    /// The variables \eq{x} of the optimization problem.
-    VectorRef x;
-
-    /// The Lagrange multipliers \eq{y} of the optimization problem.
-    VectorRef y;
-
-    /// The instability measures of variables \eq{x} defined as \eq{z = g + W^{T}y}.
-    VectorRef z;
-
-    /// The sensitivity derivatives \eq{\partial x/\partial p} with respect to parameters \eq{p}.
-    MatrixRef dxdp;
-
-    /// The sensitivity derivatives \eq{\partial y/\partial p} with respect to parameters \eq{p}.
-    MatrixRef dydp;
-
-    /// The sensitivity derivatives \eq{\partial z/\partial p} with respect to parameters \eq{p}.
-    MatrixRef dzdp;
-
-    /// Construct a StateRef instance with a given State instance.
-    StateRef(State& state)
-    : x(state.x),
-      y(state.y),
-      z(state.z),
-      dxdp(state.dxdp),
-      dydp(state.dydp),
-      dzdp(state.dzdp)
-    {}
-};
-
 } // namespace Optima
