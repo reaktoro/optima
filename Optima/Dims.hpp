@@ -18,24 +18,27 @@
 #pragma once
 
 // Optima includes
-#include <Optima/BasicSolver.hpp>
-#include <Optima/Canonicalizer.hpp>
-#include <Optima/ConstraintFunction.hpp>
-#include <Optima/Exception.hpp>
-#include <Optima/ExtendedCanonicalizer.hpp>
 #include <Optima/Index.hpp>
-#include <Optima/IndexUtils.hpp>
-#include <Optima/Matrix.hpp>
-#include <Optima/Number.hpp>
-#include <Optima/ObjectiveFunction.hpp>
-#include <Optima/Options.hpp>
-#include <Optima/Outputter.hpp>
-#include <Optima/Problem.hpp>
-#include <Optima/Result.hpp>
-#include <Optima/SaddlePointOptions.hpp>
-#include <Optima/SaddlePointSolver.hpp>
-#include <Optima/Solver.hpp>
-#include <Optima/State.hpp>
-#include <Optima/Stepper.hpp>
-#include <Optima/Timing.hpp>
-#include <Optima/Utils.hpp>
+
+namespace Optima {
+
+/// The class used to define the dimensions needed to setup an optimization problem.
+struct Dims
+{
+    /// The number of variables in \eq{x}.
+    Index x = 0;
+
+    /// The number of linear equality constraint equations in \eq{A_{\mathrm{e}}x=b_{\mathrm{e}}}.
+    Index be = 0;
+
+    /// The number of linear inequality constraint equations in \eq{A_{\mathrm{g}}x\ge b_{\mathrm{g}}}.
+    Index bg = 0;
+
+    /// The number of non-linear equality constraint equations in \eq{h_{\mathrm{e}}(x)=0}.
+    Index he = 0;
+
+    /// The number of non-linear inequality constraint equations in \eq{h_{\mathrm{g}}(x)\geq0}.
+    Index hg = 0;
+};
+
+} // namespace Optima

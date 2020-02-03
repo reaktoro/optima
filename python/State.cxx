@@ -27,9 +27,21 @@ using namespace Optima;
 void exportState(py::module& m)
 {
     py::class_<State>(m, "State")
-        .def(py::init<>())
+        .def(py::init<const Dims&>())
+        .def_readonly("dims", &State::dims)
         .def_readwrite("x", &State::x)
         .def_readwrite("y", &State::y)
+        .def_readwrite("ybe", &State::ybe)
+        .def_readwrite("ybg", &State::ybg)
+        .def_readwrite("yhe", &State::yhe)
+        .def_readwrite("yhg", &State::yhg)
         .def_readwrite("z", &State::z)
+        .def_readwrite("dxdp", &State::dxdp)
+        .def_readwrite("dydp", &State::dydp)
+        .def_readwrite("dzdp", &State::dzdp)
+        .def_readwrite("xbar", &State::xbar)
+        .def_readwrite("zbar", &State::zbar)
+        .def_readwrite("xbg", &State::xbg)
+        .def_readwrite("xhg", &State::xhg)
         ;
 }

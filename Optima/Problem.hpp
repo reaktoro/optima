@@ -22,34 +22,21 @@
 
 // Optima includes
 #include <Optima/ConstraintFunction.hpp>
+#include <Optima/Dims.hpp>
 #include <Optima/Index.hpp>
 #include <Optima/Matrix.hpp>
 #include <Optima/ObjectiveFunction.hpp>
 
 namespace Optima {
 
-/// The class used to define the dimensions needed to setup an optimization problem.
-struct Dims
-{
-    /// The number of variables in \eq{x}.
-    Index x = 0;
-
-    /// The number of linear equality constraint equations in \eq{A_{\mathrm{e}}x=b_{\mathrm{e}}}.
-    Index be = 0;
-
-    /// The number of linear inequality constraint equations in \eq{A_{\mathrm{g}}x\ge b_{\mathrm{g}}}.
-    Index bg = 0;
-
-    /// The number of non-linear equality constraint equations in \eq{h_{\mathrm{e}}(x)=0}.
-    Index he = 0;
-
-    /// The number of non-linear inequality constraint equations in \eq{h_{\mathrm{g}}(x)\geq0}.
-    Index hg = 0;
-};
-
 /// The class used to define an optimization problem.
 class Problem
 {
+private:
+    struct Impl;
+
+    std::unique_ptr<Impl> pimpl;
+
 public:
     /// Construct a Problem instance with given dimension information.
     Problem(const Dims& dims);
@@ -78,10 +65,10 @@ public:
     /// The right-hand side vector \eq{b_{\mathrm{g}}} in the linear inequality constraints \eq{A_{\mathrm{g}}x\ge b_{\mathrm{g}}}.
     VectorRef bg;
 
-    /// The nonlinear equality constraint function \eq{h_{\mathrm{e}}(x)=0}.
+    /// The nonlinear equality constraint function in \eq{h_{\mathrm{e}}(x)=0}.
     ConstraintFunction he;
 
-    /// The nonlinear inequality constraint function \eq{h_{\mathrm{g}}(x)\geq0}.
+    /// The nonlinear inequality constraint function in \eq{h_{\mathrm{g}}(x)\geq0}.
     ConstraintFunction hg;
 
     /// The objective function \eq{f(x)} of the optimization problem.
@@ -102,19 +89,14 @@ public:
     /// The derivatives *∂b/∂p*.
     Matrix dbdp;
 
-    /// The nonlinear equality constraint function \eq{h_{\mathrm{e}}(x)=0} (to be used in python only!).
+    /// The nonlinear equality constraint function in \eq{h_{\mathrm{e}}(x)=0} (to be used in python only!).
     ConstraintFunction4py __4py_he;
 
-    /// The nonlinear inequality constraint function \eq{h_{\mathrm{g}}(x)\geq0} (to be used in python only!).
+    /// The nonlinear inequality constraint function in \eq{h_{\mathrm{g}}(x)\geq0} (to be used in python only!).
     ConstraintFunction4py __4py_hg;
 
     /// The objective function \eq{f(x)} of the optimization problem (to be used in python only!).
     ObjectiveFunction4py __4py_f;
-
-private:
-    struct Impl;
-
-    std::unique_ptr<Impl> pimpl;
 };
 
 } // namespace Optima

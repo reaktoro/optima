@@ -42,10 +42,10 @@ auto initBasicSolver(const Problem& problem) -> BasicSolver
     const auto mh = mhe + mhg;
     const auto m  = mb + mh;
 
-    // Create the matrix A = [ [Ae, 0, 0], [Ag, -I, 0] ]
+    // Create matrix A = [ [Ae, 0, 0], [Ag, I, 0] ]
     Matrix A = zeros(mb, n);
     A.leftCols(nx) << problem.Ae, problem.Ag;
-    A.middleCols(nx, nu).bottomRows(nu).diagonal().fill(-1.0);
+    A.middleCols(nx, nu).bottomRows(nu).diagonal().fill(1.0);
 
     return BasicSolver({n, m, A});
 }
@@ -81,12 +81,6 @@ struct Solver::Impl
     /// The dimension of number m = mb + mh.
     Index m = 0;
 
-    /// The vector bar(x) = [x, u, v] in the basic optimization problem.
-    Vector xbar;
-
-    /// The vector bar(z) = [zx, zu, zv] in the basic optimization problem.
-    Vector zbar;
-
     /// The right-hand side vector b = [be, bg] in the basic optimization problem.
     Vector b;
 
@@ -119,8 +113,6 @@ struct Solver::Impl
         m  = mb + mh;
 
         // Initialize vectors
-        xbar.resize(n);
-        zbar.resize(n);
         xbar_lower.resize(n);
         xbar_upper.resize(n);
         b.resize(m);
@@ -169,7 +161,7 @@ struct Solver::Impl
             auto Jg = res.J.bottomLeftCorner(dims.hg, nx);
 
             res.J.rightCols(nu + nv).fill(0.0);
-            res.J.bottomRightCorner(nv, nv).diagonal().fill(-1.0);
+            res.J.bottomRightCorner(nv, nv).diagonal().fill(1.0);
 
             ConstraintResult re{he, Je};
             ConstraintResult rg{hg, Jg};
@@ -177,35 +169,29 @@ struct Solver::Impl
             problem.he(x, re);
             problem.hg(x, rg);
 
-            hg.noalias() -= v;
+            hg.noalias() += v;
 
             res.failed = re.failed || rg.failed;
         };
 
-        // Initialize vector bar(x) = [x, u, v]
-        xbar.head(nx) = state.x;
-        xbar.tail(nu + nv).fill(0.0);
-
         // Initialize vector with lower bounds for bar(x) = [x, u, v]
         xbar_lower.head(nx) = problem.xlower;
-        xbar_lower.tail(nu + nv).fill(0.0);
+        xbar_lower.tail(nu + nv).fill(-infinity());
 
         // Initialize vector with upper bounds for bar(x) = [x, u, v]
         xbar_upper.head(nx) = problem.xupper;
-        xbar_lower.tail(nu + nv).fill(infinity());
+        xbar_lower.tail(nu + nv).fill(0.0);
 
         // Initialize vector b = [be, bg]
         b << problem.be, problem.bg;
 
         // Create reference for y vector
-        auto& y = state.y;
+        auto xbar = state.xbar;
+        auto ybar = state.y;
+        auto zbar = state.zbar;
 
         // Solve the constructed basic optimization problem
-        auto result = solver.solve({ f, h, b, xbar_lower, xbar_upper, xbar, y, zbar, iordering, nul, nuu });
-
-        // Set back the calculated variables to state
-        state.x = xbar.head(nx);
-        state.z = zbar.head(nx);
+        auto result = solver.solve({ f, h, b, xbar_lower, xbar_upper, xbar, ybar, zbar, iordering, nul, nuu });
 
         return result;
     }

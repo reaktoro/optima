@@ -1115,8 +1115,8 @@ h(\bar{x}) & =0
 \begin_layout Standard
 \begin_inset Formula 
 \begin{align*}
-A_{\mathrm{g}}x-u & =b_{\mathrm{g}}\\
-u & \geq0
+A_{\mathrm{g}}x+u & =b_{\mathrm{g}}\\
+u & \leq0
 \end{align*}
 
 \end_inset
@@ -1124,9 +1124,17 @@ u & \geq0
 
 \begin_inset Formula 
 \begin{align*}
-h_{\mathrm{g}}(x)-v & =0\\
-v & \geq0
+h_{\mathrm{g}}(x)+v & =0\\
+v & \leq0
 \end{align*}
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\bar{x}=(x,x_{b_{\mathrm{g}}},x_{h_{\mathrm{g}}})=(x,u,v)
+\]
 
 \end_inset
 
@@ -1142,7 +1150,7 @@ v & \geq0
 \begin_inset Formula 
 \[
 A=\begin{bmatrix}A_{\mathrm{e}} & 0 & 0\\
-A_{\mathrm{g}} & -I & 0
+A_{\mathrm{g}} & I & 0
 \end{bmatrix}
 \]
 
@@ -1162,7 +1170,7 @@ b_{\mathrm{g}}
 \begin_inset Formula 
 \[
 h(\bar{x})=\begin{bmatrix}h_{\mathrm{e}}(x)\\
-h_{\mathrm{g}}(x)-v
+h_{\mathrm{g}}(x)+v
 \end{bmatrix}
 \]
 
@@ -1172,7 +1180,7 @@ h_{\mathrm{g}}(x)-v
 \begin_inset Formula 
 \[
 J(\bar{x})=\begin{bmatrix}J_{\mathrm{e}} & 0 & 0\\
-J_{\mathrm{g}} & 0 & -I
+J_{\mathrm{g}} & 0 & I
 \end{bmatrix}
 \]
 
@@ -1181,7 +1189,7 @@ J_{\mathrm{g}} & 0 & -I
 
 \begin_inset Formula 
 \[
-\bar{x}_{l}=(x_{l},0,0)
+\bar{x}_{l}=(x_{l},-\infty,-\infty)
 \]
 
 \end_inset
@@ -1189,7 +1197,7 @@ J_{\mathrm{g}} & 0 & -I
 
 \begin_inset Formula 
 \[
-\bar{x}_{u}=(x_{u},\infty,\infty)
+\bar{x}_{u}=(x_{u},0,0)
 \]
 
 \end_inset
@@ -1220,6 +1228,55 @@ J_{\mathrm{g}} & 0 & -I
 0 & 0 & 0\\
 0 & 0 & 0
 \end{bmatrix}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+z_{x}=g+W^{T}y
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+y=(y_{b_{\mathrm{e}}},y_{b_{\mathrm{g}}},y_{h_{\mathrm{e}}},y_{h_{\mathrm{g}}})
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+z_{x}=g+W^{T}y
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+z=g+A_{\mathrm{e}}^{T}y_{b_{\mathrm{e}}}+A_{\mathrm{g}}^{T}y_{b_{\mathrm{g}}}+J_{\mathrm{e}}^{T}y_{h_{\mathrm{e}}}+J_{\mathrm{g}}^{T}y_{h_{\mathrm{g}}}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\bar{z}=(z,y_{b_{\mathrm{g}}},y_{h_{\mathrm{g}}})
 \]
 
 \end_inset
