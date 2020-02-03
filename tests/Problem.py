@@ -46,7 +46,7 @@ testdata = product(
 )
 
 @mark.parametrize("args", testdata)
-def test_state(args):
+def test_problem(args):
 
     nx, mbe, mbg, mhe, mhg = args
 
@@ -60,34 +60,11 @@ def test_state(args):
     dims.he = mhe
     dims.hg = mhg
 
-    state = State(dims)
+    problem = Problem(dims)
 
-    assert len(state.x) == nx
-    assert len(state.y) == m
-    assert len(state.ybe) == mbe
-    assert len(state.ybg) == mbg
-    assert len(state.yhe) == mhe
-    assert len(state.yhg) == mhg
-    assert len(state.z) == nx
-    assert len(state.xbar) == n
-    assert len(state.zbar) == n
-    assert len(state.xbg) == mbg
-    assert len(state.xhg) == mhg
-
-    assert allclose(state.xbar, zeros(n))
-    assert allclose(state.zbar, zeros(n))
-    assert allclose(state.y, zeros(m))
-
-    state.xbar = linspace(1.0, n, n)
-    state.zbar = linspace(1.0, n, n) * 3
-    state.y    = linspace(1.0, m, m) * 5
-
-    assert allclose(state.x  , state.xbar[:nx])
-    assert allclose(state.ybe, state.y[:mbe])
-    assert allclose(state.ybg, state.y[mbe:][:mbg])
-    assert allclose(state.yhe, state.y[mbe:][mbg:][:mhe])
-    assert allclose(state.yhg, state.y[mbe:][mbg:][mhe:])
-    assert allclose(state.z  , state.zbar[:nx])
-    assert allclose(state.xbg, state.xbar[nx:][:mbg])
-    assert allclose(state.xhg, state.xbar[nx:][mbg:])
-
+    assert allclose(problem.Ae, zeros((mbe, nx)))
+    assert allclose(problem.Ag, zeros((mbg, nx)))
+    assert allclose(problem.be, zeros(mbe))
+    assert allclose(problem.bg, zeros(mbg))
+    assert allclose(problem.xlower, ones(nx) * -inf)
+    assert allclose(problem.xupper, ones(nx) *  inf)
