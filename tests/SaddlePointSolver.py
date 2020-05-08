@@ -165,7 +165,7 @@ def test_saddle_point_solver(args):
 
     # Check the residual of the equation M * s = r
 
-    tol = 1e-9 if structure_G == 'denseG' else 1e-14
+    tol = 1e-9 if structure_G == 'denseG' else 1e-13
 
     succeeded = norm(M @ s - r) / norm(r) < tol
 

@@ -94,7 +94,7 @@ def matrix_with_one_basic_fixed_variable(m, n, ifixed=[]):
     W = matrix_with_linearly_independent_rows_only(m, n, ifixed)
     if len(ifixed) != 0:
         ifree = list(set(range(n)) - set(ifixed))  # indices of free variables
-        W[-1, ifree] = 0.0
+        W[-1, ifree] = 0.0  # last row is all zeros, except columns corresponding to fixed variables
     return W
 
 
@@ -102,8 +102,21 @@ def matrix_with_two_basic_fixed_variables(m, n, ifixed=[]):
     W = matrix_with_linearly_independent_rows_only(m, n, ifixed)
     if len(ifixed) != 0:
         ifree = list(set(range(n)) - set(ifixed))  # indices of free variables
-        W[-2, ifree] = 0.0
-        W[-1, ifree] = 0.0
+        W[-2, ifree] = 0.0   # second-last row is all zeros, except columns corresponding to fixed variables
+        W[-1, ifree] = 0.0  # last row is all zeros, except columns corresponding to fixed variables
+    return W
+
+
+def matrix_with_one_zero_column(m, n, ifixed=[]):
+    W = matrix_with_linearly_independent_rows_only(m, n, ifixed)
+    W[:, 0] = 0.0  # first column of the matrix is zero (i.e. when first variable does not participate in any linear constraints)
+    return W
+
+
+def matrix_with_two_zero_columns(m, n, ifixed=[]):
+    W = matrix_with_linearly_independent_rows_only(m, n, ifixed)
+    W[:, 0] = 0.0  # first column of the matrix is zero (i.e. when first variable does not participate in any linear constraints)
+    W[:, 1] = 0.0  # second column of the matrix is zero (i.e. when second variable does not participate in any linear constraints)
     return W
 
 
@@ -120,5 +133,7 @@ testing_matrices_W = [
     matrix_with_one_linearly_dependent_row,
     matrix_with_two_linearly_dependent_rows,
     matrix_with_one_basic_fixed_variable,
-    matrix_with_two_basic_fixed_variables
+    matrix_with_two_basic_fixed_variables,
+    matrix_with_one_zero_column,
+    matrix_with_two_zero_columns
 ]
