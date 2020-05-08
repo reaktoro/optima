@@ -48,6 +48,10 @@ class TensorFixedSize : public TensorBase<TensorFixedSize<Scalar_, Dimensions_, 
       RawAccess = true
     };
 
+  //===- Tensor block evaluation strategy (see TensorBlock.h) -------------===//
+  typedef internal::TensorBlockNotImplemented TensorBlock;
+  //===--------------------------------------------------------------------===//
+
   typedef Dimensions_ Dimensions;
   static const std::size_t NumIndices = Dimensions::count;
 
