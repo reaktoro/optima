@@ -23,6 +23,9 @@ option(OPTIMA_BUILD_DOCS   "Build documentation." OFF)
 option(OPTIMA_BUILD_BENCH  "Build benchmarks." OFF)
 option(OPTIMA_BUILD_ALL    "Build everything." OFF)
 
+# Define if shared library should be build instead of static.
+option(BUILD_SHARED_LIBS "Build shared libraries." ON)
+
 # Option to allow or not Eigen to allocate memory at runtime
 option(EIGEN_RUNTIME_NO_MALLOC "Allow or not Eigen to allocate memory at runtime" OFF)
 

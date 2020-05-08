@@ -4,5 +4,6 @@ include_directories(${PROJECT_SOURCE_DIR})
 
 foreach(CPPFILE ${CPPFILES})
     get_filename_component(CPPNAME ${CPPFILE} NAME_WE)
-    add_executable(${CPPNAME} $<TARGET_OBJECTS:OptimaObject> ${CPPFILE})
+    add_executable(${CPPNAME} ${CPPFILE})
+    target_link_libraries(${CPPNAME} Optima::Optima)
 endforeach()
