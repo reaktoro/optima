@@ -21,6 +21,11 @@ set_target_properties(Optima PROPERTIES
 # Add the root directory of the project to the include list
 target_include_directories(Optima PRIVATE ${PROJECT_SOURCE_DIR})
 
+# Add the include paths to the Optima target and propagate to dependent codes
+target_include_directories(Optima
+    PRIVATE ${PROJECT_SOURCE_DIR}
+    PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+
 # Install Optima C++ library
 install(TARGETS Optima
     EXPORT OptimaTargets

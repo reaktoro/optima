@@ -72,3 +72,6 @@ endif()
 add_custom_target(tests
     COMMAND pytest
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/tests")
+
+# Install the cmake config files that permit users to use find_package(Optima)
+include(OptimaInstallCMakeConfigFiles)
