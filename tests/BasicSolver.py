@@ -189,7 +189,7 @@ def test_basic_solver(args):
 
     # Create the options for the optimization calculation
     options = Options()
-    options.output.active = True
+    options.output.active = False
     options.kkt.method = method
 
     # Solve the optimization problem
