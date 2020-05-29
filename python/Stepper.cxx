@@ -42,9 +42,9 @@ void exportStepper(py::module& m)
         return self.decompose({x, y, g, H, J, xlower, xupper, iordering, nul, nuu});
     };
 
-    auto solve = [](Stepper& self, VectorConstRef x, VectorConstRef y, VectorConstRef b, VectorConstRef h, VectorConstRef g, VectorRef dx, VectorRef dy, VectorRef rx, VectorRef ry, VectorRef z)
+    auto solve = [](Stepper& self, VectorConstRef x, VectorConstRef y, VectorConstRef b, VectorConstRef h, VectorConstRef g, MatrixConstRef4py H, VectorRef dx, VectorRef dy, VectorRef rx, VectorRef ry, VectorRef z)
     {
-        self.solve({x, y, b, h, g, dx, dy, rx, ry, z});
+        self.solve({x, y, b, h, g, H, dx, dy, rx, ry, z});
     };
 
     Matrix tmp_dxdp, tmp_dydp, tmp_dzdp;

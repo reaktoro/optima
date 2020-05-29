@@ -45,6 +45,9 @@ struct SaddlePointSolverInitArgs
 /// The arguments for method SaddlePointSolver::decompose.
 struct SaddlePointSolverDecomposeArgs
 {
+    /// The right-hand side vector *a* in the saddle point problem.
+    VectorConstRef a;
+
     /// The Hessian matrix *H* in the saddle point problem.
     MatrixConstRef H;
 

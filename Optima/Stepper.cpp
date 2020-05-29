@@ -33,9 +33,11 @@ struct Stepper::Impl
 {
     Options options;          ///< The options for the optimization calculation
     Matrix W;                 ///< The coefficient matrix W = [A; J] of the linear/nonlinear equality constraints.
-    Vector z;                 ///< The instability measures of the variables defined as `z = g + tr(W)*y`.
-    Vector s;                 ///< The solution vector `s = [dx dy]` for the saddle point problem.
-    Vector r;                 ///< The right-hand side residual vector `r = [rx ry]`  for the saddle point problem.
+    Vector z;                 ///< The instability measures of the variables defined as z = g + tr(W)*y.
+    Vector sx;                ///< The solution vector x in the saddle point problem.
+    Vector sy;                ///< The solution vector y in the saddle point problem.
+    Vector sa;                ///< The right-hand side vector a in the saddle point problem.
+    Vector sb;                ///< The right-hand side vector b in the saddle point problem.
     Index n      = 0;         ///< The number of variables in x.
     Index ns     = 0;         ///< The number of stable variables in x.
     Index nu     = 0;         ///< The number of unstable (lower/upper) variables in x.
@@ -73,9 +75,11 @@ struct Stepper::Impl
         t  = n + m;
 
         // Initialize auxiliary vectors
-        z = zeros(n);
-        r = zeros(t);
-        s = zeros(t);
+        z  = zeros(n);
+        sx = zeros(n);
+        sy = zeros(m);
+        sa = zeros(n);
+        sb = zeros(m);
 
         // Initialize the initial ordering of the variables
         iordering = indices(n);
@@ -175,10 +179,18 @@ struct Stepper::Impl
         // The indices of the lower and upper unstable variables
         auto iu = iordering.tail(nu);
 
+        // Compute the right-hand side vector a in the saddle point problem
+        sx = x;
+        sx(iu).fill(0.0);
+        sa = H*sx - g;
+
+        // Set entries corresponding to unstable variables to x (to ensure fixed variables remain fixed)
+        sa(iu) = x(iu);
+
         // Decompose the saddle point matrix (this decomposition is later used in method solve, possibly many times!)
         // Consider lower/upper unstable variables as "fixed" variables in the saddle point problem.
         // Reason: we do not need to compute Newton steps for the currently unstable variables!
-        solver.decompose({ H, J, Matrix{}, iu });
+        solver.decompose({ sa, H, J, Matrix{}, iu });
 
         // Export the updated ordering of the variables
         ivariables = iordering;
@@ -192,6 +204,7 @@ struct Stepper::Impl
         auto y       = args.y;
         auto b       = args.b;
         auto g       = args.g;
+        auto H       = args.H;
         auto h       = args.h;
         auto dx      = args.dx;
         auto dy      = args.dy;
@@ -199,6 +212,7 @@ struct Stepper::Impl
         auto ry      = args.ry;
         auto z       = args.z;
         const auto A = W.topRows(ml);
+        const auto J = W.bottomRows(mn);
 
         // Ensure consistent dimensions of vectors/matrices.
         assert(x.rows() == n);
@@ -224,8 +238,24 @@ struct Stepper::Impl
         ry.head(ml).noalias() = -(A*x - b);
         ry.tail(mn).noalias() = -h;
 
+        // Compute the right-hand side vector a in the saddle point problem
+        sx = x;
+        sx(iu).fill(0.0);
+        sa = H*sx - g;
+
+        // Set entries corresponding to unstable variables to x (to ensure fixed variables remain fixed)
+        sa(iu) = x(iu);
+
+        // Compute the right-hand side vector b in the saddle point problem
+        sb.head(ml).noalias() = b;
+        sb.tail(mn).noalias() = J*x - h;
+
         // Solve the saddle point problem
-        solver.solve({ rx, ry, dx, dy });
+        solver.solve({ sa, sb, sx, sy });
+
+        // Finalize the computation of the steps dx and dy
+        dx = sx - x;
+        dy = sy - y;
     }
 
     /// Compute the sensitivity derivatives of the saddle point problem.

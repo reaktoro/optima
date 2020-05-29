@@ -157,7 +157,7 @@ def test_saddle_point_solver(args):
     # Create a SaddlePointSolver to solve the saddle point problem
     solver = SaddlePointSolver(n, m, A)
     solver.setOptions(options)
-    solver.decompose(H, J, G, ifixed)
+    solver.decompose(a, H, J, G, ifixed)
     solver.solve(x, y)
 
     # Create solution vector s = [x, y]

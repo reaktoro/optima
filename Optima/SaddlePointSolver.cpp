@@ -19,6 +19,7 @@
 
 // C++ includes
 #include <cassert>
+#include <cmath>
 
 // Eigen includes
 #include <Optima/deps/eigen3/Eigen/Dense>
@@ -32,6 +33,8 @@
 #include <Optima/Utils.hpp>
 
 namespace Optima {
+
+using std::abs;
 
 struct SaddlePointSolver::Impl
 {
@@ -71,6 +74,7 @@ struct SaddlePointSolver::Impl
     Indices iordering; ///< The ordering of the variables as (free-basic, free-non-basic, fixed-basic, fixed-non-basic)
 
     Eigen::PartialPivLU<Matrix> lu; ///< The LU decomposition solver.
+    // Eigen::FullPivLU<Matrix> lu; ///< The LU decomposition solver.
 
     bool initialized = false; ///< The boolean flag that indicates whether the saddle point solver has been initialized.
     bool degenerate = false;  ///< The boolean flag that indicates that the decomposed saddle point matrix was degenerate with no free variables.
@@ -127,9 +131,28 @@ struct SaddlePointSolver::Impl
         // The indices of the fixed (ifixed) variables
         const auto ifixed = iordering.tail(nf);
 
+        // Define the Dv operator
+        const auto Dv = [](const auto& vi)
+        {
+            constexpr const auto eps = std::numeric_limits<double>::epsilon();
+            const auto aux = abs(vi);
+            return aux < eps ? 1.0 : aux;
+        };
+
         // Update the priority weights for the update of the canonical form
-        weights.noalias() = args.H.diagonal();
-        weights.noalias() = abs(inv(weights));
+        for(auto i = 0; i < n; ++i)
+        {
+            const auto Dai = Dv(args.a[i]);
+            const auto DHi = Dv(args.H(i, i));
+            weights[i] = 1.0/(Dai * DHi);
+        }
+
+        // const auto fakezero = std::numeric_limits<double>::min(); // 2.22507e-308
+        // weights.noalias() = args.H.diagonal();
+        // weights.noalias() = (weights.array() == 0).select(fakezero, weights); // replace zero by fakezero to avoid division by zero
+        // weights.noalias() = abs(inv(weights));
+
+        // Set negative priority weights for the fixed variables
         weights(ifixed).noalias() = -linspace(nf, 1, nf);
 
         // Update the canonical form and the ordering of the variables

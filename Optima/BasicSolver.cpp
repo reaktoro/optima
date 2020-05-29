@@ -30,6 +30,24 @@
 #include <Optima/Utils.hpp>
 
 namespace Optima {
+namespace detail {
+
+// auto applyStep(VectorConstRef p, VectorConstRef dp, VectorConstRef plower, VectorConstRef pupper, double tau)
+// {
+//     auto ilimiting = p.size();
+//     auto alpha = 1.0;
+//     const auto np = p.size();
+//     for(auto i = 0; i < np; ++i)
+//     {
+//         const auto qi = p[i] + alpha*dp[i];
+//         if(qi <= plower[i])
+//             alpha = (plower[i] - p[i])/dp[i]; // p[i] + alpha*dp[i] === plower[i]
+//         if(qi <= plower[i] || qi >= pupper[i])
+//     }
+
+// }
+
+} // namespace detail
 
 /// The implementation of the solver for basic optimization problems.
 struct BasicSolver::Impl
@@ -306,7 +324,7 @@ struct BasicSolver::Impl
         stepper.decompose({ x, y, g, H, J, xlower, xupper, iordering, nul, nuu });
 
         // Calculate the Newton step
-        stepper.solve({ x, y, b, h, g, dx, dy, rx, ry, z });
+        stepper.solve({ x, y, b, h, g, H, dx, dy, rx, ry, z });
 
         // Update the time spent in linear systems
 		result.time_linear_systems += timer.elapsed();
@@ -441,88 +459,81 @@ struct BasicSolver::Impl
 	// Update the variables (x, y, z, w) with a conservative Newton stepping scheme
 	auto applyNewtonSteppingConservative(BasicSolverSolveArgs args) -> void
 	{
-//		// Aliases to variables x, y, z, w
-//		VectorRef x = args.x;
-//		VectorRef y = args.y;
-//		VectorRef z = args.z;
-//		VectorRef w = args.w;
-//
-//		// Aliases to Newton steps calculated before
-//		VectorConstRef dx = stepper.step().x;
-//		VectorConstRef dy = stepper.step().y;
-//		VectorConstRef dz = stepper.step().z;
-//		VectorConstRef dw = stepper.step().w;
-//
-//		// The indices of variables with lower/upper bounds and fixed values
-//		IndicesConstRef ilower = constraints.variablesWithLowerBounds();
-//		IndicesConstRef iupper = constraints.variablesWithUpperBounds();
-//		IndicesConstRef ifixed = constraints.variablesWithFixedValues();
-//
-//		// Initialize the step length factor
-//		double alphax = xStepLength(x, dx, xlower, xupper, tau);
-//		double alphaz = zStepLength(z, dz, tau);
-//		double alphaw = wStepLength(w, dw, tau);
-//		double alpha = alphax;
-//
-//		// The number of tentatives to find a trial iterate that results in finite objective result
-//		unsigned tentatives = 0;
-//
-//		// Repeat until a suitable xtrial iterate if found such that f(xtrial) is finite
-//		for(; tentatives < 10; ++tentatives)
-//		{
-//			// Calculate the current trial iterate for x
-//			xtrial = x + alpha * dx;
-//
-//			// Evaluate the objective function at the trial iterate
-//			f.requires.f = true;
-//			f.requires.g = false;
-//			f.requires.H = false;
+		// Aliases to variables x, y, z, w
+		// VectorRef x = args.x;
+		// VectorRef y = args.y;
+		// VectorRef z = args.z;
+
+		// // The indices of variables with lower/upper bounds and fixed values
+		// IndicesConstRef ilower = constraints.variablesWithLowerBounds();
+		// IndicesConstRef iupper = constraints.variablesWithUpperBounds();
+		// IndicesConstRef ifixed = constraints.variablesWithFixedValues();
+
+		// // Initialize the step length factor
+		// double alphax = xStepLength(x, dx, xlower, xupper, tau);
+		// double alphaz = zStepLength(z, dz, tau);
+		// double alphaw = wStepLength(w, dw, tau);
+		// double alpha = alphax;
+
+		// // The number of tentatives to find a trial iterate that results in finite objective result
+		// unsigned tentatives = 0;
+
+		// // Repeat until a suitable xtrial iterate if found such that f(xtrial) is finite
+		// for(; tentatives < 10; ++tentatives)
+		// {
+		// 	// Calculate the current trial iterate for x
+		// 	xtrial = x + alpha * dx;
+
+		// 	// Evaluate the objective function at the trial iterate
+		// 	f.requires.f = true;
+		// 	f.requires.g = false;
+		// 	f.requires.H = false;
 
 
-//			f = objective(xtrial);
-//
-//			args.f = f.f;
-//			args.g = f.g;
-//			args.H = f.H;
-//
-//			// Leave the loop if f(xtrial) is finite
-//			if(isfinite(f))
-//				break;
-//
-//			// Decrease alpha in a hope that a shorter step results f(xtrial) finite
-//			alpha *= 0.01;
-//		}
-//
-//		// Return false if xtrial could not be found s.t. f(xtrial) is finite
-//		if(tentatives == 10)
-//			return false;
-//
-//		// Update the iterate x from xtrial
-//		x = xtrial;
-//
-//		// Update the z-Lagrange multipliers
-//		z += alphaz * dz;
-//
-//		// Update the w-Lagrange multipliers
-//		w += alphaw * dw;
-//
-//		// Update the y-Lagrange multipliers
-//		y += dy;
-//
-//		// Update the gradient and Hessian at x
-//		f.requires.f = false;
-//		f.requires.g = true;
-//		f.requires.H = true;
+		// 	f = objective(xtrial);
+
+		// 	args.f = f.f;
+		// 	args.g = f.g;
+		// 	args.H = f.H;
+
+		// 	// Leave the loop if f(xtrial) is finite
+		// 	if(isfinite(f))
+		// 		break;
+
+		// 	// Decrease alpha in a hope that a shorter step results f(xtrial) finite
+		// 	alpha *= 0.01;
+		// }
+
+		// // Return false if xtrial could not be found s.t. f(xtrial) is finite
+		// if(tentatives == 10)
+		// 	return false;
+
+		// // Update the iterate x from xtrial
+		// x = xtrial;
+
+		// // Update the z-Lagrange multipliers
+		// z += alphaz * dz;
+
+		// // Update the w-Lagrange multipliers
+		// w += alphaw * dw;
+
+		// // Update the y-Lagrange multipliers
+		// y += dy;
+
+		// // Update the gradient and Hessian at x
+		// f.requires.f = false;
+		// f.requires.g = true;
+		// f.requires.H = true;
 
 
-//		f = objective(x);
-//
-//		args.f = f.f;
-//		args.g = f.g;
-//		args.H = f.H;
-//
-//		// Return true as found xtrial results in finite f(xtrial)
-//		return true;
+		// f = objective(x);
+
+		// args.f = f.f;
+		// args.g = f.g;
+		// args.H = f.H;
+
+		// // Return true as found xtrial results in finite f(xtrial)
+		// return true;
 	};
 
 	/// Return true if the calculation converged.

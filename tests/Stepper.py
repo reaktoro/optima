@@ -230,7 +230,7 @@ def test_active_stepper(args):
     # Initialize, decompose the saddle point matrix, and solve the Newton step
     stepper.initialize(xlower, xupper)
     stepper.decompose(x, y, g, H, J, xlower, xupper, iordering, nul, nuu)
-    stepper.solve(x, y, b, h, g, dx, dy, rx, ry, z)
+    stepper.solve(x, y, b, h, g, H, dx, dy, rx, ry, z)
 
     # Compute the sensitivity derivatives of the optimal solution
     np = 5  # the number of parameters

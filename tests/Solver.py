@@ -147,8 +147,12 @@ def test_basic_solver(args):
     z[iunstable_lower] =  123  # lower unstable variables have positive value for z
     z[iunstable_upper] = -123  # upper unstable variables have negative value for z
 
-    # Assemble the coefficient matrix A in Ax = b
+    # Create the Hessian matrix *H*
     H = matrix_non_singular(n)
+
+    # Ensure off-diagonal entries are zero if Rangespace method is used
+    if method == SaddlePointMethod.Rangespace:
+        H = diag(diag(H))
 
     # Zero out rows and columns in H corresponding to fixed variables for the sake of computing consistent c vector below
     H[ifixed, :] = H[:, ifixed] = 0.0

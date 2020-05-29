@@ -68,6 +68,7 @@ struct StepperSolveArgs
     VectorConstRef b;          ///< The right-hand side vector *b* of the linear equality constraints *Ax = b*.
     VectorConstRef h;          ///< The value of the equality constraint function.
     VectorConstRef g;          ///< The gradient of the objective function.
+    MatrixConstRef H;          ///< The Hessian of the objective function.
     VectorRef dx;              ///< The output step for the primal variables *x*.
     VectorRef dy;              ///< The output step for the Lagrange multipliers *y*.
     VectorRef rx;              ///< The output residuals of the first-order optimality conditions.
