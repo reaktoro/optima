@@ -132,19 +132,6 @@ struct Canonicalizer::Impl
         threshold = std::abs(lu.maxPivot()) * lu.threshold() * std::max(A.rows(), A.cols());
     }
 
-    /// Rationalize the entries in the canonical form.
-    auto rationalize(Index maxdenominator) -> void
-    {
-        auto rational = [&](double val) -> double
-        {
-            auto pair = Optima::rationalize(val, maxdenominator);
-            return static_cast<double>(std::get<0>(pair))/std::get<1>(pair);
-        };
-
-        std::transform(S.data(), S.data() + S.size(), S.data(), rational);
-        std::transform(R.data(), R.data() + R.size(), R.data(), rational);
-    }
-
     /// Swap a basic variable by a non-basic variable.
     auto updateWithSwapBasicVariable(Index ib, Index in) -> void
     {
@@ -359,11 +346,6 @@ auto Canonicalizer::updateWithSwapBasicVariable(Index ibasic, Index inonbasic) -
 auto Canonicalizer::updateWithPriorityWeights(VectorConstRef weights) -> void
 {
     pimpl->updateWithPriorityWeights(weights);
-}
-
-auto Canonicalizer::rationalize(Index maxdenominator) -> void
-{
-    pimpl->rationalize(maxdenominator);
 }
 
 } // namespace Optima

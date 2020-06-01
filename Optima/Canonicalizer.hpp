@@ -107,16 +107,6 @@ public:
     /// Update the canonical form with a new ordering for the variables.
     auto updateWithNewOrdering(IndicesConstRef ordering) -> void;
 
-    /// Rationalize the entries in the canonical form.
-    /// This method should be used if the entries in matrix \eq{A} are rational numbers and
-    /// round-off errors introduced by the canonicalization should be eliminated as much as possible.
-    /// This method will replace all entries in matrices \eq{R} and \eq{S} by the nearest rational
-    /// number. To to this, an estimate for the maximum denominator among all entries in \eq{A}
-    /// is needed. For example, one might know in advance that all entries in \eq{A} are rationals
-    /// with denominators certainly not greater than 1000.
-    /// @param maxdenominator The estimate for the maximum denominator.
-    auto rationalize(Index maxdenominator) -> void;
-
 private:
     struct Impl;
 
