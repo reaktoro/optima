@@ -40,6 +40,7 @@ void exportUtils(py::module& m)
     m.def("minimizeGoldenSectionSearch", &minimizeGoldenSectionSearch);
     m.def("minimizeBrent", &minimizeBrent);
     m.def("inverseShermanMorrison", &inverseShermanMorrison);
+    m.def("rational", &rational);
     m.def("rationalize", &rationalize);
     m.def("matrixStructure", &matrixStructure);
     m.def("isZeroMatrix", &isZeroMatrix);

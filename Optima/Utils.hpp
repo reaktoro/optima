@@ -109,9 +109,26 @@ auto inverseShermanMorrison(const Matrix& invA, const Vector& D) -> Matrix;
 /// The algorithm is based on Farey sequence as shown
 /// [here](http://www.johndcook.com/blog/2010/10/20/best-rational-approximation/).
 /// @param x The real number.
-/// @param n The maximum denominator.
+/// @param maxden The maximum denominator.
 /// @return A tuple containing the numerator and denominator.
-auto rationalize(double x, unsigned n) -> std::tuple<long, long>;
+auto rational(double x, unsigned maxden) -> std::tuple<long, long>;
+
+/// Rationalize the entries in a matrix/vector.
+/// This method will reset the values in a matrix by the closest rational
+/// number, in case the original matrix was made of rational numbers and its
+/// transformation was spoiled with round-off errors.
+/// @param data The pointer to the beginning of a matrix/vector data.
+/// @param size The size of the matrix/vector.
+/// @param maxden The maximum denominator.
+auto rationalize(double* data, unsigned size, unsigned maxden) -> void;
+
+/// Replace residual round-off errors by zeros in a matrix/vector.
+/// This method replaces all entries in a matrix that are below a given
+/// threshold by zeroes. These entries are considered residual round-off
+/// errors, as a result of linear algebra operations on them. If a zero
+/// threshold is given, a threshold is calculated as the product of epsilon
+/// value and the maximum absolute value in the matrix.
+auto cleanResidualRoundoffErrors(Matrix& M, double threshold=0) -> void;
 
 /// Used to describe the structure of a matrix.
 enum class MatrixStructure

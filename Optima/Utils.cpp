@@ -356,7 +356,7 @@ auto farey(double x, unsigned n) -> std::tuple<long, long>
     return (b > n) ? std::make_tuple(c, d) : std::make_tuple(a, b);
 }
 
-auto rationalize(double x, unsigned n) -> std::tuple<long, long>
+auto rational(double x, unsigned n) -> std::tuple<long, long>
 {
     long a, b, sign = (x >= 0) ? +1 : -1;
     if(std::abs(x) > 1.0) {
@@ -367,6 +367,37 @@ auto rationalize(double x, unsigned n) -> std::tuple<long, long>
         std::tie(a, b) = farey(std::abs(x), n);
         return std::make_tuple(sign*a, b);
     }
+}
+
+auto rationalize(double* data, unsigned size, unsigned maxden) -> void
+{
+    auto ratio = [&](double val) -> double
+    {
+        auto pair = Optima::rational(val, maxden);
+        return static_cast<double>(std::get<0>(pair))/std::get<1>(pair);
+    };
+    std::transform(data, data + size, data, ratio);
+}
+
+/// Replace residual round-off errors by zeros in a vector.
+auto cleanResidualRoundoffErrors(double* data, std::size_t size, double threshold) -> void
+{
+    using std::abs;
+    if(threshold <= 0.0)
+    {
+        const auto eps = std::numeric_limits<double>::epsilon();
+        const auto max = Vector::Map(data, size).array().abs().maxCoeff();
+        threshold = eps*max;
+    }
+    for(auto i = 0; i < size; ++i)
+        if(abs(data[i]) <= threshold)
+            data[i] = 0.0;
+}
+
+/// Replace residual round-off errors by zeros in a matrix.
+auto cleanResidualRoundoffErrors(Matrix& M, double threshold) -> void
+{
+    cleanResidualRoundoffErrors(M.data(), M.size(), threshold);
 }
 
 auto matrixStructure(MatrixConstRef mat) -> MatrixStructure
