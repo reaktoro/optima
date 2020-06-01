@@ -131,7 +131,7 @@ struct SaddlePointSolver::Impl
         // The indices of the fixed (ifixed) variables
         const auto ifixed = iordering.tail(nf);
 
-        // Define the Dv operator
+        // Define the Dv operator for the priority weights calculation
         const auto Dv = [](const auto& vi)
         {
             constexpr const auto eps = std::numeric_limits<double>::epsilon();
@@ -146,11 +146,6 @@ struct SaddlePointSolver::Impl
             const auto DHi = Dv(args.H(i, i));
             weights[i] = 1.0/(Dai * DHi);
         }
-
-        // const auto fakezero = std::numeric_limits<double>::min(); // 2.22507e-308
-        // weights.noalias() = args.H.diagonal();
-        // weights.noalias() = (weights.array() == 0).select(fakezero, weights); // replace zero by fakezero to avoid division by zero
-        // weights.noalias() = abs(inv(weights));
 
         // Set negative priority weights for the fixed variables
         weights(ifixed).noalias() = -linspace(nf, 1, nf);
