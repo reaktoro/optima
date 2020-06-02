@@ -334,7 +334,7 @@ struct BasicSolver::Impl
 	auto updateResultErrors() -> void
 	{
 		// Update the current optimality, feasibility and complementarity errors
-		result.error_optimality  = norminf(rx);
+		result.error_optimality  = norminf(rx)/norminf(g);
 		result.error_feasibility = norminf(ry);
 
 		// Update the current maximum error of the optimization calculation
