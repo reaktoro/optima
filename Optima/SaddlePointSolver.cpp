@@ -74,7 +74,6 @@ struct SaddlePointSolver::Impl
     Indices iordering; ///< The ordering of the variables as (free-basic, free-non-basic, fixed-basic, fixed-non-basic)
 
     Eigen::PartialPivLU<Matrix> lu; ///< The LU decomposition solver.
-    // Eigen::FullPivLU<Matrix> lu; ///< The LU decomposition solver.
 
     bool initialized = false; ///< The boolean flag that indicates whether the saddle point solver has been initialized.
     bool degenerate = false;  ///< The boolean flag that indicates that the decomposed saddle point matrix was degenerate with no free variables.
@@ -131,21 +130,11 @@ struct SaddlePointSolver::Impl
         // The indices of the fixed (ifixed) variables
         const auto ifixed = iordering.tail(nf);
 
-        // Define the Dv operator for the priority weights calculation
-        const auto Dv = [](const auto& vi)
-        {
-            constexpr const auto eps = std::numeric_limits<double>::epsilon();
-            const auto aux = abs(vi);
-            return aux < eps ? 1.0 : aux;
-        };
-
         // Update the priority weights for the update of the canonical form
-        for(auto i = 0; i < n; ++i)
-        {
-            const auto Dai = Dv(args.a[i]);
-            const auto DHi = Dv(args.H(i, i));
-            weights[i] = 1.0/(Dai * DHi);
-        }
+        const auto fakezero = std::numeric_limits<double>::min(); // 2.22507e-308
+        weights.noalias() = args.H.diagonal();
+        weights.noalias() = (weights.array() == 0).select(fakezero, weights); // replace zero by fakezero to avoid division by zero
+        weights.noalias() = abs(inv(weights));
 
         // Set negative priority weights for the fixed variables
         weights(ifixed).noalias() = -linspace(nf, 1, nf);
@@ -791,6 +780,17 @@ struct SaddlePointSolver::Impl
         // Calculate b' = R * b
         b.noalias() = R * args.b;
 
+        // Ensure residual round-off errors are cleaned in b' after R*b.
+        // This improves accuracy and statbility in degenerate cases when some
+        // variables need to have tiny values. For example, suppose the
+        // equality constraints effectively enforce `xi - 2xj = 0`, for
+        // variables `i` and `j`, which, combined with the optimality
+        // constraints, results in an exact solution of `xj = 1e-31`. If,
+        // instead, we don't clean these residual round-off errors, we may
+        // instead have `xi - 2xj = eps`, where `eps` is a small residual error
+        // (e.g., 1e-16). This will cause `xi = eps`, and not `xi = 2e-31`.
+        cleanResidualRoundoffErrors(b);
+
         // Calculate bbx'' = bbx' - Sbxnf*anf
         bbx -= Sbxnf * anf;
 
@@ -849,6 +849,17 @@ struct SaddlePointSolver::Impl
 
         // Calculate b' = R * b
         b.noalias() = R * args.b;
+
+        // Ensure residual round-off errors are cleaned in b' after R*b.
+        // This improves accuracy and statbility in degenerate cases when some
+        // variables need to have tiny values. For example, suppose the
+        // equality constraints effectively enforce `xi - 2xj = 0`, for
+        // variables `i` and `j`, which, combined with the optimality
+        // constraints, results in an exact solution of `xj = 1e-31`. If,
+        // instead, we don't clean these residual round-off errors, we may
+        // instead have `xi - 2xj = eps`, where `eps` is a small residual error
+        // (e.g., 1e-16). This will cause `xi = eps`, and not `xi = 2e-31`.
+        cleanResidualRoundoffErrors(b);
 
         // Calculate bbx'' = bbx' - Sbxnf*anf
         bbx -= Sbxnf * anf;
@@ -928,6 +939,17 @@ struct SaddlePointSolver::Impl
         a.noalias() = args.a(iordering);
 
         b.noalias() = R * args.b;
+
+        // Ensure residual round-off errors are cleaned in b' after R*b.
+        // This improves accuracy and statbility in degenerate cases when some
+        // variables need to have tiny values. For example, suppose the
+        // equality constraints effectively enforce `xi - 2xj = 0`, for
+        // variables `i` and `j`, which, combined with the optimality
+        // constraints, results in an exact solution of `xj = 1e-31`. If,
+        // instead, we don't clean these residual round-off errors, we may
+        // instead have `xi - 2xj = eps`, where `eps` is a small residual error
+        // (e.g., 1e-16). This will cause `xi = eps`, and not `xi = 2e-31`.
+        cleanResidualRoundoffErrors(b);
 
         anx -= tr(Sb2nx) * ab2;
         bbx -= Sbxnf * anf;
@@ -1026,6 +1048,17 @@ struct SaddlePointSolver::Impl
 
         b.noalias() = R * args.b;
 
+        // Ensure residual round-off errors are cleaned in b' after R*b.
+        // This improves accuracy and statbility in degenerate cases when some
+        // variables need to have tiny values. For example, suppose the
+        // equality constraints effectively enforce `xi - 2xj = 0`, for
+        // variables `i` and `j`, which, combined with the optimality
+        // constraints, results in an exact solution of `xj = 1e-31`. If,
+        // instead, we don't clean these residual round-off errors, we may
+        // instead have `xi - 2xj = eps`, where `eps` is a small residual error
+        // (e.g., 1e-16). This will cause `xi = eps`, and not `xi = 2e-31`.
+        cleanResidualRoundoffErrors(b);
+
         anx -= tr(Sb2nx) * ab2;
         bbx -= Sbxnf * anf;
         bbf -= Sbfnf * anf + abf;
@@ -1117,7 +1150,18 @@ struct SaddlePointSolver::Impl
         a.noalias() = args.a(iordering);
 
         // Calculate b' = R*b
-        b.noalias() = R*args.b;
+        b.noalias() = R * args.b;
+
+        // Ensure residual round-off errors are cleaned in b' after R*b.
+        // This improves accuracy and statbility in degenerate cases when some
+        // variables need to have tiny values. For example, suppose the
+        // equality constraints effectively enforce `xi - 2xj = 0`, for
+        // variables `i` and `j`, which, combined with the optimality
+        // constraints, results in an exact solution of `xj = 1e-31`. If,
+        // instead, we don't clean these residual round-off errors, we may
+        // instead have `xi - 2xj = eps`, where `eps` is a small residual error
+        // (e.g., 1e-16). This will cause `xi = eps`, and not `xi = 2e-31`.
+        cleanResidualRoundoffErrors(b);
 
         // Calculate bbx'' = bbx' - Sbxnf*anf
         bbx -= Sbxnf*anf;
@@ -1206,7 +1250,18 @@ struct SaddlePointSolver::Impl
         af.noalias() = args.a(ifixed);
 
         // Calculate b' = R*b
-        b.noalias() = R*args.b;
+        b.noalias() = R * args.b;
+
+        // Ensure residual round-off errors are cleaned in b' after R*b.
+        // This improves accuracy and statbility in degenerate cases when some
+        // variables need to have tiny values. For example, suppose the
+        // equality constraints effectively enforce `xi - 2xj = 0`, for
+        // variables `i` and `j`, which, combined with the optimality
+        // constraints, results in an exact solution of `xj = 1e-31`. If,
+        // instead, we don't clean these residual round-off errors, we may
+        // instead have `xi - 2xj = eps`, where `eps` is a small residual error
+        // (e.g., 1e-16). This will cause `xi = eps`, and not `xi = 2e-31`.
+        cleanResidualRoundoffErrors(b);
 
         // Calculate bbx'' = bbx' - Sbxnf*anf
         bbx -= Sbxnf*anf;
