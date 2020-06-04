@@ -22,7 +22,7 @@
 #include <cmath>
 
 // Eigen includes
-#include <Optima/deps/eigen3/Eigen/Dense>
+#include <Optima/deps/eigen3/Eigen/LU>
 
 // Optima includes
 #include <Optima/Exception.hpp>
