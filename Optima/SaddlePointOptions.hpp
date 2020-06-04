@@ -54,7 +54,7 @@ class SaddlePointOptions
 {
 public:
     /// The method for solving the saddle point problems.
-    SaddlePointMethod method = SaddlePointMethod::Fullspace;
+    SaddlePointMethod method = SaddlePointMethod::Rangespace;
 
     /// The option to rationalize the entries in the canonical form.
     /// This option should be turned on if accuracy of the calculations is sensitive to round-off
