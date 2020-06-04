@@ -43,5 +43,11 @@ void exportState(py::module& m)
         .def_readwrite("zbar", &State::zbar)
         .def_readwrite("xbg", &State::xbg)
         .def_readwrite("xhg", &State::xhg)
+        .def_readwrite("iordering", &State::iordering)
+        .def_readwrite("ns", &State::ns)
+        .def_readwrite("nlu", &State::nlu)
+        .def_readwrite("nslu", &State::nslu)
+        .def_readwrite("nuu", &State::nuu)
+        .def_readwrite("nsuu", &State::nsuu)
         ;
 }

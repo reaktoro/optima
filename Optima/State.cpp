@@ -17,6 +17,9 @@
 
 #include "State.hpp"
 
+// Optima includes
+#include <Optima/IndexUtils.hpp>
+
 namespace Optima {
 
 struct State::Impl
@@ -30,11 +33,15 @@ struct State::Impl
     /// The variables \eq{\bar{z}=(z,y_{b_{\mathrm{g}}},y_{h_{\mathrm{g}}})} of the basic optimization problem.
     Vector zbar;
 
+    /// The ordering of the variables \eq{x} as *stable*, *lower unstable*, *strictly lower unstable*, *upper unstable*, *strictly upper unstable*.
+    Indices iordering;
+
     /// Construct a State::Impl object with given dimensions information.
     Impl(const Dims& dims)
     : xbar(zeros(dims.x + dims.bg + dims.hg)),
       ybar(zeros(dims.be + dims.bg + dims.he + dims.hg)),
-      zbar(zeros(dims.x + dims.bg + dims.hg))
+      zbar(zeros(dims.x + dims.bg + dims.hg)),
+      iordering(indices(dims.x))
     {}
 };
 
@@ -51,7 +58,13 @@ State::State(const Dims& dims)
   xbar(pimpl->xbar),
   zbar(pimpl->zbar),
   xbg(pimpl->xbar.segment(dims.x, dims.bg)),
-  xhg(pimpl->xbar.tail(dims.hg))
+  xhg(pimpl->xbar.tail(dims.hg)),
+  iordering(pimpl->iordering),
+  ns(dims.x),
+  nlu(0),
+  nslu(0),
+  nuu(0),
+  nsuu(0)
 {}
 
 State::State(const State& other)
@@ -67,7 +80,13 @@ State::State(const State& other)
   xbar(pimpl->xbar),
   zbar(pimpl->zbar),
   xbg(pimpl->xbar.segment(other.dims.x, other.dims.bg)),
-  xhg(pimpl->xbar.tail(other.dims.hg))
+  xhg(pimpl->xbar.tail(other.dims.hg)),
+  iordering(pimpl->iordering),
+  ns(other.dims.x),
+  nlu(0),
+  nslu(0),
+  nuu(0),
+  nsuu(0)
 {}
 
 State::~State()
