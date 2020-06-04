@@ -228,7 +228,7 @@ def test_active_stepper(args):
     stepper.setOptions(options)
 
     # Initialize, decompose the saddle point matrix, and solve the Newton step
-    stepper.initialize(xlower, xupper)
+    stepper.initialize(b, xlower, xupper)
     stepper.decompose(x, y, g, H, J, xlower, xupper, iordering, nul, nuu)
     stepper.solve(x, y, b, h, g, H, dx, dy, rx, ry, z)
 
@@ -301,7 +301,7 @@ def test_active_stepper(args):
     # Compare the actual and expected Newton steps
     s_actual = concatenate([dx, dy])
 
-    assert allclose(M @ s_actual, M @ s_expected)
+    assert allclose(M @ s_actual, M @ s_expected), print_state()
 
     # Compare the actual and expected right-hand side vector r of residuals
     r_actual = concatenate([rx, ry])

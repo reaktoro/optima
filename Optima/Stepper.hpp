@@ -41,6 +41,7 @@ struct StepperInitArgs
 /// The arguments for method Stepper::initialize.
 struct StepperInitializeArgs
 {
+    VectorConstRef b;       ///< The right-hand side vector *b* of the linear equality constraints *Ax = b*.
     VectorConstRef xlower;  ///< The lower bounds of the primal variables.
     VectorConstRef xupper;  ///< The upper bounds of the primal variables.
 };

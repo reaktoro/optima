@@ -32,9 +32,9 @@ void exportStepper(py::module& m)
         return Stepper({n, m, A});
     };
 
-    auto initialize = [](Stepper& self, VectorConstRef xlower, VectorConstRef xupper)
+    auto initialize = [](Stepper& self, VectorConstRef b, VectorConstRef xlower, VectorConstRef xupper)
     {
-        return self.initialize({xlower, xupper});
+        return self.initialize({b, xlower, xupper});
     };
 
     auto decompose = [](Stepper& self, VectorConstRef x, VectorConstRef y, VectorConstRef g, MatrixConstRef4py H, MatrixConstRef4py J, VectorConstRef xlower, VectorConstRef xupper, IndicesRef iordering, IndexNumberRef nul, IndexNumberRef nuu)
