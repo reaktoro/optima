@@ -180,14 +180,14 @@ struct BasicSolver::Impl
 
         outputter.outputHeader();
         outputter.addValue(result.iterations);
-        outputter.addValue(f);
-        outputter.addValue(result.error);
+        outputter.addValue("-");
+        outputter.addValue("-");
         outputter.addValues(x);
         outputter.addValues(y);
         outputter.addValues(z);
         outputter.addValues(abs(rx));
-        outputter.addValue(result.error_optimality);
-        outputter.addValue(result.error_feasibility);
+        outputter.addValue("-");
+        outputter.addValue("-");
         outputter.outputState();
     };
 
@@ -219,6 +219,7 @@ struct BasicSolver::Impl
         // Auxiliary references
         auto x         = args.x;
         auto y         = args.y;
+        auto b         = args.b;
         auto xlower    = args.xlower;
         auto xupper    = args.xupper;
         auto iordering = args.iordering;
@@ -238,26 +239,7 @@ struct BasicSolver::Impl
         x.noalias() = min(x, xupper);
 
     	// Initialize the Newton step calculator once for the upcoming decompose/solve calls
-        stepper.initialize({xlower, xupper});
-
-        // Evaluate the objective function
-        evaluateObjectiveFunction(args);
-
-        // Evaluate the constraint function
-        evaluateConstraintFunction(args);
-
-        // Assert the objective function produces finite numbers at this point
-        Assert(std::isfinite(f) && g.allFinite() && H.allFinite(),
-			"Failure evaluating the objective function.", "The evaluation of "
-			"the objective function at the entry point of the optimization "
-			"calculation produced non-finite numbers, "
-			"such as `nan` and/or `inf`.");
-
-        // Compute the Newton step for the current state
-        computeNewtonStep(args);
-
-        // Update the optimality, feasibility and complementarity errors
-        updateResultErrors();
+        stepper.initialize({b, xlower, xupper});
 	}
 
     // Evaluate the objective function
@@ -276,6 +258,13 @@ struct BasicSolver::Impl
 
         // Evaluate the objective function f(x)
         args.obj(args.x, res);
+
+        // Assert the objective function produces finite numbers at this point
+        Assert(std::isfinite(f) && g.allFinite() && H.allFinite(),
+			"Failure evaluating the objective function.", "The evaluation of "
+			"the objective function at the entry point of the optimization "
+			"calculation produced non-finite numbers, "
+			"such as `nan` and/or `inf`.");
 	}
 
     // Evaluate the equality constraint function
@@ -334,7 +323,7 @@ struct BasicSolver::Impl
 	auto updateResultErrors() -> void
 	{
 		// Update the current optimality, feasibility and complementarity errors
-		result.error_optimality  = norminf(rx)/norminf(g);
+		result.error_optimality  = norminf(rx)/(1 + norminf(g));
 		result.error_feasibility = norminf(ry);
 
 		// Update the current maximum error of the optimization calculation
@@ -578,15 +567,15 @@ struct BasicSolver::Impl
 
         for(iterations = 1; iterations <= maxiters && !succeeded; ++iterations)
         {
+            evaluateObjectiveFunction(args);
+            evaluateConstraintFunction(args);
+			computeNewtonStep(args);
+			updateResultErrors();
             applyNewtonStepping(args);
             outputCurrentState(args);
 
             if((succeeded = converged()))
                 break;
-
-            evaluateObjectiveFunction(args);
-			computeNewtonStep(args);
-			updateResultErrors();
         }
 
         // Output a final header
