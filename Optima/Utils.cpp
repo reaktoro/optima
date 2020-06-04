@@ -380,24 +380,29 @@ auto rationalize(double* data, unsigned size, unsigned maxden) -> void
 }
 
 /// Replace residual round-off errors by zeros in a vector.
-auto cleanResidualRoundoffErrors(double* data, std::size_t size, double threshold) -> void
+auto cleanResidualRoundoffErrors(VectorRef vec) -> void
 {
-    using std::abs;
-    if(threshold <= 0.0)
-    {
-        const auto eps = std::numeric_limits<double>::epsilon();
-        const auto max = Vector::Map(data, size).array().abs().maxCoeff();
-        threshold = eps*max;
-    }
-    for(auto i = 0; i < size; ++i)
-        if(abs(data[i]) <= threshold)
-            data[i] = 0.0;
+    const auto eps = std::numeric_limits<double>::epsilon();
+    const auto max = vec.array().abs().maxCoeff();
+    const auto rows = vec.rows();
+    const auto threshold = eps * max * rows;
+    for(auto i = 0; i  < rows; ++i)
+        if(std::abs(vec[i]) <= threshold)
+            vec[i] = 0.0;
 }
 
 /// Replace residual round-off errors by zeros in a matrix.
-auto cleanResidualRoundoffErrors(Matrix& M, double threshold) -> void
+auto cleanResidualRoundoffErrors(MatrixRef mat) -> void
 {
-    cleanResidualRoundoffErrors(M.data(), M.size(), threshold);
+    const auto eps = std::numeric_limits<double>::epsilon();
+    const auto max = mat.array().abs().maxCoeff();
+    const auto rows = mat.rows();
+    const auto cols = mat.cols();
+    const auto threshold = eps * max * std::max(rows, cols);
+    for(auto i = 0; i  < rows; ++i)
+        for(auto j = 0; j  < cols; ++j)
+            if(std::abs(mat(i, j)) <= threshold)
+                mat(i, j) = 0.0;
 }
 
 auto matrixStructure(MatrixConstRef mat) -> MatrixStructure

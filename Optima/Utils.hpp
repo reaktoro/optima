@@ -128,7 +128,7 @@ auto rationalize(double* data, unsigned size, unsigned maxden) -> void;
 /// errors, as a result of linear algebra operations on them. If a zero
 /// threshold is given, a threshold is calculated as the product of epsilon
 /// value and the maximum absolute value in the matrix.
-auto cleanResidualRoundoffErrors(Matrix& M, double threshold=0) -> void;
+auto cleanResidualRoundoffErrors(MatrixRef mat) -> void;
 
 /// Used to describe the structure of a matrix.
 enum class MatrixStructure
