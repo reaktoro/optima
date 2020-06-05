@@ -24,6 +24,7 @@
 #include <Optima/Dims.hpp>
 #include <Optima/Index.hpp>
 #include <Optima/Matrix.hpp>
+#include <Optima/Stability.hpp>
 
 namespace Optima {
 
@@ -93,23 +94,8 @@ public:
     /// The variables \eq{x_{h_{\mathrm{g}}}} in \eq{\bar{x} = (x,x_{b_{\mathrm{g}}},x_{h_{\mathrm{g}}})} of the basic optimization problem.
     VectorRef xhg;
 
-    /// The ordering of the variables \eq{x} as *stable*, *lower unstable*, *strictly lower unstable*, *upper unstable*, *strictly upper unstable*.
-    IndicesRef iordering;
-
-    /// The number of *stable variables* in \eq{x}.
-    Index ns;
-
-    /// The number of *lower unstable variables* in \eq{x}.
-    Index nlu;
-
-    /// The number of *strictly lower unstable variables* in \eq{x}.
-    Index nslu;
-
-    /// The number of *upper unstable variables* in \eq{x}.
-    Index nuu;
-
-    /// The number of *strictly upper unstable variables* in \eq{x}.
-    Index nsuu;
+    /// The stability state of the primal variables *x*.
+    Stability stability;
 };
 
 } // namespace Optima

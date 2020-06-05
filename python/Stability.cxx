@@ -21,28 +21,18 @@
 namespace py = pybind11;
 
 // Optima includes
-#include <Optima/State.hpp>
+#include <Optima/Stability.hpp>
 using namespace Optima;
 
-void exportState(py::module& m)
+void exportStability(py::module& m)
 {
-    py::class_<State>(m, "State")
-        .def(py::init<const Dims&>())
-        .def_readonly("dims", &State::dims)
-        .def_readwrite("x", &State::x)
-        .def_readwrite("y", &State::y)
-        .def_readwrite("ybe", &State::ybe)
-        .def_readwrite("ybg", &State::ybg)
-        .def_readwrite("yhe", &State::yhe)
-        .def_readwrite("yhg", &State::yhg)
-        .def_readwrite("z", &State::z)
-        .def_readwrite("dxdp", &State::dxdp)
-        .def_readwrite("dydp", &State::dydp)
-        .def_readwrite("dzdp", &State::dzdp)
-        .def_readwrite("xbar", &State::xbar)
-        .def_readwrite("zbar", &State::zbar)
-        .def_readwrite("xbg", &State::xbg)
-        .def_readwrite("xhg", &State::xhg)
-        .def_readwrite("stability", &State::stability)
+    py::class_<Stability>(m, "Stability")
+        .def(py::init<>())
+        .def_readwrite("iordering", &Stability::iordering)
+        .def_readwrite("ns", &Stability::ns)
+        .def_readwrite("nlu", &Stability::nlu)
+        .def_readwrite("nuu", &Stability::nuu)
+        .def_readwrite("nslu", &Stability::nslu)
+        .def_readwrite("nsuu", &Stability::nsuu)
         ;
 }

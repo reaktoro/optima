@@ -26,6 +26,7 @@
 #include <Optima/Number.hpp>
 #include <Optima/Matrix.hpp>
 #include <Optima/ObjectiveFunction.hpp>
+#include <Optima/Stability.hpp>
 
 namespace Optima {
 
@@ -52,20 +53,19 @@ struct BasicSolverSolveArgs
     VectorRef x;                   ///< The output primal variables *x* of the basic optimization problem.
     VectorRef y;                   ///< The output Lagrange multipliers *y* with respect to constraints *Ax = b* and *h(x) = 0*.
     VectorRef z;                   ///< The output instability measures of the primal variables defined as *z = g + tr(A)yl + tr(J)yn*.
-    IndicesRef iordering;          ///< The output ordering of the variables as (*stable*, *lower unstable*, *upper unstable*).
-    IndexNumberRef nul;            ///< The output number of *lower unstable variables* (i.e. those active/attached at their lower bounds).
-    IndexNumberRef nuu;            ///< The output number of *upper unstable variables* (i.e. those active/attached at their upper bounds).
+    Stability& stability;          ///< The output stability state of the primal variables *x*.
 };
 
 /// The arguments for method BasicSolver::sensitivities.
 struct BasicSolverSensitivitiesArgs
 {
-    MatrixConstRef dgdp; ///< The derivatives *∂g/∂p*.
-    MatrixConstRef dhdp; ///< The derivatives *∂h/∂p*.
-    MatrixConstRef dbdp; ///< The derivatives *∂b/∂p*.
-    MatrixRef dxdp;      ///< The output sensitivity derivatives *∂x/∂p*.
-    MatrixRef dydp;      ///< The output sensitivity derivatives *∂y/∂p*.
-    MatrixRef dzdp;      ///< The output sensitivity derivatives *∂z/∂p*.
+    MatrixConstRef dgdp;         ///< The derivatives *∂g/∂p*.
+    MatrixConstRef dhdp;         ///< The derivatives *∂h/∂p*.
+    MatrixConstRef dbdp;         ///< The derivatives *∂b/∂p*.
+    Stability const& stability;  ///< The stability state of the primal variables *x*.
+    MatrixRef dxdp;              ///< The output sensitivity derivatives *∂x/∂p*.
+    MatrixRef dydp;              ///< The output sensitivity derivatives *∂y/∂p*.
+    MatrixRef dzdp;              ///< The output sensitivity derivatives *∂z/∂p*.
 };
 
 /// The solver for optimization problems in its basic form.

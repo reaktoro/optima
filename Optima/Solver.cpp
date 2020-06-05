@@ -55,7 +55,7 @@ auto initBasicSolver(const Problem& problem) -> BasicSolver
 struct Solver::Impl
 {
     /// The basic optimization solver.
-    BasicSolver solver;
+    BasicSolver basicsolver;
 
     /// The dimension information of variables and constraints in the optimization problem.
     Dims dims;
@@ -94,14 +94,14 @@ struct Solver::Impl
     Indices iordering;
 
     /// The number of lower unstable variables in bar(x) = [x, u, v].
-    IndexNumber nul;
+    IndexNumber nlu;
 
     /// The number of upper unstable variables in bar(x) = [x, u, v].
     IndexNumber nuu;
 
     /// Construct a Solver instance with given optimization problem.
     Impl(const Problem& problem)
-    : solver(detail::initBasicSolver(problem)), dims(problem.dims)
+    : basicsolver(detail::initBasicSolver(problem)), dims(problem.dims)
     {
         // Initialize dimension variables
         nx = dims.x;
@@ -124,7 +124,7 @@ struct Solver::Impl
     /// Set the options for the optimization calculation.
     auto setOptions(const Options& options) -> void
     {
-        solver.setOptions(options);
+        basicsolver.setOptions(options);
     }
 
     /// Solve the optimization problem.
@@ -185,13 +185,14 @@ struct Solver::Impl
         // Initialize vector b = [be, bg]
         b << problem.be, problem.bg;
 
-        // Create reference for y vector
-        auto xbar = state.xbar;
-        auto ybar = state.y;
-        auto zbar = state.zbar;
+        // Create references to state members
+        auto xbar       = state.xbar;
+        auto ybar       = state.y;
+        auto zbar       = state.zbar;
+        auto& stability = state.stability;
 
         // Solve the constructed basic optimization problem
-        auto result = solver.solve({ f, h, b, xbar_lower, xbar_upper, xbar, ybar, zbar, iordering, nul, nuu });
+        auto result = basicsolver.solve({ f, h, b, xbar_lower, xbar_upper, xbar, ybar, zbar, stability });
 
         return result;
     }

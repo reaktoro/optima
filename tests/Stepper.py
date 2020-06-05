@@ -22,6 +22,7 @@ from pytest import approx, mark
 from itertools import product
 
 from utils.matrices import testing_matrices_W, matrix_non_singular
+from utils.stability import create_expected_stability, check_stability
 
 
 from enum import Enum
@@ -203,21 +204,15 @@ def test_active_stepper(args):
     # Compute the residual vector h of the nonlinear equality constraints h(x) = 0 knowing that ryn := -h
     h = -ryn
 
-    # Create the ordering vector that will order the
-    # variables as (*stable*, *lower unstable*, *upper unstable*)
-    iordering = arange(n)
-
-    # Create the index numbers that will contain the number
-    # of *lower unstable* (nul) and *upper unstable* (nuu) variables
-    nul = IndexNumber()
-    nuu = IndexNumber()
-
     # The solution of the Newton step calculation
     dx = zeros(n) # The Newton step for the primal variables *x*.
     dy = zeros(m) # The Newton step for the Lagrange multipliers *y*.
     rx = zeros(n) # The residuals of the first-order optimality conditions.
     ry = zeros(m) # The residuals of the linear/nonlinear feasibility conditions.
     z = zeros(n)  # The *unstabilities* of the variables defined as *z = g + tr(W)y* where *W = [A; J]*.
+
+    # Create the stability state of the variables
+    stability = Stability()
 
     # Set options for the Newton step calculation
     options = Options()
@@ -228,9 +223,9 @@ def test_active_stepper(args):
     stepper.setOptions(options)
 
     # Initialize, decompose the saddle point matrix, and solve the Newton step
-    stepper.initialize(b, xlower, xupper)
-    stepper.decompose(x, y, g, H, J, xlower, xupper, iordering, nul, nuu)
-    stepper.solve(x, y, b, h, g, H, dx, dy, rx, ry, z)
+    stepper.initialize(b, xlower, xupper, x, stability)
+    stepper.decompose(x, y, g, H, J, xlower, xupper, stability)
+    stepper.solve(x, y, b, h, g, H, stability, dx, dy, rx, ry, z)
 
     # Compute the sensitivity derivatives of the optimal solution
     np = 5  # the number of parameters
@@ -258,7 +253,7 @@ def test_active_stepper(args):
     dydp = zeros((m, np))
     dzdp = zeros((n, np))
 
-    stepper.sensitivities(dgdp, dhdp, dbdp, dxdp, dydp, dzdp)
+    stepper.sensitivities(dgdp, dhdp, dbdp, stability, dxdp, dydp, dzdp)
 
     # Assemble dsdp = [dxdp; dydp] and compute drdp = M*dsdp
     dsdp = block([[dxdp], [dydp]])
@@ -314,9 +309,10 @@ def test_active_stepper(args):
 
     assert allclose(z_actual, z_expected)
 
-    # Compare the actual and expected number of lower/upper unstable variables
-    assert nul.value == [x[i] == xlower[i] and z[i] > 0.0 for i in range(n)].count(True)
-    assert nuu.value == [x[i] == xupper[i] and z[i] < 0.0 for i in range(n)].count(True)
+    # Create a Stability object with expected state
+    expected_stability = create_expected_stability(A, x, b, z, xlower, xupper)
+
+    check_stability(stability, expected_stability)
 
     # Compare the actual and expected sensitivity derivatives
     assert allclose(drdp_expected, drdp)

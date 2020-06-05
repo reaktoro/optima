@@ -29,6 +29,8 @@
 
 namespace Optima {
 
+using std::abs;
+
 struct Stepper::Impl
 {
     Options options;          ///< The options for the optimization calculation
@@ -39,25 +41,14 @@ struct Stepper::Impl
     Vector sa;                ///< The right-hand side vector a in the saddle point problem.
     Vector sb;                ///< The right-hand side vector b in the saddle point problem.
     Vector Hx;                ///< The product of Hessian matrix *H* and the current state of the primal variables *x*
-    Index n      = 0;         ///< The number of variables in x.
-    Index ns     = 0;         ///< The number of stable variables in x.
-    Index nu     = 0;         ///< The number of unstable (lower/upper) variables in x.
-    Index nlower = 0;         ///< The number of variables with lower bounds.
-    Index nupper = 0;         ///< The number of variables with upper bounds.
-    Index ml     = 0;         ///< The number of linear equality constraints.
-    Index mn     = 0;         ///< The number of non-linear equality constraints.
-    Index m      = 0;         ///< The number of equality constraints (m = ml + mn).
-    Index t      = 0;         ///< The total number of variables in x and y (t = n + m).
-    Indices iordering;        ///< The ordering of the variables as (*stable*, *lower unstable*, *upper unstable*).
+    Index n  = 0;             ///< The number of variables in x.
+    Index ml = 0;             ///< The number of linear equality constraints.
+    Index mn = 0;             ///< The number of non-linear equality constraints.
+    Index m  = 0;             ///< The number of equality constraints (m = ml + mn).
+    Index t  = 0;             ///< The total number of variables in x and y (t = n + m).
     Indices ipositiverows;    ///< The indices of the rows in matrix A that only have positive or zero coefficients.
     Indices inegativerows;    ///< The indices of the rows in matrix A that only have negative or zero coefficients.
     SaddlePointSolver solver; ///< The saddle point solver.
-
-    /// The flags for each variable indicating if they have been marked strictly unstable at the lower bounds.
-    std::vector<bool> is_strictly_lower_unstable;
-
-    /// The flags for each variable indicating if they have been marked strictly unstable at the upper bounds.
-    std::vector<bool> is_strictly_upper_unstable;
 
     /// Construct a default Stepper::Impl instance.
     Impl()
@@ -88,9 +79,6 @@ struct Stepper::Impl
         sa = zeros(n);
         sb = zeros(m);
 
-        // Initialize the initial ordering of the variables
-        iordering = indices(n);
-
         // Initialize the indices of the rows in matrix A that only have positive or zero coefficients.
         std::vector<Index> iposrows;
         for(auto i = 0; i < ml; ++i)
@@ -104,25 +92,26 @@ struct Stepper::Impl
             if(args.A.row(i).maxCoeff() <= 0.0)
                 inegrows.push_back(i);
         inegativerows = Indices::Map(inegrows.data(), inegrows.size());
-
-        // Allocate memory for the vectors that indicate strictly unstable variables
-        is_strictly_lower_unstable.resize(n);
-        is_strictly_upper_unstable.resize(n);
     }
 
     /// Initialize the step calculator before calling decompose multiple times.
     auto initialize(StepperInitializeArgs args) -> void
     {
-        // Auxiliary references
+        // Auxiliary const references
         const auto b      = args.b;
         const auto xlower = args.xlower;
         const auto xupper = args.xupper;
         const auto A      = W.topRows(ml);
 
+        // Auxiliary references
+        auto& stability = args.stability;
+        auto x          = args.x;
+
         // Ensure consistent dimensions of vectors/matrices.
-        assert(b.rows() == m);
+        assert(b.rows() == ml);
         assert(xlower.rows() == n);
         assert(xupper.rows() == n);
+        assert(x.rows() == n);
 
         //======================================================================
         // IDENTIFY STRICTLY LOWER/UPPER UNSTABLE VARIABLES
@@ -133,37 +122,58 @@ struct Stepper::Impl
         // coefficients cannot be satisfied with primal values that are inside
         // the feasible domain.
         //======================================================================
-        for(auto i = 0; i < n; ++i)
-        {
-            is_strictly_lower_unstable[i] = false;
-            is_strictly_upper_unstable[i] = false;
-        }
+        /// The flags for each variable indicating if they have been marked strictly lower/upper unstable.
+        std::vector<bool> is_strictly_lower_unstable(n, false);
+        std::vector<bool> is_strictly_upper_unstable(n, false);
 
         for(auto i : ipositiverows)
-        {
             if(A.row(i)*xlower >= b[i])
                 for(auto j = 0; j < n; ++j)
                     if(A(i, j) != 0.0)
                         is_strictly_lower_unstable[j] = true;
 
+        for(auto i : ipositiverows)
             if(A.row(i)*xupper <= b[i])
                 for(auto j = 0; j < n; ++j)
                     if(A(i, j) != 0.0)
                         is_strictly_upper_unstable[j] = true;
-        }
 
         for(auto i : inegativerows)
-        {
             if(A.row(i)*xlower <= b[i])
                 for(auto j = 0; j < n; ++j)
                     if(A(i, j) != 0.0)
                         is_strictly_lower_unstable[j] = true;
 
+        for(auto i : inegativerows)
             if(A.row(i)*xupper >= b[i])
                 for(auto j = 0; j < n; ++j)
                     if(A(i, j) != 0.0)
                         is_strictly_upper_unstable[j] = true;
-        }
+
+        // Reset the order of the species
+        stability.iordering.resize(n);
+        for(auto i = 0; i < n; ++i)
+            stability.iordering[i] = i;
+
+        // Organize the variables so that strictly lower and upper unstable ones are in the back.
+        auto is_strictly_lower_unstable_fn = [&](Index i) { return is_strictly_lower_unstable[i]; };
+        auto is_strictly_upper_unstable_fn = [&](Index i) { return is_strictly_upper_unstable[i]; };
+
+        const auto pos0 = n;
+        const auto pos1 = moveRightIf(stability.iordering.head(pos0), is_strictly_upper_unstable_fn);
+        const auto pos2 = moveRightIf(stability.iordering.head(pos1), is_strictly_lower_unstable_fn);
+
+        // Compute the number of strictly upper and lower unstable variables
+        stability.nsuu = pos0 - pos1;
+        stability.nslu = pos1 - pos2;
+
+        // The indices of the strictly lower and upper unstable variables
+        const auto isuu = stability.iordering.head(pos0).tail(stability.nsuu);
+        const auto islu = stability.iordering.head(pos1).tail(stability.nslu);
+
+        // Attach the strictly unstable variables to either their upper or lower bounds
+        x(isuu) = xupper(isuu);
+        x(islu) = xlower(islu);
     }
 
     /// Decompose the saddle point matrix for diagonal Hessian matrices.
@@ -181,9 +191,7 @@ struct Stepper::Impl
         auto J          = args.J;
         auto xlower     = args.xlower;
         auto xupper     = args.xupper;
-        auto ivariables = args.iordering;
-        auto& nul       = args.nul;
-        auto& nuu       = args.nuu;
+        auto& stability = args.stability;
         const auto A    = W.topRows(ml);
 
         // Ensure consistent dimensions of vectors/matrices.
@@ -196,8 +204,7 @@ struct Stepper::Impl
         assert(J.cols() == n || mn == 0);
         assert(xlower.rows() == n);
         assert(xupper.rows() == n);
-        assert(ivariables.rows() == n);
-        assert(iordering.rows() == n);
+        assert(stability.iordering.rows() == n);
         assert(W.rows() == m);
         assert(W.cols() == n || m == 0);
 
@@ -207,30 +214,38 @@ struct Stepper::Impl
         // Calculate the optimality residuals
         z.noalias() = g + tr(W)*y;
 
+        // The function that computes the z-threshold for variable xi to determine its stability.
+        const auto zeps = [&](auto i)
+        {
+            // The threshold below is computed taking into account the order of
+            // magnitude of g[i] as well as m = rows(W), because of
+            // accumulation of round-off errors from tr(W)*y.
+            const auto eps = std::numeric_limits<double>::epsilon();
+            return (1 + abs(g[i])) * eps * m;
+        };
+
         // Update the ordering of the variables with lower and upper bounds
-        auto is_lower_unstable = [&](Index i) { return x[i] == xlower[i] && z[i] > 0.0 || is_strictly_lower_unstable[i]; };
-        auto is_upper_unstable = [&](Index i) { return x[i] == xupper[i] && z[i] < 0.0 || is_strictly_upper_unstable[i]; };
+        auto is_lower_unstable_fn = [&](Index i) { return x[i] == xlower[i] && z[i] > 0.0; };
+        auto is_upper_unstable_fn = [&](Index i) { return x[i] == xupper[i] && z[i] < 0.0; };
+        // auto is_lower_unstable_fn = [&](Index i) { return x[i] == xlower[i] && z[i] > -zeps(i); }; // in theory, z[i] > 0, but round-off errors need to be considered here!
+        // auto is_upper_unstable_fn = [&](Index i) { return x[i] == xupper[i] && z[i] < +zeps(i); }; // in theory, z[i] < 0, but round-off errors need to be considered here!
 
-        // Organize the variables in the order (stable, lower unstable, upper unstable).
-        // Note: The logic below prevents a simultaneous lower and upper unstable
-        // variable from being considered twice in the set of unstable variables!
-        const auto upos = moveRightIf(iordering, is_upper_unstable);
-        const auto lpos = moveRightIf(iordering.head(upos), is_lower_unstable);
+        // Organize the primal variables in the order: (stable, lower unstable, upper unstable, strictly lower unstable, strictly upper unstable).
+        const auto pos0 = n - stability.nslu - stability.nsuu;
+        const auto pos1 = moveRightIf(stability.iordering.head(pos0), is_upper_unstable_fn);
+        const auto pos2 = moveRightIf(stability.iordering.head(pos1), is_lower_unstable_fn);
 
-        // Update the number of lower and upper unstable variables
-        nuu = n - upos;
-        nul = upos - lpos;
+        // Update the number of upper unstable, lower unstable, and stable variables
+        stability.nuu  = pos0 - pos1;
+        stability.nlu  = pos1 - pos2;
+        stability.ns   = pos2;
 
-        // Update the number of unstable and stable variables
-        nu = nuu + nul;
-        ns = n - nu;
-
-        // The indices of the unstable variables
-        const auto iu = iordering.tail(nu);
-
-        // The indices of the lower unstable and upper unstable variables
-        const auto iul = iu.head(nul);
-        const auto iuu = iu.tail(nuu);
+        // The indices of all unstable variables. These will be classified as
+        // fixed variables when solving the saddle point problem to compute the
+        // Newton step. This effectively reduces the dimension of the linear
+        // algebra problem solved (i.e. the unstable variables do not make up
+        // to the final dimension of the matrix equations solved).
+        const auto iu = stability.iordering.tail(n - stability.ns);
 
         // Decompose the saddle point matrix.
         // This decomposition is later used in method solve, possibly many
@@ -238,28 +253,28 @@ struct Stepper::Impl
         // in the saddle point problem. Reason: we do not need to compute
         // Newton steps for the currently unstable variables!
         solver.decompose({ H, J, Matrix{}, iu });
-
-        // Export the updated ordering of the variables
-        ivariables = iordering;
     }
 
     /// Solve the saddle point problem.
     auto solve(StepperSolveArgs args) -> void
     {
+        // Auxiliary constant references
+        const auto x          = args.x;
+        const auto y          = args.y;
+        const auto b          = args.b;
+        const auto g          = args.g;
+        const auto H          = args.H;
+        const auto h          = args.h;
+        const auto A          = W.topRows(ml);
+        const auto J          = W.bottomRows(mn);
+        const auto& stability = args.stability;
+
         // Auxiliary references
-        auto x       = args.x;
-        auto y       = args.y;
-        auto b       = args.b;
-        auto g       = args.g;
-        auto H       = args.H;
-        auto h       = args.h;
-        auto dx      = args.dx;
-        auto dy      = args.dy;
-        auto rx      = args.rx;
-        auto ry      = args.ry;
-        auto z       = args.z;
-        const auto A = W.topRows(ml);
-        const auto J = W.bottomRows(mn);
+        auto dx = args.dx;
+        auto dy = args.dy;
+        auto rx = args.rx;
+        auto ry = args.ry;
+        auto z  = args.z;
 
         // Ensure consistent dimensions of vectors/matrices.
         assert(x.rows() == n);
@@ -267,10 +282,13 @@ struct Stepper::Impl
         assert(g.rows() == n);
         assert(A.rows() == ml);
         assert(A.cols() == n || ml == 0);
-        assert(iordering.rows() == n);
+        assert(stability.iordering.rows() == n);
 
-        // The indices of the lower and upper unstable variables
-        auto iu = iordering.tail(nu);
+        // The indices of all unstable variables
+        auto iu = stability.iordering.tail(n - stability.ns);
+
+        // The indices of the strictly lower and upper unstable variables
+        auto isu = stability.iordering.tail(stability.nslu + stability.nsuu);
 
         // Calculate the instability measure of the variables.
         z.noalias() = g + tr(W)*y;
@@ -278,7 +296,9 @@ struct Stepper::Impl
         // Calculate the residuals of the first-order optimality conditions
         rx = -z;
 
-        // Set residuals wrt unstable variables to zero
+        // Set residuals with respect to unstable variables to zero. This
+        // ensures that they are not taken into account when checking for
+        // convergence.
         rx(iu).fill(0.0);
 
         // Calculate the residuals of the feasibility conditions
@@ -298,6 +318,13 @@ struct Stepper::Impl
         // Set entries corresponding to unstable variables to x (to ensure fixed variables remain fixed)
         sa(iu) = x(iu);
 
+        // For the strictly unstable variables, however, set the values in
+        // vector `a` to zero. This is to ensure that the strictly unstable
+        // variables are not even taken into account in the calculation, not
+        // even in the linear equality constraints. It is like if they were not
+        // part of the problem.
+        sa(isu).fill(0.0);
+
         // Compute the right-hand side vector b in the saddle point problem
         sb.head(ml).noalias() = b;
         sb.tail(mn).noalias() = J*x - h;
@@ -313,6 +340,10 @@ struct Stepper::Impl
         // Finalize the computation of the steps dx and dy
         dx = sx - x;
         dy = sy - y;
+
+        // Ensure the strictly unstable variables have zero steps, not even
+        // round-off errors allowed.
+        dx(isu).fill(0.0);
 
         //=====================================================================
         // Exponential Impulse with x' = x * exp(dx/x)
@@ -334,12 +365,13 @@ struct Stepper::Impl
     auto sensitivities(StepperSensitivitiesArgs args) -> void
     {
         // Auxiliary references
-        auto dxdp = args.dxdp;
-        auto dydp = args.dydp;
-        auto dzdp = args.dzdp;
-        auto dgdp = args.dgdp;
-        auto dbdp = args.dbdp;
-        auto dhdp = args.dhdp;
+        auto dxdp       = args.dxdp;
+        auto dydp       = args.dydp;
+        auto dzdp       = args.dzdp;
+        auto dgdp       = args.dgdp;
+        auto dbdp       = args.dbdp;
+        auto dhdp       = args.dhdp;
+        auto& stability = args.stability;
 
         // The number of parameters for sensitivity computation
         auto np = dxdp.cols();
@@ -358,8 +390,8 @@ struct Stepper::Impl
         assert(dhdp.cols() == np);
 
         // The indices of the stable and unstable variables
-        auto is = iordering.head(ns);
-        auto iu = iordering.tail(nu);
+        auto is = stability.iordering.head(stability.ns);
+        auto iu = stability.iordering.tail(n - stability.ns);
 
         // Assemble the right-hand side matrix (zero for unstable variables!)
         dxdp(is, all) = -dgdp(is, all);

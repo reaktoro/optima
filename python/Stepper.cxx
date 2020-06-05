@@ -32,28 +32,60 @@ void exportStepper(py::module& m)
         return Stepper({n, m, A});
     };
 
-    auto initialize = [](Stepper& self, VectorConstRef b, VectorConstRef xlower, VectorConstRef xupper)
+    auto initialize = [](Stepper& self,
+        VectorConstRef b,
+        VectorConstRef xlower,
+        VectorConstRef xupper,
+        VectorRef x,
+        Stability& stability)
     {
-        return self.initialize({b, xlower, xupper});
+        self.initialize({ b, xlower, xupper, x, stability });
     };
 
-    auto decompose = [](Stepper& self, VectorConstRef x, VectorConstRef y, VectorConstRef g, MatrixConstRef4py H, MatrixConstRef4py J, VectorConstRef xlower, VectorConstRef xupper, IndicesRef iordering, IndexNumberRef nul, IndexNumberRef nuu)
+    auto decompose = [](Stepper& self,
+        VectorConstRef x,
+        VectorConstRef y,
+        VectorConstRef g,
+        MatrixConstRef4py H,
+        MatrixConstRef4py J,
+        VectorConstRef xlower,
+        VectorConstRef xupper,
+        Stability& stability)
     {
-        return self.decompose({x, y, g, H, J, xlower, xupper, iordering, nul, nuu});
+        self.decompose({ x, y, g, H, J, xlower, xupper, stability });
     };
 
-    auto solve = [](Stepper& self, VectorConstRef x, VectorConstRef y, VectorConstRef b, VectorConstRef h, VectorConstRef g, MatrixConstRef4py H, VectorRef dx, VectorRef dy, VectorRef rx, VectorRef ry, VectorRef z)
+    auto solve = [](Stepper& self,
+        VectorConstRef x,
+        VectorConstRef y,
+        VectorConstRef b,
+        VectorConstRef h,
+        VectorConstRef g,
+        MatrixConstRef4py H,
+        Stability const& stability,
+        VectorRef dx,
+        VectorRef dy,
+        VectorRef rx,
+        VectorRef ry,
+        VectorRef z)
     {
-        self.solve({x, y, b, h, g, H, dx, dy, rx, ry, z});
+        self.solve({x, y, b, h, g, H, stability, dx, dy, rx, ry, z});
     };
 
     Matrix tmp_dxdp, tmp_dydp, tmp_dzdp;
-    auto sensitivities = [=](Stepper& self, MatrixConstRef4py dgdp, MatrixConstRef4py dhdp, MatrixConstRef4py dbdp, MatrixRef4py dxdp, MatrixRef4py dydp, MatrixRef4py dzdp) mutable
+    auto sensitivities = [=](Stepper& self,
+        MatrixConstRef4py dgdp,
+        MatrixConstRef4py dhdp,
+        MatrixConstRef4py dbdp,
+        Stability const& stability,
+        MatrixRef4py dxdp,
+        MatrixRef4py dydp,
+        MatrixRef4py dzdp) mutable
     {
         tmp_dxdp.resize(dxdp.rows(), dxdp.cols());
         tmp_dydp.resize(dydp.rows(), dydp.cols());
         tmp_dzdp.resize(dzdp.rows(), dzdp.cols());
-        self.sensitivities({dgdp, dhdp, dbdp, tmp_dxdp, tmp_dydp, tmp_dzdp});
+        self.sensitivities({dgdp, dhdp, dbdp, stability, tmp_dxdp, tmp_dydp, tmp_dzdp});
         dxdp = tmp_dxdp;
         dydp = tmp_dydp;
         dzdp = tmp_dzdp;

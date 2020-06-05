@@ -33,15 +33,11 @@ struct State::Impl
     /// The variables \eq{\bar{z}=(z,y_{b_{\mathrm{g}}},y_{h_{\mathrm{g}}})} of the basic optimization problem.
     Vector zbar;
 
-    /// The ordering of the variables \eq{x} as *stable*, *lower unstable*, *strictly lower unstable*, *upper unstable*, *strictly upper unstable*.
-    Indices iordering;
-
     /// Construct a State::Impl object with given dimensions information.
     Impl(const Dims& dims)
     : xbar(zeros(dims.x + dims.bg + dims.hg)),
       ybar(zeros(dims.be + dims.bg + dims.he + dims.hg)),
-      zbar(zeros(dims.x + dims.bg + dims.hg)),
-      iordering(indices(dims.x))
+      zbar(zeros(dims.x + dims.bg + dims.hg))
     {}
 };
 
@@ -59,12 +55,7 @@ State::State(const Dims& dims)
   zbar(pimpl->zbar),
   xbg(pimpl->xbar.segment(dims.x, dims.bg)),
   xhg(pimpl->xbar.tail(dims.hg)),
-  iordering(pimpl->iordering),
-  ns(dims.x),
-  nlu(0),
-  nslu(0),
-  nuu(0),
-  nsuu(0)
+  stability({indices(dims.x), dims.x})
 {}
 
 State::State(const State& other)
@@ -81,12 +72,7 @@ State::State(const State& other)
   zbar(pimpl->zbar),
   xbg(pimpl->xbar.segment(other.dims.x, other.dims.bg)),
   xhg(pimpl->xbar.tail(other.dims.hg)),
-  iordering(pimpl->iordering),
-  ns(other.dims.x),
-  nlu(0),
-  nslu(0),
-  nuu(0),
-  nsuu(0)
+  stability(other.stability)
 {}
 
 State::~State()

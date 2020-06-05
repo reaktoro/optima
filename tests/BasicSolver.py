@@ -177,8 +177,8 @@ def test_basic_solver(args):
     iordering = arange(n)
 
     # Create the index numbers that will contain the number
-    # of *lower unstable* (nul) and *upper unstable* (nuu) variables
-    nul = IndexNumber()
+    # of *lower unstable* (nlu) and *upper unstable* (nuu) variables
+    nlu = IndexNumber()
     nuu = IndexNumber()
 
     # Keep references to current x, y, z as they are the expected solution
@@ -191,6 +191,9 @@ def test_basic_solver(args):
     y = zeros(m)
     z = zeros(n)
 
+    # Create the stability state of the variables
+    stability = Stability()
+
     # Create the options for the optimization calculation
     options = Options()
     options.output.active = False
@@ -200,7 +203,7 @@ def test_basic_solver(args):
     solver = BasicSolver(n, m, A)
     solver.setOptions(options)
 
-    res = solver.solve(obj, h, b, xlower, xupper, x, y, z, iordering, nul, nuu)
+    res = solver.solve(obj, h, b, xlower, xupper, x, y, z, stability)
 
     if not res.succeeded:
 

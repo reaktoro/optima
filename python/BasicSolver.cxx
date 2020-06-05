@@ -25,6 +25,7 @@ namespace py = pybind11;
 #include <Optima/BasicSolver.hpp>
 #include <Optima/Options.hpp>
 #include <Optima/Result.hpp>
+#include <Optima/Stability.hpp>
 using namespace Optima;
 
 void exportBasicSolver(py::module& m)
@@ -34,20 +35,36 @@ void exportBasicSolver(py::module& m)
         return BasicSolver({n, m, A});
     };
 
-    auto solve = [](BasicSolver& self, const ObjectiveFunction4py& obj4py, const ConstraintFunction4py& h4py, VectorConstRef b, VectorConstRef xlower, VectorConstRef xupper, VectorRef x, VectorRef y, VectorRef z, IndicesRef iordering, IndexNumberRef nul, IndexNumberRef nuu) -> Result
+    auto solve = [](BasicSolver& self,
+        const ObjectiveFunction4py& obj4py,
+        const ConstraintFunction4py& h4py,
+        VectorConstRef b,
+        VectorConstRef xlower,
+        VectorConstRef xupper,
+        VectorRef x,
+        VectorRef y,
+        VectorRef z,
+        Stability& stability) -> Result
     {
         auto obj = convert(obj4py);
         auto h = convert(h4py);
-        return self.solve({ obj, h, b, xlower, xupper, x, y, z, iordering, nul, nuu });
+        return self.solve({ obj, h, b, xlower, xupper, x, y, z, stability });
     };
 
     Matrix tmp_dxdp, tmp_dydp, tmp_dzdp;
-    auto sensitivities = [=](BasicSolver& self, MatrixConstRef4py dgdp, MatrixConstRef4py dhdp, MatrixConstRef4py dbdp, MatrixRef4py dxdp, MatrixRef4py dydp, MatrixRef4py dzdp) mutable
+    auto sensitivities = [=](BasicSolver& self,
+        MatrixConstRef4py dgdp,
+        MatrixConstRef4py dhdp,
+        MatrixConstRef4py dbdp,
+        Stability const& stability,
+        MatrixRef4py dxdp,
+        MatrixRef4py dydp,
+        MatrixRef4py dzdp) mutable
     {
         tmp_dxdp.resize(dxdp.rows(), dxdp.cols());
         tmp_dydp.resize(dydp.rows(), dydp.cols());
         tmp_dzdp.resize(dzdp.rows(), dzdp.cols());
-        self.sensitivities({dgdp, dhdp, dbdp, tmp_dxdp, tmp_dydp, tmp_dzdp});
+        self.sensitivities({dgdp, dhdp, dbdp, stability, tmp_dxdp, tmp_dydp, tmp_dzdp});
         dxdp = tmp_dxdp;
         dydp = tmp_dydp;
         dzdp = tmp_dzdp;

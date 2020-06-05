@@ -217,19 +217,18 @@ struct BasicSolver::Impl
     auto initialize(BasicSolverSolveArgs args) -> void
 	{
         // Auxiliary references
-        auto x         = args.x;
-        auto y         = args.y;
-        auto b         = args.b;
-        auto xlower    = args.xlower;
-        auto xupper    = args.xupper;
-        auto iordering = args.iordering;
+        auto x          = args.x;
+        auto y          = args.y;
+        auto b          = args.b;
+        auto xlower     = args.xlower;
+        auto xupper     = args.xupper;
+        auto& stability = args.stability;
 
         // Ensure consistent dimensions of vectors/matrices.
         assert(x.rows() == n);
         assert(y.rows() == m);
         assert(xlower.rows() == n);
         assert(xupper.rows() == n);
-        assert(iordering.rows() == n);
 
         // Clear previous state of the Outputter instance
         outputter.clear();
@@ -239,7 +238,7 @@ struct BasicSolver::Impl
         x.noalias() = min(x, xupper);
 
     	// Initialize the Newton step calculator once for the upcoming decompose/solve calls
-        stepper.initialize({b, xlower, xupper});
+        stepper.initialize({ b, xlower, xupper, x, stability });
 	}
 
     // Evaluate the objective function
@@ -290,15 +289,13 @@ struct BasicSolver::Impl
     	Timer timer;
 
         // Auxiliary variables
-        auto x         = args.x;
-        auto y         = args.y;
-        auto z         = args.z;
-        auto b         = args.b;
-        auto xlower    = args.xlower;
-        auto xupper    = args.xupper;
-        auto iordering = args.iordering;
-        auto& nul      = args.nul;
-        auto& nuu      = args.nuu;
+        auto x          = args.x;
+        auto y          = args.y;
+        auto z          = args.z;
+        auto b          = args.b;
+        auto xlower     = args.xlower;
+        auto xupper     = args.xupper;
+        auto& stability = args.stability;
 
         // Ensure consistent dimensions of vectors/matrices.
         assert(x.rows() == n);
@@ -307,13 +304,12 @@ struct BasicSolver::Impl
         assert(b.rows() == mb);
         assert(xlower.rows() == n);
         assert(xupper.rows() == n);
-        assert(iordering.rows() == n);
 
     	// Decompose the Jacobian matrix and calculate a Newton step
-        stepper.decompose({ x, y, g, H, J, xlower, xupper, iordering, nul, nuu });
+        stepper.decompose({ x, y, g, H, J, xlower, xupper, stability });
 
         // Calculate the Newton step
-        stepper.solve({ x, y, b, h, g, H, dx, dy, rx, ry, z });
+        stepper.solve({ x, y, b, h, g, H, stability, dx, dy, rx, ry, z });
 
         // Update the time spent in linear systems
 		result.time_linear_systems += timer.elapsed();
@@ -592,9 +588,9 @@ struct BasicSolver::Impl
     {
         Timer timer;
 
-        auto [dgdp, dhdp, dbdp, dxdp, dydp, dzdp] = args;
+        auto [dgdp, dhdp, dbdp, stability, dxdp, dydp, dzdp] = args;
 
-        stepper.sensitivities({ dgdp, dhdp, dbdp, dxdp, dydp, dzdp} );
+        stepper.sensitivities({ dgdp, dhdp, dbdp, stability, dxdp, dydp, dzdp });
 
         result.time_sensitivities = timer.elapsed();
 
