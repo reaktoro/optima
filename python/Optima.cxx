@@ -38,6 +38,7 @@ void exportSaddlePointSolver(py::module& m);
 void exportSaddlePointSolver2(py::module& m);
 void exportSolver(py::module& m);
 void exportStability(py::module& m);
+void exportStabilityChecker(py::module& m);
 void exportState(py::module& m);
 void exportStepper(py::module& m);
 void exportStepper(py::module& m);
@@ -65,6 +66,7 @@ PYBIND11_MODULE(optima, m)
     exportSaddlePointSolver2(m);
     exportSolver(m);
     exportStability(m);
+    exportStabilityChecker(m);
     exportState(m);
     exportStepper(m);
     exportTiming(m);

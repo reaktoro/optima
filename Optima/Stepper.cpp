@@ -428,22 +428,22 @@ auto Stepper::setOptions(const Options& options) -> void
 
 auto Stepper::initialize(StepperInitializeArgs args) -> void
 {
-    return pimpl->initialize(args);
+    pimpl->initialize(args);
 }
 
 auto Stepper::decompose(StepperDecomposeArgs args) -> void
 {
-    return pimpl->decompose(args);
+    pimpl->decompose(args);
 }
 
 auto Stepper::solve(StepperSolveArgs args) -> void
 {
-    return pimpl->solve(args);
+    pimpl->solve(args);
 }
 
 auto Stepper::sensitivities(StepperSensitivitiesArgs args) -> void
 {
-    return pimpl->sensitivities(args);
+    pimpl->sensitivities(args);
 }
 
 } // namespace Optima
