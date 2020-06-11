@@ -737,35 +737,39 @@ struct SaddlePointSolver::Impl
     auto solve(SaddlePointSolverSolveAdvancedArgs args) -> void
     {
         // Auxiliary references
-        const auto H  = args.H;
-        const auto x0 = args.x0;
-        const auto g  = args.g;
         const auto jx = iordering.head(nx);
         const auto jf = iordering.tail(nf);
 
-        // Use this->vec as work space for x0' = x0 if free, 0 if fixed
-        auto x0prime = vec.head(n);
+        // Use this->vec.head(n) as work space for x' where x'(free) = x(free) and x'(fixed) = 0
+        auto xprime = vec.head(n);
 
-        x0prime(jx) = args.x0(jx);
-        x0prime(jf).fill(0.0);
+        xprime(jx) = args.x(jx);
+        xprime(jf).fill(0.0);
 
-        // Use args.x as work space for a = H*x0 - g
-        auto a = args.x;
+        // Use args.xbar as work space for a = H*x - g
+        auto a = args.xbar;
 
-        // Compute H*x0', considering only diag(H) in case of rangespace method!
-        // The use of x0' instead of x0 is because H contribution from fixed variables should be ignored.
+        // Compute H*x', considering only diag(H) in case of rangespace method!
+        // The use of x' instead of x is because H contribution from fixed
+        // variables should be ignored.
         if(options.method == SaddlePointMethod::Rangespace)
-            a = H.diagonal().cwiseProduct(x0prime);
-        else a = H * x0prime;
+            a = args.H.diagonal().cwiseProduct(xprime);
+        else a = args.H * xprime;
 
-        // Complete the calculation of H*x0 - g
-        a -= g;
+        // Complete the calculation of H*x' - g
+        a -= args.g;
 
-        // Ensure the computed x satisfy x(jf) = x0(jf)!
-        a(jf) = args.x0(jf);
+        // Use args.ybar as work space for b' = [b, J*x - h]
+        auto b = args.ybar;
+
+        b.head(ml) = args.b;
+        b.tail(mn) = args.J * args.x - args.h;
+
+        // Ensure the computed xbar satisfy xbar(jf) = x(jf)!
+        a(jf) = args.x(jf);
 
         // Compute the solution vectors x and y in the saddle point problem
-        solve({ a, args.b, args.x, args.y });
+        solve({ a, b, args.xbar, args.ybar });
     }
 
     /// Solve the saddle point problem for the degenerate case of no free variables.

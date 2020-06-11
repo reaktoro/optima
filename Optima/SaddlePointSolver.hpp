@@ -86,21 +86,32 @@ struct SaddlePointSolverSolveAlternativeArgs
 
 /// The arguments for method SaddlePointSolver::solve.
 /// When performing numerical optimization, the following saddle point problem
-/// may emerge:
+/// may emerge during a Newton step calculation:
 ///
-/// @eqc{\begin{bmatrix}H & A^{T}\\A &
-/// 0\end{bmatrix}\begin{bmatrix}x\\y\end{bmatrix}=\begin{bmatrix}Hx_{0}-g\\b\end{bmatrix}}}
+/// @eqc{\begin{bmatrix}H & A^{T} & J^{T}\\ A & 0 & 0\\ J & 0 & 0
+/// \end{bmatrix}\begin{bmatrix}\Delta x\\ \Delta y_{A}\\ \Delta y_{J}
+/// \end{bmatrix}=-\begin{bmatrix}g+A^{T}y_{A}+J^{T}y_{J}\\ Ax-b\\ h
+/// \end{bmatrix}}
 ///
-/// where the right-hand side vector depends on the difference @eq{H x_0 - g}
-/// where @eq{x_0} is the current vector of primal variables @eq{x} and @eq{g}
-/// is the current gradient vector of the objective function.
+/// Instead of dealing with delta variables, this can be formulated as follows:
+///
+/// @eqc{\begin{bmatrix}H & A^{T} & J^{T}\\ A & 0 & 0\\ J & 0 & 0
+/// \end{bmatrix}\begin{bmatrix}\bar{x}\\ \bar{y}_{A}\\ \bar{y}_{J}
+/// \end{bmatrix}=\begin{bmatrix}Hx-g\\ b\\ Jx-h \end{bmatrix}}
+///
+/// where @eq{x} is the current vector of primal variables, @eq{g} is
+/// the current gradient vector of the objective function, @eq{h} is the
+/// current residual of the non-linear constraint function @eq{h(x)}.
 struct SaddlePointSolverSolveAdvancedArgs
 {
     /// The Hessian matrix *H* in the saddle point problem.
     MatrixConstRef H;
 
+    /// The lower and variable block of the Jacobian matrix *W = [A; J]* in the saddle point problem.
+    MatrixConstRef J;
+
     /// The right-hand side vector *x0* in the saddle point problem.
-    VectorConstRef x0;
+    VectorConstRef x;
 
     /// The right-hand side vector *g* in the saddle point problem.
     VectorConstRef g;
@@ -108,11 +119,14 @@ struct SaddlePointSolverSolveAdvancedArgs
     /// The right-hand side vector *b* in the saddle point problem.
     VectorConstRef b;
 
+    /// The right-hand side vector *h* in the saddle point problem.
+    VectorConstRef h;
+
     /// The solution vector *x* in the saddle point problem.
-    VectorRef x;
+    VectorRef xbar;
 
     /// The solution vector *y* in the saddle point problem.
-    VectorRef y;
+    VectorRef ybar;
 };
 
 /// Used to solve saddle point problems.

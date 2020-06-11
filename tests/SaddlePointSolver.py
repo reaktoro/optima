@@ -27,8 +27,8 @@ from utils.matrices import testing_matrices_W, matrix_non_singular
 def print_state(M, r, s, m, n):
     set_printoptions(linewidth=1000, suppress=True)
     slu = eigen.solve(M, r)
-    print( 'M        = \n', M )
-    print( 'r        = ', r )
+    # print( 'M        = \n', M )
+    # print( 'r        = ', r )
     print( 'x        = ', s[:n] )
     print( 'x(lu)    = ', slu[:n] )
     print( 'x(diff)  = ', abs(s[:n] - slu[:n]) )
@@ -65,8 +65,8 @@ tested_ifixed = [
 ]
 
 # Tested number of rows in matrix A (upper block of W)
-tested_mu = [6, 4]
-tested_ml = [3, 1, 0]
+tested_ml = [6, 4]
+tested_mn = [3, 1, 0]
 
 # Tested cases for the conditions of the variables in terms of pivot variables
 tested_variable_conditions = [
@@ -87,8 +87,8 @@ testdata = product(tested_matrices_W,
                    tested_structures_H,
                    tested_structures_G,
                    tested_ifixed,
-                   tested_mu,
                    tested_ml,
+                   tested_mn,
                    tested_variable_conditions,
                    tested_methods)
 
@@ -128,6 +128,9 @@ def test_saddle_point_solver(args):
     # Adjust the diagonal entries to control number of pivot variables
     Hdiag[seq] = factor * Hdiag[seq]
 
+    H[ifixed, :] = 0.0  # zero out rows in H corresponding to fixed variables
+    H[:, ifixed] = 0.0  # zero out cols in H corresponding to fixed variables
+
     # Assemble the coefficient matrix [[H, tr(W)], [W, G]]
     M = block([[H, W.T], [W, G]])
 
@@ -141,6 +144,10 @@ def test_saddle_point_solver(args):
     # The right-hand side vectors a and b
     a = r[:n]
     b = r[n:]
+
+    # The component vectors in b = [bl, bn]
+    bl = b[:ml]
+    bn = b[ml:]
 
     # The solution vectors x and y
     x = a.copy()
@@ -192,9 +199,12 @@ def test_saddle_point_solver(args):
 
     # Check the overload solve(H, x0, g, b, x, y) works
     x0 = linspace(1, n, n) * 10
-    x0[ifixed] = 0.0  # ensure no contribution in H*x0 from fixed variables
-    g = H @ x0 - a
+
     x0[ifixed] = expected[ifixed]  # this is needed because fixed variables end up with what ever is in x0
-    solver.solve(H, x0, g, b, x, y)
+
+    g = H @ x0 - a   # compute g so that H*x - g === a (identical to r[:n])
+    h = J @ x0 - bn  # compute h so that J*x - h === bn (identical to r[n:])
+
+    solver.solve(H, J, x0, g, bl, h, x, y)
 
     check_solution(x, y)

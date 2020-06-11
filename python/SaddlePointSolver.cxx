@@ -48,9 +48,9 @@ void exportSaddlePointSolver(py::module& m)
         self.solve({ x, y });
     };
 
-    auto solve3 = [](SaddlePointSolver& self, MatrixConstRef4py H, VectorConstRef x0, VectorConstRef g, VectorConstRef b, VectorRef x, VectorRef y)
+    auto solve3 = [](SaddlePointSolver& self, MatrixConstRef4py H, MatrixConstRef4py J, VectorConstRef x, VectorConstRef g, VectorConstRef b, VectorConstRef h, VectorRef xbar, VectorRef ybar)
     {
-        self.solve({ H, x0, g, b, x, y });
+        self.solve({ H, J, x, g, b, h, xbar, ybar });
     };
 
     py::class_<SaddlePointSolver>(m, "SaddlePointSolver")
