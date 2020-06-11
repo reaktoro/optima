@@ -305,29 +305,12 @@ struct Stepper::Impl
         ry.head(ml).noalias() = -(A*x - b);
         ry.tail(mn).noalias() = -h;
 
-        // Compute the right-hand side vector a in the saddle point problem
-        sx = x;
-        sx(iu).fill(0.0);
-
-        if(options.kkt.method == SaddlePointMethod::Rangespace)
-            Hx = H.diagonal().asDiagonal() * sx;
-        else Hx = H*sx;
-
-        sa = Hx - g;
-
-        // Set entries corresponding to unstable variables to x (to ensure fixed variables remain fixed)
-        sa(iu) = x(iu);
-
-        // For the strictly unstable variables, however, set the values in
-        // vector `a` to zero. This is to ensure that the strictly unstable
-        // variables are not even taken into account in the calculation, not
-        // even in the linear equality constraints. It is like if they were not
-        // part of the problem.
-        sa(isu).fill(0.0);
-
-        // Compute the right-hand side vector b in the saddle point problem
-        sb.head(ml).noalias() = b;
-        sb.tail(mn).noalias() = J*x - h;
+        // // For the strictly unstable variables, however, set the values in
+        // // vector `a` to zero. This is to ensure that the strictly unstable
+        // // variables are not even taken into account in the calculation, not
+        // // even in the linear equality constraints. It is like if they were not
+        // // part of the problem.
+        // sa(isu).fill(0.0);
 
         // Solve the saddle point problem.
         // Note: For numerical accuracy, it is important to compute
@@ -335,7 +318,7 @@ struct Stepper::Impl
         // This is because the latter causes very small values on the
         // right-hand side of the saddle point problem, and algebraic
         // manipulation of these small values results in round-off errors.
-        solver.solve({ sa, sb, sx, sy });
+        solver.solve({ H, J, x, g, b, h, sx, sy });
 
         // Finalize the computation of the steps dx and dy
         dx = sx - x;
@@ -353,12 +336,10 @@ struct Stepper::Impl
 
         // if(res < eps && !firstiter)
         // if(res < options.tolerance)
-        // {
-        //     sx = x.array() * dx.cwiseQuotient(x).array().exp();
-        //     dx = sx - x;
-        // }
-
-        // firstiter = false;
+        {
+            sx = x.array() * dx.cwiseQuotient(x).array().exp();
+            dx = sx - x;
+        }
     }
 
     /// Compute the sensitivity derivatives of the saddle point problem.
