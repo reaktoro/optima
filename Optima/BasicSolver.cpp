@@ -524,6 +524,10 @@ struct BasicSolver::Impl
 	/// Return true if the calculation converged.
     auto converged() const -> bool
     {
+        // Prevent successfull convergence if linear equality constraints have not converged yet
+        if(result.error_feasibility > options.tolerance_linear_equality_constraints)
+            return false;
+
         // Check if the calculation should stop based on optimality/feasibility errors
         return result.error < options.tolerance;
     };
