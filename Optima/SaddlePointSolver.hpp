@@ -84,6 +84,37 @@ struct SaddlePointSolverSolveAlternativeArgs
     VectorRef y;
 };
 
+/// The arguments for method SaddlePointSolver::solve.
+/// When performing numerical optimization, the following saddle point problem
+/// may emerge:
+///
+/// @eqc{\begin{bmatrix}H & A^{T}\\A &
+/// 0\end{bmatrix}\begin{bmatrix}x\\y\end{bmatrix}=\begin{bmatrix}Hx_{0}-g\\b\end{bmatrix}}}
+///
+/// where the right-hand side vector depends on the difference @eq{H x_0 - g}
+/// where @eq{x_0} is the current vector of primal variables @eq{x} and @eq{g}
+/// is the current gradient vector of the objective function.
+struct SaddlePointSolverSolveAdvancedArgs
+{
+    /// The Hessian matrix *H* in the saddle point problem.
+    MatrixConstRef H;
+
+    /// The right-hand side vector *x0* in the saddle point problem.
+    VectorConstRef x0;
+
+    /// The right-hand side vector *g* in the saddle point problem.
+    VectorConstRef g;
+
+    /// The right-hand side vector *b* in the saddle point problem.
+    VectorConstRef b;
+
+    /// The solution vector *x* in the saddle point problem.
+    VectorRef x;
+
+    /// The solution vector *y* in the saddle point problem.
+    VectorRef y;
+};
+
 /// Used to solve saddle point problems.
 /// Use this class to solve saddle point problems.
 ///
@@ -123,18 +154,20 @@ public:
     /// Return the current saddle point options.
     auto options() const -> const SaddlePointOptions&;
 
-    /// Decompose the coefficient matrix of the saddle point problem.
-    /// @note This method should be called before the @ref solve method and after @ref canonicalize.
-    /// @param lhs The coefficient matrix of the saddle point problem.
+    /// Decompose the coefficient matrix of the saddle point problem into canonical form.
     auto decompose(SaddlePointSolverDecomposeArgs args) -> void;
 
     /// Solve the saddle point problem.
-    /// @note Method SaddlePointSolver::decompose needs to be called first.
+    /// @note Ensure method @ref decompose has been called before this method.
     auto solve(SaddlePointSolverSolveArgs args) -> void;
 
     /// Solve the saddle point problem.
-    /// @note Method SaddlePointSolver::decompose needs to be called first.
+    /// @note Ensure method @ref decompose has been called before this method.
     auto solve(SaddlePointSolverSolveAlternativeArgs args) -> void;
+
+    /// Solve the saddle point problem.
+    /// @note Ensure method @ref decompose has been called before this method.
+    auto solve(SaddlePointSolverSolveAdvancedArgs args) -> void;
 
 private:
     struct Impl;

@@ -30,22 +30,27 @@ void exportSaddlePointSolver(py::module& m)
 {
     auto init = [](Index n, Index m, MatrixConstRef4py A) -> SaddlePointSolver
     {
-        return SaddlePointSolver({n, m, A});
+        return SaddlePointSolver({ n, m, A });
     };
 
     auto decompose = [](SaddlePointSolver& self, MatrixConstRef4py H, MatrixConstRef4py J, MatrixConstRef4py G, IndicesConstRef ifixed)
     {
-        return self.decompose({H, J, G, ifixed});
+        return self.decompose({ H, J, G, ifixed });
     };
 
     auto solve1 = [](SaddlePointSolver& self, VectorConstRef a, VectorConstRef b, VectorRef x, VectorRef y)
     {
-        self.solve({a, b, x, y});
+        self.solve({ a, b, x, y });
     };
 
     auto solve2 = [](SaddlePointSolver& self, VectorRef x, VectorRef y)
     {
-        self.solve({x, y});
+        self.solve({ x, y });
+    };
+
+    auto solve3 = [](SaddlePointSolver& self, MatrixConstRef4py H, VectorConstRef x0, VectorConstRef g, VectorConstRef b, VectorRef x, VectorRef y)
+    {
+        self.solve({ H, x0, g, b, x, y });
     };
 
     py::class_<SaddlePointSolver>(m, "SaddlePointSolver")
@@ -56,5 +61,6 @@ void exportSaddlePointSolver(py::module& m)
         .def("decompose", decompose)
         .def("solve", solve1)
         .def("solve", solve2)
+        .def("solve", solve3)
         ;
 }

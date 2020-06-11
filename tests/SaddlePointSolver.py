@@ -158,29 +158,43 @@ def test_saddle_point_solver(args):
     solver = SaddlePointSolver(n, m, A)
     solver.setOptions(options)
     solver.decompose(H, J, G, ifixed)
+
+    def check_solution(x, y):
+        # Create solution vector s = [x, y]
+        s = concatenate([x, y])
+
+        # Check the residual of the equation M * s = r
+
+        tol = 1e-9 if structure_G == 'denseG' else 1e-13
+
+        succeeded = norm(M @ s - r) / norm(r) < tol
+
+        if not succeeded:
+            print()
+            print(f"assemble_W = {assemble_W}")
+            print(f"structure_H = {structure_H}")
+            print(f"structure_G = {structure_G}")
+            print(f"ifixed = {ifixed}")
+            print(f"ml = {ml}")
+            print(f"mn = {mn}")
+            print(f"variable_condition = {variable_condition}")
+            print(f"method = {method}")
+            print()
+
+            print_state(M, r, s, m, n)
+
+        assert norm(M @ s - r) / norm(r) < tol
+
+    # Check the overload solve(x, y) works
     solver.solve(x, y)
 
-    # Create solution vector s = [x, y]
-    s = concatenate([x, y])
+    check_solution(x, y)
 
-    # Check the residual of the equation M * s = r
+    # Check the overload solve(H, x0, g, b, x, y) works
+    x0 = linspace(1, n, n) * 10
+    x0[ifixed] = 0.0  # ensure no contribution in H*x0 from fixed variables
+    g = H @ x0 - a
+    x0[ifixed] = expected[ifixed]  # this is needed because fixed variables end up with what ever is in x0
+    solver.solve(H, x0, g, b, x, y)
 
-    tol = 1e-9 if structure_G == 'denseG' else 1e-13
-
-    succeeded = norm(M @ s - r) / norm(r) < tol
-
-    if not succeeded:
-        print()
-        print(f"assemble_W = {assemble_W}")
-        print(f"structure_H = {structure_H}")
-        print(f"structure_G = {structure_G}")
-        print(f"ifixed = {ifixed}")
-        print(f"ml = {ml}")
-        print(f"mn = {mn}")
-        print(f"variable_condition = {variable_condition}")
-        print(f"method = {method}")
-        print()
-
-        print_state(M, r, s, m, n)
-
-    assert norm(M @ s - r) / norm(r) < tol
+    check_solution(x, y)

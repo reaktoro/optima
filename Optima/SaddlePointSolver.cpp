@@ -718,7 +718,7 @@ struct SaddlePointSolver::Impl
         lu.compute(M);
     }
 
-    /// Solve the saddle point problem with diagonal Hessian matrix.
+    /// Solve the saddle point problem.
     auto solve(SaddlePointSolverSolveArgs args) -> void
     {
         // Check if the saddle point matrix is degenerate, with no free variables.
@@ -731,6 +731,41 @@ struct SaddlePointSolver::Impl
         case SaddlePointMethod::Rangespace: solveRangespace(args); break;
         default: solveFullspace(args); break;
         }
+    }
+
+    /// Solve the saddle point problem.
+    auto solve(SaddlePointSolverSolveAdvancedArgs args) -> void
+    {
+        // Auxiliary references
+        const auto H  = args.H;
+        const auto x0 = args.x0;
+        const auto g  = args.g;
+        const auto jx = iordering.head(nx);
+        const auto jf = iordering.tail(nf);
+
+        // Use this->vec as work space for x0' = x0 if free, 0 if fixed
+        auto x0prime = vec.head(n);
+
+        x0prime(jx) = args.x0(jx);
+        x0prime(jf).fill(0.0);
+
+        // Use args.x as work space for a = H*x0 - g
+        auto a = args.x;
+
+        // Compute H*x0', considering only diag(H) in case of rangespace method!
+        // The use of x0' instead of x0 is because H contribution from fixed variables should be ignored.
+        if(options.method == SaddlePointMethod::Rangespace)
+            a = H.diagonal().cwiseProduct(x0prime);
+        else a = H * x0prime;
+
+        // Complete the calculation of H*x0 - g
+        a -= g;
+
+        // Ensure the computed x satisfy x(jf) = x0(jf)!
+        a(jf) = args.x0(jf);
+
+        // Compute the solution vectors x and y in the saddle point problem
+        solve({ a, args.b, args.x, args.y });
     }
 
     /// Solve the saddle point problem for the degenerate case of no free variables.
@@ -1339,6 +1374,11 @@ auto SaddlePointSolver::solve(SaddlePointSolverSolveAlternativeArgs args) -> voi
 {
     auto [x, y] = args;
     return pimpl->solve({x, y, x, y});
+}
+
+auto SaddlePointSolver::solve(SaddlePointSolverSolveAdvancedArgs args) -> void
+{
+    return pimpl->solve(args);
 }
 
 } // namespace Optima
