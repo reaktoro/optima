@@ -88,6 +88,9 @@ public:
     /// current and previous value of the objective function.
     double tolerancef = 0.0;
 
+    /// The relative tolerance for the linear equality contraints.
+    double tolerance_linear_equality_constraints = 1.0e-14;
+
     /// The maximum number of iterations in the optimization calculations.
     unsigned max_iterations = 200;
 
