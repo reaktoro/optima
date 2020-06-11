@@ -151,25 +151,27 @@ struct Stepper::Impl
                         is_strictly_upper_unstable[j] = true;
 
         // Reset the order of the species
-        stability.iordering.resize(n);
+        Indices iordering(n);
         for(auto i = 0; i < n; ++i)
-            stability.iordering[i] = i;
+            iordering[i] = i;
 
         // Organize the variables so that strictly lower and upper unstable ones are in the back.
         auto is_strictly_lower_unstable_fn = [&](Index i) { return is_strictly_lower_unstable[i]; };
         auto is_strictly_upper_unstable_fn = [&](Index i) { return is_strictly_upper_unstable[i]; };
 
         const auto pos0 = n;
-        const auto pos1 = moveRightIf(stability.iordering.head(pos0), is_strictly_upper_unstable_fn);
-        const auto pos2 = moveRightIf(stability.iordering.head(pos1), is_strictly_lower_unstable_fn);
+        const auto pos1 = moveRightIf(iordering.head(pos0), is_strictly_upper_unstable_fn);
+        const auto pos2 = moveRightIf(iordering.head(pos1), is_strictly_lower_unstable_fn);
 
         // Compute the number of strictly upper and lower unstable variables
-        stability.nsuu = pos0 - pos1;
-        stability.nslu = pos1 - pos2;
+        const auto nsuu = pos0 - pos1;
+        const auto nslu = pos1 - pos2;
 
         // The indices of the strictly lower and upper unstable variables
-        const auto isuu = stability.iordering.head(pos0).tail(stability.nsuu);
-        const auto islu = stability.iordering.head(pos1).tail(stability.nslu);
+        const auto isuu = iordering.head(pos0).tail(nsuu);
+        const auto islu = iordering.head(pos1).tail(nslu);
+
+        stability.update({ iordering, n - nslu - nsuu, 0, 0, nslu, nsuu });
 
         // Attach the strictly unstable variables to either their upper or lower bounds
         x(isuu) = xupper(isuu);
@@ -204,7 +206,6 @@ struct Stepper::Impl
         assert(J.cols() == n || mn == 0);
         assert(xlower.rows() == n);
         assert(xupper.rows() == n);
-        assert(stability.iordering.rows() == n);
         assert(W.rows() == m);
         assert(W.cols() == n || m == 0);
 
@@ -227,25 +228,30 @@ struct Stepper::Impl
         // Update the ordering of the variables with lower and upper bounds
         auto is_lower_unstable_fn = [&](Index i) { return x[i] == xlower[i] && z[i] > 0.0; };
         auto is_upper_unstable_fn = [&](Index i) { return x[i] == xupper[i] && z[i] < 0.0; };
-        // auto is_lower_unstable_fn = [&](Index i) { return x[i] == xlower[i] && z[i] > -zeps(i); }; // in theory, z[i] > 0, but round-off errors need to be considered here!
-        // auto is_upper_unstable_fn = [&](Index i) { return x[i] == xupper[i] && z[i] < +zeps(i); }; // in theory, z[i] < 0, but round-off errors need to be considered here!
+
+        Indices iordering = stability.indicesVariables();
+
+        const auto nslu = stability.numStrictlyLowerUnstableVariables();
+        const auto nsuu = stability.numStrictlyUpperUnstableVariables();
 
         // Organize the primal variables in the order: (stable, lower unstable, upper unstable, strictly lower unstable, strictly upper unstable).
-        const auto pos0 = n - stability.nslu - stability.nsuu;
-        const auto pos1 = moveRightIf(stability.iordering.head(pos0), is_upper_unstable_fn);
-        const auto pos2 = moveRightIf(stability.iordering.head(pos1), is_lower_unstable_fn);
+        const auto pos0 = n - nslu - nsuu;
+        const auto pos1 = moveRightIf(iordering.head(pos0), is_upper_unstable_fn);
+        const auto pos2 = moveRightIf(iordering.head(pos1), is_lower_unstable_fn);
 
         // Update the number of upper unstable, lower unstable, and stable variables
-        stability.nuu  = pos0 - pos1;
-        stability.nlu  = pos1 - pos2;
-        stability.ns   = pos2;
+        const auto nuu  = pos0 - pos1;
+        const auto nlu  = pos1 - pos2;
+        const auto ns   = pos2;
+
+        stability.update({ iordering, ns, nlu, nuu, nslu, nsuu });
 
         // The indices of all unstable variables. These will be classified as
         // fixed variables when solving the saddle point problem to compute the
         // Newton step. This effectively reduces the dimension of the linear
         // algebra problem solved (i.e. the unstable variables do not make up
         // to the final dimension of the matrix equations solved).
-        const auto iu = stability.iordering.tail(n - stability.ns);
+        const auto iu = stability.indicesUnstableVariables();
 
         // Decompose the saddle point matrix.
         // This decomposition is later used in method solve, possibly many
@@ -282,13 +288,12 @@ struct Stepper::Impl
         assert(g.rows() == n);
         assert(A.rows() == ml);
         assert(A.cols() == n || ml == 0);
-        assert(stability.iordering.rows() == n);
 
         // The indices of all unstable variables
-        auto iu = stability.iordering.tail(n - stability.ns);
+        auto iu = stability.indicesUnstableVariables();
 
         // The indices of the strictly lower and upper unstable variables
-        auto isu = stability.iordering.tail(stability.nslu + stability.nsuu);
+        auto isu = stability.indicesStrictlyUnstableVariables();
 
         // Calculate the instability measure of the variables.
         z.noalias() = g + tr(W)*y;
@@ -336,10 +341,10 @@ struct Stepper::Impl
 
         // if(res < eps && !firstiter)
         // if(res < options.tolerance)
-        {
-            sx = x.array() * dx.cwiseQuotient(x).array().exp();
-            dx = sx - x;
-        }
+        // {
+        //     sx = x.array() * dx.cwiseQuotient(x).array().exp();
+        //     dx = sx - x;
+        // }
     }
 
     /// Compute the sensitivity derivatives of the saddle point problem.
@@ -371,8 +376,10 @@ struct Stepper::Impl
         assert(dhdp.cols() == np);
 
         // The indices of the stable and unstable variables
-        auto is = stability.iordering.head(stability.ns);
-        auto iu = stability.iordering.tail(n - stability.ns);
+        auto is = stability.indicesStableVariables();
+        auto iu = stability.indicesUnstableVariables();
+        // auto is = stability.iordering.head(stability.ns);
+        // auto iu = stability.iordering.tail(n - stability.ns);
 
         // Assemble the right-hand side matrix (zero for unstable variables!)
         dxdp(is, all) = -dgdp(is, all);

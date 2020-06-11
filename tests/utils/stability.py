@@ -92,15 +92,15 @@ def create_expected_stability(A, x, b, z, xlower, xupper):
     iunstable = ilower_unstable + iupper_unstable + istrictly_lower_unstable + istrictly_upper_unstable
     istable = list(set(range(n)) - set(iunstable))
 
-    stability = Stability()
-    stability.iordering = istable + iunstable
-    stability.ns   = len(istable)
-    stability.nlu  = len(ilower_unstable)
-    stability.nuu  = len(iupper_unstable)
-    stability.nslu = len(istrictly_lower_unstable)
-    stability.nsuu = len(istrictly_upper_unstable)
+    data = StabilityData()
+    data.iordering = istable + iunstable
+    data.ns   = len(istable)
+    data.nlu  = len(ilower_unstable)
+    data.nuu  = len(iupper_unstable)
+    data.nslu = len(istrictly_lower_unstable)
+    data.nsuu = len(istrictly_upper_unstable)
 
-    return stability
+    return Stability(data)
 
 
 def check_stability(actual, expected):
@@ -112,29 +112,23 @@ def check_stability(actual, expected):
     """
 
     def istable(stability):
-        return set(stability.iordering[:stability.ns])
+        return set(stability.indicesStableVariables())
 
     def ilower_unstable(stability):
-        return set(stability.iordering[stability.ns:][:stability.nlu])
+        return set(stability.indicesLowerUnstableVariables())
 
     def iupper_unstable(stability):
-        return set(stability.iordering[stability.ns:][stability.nlu:][:stability.nuu])
+        return set(stability.indicesUpperUnstableVariables())
 
     def istrictly_lower_unstable(stability):
-        return set(stability.iordering[stability.ns:][stability.nlu:][stability.nuu:][:stability.nslu])
+        return set(stability.indicesStrictlyLowerUnstableVariables())
 
     def istrictly_upper_unstable(stability):
-        return set(stability.iordering[stability.ns:][stability.nlu:][stability.nuu:][stability.nslu:][stability.nsuu:])
+        return set(stability.indicesStrictlyUpperUnstableVariables())
 
     assert istable(actual)                  == istable(expected)
     assert ilower_unstable(actual)          == ilower_unstable(expected)
     assert iupper_unstable(actual)          == iupper_unstable(expected)
     assert istrictly_lower_unstable(actual) == istrictly_lower_unstable(expected)
     assert istrictly_upper_unstable(actual) == istrictly_upper_unstable(expected)
-
-    assert actual.ns   == expected.ns
-    assert actual.nlu  == expected.nlu
-    assert actual.nuu  == expected.nuu
-    assert actual.nslu == expected.nslu
-    assert actual.nsuu == expected.nsuu
 
