@@ -100,19 +100,19 @@ struct SaddlePointSolverSolveAlternativeArgs
 /// The return type of method SaddlePointSolver::info.
 struct SaddlePointSolverInfo
 {
-    /// The current indices of the basic variables.
-    IndicesConstRef ibasic;
+    /// The indices of the basic variables.
+    IndicesConstRef jb;
 
-    /// The current indices of the non-basic variables.
-    IndicesConstRef inonbasic;
+    /// The indices of the non-basic variables.
+    IndicesConstRef jn;
 
-    /// The current canonicalization matrix *R* of *W = [A; J]*.
+    /// The canonicalization matrix *R* of *W = [A; J]*.
     MatrixConstRef R;
 
-    /// The current matrix *S* in the canonical form of *W = [A; J]*.
+    /// The matrix *S* in the canonical form of *W = [A; J]*.
     MatrixConstRef S;
 
-    /// The current permutation matrix *Q* in the canonical form of *W = [A; J]*.
+    /// The permutation matrix *Q* in the canonical form of *W = [A; J]*.
     IndicesConstRef Q;
 };
 

@@ -58,6 +58,14 @@ void exportSaddlePointSolver(py::module& m)
         self.solve({ H, J, x, g, b, h, xbar, ybar });
     };
 
+    py::class_<SaddlePointSolverInfo>(m, "SaddlePointSolverInfo")
+        .def_readonly("jb", &SaddlePointSolverInfo::jb)
+        .def_readonly("jn", &SaddlePointSolverInfo::jn)
+        .def_readonly("R", &SaddlePointSolverInfo::R)
+        .def_readonly("S", &SaddlePointSolverInfo::S)
+        .def_readonly("Q", &SaddlePointSolverInfo::Q)
+        ;
+
     py::class_<SaddlePointSolver>(m, "SaddlePointSolver")
         .def(py::init<>())
         .def(py::init(init))
@@ -68,5 +76,6 @@ void exportSaddlePointSolver(py::module& m)
         .def("solve", solve1)
         .def("solve", solve2)
         .def("solve", solve3)
+        .def("info", &SaddlePointSolver::info, py::return_value_policy::reference_internal)
         ;
 }
