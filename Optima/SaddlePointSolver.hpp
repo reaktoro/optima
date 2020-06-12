@@ -142,7 +142,7 @@ struct SaddlePointSolverSolveAdvancedArgs
     /// The lower and variable block of the Jacobian matrix *W = [A; J]* in the saddle point problem.
     MatrixConstRef J;
 
-    /// The right-hand side vector *x0* in the saddle point problem.
+    /// The right-hand side vector *x* in the saddle point problem.
     VectorConstRef x;
 
     /// The right-hand side vector *g* in the saddle point problem.
@@ -159,6 +159,38 @@ struct SaddlePointSolverSolveAdvancedArgs
 
     /// The solution vector *y* in the saddle point problem.
     VectorRef ybar;
+};
+
+/// The arguments for method SaddlePointSolver::residual.
+struct SaddlePointSolverResidualArgs
+{
+    /// The vector *x* in the canonical residual equation.
+    VectorConstRef x;
+
+    /// The right-hand side vector *b* in the canonical residual equation.
+    VectorConstRef b;
+
+    /// The output vector with the relative canonical residuals.
+    VectorRef r;
+};
+
+/// The arguments for method SaddlePointSolver::residual.
+struct SaddlePointSolverResidualAdvancedArgs
+{
+    /// The lower and variable block of the Jacobian matrix *W = [A; J]* in the saddle point problem.
+    MatrixConstRef J;
+
+    /// The vector *x* in the canonical residual equation.
+    VectorConstRef x;
+
+    /// The right-hand side vector *b* in the canonical residual equation.
+    VectorConstRef b;
+
+    /// The right-hand side vector *h* in the canonical residual equation.
+    VectorConstRef h;
+
+    /// The output vector with the relative canonical residuals.
+    VectorRef r;
 };
 
 /// Used to solve saddle point problems.
@@ -218,6 +250,14 @@ public:
     /// Solve the saddle point problem.
     /// @note Ensure method @ref decompose has been called before this method.
     auto solve(SaddlePointSolverSolveAdvancedArgs args) -> void;
+
+    /// Calculate the relative canonical residual of equation `W*x - b`.
+    /// @note Ensure method @ref canonicalize has been called before this method.
+    auto residuals(SaddlePointSolverResidualArgs args) -> void;
+
+    /// Calculate the relative canonical residual of equation `W*x - [b; J*x + h]`.
+    /// @note Ensure method @ref canonicalize has been called before this method.
+    auto residuals(SaddlePointSolverResidualAdvancedArgs args) -> void;
 
     /// Return the current state info of the saddle point solver.
     auto info() const -> SaddlePointSolverInfo;

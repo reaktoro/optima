@@ -1328,6 +1328,110 @@ struct SaddlePointSolver::Impl
         x(iordering).noalias() = a;
     }
 
+    /// Calculate the relative canonical residual of equation `W*x - b`.
+    /// @note Ensure method @ref canonicalize has been called before this method.
+    auto residuals(SaddlePointSolverResidualArgs args) -> void
+    {
+        // Alias to the matrices of the canonicalization process
+        auto S = canonicalizer.S();
+        auto R = canonicalizer.R();
+
+        // Views to the sub-vectors of x = [xx xf]
+        auto xx = a.head(nx); // the free variables in x
+        auto xf = a.tail(nf); // the fixed variables in x
+
+        // Views to the sub-vectors of xx = [xbx, xnx]
+        auto xbx = xx.head(nbx); // the free basic variables in x
+        auto xnx = xx.tail(nnx); // the free non-basic variables in x
+
+        // Views to the sub-vectors of xf = [xbf, xnf]
+        auto xbf = xf.head(nbf); // the fixed basic variables in x
+        auto xnf = xf.tail(nnf); // the fixed non-basic variables in x
+
+        // Use `a` as workspace for x in the order [xbx, xnx, xbf, xnf]
+        a = args.x(iordering);
+
+        // Views to the sub-vectors of right-hand side vector b = [bx bf bl]
+        auto bbx = b.head(nbx);
+        auto bbf = b.segment(nbx, nbf);
+        auto bbl = b.tail(nl);
+
+        // Views to the sub-matrices of the canonical matrix S
+        auto Sbxnx = S.topLeftCorner(nbx, nnx);
+        auto Sbxnf = S.topRightCorner(nbx, nnf);
+        auto Sbfnf = S.bottomRightCorner(nbf, nnf);
+
+        // The indices of the free and fixed variables
+        auto jx = iordering.head(nx);
+        auto jf = iordering.tail(nf);
+
+        // The relative residual vector r = [rbx rbf rbl]
+        auto rbx = args.r.head(nbx);         // corresponding to free basic variables
+        auto rbf = args.r.segment(nbx, nbf); // corresponding to fixed basic variables
+        auto rbl = args.r.tail(nl);          // corresponding to linearly dependent equations
+
+        // Calculate b' = R*b
+        b.noalias() = R * args.b;
+
+        // Ensure residual round-off errors are cleaned in b' after R*b.
+        // This improves accuracy and statbility in degenerate cases when some
+        // variables need to have tiny values. For example, suppose the
+        // equality constraints effectively enforce `xi - 2xj = 0`, for
+        // variables `i` and `j`, which, combined with the optimality
+        // constraints, results in an exact solution of `xj = 1e-31`. If,
+        // instead, we don't clean these residual round-off errors, we may
+        // instead have `xi - 2xj = eps`, where `eps` is a small residual error
+        // (e.g., 1e-16). This will cause `xi = eps`, and not `xi = 2e-31`.
+        cleanResidualRoundoffErrors(b);
+
+        // Calculate bbx'' = bbx' - Sbxnf*xnf
+        bbx -= Sbxnf*xnf;
+
+        // Calculate bbf'' = bbf' - xbf - Sbfnf*xnf
+        bbf -= xbf + Sbfnf*xnf;
+
+        // Compute rbx = xbx + Sbxnx*xnx + Sbxnf*xnf - bbx
+        rbx = xbx;
+        rbx += Sbxnx*xnx;
+        rbx += Sbxnf*xnf;
+        rbx -= bbx;
+
+        // Normalize rbx for xbx', where xbx'[i] = xbx[i] if xbx[i] != 0 else 1
+        rbx.noalias() = rbx.cwiseQuotient((xbx.array() != 0.0).select(xbx, 1.0));
+
+        // Set the residuals to absolute values
+        rbx.noalias() = rbx.cwiseAbs();
+
+        // Set the residuals with respect to fixed basic variables to zero.
+        rbf.fill(0.0);
+
+        // Set the residuals with respect to linearly dependent equations to zero.
+        rbl.fill(0.0);
+
+        // Note: Even if there are inconsistencies above (e.g. some of these
+        // residuals are not zero, like when SiO2 is fixed with 1 mol and it
+        // the only species in a chemical system with element Si, but b[Si] = 2
+        // mol) we consider that this is an input error and try to find a
+        // solution that is feasible with respect to the free variables.
+    }
+
+    /// Calculate the relative canonical residual of equation `W*x - [b; J*x + h]`.
+    /// @note Ensure method @ref canonicalize has been called before this method.
+    auto residuals(SaddlePointSolverResidualAdvancedArgs args) -> void
+    {
+        // Auxiliary references
+        auto [J, x, b, h, r] = args;
+
+        // Use vec as workspace for the calculation of b' = [b; J*x + h]
+        auto bprime = vec.head(m);
+
+        bprime.head(ml) = b;
+        bprime.tail(mn) = J*x + h;
+
+        /// Calculate the relative canonical residual of equation `W*x - b'.
+        residuals({ x, bprime, r });
+    }
+
     /// Return the current state info of the saddle point solver.
     auto info() const -> SaddlePointSolverInfo
     {
@@ -1395,6 +1499,16 @@ auto SaddlePointSolver::solve(SaddlePointSolverSolveAlternativeArgs args) -> voi
 auto SaddlePointSolver::solve(SaddlePointSolverSolveAdvancedArgs args) -> void
 {
     return pimpl->solve(args);
+}
+
+auto SaddlePointSolver::residuals(SaddlePointSolverResidualArgs args) -> void
+{
+    return pimpl->residuals(args);
+}
+
+auto SaddlePointSolver::residuals(SaddlePointSolverResidualAdvancedArgs args) -> void
+{
+    return pimpl->residuals(args);
 }
 
 auto SaddlePointSolver::info() const -> SaddlePointSolverInfo

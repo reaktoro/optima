@@ -177,22 +177,14 @@ struct Stepper::Impl
         // The J matrix block in W = [A; J]
         const auto J = W.bottomRows(mn);
 
-        // The canonical state of the matrix *W = [A; J]*
-        const auto [jb, jn, R, S, Q] = solver.info();
-
-        // The basic and non-basic primal variables
-        const auto xb = x(jb);
-        const auto xn = x(jn);
-
-        // The number of basic and non-basic primal variables
-        const auto nb = jb.size();
-        const auto nn = jn.size();
-
         // Get a reference to the stability state of the variables
         const auto& stability = stbchecker.stability();
 
         // The indices of all unstable variables
         auto iu = stability.indicesUnstableVariables();
+
+        // The indices of all strictly unstable variables
+        auto isu = stability.indicesStrictlyUnstableVariables();
 
         // Ensure consistent dimensions of vectors/matrices.
         assert(x.rows() == n);
@@ -203,6 +195,30 @@ struct Stepper::Impl
         assert(rx.rows() == n);
         assert(ry.rows() == m);
         assert(z.rows() == n);
+
+        //======================================================================
+        // Compute the canonical feasibility residuals using xb + S*xn - b' = 0
+        //======================================================================
+        // The computation logic below is aimed at producing feasibility
+        // residuals less affected by round-off errors. For certain
+        // applications (e.g. chemical equilibrium), in which some variables
+        // attain very small values (e.g. H2, O2), and there might be an
+        // algebraic relation between them (e.g. x[H2] = 2*x[O2] when only H2O,
+        // H+, OH-, H2, O2 are considered) that strongly affects the
+        // first-order optimality equations, this strategy is important.
+        //======================================================================
+
+        // Ensure the strictly unstable variables are ignored for feasibility
+        // residuals. It is like if they were excluded from the computation,
+        // but their final values forced to their bounds.
+
+        // Use rx as a workspace for x' where x'[i] = 0 if i in isu else x[i]
+        auto xprime = rx;
+
+        xprime = x;
+        xprime(isu).fill(0.0);
+
+        solver.residuals({ J, xprime, b, h, ry });
 
         //======================================================================
         // Compute the optimality residuals using g + tr(W)*y = 0
@@ -219,55 +235,38 @@ struct Stepper::Impl
         // convergence.
         rx(iu).fill(0.0);
 
-        //======================================================================
-        // Compute the feasibility residuals using xb + S*xn - b' = 0
-        //======================================================================
-        // The computation logic below is aimed at producing feasibility
-        // residuals less affected by round-off errors, in which the summation
-        // of the variables happen from smaller variables to larger ones (i.e.
-        // using a reverse for loop). Thus, we start at the back of the stable
-        // non-basic variables, then at the back of the stable basic variables,
-        // and finally we account for the unstable variables (which are trapped
-        // on their bounds).
-        //
-        // For certain applications (e.g. chemical equilibrium), in which some
-        // variables attain very small values (e.g. H2, O2), and there is an
-        // algebraic relation between them (e.g. x[H2] = 2*x[O2]) that strongly
-        // affects the first-order optimality equations, this strategy is important.
-        //======================================================================
+        // // Calculate the vector [b; J*x + h]
+        // ry.head(ml).noalias() = b;
+        // ry.tail(mn).noalias() = J*x + h;
 
-        // Calculate the vector [b; J*x + h]
-        ry.head(ml).noalias() = b;
-        ry.tail(mn).noalias() = J*x + h;
+        // // Calculate b' = R*[b; J*x + h]
+        // bprime.noalias() = R * ry;
 
-        // Calculate b' = R*[b; J*x + h]
-        bprime.noalias() = R * ry;
+        // // Ensure b' is clean of residual round off errors
+        // cleanResidualRoundoffErrors(bprime);
 
-        // Ensure b' is clean of residual round off errors
-        cleanResidualRoundoffErrors(bprime);
+        // // Determine the order of the non-basic variables from small to large values
+        // Indices jnorder = indices(nn);
+        // std::sort(jnorder.begin(), jnorder.end(),
+        //     [&](auto a, auto b) { return x[jn[a]] < x[jn[b]]; });
 
-        // Determine the order of the non-basic variables from small to large values
-        Indices jnorder = indices(nn);
-        std::sort(jnorder.begin(), jnorder.end(),
-            [&](auto a, auto b) { return x[jn[a]] < x[jn[b]]; });
+        // // Ensure ry starts with zeros
+        // ry.fill(0.0);
 
-        // Ensure ry starts with zeros
-        ry.fill(0.0);
+        // // Because W = [A; J] may have linearly dependent rows, work only with
+        // // the sub-vectors corresponding to basic variables.
+        // auto ryb = ry.head(nb);         // ry = [ryb, ryl]
+        // auto bprimeb = bprime.head(nb); // b' = [bb', bl']
 
-        // Because W = [A; J] may have linearly dependent rows, work only with
-        // the sub-vectors corresponding to basic variables.
-        auto ryb = ry.head(nb);         // ry = [ryb, ryl]
-        auto bprimeb = bprime.head(nb); // b' = [bb', bl']
+        // // Compute the S*xn contribution paying attention to round-off errors
+        // for(auto i : jnorder)
+        //     ryb += S.col(i) * x[jn[i]];
 
-        // Compute the S*xn contribution paying attention to round-off errors
-        for(auto i : jnorder)
-            ryb += S.col(i) * x[jn[i]];
+        // // Compute remaining xb - bb'
+        // ryb.noalias() += xb;
+        // ryb.noalias() -= bprimeb;
 
-        // Compute remaining xb - bb'
-        ryb.noalias() += xb;
-        ryb.noalias() -= bprimeb;
-
-        ryb.noalias() = ryb.cwiseQuotient((xb.array() != 0.0).select(xb, 1.0));
+        // ryb.noalias() = ryb.cwiseQuotient((xb.array() != 0.0).select(xb, 1.0));
     }
 
     /// Decompose the saddle point matrix.
@@ -333,21 +332,21 @@ struct Stepper::Impl
         // // part of the problem.
         // sa(isu).fill(0.0);
 
+        auto xprime = dx;
+        xprime = x;
+        xprime(isu).fill(0.0);
+
         // Solve the saddle point problem.
         // Note: For numerical accuracy, it is important to compute
         // directly the next x and y iterates, instead of dx and dy.
         // This is because the latter causes very small values on the
         // right-hand side of the saddle point problem, and algebraic
         // manipulation of these small values results in round-off errors.
-        solver.solve({ H, J, x, g, b, h, xbar, ybar });
+        solver.solve({ H, J, xprime, g, b, h, xbar, ybar });
 
         // Finalize the computation of the steps dx and dy
-        dx = xbar - x;
+        dx = xbar - xprime;
         dy = ybar - y;
-
-        // Ensure the strictly unstable variables have zero steps, not even
-        // round-off errors allowed.
-        dx(isu).fill(0.0);
 
         //=====================================================================
         // Exponential Impulse with x' = x * exp(dx/x)
@@ -357,10 +356,10 @@ struct Stepper::Impl
 
         // if(res < eps && !firstiter)
         // if(res < options.tolerance)
-        // {
-        //     xbar = x.array() * dx.cwiseQuotient(x).array().exp();
-        //     dx = xbar - x;
-        // }
+        {
+            xbar = x.array() * dx.cwiseQuotient(x).array().exp();
+            dx = xbar - x;
+        }
     }
 
     /// Compute the sensitivity derivatives of the saddle point problem.
