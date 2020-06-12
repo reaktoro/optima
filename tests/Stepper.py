@@ -18,6 +18,7 @@
 from optima import *
 from numpy import *
 from numpy.linalg import norm
+from numpy.testing import assert_allclose
 from pytest import approx, mark
 from itertools import product
 
@@ -178,7 +179,7 @@ def test_active_stepper(args):
     M[iunstable, iunstable] = 1.0
 
     # Compute the right-hand side vector r = Ms
-    r = r_expected = M @ s  # Introduce `r` as an alias for `r_expected`
+    r = M @ s
 
     # Get references to rx and ry in r where rx := -(g + tr(W)y) and ry := (ryl, ryn)
     rx = r[:n]
@@ -205,11 +206,11 @@ def test_active_stepper(args):
     h = -ryn
 
     # The solution of the Newton step calculation
-    dx = zeros(n) # The Newton step for the primal variables *x*.
-    dy = zeros(m) # The Newton step for the Lagrange multipliers *y*.
-    rx = zeros(n) # The residuals of the first-order optimality conditions.
-    ry = zeros(m) # The residuals of the linear/nonlinear feasibility conditions.
-    z = zeros(n)  # The *unstabilities* of the variables defined as *z = g + tr(W)y* where *W = [A; J]*.
+    dx   = zeros(n)  # The Newton step for the primal variables *x*.
+    dy   = zeros(m)  # The Newton step for the Lagrange multipliers *y*.
+    resx = zeros(n)  # The residuals of the first-order optimality conditions.
+    resy = zeros(m)  # The residuals of the linear/nonlinear feasibility conditions.
+    z    = zeros(n)  # The *unstabilities* of the variables defined as *z = g + tr(W)y* where *W = [A; J]*.
 
     # Create the stability state of the variables
     stability = Stability()
@@ -224,10 +225,14 @@ def test_active_stepper(args):
 
     # Initialize, decompose the saddle point matrix, and solve the Newton step
     stepper.initialize(b, xlower, xupper, x, stability)
+    stepper.canonicalize(x, y, g, H, J, xlower, xupper, stability)
+    stepper.residuals(x, y, b, h, g, resx, resy, z)
     stepper.decompose(x, y, g, H, J, xlower, xupper, stability)
-    stepper.solve(x, y, b, h, g, H, stability, dx, dy, rx, ry, z)
+    stepper.solve(x, y, b, h, g, H, stability, dx, dy)
 
+    #==============================================================
     # Compute the sensitivity derivatives of the optimal solution
+    #==============================================================
     np = 5  # the number of parameters
 
     dsdp_expected = linspace(1.0, t*np, t*np).reshape((t, np))
@@ -263,6 +268,8 @@ def test_active_stepper(args):
     dzdp_expected = dgdp + W.T @ dydp  # do not use dydp_expected here; causes failure when there are basic fixed variables (degeneracy)!!!
     dzdp_expected[istable, :] = 0.0  # dzdp is zero for stable variables
 
+    set_printoptions(suppress=True, linewidth=1000, precision=3)
+
     # Print state variables
     def print_state():
         set_printoptions(suppress=True, linewidth=1000, precision=3)
@@ -281,10 +288,6 @@ def test_active_stepper(args):
         print(f"dx(expected) = {s[:n]}")
         print(f"dy(actual)   = {dy}")
         print(f"dy(expected) = {s[n:]}")
-        print(f"rx(actual)   = {rx}")
-        print(f"rx(expected) = {r[:n]}")
-        print(f"ry(actual)   = {ry}")
-        print(f"ry(expected) = {r[n:]}")
         print(f"dxdp(actual) = \n{dxdp}")
         print(f"dxdp(expected) = \n{dxdp_expected}")
         print(f"dydp(actual) = \n{dydp}")
@@ -296,18 +299,19 @@ def test_active_stepper(args):
     # Compare the actual and expected Newton steps
     s_actual = concatenate([dx, dy])
 
-    assert allclose(M @ s_actual, M @ s_expected), print_state()
+    assert_allclose(M @ s_actual, M @ s_expected)
 
-    # Compare the actual and expected right-hand side vector r of residuals
-    r_actual = concatenate([rx, ry])
+    # # Get the canonicalization matrix R
+    # R = stepper.info().R  # TODO: Stepper has no info method yet.
 
-    assert allclose(r_actual, r_expected)
+    # # The expected optimality and feasibility residuals
+    # resx_expected = abs(rx)
+    # resy_expected = abs(R * ry)  # The feasibility residuals in canonical form!
+    # z_expected = g + W.T @ y
 
-    # Compare the actual and expected z vector
-    z_actual = z
-    z_expected = g + W.T @ y
-
-    assert allclose(z_actual, z_expected)
+    # assert_allclose(resx, resx_expected)
+    # assert_allclose(resy, resy_expected)
+    # assert_allclose(z, z_expected)
 
     # Create a Stability object with expected state
     expected_stability = create_expected_stability(A, x, b, z, xlower, xupper)
@@ -315,5 +319,5 @@ def test_active_stepper(args):
     check_stability(stability, expected_stability)
 
     # Compare the actual and expected sensitivity derivatives
-    assert allclose(drdp_expected, drdp)
-    assert allclose(dzdp_expected, dzdp)
+    assert_allclose(drdp_expected, drdp)
+    assert_allclose(dzdp_expected, dzdp)

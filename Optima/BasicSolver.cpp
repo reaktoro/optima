@@ -305,11 +305,17 @@ struct BasicSolver::Impl
         assert(xlower.rows() == n);
         assert(xupper.rows() == n);
 
+    	// Canonicalize the W = [A; J] matrix as a pre-step to calculate the Newton step
+        stepper.canonicalize({ x, y, g, H, J, xlower, xupper, stability });
+
+        // Compute the current optimality and feasibility residuals
+        stepper.residuals({ x, y, b, h, g, rx, ry, z });
+
     	// Decompose the Jacobian matrix and calculate a Newton step
         stepper.decompose({ x, y, g, H, J, xlower, xupper, stability });
 
         // Calculate the Newton step
-        stepper.solve({ x, y, b, h, g, H, stability, dx, dy, rx, ry, z });
+        stepper.solve({ x, y, b, h, g, H, stability, dx, dy });
 
         // Update the time spent in linear systems
 		result.time_linear_systems += timer.elapsed();

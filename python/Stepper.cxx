@@ -42,6 +42,32 @@ void exportStepper(py::module& m)
         self.initialize({ b, xlower, xupper, x, stability });
     };
 
+    auto canonicalize = [](Stepper& self,
+        VectorConstRef x,
+        VectorConstRef y,
+        VectorConstRef g,
+        MatrixConstRef4py H,
+        MatrixConstRef4py J,
+        VectorConstRef xlower,
+        VectorConstRef xupper,
+        Stability& stability)
+    {
+        self.canonicalize({ x, y, g, H, J, xlower, xupper, stability  });
+    };
+
+    auto residuals = [](Stepper& self,
+        VectorConstRef x,
+        VectorConstRef y,
+        VectorConstRef b,
+        VectorConstRef h,
+        VectorConstRef g,
+        VectorRef rx,
+        VectorRef ry,
+        VectorRef z)
+    {
+        self.residuals({ x, y, b, h, g, rx, ry, z });
+    };
+
     auto decompose = [](Stepper& self,
         VectorConstRef x,
         VectorConstRef y,
@@ -64,12 +90,9 @@ void exportStepper(py::module& m)
         MatrixConstRef4py H,
         Stability const& stability,
         VectorRef dx,
-        VectorRef dy,
-        VectorRef rx,
-        VectorRef ry,
-        VectorRef z)
+        VectorRef dy)
     {
-        self.solve({x, y, b, h, g, H, stability, dx, dy, rx, ry, z});
+        self.solve({x, y, b, h, g, H, stability, dx, dy });
     };
 
     Matrix tmp_dxdp, tmp_dydp, tmp_dzdp;
@@ -96,6 +119,8 @@ void exportStepper(py::module& m)
         .def(py::init(init))
         .def("setOptions", &Stepper::setOptions)
         .def("initialize", initialize)
+        .def("canonicalize", canonicalize)
+        .def("residuals", residuals)
         .def("decompose", decompose)
         .def("solve", solve)
         .def("sensitivities", sensitivities)
