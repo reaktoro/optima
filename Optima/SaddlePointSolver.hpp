@@ -42,6 +42,19 @@ struct SaddlePointSolverInitArgs
     MatrixConstRef A;
 };
 
+/// The arguments for method SaddlePointSolver::canonicalize.
+struct SaddlePointSolverCanonicalizeArgs
+{
+    /// The Hessian matrix *H* in the saddle point problem.
+    MatrixConstRef H;
+
+    /// The lower and variable block of the Jacobian matrix *W = [A; J]* in the saddle point problem.
+    MatrixConstRef J;
+
+    /// The indices of the fixed variables.
+    IndicesConstRef ifixed;
+};
+
 /// The arguments for method SaddlePointSolver::decompose.
 struct SaddlePointSolverDecomposeArgs
 {
@@ -82,6 +95,25 @@ struct SaddlePointSolverSolveAlternativeArgs
 
     /// The right-hand side vector *b* (as input) and solution vector *y* (as output) in the saddle point problem.
     VectorRef y;
+};
+
+/// The return type of method SaddlePointSolver::info.
+struct SaddlePointSolverInfo
+{
+    /// The current indices of the basic variables.
+    IndicesConstRef ibasic;
+
+    /// The current indices of the non-basic variables.
+    IndicesConstRef inonbasic;
+
+    /// The current canonicalization matrix *R* of *W = [A; J]*.
+    MatrixConstRef R;
+
+    /// The current matrix *S* in the canonical form of *W = [A; J]*.
+    MatrixConstRef S;
+
+    /// The current permutation matrix *Q* in the canonical form of *W = [A; J]*.
+    IndicesConstRef Q;
 };
 
 /// The arguments for method SaddlePointSolver::solve.
@@ -168,7 +200,11 @@ public:
     /// Return the current saddle point options.
     auto options() const -> const SaddlePointOptions&;
 
+    /// Canonicalize the *W = [A; J]* matrix of the saddle point problem.
+    auto canonicalize(SaddlePointSolverCanonicalizeArgs args) -> void;
+
     /// Decompose the coefficient matrix of the saddle point problem into canonical form.
+    /// @note Ensure method @ref canonicalize has been called before this method.
     auto decompose(SaddlePointSolverDecomposeArgs args) -> void;
 
     /// Solve the saddle point problem.
@@ -182,6 +218,9 @@ public:
     /// Solve the saddle point problem.
     /// @note Ensure method @ref decompose has been called before this method.
     auto solve(SaddlePointSolverSolveAdvancedArgs args) -> void;
+
+    /// Return the current state info of the saddle point solver.
+    auto info() const -> SaddlePointSolverInfo;
 
 private:
     struct Impl;

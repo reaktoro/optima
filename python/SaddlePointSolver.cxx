@@ -33,6 +33,11 @@ void exportSaddlePointSolver(py::module& m)
         return SaddlePointSolver({ n, m, A });
     };
 
+    auto canonicalize = [](SaddlePointSolver& self, MatrixConstRef4py H, MatrixConstRef4py J, IndicesConstRef ifixed)
+    {
+        return self.canonicalize({ H, J, ifixed });
+    };
+
     auto decompose = [](SaddlePointSolver& self, MatrixConstRef4py H, MatrixConstRef4py J, MatrixConstRef4py G, IndicesConstRef ifixed)
     {
         return self.decompose({ H, J, G, ifixed });
@@ -58,6 +63,7 @@ void exportSaddlePointSolver(py::module& m)
         .def(py::init(init))
         .def("setOptions", &SaddlePointSolver::setOptions)
         .def("options", &SaddlePointSolver::options)
+        .def("canonicalize", canonicalize)
         .def("decompose", decompose)
         .def("solve", solve1)
         .def("solve", solve2)

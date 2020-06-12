@@ -75,7 +75,6 @@ struct SaddlePointSolver::Impl
 
     Eigen::PartialPivLU<Matrix> lu; ///< The LU decomposition solver.
 
-    bool initialized = false; ///< The boolean flag that indicates whether the saddle point solver has been initialized.
     bool degenerate = false;  ///< The boolean flag that indicates that the decomposed saddle point matrix was degenerate with no free variables.
 
     /// Construct a default SaddlePointSolver::Impl instance.
@@ -95,9 +94,6 @@ struct SaddlePointSolver::Impl
         ml = args.A.rows();
         mn = m - ml;
 
-        /// Update initialization status
-        initialized = true;
-
         // Allocate auxiliary memory
         a.resize(n);
         b.resize(m);
@@ -110,9 +106,12 @@ struct SaddlePointSolver::Impl
         iordering = indices(n);
     }
 
-    /// Update the canonical form of the coefficient matrix *W = [A; J]* of the saddle point problem.
-    auto updateCanonicalForm(SaddlePointSolverDecomposeArgs args) -> void
+    /// Canonicalize the *W = [A; J]* matrix of the saddle point problem.
+    auto canonicalize(SaddlePointSolverCanonicalizeArgs args) -> void
     {
+        // Ensure number of variables is positive.
+        assert(n > 0);
+
         // Update the number of fixed and free variables
         nf = args.ifixed.size();
         nx = n - nf;
@@ -192,11 +191,8 @@ struct SaddlePointSolver::Impl
     /// Decompose the coefficient matrix of the saddle point problem.
     auto decompose(SaddlePointSolverDecomposeArgs args) -> void
     {
-        // Ensure initialization has happened.
+        // Ensure number of variables is positive.
         assert(n > 0);
-
-        // Update the canonical form of the matrix *W = [A; J]*
-        updateCanonicalForm(args);
 
         // Check if the saddle point matrix is degenerate, with no free variables.
         if(degenerate)
@@ -1331,6 +1327,17 @@ struct SaddlePointSolver::Impl
         // Set back the values of x currently stored in a
         x(iordering).noalias() = a;
     }
+
+    /// Return the current state info of the saddle point solver.
+    auto info() const -> SaddlePointSolverInfo
+    {
+        const auto jb = canonicalizer.indicesBasicVariables();
+        const auto jn = canonicalizer.indicesNonBasicVariables();
+        const auto S  = canonicalizer.S();
+        const auto R  = canonicalizer.R();
+        const auto Q  = canonicalizer.Q();
+        return { jb, jn, R, S, Q };
+    }
 };
 
 SaddlePointSolver::SaddlePointSolver()
@@ -1364,6 +1371,11 @@ auto SaddlePointSolver::options() const -> const SaddlePointOptions&
     return pimpl->options;
 }
 
+auto SaddlePointSolver::canonicalize(SaddlePointSolverCanonicalizeArgs args) -> void
+{
+    return pimpl->canonicalize(args);
+}
+
 auto SaddlePointSolver::decompose(SaddlePointSolverDecomposeArgs args) -> void
 {
     return pimpl->decompose(args);
@@ -1383,6 +1395,11 @@ auto SaddlePointSolver::solve(SaddlePointSolverSolveAlternativeArgs args) -> voi
 auto SaddlePointSolver::solve(SaddlePointSolverSolveAdvancedArgs args) -> void
 {
     return pimpl->solve(args);
+}
+
+auto SaddlePointSolver::info() const -> SaddlePointSolverInfo
+{
+    return pimpl->info();
 }
 
 } // namespace Optima

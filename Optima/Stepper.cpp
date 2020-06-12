@@ -163,6 +163,7 @@ struct Stepper::Impl
         // times! Consider lower/upper unstable variables as "fixed" variables
         // in the saddle point problem. Reason: we do not need to compute
         // Newton steps for the currently unstable variables!
+        solver.canonicalize({ H, J, iu });
         solver.decompose({ H, J, Matrix{}, iu });
     }
 
@@ -246,10 +247,10 @@ struct Stepper::Impl
 
         // if(res < eps && !firstiter)
         // if(res < options.tolerance)
-        // {
-        //     xbar = x.array() * dx.cwiseQuotient(x).array().exp();
-        //     dx = xbar - x;
-        // }
+        {
+            xbar = x.array() * dx.cwiseQuotient(x).array().exp();
+            dx = xbar - x;
+        }
     }
 
     /// Compute the sensitivity derivatives of the saddle point problem.

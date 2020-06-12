@@ -164,6 +164,7 @@ def test_saddle_point_solver(args):
     # Create a SaddlePointSolver to solve the saddle point problem
     solver = SaddlePointSolver(n, m, A)
     solver.setOptions(options)
+    solver.canonicalize(H, J, ifixed)
     solver.decompose(H, J, G, ifixed)
 
     def check_solution(x, y):
