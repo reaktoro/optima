@@ -136,9 +136,6 @@ struct StepperInfo
 class Stepper
 {
 public:
-    /// Construct a default Stepper instance.
-    Stepper();
-
     /// Construct a Stepper instance with given initialization data.
     explicit Stepper(StepperInitArgs args);
 

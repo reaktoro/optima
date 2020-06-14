@@ -48,10 +48,6 @@ struct Stepper::Impl
     StabilityChecker stbchecker; ///< The stability checker of the primal variables
     SaddlePointSolver solver;    ///< The saddle point solver.
 
-    /// Construct a default Stepper::Impl instance.
-    Impl()
-    {}
-
     /// Construct a Stepper::Impl instance.
     Impl(StepperInitArgs args)
     : n(args.n), m(args.m), W(args.m, args.n),
@@ -290,7 +286,7 @@ struct Stepper::Impl
         // times! Consider lower/upper unstable variables as "fixed" variables
         // in the saddle point problem. Reason: we do not need to compute
         // Newton steps for the currently unstable variables!
-        solver.decompose({ H, J, G, iu });
+        solver.decompose({ H, J, iu });
     }
 
     /// Solve the saddle point problem.
@@ -345,8 +341,8 @@ struct Stepper::Impl
         solver.solve({ H, J, xprime, g, b, h, xbar, ybar });
 
         // Finalize the computation of the steps dx and dy
-        dx = xbar - xprime;
-        dy = ybar - y;
+        dx.noalias() = xbar - xprime;
+        dy.noalias() = ybar - y;
 
         //=====================================================================
         // Exponential Impulse with x' = x * exp(dx/x)
@@ -356,10 +352,10 @@ struct Stepper::Impl
 
         // if(res < eps && !firstiter)
         // if(res < options.tolerance)
-        {
-            xbar = x.array() * dx.cwiseQuotient(x).array().exp();
-            dx = xbar - x;
-        }
+        // {
+        //     xbar = x.array() * dx.cwiseQuotient(x).array().exp();
+        //     dx = xbar - x;
+        // }
     }
 
     /// Compute the sensitivity derivatives of the saddle point problem.
@@ -411,10 +407,6 @@ struct Stepper::Impl
         dzdp(iu, all) = dgdp(iu, all) + tr(W(all, iu)) * dydp;
     }
 };
-
-Stepper::Stepper()
-: pimpl(new Impl())
-{}
 
 Stepper::Stepper(StepperInitArgs args)
 : pimpl(new Impl(args))

@@ -52,7 +52,7 @@ struct SaddlePointSolverCanonicalizeArgs
     MatrixConstRef J;
 
     /// The indices of the fixed variables.
-    IndicesConstRef ifixed;
+    IndicesConstRef jf;
 };
 
 /// The arguments for method SaddlePointSolver::decompose.
@@ -64,11 +64,8 @@ struct SaddlePointSolverDecomposeArgs
     /// The lower and variable block of the Jacobian matrix *W = [A; J]* in the saddle point problem.
     MatrixConstRef J;
 
-    /// The negative semi-definite matrix *G* in the saddle point problem.
-    MatrixConstRef G;
-
     /// The indices of the fixed variables.
-    IndicesConstRef ifixed;
+    IndicesConstRef jf;
 };
 
 /// The arguments for method SaddlePointSolver::solve.
@@ -211,9 +208,6 @@ struct SaddlePointSolverResidualAdvancedArgs
 class SaddlePointSolver
 {
 public:
-    /// Construct a default SaddlePointSolver instance.
-    SaddlePointSolver();
-
     /// Construct a SaddlePointSolver instance with given data.
     SaddlePointSolver(SaddlePointSolverInitArgs args);
 

@@ -18,6 +18,7 @@
 from optima import *
 from numpy import *
 from numpy.linalg import norm
+from numpy.testing import assert_allclose
 from pytest import approx, mark
 from itertools import product
 
@@ -51,12 +52,6 @@ tested_structures_H = [
     'diagonalH'
 ]
 
-# Tested cases for the structure of matrix G
-tested_structures_G = [
-    'denseG', # TODO: currently, dense G tests produces more residual error than the other cases (I think it is because of R*G*tr(R) terms, Allan, 21.01.20).
-    'zeroG'
-]
-
 # Tested cases for the indices of fixed variables
 tested_ifixed = [
     arange(0),
@@ -85,7 +80,6 @@ tested_methods = [
 # Combination of all tested cases
 testdata = product(tested_matrices_W,
                    tested_structures_H,
-                   tested_structures_G,
                    tested_ifixed,
                    tested_ml,
                    tested_mn,
@@ -95,7 +89,7 @@ testdata = product(tested_matrices_W,
 @mark.parametrize("args", testdata)
 def test_saddle_point_solver(args):
 
-    assemble_W, structure_H, structure_G, ifixed, ml, mn, variable_condition, method = args
+    assemble_W, structure_H, ifixed, ml, mn, variable_condition, method = args
 
     m = ml + mn
 
@@ -110,8 +104,8 @@ def test_saddle_point_solver(args):
     A = W[:ml, :]  # extract the upper block of W = [A; J]
     J = W[ml:, :]  # extract the lower block of W = [A; J]
 
-    H =  matrix_non_singular(n)
-    G = -matrix_non_singular(m) if structure_G == 'denseG' else zeros((m, m))
+    H = matrix_non_singular(n)
+    O = zeros((m, m))
 
     if method == SaddlePointMethod.Rangespace:
         H = abs(diag(linspace(1, n, num=n)))
@@ -131,8 +125,8 @@ def test_saddle_point_solver(args):
     H[ifixed, :] = 0.0  # zero out rows in H corresponding to fixed variables
     H[:, ifixed] = 0.0  # zero out cols in H corresponding to fixed variables
 
-    # Assemble the coefficient matrix [[H, tr(W)], [W, G]]
-    M = block([[H, W.T], [W, G]])
+    # Assemble the coefficient matrix [[H, tr(W)], [W, O]]
+    M = block([[H, W.T], [W, O]])
 
     M[ifixed, :] = 0.0       # zero out rows in M corresponding to fixed variables
     M[:n, ifixed] = 0.0      # zero out cols in M in the top-left block corresponding to fixed variables
@@ -153,10 +147,6 @@ def test_saddle_point_solver(args):
     x = a.copy()
     y = b.copy()
 
-    # Set G to empty in case it is zero
-    if structure_G == 'zeroG':
-        G = zeros((0, 0))
-
     # Specify the saddle point method for the current test
     options = SaddlePointOptions()
     options.method = method
@@ -165,7 +155,7 @@ def test_saddle_point_solver(args):
     solver = SaddlePointSolver(n, m, A)
     solver.setOptions(options)
     solver.canonicalize(H, J, ifixed)
-    solver.decompose(H, J, G, ifixed)
+    solver.decompose(H, J, ifixed)
 
     def check_solution(x, y):
         # Create solution vector s = [x, y]
@@ -173,7 +163,7 @@ def test_saddle_point_solver(args):
 
         # Check the residual of the equation M * s = r
 
-        tol = 1e-9 if structure_G == 'denseG' else 1e-13
+        tol = 1e-13
 
         succeeded = norm(M @ s - r) / norm(r) < tol
 
@@ -181,7 +171,6 @@ def test_saddle_point_solver(args):
             print()
             print(f"assemble_W = {assemble_W}")
             print(f"structure_H = {structure_H}")
-            print(f"structure_G = {structure_G}")
             print(f"ifixed = {ifixed}")
             print(f"ml = {ml}")
             print(f"mn = {mn}")
@@ -206,6 +195,10 @@ def test_saddle_point_solver(args):
     g = H @ x0 - a   # compute g so that H*x - g === a (identical to r[:n])
     h = J @ x0 - bn  # compute h so that J*x - h === bn (identical to r[n:])
 
+    print("a = \n", a)
+    print("b = \n", b)
+    print("x0 = \n", x0)
+    print("bn = \n", bn)
     solver.solve(H, J, x0, g, bl, h, x, y)
 
     check_solution(x, y)

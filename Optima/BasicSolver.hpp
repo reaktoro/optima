@@ -75,9 +75,6 @@ struct BasicSolverSensitivitiesArgs
 class BasicSolver
 {
 public:
-    /// Construct a default BasicSolver instance.
-    BasicSolver();
-
     /// Construct a BasicSolver instance with given details of the optimization problem.
     BasicSolver(BasicSolverInitArgs args);
 

@@ -71,7 +71,6 @@ void exportBasicSolver(py::module& m)
     };
 
     py::class_<BasicSolver>(m, "BasicSolver")
-        .def(py::init<>())
         .def(py::init(init))
         .def("setOptions", &BasicSolver::setOptions)
         .def("solve", solve)

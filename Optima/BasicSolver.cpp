@@ -112,12 +112,9 @@ struct BasicSolver::Impl
     /// The outputter instance
     Outputter outputter;
 
-    /// Construct a default BasicSolver::Impl instance.
-    Impl()
-    {}
-
     /// Construct a BasicSolver::Impl instance with given details of the optimization problem.
     Impl(BasicSolverInitArgs args)
+    : stepper({ args.n, args.m, args.A })
     {
         // Initialize the members related to number of variables and constraints
         n  = args.n;
@@ -140,9 +137,6 @@ struct BasicSolver::Impl
         ry      = zeros(m);
         xtrial  = zeros(n);
         dxtrial = zeros(n);
-
-        // Initialize step calculator
-        stepper = Stepper({n, m, args.A});
     }
 
     /// Set the options for the optimization calculation.
@@ -607,10 +601,6 @@ struct BasicSolver::Impl
         return result;
     }
 };
-
-BasicSolver::BasicSolver()
-: pimpl(new Impl())
-{}
 
 BasicSolver::BasicSolver(BasicSolverInitArgs args)
 : pimpl(new Impl(args))

@@ -115,7 +115,6 @@ void exportStepper(py::module& m)
     };
 
     py::class_<Stepper>(m, "Stepper")
-        .def(py::init<>())
         .def(py::init(init))
         .def("setOptions", &Stepper::setOptions)
         .def("initialize", initialize)
