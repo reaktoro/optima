@@ -18,9 +18,7 @@
 #pragma once
 
 // Eigen includes
-#include <Optima/deps/eigen3/Eigen/Core>
-#include <Optima/deps/eigenx/Eigen/Functions>
-#include <Optima/deps/eigenx/Eigen/Types>
+#include <Optima/Eigen.hpp>
 
 namespace Optima {
 
