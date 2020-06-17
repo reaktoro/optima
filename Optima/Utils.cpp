@@ -32,6 +32,159 @@ auto largestStep(const Vector& p, const Vector& dp) -> double
     return alpha;
 }
 
+auto largestStep(const Vector& p, const Vector& dp, const Vector& plower, const Vector& pupper) -> double
+{
+    using std::isfinite;
+    using std::min;
+    auto alpha = infinity();
+    for(auto i = 0; i < p.size(); ++i)
+    {
+        assert(p[i] >= plower[i]);
+        assert(p[i] <= pupper[i]);
+        if(isfinite(plower[i]) && p[i] + dp[i] < plower[i])
+        {
+            const auto alphai = (plower[i] - p[i])/dp[i]; // from p[i] + alpha[i]*dp[i] = plower[i]
+            alpha = min(alpha, alphai);
+            continue;
+        }
+        if(isfinite(pupper[i]) && p[i] + dp[i] > pupper[i])
+        {
+            const auto alphai = (pupper[i] - p[i])/dp[i]; // from p[i] + alpha[i]*dp[i] = pupper[i]
+            alpha = min(alpha, alphai);
+            continue;
+        }
+    }
+    return alpha;
+}
+
+auto performConservativeStep(Vector& p, const Vector& dp, const Vector& plower, const Vector& pupper) -> void
+{
+    // Assert all vectors have consistent dimention
+    const auto size = p.size();
+    assert(dp.size() == size);
+    assert(plower.size() == size);
+    assert(pupper.size() == size);
+
+    using std::isfinite;
+    using std::min;
+
+    // The index of the variable in p that has largest lower/upper bound
+    // violation, which will be attached to its bound if applicable.
+    auto j = p.size();
+
+    // The factor used to scale the step dp so that variable p[j] is attached
+    // to its lower or upper bound (affecting all other variables).
+    auto alpha = infinity();
+
+    // The integer that indicates if p[j] should be attached to its lower bound
+    // (-1), to its upper bound (+1), or j is not applicable (0).
+    auto lu = 0;
+
+    // Identify index j and alpha factor in the loop below
+    for(auto i = 0; i < size; ++i)
+    {
+        assert(p[i] >= plower[i]);
+        assert(p[i] <= pupper[i]);
+        if(p[i] == plower[i] && dp[i] < 0.0)
+        {
+            // dp[i] = 0.0;
+            continue;
+        }
+        if(p[i] == pupper[i] && dp[i] > 0.0)
+        {
+            // dp[i] = 0.0;
+            continue;
+        }
+        if(isfinite(plower[i]) && p[i] + dp[i] < plower[i])
+        {
+            const auto alphai = (plower[i] - p[i])/dp[i]; // from p[i] + alpha[i]*dp[i]
+            if(alphai < alpha)
+            {
+                alpha = alphai;
+                j = i;
+                lu = -1;
+            }
+            continue;
+        }
+        if(isfinite(pupper[i]) && p[i] + dp[i] > pupper[i])
+        {
+            const auto alphai = (pupper[i] - p[i])/dp[i]; // from p[i] + alpha[i]*dp[i]
+            if(alphai < alpha)
+            {
+                alpha = alphai;
+                j = i;
+                lu = +1;
+            }
+            continue;
+        }
+    }
+
+    // If needed, perform the conservative step using alpha
+    if(lu != 0)
+    {
+        // Compute p' = p + alpha*dp
+        p += alpha * dp;
+
+        // Ensure exact bound attachment for p[j]. This is needed because
+        // round-off errors in p[j] + alpha*dp[j] can prevent that.
+        p[j] = lu == -1 ? plower[j] : pupper[j];
+    }
+    // Compute p' = p + dp
+    else p += dp;
+
+    // Loop once more through all variables and attach any bound violating
+    // variable to its closest bound. This is also done in case round-off
+    // errors in p + alpha*dp produced slightly bound violations.
+    p.noalias() = p.cwiseMax(plower);
+    p.noalias() = p.cwiseMin(pupper);
+}
+
+auto performAggressiveStep(Vector& p, const Vector& dp, const Vector& plower, const Vector& pupper) -> void
+{
+    // Assert all vectors have consistent dimention
+    const auto size = p.size();
+    assert(dp.size() == size);
+    assert(plower.size() == size);
+    assert(pupper.size() == size);
+
+    // Perform full step so that p' = p + dp
+    p += dp;
+
+    // Ensure no entry in `p'` violates lower/upper bounds
+    p.noalias() = p.cwiseMax(plower);
+    p.noalias() = p.cwiseMin(pupper);
+}
+
+auto stepUpToBounds(const Vector& p, const Vector& dp, const Vector& plower, const Vector& pupper) -> double
+{
+    using std::isfinite;
+    using std::min;
+    Vector res = -p.array() / dp.array();
+    double alpha = infinity();
+    for(auto i = 0; i < res.size(); ++i)
+    {
+        assert(p[i] >= plower[i]);
+        assert(p[i] <= pupper[i]);
+        const auto pi = p[i] + dp[i];
+        if(isfinite(plower[i]) && p[i] + dp[i] < plower[i])
+        {
+            const auto alphai = (plower[i] - p[i])/dp[i]; // from p[i] + alpha[i]*dp[i] = plower[i] => alpha[i] = (plower[i] - p[i])/dp[i]
+            alpha = min(alpha, alphai);
+            continue;
+        }
+        if(isfinite(pupper[i]) && p[i] + dp[i] > pupper[i])
+        {
+            const auto alphai = (pupper[i] - p[i])/dp[i]; // from p[i] + alpha[i]*dp[i] = pupper[i] => alpha[i] = (pupper[i] - p[i])/dp[i]
+            alpha = min(alpha, alphai);
+            continue;
+        }
+
+        if(pi > pupper[i])
+            alpha = res[i];
+    }
+    return alpha;
+}
+
 auto fractionToTheBoundary(const Vector& p, const Vector& dp, double tau) -> double
 {
     Index i;

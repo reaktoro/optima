@@ -32,7 +32,27 @@ namespace Optima {
 /// lower bound @f$\mathbf{x}_l=\mathbf{0}@f$.
 /// @param p The point @f$\mathbf{p}@f$
 /// @param dp The step @f$\Delta\mathbf{p}@f$
+/// @return The largest step length (+inf in case the step does not violate the bounds)
 auto largestStep(const Vector& p, const Vector& dp) -> double;
+
+/// Compute the largest step length @f$\alpha@f$ such that
+/// @f$\mathbf{p} + \alpha\Delta\mathbf{p}@f$ does not violate
+/// the given lower and upper bounds.
+/// @param p The point @f$\mathbf{p}@f$
+/// @param dp The step @f$\Delta\mathbf{p}@f$
+/// @param plower The lower bounds for @eq{\mathbf{p}}
+/// @param pupper The upper bounds for @eq{\mathbf{p}}
+/// @return The largest step length (+inf in case the step does not violate the bounds)
+auto largestStep(const Vector& p, const Vector& dp, const Vector& plower, const Vector& pupper) -> double;
+
+/// Perform a conservative step using @eq{p^{\prime}=p+\alpha\Delta p}.
+/// In this method, a factor @eq{\alpha\in(0,1]} is used to reduce the step
+/// length of @eq{\Delta p} so that no lower or upper bounds are violated. The
+/// factor @eq{alpha} is determined based on the largest bound violation.
+auto performConservativeStep(Vector& p, const Vector& dp, const Vector& plower, const Vector& pupper) -> void;
+
+/// Perform an aggressive step using @eq{p^{\prime}=\max(p_{\mathrm{lower}},\min(p,p_{\mathrm{upper}}))}.
+auto performAggressiveStep(Vector& p, const Vector& dp, const Vector& plower, const Vector& pupper) -> void;
 
 /// Compute the fraction-to-the-boundary step length given by:
 /// @f[\alpha_{\mathrm{max}}=\max\{\alpha\in(0,1]:\mathbf{p}+\alpha\Delta\mathbf{p}\geq(1-\tau)\mathbf{p}\}@f.]

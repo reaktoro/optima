@@ -32,7 +32,13 @@ void exportUtils(py::module& m)
         .value("Zero", MatrixStructure::Zero)
         ;
 
-    m.def("largestStep", &largestStep);
+    auto largestStep1 = static_cast<double(*)(const Vector&, const Vector&)>(&largestStep);
+    auto largestStep2 = static_cast<double(*)(const Vector&, const Vector&, const Vector&, const Vector&)>(&largestStep);
+
+    m.def("largestStep", largestStep1);
+    m.def("largestStep", largestStep2);
+    m.def("performConservativeStep", &performConservativeStep);
+    m.def("performAggressiveStep", &performAggressiveStep);
     m.def("lessThan", &lessThan);
     m.def("greaterThan", &greaterThan);
     m.def("infinity", &infinity);
