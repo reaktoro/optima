@@ -30,87 +30,60 @@
 #include <Optima/Utils.hpp>
 
 namespace Optima {
-namespace detail {
-
-// auto applyStep(VectorConstRef p, VectorConstRef dp, VectorConstRef plower, VectorConstRef pupper, double tau)
-// {
-//     auto ilimiting = p.size();
-//     auto alpha = 1.0;
-//     const auto np = p.size();
-//     for(auto i = 0; i < np; ++i)
-//     {
-//         const auto qi = p[i] + alpha*dp[i];
-//         if(qi <= plower[i])
-//             alpha = (plower[i] - p[i])/dp[i]; // p[i] + alpha*dp[i] === plower[i]
-//         if(qi <= plower[i] || qi >= pupper[i])
-//     }
-
-// }
-
-} // namespace detail
 
 /// The implementation of the solver for basic optimization problems.
 struct BasicSolver::Impl
 {
-    /// The calculator of the Newton step (dx, dy, dz, dw)
-    Stepper stepper;
+    //======================================================================
+    // DATA INITIALIZED AT CONSTRUCTION TIME
+    //======================================================================
 
-    /// The options for the optimization calculation
-    Options options;
+    Stepper stepper; ///< The calculator of the Newton step (dx, dy).
+    Index n;         ///< The number of variables in x.
+    Index mb;        ///< The number of linear equality constraints in Ax = b.
+    Index mh;        ///< The number of non-linear equality constraints in h(x) = 0.
+    Index m;         ///< The number of constraints in Ax = b and h(x) = 0.
+    Index t;         ///< The total number of variables in (x, y).
 
-    /// The result of the non-linear equality constraint function h(x)
-    Vector h;
+    //======================================================================
+    // DATA INITIALIZED AT THE BEGINNING OF EACH SOLVE OPERATION
+    //======================================================================
 
-    /// The Jacobian matrix J of the non-linear equality constraint function h(x)
-    Matrix J;
+    ObjectiveFunction objectivefn;   ///< The objective function *f(x)* of the basic optimization problem.
+    ConstraintFunction constraintfn; ///< The nonlinear equality constraint function *h(x)*.
+    Vector b;                        ///< The right-hand side vector *b* of the linear equality constraints *Ax = b*.
+    Vector xlower;                   ///< The lower bounds of the primal variables.
+    Vector xupper;                   ///< The upper bounds of the primal variables.
+    Stability stability;             ///< The stability state of the primal variables *x*.
 
-    /// The evaluated objective function f(x).
-    double f;
+    //======================================================================
+    // DATA THAT IS CHANGED IN EVERY ITERATION OF THE ALGORITHM
+    //======================================================================
 
-    /// The evaluated gradient of the objective function f(x).
-    Vector g;
+    Result result;  ///< The result of the optimization problem
+    Vector h;       ///< The result of the non-linear equality constraint function h(x)
+    Matrix J;       ///< The Jacobian matrix J of the non-linear equality constraint function h(x)
+    double f;       ///< The evaluated objective function f(x).
+    Vector g;       ///< The evaluated gradient of the objective function f(x).
+    Matrix H;       ///< The evaluated Hessian of the objective function f(x).
+    Vector dx;      ///< The Newton step for the primal variables *x*.
+    Vector dy;      ///< The Newton step for the Lagrange multipliers *y*.
+    Vector rx;      ///< The residuals of the first-order optimality conditions.
+    Vector ry;      ///< The residuals of the linear/nonlinear feasibility conditions.
+    Vector x;       ///< The current value of x.
+    Vector y;       ///< The current value of y.
+    Vector z;       ///< The current value of z = g + tr(W)y.
+    Vector xtrial;  ///< The trial iterate x(trial).
+    Vector ytrial;  ///< The trial iterate y(trial).
+    Vector dxtrial; ///< The trial Newton step dx(trial).
+    Vector dytrial; ///< The trial Newton step dy(trial).
 
-    /// The evaluated Hessian of the objective function f(x).
-    Matrix H;
+    //======================================================================
+    // OTHER DATA
+    //======================================================================
 
-    /// The result of the optimization problem
-    Result result;
-
-    /// The Newton step for the primal variables *x*.
-    Vector dx;
-
-    /// The Newton step for the Lagrange multipliers *y*.
-    Vector dy;
-
-    /// The residuals of the first-order optimality conditions.
-    Vector rx;
-
-    /// The residuals of the linear/nonlinear feasibility conditions.
-    Vector ry;
-
-    /// The trial iterate x(trial)
-    Vector xtrial;
-
-    /// The trial Newton step dx(trial)
-    Vector dxtrial;
-
-    /// The number of variables
-    Index n;
-
-    /// The number of linear equality constraints in Ax = b.
-    Index mb;
-
-    /// The number of non-linear equality constraints in h(x) = 0.
-    Index mh;
-
-    /// The number of constraints.
-    Index m;
-
-    /// The total number of variables (x, y, z, w).
-    Index t;
-
-    /// The outputter instance
-    Outputter outputter;
+    Options options;     ///< The options for the optimization calculation.
+    Outputter outputter; ///< The outputter object to output computation state.
 
     /// Construct a BasicSolver::Impl instance with given details of the optimization problem.
     Impl(BasicSolverInitArgs args)
@@ -135,8 +108,13 @@ struct BasicSolver::Impl
         dy      = zeros(m);
         rx      = zeros(n);
         ry      = zeros(m);
+        x       = zeros(n);
+        y       = zeros(m);
+        z       = zeros(n);
         xtrial  = zeros(n);
+        ytrial  = zeros(m);
         dxtrial = zeros(n);
+        dytrial = zeros(m);
     }
 
     /// Set the options for the optimization calculation.
@@ -152,172 +130,216 @@ struct BasicSolver::Impl
         outputter.setOptions(options.output);
     }
 
-    // Output the header and initial state of the solution
-    auto outputInitialState(BasicSolverSolveArgs args) -> void
+    /// Solve the optimization problem.
+    auto solve(BasicSolverSolveArgs args) -> Result
+    {
+        // Start timing the calculation
+        Timer timer;
+
+        // Finish the calculation if the problem has no variable
+        if(n == 0)
+        {
+            result.succeeded = true;
+            result.time = timer.elapsed();
+            return result;
+        }
+
+        const auto maxiters = options.max_iterations;
+
+        // Auxiliary references to some result variables
+        auto& iterations = result.iterations;
+        auto& succeeded = result.succeeded = false;
+
+        initialize(args);
+
+        outputHeaderTop();
+
+        for(iterations = 1; iterations <= maxiters && !succeeded; ++iterations)
+        {
+            evaluateObjectiveFn(x, { .f=true, .g=true, .H=true });
+            evaluateConstraintFn(x);
+			updateResiduals();
+            outputCurrentState();
+
+            if((succeeded = converged()))
+                break;
+
+			computeNewtonStep();
+            applyNewtonStepping();
+        }
+
+        outputHeaderBottom();
+
+        finalize(args);
+
+        // Finish timing the calculation
+        result.time = timer.elapsed();
+
+        return result;
+    }
+
+    /// Compute the sensitivity derivatives of the optimal solution.
+    auto sensitivities(BasicSolverSensitivitiesArgs args) -> Result
+    {
+        Timer timer;
+
+        auto [dgdp, dhdp, dbdp, stability, dxdp, dydp, dzdp] = args;
+
+        stepper.sensitivities({ dgdp, dhdp, dbdp, stability, dxdp, dydp, dzdp });
+
+        result.time_sensitivities = timer.elapsed();
+
+        return result;
+    }
+
+    // Output the header at the top of the output table.
+    auto outputHeaderTop() -> void
     {
         if(!options.output.active) return;
-
-        // Aliases to canonical variables
-        const auto& x = args.x;
-        const auto& y = args.y;
-        const auto& z = args.z;
-
         outputter.addEntry("Iteration");
         outputter.addEntry("f(x)");
+        outputter.addEntry("Optimality");
+        outputter.addEntry("Feasibility");
         outputter.addEntry("Error");
         outputter.addEntries(options.output.xprefix, n, options.output.xnames);
         outputter.addEntries(options.output.yprefix, m, options.output.ynames);
         outputter.addEntries(options.output.zprefix, n, options.output.xnames);
         outputter.addEntries("r", n, options.output.xnames);
-        outputter.addEntry("Optimality");
-        outputter.addEntry("Feasibility");
-
         outputter.outputHeader();
-        outputter.addValue(result.iterations);
-        outputter.addValue("-");
-        outputter.addValue("-");
-        outputter.addValues(x);
-        outputter.addValues(y);
-        outputter.addValues(z);
-        outputter.addValues(abs(rx));
-        outputter.addValue("-");
-        outputter.addValue("-");
-        outputter.outputState();
     };
 
-    // The function that outputs the current state of the solution
-    auto outputCurrentState(BasicSolverSolveArgs args) -> void
+    // Output the header at the bottom of the output table.
+    auto outputHeaderBottom() -> void
     {
         if(!options.output.active) return;
+        outputter.outputHeader();
+    };
 
-        // Aliases to canonical variables
-        const auto& x = args.x;
-        const auto& y = args.y;
-        const auto& z = args.z;
-
+    // Output the current state of the solution.
+    auto outputCurrentState() -> void
+    {
+        if(!options.output.active) return;
         outputter.addValue(result.iterations);
         outputter.addValue(f);
+        outputter.addValue(result.error_optimality);
+        outputter.addValue(result.error_feasibility);
         outputter.addValue(result.error);
         outputter.addValues(x);
         outputter.addValues(y);
         outputter.addValues(z);
         outputter.addValues(abs(rx));
-        outputter.addValue(result.error_optimality);
-        outputter.addValue(result.error_feasibility);
         outputter.outputState();
     };
 
     // Initialize internal state before calculation begins
     auto initialize(BasicSolverSolveArgs args) -> void
 	{
-        // Auxiliary references
-        auto x          = args.x;
-        auto y          = args.y;
-        auto b          = args.b;
-        auto xlower     = args.xlower;
-        auto xupper     = args.xupper;
-        auto& stability = args.stability;
+        // Ensure the objective function has been given.
+        Assert(args.obj != nullptr,
+            "Could not proceed with BasicSolver::solve.",
+                "No objective function given.");
+
+        // Ensure the objective function has been given if number of nonlinear constraints is positive.
+        Assert(mh == 0 or args.h != nullptr,
+            "Could not proceed with BasicSolver::solve.",
+                "No constraint function given.");
 
         // Ensure consistent dimensions of vectors/matrices.
-        assert(x.rows() == n);
-        assert(y.rows() == m);
-        assert(xlower.rows() == n);
-        assert(xupper.rows() == n);
+        assert(args.x.rows() == n);
+        assert(args.y.rows() == m);
+        assert(args.b.rows() == mb);
+        assert(args.xlower.rows() == n);
+        assert(args.xupper.rows() == n);
 
         // Clear previous state of the Outputter instance
         outputter.clear();
 
+        // Initialize the problem related data-members
+        objectivefn  = args.obj;
+        constraintfn = args.h;
+        b            = args.b;
+        xlower       = args.xlower;
+        xupper       = args.xupper;
+
+        // Initialize vectors x and y with given initial guesses
+        x = args.x;
+        y = args.y;
+
+        // Initialize the stability of the variables with given initial state
+        stability = args.stability;
+
         // Ensure the initial guess for `x` does not violate lower/upper bounds
-        x.noalias() = max(x, xlower);
-        x.noalias() = min(x, xupper);
+        x.noalias() = max(args.x, xlower);
+        x.noalias() = min(args.x, xupper);
 
     	// Initialize the Newton step calculator once for the upcoming decompose/solve calls
         stepper.initialize({ b, xlower, xupper, x, stability });
 	}
 
-    // Evaluate the objective function
-    auto evaluateObjectiveFunction(BasicSolverSolveArgs args) -> void
+    // Finalize the calculation by setting back computed state.
+    auto finalize(BasicSolverSolveArgs args) -> void
 	{
-        // Ensure objective function is not empty.
-        assert(args.obj != nullptr);
+        // Set back in args the solution state of variables x, y, z
+        args.x = x;
+        args.y = y;
+        args.z = z;
 
+        // Set back in args the obtained stability state of the variables
+        args.stability = stability;
+    }
+
+    // Evaluate the objective function.
+    auto evaluateObjectiveFn(const Vector& x, ObjectiveRequirement req) -> ObjectiveResult
+	{
         // Create an ObjectiveResult with f, g, H to be filled
         ObjectiveResult res(f, g, H);
 
-        // Establish the current needs for the objective function evaluation
-        res.requires.f = true;
-        res.requires.g = true;
-        res.requires.H = true;
+        // The computation requirements for f, g, and H
+        res.requires = req;
 
         // Evaluate the objective function f(x)
-        args.obj(args.x, res);
+        objectivefn(x, res);
 
-        // Assert the objective function produces finite numbers at this point
-        Assert(std::isfinite(f) && g.allFinite() && H.allFinite(),
-			"Failure evaluating the objective function.", "The evaluation of "
-			"the objective function at the entry point of the optimization "
-			"calculation produced non-finite numbers, "
-			"such as `nan` and/or `inf`.");
+        // Check the objective function produces finite numbers at this point
+        if(res.requires.f && !std::isfinite(f))
+            res.failed = true;
+        if(res.requires.g && !g.allFinite())
+            res.failed = true;
+        if(res.requires.H && !H.allFinite())
+            res.failed = true;
+
+        return res;
 	}
 
-    // Evaluate the equality constraint function
-    auto evaluateConstraintFunction(BasicSolverSolveArgs args) -> void
+    // Evaluate the equality constraint function h(x)
+    auto evaluateConstraintFn(const Vector& x) -> ConstraintResult
 	{
-        // Skip if there are no non-linear equality constraints
-        if(mh == 0)
-            return;
-
-        // Ensure constraint function is not empty.
-        assert(args.h != nullptr);
-
         // Create a ConstraintResult with h and J to be filled
         ConstraintResult res{h, J};
 
+        // Skip if there are no non-linear equality constraints
+        if(mh == 0)
+            return res;
+
         // Evaluate the constraint function h(x)
-        args.h(args.x, res);
+        constraintfn(x, res);
+
+        // Check the constraint function produces finite numbers at this point
+        if(!h.allFinite() || !J.allFinite())
+            res.failed = true;
+
+        return res;
 	}
 
-    // The function that computes the Newton step
-    auto computeNewtonStep(BasicSolverSolveArgs args) -> void
-    {
-    	Timer timer;
-
-        // Auxiliary variables
-        auto x          = args.x;
-        auto y          = args.y;
-        auto z          = args.z;
-        auto b          = args.b;
-        auto xlower     = args.xlower;
-        auto xupper     = args.xupper;
-        auto& stability = args.stability;
-
-        // Ensure consistent dimensions of vectors/matrices.
-        assert(x.rows() == n);
-        assert(y.rows() == m);
-        assert(z.rows() == n);
-        assert(b.rows() == mb);
-        assert(xlower.rows() == n);
-        assert(xupper.rows() == n);
-
+	// Update the optimality, feasibility and complementarity errors
+	auto updateResiduals() -> void
+	{
     	// Canonicalize the W = [A; J] matrix as a pre-step to calculate the Newton step
         stepper.canonicalize({ x, y, g, H, J, xlower, xupper, stability });
 
         // Compute the current optimality and feasibility residuals
         stepper.residuals({ x, y, b, h, g, rx, ry, z });
 
-    	// Decompose the Jacobian matrix and calculate a Newton step
-        stepper.decompose({ x, y, g, H, J, xlower, xupper, stability });
-
-        // Calculate the Newton step
-        stepper.solve({ x, y, b, h, g, H, stability, dx, dy });
-
-        // Update the time spent in linear systems
-		result.time_linear_systems += timer.elapsed();
-    };
-
-	// Update the optimality, feasibility and complementarity errors
-	auto updateResultErrors() -> void
-	{
 		// Update the current optimality, feasibility and complementarity errors
 		result.error_optimality  = norminf(rx)/(1 + norminf(g));
 		result.error_feasibility = norminf(ry);
@@ -329,12 +351,27 @@ struct BasicSolver::Impl
 		});
 	}
 
+    // The function that computes the Newton step
+    auto computeNewtonStep() -> void
+    {
+    	Timer timer;
+
+    	// Decompose the Jacobian matrix and calculate a Newton step
+        stepper.decompose({ x, y, g, H, J, xlower, xupper, stability });
+
+        // Calculate the Newton step
+        stepper.solve({ x, y, b, h, g, H, stability, dx, dy });
+
+        // Update the time spent in linear systems
+		result.time_linear_systems += timer.elapsed();
+    };
+
     // Update the variables (x, y, z, w) with a Newton stepping scheme
-    auto applyNewtonStepping(BasicSolverSolveArgs args) -> void
+    auto applyNewtonStepping() -> void
     {
         switch(options.step) {
-        case Aggressive: return applyNewtonSteppingAggressive(args);
-        default: return applyNewtonSteppingConservative(args);
+        case Aggressive: return applyNewtonSteppingAggressive();
+        default: return applyNewtonSteppingConservative();
         }
     };
 
@@ -409,27 +446,68 @@ struct BasicSolver::Impl
 
 	}
 
+	// Compute the error function E(x, y) used in the line search algorithm.
+	auto computeError(const Vector& x, const Vector& y) -> double
+    {
+        // Evaluate the objective function f(x) and its gradient g(x)
+        evaluateObjectiveFn(x, {.f=true, .g=true, .H=false});
+
+        // Evaluate the equality constraint function h(x)
+        evaluateConstraintFn(x);
+
+        // Compute the current optimality and feasibility residuals
+        stepper.residuals({ x, y, b, h, g, rx, ry, z });
+
+		// Update the current optimality, feasibility and complementarity errors
+		const auto error_optimality  = norminf(rx)/(1 + norminf(g));
+		const auto error_feasibility = norminf(ry);
+
+		// Return the maximum error
+		return std::max({ error_optimality, error_feasibility });
+    }
+
 	// Update the variables (x, y, z, w) with an aggressive Newton stepping scheme
-	auto applyNewtonSteppingAggressive(BasicSolverSolveArgs args) -> void
+	auto applyNewtonSteppingAggressive() -> void
 	{
-        // Auxiliary variables
-        auto x = args.x;
-        auto y = args.y;
-        auto xlower = args.xlower;
-        auto xupper = args.xupper;
+		// // Update xtrial with the calculated Newton step
+		// xtrial = x + dx;
 
-        // Ensure consistent dimensions of vectors/matrices.
-        assert(x.rows() == n);
-        assert(y.rows() == m);
-        assert(xlower.rows() == n);
-        assert(xupper.rows() == n);
+        // // Ensure no entry in `x` violate lower/upper bounds
+        // xtrial.noalias() = max(xtrial, xlower);
+        // xtrial.noalias() = min(xtrial, xupper);
 
-		// Update xtrial with the calculated Newton step
-		xtrial = x + dx;
+        xtrial = x;
 
-        // Ensure no entry in `x` violate lower/upper bounds
-        xtrial.noalias() = max(xtrial, xlower);
-        xtrial.noalias() = min(xtrial, xupper);
+        const auto E0 = result.error;
+
+        // performAggressiveStep(xtrial, dx, xlower, xupper);
+        performConservativeStep(xtrial, dx, xlower, xupper);
+
+        // computeError({ })
+
+
+
+        // // Create an ObjectiveResult with f, g, H to be filled
+        // ObjectiveResult res(f, g, H);
+
+        // // Establish the current needs for the objective function evaluation
+        // res.requires.f = true;
+        // res.requires.g = true;
+        // res.requires.H = false; // there is no need for Hessian updates during the line search
+
+        // // Evaluate the objective function f(x)
+        // args.obj(xtrial, res);
+
+        // bool line_search_needed = false;
+
+        // // If x(trial) produces non-finite values, line search is needed
+        // line_search_needed = !std::isfinite(f) || g.allFinite();
+
+        // error_new < error
+
+
+
+
 
 		// Calculate the trial Newton step for the aggressive mode
 		dxtrial = xtrial - x;
@@ -442,7 +520,7 @@ struct BasicSolver::Impl
 	};
 
 	// Update the variables (x, y, z, w) with a conservative Newton stepping scheme
-	auto applyNewtonSteppingConservative(BasicSolverSolveArgs args) -> void
+	auto applyNewtonSteppingConservative() -> void
 	{
 		// Aliases to variables x, y, z, w
 		// VectorRef x = args.x;
@@ -531,75 +609,6 @@ struct BasicSolver::Impl
         // Check if the calculation should stop based on optimality/feasibility errors
         return result.error < options.tolerance;
     };
-
-    /// Solve the optimization problem.
-    auto solve(BasicSolverSolveArgs args) -> Result
-    {
-        // Start timing the calculation
-        Timer timer;
-
-        // Ensure the objective function has been given.
-        Assert(args.obj != nullptr,
-            "Could not initialize BasicSolver.",
-                "No objective function given.");
-
-        // Ensure the objective function has been given if number of nonlinear constraints is positive.
-        Assert(mh == 0 or args.h != nullptr,
-            "Could not initialize BasicSolver.",
-                "No constraint function given.");
-
-        // Finish the calculation if the problem has no variable
-        if(n == 0)
-        {
-            result.succeeded = true;
-            result.time = timer.elapsed();
-            return result;
-        }
-
-        const auto maxiters = options.max_iterations;
-
-        // Auxiliary references to some result variables
-        auto& iterations = result.iterations;
-        auto& succeeded = result.succeeded = false;
-
-        initialize(args);
-        outputInitialState(args);
-
-        for(iterations = 1; iterations <= maxiters && !succeeded; ++iterations)
-        {
-            evaluateObjectiveFunction(args);
-            evaluateConstraintFunction(args);
-			computeNewtonStep(args);
-			updateResultErrors();
-            applyNewtonStepping(args);
-            outputCurrentState(args);
-
-            if((succeeded = converged()))
-                break;
-        }
-
-        // Output a final header
-        outputter.outputHeader();
-
-        // Finish timing the calculation
-        result.time = timer.elapsed();
-
-        return result;
-    }
-
-    /// Compute the sensitivity derivatives of the optimal solution.
-    auto sensitivities(BasicSolverSensitivitiesArgs args) -> Result
-    {
-        Timer timer;
-
-        auto [dgdp, dhdp, dbdp, stability, dxdp, dydp, dzdp] = args;
-
-        stepper.sensitivities({ dgdp, dhdp, dbdp, stability, dxdp, dydp, dzdp });
-
-        result.time_sensitivities = timer.elapsed();
-
-        return result;
-    }
 };
 
 BasicSolver::BasicSolver(BasicSolverInitArgs args)
