@@ -46,13 +46,13 @@ struct Stepper::Impl
     Index m  = 0;                ///< The number of equality constraints (m = ml + mn).
     Index t  = 0;                ///< The total number of variables in x and y (t = n + m).
     StabilityChecker stbchecker; ///< The stability checker of the primal variables
-    SaddlePointSolver solver;    ///< The saddle point solver.
+    SaddlePointSolver spsolver;  ///< The saddle point solver.
 
     /// Construct a Stepper::Impl instance.
     Impl(StepperInitArgs args)
     : n(args.n), m(args.m), W(args.m, args.n),
       stbchecker({args.n, args.m, args.A}),
-      solver({args.n, args.m, args.A})
+      spsolver({args.n, args.m, args.A})
     {
         // Ensure the step calculator is initialized with a positive number of variables.
         Assert(n > 0, "Could not proceed with Stepper initialization.",
@@ -160,7 +160,7 @@ struct Stepper::Impl
         // times! Consider lower/upper unstable variables as "fixed" variables
         // in the saddle point problem. Reason: we do not need to compute
         // Newton steps for the currently unstable variables!
-        solver.canonicalize({ H, J, iu });
+        spsolver.canonicalize({ H, J, iu });
     }
 
     /// Calculate the current optimality and feasibility residuals.
@@ -214,7 +214,7 @@ struct Stepper::Impl
         xprime = x;
         xprime(isu).fill(0.0);
 
-        solver.residuals({ J, xprime, b, h, ry });
+        spsolver.residuals({ J, xprime, b, h, ry });
 
         //======================================================================
         // Compute the optimality residuals using g + tr(W)*y = 0
@@ -286,7 +286,7 @@ struct Stepper::Impl
         // times! Consider lower/upper unstable variables as "fixed" variables
         // in the saddle point problem. Reason: we do not need to compute
         // Newton steps for the currently unstable variables!
-        solver.decompose({ H, J, iu });
+        spsolver.decompose({ H, J, iu });
     }
 
     /// Solve the saddle point problem.
@@ -338,7 +338,7 @@ struct Stepper::Impl
         // This is because the latter causes very small values on the
         // right-hand side of the saddle point problem, and algebraic
         // manipulation of these small values results in round-off errors.
-        solver.solve({ H, J, xprime, g, b, h, xbar, ybar });
+        spsolver.solve({ H, J, xprime, g, b, h, xbar, ybar });
 
         // Finalize the computation of the steps dx and dy
         dx.noalias() = xbar - xprime;
@@ -400,7 +400,7 @@ struct Stepper::Impl
 
         // Solve the saddle point problem for each parameter to compute the corresponding sensitivity derivatives
         for(Index i = 0; i < np; ++i)
-            solver.solve({ dxdp.col(i), dydp.col(i) });
+            spsolver.solve({ dxdp.col(i), dydp.col(i) });
 
         // Calculate the sensitivity derivatives dzdp (zero for stable variables!).
         dzdp(is, all).fill(0.0);
@@ -428,7 +428,7 @@ auto Stepper::operator=(Stepper other) -> Stepper&
 auto Stepper::setOptions(const Options& options) -> void
 {
     pimpl->options = options;
-    pimpl->solver.setOptions(options.kkt);
+    pimpl->spsolver.setOptions(options.kkt);
 }
 
 auto Stepper::initialize(StepperInitializeArgs args) -> void
