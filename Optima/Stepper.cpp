@@ -321,14 +321,13 @@ struct Stepper::Impl
         // The indices of the strictly lower and upper unstable variables
         auto isu = stability.indicesStrictlyUnstableVariables();
 
-        // // For the strictly unstable variables, however, set the values in
-        // // vector `a` to zero. This is to ensure that the strictly unstable
-        // // variables are not even taken into account in the calculation, not
-        // // even in the linear equality constraints. It is like if they were not
-        // // part of the problem.
-        // sa(isu).fill(0.0);
+        // In the computation of xbar and ybar below use x' where x'[i] is x[i]
+        // if i is not a strictly unstable variable, and zero if so. This is to
+        // ensure that the strictly unstable variables are not even taken into
+        // account in the calculation, not even in the linear equality
+        // constraints. It is like if they were not part of the problem.
 
-        auto xprime = dx;
+        auto xprime = dx; // use dx as workspace for x'
         xprime = x;
         xprime(isu).fill(0.0);
 
