@@ -32,12 +32,6 @@ public:
     /// The number of iterations in the optimization calculation.
     Index iterations = 0;
 
-    /// The number of evaluations of the objective function in the optimization calculation.
-    Index num_objective_evals = 0;
-
-    /// The convergence rate of the optimization calculation near the solution.
-    double convergence_rate = 0;
-
     /// The final residual error of the optimization calculation.
     double error = 0;
 
@@ -47,17 +41,32 @@ public:
     /// The final feasibility error of the optimization calculation.
     double error_feasibility = 0;
 
-    /// The final complementarity error (lower bounds) of the optimization calculation.
-    double error_complementarity_lower = 0;
+    /// The number of evaluations of the objective function in the optimization calculation.
+    Index num_objective_evals = 0;
 
-    /// The final complementarity error (upper bounds) of the optimization calculation.
-    double error_complementarity_upper = 0;
+    /// The number of evaluations of *f(x)* in the optimization calculation.
+    Index num_objective_evals_f = 0;
+
+    /// The number of evaluations of *g(x)* in the optimization calculation.
+    Index num_objective_evals_g = 0;
+
+    /// The number of evaluations of *H(x)* in the optimization calculation.
+    Index num_objective_evals_H = 0;
 
     /// The wall time spent for the optimization calculation (in units of s).
     double time = 0;
 
     /// The wall time spent for all objective evaluations (in units of s).
     double time_objective_evals = 0;
+
+    /// The wall time spent for evaluating just *f(x)* (in units of s).
+    double time_objective_evals_f = 0;
+
+    /// The wall time spent for evaluating just *g(x)* (in units of s).
+    double time_objective_evals_g = 0;
+
+    /// The wall time spent for evaluating just *H(x)* (in units of s).
+    double time_objective_evals_H = 0;
 
     /// The wall time spent for all contraint evaluations (in units of s).
     double time_constraint_evals = 0;

@@ -24,7 +24,6 @@ auto Result::operator+=(const Result& other) -> Result&
     succeeded              = other.succeeded;
     iterations            += other.iterations;
     num_objective_evals   += other.num_objective_evals;
-    convergence_rate       = other.convergence_rate;
     error                  = other.error;
     time                  += other.time;
     time_objective_evals  += other.time_objective_evals;
