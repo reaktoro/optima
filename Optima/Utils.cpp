@@ -57,7 +57,7 @@ auto largestStep(const Vector& p, const Vector& dp, const Vector& plower, const 
     return alpha;
 }
 
-auto performConservativeStep(Vector& p, const Vector& dp, const Vector& plower, const Vector& pupper) -> void
+auto performConservativeStep(Vector& p, const Vector& dp, const Vector& plower, const Vector& pupper) -> double
 {
     // Assert all vectors have consistent dimention
     const auto size = p.size();
@@ -74,7 +74,7 @@ auto performConservativeStep(Vector& p, const Vector& dp, const Vector& plower, 
 
     // The factor used to scale the step dp so that variable p[j] is attached
     // to its lower or upper bound (affecting all other variables).
-    auto alpha = infinity();
+    auto alpha = 1.0;
 
     // The integer that indicates if p[j] should be attached to its lower bound
     // (-1), to its upper bound (+1), or j is not applicable (0).
@@ -100,7 +100,7 @@ auto performConservativeStep(Vector& p, const Vector& dp, const Vector& plower, 
             const auto alphai = (plower[i] - p[i])/dp[i]; // from p[i] + alpha[i]*dp[i]
             if(alphai < alpha)
             {
-                alpha = alphai;
+                alpha = std::max(alphai, 1.0); // just in case we get 1 + eps
                 j = i;
                 lu = -1;
             }
@@ -111,7 +111,7 @@ auto performConservativeStep(Vector& p, const Vector& dp, const Vector& plower, 
             const auto alphai = (pupper[i] - p[i])/dp[i]; // from p[i] + alpha[i]*dp[i]
             if(alphai < alpha)
             {
-                alpha = alphai;
+                alpha = std::max(alphai, 1.0); // just in case we get 1 + eps
                 j = i;
                 lu = +1;
             }
@@ -137,6 +137,8 @@ auto performConservativeStep(Vector& p, const Vector& dp, const Vector& plower, 
     // errors in p + alpha*dp produced slightly bound violations.
     p.noalias() = p.cwiseMax(plower);
     p.noalias() = p.cwiseMin(pupper);
+
+    return alpha;
 }
 
 auto performAggressiveStep(Vector& p, const Vector& dp, const Vector& plower, const Vector& pupper) -> void

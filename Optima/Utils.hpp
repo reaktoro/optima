@@ -49,7 +49,7 @@ auto largestStep(const Vector& p, const Vector& dp, const Vector& plower, const 
 /// In this method, a factor @eq{\alpha\in(0,1]} is used to reduce the step
 /// length of @eq{\Delta p} so that no lower or upper bounds are violated. The
 /// factor @eq{alpha} is determined based on the largest bound violation.
-auto performConservativeStep(Vector& p, const Vector& dp, const Vector& plower, const Vector& pupper) -> void;
+auto performConservativeStep(Vector& p, const Vector& dp, const Vector& plower, const Vector& pupper) -> double;
 
 /// Perform an aggressive step using @eq{p^{\prime}=\max(p_{\mathrm{lower}},\min(p,p_{\mathrm{upper}}))}.
 auto performAggressiveStep(Vector& p, const Vector& dp, const Vector& plower, const Vector& pupper) -> void;
