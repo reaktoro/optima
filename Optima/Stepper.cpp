@@ -230,39 +230,6 @@ struct Stepper::Impl
         // ensures that they are not taken into account when checking for
         // convergence.
         rx(iu).fill(0.0);
-
-        // // Calculate the vector [b; J*x + h]
-        // ry.head(ml).noalias() = b;
-        // ry.tail(mn).noalias() = J*x + h;
-
-        // // Calculate b' = R*[b; J*x + h]
-        // bprime.noalias() = R * ry;
-
-        // // Ensure b' is clean of residual round off errors
-        // cleanResidualRoundoffErrors(bprime);
-
-        // // Determine the order of the non-basic variables from small to large values
-        // Indices jnorder = indices(nn);
-        // std::sort(jnorder.begin(), jnorder.end(),
-        //     [&](auto a, auto b) { return x[jn[a]] < x[jn[b]]; });
-
-        // // Ensure ry starts with zeros
-        // ry.fill(0.0);
-
-        // // Because W = [A; J] may have linearly dependent rows, work only with
-        // // the sub-vectors corresponding to basic variables.
-        // auto ryb = ry.head(nb);         // ry = [ryb, ryl]
-        // auto bprimeb = bprime.head(nb); // b' = [bb', bl']
-
-        // // Compute the S*xn contribution paying attention to round-off errors
-        // for(auto i : jnorder)
-        //     ryb += S.col(i) * x[jn[i]];
-
-        // // Compute remaining xb - bb'
-        // ryb.noalias() += xb;
-        // ryb.noalias() -= bprimeb;
-
-        // ryb.noalias() = ryb.cwiseQuotient((xb.array() != 0.0).select(xb, 1.0));
     }
 
     /// Decompose the saddle point matrix.
