@@ -58,14 +58,14 @@ void exportSaddlePointSolver(py::module& m)
         self.solve({ H, J, x, g, b, h, xbar, ybar });
     };
 
-    auto residuals1 = [](SaddlePointSolver& self, VectorConstRef x, VectorConstRef b, VectorRef r)
+    auto residuals1 = [](SaddlePointSolver& self, VectorConstRef x, VectorConstRef b, VectorRef r, VectorRef e)
     {
-        self.residuals({ x, b, r });
+        self.residuals({ x, b, r, e });
     };
 
-    auto residuals2 = [](SaddlePointSolver& self, MatrixConstRef4py J, VectorConstRef x, VectorConstRef b, VectorConstRef h, VectorRef r)
+    auto residuals2 = [](SaddlePointSolver& self, MatrixConstRef4py J, VectorConstRef x, VectorConstRef b, VectorConstRef h, VectorRef r, VectorRef e)
     {
-        self.residuals({ J, x, b, h, r });
+        self.residuals({ J, x, b, h, r, e });
     };
 
     py::class_<SaddlePointSolverInfo>(m, "SaddlePointSolverInfo")

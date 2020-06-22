@@ -436,10 +436,15 @@ struct SaddlePointSolver::Impl
         auto jx = iordering.head(nx);
         auto jf = iordering.tail(nf);
 
-        // The relative residual vector r = [rbx rbf rbl]
+        // The residual vector r = [rbx rbf rbl]
         auto rbx = args.r.head(nbx);         // corresponding to free basic variables
         auto rbf = args.r.segment(nbx, nbf); // corresponding to fixed basic variables
         auto rbl = args.r.tail(nl);          // corresponding to linearly dependent equations
+
+        // The relative residual error vector e = [ebx ebf ebl]
+        auto ebx = args.e.head(nbx);         // corresponding to free basic variables
+        auto ebf = args.e.segment(nbx, nbf); // corresponding to fixed basic variables
+        auto ebl = args.e.tail(nl);          // corresponding to linearly dependent equations
 
         // The Alias to matrix A in W = [A; J]
         const auto Wf = W(Eigen::all, jf);
@@ -476,9 +481,6 @@ struct SaddlePointSolver::Impl
         rbx.noalias() += Sbxnx*xnx;
         rbx.noalias() -= bbx;
 
-        // Normalize rbx for xbx', where xbx'[i] = xbx[i] if xbx[i] != 0 else 1
-        rbx.noalias() = rbx.cwiseQuotient((xbx.array() != 0.0).select(xbx, 1.0));
-
         // Set the residuals to absolute values
         rbx.noalias() = rbx.cwiseAbs();
 
@@ -493,6 +495,15 @@ struct SaddlePointSolver::Impl
         // the only species in a chemical system with element Si, but b[Si] = 2
         // mol) we consider that this is an input error and try to find a
         // solution that is feasible with respect to the free variables.
+
+        // Compute the relative error ebx by normalizing rbx by xbx', where xbx'[i] = xbx[i] if xbx[i] != 0 else 1
+        ebx.noalias() = rbx.cwiseQuotient((xbx.array() != 0.0).select(xbx, 1.0));
+
+        // Set the errors with respect to fixed basic variables to zero.
+        ebf.fill(0.0);
+
+        // Set the errors with respect to linearly dependent equations to zero.
+        ebl.fill(0.0);
     }
 
     /// Calculate the relative canonical residual of equation `W*x - [b; J*x + h]`.
@@ -500,7 +511,7 @@ struct SaddlePointSolver::Impl
     auto residuals(SaddlePointSolverResidualAdvancedArgs args) -> void
     {
         // Unpack the data members in args
-        auto [J, x, b, h, r] = args;
+        auto [J, x, b, h, r, e] = args;
 
         // The vector b' = [b; J*x + h] (using args.r as workspace)
         auto bp = args.r;
@@ -508,8 +519,8 @@ struct SaddlePointSolver::Impl
         // Calculate b' = [b; J*x + h]
         bp << b, J*x + h;
 
-        /// Calculate the relative canonical residual of equation `W*x - b'`.
-        residuals({ x, bp, r });
+        /// Calculate the canonical residual of equation `W*x - b'`.
+        residuals({ x, bp, r, e });
     }
 
     /// Return the current state info of the saddle point solver.

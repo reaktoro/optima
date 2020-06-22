@@ -167,8 +167,11 @@ struct SaddlePointSolverResidualArgs
     /// The right-hand side vector *b* in the canonical residual equation.
     VectorConstRef b;
 
-    /// The output vector with the relative canonical residuals.
+    /// The output vector with the canonical residuals.
     VectorRef r;
+
+    /// The output vector with the relative canonical residual errors.
+    VectorRef e;
 };
 
 /// The arguments for method SaddlePointSolver::residual.
@@ -186,8 +189,11 @@ struct SaddlePointSolverResidualAdvancedArgs
     /// The right-hand side vector *h* in the canonical residual equation.
     VectorConstRef h;
 
-    /// The output vector with the relative canonical residuals.
+    /// The output vector with the canonical residuals.
     VectorRef r;
+
+    /// The output vector with the relative canonical residual errors.
+    VectorRef e;
 };
 
 /// Used to solve saddle point problems.
