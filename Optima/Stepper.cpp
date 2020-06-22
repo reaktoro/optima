@@ -78,35 +78,32 @@ struct Stepper::Impl
     /// Initialize the step calculator before calling decompose multiple times.
     auto initialize(StepperInitializeArgs args) -> void
     {
+        // Ensure consistent dimensions of vectors/matrices.
+        assert(args.b.rows() == ml);
+        assert(args.xlower.rows() == n);
+        assert(args.xupper.rows() == n);
+        assert(args.x.rows() == n);
+
         // Auxiliary const references
         const auto b      = args.b;
         const auto xlower = args.xlower;
         const auto xupper = args.xupper;
         const auto A      = W.topRows(ml);
 
-        // Auxiliary references
-        auto& stability = args.stability;
-        auto x = args.x;
-
-        // Ensure consistent dimensions of vectors/matrices.
-        assert(b.rows() == ml);
-        assert(xlower.rows() == n);
-        assert(xupper.rows() == n);
-        assert(x.rows() == n);
-
         // Initialize the stability checker.
+        // Identify the strictly lower and upper unstable variables.
         stbchecker.initialize({ A, b, xlower, xupper });
 
         // Set the output Stability object
-        stability = stbchecker.stability();
+        args.stability = stbchecker.stability();
 
         // Get the indices of the strictly lower and upper unstable variables
-        const auto islu = stability.indicesStrictlyLowerUnstableVariables();
-        const auto isuu = stability.indicesStrictlyUpperUnstableVariables();
+        const auto islu = args.stability.indicesStrictlyLowerUnstableVariables();
+        const auto isuu = args.stability.indicesStrictlyUpperUnstableVariables();
 
         // Attach the strictly unstable variables to either their upper or lower bounds
-        x(isuu) = xupper(isuu);
-        x(islu) = xlower(islu);
+        args.x(isuu) = xupper(isuu);
+        args.x(islu) = xlower(islu);
     }
 
     /// Canonicalize the matrix *W = [A; J]* in the saddle point matrix.
@@ -168,7 +165,7 @@ struct Stepper::Impl
     auto residuals(StepperResidualsArgs args) -> void
     {
         // Auxiliary references
-        auto [x, y, b, h, g, rx, ry, z] = args;
+        auto [x, y, b, h, g, rx, ry, ex, ey, z] = args;
 
         // The J matrix block in W = [A; J]
         const auto J = W.bottomRows(mn);
@@ -190,6 +187,8 @@ struct Stepper::Impl
         assert(g.rows() == n);
         assert(rx.rows() == n);
         assert(ry.rows() == m);
+        assert(ex.rows() == n);
+        assert(ey.rows() == m);
         assert(z.rows() == n);
 
         //======================================================================
@@ -214,7 +213,9 @@ struct Stepper::Impl
         xprime = x;
         xprime(isu).fill(0.0);
 
-        spsolver.residuals({ J, xprime, b, h, ry });
+        spsolver.residuals({ J, xprime, b, h, ry, ey });
+
+        // Compute the relative errors of the linear/nonlinear feasibility conditions.
 
         //======================================================================
         // Compute the optimality residuals using g + tr(W)*y = 0
@@ -230,6 +231,10 @@ struct Stepper::Impl
         // ensures that they are not taken into account when checking for
         // convergence.
         rx(iu).fill(0.0);
+
+        // Compute the relative errors of the first-order optimality conditions.
+        ex = rx.array() / (1 + g.array().abs());
+
     }
 
     /// Decompose the saddle point matrix.
@@ -309,19 +314,6 @@ struct Stepper::Impl
         // Finalize the computation of the steps dx and dy
         dx.noalias() = xbar - xprime;
         dy.noalias() = ybar - y;
-
-        //=====================================================================
-        // Exponential Impulse with x' = x * exp(dx/x)
-        //======================================================================
-        // static bool firstiter = true;
-        // const auto res = norm(A*dx)/norm(b);
-
-        // if(res < eps && !firstiter)
-        // if(res < options.tolerance)
-        // {
-        //     xbar = x.array() * dx.cwiseQuotient(x).array().exp();
-        //     dx = xbar - x;
-        // }
     }
 
     /// Compute the sensitivity derivatives of the saddle point problem.

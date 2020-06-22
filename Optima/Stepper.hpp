@@ -71,6 +71,8 @@ struct StepperResidualsArgs
     VectorConstRef g;           ///< The gradient of the objective function.
     VectorRef rx;               ///< The output residuals of the first-order optimality conditions.
     VectorRef ry;               ///< The output residuals of the linear/nonlinear feasibility conditions.
+    VectorRef ex;               ///< The output relative errors of the first-order optimality conditions.
+    VectorRef ey;               ///< The output relative errors of the linear/nonlinear feasibility conditions.
     VectorRef z;                ///< The output *unstabilities* of the variables defined as *z = g + tr(W)y* where *W = [A; J]*.
 };
 

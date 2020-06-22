@@ -63,9 +63,11 @@ void exportStepper(py::module& m)
         VectorConstRef g,
         VectorRef rx,
         VectorRef ry,
+        VectorRef ex,
+        VectorRef ey,
         VectorRef z)
     {
-        self.residuals({ x, y, b, h, g, rx, ry, z });
+        self.residuals({ x, y, b, h, g, rx, ry, ex, ey, z });
     };
 
     auto decompose = [](Stepper& self,
