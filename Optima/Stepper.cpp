@@ -234,7 +234,6 @@ struct Stepper::Impl
 
         // Compute the relative errors of the first-order optimality conditions.
         ex = rx.array() / (1 + g.array().abs());
-
     }
 
     /// Decompose the saddle point matrix.
@@ -320,13 +319,13 @@ struct Stepper::Impl
     auto sensitivities(StepperSensitivitiesArgs args) -> void
     {
         // Auxiliary references
-        auto dxdp       = args.dxdp;
-        auto dydp       = args.dydp;
-        auto dzdp       = args.dzdp;
-        auto dgdp       = args.dgdp;
-        auto dbdp       = args.dbdp;
-        auto dhdp       = args.dhdp;
-        auto& stability = args.stability;
+        auto dxdp = args.dxdp;
+        auto dydp = args.dydp;
+        auto dzdp = args.dzdp;
+        auto dgdp = args.dgdp;
+        auto dbdp = args.dbdp;
+        auto dhdp = args.dhdp;
+        auto const& stability = args.stability;
 
         // The number of parameters for sensitivity computation
         auto np = dxdp.cols();
@@ -363,6 +362,39 @@ struct Stepper::Impl
         // Calculate the sensitivity derivatives dzdp (zero for stable variables!).
         dzdp(is, all).fill(0.0);
         dzdp(iu, all) = dgdp(iu, all) + tr(W(all, iu)) * dydp;
+    }
+
+    /// Compute the steepest descent direction vectors for *x* and *y*.
+    auto steepestDescent(StepperSteepestDescentArgs args) -> void
+    {
+        // Unpack the data members in args
+        auto [x, y, b, h, g, dx, dy] = args;
+
+        // Auxiliary references
+        const auto A = W.topRows(ml);
+
+        // Get a reference to the stability state of the variables
+        const auto& stability = stbchecker.stability();
+
+        // The indices of all unstable variables
+        auto iu = stability.indicesUnstableVariables();
+
+        //======================================================================
+        // Compute the steepest descent direction for *x*
+        //======================================================================
+
+        // The steepest descent direction for *x* as the negative of the gradient wrt x of Lagrange function.
+        dx.noalias() = -(g + tr(W)*y);
+
+        // For the unstable variables, ensure zero step as they should continue on their bounds.
+        dx(iu).fill(0.0);
+
+        //======================================================================
+        // Compute the steepest descent direction for *y*
+        //======================================================================
+
+        dy.head(ml) = -(A*x - b);
+        dy.tail(mn) = -(h);
     }
 };
 
@@ -417,6 +449,11 @@ auto Stepper::solve(StepperSolveArgs args) -> void
 auto Stepper::sensitivities(StepperSensitivitiesArgs args) -> void
 {
     pimpl->sensitivities(args);
+}
+
+auto Stepper::steepestDescent(StepperSteepestDescentArgs args) -> void
+{
+    pimpl->steepestDescent(args);
 }
 
 } // namespace Optima

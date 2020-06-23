@@ -79,14 +79,14 @@ struct StepperResidualsArgs
 /// The arguments for method Stepper::decompose.
 struct StepperDecomposeArgs
 {
-    VectorConstRef x;       ///< The current state of the primal variables.
-    VectorConstRef y;       ///< The current state of the Lagrange multipliers.
-    VectorConstRef g;       ///< The gradient of the objective function.
-    MatrixConstRef H;       ///< The Hessian of the objective function.
-    MatrixConstRef J;       ///< The Jacobian of the equality constraint function.
-    VectorConstRef xlower;  ///< The lower bounds of the primal variables.
-    VectorConstRef xupper;  ///< The upper bounds of the primal variables.
-    Stability& stability;   ///< The output stability state of the primal variables *x*.
+    VectorConstRef x;            ///< The current state of the primal variables.
+    VectorConstRef y;            ///< The current state of the Lagrange multipliers.
+    VectorConstRef g;            ///< The gradient of the objective function.
+    MatrixConstRef H;            ///< The Hessian of the objective function.
+    MatrixConstRef J;            ///< The Jacobian of the equality constraint function.
+    VectorConstRef xlower;       ///< The lower bounds of the primal variables.
+    VectorConstRef xupper;       ///< The upper bounds of the primal variables.
+    Stability const& stability;  ///< The output stability state of the primal variables *x*.
 };
 
 /// The arguments for method Stepper::solve.
@@ -113,6 +113,18 @@ struct StepperSensitivitiesArgs
     MatrixRef dxdp;             ///< The output sensitivity derivatives *∂x/∂p*.
     MatrixRef dydp;             ///< The output sensitivity derivatives *∂y/∂p*.
     MatrixRef dzdp;             ///< The output sensitivity derivatives *∂z/∂p*.
+};
+
+/// The arguments for method Stepper::steepestDescent.
+struct StepperSteepestDescentArgs
+{
+    VectorConstRef x;           ///< The current state of the primal variables.
+    VectorConstRef y;           ///< The current state of the Lagrange multipliers.
+    VectorConstRef b;           ///< The right-hand side vector *b* of the linear equality constraints *Ax = b*.
+    VectorConstRef h;           ///< The value of the equality constraint function.
+    VectorConstRef g;           ///< The gradient of the objective function.
+    VectorRef dx;               ///< The output steepest descent direction for the primal variables *x*.
+    VectorRef dy;               ///< The output steepest descent direction for the Lagrange multipliers *y*.
 };
 
 /// The return type of method Stepper::info.
@@ -175,6 +187,10 @@ public:
     /// Compute the sensitivity derivatives of the saddle point problem.
     /// @note Ensure method @ref solve is called first.
     auto sensitivities(StepperSensitivitiesArgs args) -> void;
+
+    /// Compute the steepest descent direction vectors for *x* and *y*.
+    /// @note Ensure method @ref canonicalize is called first.
+    auto steepestDescent(StepperSteepestDescentArgs args) -> void;
 
 private:
     struct Impl;
