@@ -100,7 +100,7 @@ auto performConservativeStep(Vector& p, const Vector& dp, const Vector& plower, 
             const auto alphai = (plower[i] - p[i])/dp[i]; // from p[i] + alpha[i]*dp[i]
             if(alphai < alpha)
             {
-                alpha = std::max(alphai, 1.0); // just in case we get 1 + eps
+                alpha = std::min(alphai, 1.0); // just in case we get alphai = 1 + eps, so that min(alphai, 1) produces 1
                 j = i;
                 lu = -1;
             }
@@ -111,7 +111,7 @@ auto performConservativeStep(Vector& p, const Vector& dp, const Vector& plower, 
             const auto alphai = (pupper[i] - p[i])/dp[i]; // from p[i] + alpha[i]*dp[i]
             if(alphai < alpha)
             {
-                alpha = std::max(alphai, 1.0); // just in case we get 1 + eps
+                alpha = std::min(alphai, 1.0); // just in case we get alphai = 1 + eps, so that min(alphai, 1) produces 1
                 j = i;
                 lu = +1;
             }
