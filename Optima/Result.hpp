@@ -29,6 +29,9 @@ public:
     /// The flag that indicates if the optimization calculation converged.
     bool succeeded = false;
 
+    /// The reason for the failure in the optimization calculation.
+    std::string failure_reason;
+
     /// The number of iterations in the optimization calculation.
     Index iterations = 0;
 
