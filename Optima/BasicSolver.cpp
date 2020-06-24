@@ -459,7 +459,7 @@ struct BasicSolver::Impl
 	auto computeError(const Vector& x, const Vector& y) -> double
     {
         // Evaluate the objective function f(x) and its gradient g(x)
-        const auto fres = evaluateObjectiveFn(x, { .f=true, .g=true, .H=false });
+        const auto fres = evaluateObjectiveFn(x, { .f=false, .g=true, .H=false });
 
         // Return +inf if objective function evaluation failed.
         if(fres.failed) return infinity();
@@ -485,7 +485,7 @@ struct BasicSolver::Impl
     	Timer timer;
 
         // Evaluate the Hessian of the objective function
-        const auto fres = evaluateObjectiveFn(x, { .f=true, .g=true, .H=true });
+        const auto fres = evaluateObjectiveFn(x, { .f=false, .g=true, .H=true });
 
         // Ensure the Hessian computation was successul.
         if(fres.failed)
