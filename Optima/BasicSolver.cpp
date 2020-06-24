@@ -537,13 +537,18 @@ struct BasicSolver::Impl
             // The phi(alpha) function that we want to minimize.
             const auto phi = [&](double alpha) -> double
             {
+                // Vector xnext = x*(1 - alpha) + alpha*xbar;
+                // Vector ynext = y*(1 - alpha) + alpha*ybar;
+                // return computeError(xnext, ynext);
+
+                xtrial.noalias() = x*(1 - alpha) + alpha*xbar;
+                ytrial.noalias() = y*(1 - alpha) + alpha*ybar;
+                return computeError(xtrial, ytrial);
+
                 // xtrial.noalias() = x*(1 - alpha) + alpha*xbar;
                 // ytrial.noalias() = y*(1 - alpha) + alpha*ybar;
-                Vector xnext = x*(1 - alpha) + alpha*xbar;
-                Vector ynext = y*(1 - alpha) + alpha*ybar;
                 // Vector xnext = x + alpha*dx;
                 // Vector ynext = y + alpha*dy;
-                return computeError(xnext, ynext);
             };
 
             std::cout << "alpha    = ";
@@ -555,20 +560,22 @@ struct BasicSolver::Impl
                 std::cout << std::left << std::setw(10) << phi(i/100.0) << " ";
             std::cout << std::endl;
 
-            // Minimize the error E along the current steepest descent direction.
-            auto alpha = minimizeBrent(phi, 0.0, 1.0, 1e-5, 5);
-            // auto alpha = minimizeBrent(phi, 0.0, alphamax, 1e-10, 100);
-            // auto alpha = minimizeBrent(phi, 0.0, alphamax*0.99, 1e-10, 100);
-            // auto alpha = minimizeGoldenSectionSearch(phi, 0.0, alphamax, 1e-10);
+            // Minimize the error phi(alpha) along the current Newton
+            // direction. This is to be performed in the interval [0, 1], where
+            // alpha=1 conincides with the largest Newton step that can be made
+            // so that no lower/upper bound is violated.
+            const auto lstol = options.linesearch.tolerance;
+            const auto lsmaxiters = options.linesearch.maxiters;
+            const auto alphamin = minimizeBrent(phi, 0.0, 1.0, lstol, lsmaxiters);
 
             // Calculate x(trial) and y(trial) using the minimizer alpha value
-            xtrial.noalias() = x*(1 - alpha) + alpha*xbar;
-            ytrial.noalias() = y*(1 - alpha) + alpha*ybar;
+            xtrial.noalias() = x*(1 - alphamin) + alphamin*xbar;
+            ytrial.noalias() = y*(1 - alphamin) + alphamin*ybar;
 
             // Compute the new error E after the steepest descent minmization approach
             const auto Enew2 = computeError(xtrial, ytrial);
 
-            std::cout << "alpha*    = " << alpha << std::endl;
+            std::cout << "alpha*    = " << alphamin << std::endl;
             std::cout << "E(alpha*) = " << Enew2 << std::endl;
 
             auto i = 0;

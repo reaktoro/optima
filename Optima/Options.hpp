@@ -66,6 +66,16 @@ struct OutputOptions : OutputterOptions
     auto operator=(bool active) -> OutputOptions&;
 };
 
+/// The options for the linear search minimization operation.
+struct LineSearchOptions
+{
+    /// The tolerance in the minimization calculation during the line search operation.
+    double tolerance = 1.0e-5;
+
+    /// The maximum number of iterations during the minimization calculation in the line search operation.
+    double maxiters = 5;
+};
+
 /// A type that describes the options of a optimization calculation
 class Options
 {
@@ -108,6 +118,9 @@ public:
 
     /// The options for the solution of the KKT equations.
     SaddlePointOptions kkt;
+
+    /// The options for the linear search minimization operation.
+    LineSearchOptions linesearch;
 };
 
 } // namespace Optima
