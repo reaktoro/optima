@@ -188,11 +188,9 @@ struct BasicSolver::Impl
             if((succeeded = converged()))
                 break;
 
-            // if(applyNewtonStep() == FAILED)
-            //     if(applySteepestDescentStep() == FAILED)
-            //         break;
-
-            applyNewtonStep();
+            if(applyNewtonStep() == FAILED)
+                if(applySteepestDescentStep() == FAILED)
+                    break;
         }
 
         outputHeaderBottom();
@@ -406,8 +404,6 @@ struct BasicSolver::Impl
         stepper.residuals({ x, y, b, h, g, rx, ry, ex, ey, z });
 
 		// Update the current optimality, feasibility and complementarity errors
-		// result.error_optimality  = norminf(rx)/(1 + norminf(g));
-		// result.error_feasibility = norminf(ry);
 		result.error_optimality  = norminf(ex);
 		result.error_feasibility = norminf(ey);
 
@@ -421,20 +417,43 @@ struct BasicSolver::Impl
         const auto yb = y.head(mb);
         const auto yh = y.tail(mh);
 
-        // ex << g + tr(A)*yb + tr(J)*yh;
-        // ey << A*x - b, h;
-
         L = f + yb.dot(A*x - b) + yh.dot(h);
 
         // Update the error E(x, y) = ||g + tr(W)y||^2 + ||Ax - b||^2 + ||h(x)||^2.
-        E = rx.squaredNorm() + ry.squaredNorm();
+        // E = rx.squaredNorm() + ry.squaredNorm();
         // E = ex.squaredNorm() + ey.squaredNorm();
-        // E = computeError(x, y);
+        E = computeError(x, y);
 
         // Store both L and E in the analysis container
         analysis.L.push_back(L);
         analysis.E.push_back(E);
 	}
+
+	// Compute the Lagrange function L(x, y) used in the line search algorithm.
+	auto computeLagrangeFn(const Vector& x, const Vector& y) -> double
+    {
+        // Evaluate the objective function f(x) and its gradient g(x)
+        const auto fres = evaluateObjectiveFn(x, { .f=true, .g=true, .H=true });
+
+        // Return +inf if objective function evaluation failed.
+        if(fres.failed) return infinity();
+
+        // Evaluate the equality constraint function h(x)
+        const auto hres = evaluateConstraintFn(x);
+
+        // Return +inf if constraint function evaluation failed.
+        if(hres.failed) return infinity();
+
+        // Update the Lagrange function L(x, y) = f + tr(yb)*(Ax - b) + tr(yh)*h
+        const auto yb = y.head(mb);
+        const auto yh = y.tail(mh);
+
+        L = f + yb.dot(A*x - b) + yh.dot(h);
+
+        const auto L0 = analysis.L.front();
+
+        return L - L0;
+    }
 
 	// Compute the error function E(x, y) used in the line search algorithm.
 	auto computeError(const Vector& x, const Vector& y) -> double
@@ -458,79 +477,6 @@ struct BasicSolver::Impl
 		// Return the error E(x, y) = ||g + tr(W)y||^2 + ||Ax - b||^2 + ||h(x)||^2.
 		return rx.squaredNorm() + ry.squaredNorm();
     }
-
-	// // Compute the error function E(x, y) used in the line search algorithm.
-	// auto computeError(const Vector& x, const Vector& y) -> double
-    // {
-    //     // Evaluate the objective function f(x) and its gradient g(x)
-    //     const auto fres = evaluateObjectiveFn(x, { .f=true, .g=true, .H=false });
-
-    //     // Return +inf if objective function evaluation failed.
-    //     if(fres.failed) return infinity();
-
-    //     // Evaluate the equality constraint function h(x)
-    //     const auto hres = evaluateConstraintFn(x);
-
-    //     // Return +inf if constraint function evaluation failed.
-    //     if(hres.failed) return infinity();
-
-    //     // Compute the current optimality and feasibility residuals
-    //     stepper.residuals({ x, y, b, h, g, rx, ry, z });
-
-	// 	// Return the error E(x, y) = ||g + tr(W)y||^2 + ||Ax - b||^2 + ||h(x)||^2.
-	// 	return rx.squaredNorm() + ry.squaredNorm();
-    // }
-
-	// // Compute the error function E(x, y) used in the line search algorithm.
-	// auto computeError(const Vector& x, const Vector& y) -> double
-    // {
-    //     // Evaluate the objective function f(x) and its gradient g(x)
-    //     const auto fres = evaluateObjectiveFn(x, { .f=true, .g=true, .H=true });
-
-    //     // Return +inf if objective function evaluation failed.
-    //     if(fres.failed) return infinity();
-
-    //     // Evaluate the equality constraint function h(x)
-    //     const auto hres = evaluateConstraintFn(x);
-
-    //     // Return +inf if constraint function evaluation failed.
-    //     if(hres.failed) return infinity();
-
-    //     // Canonicalize the W = [A; J] matrix as a pre-step to calculate the Newton step
-    //     stepper.canonicalize({ x, y, g, H, J, xlower, xupper, stability }); // TODO Check if this is really needed (or can be optimized)
-
-    //     // Compute the current optimality and feasibility residuals
-    //     stepper.residuals({ x, y, b, h, g, rx, ry, z });
-
-	// 	// Return the error E(x, y) = ||g + tr(W)y||^2 + ||Ax - b||^2 + ||h(x)||^2.
-	// 	return rx.squaredNorm() + ry.squaredNorm();
-    // }
-
-	// // Compute the error function E(x, y) used in the line search algorithm.
-	// auto computeError(const Vector& x, const Vector& y) -> double
-    // {
-    //     // Evaluate the objective function f(x) and its gradient g(x)
-    //     const auto fres = evaluateObjectiveFn(x, { .f=true, .g=true, .H=true });
-
-    //     // Return +inf if objective function evaluation failed.
-    //     if(fres.failed) return infinity();
-
-    //     // Evaluate the equality constraint function h(x)
-    //     const auto hres = evaluateConstraintFn(x);
-
-    //     // Return +inf if constraint function evaluation failed.
-    //     if(hres.failed) return infinity();
-
-    //     const auto yb = y.head(mb);
-    //     const auto yh = y.tail(mh);
-
-    //     ex << g + tr(A)*yb + tr(J)*yh;
-    //     ey << A*x - b, h;
-
-	// 	// Return the error E(x, y) = ||g + tr(W)y||^2 + ||Ax - b||^2 + ||h(x)||^2.
-	// 	// return rx.squaredNorm() + ry.squaredNorm();
-	// 	return ex.squaredNorm() + ey.squaredNorm();
-    // }
 
     // The function that computes the Newton step
     auto computeNewtonStep() -> bool
@@ -558,137 +504,6 @@ struct BasicSolver::Impl
         return true;
     };
 
-    // Update the variables (x, y, z, w) with a Newton stepping scheme
-    auto applyNewtonStepping() -> void
-    {
-        switch(options.step) {
-        case Aggressive: return applyNewtonSteppingAggressive();
-        default: return applyNewtonSteppingConservative();
-        }
-    };
-
-    /// Perform a backtracking line search algorithm to check if a shorter
-    /// Newton step results in better residuals.
-    auto applyBacktrackingLineSeach() -> void
-	{
-    	// Skip if first iteration
-
-    	// TODO Use dxtrial to calculate alpha step length to decrease the stepping
-
-//		// Establish the current needs for the objective function evaluation at the trial iterate
-//		f.requires.f = true;
-//		f.requires.g = false;
-//		f.requires.H = false;
-//
-//		// Evaluate the objective function at the trial iterate
-
-
-//		f = objective(xtrial);
-//
-//		args.f = f.f;
-//		args.g = f.g;
-//		args.H = f.H;
-//
-//		// Initialize the step length factor
-//		double alpha = fractionToTheBoundary(x, dx, options.tau);
-//
-//		// The number of tentatives to find a trial iterate that results in finite objective result
-//		unsigned tentatives = 0;
-//
-//		// Repeat until f(xtrial) is finite
-//		while(!isfinite(f) && ++tentatives < 10)
-//		{
-//			// Calculate a new trial iterate using a smaller step length
-//			xtrial = x + alpha * dx;
-//
-//			// Evaluate the objective function at the new trial iterate
-//			f.requires.f = true;
-//			f.requires.g = false;
-//			f.requires.H = false;
-
-
-//			f = objective(xtrial);
-//
-//			args.f = f.f;
-//			args.g = f.g;
-//			args.H = f.H;
-//
-//			// Decrease the current step length
-//			alpha *= 0.5;
-//		}
-//
-//		// Return false if xtrial could not be found s.t. f(xtrial) is finite
-//		if(tentatives == 10)
-//			return false;
-//
-//		// Update the iterate x from xtrial
-//		x = xtrial;
-//
-//		// Update the gradient and Hessian at x
-//		f.requires.f = false;
-//		f.requires.g = true;
-//		f.requires.H = true;
-
-
-//		f = objective(x);
-//
-//		args.f = f.f;
-//		args.g = f.g;
-//		args.H = f.H;
-
-	}
-
-	// // Update the variables (x, y) with a Newton step.
-	// auto applyNewtonStep() -> bool
-    // {
-    //     // Compute the Newton steps dx and dy
-    //     computeNewtonStep();
-
-    //     // The parameter used to decrease the Newton steps in case of failure
-    //     const auto sigma = 0.1;
-
-    //     // The maximum number of tentatives in case of failure when applying Newton steps
-    //     const auto max_tentatives = 10;
-
-    //     dxtrial = dx;
-    //     dytrial = dy;
-
-    //     for(auto tentatives = 0; ; ++tentatives)
-    //     {
-    //         // Compute x(trial) and y(trial) taking care of the bounds of x
-    //         xtrial = x;
-    //         performAggressiveStep(xtrial, dxtrial, xlower, xupper);
-    //         ytrial = y + dytrial;
-
-    //         // Evaluate the objective function f(x) at x(trial)
-    //         const auto fres = evaluateObjectiveFn(xtrial, { .f=true, .g=true, .H=true });
-
-    //         // Evaluate the constraint function h(x) at x(trial)
-    //         const auto hres = evaluateConstraintFn(xtrial);
-
-    //         // Check if the current x(trial) and y(trial) causes a failed stepping
-    //         const bool failed = fres.failed || hres.failed;
-
-    //         // Break out of this loop if no failure happened.
-    //         if(!failed)
-    //             break;
-
-    //         // If all tentatives have been made, exit with
-    //         if(tentatives >= max_tentatives)
-    //             return false;
-
-    //         // The calculation failed, so decrease the Newton steps for x and y variables
-    //         dxtrial *= sigma;
-    //         dytrial *= sigma;
-    //     }
-
-	// 	// Update the x variables
-	// 	x = xtrial;
-	// 	y = ytrial;
-
-    //     return true;
-    // }
-
 	// Update the variables (x, y) with a Newton step.
 	auto applyNewtonStep() -> bool
     {
@@ -710,6 +525,56 @@ struct BasicSolver::Impl
         // Return true if new error is less than error at initial guess
         // if(Enew > E0)
         //     return FAILED;
+        // if(Enew > E0)
+        if(Enew > E)
+        {
+            xtrial = x;
+            const auto alphamax = performConservativeStep(xtrial, dx, xlower, xupper);
+
+            Vector xbar = xtrial;
+            Vector ybar = y + alphamax * dy;
+
+            // The phi(alpha) function that we want to minimize.
+            const auto phi = [&](double alpha) -> double
+            {
+                // xtrial.noalias() = x*(1 - alpha) + alpha*xbar;
+                // ytrial.noalias() = y*(1 - alpha) + alpha*ybar;
+                Vector xnext = x*(1 - alpha) + alpha*xbar;
+                Vector ynext = y*(1 - alpha) + alpha*ybar;
+                // Vector xnext = x + alpha*dx;
+                // Vector ynext = y + alpha*dy;
+                return computeError(xnext, ynext);
+            };
+
+            std::cout << "alpha    = ";
+            for(auto i = 0; i <= 100; ++i)
+                std::cout << std::left << std::setw(10) << i/100.0 << " ";
+            std::cout << std::endl;
+            std::cout << "E(alpha) = ";
+            for(auto i = 0; i <= 100; ++i)
+                std::cout << std::left << std::setw(10) << phi(i/100.0) << " ";
+            std::cout << std::endl;
+
+            // Minimize the error E along the current steepest descent direction.
+            auto alpha = minimizeBrent(phi, 0.0, 1.0, 1e-5, 5);
+            // auto alpha = minimizeBrent(phi, 0.0, alphamax, 1e-10, 100);
+            // auto alpha = minimizeBrent(phi, 0.0, alphamax*0.99, 1e-10, 100);
+            // auto alpha = minimizeGoldenSectionSearch(phi, 0.0, alphamax, 1e-10);
+
+            // Calculate x(trial) and y(trial) using the minimizer alpha value
+            xtrial.noalias() = x*(1 - alpha) + alpha*xbar;
+            ytrial.noalias() = y*(1 - alpha) + alpha*ybar;
+
+            // Compute the new error E after the steepest descent minmization approach
+            const auto Enew2 = computeError(xtrial, ytrial);
+
+            std::cout << "alpha*    = " << alpha << std::endl;
+            std::cout << "E(alpha*) = " << Enew2 << std::endl;
+
+            auto i = 0;
+
+            // return FAILED;
+        }
 
         // Update x and y to their respective trial states
         x = xtrial;
@@ -734,31 +599,44 @@ struct BasicSolver::Impl
         // The phi(alpha) function that we want to minimize.
         const auto phi = [&](double alpha) -> double
         {
-            xtrial.noalias() = x*(1 - alpha) + alpha*xbar;
-            ytrial.noalias() = y*(1 - alpha) + alpha*ybar;
-            return computeError(xtrial, ytrial);
+            // xtrial.noalias() = x*(1 - alpha) + alpha*xbar;
+            // ytrial.noalias() = y*(1 - alpha) + alpha*ybar;
+            Vector xnext = x*(1 - alpha) + alpha*xbar;
+            Vector ynext = y*(1 - alpha) + alpha*ybar;
+            // Vector xnext = x + alpha*dx;
+            // Vector ynext = y + alpha*dy;
+            // return computeError(xtrial, ytrial);
+            return computeLagrangeFn(xnext, ynext);
         };
 
-        std::cout << "E(alpha) = ";
+        // std::cout << "E(alpha) = ";
+        // for(auto i = 0; i <= 100; ++i)
+        //     std::cout << phi(i/100.0) << " ";
+        // std::cout << std::endl;
+
+        std::cout << "L(p + alpha*dp) - L0 = ";
         for(auto i = 0; i <= 100; ++i)
             std::cout << phi(i/100.0) << " ";
         std::cout << std::endl;
 
         // Minimize the error E along the current steepest descent direction.
-        auto alpha = minimizeGoldenSectionSearch(phi, 0.0, 1.0, 1e-10);
+        auto alpha = minimizeGoldenSectionSearch(phi, 0.0, alphamax, 1e-40);
 
         // Calculate x(trial) and y(trial) using the minimizer alpha value
         xtrial.noalias() = x*(1 - alpha) + alpha*xbar;
         ytrial.noalias() = y*(1 - alpha) + alpha*ybar;
 
         // Compute the new error E after the steepest descent minmization approach
-        const auto Enew = computeError(xtrial, ytrial);
+        // const auto Enew = computeError(xtrial, ytrial);
+        const auto Lnew = computeLagrangeFn(xtrial, ytrial);
 
         // Get the error E at the initial guess
-        const auto E0 = analysis.E.front();
+        // const auto E0 = analysis.E.front();
 
         // Return true if new error is less than error at initial guess
-        if(Enew > E0)
+        // if(Enew > E0)
+        //     return false;
+        if(Lnew > 0.0)
             return false;
 
         // Update x and y to their respective trial states
@@ -768,269 +646,6 @@ struct BasicSolver::Impl
         // The steepest descent approach was successful.
         return true;
     }
-
-	// Update the variables (x, y, z, w) with an aggressive Newton stepping scheme
-	auto applyNewtonSteppingAggressive() -> void
-	{
-		// // Update xtrial with the calculated Newton step
-		// xtrial = x + dx;
-
-        // // Ensure no entry in `x` violate lower/upper bounds
-        // xtrial.noalias() = max(xtrial, xlower);
-        // xtrial.noalias() = min(xtrial, xupper);
-
-        const auto yb = y.head(mb);
-        const auto yh = y.tail(mh);
-
-        Vector d(t); d << dx, dy;
-
-        Vector gradL(t);
-        gradL << g + tr(A)*yb + tr(J)*yh, A*x-b, h;
-
-        const auto c1 = 1e-5;
-        const auto c2 = 1e+5;
-
-        const auto slope = gradL.dot(d);
-        const auto slope_descent = -gradL.squaredNorm();
-        const auto slope_eps = c1 * std::abs(slope_descent);
-
-        const auto slopex = gradL.head(n).dot(d.head(n));
-        const auto slopey = gradL.tail(m).dot(d.tail(m));
-
-        std::cout << "slope     = " << slope << std::endl;
-        std::cout << "slopex    = " << slopex << std::endl;
-        std::cout << "slopey    = " << slopey << std::endl;
-
-        std::cout << "||dx||    = " << dx.norm() << std::endl;
-        std::cout << "||dy||    = " << dy.norm() << std::endl;
-
-        std::cout << "||dx,dy|| = " << d.norm() << std::endl;
-
-        xtrial = x;
-        performAggressiveStep(xtrial, dx, xlower, xupper);
-
-        ytrial = y + dy;
-
-        const auto Etrial = computeError(xtrial, ytrial);
-
-        const auto E0 = analysis.E.front();
-
-        std::cout << "Etrial = " << Etrial << std::endl;
-
-        if(false)
-        // if(Etrial > E0)
-        // if(Etrial > E)
-        {
-            std::cout << "Etrial > E0 = " << E0 << std::endl;
-            const auto yb = y.head(mb);
-            const auto yh = y.tail(mh);
-
-            Vector d(t); d << dx, dy;
-
-            Vector gradL(t);
-            gradL << g + tr(A)*yb + tr(J)*yh, A*x-b, h;
-
-            const auto c1 = 1e-5;
-            const auto c2 = 1e+5;
-
-            const auto slope = gradL.dot(d);
-            const auto slope_descent = gradL.squaredNorm();
-            const auto slope_eps = c1 * slope_descent;
-
-            if(slope > 0.0 || std::abs(slope) < slope_eps)
-            {
-                dx = -gradL.head(n);
-                dy = -gradL.tail(m);
-            }
-
-            xtrial = x;
-            const auto alphamax = performConservativeStep(xtrial, dx, xlower, xupper);
-
-            Vector xbar = xtrial;
-            Vector ybar = y + alphamax * dy;
-
-            const auto phi = [&](double alpha) -> double
-            {
-                xtrial.noalias() = x*(1 - alpha) + alpha*xbar;
-                ytrial.noalias() = y*(1 - alpha) + alpha*ybar;
-                return computeError(xtrial, ytrial);
-            };
-
-            std::cout << "E(alpha) = ";
-            for(auto i = 0; i <= 100; ++i)
-                std::cout << phi(i/100.0) << " ";
-            std::cout << std::endl;
-
-            auto alpha = minimizeGoldenSectionSearch(phi, 0.0, 1.0, 1e-10);
-
-            xtrial.noalias() = x*(1 - alpha) + alpha*xbar;
-            ytrial.noalias() = y*(1 - alpha) + alpha*ybar;
-
-            const auto newExy = computeError(xtrial, ytrial);
-
-            // if(newExy > Exy)
-            // {
-            //     xtrial.noalias() = x + dx;
-            //     ytrial.noalias() = y + dy;
-            // }
-
-            // // The number of tentatives to find a trial iterate that results in finite objective result
-            // auto tentatives = 0;
-
-            // auto alpha = 1.0;
-
-            // // Repeat until a suitable xtrial iterate if found such that f(xtrial) is finite
-            // for(; tentatives < 10; ++tentatives)
-            // {
-            //     // Calculate the current trial iterate for x
-            //     xtrial = x + alpha * dx;
-            //     ytrial = y + alpha * dy;
-
-            //     // Evaluate the objective function at the trial iterate
-            //     f.requires.f = true;
-            //     f.requires.g = false;
-            //     f.requires.H = false;
-
-
-            //     f = objective(xtrial);
-
-            //     args.f = f.f;
-            //     args.g = f.g;
-            //     args.H = f.H;
-
-            //     // Leave the loop if f(xtrial) is finite
-            //     if(isfinite(f))
-            //         break;
-
-            //     // Decrease alpha in a hope that a shorter step results f(xtrial) finite
-            //     alpha *= 0.01;
-            // }
-
-            // // Return false if xtrial could not be found s.t. f(xtrial) is finite
-            // if(tentatives == 10)
-            //     return false;
-        }
-
-
-
-
-        // computeError({ })
-
-
-
-        // // Create an ObjectiveResult with f, g, H to be filled
-        // ObjectiveResult res(f, g, H);
-
-        // // Establish the current needs for the objective function evaluation
-        // res.requires.f = true;
-        // res.requires.g = true;
-        // res.requires.H = false; // there is no need for Hessian updates during the line search
-
-        // // Evaluate the objective function f(x)
-        // args.obj(xtrial, res);
-
-        // bool line_search_needed = false;
-
-        // // If x(trial) produces non-finite values, line search is needed
-        // line_search_needed = !std::isfinite(f) || g.allFinite();
-
-        // error_new < error
-
-
-
-
-
-		// Calculate the trial Newton step for the aggressive mode
-		dxtrial = xtrial - x;
-		dytrial = ytrial - y;
-
-		// Update the x variables
-		x = xtrial;
-		y = ytrial;
-
-		// Update the y-Lagrange multipliers
-		// y += dy;
-	};
-
-	// Update the variables (x, y, z, w) with a conservative Newton stepping scheme
-	auto applyNewtonSteppingConservative() -> void
-	{
-		// Aliases to variables x, y, z, w
-		// VectorRef x = args.x;
-		// VectorRef y = args.y;
-		// VectorRef z = args.z;
-
-		// // The indices of variables with lower/upper bounds and fixed values
-		// IndicesConstRef ilower = constraints.variablesWithLowerBounds();
-		// IndicesConstRef iupper = constraints.variablesWithUpperBounds();
-		// IndicesConstRef ifixed = constraints.variablesWithFixedValues();
-
-		// // Initialize the step length factor
-		// double alphax = xStepLength(x, dx, xlower, xupper, tau);
-		// double alphaz = zStepLength(z, dz, tau);
-		// double alphaw = wStepLength(w, dw, tau);
-		// double alpha = alphax;
-
-		// // The number of tentatives to find a trial iterate that results in finite objective result
-		// unsigned tentatives = 0;
-
-		// // Repeat until a suitable xtrial iterate if found such that f(xtrial) is finite
-		// for(; tentatives < 10; ++tentatives)
-		// {
-		// 	// Calculate the current trial iterate for x
-		// 	xtrial = x + alpha * dx;
-
-		// 	// Evaluate the objective function at the trial iterate
-		// 	f.requires.f = true;
-		// 	f.requires.g = false;
-		// 	f.requires.H = false;
-
-
-		// 	f = objective(xtrial);
-
-		// 	args.f = f.f;
-		// 	args.g = f.g;
-		// 	args.H = f.H;
-
-		// 	// Leave the loop if f(xtrial) is finite
-		// 	if(isfinite(f))
-		// 		break;
-
-		// 	// Decrease alpha in a hope that a shorter step results f(xtrial) finite
-		// 	alpha *= 0.01;
-		// }
-
-		// // Return false if xtrial could not be found s.t. f(xtrial) is finite
-		// if(tentatives == 10)
-		// 	return false;
-
-		// // Update the iterate x from xtrial
-		// x = xtrial;
-
-		// // Update the z-Lagrange multipliers
-		// z += alphaz * dz;
-
-		// // Update the w-Lagrange multipliers
-		// w += alphaw * dw;
-
-		// // Update the y-Lagrange multipliers
-		// y += dy;
-
-		// // Update the gradient and Hessian at x
-		// f.requires.f = false;
-		// f.requires.g = true;
-		// f.requires.H = true;
-
-
-		// f = objective(x);
-
-		// args.f = f.f;
-		// args.g = f.g;
-		// args.H = f.H;
-
-		// // Return true as found xtrial results in finite f(xtrial)
-		// return true;
-	};
 
 	/// Return true if the calculation converged.
     auto converged() const -> bool
