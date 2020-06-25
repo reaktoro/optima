@@ -412,10 +412,9 @@ struct Stepper::Impl
 
         W.bottomRows(mn) = J;
 
-        // dx.noalias() = H*dxL + tr(W)*dyL;
         dx.noalias() = tr(W)*dyL;
         if(options.kkt.method == SaddlePointMethod::Rangespace)
-            dx.noalias() += H.diagonal() * dxL;
+            dx.noalias() += H.diagonal().cwiseProduct(dxL);
         else dx.noalias() += H * dxL;
 
         dy.noalias() = A*dxL;
