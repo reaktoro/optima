@@ -474,8 +474,8 @@ struct BasicSolver::Impl
         if(hres.failed) return infinity();
 
         // Compute the current optimality and feasibility residuals.
-        // This can be achieved with Stepper::steepestDescent method.
-        stepper.steepestDescent({ x, y, b, h, g, rx, ry });
+        // This can be achieved with Stepper::steepestDescentLagrange method.
+        stepper.steepestDescentLagrange({ x, y, b, h, g, rx, ry });
 
 		// Return the error E(x, y) = ||g + tr(W)y||^2 + ||Ax - b||^2 + ||h(x)||^2.
 		return rx.squaredNorm() + ry.squaredNorm();
@@ -672,8 +672,90 @@ struct BasicSolver::Impl
 	// Update the variables (x, y) with a steepest descent step.
 	auto applySteepestDescentStep() -> bool
     {
+        // Evaluate the Hessian of the objective function
+        const auto fres = evaluateObjectiveFn(x, { .f=false, .g=true, .H=true });
+
+        // Ensure the Hessian computation was successul.
+        if(fres.failed)
+            return FAILED;
+
         // Compute the steepest descent steps dx and dy
-        stepper.steepestDescent({ x, y, b, h, g, dx, dy });
+        stepper.steepestDescentError({ x, y, b, h, g, H, J, dx, dy });
+
+        // Start with x(bar) = x(current)
+        xbar = x;
+
+        // Step x(bar) until the full-length of `dx` if no bounds are violated.
+        // Otherwise, stop at the first hit lower/upper bound.
+        const auto maxlength = performConservativeStep(xbar, dx, xlower, xupper);
+
+        // Compute y(bar) considering the length obtained in the previous step.
+        ybar = y + maxlength*dy;
+
+        // Compute the Lagrange value L at x(bar) and y(bar) after a full
+        // steepest descent step (or tamed to avoid bound violation!).
+        const auto Ebar = computeError(xbar, ybar);
+
+        // The Lagrange value L at the previous iteration.
+        const auto Eold = analysis.E.back();
+
+        // Skip the minimization procedure if the Lagrange function has already
+        // been decreased with the full steepest descent step. This is needed
+        // because the minimization approach would be more costly to find this
+        // out. Also, the minimization approach below may produce an alpha
+        // length that is close to 1, but not 1. This can produce an indefinite
+        // number of movements towards a bound, with the variable closest to
+        // its bound never getting attached to it.
+        if(Ebar < Eold)
+        {
+            x = xbar;
+            y = ybar;
+            return SUCCEEDED;
+        }
+
+        // Define the function phi(alpha) = L(x + alpha*dx, y + alpha*dy) that we want to minimize.
+        const auto phi = [&](double alpha) -> double
+        {
+            xtrial.noalias() = x*(1 - alpha) + alpha*xbar; // using x + alpha*(xbar - x) is sensitive to round-off errors!
+            ytrial.noalias() = y*(1 - alpha) + alpha*ybar; // using y + alpha*(ybar - y) is sensitive to round-off errors!
+            return computeError(xtrial, ytrial);
+        };
+
+        // The tolerance and maximum number of iterations used in the steepest descent minimization procedure.
+        const auto tol = options.steepestdescent.tolerance;
+        const auto maxiters = options.steepestdescent.maxiters;
+
+        // Minimize function phi(alpha) along the computed steepest descent direction `dx` and `dy`.
+        // This is to be performed in the interval [0, 1], where alpha=1
+        // coincides with the largest Newton step that we could make so that no
+        // lower/upper bound is violated.
+        const auto alphamin = minimizeBrent(phi, 0.0, 1.0, tol, maxiters);
+
+        // Calculate x(trial) and y(trial) using the minimizer alpha value
+        xtrial.noalias() = x*(1 - alphamin) + alphamin*xbar; // using x + alpha*(xbar - x) is sensitive to round-off errors!
+        ytrial.noalias() = y*(1 - alphamin) + alphamin*ybar; // using y + alpha*(ybar - y) is sensitive to round-off errors!
+
+        // Compute the new Lagrange value L after the steepest descent operation.
+        const auto Enew = computeError(xtrial, ytrial);
+
+        // Return failed status if the Lagrange function did not decrease along
+        // the steepest descent minimization operation.
+        if(Enew > Eold)
+            return FAILED;
+
+        // Update x and y to their respective trial states
+        x = xtrial;
+        y = ytrial;
+
+        // The steepest descent step approach was successful.
+        return SUCCEEDED;
+    }
+
+	// Update the variables (x, y) with a steepest descent step.
+	auto applySteepestDescentLagrangeStep() -> bool
+    {
+        // Compute the steepest descent steps dx and dy
+        stepper.steepestDescentLagrange({ x, y, b, h, g, dx, dy });
 
         // Start with x(bar) = x(current)
         xbar = x;
