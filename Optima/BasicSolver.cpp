@@ -438,7 +438,7 @@ struct BasicSolver::Impl
 	auto computeLagrangeFn(const Vector& x, const Vector& y) -> double
     {
         // Evaluate the objective function f(x) and its gradient g(x)
-        const auto fres = evaluateObjectiveFn(x, { .f=true, .g=true, .H=true });
+        const auto fres = evaluateObjectiveFn(x, { .f=true, .g=true, .H=false });
 
         // Return +inf if objective function evaluation failed.
         if(fres.failed) return infinity();
@@ -455,15 +455,13 @@ struct BasicSolver::Impl
 
         L = f + yb.dot(A*x - b) + yh.dot(h);
 
-        const auto L0 = analysis.L.front();
-
-        return L - L0;
+        return L;
     }
 
 	// Compute the error function E(x, y) used in the line search algorithm.
 	auto computeError(const Vector& x, const Vector& y) -> double
     {
-        // Evaluate the objective function f(x) and its gradient g(x)
+        // Evaluate the objective function gradient g(x) only
         const auto fres = evaluateObjectiveFn(x, { .f=false, .g=true, .H=false });
 
         // Return +inf if objective function evaluation failed.
@@ -612,7 +610,7 @@ struct BasicSolver::Impl
         const auto tol = options.linesearch.tolerance;
         const auto maxiters = options.linesearch.maxiters;
 
-        // Minimize function phi(alpha) along the computed Newton direction `dx`.
+        // Minimize function phi(alpha) along the computed Newton direction `dx` and `dy`.
         // This is to be performed in the interval [0, 1], where alpha=1
         // coincides with the largest Newton step that we could make so that no
         // lower/upper bound is violated.
@@ -677,60 +675,64 @@ struct BasicSolver::Impl
         // Compute the steepest descent steps dx and dy
         stepper.steepestDescent({ x, y, b, h, g, dx, dy });
 
-        xtrial = x;
-        const auto alphamax = performConservativeStep(xtrial, dx, xlower, xupper);
+        // Start with x(bar) = x(current)
+        xbar = x;
 
-        Vector xbar = xtrial;
-        Vector ybar = y + alphamax * dy;
+        // Step x(bar) until the full-length of `dx` if no bounds are violated.
+        // Otherwise, stop at the first hit lower/upper bound.
+        const auto maxlength = performConservativeStep(xbar, dx, xlower, xupper);
 
-        // The phi(alpha) function that we want to minimize.
+        // Compute y(bar) considering the length obtained in the previous step.
+        ybar = y + maxlength*dy;
+
+        // Compute the Lagrange value L at x(bar) and y(bar) after a full
+        // steepest descent step (or tamed to avoid bound violation!).
+        const auto Lbar = computeLagrangeFn(xbar, ybar);
+
+        // The Lagrange value L at the previous iteration.
+        const auto Lold = analysis.L.back();
+
+        // Skip the minimization procedure if the Lagrange function has already
+        // been decreased with the full steepest descent step. This is needed
+        // because the minimization approach would be more costly to find this
+        // out. Also, the minimization approach below may produce an alpha
+        // length that is close to 1, but not 1. This can produce an indefinite
+        // number of movements towards a bound, with the variable closest to
+        // its bound never getting attached to it.
+        if(Lbar < Lold)
+            return SUCCEEDED;
+
+        // Define the function phi(alpha) = L(x + alpha*dx, y + alpha*dy) that we want to minimize.
         const auto phi = [&](double alpha) -> double
         {
-            // xtrial.noalias() = x*(1 - alpha) + alpha*xbar;
-            // ytrial.noalias() = y*(1 - alpha) + alpha*ybar;
-            Vector xnext = x*(1 - alpha) + alpha*xbar;
-            Vector ynext = y*(1 - alpha) + alpha*ybar;
-            // Vector xnext = x + alpha*dx;
-            // Vector ynext = y + alpha*dy;
-            // return computeError(xtrial, ytrial);
-            return computeLagrangeFn(xnext, ynext);
+            xtrial.noalias() = x*(1 - alpha) + alpha*xbar; // using x + alpha*(xbar - x) is sensitive to round-off errors!
+            ytrial.noalias() = y*(1 - alpha) + alpha*ybar; // using y + alpha*(ybar - y) is sensitive to round-off errors!
+            return computeLagrangeFn(xtrial, ytrial);
         };
 
-        // std::cout << "E(alpha) = ";
-        // for(auto i = 0; i <= 100; ++i)
-        //     std::cout << phi(i/100.0) << " ";
-        // std::cout << std::endl;
+        // The tolerance and maximum number of iterations used in the steepest descent minimization procedure.
+        const auto tol = options.steepestdescent.tolerance;
+        const auto maxiters = options.steepestdescent.maxiters;
 
-        // std::cout << "L(p + alpha*dp) - L0 = ";
-        // for(auto i = 0; i <= 100; ++i)
-        //     std::cout << phi(i/100.0) << " ";
-        // std::cout << std::endl;
-
-        // Minimize the error E along the current steepest descent direction.
-        auto alpha = minimizeGoldenSectionSearch(phi, 0.0, alphamax, 1e-40);
+        // Minimize function phi(alpha) along the computed steepest descent direction `dx` and `dy`.
+        // This is to be performed in the interval [0, 1], where alpha=1
+        // coincides with the largest Newton step that we could make so that no
+        // lower/upper bound is violated.
+        const auto alphamin = minimizeBrent(phi, 0.0, 1.0, tol, maxiters);
 
         // Calculate x(trial) and y(trial) using the minimizer alpha value
-        xtrial.noalias() = x*(1 - alpha) + alpha*xbar;
-        ytrial.noalias() = y*(1 - alpha) + alpha*ybar;
+        xtrial.noalias() = x*(1 - alphamin) + alphamin*xbar; // using x + alpha*(xbar - x) is sensitive to round-off errors!
+        ytrial.noalias() = y*(1 - alphamin) + alphamin*ybar; // using y + alpha*(ybar - y) is sensitive to round-off errors!
 
-        // Compute the new error E after the steepest descent minmization approach
-        // const auto Enew = computeError(xtrial, ytrial);
+        // Compute the new Lagrange value L after the steepest descent operation.
         const auto Lnew = computeLagrangeFn(xtrial, ytrial);
 
-        // Get the error E at the initial guess
-        // const auto E0 = analysis.E.front();
+        // Return failed status if the Lagrange function did not decrease along
+        // the steepest descent minimization operation.
+        if(Lnew > Lold)
+            return FAILED;
 
-        // Return true if new error is less than error at initial guess
-        // if(Enew > E0)
-        //     return false;
-        if(Lnew > 0.0)
-            return false;
-
-        // Update x and y to their respective trial states
-        x = xtrial;
-        y = ytrial;
-
-        // The steepest descent approach was successful.
+        // The steepest descent step approach was successful.
         return SUCCEEDED;
     }
 

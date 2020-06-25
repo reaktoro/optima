@@ -92,6 +92,16 @@ struct BacktrackSearchOptions
     double maxiters = 10;
 };
 
+/// The options for the steepest descent step operation when needed.
+struct SteepestDescentOptions
+{
+    /// The tolerance in the minimization calculation during the steepest descent operation.
+    double tolerance = 1.0e-6;
+
+    /// The maximum number of iterations during the minimization calculation during the steepest descent operation.
+    double maxiters = 10;
+};
+
 /// A type that describes the options of a optimization calculation
 class Options
 {
@@ -137,6 +147,9 @@ public:
 
     /// The options for the linear search minimization operation.
     LineSearchOptions linesearch;
+
+    /// The options for the steepest descent step operation when needed.
+    SteepestDescentOptions steepestdescent;
 
     /// The options for the backtrack linear search operation.
     BacktrackSearchOptions backtrack;
