@@ -74,6 +74,22 @@ struct LineSearchOptions
 
     /// The maximum number of iterations during the minimization calculation in the line search operation.
     double maxiters = 5;
+
+    /// The parameter that triggers line-search when current error is greater than initial error by a given factor (`Enew > factor*E0`).
+    double trigger_when_current_error_is_greater_than_initial_error_by_factor = 1.0;
+
+    /// The parameter that triggers line-search when current error is greater than previous error by a given factor (`Enew > factor*Eold`).
+    double trigger_when_current_error_is_greater_than_previous_error_by_factor = 10.0;
+};
+
+/// The options for the backtrack linear search operation.
+struct BacktrackSearchOptions
+{
+    /// The factor between 0 and 1 used to decrease the Newton length in each backtrack step.
+    double factor = 0.1;
+
+    /// The maximum number of iterations during the backtrack search operations.
+    double maxiters = 10;
 };
 
 /// A type that describes the options of a optimization calculation
@@ -121,6 +137,9 @@ public:
 
     /// The options for the linear search minimization operation.
     LineSearchOptions linesearch;
+
+    /// The options for the backtrack linear search operation.
+    BacktrackSearchOptions backtrack;
 };
 
 } // namespace Optima
