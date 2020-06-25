@@ -34,8 +34,11 @@
 namespace Optima {
 namespace {
 
-/// The boolean flag that indicates a step failed.
-const auto FAILED = false;
+const auto FAILED    = false; ///< The boolean flag that indicates a step failed.
+const auto SUCCEEDED = true;  ///< The boolean flag that indicates a step succeeded.
+
+/// Return true if `x` is not finite.
+inline auto isinf(double x) -> bool { return !std::isfinite(x); }
 
 } // anonymous namespace
 
@@ -87,6 +90,8 @@ struct BasicSolver::Impl
     Vector z;          ///< The current value of z = g + tr(W)y.
     Vector xtrial;     ///< The trial iterate x(trial).
     Vector ytrial;     ///< The trial iterate y(trial).
+    Vector xbar;       ///< The auxiliary vector x used during the line-search algorithm.
+    Vector ybar;       ///< The auxiliary vector y used during the line-search algorithm.
     Vector dxtrial;    ///< The trial Newton step dx(trial).
     Vector dytrial;    ///< The trial Newton step dy(trial).
     double L;          ///< The current value L(x, y) of the Lagrange function.
@@ -309,16 +314,16 @@ struct BasicSolver::Impl
         const auto fres = evaluateObjectiveFn(x, { .f=true, .g=true, .H=true }); // TODO: The Hessian computation at this point should be eliminated in the future. Check how this can be done safely.
 
         // Return false if objective function evaluation failed.
-        if(fres.failed) return false;
+        if(fres.failed) return FAILED;
 
         // Evaluate the equality constraint function h at x0 (initial guess)
         const auto hres = evaluateConstraintFn(x);
 
         // Return false if constraint function evaluation failed.
-        if(hres.failed) return false;
+        if(hres.failed) return FAILED;
 
         // Return true as initialize step was successful.
-        return true;
+        return SUCCEEDED;
 	}
 
     // Finalize the calculation by setting back computed state.
@@ -349,7 +354,7 @@ struct BasicSolver::Impl
         objectivefn(x, res);
 
         // Check the objective function produces finite numbers at this point
-        if(res.requires.f && !std::isfinite(f))
+        if(res.requires.f && isinf(f))
             res.failed = true;
         if(res.requires.g && !g.allFinite())
             res.failed = true;
@@ -489,7 +494,7 @@ struct BasicSolver::Impl
 
         // Ensure the Hessian computation was successul.
         if(fres.failed)
-            return false;
+            return FAILED;
 
         // Canonicalize the W = [A; J] matrix as a pre-step to calculate the Newton step
         stepper.canonicalize({ x, y, g, H, J, xlower, xupper, stability });
@@ -504,7 +509,7 @@ struct BasicSolver::Impl
 		result.time_linear_systems += timer.elapsed();
 
         // Newton step was calculated successfully.
-        return true;
+        return SUCCEEDED;
     };
 
 	// Update the variables (x, y) with a Newton step.
@@ -518,6 +523,10 @@ struct BasicSolver::Impl
         xtrial = x;
         performAggressiveStep(xtrial, dx, xlower, xupper);
         ytrial = y + dy;
+
+        // if(isLineSearchNeeded(xtrial, ytrial))
+        //     if(initiateLineSearch() == FAILED)
+        //         return FAILED;
 
         // Compute the new error E after Newton step approach
         const auto Enew = computeError(xtrial, ytrial);
@@ -554,14 +563,14 @@ struct BasicSolver::Impl
                 // Vector ynext = y + alpha*dy;
             };
 
-            std::cout << "alpha    = ";
-            for(auto i = 0; i <= 100; ++i)
-                std::cout << std::left << std::setw(10) << i/100.0 << " ";
-            std::cout << std::endl;
-            std::cout << "E(alpha) = ";
-            for(auto i = 0; i <= 100; ++i)
-                std::cout << std::left << std::setw(10) << phi(i/100.0) << " ";
-            std::cout << std::endl;
+            // std::cout << "alpha    = ";
+            // for(auto i = 0; i <= 100; ++i)
+            //     std::cout << std::left << std::setw(10) << i/100.0 << " ";
+            // std::cout << std::endl;
+            // std::cout << "E(alpha) = ";
+            // for(auto i = 0; i <= 100; ++i)
+            //     std::cout << std::left << std::setw(10) << phi(i/100.0) << " ";
+            // std::cout << std::endl;
 
             // Minimize the error phi(alpha) along the current Newton
             // direction. This is to be performed in the interval [0, 1], where
@@ -591,7 +600,145 @@ struct BasicSolver::Impl
         y = ytrial;
 
         // The Newton step approach was successful.
-        return true;
+        return SUCCEEDED;
+    }
+
+    /// Return true if current trial state for x and y demands a line-search procedure.
+    auto isLineSearchNeeded(const Vector& xtrial, const Vector& ytrial) -> bool
+    {
+        // Compute the new error E after Newton step approach
+        const auto Enew = computeError(xtrial, ytrial);
+
+        // The error E at the initial guess
+        const auto E0 = analysis.E.front();
+
+        // The error E at the previous iteration
+        const auto Eold = analysis.E.back();
+
+        //======================================================================
+        // Return true if Enew == inf (i.e., evaluation of f(x) or h(x) failed!).
+        //======================================================================
+        if(isinf(Enew))
+            return true;
+
+        //======================================================================
+        // Return true if Enew is much larger than E0
+        //======================================================================
+        {
+            const auto factor = options.linesearch.trigger_when_current_error_is_greater_than_initial_error_by_factor;
+            if(factor > 0.0 && Enew > factor * E0)
+                return true;
+        }
+
+        //======================================================================
+        // Return true if Enew is much larger than Eold
+        //======================================================================
+        {
+            const auto factor = options.linesearch.trigger_when_current_error_is_greater_than_previous_error_by_factor;
+            if(factor > 0.0 && Enew > factor * Eold)
+                return true;
+        }
+
+        return false;
+    }
+
+    /// Perform a line-search along the computed Newton direction.
+    auto initiateLineSearch() -> bool
+    {
+        // Start with x(bar) = x(current)
+        xbar = x;
+
+        // Step x(bar) until the full-length of `dx` if no bounds are violated.
+        // Otherwise, stop at the first hit lower/upper bound.
+        const auto maxlength = performConservativeStep(xbar, dx, xlower, xupper);
+
+        // Compute y(bar) considering the length obtained in the previous step.
+        ybar = y + maxlength*dy;
+
+        // Compute the new error E after conservative Newton step approach
+        const auto Ebar = computeError(xbar, ybar);
+
+        // Check if Ebar is infinity. This condition is a result of a failure
+        // in the evaluation of the objective and constraint functions f(x) and
+        // h(x). This backtrack step procedure will compute x(bar) and y(bar)
+        // that does not cause failures in the evaluation of such functions.
+        if(isinf(Ebar))
+            if(initiateBacktrackStepping(xbar, ybar) == FAILED)
+                return FAILED;
+
+        // Define the function phi(alpha) = E(x + alpha*dx) that we want to minimize.
+        const auto phi = [&](double alpha) -> double
+        {
+            xtrial.noalias() = x*(1 - alpha) + alpha*xbar; // using x + alpha*(xbar - x) is sensitive to round-off errors!
+            ytrial.noalias() = y*(1 - alpha) + alpha*ybar; // using y + alpha*(ybar - y) is sensitive to round-off errors!
+            return computeError(xtrial, ytrial);
+        };
+
+        // The tolerance and maximum number of iterations used in the line-search minimization procedure.
+        const auto tol = options.linesearch.tolerance;
+        const auto maxiters = options.linesearch.maxiters;
+
+        // Minimize function phi(alpha) along the computed Newton direction `dx`.
+        // This is to be performed in the interval [0, 1], where alpha=1
+        // coincides with the largest Newton step that we could make so that no
+        // lower/upper bound is violated.
+        const auto alphamin = minimizeBrent(phi, 0.0, 1.0, tol, maxiters);
+
+        // Calculate x(trial) and y(trial) using the minimizer alpha value
+        xtrial.noalias() = x*(1 - alphamin) + alphamin*xbar; // using x + alpha*(xbar - x) is sensitive to round-off errors!
+        ytrial.noalias() = y*(1 - alphamin) + alphamin*ybar; // using y + alpha*(ybar - y) is sensitive to round-off errors!
+
+        // Compute the new error E after the line-search operation.
+        const auto Enew = computeError(xtrial, ytrial);
+
+        // Return failed status only if the new error is infinity (i.e. when
+        // the evaluation of the objective/constraint functions fail at the
+        // last alpha). Note the error found here may still be larger than the
+        // previous error, or even the error at the initial guess. The
+        // line-search goal is only to tentatively tame large errors resulting
+        // from a plain use of full-length Newton step (or a step that
+        // immediately brings x[i] to its bounds).
+        if(isinf(Enew))
+            return FAILED;
+
+        // Update x and y to their respective trial states
+        x = xtrial;
+        y = ytrial;
+
+        // The Newton step approach was successful.
+        return SUCCEEDED;
+    }
+
+	// Perform shorter and shorter Newton steps until objective function does not fail.
+	auto initiateBacktrackStepping(Vector& xbar, Vector& ybar) -> bool
+    {
+        // The parameter used to decrease the Newton steps during the backtrack search
+        const auto factor = options.backtrack.factor;
+
+        // The maximum number of tentatives in case of failure when applying Newton steps
+        const auto maxiters = options.backtrack.maxiters;
+
+        // The alpha length to be determined in the backtrack search operation below
+        auto alpha = factor;
+
+        for(auto i = 0; i < maxiters; ++i)
+        {
+            xtrial.noalias() = x*(1 - alpha) + alpha*xbar; // using x + alpha*(xbar - x) is sensitive to round-off errors!
+            ytrial.noalias() = y*(1 - alpha) + alpha*ybar; // using y + alpha*(ybar - y) is sensitive to round-off errors!
+
+            const auto Enew = computeError(xtrial, ytrial);
+
+            if(!isinf(Enew))
+            {
+		        xbar = xtrial;
+		        ybar = ytrial;
+                return SUCCEEDED;
+            }
+
+            alpha *= factor;
+        }
+
+        return FAILED;
     }
 
 	// Update the variables (x, y) with a steepest descent step.
@@ -624,10 +771,10 @@ struct BasicSolver::Impl
         //     std::cout << phi(i/100.0) << " ";
         // std::cout << std::endl;
 
-        std::cout << "L(p + alpha*dp) - L0 = ";
-        for(auto i = 0; i <= 100; ++i)
-            std::cout << phi(i/100.0) << " ";
-        std::cout << std::endl;
+        // std::cout << "L(p + alpha*dp) - L0 = ";
+        // for(auto i = 0; i <= 100; ++i)
+        //     std::cout << phi(i/100.0) << " ";
+        // std::cout << std::endl;
 
         // Minimize the error E along the current steepest descent direction.
         auto alpha = minimizeGoldenSectionSearch(phi, 0.0, alphamax, 1e-40);
@@ -654,7 +801,7 @@ struct BasicSolver::Impl
         y = ytrial;
 
         // The steepest descent approach was successful.
-        return true;
+        return SUCCEEDED;
     }
 
 	/// Return true if the calculation converged.
