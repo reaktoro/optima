@@ -524,76 +524,10 @@ struct BasicSolver::Impl
         performAggressiveStep(xtrial, dx, xlower, xupper);
         ytrial = y + dy;
 
-        // if(isLineSearchNeeded(xtrial, ytrial))
-        //     if(initiateLineSearch() == FAILED)
-        //         return FAILED;
-
-        // Compute the new error E after Newton step approach
-        const auto Enew = computeError(xtrial, ytrial);
-
-        // Get the error E at the initial guess
-        const auto E0 = analysis.E.front();
-
-        // Return true if new error is less than error at initial guess
-        // if(Enew > E0)
-        //     return FAILED;
-        // if(Enew > E0)
-        if(Enew > E)
-        {
-            xtrial = x;
-            const auto alphamax = performConservativeStep(xtrial, dx, xlower, xupper);
-
-            Vector xbar = xtrial;
-            Vector ybar = y + alphamax * dy;
-
-            // The phi(alpha) function that we want to minimize.
-            const auto phi = [&](double alpha) -> double
-            {
-                // Vector xnext = x*(1 - alpha) + alpha*xbar;
-                // Vector ynext = y*(1 - alpha) + alpha*ybar;
-                // return computeError(xnext, ynext);
-
-                xtrial.noalias() = x*(1 - alpha) + alpha*xbar;
-                ytrial.noalias() = y*(1 - alpha) + alpha*ybar;
-                return computeError(xtrial, ytrial);
-
-                // xtrial.noalias() = x*(1 - alpha) + alpha*xbar;
-                // ytrial.noalias() = y*(1 - alpha) + alpha*ybar;
-                // Vector xnext = x + alpha*dx;
-                // Vector ynext = y + alpha*dy;
-            };
-
-            // std::cout << "alpha    = ";
-            // for(auto i = 0; i <= 100; ++i)
-            //     std::cout << std::left << std::setw(10) << i/100.0 << " ";
-            // std::cout << std::endl;
-            // std::cout << "E(alpha) = ";
-            // for(auto i = 0; i <= 100; ++i)
-            //     std::cout << std::left << std::setw(10) << phi(i/100.0) << " ";
-            // std::cout << std::endl;
-
-            // Minimize the error phi(alpha) along the current Newton
-            // direction. This is to be performed in the interval [0, 1], where
-            // alpha=1 conincides with the largest Newton step that can be made
-            // so that no lower/upper bound is violated.
-            const auto lstol = options.linesearch.tolerance;
-            const auto lsmaxiters = options.linesearch.maxiters;
-            const auto alphamin = minimizeBrent(phi, 0.0, 1.0, lstol, lsmaxiters);
-
-            // Calculate x(trial) and y(trial) using the minimizer alpha value
-            xtrial.noalias() = x*(1 - alphamin) + alphamin*xbar;
-            ytrial.noalias() = y*(1 - alphamin) + alphamin*ybar;
-
-            // Compute the new error E after the steepest descent minmization approach
-            const auto Enew2 = computeError(xtrial, ytrial);
-
-            std::cout << "alpha*    = " << alphamin << std::endl;
-            std::cout << "E(alpha*) = " << Enew2 << std::endl;
-
-            auto i = 0;
-
-            // return FAILED;
-        }
+        // Determine if line-search operations are needed, based on errors at x(trial) and y(trial).
+        if(isLineSearchNeeded(xtrial, ytrial))
+            if(initiateLineSearch(xtrial, ytrial) == FAILED)
+                return FAILED;
 
         // Update x and y to their respective trial states
         x = xtrial;
@@ -643,7 +577,7 @@ struct BasicSolver::Impl
     }
 
     /// Perform a line-search along the computed Newton direction.
-    auto initiateLineSearch() -> bool
+    auto initiateLineSearch(Vector& xtrial, Vector& ytrial) -> bool
     {
         // Start with x(bar) = x(current)
         xbar = x;
@@ -700,10 +634,6 @@ struct BasicSolver::Impl
         // immediately brings x[i] to its bounds).
         if(isinf(Enew))
             return FAILED;
-
-        // Update x and y to their respective trial states
-        x = xtrial;
-        y = ytrial;
 
         // The Newton step approach was successful.
         return SUCCEEDED;
