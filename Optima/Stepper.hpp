@@ -116,13 +116,27 @@ struct StepperSensitivitiesArgs
 };
 
 /// The arguments for method Stepper::steepestDescent.
-struct StepperSteepestDescentArgs
+struct StepperSteepestDescentLagrangeArgs
 {
     VectorConstRef x;           ///< The current state of the primal variables.
     VectorConstRef y;           ///< The current state of the Lagrange multipliers.
     VectorConstRef b;           ///< The right-hand side vector *b* of the linear equality constraints *Ax = b*.
     VectorConstRef h;           ///< The value of the equality constraint function.
     VectorConstRef g;           ///< The gradient of the objective function.
+    VectorRef dx;               ///< The output steepest descent direction for the primal variables *x*.
+    VectorRef dy;               ///< The output steepest descent direction for the Lagrange multipliers *y*.
+};
+
+/// The arguments for method Stepper::steepestDescentError.
+struct StepperSteepestDescentErrorArgs
+{
+    VectorConstRef x;           ///< The current state of the primal variables.
+    VectorConstRef y;           ///< The current state of the Lagrange multipliers.
+    VectorConstRef b;           ///< The right-hand side vector *b* of the linear equality constraints *Ax = b*.
+    VectorConstRef h;           ///< The value of the equality constraint function.
+    VectorConstRef g;           ///< The gradient of the objective function.
+    MatrixConstRef H;           ///< The Hessian of the objective function.
+    MatrixConstRef J;           ///< The Jacobian of the equality constraint function.
     VectorRef dx;               ///< The output steepest descent direction for the primal variables *x*.
     VectorRef dy;               ///< The output steepest descent direction for the Lagrange multipliers *y*.
 };
@@ -188,9 +202,13 @@ public:
     /// @note Ensure method @ref solve is called first.
     auto sensitivities(StepperSensitivitiesArgs args) -> void;
 
-    /// Compute the steepest descent direction vectors for *x* and *y*.
+    /// Compute the steepest descent direction with respect to Lagrange function.
     /// @note Ensure method @ref canonicalize is called first.
-    auto steepestDescent(StepperSteepestDescentArgs args) -> void;
+    auto steepestDescentLagrange(StepperSteepestDescentLagrangeArgs args) -> void;
+
+    /// Compute the steepest descent direction with respect to error function.
+    /// @note Ensure method @ref canonicalize is called first.
+    auto steepestDescentError(StepperSteepestDescentErrorArgs args) -> void;
 
 private:
     struct Impl;

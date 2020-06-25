@@ -364,8 +364,8 @@ struct Stepper::Impl
         dzdp(iu, all) = dgdp(iu, all) + tr(W(all, iu)) * dydp;
     }
 
-    /// Compute the steepest descent direction vectors for *x* and *y*.
-    auto steepestDescent(StepperSteepestDescentArgs args) -> void
+    /// Compute the steepest descent direction with respect to Lagrange function.
+    auto steepestDescentLagrange(StepperSteepestDescentLagrangeArgs args) -> void
     {
         // Unpack the data members in args
         auto [x, y, b, h, g, dx, dy] = args;
@@ -395,6 +395,30 @@ struct Stepper::Impl
 
         dy.head(ml) = -(A*x - b);
         dy.tail(mn) = -(h);
+    }
+
+    /// Compute the steepest descent direction with respect to error function.
+    auto steepestDescentError(StepperSteepestDescentErrorArgs args) -> void
+    {
+        // Unpack the data members in args
+        auto [x, y, b, h, g, H, J, dx, dy] = args;
+
+        auto dxL = xbar;
+        auto dyL = ybar;
+
+        steepestDescentLagrange({ x, y, b, h, g, dxL, dyL });
+
+        const auto A = W.topRows(ml);
+
+        W.bottomRows(mn) = J;
+
+        // dx.noalias() = H*dxL + tr(W)*dyL;
+        dx.noalias() = tr(W)*dyL;
+        if(options.kkt.method == SaddlePointMethod::Rangespace)
+            dx.noalias() += H.diagonal() * dxL;
+        else dx.noalias() += H * dxL;
+
+        dy.noalias() = A*dxL;
     }
 };
 
@@ -451,9 +475,14 @@ auto Stepper::sensitivities(StepperSensitivitiesArgs args) -> void
     pimpl->sensitivities(args);
 }
 
-auto Stepper::steepestDescent(StepperSteepestDescentArgs args) -> void
+auto Stepper::steepestDescentLagrange(StepperSteepestDescentLagrangeArgs args) -> void
 {
-    pimpl->steepestDescent(args);
+    pimpl->steepestDescentLagrange(args);
+}
+
+auto Stepper::steepestDescentError(StepperSteepestDescentErrorArgs args) -> void
+{
+    pimpl->steepestDescentError(args);
 }
 
 } // namespace Optima
