@@ -97,18 +97,18 @@ struct SaddlePointSolverNullspace::Impl
         // Views to the sub-vectors in ax = [abx, anx]
         auto abx = aw.head(nbx);
         auto anx = aw.tail(nnx);
-        auto ab1 = abx.tail(nb1);
-        auto ab2 = abx.head(nb2);
-        auto an1 = anx.tail(nn1);
-        auto an2 = anx.head(nn2);
+        auto ab1 = abx.head(nb1);
+        auto ab2 = abx.tail(nb2);
+        auto an1 = anx.head(nn1);
+        auto an2 = anx.tail(nn2);
 
         // Update the vector bw (workspace for vector b')
         bw = args.bbx;
 
         // Views to the sub-vectors in b'
         auto bbx = bw.head(nbx);
-        auto bb1 = bbx.tail(nb1);
-        auto bb2 = bbx.head(nb2);
+        auto bb1 = bbx.head(nb1);
+        auto bb2 = bbx.tail(nb2);
 
         // Set ybx = abx (before abx is changed)
         args.ybx = abx;

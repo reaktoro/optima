@@ -33,9 +33,9 @@ void exportSaddlePointSolver(py::module& m)
         return SaddlePointSolver({ n, m, A });
     };
 
-    auto canonicalize = [](SaddlePointSolver& self, MatrixConstRef4py H, MatrixConstRef4py J, IndicesConstRef jf)
+    auto canonicalize = [](SaddlePointSolver& self, MatrixConstRef4py H, MatrixConstRef4py J, VectorConstRef X, IndicesConstRef jf)
     {
-        return self.canonicalize({ H, J, jf });
+        return self.canonicalize({ H, J, X, jf });
     };
 
     auto decompose = [](SaddlePointSolver& self, MatrixConstRef4py H, MatrixConstRef4py J, IndicesConstRef jf)

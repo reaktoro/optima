@@ -210,6 +210,8 @@ def test_active_stepper(args):
     dy   = zeros(m)  # The Newton step for the Lagrange multipliers *y*.
     resx = zeros(n)  # The residuals of the first-order optimality conditions.
     resy = zeros(m)  # The residuals of the linear/nonlinear feasibility conditions.
+    errx = zeros(n)  # The relative residual errors of the first-order optimality conditions.
+    erry = zeros(m)  # The relative residual errors of the linear/nonlinear feasibility conditions.
     z    = zeros(n)  # The *unstabilities* of the variables defined as *z = g + tr(W)y* where *W = [A; J]*.
 
     # Create the stability state of the variables
@@ -226,7 +228,7 @@ def test_active_stepper(args):
     # Initialize, decompose the saddle point matrix, and solve the Newton step
     stepper.initialize(b, xlower, xupper, x, stability)
     stepper.canonicalize(x, y, g, H, J, xlower, xupper, stability)
-    stepper.residuals(x, y, b, h, g, resx, resy, z)
+    stepper.residuals(x, y, b, h, g, resx, resy, errx, erry, z)
     stepper.decompose(x, y, g, H, J, xlower, xupper, stability)
     stepper.solve(x, y, b, h, g, H, stability, dx, dy)
 

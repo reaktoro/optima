@@ -38,50 +38,23 @@ using std::abs;
 
 struct SaddlePointSolver::Impl
 {
-    /// The canonicalizer of the Jacobian matrix *W = [A; J]*.
-    ExtendedCanonicalizer canonicalizer;
-
-    /// The canonical saddle point solver based on a rangespace algorithm.
-    SaddlePointSolverRangespace rangespace;
-
-    /// The canonical saddle point solver based on a nullspace algorithm.
-    SaddlePointSolverNullspace nullspace;
-
-    /// The canonical saddle point solver based on a fullspace algorithm.
-    SaddlePointSolverFullspace fullspace;
-
-    /// The options used to solve the saddle point problems.
-    SaddlePointOptions options;
-
-    /// The dimensions of the saddle point problem.
-    SaddlePointProblemDims dims;
-
-    /// The 'W = [A; J]' matrix in the saddle point matrix.
-    Matrix W;
-
-    /// The workspace for Hessian matrix H.
-    Matrix Hw;
-
-    /// The workspace for right-hand side vector a
-    Vector aw;
-
-    /// The workspace for right-hand side vector b
-    Vector bw;
-
-    /// The workspace for solution vector x
-    Vector xw;
-
-    /// The workspace for solution vector y
-    Vector yw;
-
-    /// The priority weights for the selection of basic variables.
-    Vector weights;
-
-    /// The ordering of the variables as (free-basic, free-non-basic, fixed-basic, fixed-non-basic)
-    Indices iordering;
-
-    /// The boolean flag that indicates that the decomposed saddle point matrix was degenerate with no free variables.
-    bool degenerate = false;
+    ExtendedCanonicalizer canonicalizer;    ///< The canonicalizer of the Jacobian matrix *W = [A; J]*.
+    SaddlePointSolverRangespace rangespace; ///< The canonical saddle point solver based on a rangespace algorithm.
+    SaddlePointSolverNullspace nullspace;   ///< The canonical saddle point solver based on a nullspace algorithm.
+    SaddlePointSolverFullspace fullspace;   ///< The canonical saddle point solver based on a fullspace algorithm.
+    SaddlePointOptions options;             ///< The options used to solve the saddle point problems.
+    SaddlePointProblemDims dims;            ///< The dimensions of the saddle point problem.
+    Matrix W;                               ///< The 'W = [A; J]' matrix in the saddle point matrix.
+    Matrix Hw;                              ///< The workspace for Hessian matrix H.
+    Vector aw;                              ///< The workspace for right-hand side vector a
+    Vector bw;                              ///< The workspace for right-hand side vector b
+    Vector xw;                              ///< The workspace for solution vector x
+    Vector yw;                              ///< The workspace for solution vector y
+    Vector weights;                         ///< The priority weights for the selection of basic variables.
+    Indices iordering;                      ///< The ordering of the variables as (free-basic, free-non-basic, fixed-basic, fixed-non-basic).
+    Indices Kb;                             ///< The permutation matrix used to order the basic variables as xb = (xb1, xb2, xbf) with 1 and 2 denoting pivot and non-pivot
+    Indices Kn;                             ///< The permutation matrix used to order the non-basic variables as xn = (xn1, xn2, xnf) with 1 and 2 denoting pivot and non-pivot
+    bool degenerate = false;                ///< The boolean flag that indicates that the decomposed saddle point matrix was degenerate with no free variables.
 
     /// Construct a SaddlePointSolver::Impl instance with given data.
     Impl(SaddlePointSolverInitArgs args)
@@ -149,10 +122,7 @@ struct SaddlePointSolver::Impl
         const auto jf = iordering.tail(nf);
 
         // Update the priority weights for the update of the canonical form
-        const auto fakezero = std::numeric_limits<double>::min(); // 2.22507e-308
-        weights.noalias() = args.H.diagonal();
-        weights.noalias() = (weights.array() == 0).select(fakezero, weights); // replace zero by fakezero to avoid division by zero
-        weights.noalias() = abs(inv(weights));
+        weights = args.X.array().abs();
 
         // Set negative priority weights for the fixed variables
         weights(jf).noalias() = -linspace(nf, 1, nf);
@@ -186,25 +156,73 @@ struct SaddlePointSolver::Impl
         nbx = nb - nbf;
         nnx = nn - nnf;
 
-        // Update the number of non-pivot free basic variables.
-        // Walk from first to last basic variable, since the free basic variables are at the beginning of ibasic
-        nb2 = 0; while(nb2 < nbx && weights[ibasic[nb2]] > 1.0) ++nb2;
+        //=========================================================================================
+        // Update the order of the free variables as xx = (xb1, xb2, xbf, xn1, xn2, xnf), where:
+        // -- xb1 are free pivot basic variables;
+        // -- xb2 are free non-pivot basic variables;
+        // -- xbf are fixed basic variables;
+        // -- xn1 are free pivot non-basic variables;
+        // -- xn2 are free non-pivot non-basic variables;
+        // -- xnf are fixed non-basic variables.
+        //-----------------------------------------------------------------------------------------
+        // Note: Pivot and non-pivot as in the Gaussian elimination sense. The pivot variables
+        // are those whose the corresponding diagonal entry in the Hessian matrix is not
+        // dominant in the infinity norm.
+        //=========================================================================================
 
-        // Update the number of non-pivot free non-basic variables.
-        // Walk from first to last non-basic variable, since the free non-basic variables are at the beginning of inonbasic
-        nn2 = 0; while(nn2 < nnx && weights[inonbasic[nn2]] > norminf(S.col(nn2))) ++nn2;
+        // Initialize the permutation matrices Kb and Kn with identity state
+        Kb = indices(nb);
+        Kn = indices(nn);
 
-        // Update the number of pivot free basic and non-basic variables.
-        nb1 = nbx - nb2;
-        nn1 = nnx - nn2;
+        // The sub-vector Kbx and Knx considering that Kb = [Kbx, Kbf] and Kn = [Knx, Knf]
+        auto Kbx = Kb.head(nbx); // keep Kbf intact below to preserve position of fixed variables (already at the end!).
+        auto Knx = Kn.head(nnx); // keep Knf intact below to preserve position of fixed variables (already at the end!).
 
-        // Update the ordering of the free variables as xx = [xbx xnx]
-        iordering.head(nx).head(nbx) = ibasic.head(nbx);
-        iordering.head(nx).tail(nnx) = inonbasic.head(nnx);
+        // The diagonal entries in the Hessian matrix.
+        const auto Hd = args.H.diagonal();
 
-        // Update the ordering of the fixed variables as xf = [xbf xnf]
-        iordering.tail(nf).head(nbf) = ibasic.tail(nbf);
-        iordering.tail(nf).tail(nnf) = inonbasic.tail(nnf);
+        // The function that determines if the i-th basic variable is pivot (as in a Gaussian elimination sense).
+        const auto is_pivot_basic_variable = [&](auto i) { return abs(Hd[ibasic[i]]) < 1.0; }; // TODO: The pivots should be considered in Nullspace method as well. Thus, it may make sense that the whole column of H is checked, and not just its diagonal entry.
+
+        // The function that determines if the i-th non-basic variable is pivot (as in a Gaussian elimination sense).
+        const auto is_pivot_nonbasic_variable = [&](auto i) { return abs(Hd[inonbasic[i]]) < norminf(S.col(i)); }; // TODO: The pivots should be considered in Nullspace method as well. Thus, it may make sense that the whole column of H is checked, and not just its diagonal entry.
+
+        // Perform ordering of xbx as xbx = (xb1, xb2)
+        nb1 = moveLeftIf(Kbx, is_pivot_basic_variable);
+
+        // Perform ordering of xnx as xnx = (xn1, xn2)
+        nn1 = moveLeftIf(Knx, is_pivot_nonbasic_variable);
+
+        // Update the ordering of the basic and non-basic variables in the canonicalizer object
+        canonicalizer.updateOrdering(Kb, Kn);
+
+        // Update the number of non-pivot free basic and non-basic variables.
+        nb2 = nbx - nb1;
+        nn2 = nnx - nn1;
+
+        //=========================================================================================
+        // Update the order of the variables as x = (xx, xf) = (xbx, xnx, xbf, xnf), where:
+        // -- xbx are free basic variables;
+        // -- xnx are free non-basic variables;
+        // -- xbf are fixed basic variables;
+        // -- xnf are fixed non-basic variables.
+        //-----------------------------------------------------------------------------------------
+        // Note: By moving fixed variables away, we now have:
+        // -- xbx = (xb1, xb2);
+        // -- xnx = (xn1, xn2).
+        //=========================================================================================
+
+        // Get the newly ordered indices of basic and non-basic variables after the above ordering update
+        const auto jb = canonicalizer.indicesBasicVariables();
+        const auto jn = canonicalizer.indicesNonBasicVariables();
+
+        // Update the ordering of the free variables as xx = [xbx xnx] = [free basic, free non-basic]
+        iordering.head(nx).head(nbx) = jb.head(nbx);
+        iordering.head(nx).tail(nnx) = jn.head(nnx);
+
+        // Update the ordering of the fixed variables as xf = [xbf xnf] = [fixed basic, fixed non-basic]
+        iordering.tail(nf).head(nbf) = jb.tail(nbf);
+        iordering.tail(nf).tail(nnf) = jn.tail(nnf);
     }
 
     /// Decompose the canonical saddle point matrix.

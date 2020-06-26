@@ -60,26 +60,26 @@ struct SaddlePointSolverRangespace::Impl
         // Update the auxiliary vector Hx with the diagonal entries of Hxx
         Hx = args.Hxx.diagonal();
 
-        // Views to the sub-matrices of Sbxnx
+        // Views to the sub-matrices of Sbxnx = [Sb1n1 Sb1n2; Sb2n1 Sb2n2]
         auto Sbxnx = args.Sbxnx;
-        auto Sb1n2 = Sbxnx.bottomLeftCorner(nb1, nn2);
-        auto Sb2n2 = Sbxnx.topLeftCorner(nb2, nn2);
-        auto Sbxn1 = Sbxnx.rightCols(nn1);
+        auto Sb1n2 = Sbxnx.topRightCorner(nb1, nn2);
+        auto Sb2n2 = Sbxnx.bottomRightCorner(nb2, nn2);
+        auto Sbxn1 = Sbxnx.leftCols(nn1);
 
         // Views to the sub-vectors of Hx = [Hb2b2 Hb1b1 Hn2n2 Hn1n1]
         auto Hbxbx = Hx.head(nbx);
         auto Hnxnx = Hx.tail(nnx);
-        auto Hb1b1 = Hbxbx.tail(nb1);
-        auto Hb2b2 = Hbxbx.head(nb2);
-        auto Hn1n1 = Hnxnx.tail(nn1);
-        auto Hn2n2 = Hnxnx.head(nn2);
+        auto Hb1b1 = Hbxbx.head(nb1);
+        auto Hb2b2 = Hbxbx.tail(nb2);
+        auto Hn1n1 = Hnxnx.head(nn1);
+        auto Hn2n2 = Hnxnx.tail(nn2);
 
         // The auxiliary matrix Tbxbx = Sbxn1 * Bn1bx and its submatrices
         auto Tbxbx = mat.topRightCorner(nbx, nbx);
-        auto Tb2b2 = Tbxbx.topLeftCorner(nb2, nb2);
-        auto Tb2b1 = Tbxbx.topRightCorner(nb2, nb1);
-        auto Tb1b2 = Tbxbx.bottomLeftCorner(nb1, nb2);
-        auto Tb1b1 = Tbxbx.bottomRightCorner(nb1, nb1);
+        auto Tb2b2 = Tbxbx.bottomRightCorner(nb2, nb2);
+        auto Tb2b1 = Tbxbx.bottomLeftCorner(nb2, nb1);
+        auto Tb1b2 = Tbxbx.topRightCorner(nb1, nb2);
+        auto Tb1b1 = Tbxbx.topLeftCorner(nb1, nb1);
 
         // The auxiliary matrix Bn1bx = inv(Hn1n1) * tr(Sbxn1)
         auto Bn1bx = mat.rightCols(nbx).middleRows(nbx, nn1);
@@ -146,16 +146,16 @@ struct SaddlePointSolverRangespace::Impl
 
         // Views to the sub-matrices of the canonical matrix S
         auto Sbxnx = args.Sbxnx;
-        auto Sb1n1 = Sbxnx.bottomRightCorner(nb1, nn1);
-        auto Sb2n1 = Sbxnx.topRightCorner(nb2, nn1);
-        auto Sb2nx = Sbxnx.topRows(nb2);
+        auto Sb1n1 = Sbxnx.topLeftCorner(nb1, nn1);
+        auto Sb2n1 = Sbxnx.bottomLeftCorner(nb2, nn1);
+        auto Sb2nx = Sbxnx.bottomRows(nb2);
 
         // The diagonal entries in H of the free variables, with Hx = [Hb2b2 Hb1b1 Hn2n2 Hn1n1]
         auto Hbxbx = Hx.head(nbx);
         auto Hnxnx = Hx.tail(nnx);
-        auto Hb1b1 = Hbxbx.tail(nb1);
-        auto Hb2b2 = Hbxbx.head(nb2);
-        auto Hn1n1 = Hnxnx.tail(nn1);
+        auto Hb1b1 = Hbxbx.head(nb1);
+        auto Hb2b2 = Hbxbx.tail(nb2);
+        auto Hn1n1 = Hnxnx.head(nn1);
 
         // Update the vector aw (workspace for vector ax)
         aw = args.ax;
@@ -163,18 +163,18 @@ struct SaddlePointSolverRangespace::Impl
         // Views to the sub-vectors in ax = [abx, anx]
         auto abx = aw.head(nbx);
         auto anx = aw.tail(nnx);
-        auto ab1 = abx.tail(nb1);
-        auto ab2 = abx.head(nb2);
-        auto an1 = anx.tail(nn1);
-        auto an2 = anx.head(nn2);
+        auto ab1 = abx.head(nb1);
+        auto ab2 = abx.tail(nb2);
+        auto an1 = anx.head(nn1);
+        auto an2 = anx.tail(nn2);
 
         // Update the vector bw (workspace for vector bbx)
         bw = args.bbx;
 
         // Views to the sub-vectors in bbx
         auto bbx = bw.head(nbx);
-        auto bb1 = bbx.tail(nb1);
-        auto bb2 = bbx.head(nb2);
+        auto bb1 = bbx.head(nb1);
+        auto bb2 = bbx.tail(nb2);
 
         anx -= tr(Sb2nx) * ab2;
 

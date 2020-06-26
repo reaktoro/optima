@@ -301,8 +301,7 @@ struct BasicSolver::Impl
         stability = args.stability;
 
         // Ensure the initial guess for `x` does not violate lower/upper bounds
-        x.noalias() = max(args.x, xlower);
-        x.noalias() = min(args.x, xupper);
+        x.noalias() = min(max(args.x, xlower), xupper);
 
     	// Initialize the Newton step calculator once for the upcoming decompose/solve calls
         stepper.initialize({ b, xlower, xupper, x, stability });

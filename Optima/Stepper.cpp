@@ -157,7 +157,7 @@ struct Stepper::Impl
         // times! Consider lower/upper unstable variables as "fixed" variables
         // in the saddle point problem. Reason: we do not need to compute
         // Newton steps for the currently unstable variables!
-        spsolver.canonicalize({ H, J, iu });
+        spsolver.canonicalize({ H, J, x, iu });
     }
 
     /// Calculate the current optimality and feasibility residuals.

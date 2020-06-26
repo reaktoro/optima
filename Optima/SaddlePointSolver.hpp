@@ -51,6 +51,9 @@ struct SaddlePointSolverCanonicalizeArgs
     /// The lower and variable block of the Jacobian matrix *W = [A; J]* in the saddle point problem.
     MatrixConstRef J;
 
+    /// The diagonal scaling matrix X in the saddle point problem.
+    VectorConstRef X;
+
     /// The indices of the fixed variables.
     IndicesConstRef jf;
 };

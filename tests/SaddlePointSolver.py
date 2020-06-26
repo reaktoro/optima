@@ -147,6 +147,9 @@ def test_saddle_point_solver(args):
     x = a.copy()
     y = b.copy()
 
+    # The scaling vector used as weights for the canonicalization
+    X = linspace(1, n, n)
+
     # Specify the saddle point method for the current test
     options = SaddlePointOptions()
     options.method = method
@@ -154,7 +157,7 @@ def test_saddle_point_solver(args):
     # Create a SaddlePointSolver to solve the saddle point problem
     solver = SaddlePointSolver(n, m, A)
     solver.setOptions(options)
-    solver.canonicalize(H, J, ifixed)
+    solver.canonicalize(H, J, X, ifixed)
     solver.decompose(H, J, ifixed)
 
     def check_solution(x, y):
