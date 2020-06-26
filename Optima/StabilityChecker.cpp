@@ -137,7 +137,7 @@ struct StabilityChecker::Impl
                     if(A(i, j) != 0.0)
                         bsuu[j] = true;
 
-        // Reset the order of the species
+        // Reset the order of the variables
         iordering.resize(n);
         for(auto i = 0; i < n; ++i)
             iordering[i] = i;
