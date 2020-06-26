@@ -88,6 +88,9 @@ public:
     /// Update the canonical form with given lower matrix block *J* and priority weights for the variables.
     auto updateWithPriorityWeights(MatrixConstRef J, VectorConstRef weights) -> void;
 
+    /// Update the ordering of the basic and non-basic variables.
+    auto updateOrdering(IndicesConstRef Kb, IndicesConstRef Kn) -> void;
+
 private:
     struct Impl;
 

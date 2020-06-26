@@ -175,6 +175,39 @@ struct ExtendedCanonicalizer::Impl
         // Rearrange the permutation matrix Q based on the new order of non-basic variables
         Kn.transpose().applyThisOnTheLeft(inonbasic);
     }
+
+    /// Update the ordering of the basic and non-basic variables,
+    auto updateOrdering(IndicesConstRef Kb, IndicesConstRef Kn) -> void
+    {
+        const auto n  = Q.rows();
+        const auto nb = S.rows();
+        const auto nn = n - nb;
+
+        assert(nb == Kb.size());
+        assert(nn == Kn.size());
+
+        // The top nb rows of R, since its remaining rows correspond to linearly dependent rows in [A; J]
+        auto Rt = R.topRows(nb);
+
+        // The indices of the basic and non-basic variables
+        auto ibasic = Q.head(nb);
+        auto inonbasic = Q.tail(nn);
+
+        // Rearrange the rows of S based on the new order of basic variables
+        Kb.asPermutation().transpose().applyThisOnTheLeft(S);
+
+        // Rearrange the columns of S based on the new order of non-basic variables
+        Kn.asPermutation().applyThisOnTheRight(S);
+
+        // Rearrange the top `nb` rows of R based on the new order of basic variables
+        Kb.asPermutation().transpose().applyThisOnTheLeft(Rt);
+
+        // Rearrange the permutation matrix Q based on the new order of basic variables
+        Kb.asPermutation().transpose().applyThisOnTheLeft(ibasic);
+
+        // Rearrange the permutation matrix Q based on the new order of non-basic variables
+        Kn.asPermutation().transpose().applyThisOnTheLeft(inonbasic);
+    }
 };
 
 ExtendedCanonicalizer::ExtendedCanonicalizer()
@@ -262,6 +295,11 @@ auto ExtendedCanonicalizer::indicesNonBasicVariables() const -> IndicesConstRef
 auto ExtendedCanonicalizer::updateWithPriorityWeights(MatrixConstRef J, VectorConstRef weights) -> void
 {
     pimpl->updateWithPriorityWeights(J, weights);
+}
+
+auto ExtendedCanonicalizer::updateOrdering(IndicesConstRef Kb, IndicesConstRef Kn) -> void
+{
+    pimpl->updateOrdering(Kb, Kn);
 }
 
 } // namespace Optima

@@ -18,6 +18,7 @@
 from optima import *
 from numpy import *
 from numpy.linalg import norm, inv
+from numpy.testing import assert_allclose
 from pytest import approx, mark
 from itertools import product
 
@@ -62,11 +63,29 @@ def check_canonical_ordering(canonicalizer, weigths):
         assert weigths[inonbasic[i]] <= weigths[inonbasic[i - 1]]
 
 
+def check_new_ordering(canonicalizer, Kb, Kn):
+    R = array(canonicalizer.R())  # create a copy of internal reference
+    S = array(canonicalizer.S())  # create a copy of internal reference
+    Q = array(canonicalizer.Q())  # create a copy of internal reference
+
+    canonicalizer.updateOrdering(Kb, Kn)
+
+    Rnew = canonicalizer.R()
+    Snew = canonicalizer.S()
+    Qnew = canonicalizer.Q()
+
+    nb = len(Kb)
+
+    assert_allclose(Rnew[:nb, :],  R[Kb, :])
+    assert_allclose(Snew,  S[Kb, :][:, Kn])
+    assert_allclose(Qnew[:nb],  Q[:nb][Kb])
+    assert_allclose(Qnew[nb:],  Q[nb:][Kn])
+
+
 def check_canonicalizer(canonicalizer, A, J):
     # Auxiliary variables
     n = canonicalizer.numVariables()
     m = canonicalizer.numEquations()
-    nb = canonicalizer.numBasicVariables()
 
     #---------------------------------------------------------------------------
     # Check the computed canonical form with certain weights
@@ -89,6 +108,22 @@ def check_canonicalizer(canonicalizer, A, J):
     check_canonical_form(canonicalizer, A, Jnew)
 
     check_canonical_ordering(canonicalizer, weigths)
+
+    #---------------------------------------------------------------------------
+    # Check changing ordering of basic and non-basic variables work
+    #---------------------------------------------------------------------------
+    nb = canonicalizer.numBasicVariables()
+    nn = canonicalizer.numNonBasicVariables()
+
+    Kb = list(range(nb))
+    Kn = list(range(nn))
+
+    check_new_ordering(canonicalizer, Kb, Kn)  # identical ordering
+
+    Kb = list(reversed(range(nb)))
+    Kn = list(reversed(range(nn)))
+
+    check_new_ordering(canonicalizer, Kb, Kn)  # reversed ordering
 
 
 # Tested cases for the matrix W
