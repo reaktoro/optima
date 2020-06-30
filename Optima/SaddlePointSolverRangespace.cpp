@@ -84,27 +84,31 @@ struct SaddlePointSolverRangespace::Impl
         // The auxiliary matrix Bn1bx = inv(Hn1n1) * tr(Sbxn1)
         auto Bn1bx = mat.rightCols(nbx).middleRows(nbx, nn1);
 
+        // The identity matrices Ib1b1 and Ib2b2
+        const auto Ib1b1 = identity(nb1, nb1);
+        const auto Ib2b2 = identity(nb2, nb2);
+
         // Initialize workspace with zeros
         mat.fill(0.0);
 
         // The matrix M of the system of linear equations
         auto M = mat.bottomRightCorner(nb1 + nb2 + nn2, nb1 + nb2 + nn2);
 
-        auto Mn2 = M.topRows(nn2);
-        auto Mb1 = M.middleRows(nn2, nb1);
-        auto Mb2 = M.middleRows(nn2 + nb1, nb2);
+        auto Mb1 = M.topRows(nb1);
+        auto Mb2 = M.middleRows(nb1, nb2);
+        auto Mn2 = M.bottomRows(nn2);
 
-        auto Mn2n2 = Mn2.leftCols(nn2);
-        auto Mn2b1 = Mn2.middleCols(nn2, nb1);
-        auto Mn2b2 = Mn2.middleCols(nn2 + nb1, nb2);
+        auto Mb1b1 = Mb1.leftCols(nb1);
+        auto Mb1b2 = Mb1.middleCols(nb1, nb2);
+        auto Mb1n2 = Mb1.rightCols(nn2);
 
-        auto Mb1n2 = Mb1.leftCols(nn2);
-        auto Mb1b1 = Mb1.middleCols(nn2, nb1);
-        auto Mb1b2 = Mb1.middleCols(nn2 + nb1, nb2);
+        auto Mb2b1 = Mb2.leftCols(nb1);
+        auto Mb2b2 = Mb2.middleCols(nb1, nb2);
+        auto Mb2n2 = Mb2.rightCols(nn2);
 
-        auto Mb2n2 = Mb2.leftCols(nn2);
-        auto Mb2b1 = Mb2.middleCols(nn2, nb1);
-        auto Mb2b2 = Mb2.middleCols(nn2 + nb1, nb2);
+        auto Mn2b1 = Mn2.leftCols(nb1);
+        auto Mn2b2 = Mn2.middleCols(nb1, nb2);
+        auto Mn2n2 = Mn2.rightCols(nn2);
 
         // Computing the auxiliary matrix Bn1bx = inv(Hn1n1) * tr(Sbxn1)
         Bn1bx.noalias() = diag(inv(Hn1n1)) * tr(Sbxn1);
@@ -112,24 +116,21 @@ struct SaddlePointSolverRangespace::Impl
         // Computing the auxiliary matrix Tbxbx = Sbxn1 * Bn1bx
         Tbxbx.noalias() = Sbxn1 * Bn1bx;
 
-        // Setting the columns of M with dimension nn2
-        Mn2n2           = diag(Hn2n2);
-        Mb1n2.noalias() = Sb1n2;
+        // Setting the 2nd column of M with dimension nb1 (corresponding to yb1)
+        Mb1b1.noalias() = Ib1b1 + diag(Hb1b1) * Tb1b1;
+        Mb2b1.noalias() = -Tb2b1;
+        Mn2b1.noalias() = tr(Sb1n2);
+
+        // Setting the 1st column of M with dimension nb2 (corresponding to xb2)
+        Mb1b2.noalias() = diag(-Hb1b1) * Tb1b2 * diag(Hb2b2);
+        Mb2b2.noalias() = Ib2b2 + Tb2b2 * diag(Hb2b2);
+        Mn2b2.noalias() = -tr(Sb2n2) * diag(Hb2b2);
+
+        // Setting the 3rd column of M with dimension nn2 (corresponding to xn2)
+        Mb1n2.noalias() = diag(-Hb1b1) * Sb1n2;
         Mb2n2.noalias() = Sb2n2;
+        Mn2n2           = diag(Hn2n2);
 
-        // Setting the columns of M with dimension nb1
-        Mn2b1.noalias()   = tr(Sb1n2);
-        Mb1b1.noalias()   = -Tb1b1;
-        Mb1b1.diagonal() -= inv(Hb1b1);
-        Mb2b1.noalias()   = -Tb2b1;
-
-        // Setting the columns of M with dimension nb2
-        Mn2b2.noalias()   = -tr(Sb2n2) * diag(Hb2b2);
-        Mb1b2.noalias()   = Tb1b2*diag(Hb2b2);
-        Mb2b2.noalias()   = Tb2b2*diag(Hb2b2);
-        Mb2b2.diagonal() += ones(nb2);
-
-        // Computing the LU decomposition of matrix M
         lu.compute(M);
     }
 
@@ -176,27 +177,25 @@ struct SaddlePointSolverRangespace::Impl
         auto bb1 = bbx.head(nb1);
         auto bb2 = bbx.tail(nb2);
 
-        anx -= tr(Sb2nx) * ab2;
-
-        an1.noalias() = an1/Hn1n1;
-
-        bb1 -= ab1/Hb1b1;
-        bb1 -= Sb1n1 * an1;
-
-        bb2 -= Sb2n1 * an1;
+        anx.noalias() -= tr(Sb2nx) * ab2;
+        an1.noalias()  = an1/Hn1n1;
+        bb1.noalias() -= ab1/Hb1b1;
+        bb1.noalias() -= Sb1n1 * an1;
+        bb2.noalias() -= Sb2n1 * an1;
+        bb1.noalias()  = diag(-Hb1b1) * bb1;
 
         auto r = vec.head(nb1 + nb2 + nn2);
 
-        auto xn2 = r.head(nn2);
-        auto yb1 = r.segment(nn2, nb1);
-        auto xb2 = r.segment(nn2 + nb1, nb2);
+        auto yb1 = r.head(nb1);
+        auto xb2 = r.segment(nb1, nb2);
+        auto xn2 = r.segment(nb1 + nb2, nn2);
 
-        r << an2, bb1, bb2;
+        r << bb1, bb2, an2;
 
         r.noalias() = lu.solve(r);
 
-        ab1.noalias() = (ab1 - yb1)/Hb1b1;
-        bb2.noalias() = (ab2 - Hb2b2 % xb2);
+        ab1.noalias()  = (ab1 - yb1)/Hb1b1;
+        bb2.noalias()  = (ab2 - Hb2b2 % xb2);
         an1.noalias() -= (tr(Sb1n1)*yb1 + tr(Sb2n1)*(bb2 - ab2))/Hn1n1;
 
         an2.noalias() = xn2;
