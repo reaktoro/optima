@@ -188,8 +188,8 @@ struct SaddlePointSolver::Impl
         const auto Hd = args.H.diagonal();
 
         // Sort the basic and non-basic free variables in decreasing order w.r.t. absolute values of Hessian diagonal entries.
-        std::sort(Kbx.begin(), Kbx.end(), [&](auto l, auto r) { return abs(Hd[ibasic[l]]) >= abs(Hd[ibasic[r]]); });
-        std::sort(Knx.begin(), Knx.end(), [&](auto l, auto r) { return abs(Hd[inonbasic[l]]) >= abs(Hd[inonbasic[r]]); });
+        std::sort(Kbx.begin(), Kbx.end(), [&](auto l, auto r) { return abs(Hd[ibasic[l]]) > abs(Hd[ibasic[r]]); }); // Note: Use > for stricter comparison, not >=!
+        std::sort(Knx.begin(), Knx.end(), [&](auto l, auto r) { return abs(Hd[inonbasic[l]]) > abs(Hd[inonbasic[r]]); }); // Note: Use > for stricter comparison, not >=!
 
         // Update the ordering of the basic and non-basic variables in the canonicalizer object
         canonicalizer.updateOrdering(Kb, Kn);
