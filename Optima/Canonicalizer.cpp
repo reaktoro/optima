@@ -65,6 +65,12 @@ struct Canonicalizer::Impl
     /// The threshold used to compare numbers.
     double threshold;
 
+    /// The number used for eliminating round-off errors during cleanup procedure.
+    /// This is computed as 10**[1 + ceil(log10(maxAij))], where maxAij is the
+    /// inf norm of matrix A. For each entry in R and S, we add sigma and
+    /// subtract sigma, so that residual round-off errors are eliminated.
+    double sigma;
+
     /// Return the number of basic variables, which is also the the rank of matrix A.
     auto numBasicVariables() -> Index
     {
@@ -130,6 +136,10 @@ struct Canonicalizer::Impl
 
         // Initialize the threshold value
         threshold = std::abs(lu.maxPivot()) * lu.threshold() * std::max(A.rows(), A.cols());
+
+        // Compute sigma for given matrix A
+        sigma = A.size() ? A.cwiseAbs().maxCoeff() : 0.0;
+        sigma = A.size() ? std::pow(10, 1 + std::ceil(std::log10(sigma))) : 0.0;
     }
 
     /// Swap a basic variable by a non-basic variable.
@@ -248,6 +258,16 @@ struct Canonicalizer::Impl
         // Rearrange the permutation matrix Q based on the new order of non-basic variables
         Kn.transpose().applyThisOnTheLeft(inonbasic);
     }
+
+    /// Perform a cleanup procedure to remove residual round-off errors from the canonical form.
+    auto cleanResidualRoundoffErrors() -> void
+    {
+        S.array() += sigma;
+        S.array() -= sigma;
+
+        R.array() += sigma;
+        R.array() -= sigma;
+    }
 };
 
 Canonicalizer::Canonicalizer()
@@ -346,6 +366,11 @@ auto Canonicalizer::updateWithSwapBasicVariable(Index ibasic, Index inonbasic) -
 auto Canonicalizer::updateWithPriorityWeights(VectorConstRef weights) -> void
 {
     pimpl->updateWithPriorityWeights(weights);
+}
+
+auto Canonicalizer::cleanResidualRoundoffErrors() -> void
+{
+    pimpl->cleanResidualRoundoffErrors();
 }
 
 } // namespace Optima

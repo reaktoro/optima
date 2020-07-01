@@ -45,6 +45,12 @@ struct ExtendedCanonicalizer::Impl
     /// The permutation matrix `Kn` used in the update method with priority weights.
     PermutationMatrix Kn;
 
+    /// The number used for eliminating round-off errors during cleanup procedure.
+    /// This is computed as 10**[1 + ceil(log10(maxAij))], where maxAij is the
+    /// inf norm of matrix A. For each entry in R and S, we add sigma and
+    /// subtract sigma, so that residual round-off errors are eliminated.
+    double sigma;
+
     /// Construct a default ExtendedCanonicalizer::Impl object
     Impl()
     {
@@ -58,6 +64,10 @@ struct ExtendedCanonicalizer::Impl
         R = canonicalizerA.R();
         S = canonicalizerA.S();
         Q = canonicalizerA.Q();
+
+        // Compute sigma for given matrix A
+        sigma = A.size() ? A.cwiseAbs().maxCoeff() : 0.0;
+        sigma = A.size() ? std::pow(10, 1 + std::ceil(std::log10(sigma))) : 0.0; // TODO: In the future, consider a contribution from J to determine sigma (or find an alternative approach to remove round-off errors.)
     }
 
     /// Update the canonical form with given variable matrix J in W = [A; J] and priority weights for the variables.
@@ -208,6 +218,16 @@ struct ExtendedCanonicalizer::Impl
         // Rearrange the permutation matrix Q based on the new order of non-basic variables
         Kn.asPermutation().transpose().applyThisOnTheLeft(inonbasic);
     }
+
+    /// Perform a cleanup procedure to remove residual round-off errors from the canonical form.
+    auto cleanResidualRoundoffErrors() -> void
+    {
+        S.array() += sigma;
+        S.array() -= sigma;
+
+        R.array() += sigma;
+        R.array() -= sigma;
+    }
 };
 
 ExtendedCanonicalizer::ExtendedCanonicalizer()
@@ -300,6 +320,11 @@ auto ExtendedCanonicalizer::updateWithPriorityWeights(MatrixConstRef J, VectorCo
 auto ExtendedCanonicalizer::updateOrdering(IndicesConstRef Kb, IndicesConstRef Kn) -> void
 {
     pimpl->updateOrdering(Kb, Kn);
+}
+
+auto ExtendedCanonicalizer::cleanResidualRoundoffErrors() -> void
+{
+    pimpl->cleanResidualRoundoffErrors();
 }
 
 } // namespace Optima

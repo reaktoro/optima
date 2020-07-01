@@ -97,6 +97,7 @@ def check_canonicalizer(canonicalizer, A):
             S = canonicalizer.S()
             if abs(S[i, j]) > 1e-12:  # new basic variable needs to have sufficiently large pivot value
                 canonicalizer.updateWithSwapBasicVariable(i, j)
+                canonicalizer.cleanResidualRoundoffErrors()
                 check_canonical_form(canonicalizer, A)
 
     #---------------------------------------------------------------------------
@@ -105,6 +106,7 @@ def check_canonicalizer(canonicalizer, A):
     weigths = random.rand(n)
 
     canonicalizer.updateWithPriorityWeights(weigths)
+    canonicalizer.cleanResidualRoundoffErrors()
 
     check_canonical_form(canonicalizer, A)
 
@@ -122,4 +124,5 @@ def test_canonicalizer(args):
     A = assemble_W(m, n, jfixed)
 
     canonicalizer = Canonicalizer(A)
+    canonicalizer.cleanResidualRoundoffErrors()
     check_canonicalizer(canonicalizer, A)

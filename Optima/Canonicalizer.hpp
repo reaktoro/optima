@@ -107,6 +107,9 @@ public:
     /// Update the canonical form with a new ordering for the variables.
     auto updateWithNewOrdering(IndicesConstRef ordering) -> void;
 
+    /// Perform a cleanup procedure to remove residual round-off errors from the canonical form.
+    auto cleanResidualRoundoffErrors() -> void;
+
 private:
     struct Impl;
 

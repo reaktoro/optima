@@ -51,5 +51,6 @@ void exportExtendedCanonicalizer(py::module& m)
         .def("indicesNonBasicVariables", &ExtendedCanonicalizer::indicesNonBasicVariables, py::return_value_policy::reference_internal)
         .def("updateWithPriorityWeights", updateWithPriorityWeights)
         .def("updateOrdering", &ExtendedCanonicalizer::updateOrdering)
+        .def("cleanResidualRoundoffErrors", &ExtendedCanonicalizer::cleanResidualRoundoffErrors)
         ;
 }

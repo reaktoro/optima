@@ -91,6 +91,9 @@ public:
     /// Update the ordering of the basic and non-basic variables.
     auto updateOrdering(IndicesConstRef Kb, IndicesConstRef Kn) -> void;
 
+    /// Perform a cleanup procedure to remove residual round-off errors from the canonical form.
+    auto cleanResidualRoundoffErrors() -> void;
+
 private:
     struct Impl;
 

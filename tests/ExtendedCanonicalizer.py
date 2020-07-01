@@ -93,6 +93,7 @@ def check_canonicalizer(canonicalizer, A, J):
     weigths = random.rand(n)
 
     canonicalizer.updateWithPriorityWeights(J, weigths)
+    canonicalizer.cleanResidualRoundoffErrors()
 
     check_canonical_form(canonicalizer, A, J)
 
@@ -104,6 +105,7 @@ def check_canonicalizer(canonicalizer, A, J):
     Jnew = J + J
 
     canonicalizer.updateWithPriorityWeights(Jnew, weigths)
+    canonicalizer.cleanResidualRoundoffErrors()
 
     check_canonical_form(canonicalizer, A, Jnew)
 
@@ -155,4 +157,5 @@ def test_canonicalizer(args):
     J = W[mu:, :]
 
     canonicalizer = ExtendedCanonicalizer(A)
+    canonicalizer.cleanResidualRoundoffErrors()
     check_canonicalizer(canonicalizer, A, J)
