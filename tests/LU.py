@@ -45,6 +45,7 @@ def test_lu(args):
 
         assert r == rank_expected
         assert norm(A[:r, :r] @ x[:r] - b[:r]) / norm(b)
+        assert all(isnan(x[r:]))
 
 
     x = linspace(1, n, n)

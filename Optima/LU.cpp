@@ -93,7 +93,11 @@ struct LU::Impl
         P.applyThisOnTheLeft(X);
         Xt = L.solve(Xt);
         Xt = U.solve(Xt);
-        Xb.fill(0.0);
+
+        // For the bottom part, corresponding to
+        // linearly dependent rows, set X to a quiet NaN.
+        const auto nan = std::numeric_limits<double>::quiet_NaN();
+        Xb.fill(nan);
     }
 };
 
