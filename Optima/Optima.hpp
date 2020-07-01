@@ -25,6 +25,7 @@
 #include <Optima/ExtendedCanonicalizer.hpp>
 #include <Optima/Index.hpp>
 #include <Optima/IndexUtils.hpp>
+#include <Optima/LU.hpp>
 #include <Optima/Matrix.hpp>
 #include <Optima/Number.hpp>
 #include <Optima/ObjectiveFunction.hpp>

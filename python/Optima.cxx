@@ -27,6 +27,7 @@ void exportDims(py::module& m);
 void exportExtendedCanonicalizer(py::module& m);
 void exportIndex(py::module& m);
 void exportIndexUtils(py::module& m);
+void exportLU(py::module& m);
 void exportNumber(py::module& m);
 void exportObjectiveFunction(py::module& m);
 void exportOutputter(py::module& m);
@@ -56,6 +57,7 @@ PYBIND11_MODULE(optima, m)
     exportExtendedCanonicalizer(m);
     exportIndex(m);
     exportIndexUtils(m);
+    exportLU(m);
     exportNumber(m);
     exportObjectiveFunction(m);
     exportOutputter(m);
