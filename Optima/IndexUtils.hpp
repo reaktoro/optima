@@ -51,6 +51,16 @@ inline auto moveLeftIf(IndicesRef base, const std::function<bool(Index)>& predic
     return std::partition(base.begin(), base.end(), predicate) - base.begin();
 }
 
+/// Partition `base` into (*group1*, *group2*) with *group1* formed with indices for which `predicate` is true.
+/// @param base The indices to be partitioned.
+/// @param predicate The predicate function that returns true if an index should be in *group1*.
+/// @return The number of indices in *group1*
+/// @see moveIntersectionRight
+inline auto stableMoveLeftIf(IndicesRef base, const std::function<bool(Index)>& predicate) -> Index
+{
+    return std::stable_partition(base.begin(), base.end(), predicate) - base.begin();
+}
+
 /// Partition `base` into (*group1*, *group2*) so that *group1* is formed with indices in `p` only.
 /// @param base The indices to be partitioned.
 /// @param p The indices in base vector to be moved to *group1*.
@@ -69,6 +79,16 @@ inline auto moveIntersectionLeft(IndicesRef base, IndicesConstRef p) -> Index
 inline auto moveRightIf(IndicesRef base, const std::function<bool(Index)>& predicate) -> Index
 {
     return std::partition(base.begin(), base.end(), [&](Index i) { return !predicate(i); }) - base.begin();
+}
+
+/// Partition `base` into (*group1*, *group2*) with *group2* formed with indices for which `predicate` is true.
+/// @param base The indices to be partitioned.
+/// @param predicate The predicate function that returns true if an index should be in *group2*.
+/// @return The number of indices in *group1*
+/// @see moveIntersectionRight
+inline auto stableMoveRightIf(IndicesRef base, const std::function<bool(Index)>& predicate) -> Index
+{
+    return std::stable_partition(base.begin(), base.end(), [&](Index i) { return !predicate(i); }) - base.begin();
 }
 
 /// Partition `base` into (*group1*, *group2*) so that *group2* is formed with indices in `p` only.
