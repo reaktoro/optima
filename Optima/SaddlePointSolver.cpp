@@ -130,6 +130,12 @@ struct SaddlePointSolver::Impl
         // Update the canonical form and the ordering of the variables
         canonicalizer.updateWithPriorityWeights(args.J, weights);
 
+        // Remove residual round-off errors after canonical form update.
+        // Note: This is an important step to ensure that residual coefficients
+        // such as 1.23456e-16 are not present in matrices R and S of the new
+        // canonical form RAQ = [I S].
+        canonicalizer.cleanResidualRoundoffErrors();
+
         // Update the number of basic and non-basic variables
         nb = canonicalizer.numBasicVariables();
         nn = canonicalizer.numNonBasicVariables();
@@ -181,20 +187,24 @@ struct SaddlePointSolver::Impl
         // The diagonal entries in the Hessian matrix.
         const auto Hd = args.H.diagonal();
 
-        // The function that determines if the i-th basic variable is pivot (as in a Gaussian elimination sense).
-        const auto is_pivot_basic_variable = [&](auto i) { return abs(Hd[ibasic[i]]) < 1.0; }; // TODO: The pivots should be considered in Nullspace method as well. Thus, it may make sense that the whole column of H is checked, and not just its diagonal entry.
-
-        // The function that determines if the i-th non-basic variable is pivot (as in a Gaussian elimination sense).
-        const auto is_pivot_nonbasic_variable = [&](auto i) { return abs(Hd[inonbasic[i]]) < norminf(S.col(i)); }; // TODO: The pivots should be considered in Nullspace method as well. Thus, it may make sense that the whole column of H is checked, and not just its diagonal entry.
-
-        // Perform ordering of xbx as xbx = (xb1, xb2)
-        nb1 = moveLeftIf(Kbx, is_pivot_basic_variable);
-
-        // Perform ordering of xnx as xnx = (xn1, xn2)
-        nn1 = moveLeftIf(Knx, is_pivot_nonbasic_variable);
+        // Sort the basic and non-basic free variables in decreasing order w.r.t. absolute values of Hessian diagonal entries.
+        std::sort(Kbx.begin(), Kbx.end(), [&](auto l, auto r) { return abs(Hd[ibasic[l]]) >= abs(Hd[ibasic[r]]); });
+        std::sort(Knx.begin(), Knx.end(), [&](auto l, auto r) { return abs(Hd[inonbasic[l]]) >= abs(Hd[inonbasic[r]]); });
 
         // Update the ordering of the basic and non-basic variables in the canonicalizer object
         canonicalizer.updateOrdering(Kb, Kn);
+
+        // Get the newly ordered indices of basic and non-basic variables after the above ordering update
+        const auto jb = canonicalizer.indicesBasicVariables();
+        const auto jn = canonicalizer.indicesNonBasicVariables();
+
+        // Find the number of pivot basic variables (those with |Hb1b1| > 1)
+        // Walk from first to last free basic variable, since they are ordered in decresiang order of |Hii| values
+        nb1 = 0; while(nb1 < nbx && abs(Hd[jb[nb1]]) > 1.0) ++nb1;
+
+        // Find the number of pivot non-basic variables (those with |Hn1n1| > |Sbxn1|)
+        // Walk from first to last free non-basic variable, since they are ordered in decresiang order of |Hii| values
+        nn1 = 0; while(nn1 < nnx && abs(Hd[jn[nn1]]) > norminf(S.col(nn1))) ++nn1;
 
         // Update the number of non-pivot free basic and non-basic variables.
         nb2 = nbx - nb1;
@@ -211,10 +221,6 @@ struct SaddlePointSolver::Impl
         // -- xbx = (xb1, xb2);
         // -- xnx = (xn1, xn2).
         //=========================================================================================
-
-        // Get the newly ordered indices of basic and non-basic variables after the above ordering update
-        const auto jb = canonicalizer.indicesBasicVariables();
-        const auto jn = canonicalizer.indicesNonBasicVariables();
 
         // Update the ordering of the free variables as xx = [xbx xnx] = [free basic, free non-basic]
         iordering.head(nx).head(nbx) = jb.head(nbx);
