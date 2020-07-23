@@ -313,6 +313,16 @@ struct Stepper::Impl
         // Finalize the computation of the steps dx and dy
         dx.noalias() = xbar - xprime;
         dy.noalias() = ybar - y;
+
+        // Replace NaN values by zero step lengths. If NaN is produced
+        // following a saddle point solve operation, this indicates the LU
+        // solver detected linearly dependent rows. Variables associated with
+        // these rows are excluded from the solution procedure of the linear
+        // system of equations. We ensure here that such variables remain
+        // constant during the next stepping operation, by setting their step
+        // lengths to zero.
+        dx = dx.array().isNaN().select(0.0, dx); // TODO: This NaN detection/removal operation can be optimized by letting such indices be queried from SaddlePointSolver class.
+        dy = dy.array().isNaN().select(0.0, dy);
     }
 
     /// Compute the sensitivity derivatives of the saddle point problem.

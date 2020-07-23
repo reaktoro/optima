@@ -20,11 +20,9 @@
 // C++ includes
 #include <cassert>
 
-// Eigen includes
-#include <Optima/deps/eigen3/Eigen/src/LU/PartialPivLU.h>
-
 // Optima includes
 #include <Optima/Exception.hpp>
+#include <Optima/LU.hpp>
 #include <Optima/Utils.hpp>
 
 namespace Optima {
@@ -38,8 +36,7 @@ struct SaddlePointSolverRangespace::Impl
     Matrix mat; ///< The matrix used as a workspace for the decompose and solve methods.
     Vector vec; ///< The vector used as a workspace for the decompose and solve methods
     Vector Hx;  ///< The diagonal entries in the Hxx matrix.
-
-    Eigen::PartialPivLU<Matrix> lu; ///< The LU decomposition solver.
+    LU lu;      ///< The LU decomposition solver.
 
     /// Construct a default SaddlePointSolverRangespace::Impl instance.
     Impl(Index n, Index m)
@@ -131,7 +128,13 @@ struct SaddlePointSolverRangespace::Impl
         Mb2n2.noalias() = Sb2n2;
         Mn2n2           = diag(Hn2n2);
 
-        lu.compute(M);
+        // std::cout << "M = \n" << M << std::endl; // TODO: Clean these commented out lines of code.
+
+        lu.decompose(M);
+
+        // std::cout << "L(M) = \n" << Matrix(lu.matrixLU().triangularView<Eigen::UnitLower>()) << std::endl;
+        // std::cout << "U(M) = \n" << Matrix(lu.matrixLU().triangularView<Eigen::Upper>()) << std::endl;
+        // std::cout << std::endl;
     }
 
     /// Solve the canonical saddle point problem.
@@ -192,7 +195,16 @@ struct SaddlePointSolverRangespace::Impl
 
         r << bb1, bb2, an2;
 
-        r.noalias() = lu.solve(r);
+        // std::cout << "bb1 = " << tr(bb1) << std::endl;  // TODO: Clean these commented out lines of code.
+        // std::cout << "bb2 = " << tr(bb2) << std::endl;
+        // std::cout << "an2 = " << tr(an2) << std::endl;
+        // std::cout << std::endl;
+
+        lu.solve(r);
+
+        const auto rank = lu.rank();
+
+        assert(r.head(rank).allFinite());
 
         ab1.noalias()  = (ab1 - yb1)/Hb1b1;
         bb2.noalias()  = (ab2 - Hb2b2 % xb2);
