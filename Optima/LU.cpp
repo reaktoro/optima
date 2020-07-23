@@ -148,4 +148,14 @@ auto LU::rank() const -> Index
     return pimpl->rank;
 }
 
+auto LU::matrixLU() const -> MatrixConstRef
+{
+    return pimpl->lu.matrixLU();
+}
+
+auto LU::P() const -> PermutationMatrix
+{
+    return pimpl->lu.permutationP();
+}
+
 } // namespace Optima

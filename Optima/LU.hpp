@@ -60,6 +60,12 @@ struct LU
     /// @note: Method @ref decompose needs to be called first.
     auto rank() const -> Index;
 
+    /// Return the matrix containing the lower and upper triangular factors.
+    auto matrixLU() const -> MatrixConstRef;
+
+    /// Return the permutation matrix factor *P* of the LU decomposition *PA = LU*.
+    auto P() const -> PermutationMatrix;
+
 private:
     struct Impl;
 
