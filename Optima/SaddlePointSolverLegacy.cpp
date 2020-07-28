@@ -55,10 +55,10 @@ struct SaddlePointSolverLegacy::Impl
     Index nbf = 0; ///< The number of *fixed basic* variables.
     Index nnx = 0; ///< The number of *free non-basic* variables.
     Index nnf = 0; ///< The number of *fixed non-basic* variables.
-    Index nb1 = 0; ///< The number of *pivot free basic* variables.
-    Index nn1 = 0; ///< The number of *pivot free non-basic* variables.
-    Index nb2 = 0; ///< The number of *non-pivot free basic* variables.
-    Index nn2 = 0; ///< The number of *non-pivot free non-basic* variables.
+    Index nbe = 0; ///< The number of *pivot free basic* variables.
+    Index nne = 0; ///< The number of *pivot free non-basic* variables.
+    Index nbi = 0; ///< The number of *non-pivot free basic* variables.
+    Index nni = 0; ///< The number of *non-pivot free non-basic* variables.
 
     Vector weights; ///< The priority weights for the selection of basic variables.
 
@@ -177,15 +177,15 @@ struct SaddlePointSolverLegacy::Impl
 
         // Update the number of non-pivot free basic variables.
         // Walk from first to last basic variable, since the free basic variables are at the beginning of ibasic
-        nb2 = 0; while(nb2 < nbx && weights[ibasic[nb2]] > 1.0) ++nb2;
+        nbi = 0; while(nbi < nbx && weights[ibasic[nbi]] > 1.0) ++nbi;
 
         // Update the number of non-pivot free non-basic variables.
         // Walk from first to last non-basic variable, since the free non-basic variables are at the beginning of inonbasic
-        nn2 = 0; while(nn2 < nnx && weights[inonbasic[nn2]] > norminf(S.col(nn2))) ++nn2;
+        nni = 0; while(nni < nnx && weights[inonbasic[nni]] > norminf(S.col(nni))) ++nni;
 
         // Update the number of pivot free basic and non-basic variables.
-        nb1 = nbx - nb2;
-        nn1 = nnx - nn2;
+        nbe = nbx - nbi;
+        nne = nnx - nni;
 
         // Update the ordering of the free variables as xx = [xbx xnx]
         iordering.head(nx).head(nbx) = ibasic.head(nbx);
@@ -337,18 +337,18 @@ struct SaddlePointSolverLegacy::Impl
 
         // Views to the sub-matrices of the canonical matrix S
         auto Sbxnx = S.topLeftCorner(nbx, nnx);
-        auto Sb1n2 = Sbxnx.bottomLeftCorner(nb1, nn2);
-        auto Sb2n2 = Sbxnx.topLeftCorner(nb2, nn2);
-        auto Sbxn1 = Sbxnx.rightCols(nn1);
+        auto Sbeni = Sbxnx.bottomLeftCorner(nbe, nni);
+        auto Sbini = Sbxnx.topLeftCorner(nbi, nni);
+        auto Sbxne = Sbxnx.rightCols(nne);
 
-        // The diagonal entries in H of the free variables, with Hx = [Hb2b2 Hb1b1 Hn2n2 Hn1n1]
+        // The diagonal entries in H of the free variables, with Hx = [Hbibi Hbebe Hnini Hnene]
         auto Hx    = H.col(0).head(nx);
         auto Hbxbx = Hx.head(nbx);
         auto Hnxnx = Hx.tail(nnx);
-        auto Hb1b1 = Hbxbx.tail(nb1);
-        auto Hb2b2 = Hbxbx.head(nb2);
-        auto Hn1n1 = Hnxnx.tail(nn1);
-        auto Hn2n2 = Hnxnx.head(nn2);
+        auto Hbebe = Hbxbx.tail(nbe);
+        auto Hbibi = Hbxbx.head(nbi);
+        auto Hnene = Hnxnx.tail(nne);
+        auto Hnini = Hnxnx.head(nni);
 
         // The indices of the free variables
         auto jx = iordering.head(nx);
@@ -356,60 +356,60 @@ struct SaddlePointSolverLegacy::Impl
         // Retrieve the entries in H corresponding to free variables.
         Hx.noalias() = args.H.diagonal()(jx);
 
-        // The auxiliary matrix Tbxbx = Sbxn1 * Bn1bx and its submatrices
+        // The auxiliary matrix Tbxbx = Sbxne * Bnebx and its submatrices
         auto Tbxbx = mat.topRightCorner(nbx, nbx);
-        auto Tb2b2 = Tbxbx.topLeftCorner(nb2, nb2);
-        auto Tb2b1 = Tbxbx.topRightCorner(nb2, nb1);
-        auto Tb1b2 = Tbxbx.bottomLeftCorner(nb1, nb2);
-        auto Tb1b1 = Tbxbx.bottomRightCorner(nb1, nb1);
+        auto Tbibi = Tbxbx.topLeftCorner(nbi, nbi);
+        auto Tbibe = Tbxbx.topRightCorner(nbi, nbe);
+        auto Tbebi = Tbxbx.bottomLeftCorner(nbe, nbi);
+        auto Tbebe = Tbxbx.bottomRightCorner(nbe, nbe);
 
-        // The auxiliary matrix Bn1bx = inv(Hn1n1) * tr(Sbxn1)
-        auto Bn1bx = mat.rightCols(nbx).middleRows(nbx, nn1);
+        // The auxiliary matrix Bnebx = inv(Hnene) * tr(Sbxne)
+        auto Bnebx = mat.rightCols(nbx).middleRows(nbx, nne);
 
         // Initialize workspace with zeros
         mat.fill(0.0);
 
         // The matrix M of the system of linear equations
-        auto M = mat.bottomRightCorner(nb1 + nb2 + nn2, nb1 + nb2 + nn2);
+        auto M = mat.bottomRightCorner(nbe + nbi + nni, nbe + nbi + nni);
 
-        auto Mn2 = M.topRows(nn2);
-        auto Mb1 = M.middleRows(nn2, nb1);
-        auto Mb2 = M.middleRows(nn2 + nb1, nb2);
+        auto Mni = M.topRows(nni);
+        auto Mbe = M.middleRows(nni, nbe);
+        auto Mbi = M.middleRows(nni + nbe, nbi);
 
-        auto Mn2n2 = Mn2.leftCols(nn2);
-        auto Mn2b1 = Mn2.middleCols(nn2, nb1);
-        auto Mn2b2 = Mn2.middleCols(nn2 + nb1, nb2);
+        auto Mnini = Mni.leftCols(nni);
+        auto Mnibe = Mni.middleCols(nni, nbe);
+        auto Mnibi = Mni.middleCols(nni + nbe, nbi);
 
-        auto Mb1n2 = Mb1.leftCols(nn2);
-        auto Mb1b1 = Mb1.middleCols(nn2, nb1);
-        auto Mb1b2 = Mb1.middleCols(nn2 + nb1, nb2);
+        auto Mbeni = Mbe.leftCols(nni);
+        auto Mbebe = Mbe.middleCols(nni, nbe);
+        auto Mbebi = Mbe.middleCols(nni + nbe, nbi);
 
-        auto Mb2n2 = Mb2.leftCols(nn2);
-        auto Mb2b1 = Mb2.middleCols(nn2, nb1);
-        auto Mb2b2 = Mb2.middleCols(nn2 + nb1, nb2);
+        auto Mbini = Mbi.leftCols(nni);
+        auto Mbibe = Mbi.middleCols(nni, nbe);
+        auto Mbibi = Mbi.middleCols(nni + nbe, nbi);
 
-        // Computing the auxiliary matrix Bn1bx = inv(Hn1n1) * tr(Sbxn1)
-        Bn1bx.noalias() = diag(inv(Hn1n1)) * tr(Sbxn1);
+        // Computing the auxiliary matrix Bnebx = inv(Hnene) * tr(Sbxne)
+        Bnebx.noalias() = diag(inv(Hnene)) * tr(Sbxne);
 
-        // Computing the auxiliary matrix Tbxbx = Sbxn1 * Bn1bx
-        Tbxbx.noalias() = Sbxn1 * Bn1bx;
+        // Computing the auxiliary matrix Tbxbx = Sbxne * Bnebx
+        Tbxbx.noalias() = Sbxne * Bnebx;
 
-        // Setting the columns of M with dimension nn2
-        Mn2n2           = diag(Hn2n2);
-        Mb1n2.noalias() = Sb1n2;
-        Mb2n2.noalias() = Sb2n2;
+        // Setting the columns of M with dimension nni
+        Mnini           = diag(Hnini);
+        Mbeni.noalias() = Sbeni;
+        Mbini.noalias() = Sbini;
 
-        // Setting the columns of M with dimension nb1
-        Mn2b1.noalias()   = tr(Sb1n2);
-        Mb1b1.noalias()   = -Tb1b1;
-        Mb1b1.diagonal() -= inv(Hb1b1);
-        Mb2b1.noalias()   = -Tb2b1;
+        // Setting the columns of M with dimension nbe
+        Mnibe.noalias()   = tr(Sbeni);
+        Mbebe.noalias()   = -Tbebe;
+        Mbebe.diagonal() -= inv(Hbebe);
+        Mbibe.noalias()   = -Tbibe;
 
-        // Setting the columns of M with dimension nb2
-        Mn2b2.noalias()   = -tr(Sb2n2) * diag(Hb2b2);
-        Mb1b2.noalias()   = Tb1b2*diag(Hb2b2);
-        Mb2b2.noalias()   = Tb2b2*diag(Hb2b2);
-        Mb2b2.diagonal() += ones(nb2);
+        // Setting the columns of M with dimension nbi
+        Mnibi.noalias()   = -tr(Sbini) * diag(Hbibi);
+        Mbebi.noalias()   = Tbebi*diag(Hbibi);
+        Mbibi.noalias()   = Tbibi*diag(Hbibi);
+        Mbibi.diagonal() += ones(nbi);
 
         // Computing the LU decomposition of matrix M
         lu.compute(M);
@@ -427,18 +427,18 @@ struct SaddlePointSolverLegacy::Impl
 
         // Views to the sub-matrices of the canonical matrix S
         auto Sbxnx = S.topLeftCorner(nbx, nnx);
-        auto Sb1n2 = Sbxnx.bottomLeftCorner(nb1, nn2);
-        auto Sb2n2 = Sbxnx.topLeftCorner(nb2, nn2);
-        auto Sbxn1 = Sbxnx.rightCols(nn1);
+        auto Sbeni = Sbxnx.bottomLeftCorner(nbe, nni);
+        auto Sbini = Sbxnx.topLeftCorner(nbi, nni);
+        auto Sbxne = Sbxnx.rightCols(nne);
 
-        // The diagonal entries in H of the free variables, with Hx = [Hb2b2 Hb1b1 Hn2n2 Hn1n1]
+        // The diagonal entries in H of the free variables, with Hx = [Hbibi Hbebe Hnini Hnene]
         auto Hx    = H.col(0).head(nx);
         auto Hbxbx = Hx.head(nbx);
         auto Hnxnx = Hx.tail(nnx);
-        auto Hb1b1 = Hbxbx.tail(nb1);
-        auto Hb2b2 = Hbxbx.head(nb2);
-        auto Hn1n1 = Hnxnx.tail(nn1);
-        auto Hn2n2 = Hnxnx.head(nn2);
+        auto Hbebe = Hbxbx.tail(nbe);
+        auto Hbibi = Hbxbx.head(nbi);
+        auto Hnene = Hnxnx.tail(nne);
+        auto Hnini = Hnxnx.head(nni);
 
         // The sub-matrices in G' = R * G * tr(R)
         auto Gbx   = G.topRows(nbx);
@@ -454,20 +454,20 @@ struct SaddlePointSolverLegacy::Impl
         auto Gblbf = Gbl.middleCols(nbx, nbf);
         auto Gblbl = Gbl.rightCols(nl);
 
-        auto Gb1b1 = Gbxbx.bottomRightCorner(nb1, nb1);
-        auto Gb1b2 = Gbxbx.bottomLeftCorner(nb1, nb2);
-        auto Gb2b1 = Gbxbx.topRightCorner(nb2, nb1);
-        auto Gb2b2 = Gbxbx.topLeftCorner(nb2, nb2);
+        auto Gbebe = Gbxbx.bottomRightCorner(nbe, nbe);
+        auto Gbebi = Gbxbx.bottomLeftCorner(nbe, nbi);
+        auto Gbibe = Gbxbx.topRightCorner(nbi, nbe);
+        auto Gbibi = Gbxbx.topLeftCorner(nbi, nbi);
 
-        auto Gb1bf = Gbxbf.bottomRows(nb1);
-        auto Gb2bf = Gbxbf.topRows(nb2);
-        auto Gb1bl = Gbxbl.bottomRows(nb1);
-        auto Gb2bl = Gbxbl.topRows(nb2);
+        auto Gbebf = Gbxbf.bottomRows(nbe);
+        auto Gbibf = Gbxbf.topRows(nbi);
+        auto Gbebl = Gbxbl.bottomRows(nbe);
+        auto Gbibl = Gbxbl.topRows(nbi);
 
-        auto Gbfb1 = Gbfbx.rightCols(nb1);
-        auto Gbfb2 = Gbfbx.leftCols(nb2);
-        auto Gblb1 = Gblbx.rightCols(nb1);
-        auto Gblb2 = Gblbx.leftCols(nb2);
+        auto Gbfbe = Gbfbx.rightCols(nbe);
+        auto Gbfbi = Gbfbx.leftCols(nbi);
+        auto Gblbe = Gblbx.rightCols(nbe);
+        auto Gblbi = Gblbx.leftCols(nbi);
 
         // The indices of the free variables
         auto jx = iordering.head(nx);
@@ -478,95 +478,95 @@ struct SaddlePointSolverLegacy::Impl
         // Calculate matrix G' = R * G * tr(R)
         G = R * G * tr(R);  // TODO: Try R * args.G * tr(R)
 
-        // The auxiliary matrix Tbxbx = Sbxn1 * Bn1bx and its submatrices
+        // The auxiliary matrix Tbxbx = Sbxne * Bnebx and its submatrices
         auto Tbxbx = mat.topRightCorner(nbx, nbx);
-        auto Tb2b2 = Tbxbx.topLeftCorner(nb2, nb2);
-        auto Tb2b1 = Tbxbx.topRightCorner(nb2, nb1);
-        auto Tb1b2 = Tbxbx.bottomLeftCorner(nb1, nb2);
-        auto Tb1b1 = Tbxbx.bottomRightCorner(nb1, nb1);
+        auto Tbibi = Tbxbx.topLeftCorner(nbi, nbi);
+        auto Tbibe = Tbxbx.topRightCorner(nbi, nbe);
+        auto Tbebi = Tbxbx.bottomLeftCorner(nbe, nbi);
+        auto Tbebe = Tbxbx.bottomRightCorner(nbe, nbe);
 
-        // The auxiliary matrix Bn1bx = inv(Hn1n1) * tr(Sbxn1)
-        auto Bn1bx = mat.rightCols(nbx).middleRows(nbx, nn1);
+        // The auxiliary matrix Bnebx = inv(Hnene) * tr(Sbxne)
+        auto Bnebx = mat.rightCols(nbx).middleRows(nbx, nne);
 
         // The matrix M of the system of linear equations
-        auto M = mat.bottomRightCorner(m + nn2, m + nn2);
+        auto M = mat.bottomRightCorner(m + nni, m + nni);
 
-        auto Mn2 = M.topRows(nn2);
-        auto Mb1 = M.middleRows(nn2, nb1);
-        auto Mb2 = M.middleRows(nn2 + nb1, nb2);
-        auto Mbf = M.middleRows(nn2 + nb1 + nb2, nbf);
+        auto Mni = M.topRows(nni);
+        auto Mbe = M.middleRows(nni, nbe);
+        auto Mbi = M.middleRows(nni + nbe, nbi);
+        auto Mbf = M.middleRows(nni + nbe + nbi, nbf);
         auto Ml  = M.bottomRows(nl);
 
-        auto Mn2n2 = Mn2.leftCols(nn2);
-        auto Mn2b1 = Mn2.middleCols(nn2, nb1);
-        auto Mn2b2 = Mn2.middleCols(nn2 + nb1, nb2);
-        auto Mn2bf = Mn2.middleCols(nn2 + nb1 + nb2, nbf);
-        auto Mn2l = Mn2.rightCols(nl);
+        auto Mnini = Mni.leftCols(nni);
+        auto Mnibe = Mni.middleCols(nni, nbe);
+        auto Mnibi = Mni.middleCols(nni + nbe, nbi);
+        auto Mnibf = Mni.middleCols(nni + nbe + nbi, nbf);
+        auto Mnil = Mni.rightCols(nl);
 
-        auto Mb1n2 = Mb1.leftCols(nn2);
-        auto Mb1b1 = Mb1.middleCols(nn2, nb1);
-        auto Mb1b2 = Mb1.middleCols(nn2 + nb1, nb2);
-        auto Mb1bf = Mb1.middleCols(nn2 + nb1 + nb2, nbf);
-        auto Mb1l = Mb1.rightCols(nl);
+        auto Mbeni = Mbe.leftCols(nni);
+        auto Mbebe = Mbe.middleCols(nni, nbe);
+        auto Mbebi = Mbe.middleCols(nni + nbe, nbi);
+        auto Mbebf = Mbe.middleCols(nni + nbe + nbi, nbf);
+        auto Mbel = Mbe.rightCols(nl);
 
-        auto Mb2n2 = Mb2.leftCols(nn2);
-        auto Mb2b1 = Mb2.middleCols(nn2, nb1);
-        auto Mb2b2 = Mb2.middleCols(nn2 + nb1, nb2);
-        auto Mb2bf = Mb2.middleCols(nn2 + nb1 + nb2, nbf);
-        auto Mb2l = Mb2.rightCols(nl);
+        auto Mbini = Mbi.leftCols(nni);
+        auto Mbibe = Mbi.middleCols(nni, nbe);
+        auto Mbibi = Mbi.middleCols(nni + nbe, nbi);
+        auto Mbibf = Mbi.middleCols(nni + nbe + nbi, nbf);
+        auto Mbil = Mbi.rightCols(nl);
 
-        auto Mbfn2 = Mbf.leftCols(nn2);
-        auto Mbfb1 = Mbf.middleCols(nn2, nb1);
-        auto Mbfb2 = Mbf.middleCols(nn2 + nb1, nb2);
-        auto Mbfbf = Mbf.middleCols(nn2 + nb1 + nb2, nbf);
+        auto Mbfni = Mbf.leftCols(nni);
+        auto Mbfbe = Mbf.middleCols(nni, nbe);
+        auto Mbfbi = Mbf.middleCols(nni + nbe, nbi);
+        auto Mbfbf = Mbf.middleCols(nni + nbe + nbi, nbf);
         auto Mbfl = Mbf.rightCols(nl);
 
-        auto Mln2 = Ml.leftCols(nn2);
-        auto Mlb1 = Ml.middleCols(nn2, nb1);
-        auto Mlb2 = Ml.middleCols(nn2 + nb1, nb2);
-        auto Mlbf = Ml.middleCols(nn2 + nb1 + nb2, nbf);
+        auto Mlni = Ml.leftCols(nni);
+        auto Mlbe = Ml.middleCols(nni, nbe);
+        auto Mlbi = Ml.middleCols(nni + nbe, nbi);
+        auto Mlbf = Ml.middleCols(nni + nbe + nbi, nbf);
         auto Mll = Ml.rightCols(nl);
 
-        // Computing the auxiliary matrix Bn1bx = inv(Hn1n1) * tr(Sbxn1)
-        Bn1bx.noalias() = diag(inv(Hn1n1)) * tr(Sbxn1);
+        // Computing the auxiliary matrix Bnebx = inv(Hnene) * tr(Sbxne)
+        Bnebx.noalias() = diag(inv(Hnene)) * tr(Sbxne);
 
-        // Computing the auxiliary matrix Tbxbx = Sbxn1 * Bn1bx
-        Tbxbx.noalias() = Sbxn1 * Bn1bx;
+        // Computing the auxiliary matrix Tbxbx = Sbxne * Bnebx
+        Tbxbx.noalias() = Sbxne * Bnebx;
 
-        // Setting the columns of M with dimension nn2
-        Mn2n2           = diag(Hn2n2);
-        Mb1n2.noalias() = Sb1n2;
-        Mb2n2.noalias() = Sb2n2;
-        Mbfn2.setZero();
-        Mln2.setZero();
+        // Setting the columns of M with dimension nni
+        Mnini           = diag(Hnini);
+        Mbeni.noalias() = Sbeni;
+        Mbini.noalias() = Sbini;
+        Mbfni.setZero();
+        Mlni.setZero();
 
-        // Setting the columns of M with dimension nb1
-        Mn2b1.noalias()   = tr(Sb1n2);
-        Mb1b1.noalias()   = Gb1b1 - Tb1b1;
-        Mb1b1.diagonal() -= inv(Hb1b1);
-        Mb2b1.noalias()   = Gb2b1 - Tb2b1;
-        Mbfb1.noalias()   = Gbfb1;
-        Mlb1.noalias()    = Gblb1;
+        // Setting the columns of M with dimension nbe
+        Mnibe.noalias()   = tr(Sbeni);
+        Mbebe.noalias()   = Gbebe - Tbebe;
+        Mbebe.diagonal() -= inv(Hbebe);
+        Mbibe.noalias()   = Gbibe - Tbibe;
+        Mbfbe.noalias()   = Gbfbe;
+        Mlbe.noalias()    = Gblbe;
 
-        // Setting the columns of M with dimension nb2
-        Mn2b2.noalias()   = -tr(Sb2n2) * diag(Hb2b2);
-        Mb1b2.noalias()   = (Tb1b2 - Gb1b2)*diag(Hb2b2);
-        Mb2b2.noalias()   = (Tb2b2 - Gb2b2)*diag(Hb2b2);
-        Mb2b2.diagonal() += ones(nb2);
-        Mbfb2.noalias()   = -Gbfb2 * diag(Hb2b2);
-        Mlb2.noalias()    = -Gblb2 * diag(Hb2b2);
+        // Setting the columns of M with dimension nbi
+        Mnibi.noalias()   = -tr(Sbini) * diag(Hbibi);
+        Mbebi.noalias()   = (Tbebi - Gbebi)*diag(Hbibi);
+        Mbibi.noalias()   = (Tbibi - Gbibi)*diag(Hbibi);
+        Mbibi.diagonal() += ones(nbi);
+        Mbfbi.noalias()   = -Gbfbi * diag(Hbibi);
+        Mlbi.noalias()    = -Gblbi * diag(Hbibi);
 
         // Setting the columns of M with dimension nbf
-        Mn2bf.setZero();
-        Mb1bf.noalias() = Gb1bf;
-        Mb2bf.noalias() = Gb2bf;
+        Mnibf.setZero();
+        Mbebf.noalias() = Gbebf;
+        Mbibf.noalias() = Gbibf;
         Mbfbf.noalias() = Gbfbf;
          Mlbf.noalias() = Gblbf;
 
         // Setting the columns of M with dimension nl
-        Mn2l.setZero();
-        Mb1l.noalias() = Gb1bl;
-        Mb2l.noalias() = Gb2bl;
+        Mnil.setZero();
+        Mbel.noalias() = Gbebl;
+        Mbil.noalias() = Gbibl;
         Mbfl.noalias() = Gbfbl;
          Mll.noalias() = Gblbl;
 
@@ -953,31 +953,31 @@ struct SaddlePointSolverLegacy::Impl
         // Views to the sub-matrices of the canonical matrix S
         auto Sbxnx = S.topLeftCorner(nbx, nnx);
         auto Sbxnf = S.topRightCorner(nbx, nnf);
-        auto Sb1n1 = Sbxnx.bottomRightCorner(nb1, nn1);
-        auto Sb2n1 = Sbxnx.topRightCorner(nb2, nn1);
-        auto Sb2nx = Sbxnx.topRows(nb2);
+        auto Sbene = Sbxnx.bottomRightCorner(nbe, nne);
+        auto Sbine = Sbxnx.topRightCorner(nbi, nne);
+        auto Sbinx = Sbxnx.topRows(nbi);
 
-        // The diagonal entries in H of the free variables, with Hx = [Hb2b2 Hb1b1 Hn2n2 Hn1n1]
+        // The diagonal entries in H of the free variables, with Hx = [Hbibi Hbebe Hnini Hnene]
         auto Hx    = H.col(0).head(nx);
         auto Hbxbx = Hx.head(nbx);
         auto Hnxnx = Hx.tail(nnx);
-        auto Hb1b1 = Hbxbx.tail(nb1);
-        auto Hb2b2 = Hbxbx.head(nb2);
-        auto Hn1n1 = Hnxnx.tail(nn1);
+        auto Hbebe = Hbxbx.tail(nbe);
+        auto Hbibi = Hbxbx.head(nbi);
+        auto Hnene = Hnxnx.tail(nne);
 
         auto ax  = a.head(nx);
         auto af  = a.tail(nf);
         auto abx = ax.head(nbx);
         auto anx = ax.tail(nnx);
         auto anf = af.tail(nnf);
-        auto ab1 = abx.tail(nb1);
-        auto ab2 = abx.head(nb2);
-        auto an1 = anx.tail(nn1);
-        auto an2 = anx.head(nn2);
+        auto abe = abx.tail(nbe);
+        auto abi = abx.head(nbi);
+        auto ane = anx.tail(nne);
+        auto ani = anx.head(nni);
 
         auto bbx = b.head(nbx);
-        auto bb1 = bbx.tail(nb1);
-        auto bb2 = bbx.head(nb2);
+        auto bbe = bbx.tail(nbe);
+        auto bbi = bbx.head(nbi);
 
         a.noalias() = args.a(iordering);
 
@@ -1000,33 +1000,33 @@ struct SaddlePointSolverLegacy::Impl
         // (e.g., 1e-16). This will cause `xi = eps`, and not `xi = 2e-31`.
         cleanResidualRoundoffErrors(b);
 
-        anx -= tr(Sb2nx) * ab2;
+        anx -= tr(Sbinx) * abi;
         // bbx -= Sbxnf * anf;
 
-        an1.noalias() = an1/Hn1n1;
+        ane.noalias() = ane/Hnene;
 
-        bb1 -= ab1/Hb1b1;
-        bb1 -= Sb1n1 * an1;
+        bbe -= abe/Hbebe;
+        bbe -= Sbene * ane;
 
-        bb2 -= Sb2n1 * an1;
+        bbi -= Sbine * ane;
 
-        auto r = vec.head(nb1 + nb2 + nn2);
+        auto r = vec.head(nbe + nbi + nni);
 
-        auto xn2 = r.head(nn2);
-        auto yb1 = r.segment(nn2, nb1);
-        auto xb2 = r.segment(nn2 + nb1, nb2);
+        auto xni = r.head(nni);
+        auto ybe = r.segment(nni, nbe);
+        auto xbi = r.segment(nni + nbe, nbi);
 
-        r << an2, bb1, bb2;
+        r << ani, bbe, bbi;
 
         r.noalias() = lu.solve(r);
 
-        ab1.noalias() = (ab1 - yb1)/Hb1b1;
-        bb2.noalias() = (ab2 - Hb2b2 % xb2);
-        an1.noalias() -= (tr(Sb1n1)*yb1 + tr(Sb2n1)*(bb2 - ab2))/Hn1n1;
+        abe.noalias() = (abe - ybe)/Hbebe;
+        bbi.noalias() = (abi - Hbibi % xbi);
+        ane.noalias() -= (tr(Sbene)*ybe + tr(Sbine)*(bbi - abi))/Hnene;
 
-        an2.noalias() = xn2;
-        bb1.noalias() = yb1;
-        ab2.noalias() = xb2;
+        ani.noalias() = xni;
+        bbe.noalias() = ybe;
+        abi.noalias() = xbi;
 
         // Compute the y vector without canonicalization
         y.noalias() = tr(R) * b;
@@ -1050,17 +1050,17 @@ struct SaddlePointSolverLegacy::Impl
         auto Sbxnx = S.topLeftCorner(nbx, nnx);
         auto Sbxnf = S.topRightCorner(nbx, nnf);
         auto Sbfnf = S.bottomRightCorner(nbf, nnf);
-        auto Sb1n1 = Sbxnx.bottomRightCorner(nb1, nn1);
-        auto Sb2n1 = Sbxnx.topRightCorner(nb2, nn1);
-        auto Sb2nx = Sbxnx.topRows(nb2);
+        auto Sbene = Sbxnx.bottomRightCorner(nbe, nne);
+        auto Sbine = Sbxnx.topRightCorner(nbi, nne);
+        auto Sbinx = Sbxnx.topRows(nbi);
 
-        // The diagonal entries in H of the free variables, with Hx = [Hb2b2 Hb1b1 Hn2n2 Hn1n1]
+        // The diagonal entries in H of the free variables, with Hx = [Hbibi Hbebe Hnini Hnene]
         auto Hx    = H.col(0).head(nx);
         auto Hbxbx = Hx.head(nbx);
         auto Hnxnx = Hx.tail(nnx);
-        auto Hb1b1 = Hbxbx.tail(nb1);
-        auto Hb2b2 = Hbxbx.head(nb2);
-        auto Hn1n1 = Hnxnx.tail(nn1);
+        auto Hbebe = Hbxbx.tail(nbe);
+        auto Hbibi = Hbxbx.head(nbi);
+        auto Hnene = Hnxnx.tail(nne);
 
         // The sub-matrices in G' = R * G * tr(R)
         auto Gbx   = G.topRows(nbx);
@@ -1070,11 +1070,11 @@ struct SaddlePointSolverLegacy::Impl
         auto Gbfbx = Gbf.leftCols(nbx);
         auto Gblbx = Gbl.leftCols(nbx);
 
-        auto Gb1b2 = Gbxbx.bottomLeftCorner(nb1, nb2);
-        auto Gb2b2 = Gbxbx.topLeftCorner(nb2, nb2);
+        auto Gbebi = Gbxbx.bottomLeftCorner(nbe, nbi);
+        auto Gbibi = Gbxbx.topLeftCorner(nbi, nbi);
 
-        auto Gbfb2 = Gbfbx.leftCols(nb2);
-        auto Gblb2 = Gblbx.leftCols(nb2);
+        auto Gbfbi = Gbfbx.leftCols(nbi);
+        auto Gblbi = Gblbx.leftCols(nbi);
 
         auto ax  = a.head(nx);
         auto af  = a.tail(nf);
@@ -1082,16 +1082,16 @@ struct SaddlePointSolverLegacy::Impl
         auto anx = ax.tail(nnx);
         auto abf = af.head(nbf);
         auto anf = af.tail(nnf);
-        auto ab1 = abx.tail(nb1);
-        auto ab2 = abx.head(nb2);
-        auto an1 = anx.tail(nn1);
-        auto an2 = anx.head(nn2);
+        auto abe = abx.tail(nbe);
+        auto abi = abx.head(nbi);
+        auto ane = anx.tail(nne);
+        auto ani = anx.head(nni);
 
         auto bbx = b.head(nbx);
         auto bbf = b.segment(nbx, nbf);
         auto bl  = b.tail(nl);
-        auto bb1 = bbx.tail(nb1);
-        auto bb2 = bbx.head(nb2);
+        auto bbe = bbx.tail(nbe);
+        auto bbi = bbx.head(nbi);
 
         a.noalias() = args.a(iordering);
 
@@ -1108,40 +1108,40 @@ struct SaddlePointSolverLegacy::Impl
         // (e.g., 1e-16). This will cause `xi = eps`, and not `xi = 2e-31`.
         cleanResidualRoundoffErrors(b);
 
-        anx -= tr(Sb2nx) * ab2;
+        anx -= tr(Sbinx) * abi;
         bbx -= Sbxnf * anf;
         bbf -= Sbfnf * anf + abf;
 
-        an1.noalias() = an1/Hn1n1;
+        ane.noalias() = ane/Hnene;
 
-        bb1 -= ab1/Hb1b1;
-        bb1 -= Sb1n1 * an1;
-        bb1 -= Gb1b2 * ab2;
+        bbe -= abe/Hbebe;
+        bbe -= Sbene * ane;
+        bbe -= Gbebi * abi;
 
-        bb2 -= Sb2n1 * an1;
-        bb2 -= Gb2b2 * ab2;
-        bbf -= Gbfb2 * ab2;
-        bl  -= Gblb2 * ab2;
+        bbi -= Sbine * ane;
+        bbi -= Gbibi * abi;
+        bbf -= Gbfbi * abi;
+        bl  -= Gblbi * abi;
 
-        auto r = vec.head(nn2 + m);
+        auto r = vec.head(nni + m);
 
-        auto xn2 = r.head(nn2);
-        auto yb1 = r.segment(nn2, nb1);
-        auto xb2 = r.segment(nn2 + nb1, nb2);
-        auto ybf = r.segment(nn2 + nb1 + nb2, nbf);
+        auto xni = r.head(nni);
+        auto ybe = r.segment(nni, nbe);
+        auto xbi = r.segment(nni + nbe, nbi);
+        auto ybf = r.segment(nni + nbe + nbi, nbf);
         auto yl = r.tail(nl);
 
-        r << an2, bb1, bb2, bbf, bl;
+        r << ani, bbe, bbi, bbf, bl;
 
         r.noalias() = lu.solve(r);
 
-        ab1.noalias() = (ab1 - yb1)/Hb1b1;
-        bb2.noalias() = (ab2 - Hb2b2 % xb2);
-        an1.noalias() -= (tr(Sb1n1)*yb1 + tr(Sb2n1)*(bb2 - ab2))/Hn1n1;
+        abe.noalias() = (abe - ybe)/Hbebe;
+        bbi.noalias() = (abi - Hbibi % xbi);
+        ane.noalias() -= (tr(Sbene)*ybe + tr(Sbine)*(bbi - abi))/Hnene;
 
-        an2.noalias() = xn2;
-        bb1.noalias() = yb1;
-        ab2.noalias() = xb2;
+        ani.noalias() = xni;
+        bbe.noalias() = ybe;
+        abi.noalias() = xbi;
         bbf.noalias() = ybf;
          bl.noalias() = yl;
 

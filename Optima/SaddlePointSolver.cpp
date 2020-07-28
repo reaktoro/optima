@@ -52,8 +52,8 @@ struct SaddlePointSolver::Impl
     Vector yw;                              ///< The workspace for solution vector y
     Vector weights;                         ///< The priority weights for the selection of basic variables.
     Indices iordering;                      ///< The ordering of the variables as (free-basic, free-non-basic, fixed-basic, fixed-non-basic).
-    Indices Kb;                             ///< The permutation matrix used to order the basic variables as xb = (xb1, xb2, xbf) with 1 and 2 denoting pivot and non-pivot
-    Indices Kn;                             ///< The permutation matrix used to order the non-basic variables as xn = (xn1, xn2, xnf) with 1 and 2 denoting pivot and non-pivot
+    Indices Kb;                             ///< The permutation matrix used to order the basic variables as xb = (xbe, xbi, xbf) with 1 and 2 denoting pivot and non-pivot
+    Indices Kn;                             ///< The permutation matrix used to order the non-basic variables as xn = (xne, xni, xnf) with 1 and 2 denoting pivot and non-pivot
     bool degenerate = false;                ///< The boolean flag that indicates that the decomposed saddle point matrix was degenerate with no free variables.
 
     /// Construct a SaddlePointSolver::Impl instance with given data.
@@ -96,7 +96,7 @@ struct SaddlePointSolver::Impl
     auto canonicalize(SaddlePointSolverCanonicalizeArgs args) -> void
     {
         // Unpack the dimension variables
-        auto& [n, m, ml, mn, nb, nn, nl, nx, nf, nbx, nbf, nnx, nnf, nb1, nn1, nb2, nn2] = dims;
+        auto& [n, m, ml, mn, nb, nn, nl, nx, nf, nbx, nbf, nnx, nnf, nbe, nne, nbi, nni] = dims;
 
         // Ensure number of variables is positive.
         assert(n > 0);
@@ -163,12 +163,12 @@ struct SaddlePointSolver::Impl
         nnx = nn - nnf;
 
         //=========================================================================================
-        // Update the order of the free variables as xx = (xb1, xb2, xbf, xn1, xn2, xnf), where:
-        // -- xb1 are free pivot basic variables;
-        // -- xb2 are free non-pivot basic variables;
+        // Update the order of the free variables as xx = (xbe, xbi, xbf, xne, xni, xnf), where:
+        // -- xbe are free pivot basic variables;
+        // -- xbi are free non-pivot basic variables;
         // -- xbf are fixed basic variables;
-        // -- xn1 are free pivot non-basic variables;
-        // -- xn2 are free non-pivot non-basic variables;
+        // -- xne are free pivot non-basic variables;
+        // -- xni are free non-pivot non-basic variables;
         // -- xnf are fixed non-basic variables.
         //-----------------------------------------------------------------------------------------
         // Note: Pivot and non-pivot as in the Gaussian elimination sense. The pivot variables
@@ -198,17 +198,17 @@ struct SaddlePointSolver::Impl
         const auto jb = canonicalizer.indicesBasicVariables();
         const auto jn = canonicalizer.indicesNonBasicVariables();
 
-        // Find the number of pivot basic variables (those with |Hb1b1| > 1)
+        // Find the number of pivot basic variables (those with |Hbebe| > 1)
         // Walk from first to last free basic variable, since they are ordered in decresiang order of |Hii| values
-        nb1 = 0; while(nb1 < nbx && abs(Hd[jb[nb1]]) > 1.0) ++nb1;
+        nbe = 0; while(nbe < nbx && abs(Hd[jb[nbe]]) > 1.0) ++nbe;
 
-        // Find the number of pivot non-basic variables (those with |Hn1n1| > |Sbxn1|)
+        // Find the number of pivot non-basic variables (those with |Hnene| > |Sbxne|)
         // Walk from first to last free non-basic variable, since they are ordered in decresiang order of |Hii| values
-        nn1 = 0; while(nn1 < nnx && abs(Hd[jn[nn1]]) > norminf(S.col(nn1))) ++nn1;
+        nne = 0; while(nne < nnx && abs(Hd[jn[nne]]) > norminf(S.col(nne))) ++nne;
 
         // Update the number of non-pivot free basic and non-basic variables.
-        nb2 = nbx - nb1;
-        nn2 = nnx - nn1;
+        nbi = nbx - nbe;
+        nni = nnx - nne;
 
         //=========================================================================================
         // Update the order of the variables as x = (xx, xf) = (xbx, xnx, xbf, xnf), where:
@@ -218,8 +218,8 @@ struct SaddlePointSolver::Impl
         // -- xnf are fixed non-basic variables.
         //-----------------------------------------------------------------------------------------
         // Note: By moving fixed variables away, we now have:
-        // -- xbx = (xb1, xb2);
-        // -- xnx = (xn1, xn2).
+        // -- xbx = (xbe, xbi);
+        // -- xnx = (xne, xni).
         //=========================================================================================
 
         // Update the ordering of the free variables as xx = [xbx xnx] = [free basic, free non-basic]

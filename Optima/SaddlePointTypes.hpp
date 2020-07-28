@@ -39,10 +39,10 @@ struct SaddlePointProblemDims
     Index nbf = 0; ///< The number of *fixed basic variables* in *x*.
     Index nnx = 0; ///< The number of *free non-basic variables* in *x*.
     Index nnf = 0; ///< The number of *fixed non-basic variables* in *x*.
-    Index nb1 = 0; ///< The number of *pivot free basic variables* in *x*.
-    Index nn1 = 0; ///< The number of *pivot free non-basic variables* in *x*.
-    Index nb2 = 0; ///< The number of *non-pivot free basic variables* in *x*.
-    Index nn2 = 0; ///< The number of *non-pivot free non-basic variables* in *x*.
+    Index nbe = 0; ///< The number of *pivot free basic variables* in *x*.
+    Index nne = 0; ///< The number of *pivot free non-basic variables* in *x*.
+    Index nbi = 0; ///< The number of *non-pivot free basic variables* in *x*.
+    Index nni = 0; ///< The number of *non-pivot free non-basic variables* in *x*.
 };
 
 /// The coefficient matrix in a canonical saddle point problem.

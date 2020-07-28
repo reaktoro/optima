@@ -77,10 +77,10 @@ struct SaddlePointSolverNullspace::Impl
         // The dimension variables needed below
         const auto nbx = args.dims.nbx;
         const auto nnx = args.dims.nnx;
-        const auto nb1 = args.dims.nb1;
-        const auto nb2 = args.dims.nb2;
-        const auto nn1 = args.dims.nn1;
-        const auto nn2 = args.dims.nn2;
+        const auto nbe = args.dims.nbe;
+        const auto nbi = args.dims.nbi;
+        const auto nne = args.dims.nne;
+        const auto nni = args.dims.nni;
 
         // Auxiliary references
         auto Sbxnx = args.Sbxnx;
@@ -97,18 +97,18 @@ struct SaddlePointSolverNullspace::Impl
         // Views to the sub-vectors in ax = [abx, anx]
         auto abx = aw.head(nbx);
         auto anx = aw.tail(nnx);
-        auto ab1 = abx.head(nb1);
-        auto ab2 = abx.tail(nb2);
-        auto an1 = anx.head(nn1);
-        auto an2 = anx.tail(nn2);
+        auto abe = abx.head(nbe);
+        auto abi = abx.tail(nbi);
+        auto ane = anx.head(nne);
+        auto ani = anx.tail(nni);
 
         // Update the vector bw (workspace for vector b')
         bw = args.bbx;
 
         // Views to the sub-vectors in b'
         auto bbx = bw.head(nbx);
-        auto bb1 = bbx.head(nb1);
-        auto bb2 = bbx.tail(nb2);
+        auto bbe = bbx.head(nbe);
+        auto bbi = bbx.tail(nbi);
 
         // Set ybx = abx (before abx is changed)
         args.ybx = abx;

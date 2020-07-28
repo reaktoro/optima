@@ -49,84 +49,84 @@ struct SaddlePointSolverRangespace::Impl
         // The dimension variables needed below
         const auto nbx = args.dims.nbx;
         const auto nnx = args.dims.nnx;
-        const auto nb1 = args.dims.nb1;
-        const auto nb2 = args.dims.nb2;
-        const auto nn1 = args.dims.nn1;
-        const auto nn2 = args.dims.nn2;
+        const auto nbe = args.dims.nbe;
+        const auto nbi = args.dims.nbi;
+        const auto nne = args.dims.nne;
+        const auto nni = args.dims.nni;
 
         // Update the auxiliary vector Hx with the diagonal entries of Hxx
         Hx = args.Hxx.diagonal();
 
-        // Views to the sub-matrices of Sbxnx = [Sb1n1 Sb1n2; Sb2n1 Sb2n2]
+        // Views to the sub-matrices of Sbxnx = [Sbene Sbeni; Sbine Sbini]
         auto Sbxnx = args.Sbxnx;
-        auto Sb1n2 = Sbxnx.topRightCorner(nb1, nn2);
-        auto Sb2n2 = Sbxnx.bottomRightCorner(nb2, nn2);
-        auto Sbxn1 = Sbxnx.leftCols(nn1);
+        auto Sbeni = Sbxnx.topRightCorner(nbe, nni);
+        auto Sbini = Sbxnx.bottomRightCorner(nbi, nni);
+        auto Sbxne = Sbxnx.leftCols(nne);
 
-        // Views to the sub-vectors of Hx = [Hb2b2 Hb1b1 Hn2n2 Hn1n1]
+        // Views to the sub-vectors of Hx = [Hbibi Hbebe Hnini Hnene]
         auto Hbxbx = Hx.head(nbx);
         auto Hnxnx = Hx.tail(nnx);
-        auto Hb1b1 = Hbxbx.head(nb1);
-        auto Hb2b2 = Hbxbx.tail(nb2);
-        auto Hn1n1 = Hnxnx.head(nn1);
-        auto Hn2n2 = Hnxnx.tail(nn2);
+        auto Hbebe = Hbxbx.head(nbe);
+        auto Hbibi = Hbxbx.tail(nbi);
+        auto Hnene = Hnxnx.head(nne);
+        auto Hnini = Hnxnx.tail(nni);
 
-        // The auxiliary matrix Tbxbx = Sbxn1 * Bn1bx and its submatrices
+        // The auxiliary matrix Tbxbx = Sbxne * Bnebx and its submatrices
         auto Tbxbx = mat.topRightCorner(nbx, nbx);
-        auto Tb2b2 = Tbxbx.bottomRightCorner(nb2, nb2);
-        auto Tb2b1 = Tbxbx.bottomLeftCorner(nb2, nb1);
-        auto Tb1b2 = Tbxbx.topRightCorner(nb1, nb2);
-        auto Tb1b1 = Tbxbx.topLeftCorner(nb1, nb1);
+        auto Tbibi = Tbxbx.bottomRightCorner(nbi, nbi);
+        auto Tbibe = Tbxbx.bottomLeftCorner(nbi, nbe);
+        auto Tbebi = Tbxbx.topRightCorner(nbe, nbi);
+        auto Tbebe = Tbxbx.topLeftCorner(nbe, nbe);
 
-        // The auxiliary matrix Bn1bx = inv(Hn1n1) * tr(Sbxn1)
-        auto Bn1bx = mat.rightCols(nbx).middleRows(nbx, nn1);
+        // The auxiliary matrix Bnebx = inv(Hnene) * tr(Sbxne)
+        auto Bnebx = mat.rightCols(nbx).middleRows(nbx, nne);
 
-        // The identity matrices Ib1b1 and Ib2b2
-        const auto Ib1b1 = identity(nb1, nb1);
-        const auto Ib2b2 = identity(nb2, nb2);
+        // The identity matrices Ibebe and Ibibi
+        const auto Ibebe = identity(nbe, nbe);
+        const auto Ibibi = identity(nbi, nbi);
 
         // Initialize workspace with zeros
         mat.fill(0.0);
 
         // The matrix M of the system of linear equations
-        auto M = mat.bottomRightCorner(nb1 + nb2 + nn2, nb1 + nb2 + nn2);
+        auto M = mat.bottomRightCorner(nbe + nbi + nni, nbe + nbi + nni);
 
-        auto Mb1 = M.topRows(nb1);
-        auto Mb2 = M.middleRows(nb1, nb2);
-        auto Mn2 = M.bottomRows(nn2);
+        auto Mbe = M.topRows(nbe);
+        auto Mbi = M.middleRows(nbe, nbi);
+        auto Mni = M.bottomRows(nni);
 
-        auto Mb1b1 = Mb1.leftCols(nb1);
-        auto Mb1b2 = Mb1.middleCols(nb1, nb2);
-        auto Mb1n2 = Mb1.rightCols(nn2);
+        auto Mbebe = Mbe.leftCols(nbe);
+        auto Mbebi = Mbe.middleCols(nbe, nbi);
+        auto Mbeni = Mbe.rightCols(nni);
 
-        auto Mb2b1 = Mb2.leftCols(nb1);
-        auto Mb2b2 = Mb2.middleCols(nb1, nb2);
-        auto Mb2n2 = Mb2.rightCols(nn2);
+        auto Mbibe = Mbi.leftCols(nbe);
+        auto Mbibi = Mbi.middleCols(nbe, nbi);
+        auto Mbini = Mbi.rightCols(nni);
 
-        auto Mn2b1 = Mn2.leftCols(nb1);
-        auto Mn2b2 = Mn2.middleCols(nb1, nb2);
-        auto Mn2n2 = Mn2.rightCols(nn2);
+        auto Mnibe = Mni.leftCols(nbe);
+        auto Mnibi = Mni.middleCols(nbe, nbi);
+        auto Mnini = Mni.rightCols(nni);
 
-        // Computing the auxiliary matrix Bn1bx = inv(Hn1n1) * tr(Sbxn1)
-        Bn1bx.noalias() = diag(inv(Hn1n1)) * tr(Sbxn1);
+        // Computing the auxiliary matrix Bnebx = inv(Hnene) * tr(Sbxne)
+        Bnebx.noalias() = diag(inv(Hnene)) * tr(Sbxne);
 
-        // Computing the auxiliary matrix Tbxbx = Sbxn1 * Bn1bx
-        Tbxbx.noalias() = Sbxn1 * Bn1bx;
+        // Computing the auxiliary matrix Tbxbx = Sbxne * Bnebx
+        Tbxbx.noalias() = Sbxne * Bnebx;
 
-        // Setting the 2nd column of M with dimension nb1 (corresponding to yb1)
-        Mb1b1.noalias() = Ib1b1 + diag(Hb1b1) * Tb1b1;
-        Mb2b1.noalias() = -Tb2b1;
-        Mn2b1.noalias() = tr(Sb1n2);
+        // Setting the 2nd column of M with dimension nbe (corresponding to ybe)
+        Mbebe.noalias() = Ibebe + diag(Hbebe) * Tbebe;
+        Mbibe.noalias() = -Tbibe;
+        Mnibe.noalias() = tr(Sbeni);
 
-        // Setting the 1st column of M with dimension nb2 (corresponding to xb2)
-        Mb1b2.noalias() = diag(-Hb1b1) * Tb1b2 * diag(Hb2b2);
-        Mb2b2.noalias() = Ib2b2 + Tb2b2 * diag(Hb2b2);
-        Mn2b2.noalias() = -tr(Sb2n2) * diag(Hb2b2);
+        // Setting the 1st column of M with dimension nbi (corresponding to xbi)
+        Mbebi.noalias() = diag(-Hbebe) * Tbebi * diag(Hbibi);
+        Mbibi.noalias() = Ibibi + Tbibi * diag(Hbibi);
+        Mnibi.noalias() = -tr(Sbini) * diag(Hbibi);
 
-        // Setting the 3rd column of M with dimension nn2 (corresponding to xn2)
-        Mb1n2.noalias() = diag(-Hb1b1) * Sb1n2;
-        Mb2n2.noalias() = Sb2n2;
-        Mn2n2           = diag(Hn2n2);
+        // Setting the 3rd column of M with dimension nni (corresponding to xni)
+        Mbeni.noalias() = diag(-Hbebe) * Sbeni;
+        Mbini.noalias() = Sbini;
+        Mnini           = diag(Hnini);
 
         // std::cout << "M = \n" << M << std::endl; // TODO: Clean these commented out lines of code.
 
@@ -143,23 +143,23 @@ struct SaddlePointSolverRangespace::Impl
         // The dimension variables needed below
         const auto nbx = args.dims.nbx;
         const auto nnx = args.dims.nnx;
-        const auto nb1 = args.dims.nb1;
-        const auto nb2 = args.dims.nb2;
-        const auto nn1 = args.dims.nn1;
-        const auto nn2 = args.dims.nn2;
+        const auto nbe = args.dims.nbe;
+        const auto nbi = args.dims.nbi;
+        const auto nne = args.dims.nne;
+        const auto nni = args.dims.nni;
 
         // Views to the sub-matrices of the canonical matrix S
         auto Sbxnx = args.Sbxnx;
-        auto Sb1n1 = Sbxnx.topLeftCorner(nb1, nn1);
-        auto Sb2n1 = Sbxnx.bottomLeftCorner(nb2, nn1);
-        auto Sb2nx = Sbxnx.bottomRows(nb2);
+        auto Sbene = Sbxnx.topLeftCorner(nbe, nne);
+        auto Sbine = Sbxnx.bottomLeftCorner(nbi, nne);
+        auto Sbinx = Sbxnx.bottomRows(nbi);
 
-        // The diagonal entries in H of the free variables, with Hx = [Hb2b2 Hb1b1 Hn2n2 Hn1n1]
+        // The diagonal entries in H of the free variables, with Hx = [Hbibi Hbebe Hnini Hnene]
         auto Hbxbx = Hx.head(nbx);
         auto Hnxnx = Hx.tail(nnx);
-        auto Hb1b1 = Hbxbx.head(nb1);
-        auto Hb2b2 = Hbxbx.tail(nb2);
-        auto Hn1n1 = Hnxnx.head(nn1);
+        auto Hbebe = Hbxbx.head(nbe);
+        auto Hbibi = Hbxbx.tail(nbi);
+        auto Hnene = Hnxnx.head(nne);
 
         // Update the vector aw (workspace for vector ax)
         aw = args.ax;
@@ -167,37 +167,37 @@ struct SaddlePointSolverRangespace::Impl
         // Views to the sub-vectors in ax = [abx, anx]
         auto abx = aw.head(nbx);
         auto anx = aw.tail(nnx);
-        auto ab1 = abx.head(nb1);
-        auto ab2 = abx.tail(nb2);
-        auto an1 = anx.head(nn1);
-        auto an2 = anx.tail(nn2);
+        auto abe = abx.head(nbe);
+        auto abi = abx.tail(nbi);
+        auto ane = anx.head(nne);
+        auto ani = anx.tail(nni);
 
         // Update the vector bw (workspace for vector bbx)
         bw = args.bbx;
 
         // Views to the sub-vectors in bbx
         auto bbx = bw.head(nbx);
-        auto bb1 = bbx.head(nb1);
-        auto bb2 = bbx.tail(nb2);
+        auto bbe = bbx.head(nbe);
+        auto bbi = bbx.tail(nbi);
 
-        anx.noalias() -= tr(Sb2nx) * ab2;
-        an1.noalias()  = an1/Hn1n1;
-        bb1.noalias() -= ab1/Hb1b1;
-        bb1.noalias() -= Sb1n1 * an1;
-        bb2.noalias() -= Sb2n1 * an1;
-        bb1.noalias()  = diag(-Hb1b1) * bb1;
+        anx.noalias() -= tr(Sbinx) * abi;
+        ane.noalias()  = ane/Hnene;
+        bbe.noalias() -= abe/Hbebe;
+        bbe.noalias() -= Sbene * ane;
+        bbi.noalias() -= Sbine * ane;
+        bbe.noalias()  = diag(-Hbebe) * bbe;
 
-        auto r = vec.head(nb1 + nb2 + nn2);
+        auto r = vec.head(nbe + nbi + nni);
 
-        auto yb1 = r.head(nb1);
-        auto xb2 = r.segment(nb1, nb2);
-        auto xn2 = r.segment(nb1 + nb2, nn2);
+        auto ybe = r.head(nbe);
+        auto xbi = r.segment(nbe, nbi);
+        auto xni = r.segment(nbe + nbi, nni);
 
-        r << bb1, bb2, an2;
+        r << bbe, bbi, ani;
 
-        // std::cout << "bb1 = " << tr(bb1) << std::endl;  // TODO: Clean these commented out lines of code.
-        // std::cout << "bb2 = " << tr(bb2) << std::endl;
-        // std::cout << "an2 = " << tr(an2) << std::endl;
+        // std::cout << "bbe = " << tr(bbe) << std::endl;  // TODO: Clean these commented out lines of code.
+        // std::cout << "bbi = " << tr(bbi) << std::endl;
+        // std::cout << "ani = " << tr(ani) << std::endl;
         // std::cout << std::endl;
 
         lu.solve(r);
@@ -206,13 +206,13 @@ struct SaddlePointSolverRangespace::Impl
 
         assert(r.head(rank).allFinite());
 
-        ab1.noalias()  = (ab1 - yb1)/Hb1b1;
-        bb2.noalias()  = (ab2 - Hb2b2 % xb2);
-        an1.noalias() -= (tr(Sb1n1)*yb1 + tr(Sb2n1)*(bb2 - ab2))/Hn1n1;
+        abe.noalias()  = (abe - ybe)/Hbebe;
+        bbi.noalias()  = (abi - Hbibi % xbi);
+        ane.noalias() -= (tr(Sbene)*ybe + tr(Sbine)*(bbi - abi))/Hnene;
 
-        an2.noalias() = xn2;
-        bb1.noalias() = yb1;
-        ab2.noalias() = xb2;
+        ani.noalias() = xni;
+        bbe.noalias() = ybe;
+        abi.noalias() = xbi;
 
         args.xx = aw;
         args.ybx = bw;
