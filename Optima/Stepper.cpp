@@ -37,6 +37,7 @@ struct Stepper::Impl
     Options options;             ///< The options for the optimization calculation
     Matrix W;                    ///< The coefficient matrix W = [A; J] of the linear/nonlinear equality constraints.
     Vector z;                    ///< The instability measures of the variables defined as z = g + tr(W)*y.
+    Vector w;                    ///< The weights of the variables used to determine which ones are basic/nonbasic.
     Vector xbar;                 ///< The solution vector x in the saddle point problem.
     Vector ybar;                 ///< The solution vector y in the saddle point problem.
     Vector bprime;               ///< The auxiliary vector b' = R*[b, J*x + h] used to compute feasibility residuals.
@@ -152,12 +153,18 @@ struct Stepper::Impl
         // to the final dimension of the matrix equations solved).
         const auto iu = stability.indicesUnstableVariables();
 
+        // Compute the weights used to determine basic/nonbasic variables
+        const auto fakezero = 1.491667e-154; // === sqrt(double-min) where double-min = 2.22507e-308
+        w = H.diagonal();
+        w.array() += fakezero; // replaces zeros by fakezero to avoid division by zero next
+        w.noalias() = abs(x - g.cwiseQuotient(w)); /// w = |x - inv(diag(H')) * g|
+
         // Decompose the saddle point matrix.
         // This decomposition is later used in method solve, possibly many
         // times! Consider lower/upper unstable variables as "fixed" variables
         // in the saddle point problem. Reason: we do not need to compute
         // Newton steps for the currently unstable variables!
-        spsolver.canonicalize({ H, J, x, iu });
+        spsolver.canonicalize({ H, J, w, iu });
     }
 
     /// Calculate the current optimality and feasibility residuals.

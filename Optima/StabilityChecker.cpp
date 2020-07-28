@@ -197,8 +197,8 @@ struct StabilityChecker::Impl
         };
 
         // Update the ordering of the variables with lower and upper bounds
-        auto is_lower_unstable_fn = [&](Index i) { return x[i] == xlower[i] && z[i] > 0.0; };
-        auto is_upper_unstable_fn = [&](Index i) { return x[i] == xupper[i] && z[i] < 0.0; };
+        auto is_lower_unstable_fn = [&](Index i) { return x[i] == xlower[i] && z[i] > -zeps(i); };
+        auto is_upper_unstable_fn = [&](Index i) { return x[i] == xupper[i] && z[i] < +zeps(i); };
 
         iordering = stability.indicesVariables();
 

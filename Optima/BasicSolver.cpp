@@ -321,6 +321,9 @@ struct BasicSolver::Impl
         // Return false if constraint function evaluation failed.
         if(hres.failed) return FAILED;
 
+        // Canonicalize the W = [A; J] matrix as a pre-step to calculate the Newton step
+        stepper.canonicalize({ x, y, g, H, J, xlower, xupper, stability });
+
         // Return true as initialize step was successful.
         return SUCCEEDED;
 	}
@@ -401,10 +404,7 @@ struct BasicSolver::Impl
 	// Update the optimality, feasibility and complementarity errors
 	auto updateResiduals() -> void
 	{
-    	// Canonicalize the W = [A; J] matrix as a pre-step to calculate the Newton step
-        stepper.canonicalize({ x, y, g, H, J, xlower, xupper, stability });
-
-        // Compute the current optimality and feasibility residuals
+        // Compute the current optimality and feasibility residuals (rx, ry) and relative errors (ex, ey)
         stepper.residuals({ x, y, b, h, g, rx, ry, ex, ey, z });
 
 		// Update the current optimality, feasibility and complementarity errors
@@ -424,9 +424,8 @@ struct BasicSolver::Impl
         L = f + yb.dot(A*x - b) + yh.dot(h);
 
         // Update the error E(x, y) = ||g + tr(W)y||^2 + ||Ax - b||^2 + ||h(x)||^2.
-        // E = rx.squaredNorm() + ry.squaredNorm();
-        // E = ex.squaredNorm() + ey.squaredNorm();
-        E = computeError(x, y);
+        stepper.steepestDescentLagrange({ x, y, b, h, g, rx, ry });
+        E = rx.squaredNorm() + ry.squaredNorm();
 
         // Store both L and E in the analysis container
         analysis.L.push_back(L);
@@ -486,8 +485,8 @@ struct BasicSolver::Impl
         // Start time measuring.
     	Timer timer;
 
-        // Evaluate the Hessian of the objective function
-        const auto fres = evaluateObjectiveFn(x, { .f=false, .g=true, .H=true });
+        // Evaluate only the Hessian of the objective function, since the gradient has already been evaluated.
+        const auto fres = evaluateObjectiveFn(x, { .f=false, .g=false, .H=true });
 
         // Ensure the Hessian computation was successul.
         if(fres.failed)
