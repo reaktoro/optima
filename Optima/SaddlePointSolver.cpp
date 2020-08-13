@@ -47,7 +47,8 @@ struct SaddlePointSolver::Impl
     Matrix W;                               ///< The W = [Ax Ap; Jx Jp] matrix in the saddle point matrix.
     Matrix S;                               ///< The S = [Sbsns Sbsnu Sbsnp; 0 Sbunu Sbunp] matrix that stores the canonical form of W = [Ax Ap; Jx Jp].
     Matrix Hw;                              ///< The workspace for H matrix.
-    Vector aw;                              ///< The workspace for right-hand side vector a
+    Vector axw;                             ///< The workspace for right-hand side vector ax
+    Vector apw;                             ///< The workspace for right-hand side vector ap
     Vector bw;                              ///< The workspace for right-hand side vector b
     Vector xw;                              ///< The workspace for solution vector x
     Vector yw;                              ///< The workspace for solution vector y
@@ -89,7 +90,8 @@ struct SaddlePointSolver::Impl
         Hw.resize(nx + np, nx + np);
         xw.resize(nx);
         yw.resize(m);
-        aw.resize(nx);
+        axw.resize(nx);
+        apw.resize(np);
         bw.resize(m);
         weights.resize(nx);
 
@@ -389,12 +391,12 @@ struct SaddlePointSolver::Impl
         // View to the sub-matrix of W corresponding to xu variables
         const auto Wu = cols(W, ju);
 
-        // Organize args.a in aw in the ordering aw = (as, au))
-        aw = ax(iordering);
+        // Organize args.a in axw in the ordering axw = (as, au))
+        axw = ax(iordering);
 
-        // View to the sub-vectors aw = (as, au) and ap
-        auto as = aw.head(ns);
-        auto au = aw.tail(nu);
+        // View to the sub-vectors axw = (as, au) and ap
+        auto as = axw.head(ns);
+        auto au = axw.tail(nu);
 
         // Compute b' = R*(b - Wu*au)
         bw.noalias() = R * (b - Wu * au);
@@ -543,13 +545,15 @@ struct SaddlePointSolver::Impl
         // The canonicalizer matrix R in the canonical form of W
         const auto R = canonicalizer.R();
 
-        // Use `aw` as workspace for x in the order [xbs, xns, xbu, xnu]
-        aw = args.x(iordering);
+        // Use `axw` as workspace for x in the order [xbs, xns, xbu, xnu]
+        axw = args.x(iordering);
+
+        // Reference to p in args
+        const auto xp = args.p;
 
         // View to the sub-vectors of x = (xs, xu)
-        auto xs = aw.head(ns);
-        auto xp = aw.tail(nu);
-        auto xu = aw.tail(nu);
+        auto xs = axw.head(ns);
+        auto xu = axw.tail(nu);
 
         // View to the sub-vectors of xs = [xbs, xns]
         auto xbs = xs.head(nbs);

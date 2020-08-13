@@ -28,44 +28,44 @@ using namespace Optima;
 
 void exportSaddlePointSolver(py::module& m)
 {
-    auto init = [](Index n, Index m, MatrixConstRef4py A) -> SaddlePointSolver
+    auto init = [](Index nx, Index np, Index m, MatrixConstRef4py Ax, MatrixConstRef4py Ap) -> SaddlePointSolver
     {
-        return SaddlePointSolver({ n, m, A });
+        return SaddlePointSolver({ nx, np, m, Ax, Ap });
     };
 
-    auto canonicalize = [](SaddlePointSolver& self, MatrixConstRef4py H, MatrixConstRef4py J, VectorConstRef X, IndicesConstRef jf)
+    auto canonicalize = [](SaddlePointSolver& self, MatrixConstRef4py Hxx, MatrixConstRef4py Hxp, MatrixConstRef4py Hpx, MatrixConstRef4py Hpp, MatrixConstRef4py Jx, MatrixConstRef4py Jp, VectorConstRef wx, IndicesConstRef ju)
     {
-        return self.canonicalize({ H, J, X, jf });
+        return self.canonicalize({ Hxx, Hxp, Hpx, Hpp, Jx, Jp, wx, ju });
     };
 
-    auto decompose = [](SaddlePointSolver& self, MatrixConstRef4py H, MatrixConstRef4py J, IndicesConstRef jf)
+    auto decompose = [](SaddlePointSolver& self, MatrixConstRef4py Hxx, MatrixConstRef4py Hxp, MatrixConstRef4py Hpx, MatrixConstRef4py Hpp, MatrixConstRef4py Jx, MatrixConstRef4py Jp, IndicesConstRef ju)
     {
-        return self.decompose({ H, J, jf });
+        return self.decompose({ Hxx, Hxp, Hpx, Hpp, Jx, Jp, ju });
     };
 
-    auto solve1 = [](SaddlePointSolver& self, VectorConstRef a, VectorConstRef b, VectorRef x, VectorRef y)
+    auto solve1 = [](SaddlePointSolver& self, VectorConstRef ax, VectorConstRef ap, VectorConstRef b, VectorRef x, VectorRef p, VectorRef y)
     {
-        self.solve({ a, b, x, y });
+        self.solve({ ax, ap, b, x, p, y });
     };
 
-    auto solve2 = [](SaddlePointSolver& self, VectorRef x, VectorRef y)
+    auto solve2 = [](SaddlePointSolver& self, VectorRef x, VectorRef p, VectorRef y)
     {
-        self.solve({ x, y });
+        self.solve({ x, p, y });
     };
 
-    auto solve3 = [](SaddlePointSolver& self, MatrixConstRef4py H, MatrixConstRef4py J, VectorConstRef x, VectorConstRef g, VectorConstRef b, VectorConstRef h, VectorRef xbar, VectorRef ybar)
+    auto solve3 = [](SaddlePointSolver& self, VectorConstRef x, VectorConstRef p, VectorConstRef g, VectorConstRef v, VectorConstRef b, VectorConstRef h, VectorRef xbar, VectorRef pbar, VectorRef ybar)
     {
-        self.solve({ H, J, x, g, b, h, xbar, ybar });
+        self.solve({ x, p, g, v, b, h, xbar, pbar, ybar });
     };
 
-    auto residuals1 = [](SaddlePointSolver& self, VectorConstRef x, VectorConstRef b, VectorRef r, VectorRef e)
+    auto residuals1 = [](SaddlePointSolver& self, VectorConstRef x, VectorConstRef p, VectorConstRef b, VectorRef r, VectorRef e)
     {
-        self.residuals({ x, b, r, e });
+        self.residuals({ x, p, b, r, e });
     };
 
-    auto residuals2 = [](SaddlePointSolver& self, MatrixConstRef4py J, VectorConstRef x, VectorConstRef b, VectorConstRef h, VectorRef r, VectorRef e)
+    auto residuals2 = [](SaddlePointSolver& self, VectorConstRef x, VectorConstRef p, VectorConstRef b, VectorConstRef h, VectorRef r, VectorRef e)
     {
-        self.residuals({ J, x, b, h, r, e });
+        self.residuals({ x, p, b, h, r, e });
     };
 
     py::class_<SaddlePointSolverInfo>(m, "SaddlePointSolverInfo")

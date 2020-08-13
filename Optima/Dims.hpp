@@ -25,19 +25,22 @@ namespace Optima {
 /// The class used to define the dimensions needed to setup an optimization problem.
 struct Dims
 {
-    /// The number of variables in \eq{x}.
+    /// The number of primal variables in \eq{x}.
     Index x = 0;
 
-    /// The number of linear equality constraint equations in \eq{A_{\mathrm{e}}x=b_{\mathrm{e}}}.
+    /// The number of parameter variables in \eq{p}.
+    Index p = 0;
+
+    /// The number of linear equality constraint equations in \eq{A_{\mathrm{ex}}x+A_{\mathrm{ep}}p=b_{\mathrm{e}}}.
     Index be = 0;
 
-    /// The number of linear inequality constraint equations in \eq{A_{\mathrm{g}}x\ge b_{\mathrm{g}}}.
+    /// The number of linear inequality constraint equations in \eq{A_{\mathrm{gx}}x+A_{\mathrm{gp}}p\ge b_{\mathrm{g}}}.
     Index bg = 0;
 
-    /// The number of non-linear equality constraint equations in \eq{h_{\mathrm{e}}(x)=0}.
+    /// The number of non-linear equality constraint equations in \eq{h_{\mathrm{e}}(x,p)=0}.
     Index he = 0;
 
-    /// The number of non-linear inequality constraint equations in \eq{h_{\mathrm{g}}(x)\geq0}.
+    /// The number of non-linear inequality constraint equations in \eq{h_{\mathrm{g}}(x,p)\geq0}.
     Index hg = 0;
 };
 
