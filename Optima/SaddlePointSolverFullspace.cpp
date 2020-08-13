@@ -39,39 +39,61 @@ struct SaddlePointSolverFullspace::Impl
     Eigen::PartialPivLU<Matrix> lu; ///< The LU decomposition solver.
 
     /// Construct a default SaddlePointSolverFullspace::Impl instance.
-    Impl(Index n, Index m)
-    : mat(n + m, n + m), vec(n + m)
+    Impl(Index nx, Index np, Index m)
+    : mat(nx + np + m, nx + np + m), vec(nx + np + m)
     {}
 
     /// Decompose the coefficient matrix of the canonical saddle point problem.
     auto decompose(CanonicalSaddlePointMatrix args) -> void
     {
         // The dimension variables needed below
-        const auto nx  = args.dims.nx;
-        const auto nbx = args.dims.nbx;
-        const auto nnx = args.dims.nnx;
+        const auto ns  = args.dims.ns;
+        const auto nbs = args.dims.nbs;
+        const auto nns = args.dims.nns;
+        const auto np  = args.dims.np;
 
-        // The identity matrix of dimension nbx
-        auto Ibxbx = identity(nbx, nbx);
+        // The matrix where the canonical saddle point matrix is assembled
+        auto M = mat.topLeftCorner(ns + np + nbs, ns + np + nbs);
 
-        // Create a view to the M block of the auxiliary matrix `mat` where the canonical saddle point matrix is defined
-        auto M = mat.topLeftCorner(nx + nbx, nx + nbx);
+        // The 1st, 2nd, 3rd, 4th blocks of rows in M
+        auto M1 = M.topRows(nbs);
+        auto M2 = M.middleRows(nbs, nns);
+        auto M3 = M.middleRows(nbs + nns, np);
+        auto M4 = M.bottomRows(nbs);
 
-        // Set the Ibb blocks in the canonical saddle point matrix
-        M.bottomLeftCorner(nbx, nbx).noalias() = Ibxbx;
-        M.topRightCorner(nbx, nbx).noalias() = Ibxbx;
+        // The matrices Hbsbs, Hbsns, Hnsbs, Hnsns in Hss
+        const auto Hbsbs = args.Hss.topRows(nbs).leftCols(nbs);
+        const auto Hbsns = args.Hss.topRows(nbs).rightCols(nns);
+        const auto Hnsbs = args.Hss.bottomRows(nns).leftCols(nbs);
+        const auto Hnsns = args.Hss.bottomRows(nns).rightCols(nns);
 
-        // Set the Sx and tr(Sx) blocks in the canonical saddle point matrix
-        M.bottomRows(nbx).middleCols(nbx, nnx) = args.Sbxnx;
-        M.rightCols(nbx).middleRows(nbx, nnx)  = tr(args.Sbxnx);
+        // The matrices Hbsnp and Hnsnp in in Hsp
+        const auto Hbsnp = args.Hsp.topRows(nbs);
+        const auto Hnsnp = args.Hsp.bottomRows(nns);
 
-        // Set the G block of M on the bottom-right corner
-        M.bottomRightCorner(nbx, nbx).setZero();
+        // The matrices Sbsns and Sbsnp
+        const auto Sbsns = args.Sbsns;
+        const auto Sbsnp = args.Sbsnp;
 
-        // Set the H + D block of the canonical saddle point matrix
-        M.topLeftCorner(nx, nx) = args.Hxx;
+        // The matrices Vnpbs, Vnpns, Vnpnp
+        const auto Vnpbs = args.Hps.leftCols(nbs);
+        const auto Vnpns = args.Hps.rightCols(nns);
+        const auto Vnpnp = args.Hpp;
 
-        // Compute the LU decomposition of M.
+        // The identity matrix Ibsbs
+        auto Ibsbs = identity(nbs, nbs);
+
+        // The zero matrices 0npbs and 0bsbs
+        auto Onpbs = zeros(np, nbs);
+        auto Obsbs = zeros(nbs, nbs);
+
+        // Assemble the matrix M
+        if(nbs) M1 << Hbsbs, Hbsns, Hbsnp, Ibsbs;
+        if(nns) M2 << Hnsbs, Hnsns, Hnsnp, tr(Sbsns);
+        if( np) M3 << Vnpbs, Vnpns, Vnpnp, Onpbs;
+        if(nbs) M4 << Ibsbs, Sbsns, Sbsnp, Obsbs;
+
+        // Compute the LU decomposition of M
         lu.compute(M);
     }
 
@@ -79,26 +101,29 @@ struct SaddlePointSolverFullspace::Impl
     auto solve(CanonicalSaddlePointProblem args) -> void
     {
         // The dimension variables needed below
-        const auto nx  = args.dims.nx;
-        const auto nbx = args.dims.nbx;
+        const auto ns  = args.dims.ns;
+        const auto nbs = args.dims.nbs;
+        const auto nns = args.dims.nns;
+        const auto np  = args.dims.np;
 
-        // View to the right-hand side vector r of the matrix equation
-        auto r = vec.head(nx + nbx);
+        // The vector where the right-hand side of the linear system is assembled
+        auto r = vec.head(ns + np + nbs);
 
-        // Assemble the right-hand side vector r = [ax bbx]
-        r << args.ax, args.bbx;
+        // Assemble the right-hand side vector r = (as, ap, bbs)
+        r << args.as, args.ap, args.bbs;
 
         // Solve the system of linear equations using the LU decomposition of M.
         r.noalias() = lu.solve(r);
 
-        // Get the result of xnx from r
-        args.xx = r.head(nx);
-        args.ybx = r.tail(nbx);
+        // Get the result of xs, p, ybs from r, which now holds r = (xs, p, ybs)
+        args.xs  = r.head(ns);
+        args.p   = r.segment(ns, np);
+        args.ybs = r.tail(nbs);
     }
 };
 
-SaddlePointSolverFullspace::SaddlePointSolverFullspace(Index n, Index m)
-: pimpl(new Impl(n, m))
+SaddlePointSolverFullspace::SaddlePointSolverFullspace(Index nx, Index np, Index m)
+: pimpl(new Impl(nx, np, m))
 {}
 
 SaddlePointSolverFullspace::SaddlePointSolverFullspace(const SaddlePointSolverFullspace& other)

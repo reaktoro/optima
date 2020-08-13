@@ -30,7 +30,7 @@ class SaddlePointSolverNullspace
 {
 public:
     /// Construct a default SaddlePointSolverNullspace instance.
-    SaddlePointSolverNullspace(Index n, Index m);
+    SaddlePointSolverNullspace(Index nx, Index np, Index m);
 
     /// Construct a copy of a SaddlePointSolverNullspace instance.
     SaddlePointSolverNullspace(const SaddlePointSolverNullspace& other);

@@ -23,43 +23,61 @@
 
 namespace Optima {
 
-/// The dimension details in a saddle point problem.
+/// The dimension details in a general saddle point problem.
 struct SaddlePointProblemDims
 {
-    Index n   = 0; ///< The number of variables *x* and columns in *W = [A; J]*.
-    Index m   = 0; ///< The number of variables *y* and rows in *W = [A; J]*.
-    Index ml  = 0; ///< The number of rows in matrix *A*.
-    Index mn  = 0; ///< The number of rows in matrix *J*.
+    Index n   = 0; ///< The number of variables in *x* and *p*.
+    Index nx  = 0; ///< The number of variables in *x = (xs, xu)*.
+    Index np  = 0; ///< The number of variables in *p*.
+    Index ns  = 0; ///< The number of variables in *xs*.
+    Index nu  = 0; ///< The number of variables in *xu*.
+    Index m   = 0; ///< The number of variables *y = (yl, yn)*.
+    Index ml  = 0; ///< The number of variables *yl* (i.e., number of rows in matrix *A*).
+    Index mn  = 0; ///< The number of variables *yn* (i.e., number of rows in matrix *J*).
     Index nb  = 0; ///< The number of basic variables in *x*.
     Index nn  = 0; ///< The number of non-basic variables *x*.
     Index nl  = 0; ///< The number of linearly dependent rows in *W = [A; J]*
-    Index nx  = 0; ///< The number of *free variables* in *x*.
-    Index nf  = 0; ///< The number of *fixed variables* in *x*.
-    Index nbx = 0; ///< The number of *free basic variables* in *x*.
-    Index nbf = 0; ///< The number of *fixed basic variables* in *x*.
-    Index nnx = 0; ///< The number of *free non-basic variables* in *x*.
-    Index nnf = 0; ///< The number of *fixed non-basic variables* in *x*.
-    Index nbe = 0; ///< The number of *pivot free basic variables* in *x*.
-    Index nne = 0; ///< The number of *pivot free non-basic variables* in *x*.
-    Index nbi = 0; ///< The number of *non-pivot free basic variables* in *x*.
-    Index nni = 0; ///< The number of *non-pivot free non-basic variables* in *x*.
+    Index nbs = 0; ///< The number of basic variables in *xs*.
+    Index nbu = 0; ///< The number of basic variables in *xu*.
+    Index nns = 0; ///< The number of non-basic variables in *xs*.
+    Index nnu = 0; ///< The number of non-basic variables in *xu*.
+    Index nbe = 0; ///< The number of pivot/explicit basic variables in *xs*.
+    Index nne = 0; ///< The number of pivot/explicit non-basic variables in *xs*.
+    Index nbi = 0; ///< The number of non-pivot/implicit basic variables in *xs*.
+    Index nni = 0; ///< The number of non-pivot/implicit non-basic variables in *xs*.
+};
+
+/// The coefficient matrix in a general saddle point problem.
+struct SaddlePointMatrix
+{
+    MatrixConstRef H;   ///< The matrix block *H* in the saddle point matrix.
+    MatrixConstRef A;   ///< The upper and constant block *A* of matrix *W = [A; J]* in the saddle point problem.
+    MatrixConstRef J;   ///< The lower and variable block *J* of matrix *W = [A; J]* in the saddle point matrix.
+    IndicesConstRef ju; ///< The indices of the *xu* variables in *x = (xs, xu, xp)*.
+    IndicesConstRef jp; ///< The indices of the *xp* variables in *x = (xs, xu, xp)*.
 };
 
 /// The coefficient matrix in a canonical saddle point problem.
 struct CanonicalSaddlePointMatrix
 {
-    SaddlePointProblemDims dims; ///< The dimension details in a saddle point problem.
-    MatrixConstRef Hxx;          ///< The Hessian matrix block `Hxx` in the canonical saddle point problem.
-    MatrixConstRef Sbxnx;        ///< The matrix block `Sbxnx` in the canonical saddle point problem.
+    SaddlePointProblemDims dims; ///< The dimension details in a general saddle point problem.
+    MatrixConstRef Hss;          ///< The Hessian matrix block `Hss` in the canonical saddle point problem.
+    MatrixConstRef Hsp;          ///< The Hessian matrix block `Hsp` in the canonical saddle point problem.
+    MatrixConstRef Hps;          ///< The Hessian matrix block `Hps` in the canonical saddle point problem.
+    MatrixConstRef Hpp;          ///< The Hessian matrix block `Hpp` in the canonical saddle point problem.
+    MatrixConstRef Sbsns;        ///< The matrix block `Sbsns` in the canonical saddle point problem.
+    MatrixConstRef Sbsnp;        ///< The matrix block `Sbsnp` in the canonical saddle point problem.
 };
 
 /// The representation of a canonical saddle point problem.
 struct CanonicalSaddlePointProblem : CanonicalSaddlePointMatrix
 {
-    VectorConstRef ax;  ///< The right-hand side vector `ax` for the free variables.
-    VectorConstRef bbx; ///< The right-hand side vector `bbx`.
-    VectorRef xx;       ///< The solution vector `xx` in the canonical saddle point problem.
-    VectorRef ybx;      ///< The solution vector `ybx` in the canonical saddle point problem.
+    VectorConstRef as;  ///< The right-hand side vector `as` for the xs variables.
+    VectorConstRef ap;  ///< The right-hand side vector `ap` for the xp variables.
+    VectorConstRef bbs; ///< The right-hand side vector `bbs`.
+    VectorRef xs;       ///< The solution vector `xs` in the canonical saddle point problem.
+    VectorRef p;        ///< The solution vector `p` in the canonical saddle point problem.
+    VectorRef ybs;      ///< The solution vector `ybs` in the canonical saddle point problem.
 };
 
 } // namespace Optima
