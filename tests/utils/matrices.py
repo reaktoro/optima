@@ -85,8 +85,8 @@ def matrix_with_two_linearly_dependent_rows(m, n, ifixed=[]):
         [array] -- The matrix with asked structure.
     """
     W = matrix_with_linearly_independent_rows_only(m, n, ifixed)
-    W[2, :] = 2*W[0, :] + W[1, :]
-    W[3, :] = W[1, :]
+    W[1, :] =  -W[0, :]
+    W[2, :] = 5*W[0, :]
     return W
 
 
