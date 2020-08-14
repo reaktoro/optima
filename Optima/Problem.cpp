@@ -24,23 +24,16 @@ namespace Optima {
 
 struct Problem::Impl
 {
-    /// The coefficient matrix \eq{A_{\mathrm{e}}} in the linear equality constraints \eq{A_{\mathrm{e}}x=b_{\mathrm{e}}}.
-    Matrix Ae;
-
-    /// The coefficient matrix \eq{A_{\mathrm{g}}} in the linear inequality constraints \eq{A_{\mathrm{g}}x\ge b_{\mathrm{g}}}.
-    Matrix Ag;
-
-    /// The right-hand side vector \eq{b_{\mathrm{e}}} in the linear equality constraints \eq{A_{\mathrm{e}}x=b_{\mathrm{e}}}.
-    Vector be;
-
-    /// The right-hand side vector \eq{b_{\mathrm{g}}} in the linear inequality constraints \eq{A_{\mathrm{g}}x\ge b_{\mathrm{g}}}.
-    Vector bg;
-
-    /// The lower bounds of the variables \eq{x}.
-    Vector xlower;
-
-    /// The upper bounds of the variables \eq{x}.
-    Vector xupper;
+    Matrix Aex;    ///< The coefficient matrix Aex in the linear equality constraints Aex*x + Aep*p = be.
+    Matrix Aep;    ///< The coefficient matrix Aep in the linear equality constraints Aex*x + Aep*p = be.
+    Matrix Agx;    ///< The coefficient matrix Agx in the linear inequality constraints Agx*x + Agp*p >= bg.
+    Matrix Agp;    ///< The coefficient matrix Agp in the linear inequality constraints Agx*x + Agp*p >= bg.
+    Vector be;     ///< The right-hand side vector \eq{b_{\mathrm{e}}} in the linear equality constraints Aex*x + Aep*p = be.
+    Vector bg;     ///< The right-hand side vector \eq{b_{\mathrm{g}}} in the linear inequality constraints Agx*x + Agp*p >= bg.
+    Vector xlower; ///< The lower bounds of the primal variables x.
+    Vector xupper; ///< The upper bounds of the primal variables x.
+    Vector plower; ///< The lower bounds of the paramter variables p.
+    Vector pupper; ///< The upper bounds of the paramter variables p.
 
     /// Construct a default Problem::Impl instance.
     Impl()
@@ -48,35 +41,42 @@ struct Problem::Impl
 
     /// Construct a Problem::Impl instance with given number of variables.
     Impl(const Dims& dims)
-    : Ae(zeros(dims.be, dims.x)),
-      Ag(zeros(dims.bg, dims.x)),
-      be(zeros(dims.be)),
-      bg(zeros(dims.bg)),
-      xlower(constants(dims.x, -infinity())),
-      xupper(constants(dims.x, infinity()))
+    : Aex(zeros(dims.be, dims.x)), Aep(zeros(dims.be, dims.p)),
+      Agx(zeros(dims.bg, dims.x)), Agp(zeros(dims.bg, dims.p)),
+      be(zeros(dims.be)), bg(zeros(dims.bg)),
+      xlower(constants(dims.x, -infinity())), xupper(constants(dims.x, infinity())),
+      plower(constants(dims.p, -infinity())), pupper(constants(dims.p, infinity()))
     {}
 };
 
 Problem::Problem(const Dims& dims)
 : pimpl(new Impl(dims)),
   dims(dims),
-  Ae(pimpl->Ae),
-  Ag(pimpl->Ag),
+  Aex(pimpl->Aex),
+  Aep(pimpl->Aep),
+  Agx(pimpl->Agx),
+  Agp(pimpl->Agp),
   be(pimpl->be),
   bg(pimpl->bg),
   xlower(pimpl->xlower),
-  xupper(pimpl->xupper)
+  xupper(pimpl->xupper),
+  plower(pimpl->plower),
+  pupper(pimpl->pupper)
 {}
 
 Problem::Problem(const Problem& other)
 : pimpl(new Impl(*other.pimpl)),
   dims(other.dims),
-  Ae(pimpl->Ae),
-  Ag(pimpl->Ag),
+  Aex(pimpl->Aex),
+  Aep(pimpl->Aep),
+  Agx(pimpl->Agx),
+  Agp(pimpl->Agp),
   be(pimpl->be),
   bg(pimpl->bg),
   xlower(pimpl->xlower),
-  xupper(pimpl->xupper)
+  xupper(pimpl->xupper),
+  plower(pimpl->plower),
+  pupper(pimpl->pupper)
 {}
 
 Problem::~Problem()

@@ -53,49 +53,70 @@ public:
     /// The dimension information of variables and constraints in the optimization problem.
     Dims const dims;
 
-    /// The coefficient matrix \eq{A_{\mathrm{e}}} in the linear equality constraints \eq{A_{\mathrm{e}}x=b_{\mathrm{e}}}.
-    MatrixRef Ae;
+    /// The coefficient matrix \eq{A_{\mathrm{ex}}} in the linear equality constraints \eq{A_{\mathrm{ex}}x+A_{\mathrm{ep}}p=b_{\mathrm{e}}}.
+    MatrixRef Aex;
 
-    /// The coefficient matrix \eq{A_{\mathrm{g}}} in the linear inequality constraints \eq{A_{\mathrm{g}}x\ge b_{\mathrm{g}}}.
-    MatrixRef Ag;
+    /// The coefficient matrix \eq{A_{\mathrm{ep}}} in the linear equality constraints \eq{A_{\mathrm{ex}}x+A_{\mathrm{ep}}p=b_{\mathrm{e}}}.
+    MatrixRef Aep;
 
-    /// The right-hand side vector \eq{b_{\mathrm{e}}} in the linear equality constraints \eq{A_{\mathrm{e}}x=b_{\mathrm{e}}}.
+    /// The coefficient matrix \eq{A_{\mathrm{gx}}} in the linear inequality constraints \eq{A_{\mathrm{gx}}x+A_{\mathrm{gp}}p\geq b_{\mathrm{g}}}.
+    MatrixRef Agx;
+
+    /// The coefficient matrix \eq{A_{\mathrm{gp}}} in the linear inequality constraints \eq{A_{\mathrm{gx}}x+A_{\mathrm{gp}}p\geq b_{\mathrm{g}}}.
+    MatrixRef Agp;
+
+    /// The right-hand side vector \eq{b_{\mathrm{e}}} in the linear equality constraints \eq{A_{\mathrm{ex}}x+A_{\mathrm{ep}}p=b_{\mathrm{e}}}.
     VectorRef be;
 
-    /// The right-hand side vector \eq{b_{\mathrm{g}}} in the linear inequality constraints \eq{A_{\mathrm{g}}x\ge b_{\mathrm{g}}}.
+    /// The right-hand side vector \eq{b_{\mathrm{g}}} in the linear inequality constraints \eq{A_{\mathrm{gx}}x+A_{\mathrm{gp}}p\geq b_{\mathrm{g}}}.
     VectorRef bg;
 
-    /// The nonlinear equality constraint function in \eq{h_{\mathrm{e}}(x)=0}.
+    /// The nonlinear equality constraint function \eq{h_{\mathrm{e}}(x, p)=0}.
     ConstraintFunction he;
 
-    /// The nonlinear inequality constraint function in \eq{h_{\mathrm{g}}(x)\geq0}.
+    /// The nonlinear inequality constraint function \eq{h_{\mathrm{g}}(x, p)\geq0}.
     ConstraintFunction hg;
 
-    /// The objective function \eq{f(x)} of the optimization problem.
+    /// The external nonlinear constraint function \eq{v(x, p)=0}.
+    ConstraintFunction v;
+
+    /// The objective function \eq{f(x, p)} of the optimization problem.
     ObjectiveFunction f;
 
-    /// The lower bounds of the variables \eq{x}.
+    /// The lower bounds of the primal variables \eq{x}.
     VectorRef xlower;
 
-    /// The upper bounds of the variables \eq{x}.
+    /// The upper bounds of the primal variables \eq{x}.
     VectorRef xupper;
 
-    /// The derivatives *∂g/∂p*.
-    Matrix dgdp;
+    /// The lower bounds of the parameter variables \eq{p}.
+    VectorRef plower;
 
-    /// The derivatives *∂h/∂p*.
-    Matrix dhdp;
+    /// The upper bounds of the parameter variables \eq{p}.
+    VectorRef pupper;
 
-    /// The derivatives *∂b/∂p*.
-    Matrix dbdp;
+    /// The derivatives *∂fx/∂w*.
+    Matrix fxw;
 
-    /// The nonlinear equality constraint function in \eq{h_{\mathrm{e}}(x)=0} (to be used in python only!).
+    /// The derivatives *∂b/∂w*.
+    Matrix bw;
+
+    /// The derivatives *∂h/∂w*.
+    Matrix hw;
+
+    /// The derivatives *∂v/∂w*.
+    Matrix vw;
+
+    /// The nonlinear equality constraint function \eq{h_{\mathrm{e}}(x, p)=0} (to be used in python only!).
     ConstraintFunction4py __4py_he;
 
-    /// The nonlinear inequality constraint function in \eq{h_{\mathrm{g}}(x)\geq0} (to be used in python only!).
+    /// The nonlinear inequality constraint function \eq{h_{\mathrm{g}}(x, p)\geq0} (to be used in python only!).
     ConstraintFunction4py __4py_hg;
 
-    /// The objective function \eq{f(x)} of the optimization problem (to be used in python only!).
+    /// The external nonlinear constraint function \eq{v(x, p)=0} (to be used in python only!).
+    ConstraintFunction4py __4py_v;
+
+    /// The objective function \eq{f(x, p)} of the optimization problem (to be used in python only!).
     ObjectiveFunction4py __4py_f;
 };
 
