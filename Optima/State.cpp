@@ -33,11 +33,15 @@ struct State::Impl
     /// The variables \eq{\bar{z}=(z,y_{b_{\mathrm{g}}},y_{h_{\mathrm{g}}})} of the basic optimization problem.
     Vector zbar;
 
+    /// The parameter variables \eq{p} of the basic optimization problem.
+    Vector p;
+
     /// Construct a State::Impl object with given dimensions information.
     Impl(const Dims& dims)
     : xbar(zeros(dims.x + dims.bg + dims.hg)),
       ybar(zeros(dims.be + dims.bg + dims.he + dims.hg)),
-      zbar(zeros(dims.x + dims.bg + dims.hg))
+      zbar(zeros(dims.x + dims.bg + dims.hg)),
+      p(zeros(dims.p))
     {}
 };
 
@@ -45,6 +49,7 @@ State::State(const Dims& dims)
 : pimpl(new Impl(dims)),
   dims(dims),
   x(pimpl->xbar.head(dims.x)),
+  p(pimpl->p),
   y(pimpl->ybar),
   ybe(pimpl->ybar.head(dims.be)),
   ybg(pimpl->ybar.segment(dims.be, dims.bg)),
@@ -62,6 +67,7 @@ State::State(const State& other)
 : pimpl(new Impl(*other.pimpl)),
   dims(other.dims),
   x(pimpl->xbar.head(other.dims.x)),
+  p(pimpl->p),
   y(pimpl->ybar),
   ybe(pimpl->ybar.head(other.dims.be)),
   ybg(pimpl->ybar.segment(other.dims.be, other.dims.bg)),
