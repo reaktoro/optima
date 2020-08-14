@@ -127,10 +127,10 @@ void exportStepper(py::module& m)
         MatrixConstRef4py bw,
         MatrixConstRef4py vw,
         Stability const& stability,
-        MatrixRef xw,
-        MatrixRef pw,
-        MatrixRef yw,
-        MatrixRef zw) mutable
+        MatrixRef4py xw,
+        MatrixRef4py pw,
+        MatrixRef4py yw,
+        MatrixRef4py zw) mutable
     {
         tmp_xw.resize(xw.rows(), xw.cols());
         tmp_pw.resize(pw.rows(), pw.cols());
@@ -138,7 +138,7 @@ void exportStepper(py::module& m)
         tmp_zw.resize(zw.rows(), zw.cols());
         self.sensitivities({ fxw, hw, bw, vw, stability, tmp_xw, tmp_pw, tmp_yw, tmp_zw });
         xw = tmp_xw;
-        pw = tmp_xw;
+        pw = tmp_pw;
         yw = tmp_yw;
         zw = tmp_zw;
     };

@@ -19,11 +19,11 @@ from optima import *
 from numpy import *
 
 
-def create_expected_stability(A, x, b, z, xlower, xupper):
+def create_expected_stability(Ax, x, b, z, xlower, xupper):
     """Return an expected Stability object for given state variables.
 
     Arguments:
-        A {array} -- The coefficient matrix A
+        Ax {array} -- The coefficient matrix Ax
         x {array} -- The primal variables x
         b {array} -- The right-hand side vector b
         z {array} -- The unstabilities of the variables z = g + tr(W)*y
@@ -37,36 +37,36 @@ def create_expected_stability(A, x, b, z, xlower, xupper):
     ipositiverows = []
     inegativerows = []
     for i in range(m):
-        if min(A[i, :]) >= 0.0:
+        if min(Ax[i, :]) >= 0.0:
             ipositiverows.append(i)
-        if max(A[i, :]) <= 0.0:
+        if max(Ax[i, :]) <= 0.0:
             inegativerows.append(i)
 
     istrictly_lower_unstable = set()
     istrictly_upper_unstable = set()
 
     for i in ipositiverows:
-        if dot(A[i, :], xlower) >= b[i]:
+        if dot(Ax[i, :], xlower) >= b[i]:
             for j in range(n):
-                if A[i, j] != 0.0:
+                if Ax[i, j] != 0.0:
                     istrictly_lower_unstable.add(j)
 
     for i in ipositiverows:
-        if dot(A[i, :], xupper) <= b[i]:
+        if dot(Ax[i, :], xupper) <= b[i]:
             for j in range(n):
-                if A[i, j] != 0.0:
+                if Ax[i, j] != 0.0:
                     istrictly_upper_unstable.add(j)
 
     for i in inegativerows:
-        if dot(A[i, :], xlower) <= b[i]:
+        if dot(Ax[i, :], xlower) <= b[i]:
             for j in range(n):
-                if A[i, j] != 0.0:
+                if Ax[i, j] != 0.0:
                     istrictly_lower_unstable.add(j)
 
     for i in inegativerows:
-        if dot(A[i, :], xupper) >= b[i]:
+        if dot(Ax[i, :], xupper) >= b[i]:
             for j in range(n):
-                if A[i, j] != 0.0:
+                if Ax[i, j] != 0.0:
                     istrictly_upper_unstable.add(j)
 
     # Remove possible duplicates in both istrictly_lower_unstable and istrictly_upper_unstable

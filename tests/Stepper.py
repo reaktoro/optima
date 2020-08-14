@@ -271,45 +271,52 @@ def test_active_stepper(args):
     stepper.decompose(x, p, y, g, Hxx, Hxp, Vpx, Vpp, Jx, Jp, xlower, xupper, plower, pupper, stability)
     stepper.solve(x, p, y, g, b, h, v, stability, dx, dp, dy)
 
-    # #==============================================================
-    # # Compute the sensitivity derivatives of the optimal solution
-    # #==============================================================
-    # np = 5  # the number of parameters
+    #==============================================================
+    # Compute the sensitivity derivatives of the optimal solution
+    #==============================================================
 
-    # dsdp_expected = linspace(1.0, t*np, t*np).reshape((t, np))
+    # The number of w parameters considered in the sensitivity calculations
+    nw = 5
 
-    # dxdp_expected = dsdp_expected[:n, :]
-    # dydp_expected = dsdp_expected[n:, :]
+    # The expected solution of the sensitivity matrix dsdw = [dxdw; dpdw; dydw]
+    dsdw_expected = linspace(1.0, t*nw, t*nw).reshape((t, nw))
 
-    # # Set rows in dxdp corresponding to unstable variables to zero
-    # dxdp_expected[iunstable, :] = 0.0
+    # The block views in dsdw = [dxdw; dpdw; dydw]
+    dxdw_expected = dsdw_expected[:nx, :]
+    dpdw_expected = dsdw_expected[nx:nx+np, :]
+    dydw_expected = dsdw_expected[nx+np:, :]
 
-    # drdp_expected = M @ dsdp_expected
+    # Set rows in dxdw corresponding to unstable variables to zero (because dxudw === 0)
+    dxdw_expected[iunstable, :] = 0.0
 
-    # # Get the H block in M (which is possibly different than original H, because of fixed variables!)
-    # dgdp = -drdp_expected[:n, :]
-    # dbdp =  drdp_expected[n:n + ml, :]
-    # dhdp = -drdp_expected[n + ml:, :]
+    # Compute the right-hand side matrix in M*dsdw = drdw
+    drdw_expected = M @ dsdw_expected
 
-    # # Set the rows of dgdp corresponding to unstable variables
-    # dgdp[iunstable, :] = linspace(1.0, nu*np, nu*np).reshape((nu, np))
+    # The block views in drdw = [-dgdw; -dvdw; dbdw; -dhdw]
+    dgdw = -drdw_expected[:nx, :]
+    dvdw = -drdw_expected[nx:nx+np, :]
+    dbdw =  drdw_expected[nx+np:nx+np+ml, :]
+    dhdw = -drdw_expected[nx+np+ml:, :]
 
-    # # The solution of the sensitivity derivatives calculation
-    # dxdp = zeros((n, np))
-    # dydp = zeros((m, np))
-    # dzdp = zeros((n, np))
+    # Set the rows of dgdw corresponding to unstable variables
+    dgdw[iunstable, :] = linspace(1.0, nu*nw, nu*nw).reshape((nu, nw))
 
-    # stepper.sensitivities(dgdp, dhdp, dbdp, stability, dxdp, dydp, dzdp)
+    # The actual/calculated sensitivity derivatives dsdw = [dxdw; dpdw; dydw] and dzdw
+    dxdw = zeros((nx, nw))
+    dpdw = zeros((np, nw))
+    dydw = zeros((m,  nw))
+    dzdw = zeros((nx, nw))
 
-    # # Assemble dsdp = [dxdp; dydp] and compute drdp = M*dsdp
-    # dsdp = block([[dxdp], [dydp]])
-    # drdp = M @ dsdp
+    # Compute the sensitivity matrices dxdw, dpdw, dydw, dzdw
+    stepper.sensitivities(dgdw, dhdw, dbdw, dvdw, stability, dxdw, dpdw, dydw, dzdw)
 
-    # # Calculate the expected sensitivity derivatives dzdp = dgdp + tr(W)dydp
-    # dzdp_expected = dgdp + W.T @ dydp  # do not use dydp_expected here; causes failure when there are basic fixed variables (degeneracy)!!!
-    # dzdp_expected[istable, :] = 0.0  # dzdp is zero for stable variables
+    # Assemble dsdw = [dxdw; dpdw; dydw] and compute drdw = M*dsdw
+    dsdw = block([[dxdw], [dpdw], [dydw]])
+    drdw = M @ dsdw
 
-    set_printoptions(suppress=True, linewidth=1000, precision=3)
+    # Calculate the expected sensitivity derivatives dzdw = dgdw + tr(W)dydw
+    dzdw_expected = dgdw + Wx.T @ dydw  # do not use dydw_expected here; causes failure when there are basic fixed variables (degeneracy)!!!
+    dzdw_expected[istable, :] = 0.0  # dzdw is zero for stable variables
 
     # Print state variables
     def print_state():
@@ -325,22 +332,30 @@ def test_active_stepper(args):
         print(f"method      = {method}")
         print()
         print(f"M = \n{M}")
-        print(f"dx(actual)   = {dx}")
-        print(f"dx(expected) = {s[:n]}")
-        print(f"dy(actual)   = {dy}")
-        print(f"dy(expected) = {s[n:]}")
-        print(f"dxdp(actual) = \n{dxdp}")
-        print(f"dxdp(expected) = \n{dxdp_expected}")
-        print(f"dydp(actual) = \n{dydp}")
-        print(f"dydp(expected) = \n{dydp_expected}")
-        print(f"dzdp(actual) = \n{dzdp}")
-        print(f"dzdp(expected) = \n{dzdp_expected}")
+        print(f"dx(actual)     = {dx}")
+        print(f"dx(expected)   = {s[:nx]}")
+        print(f"dp(actual)     = {dx}")
+        print(f"dp(expected)   = {s[nx:nx+np]}")
+        print(f"dy(actual)     = {dy}")
+        print(f"dy(expected)   = {s[nx+np:]}")
+        print(f"dxdw(actual)   = \n{dxdw}")
+        print(f"dxdw(expected) = \n{dxdw_expected}")
+        print(f"dpdw(actual)   = \n{dpdw}")
+        print(f"dpdw(expected) = \n{dpdw_expected}")
+        print(f"dydw(actual)   = \n{dydw}")
+        print(f"dydw(expected) = \n{dydw_expected}")
+        print(f"dzdw(actual)   = \n{dzdw}")
+        print(f"dzdw(expected) = \n{dzdw_expected}")
         print()
 
     # Compare the actual and expected Newton steps dx, dp, dy
     s_actual = concatenate([dx, dp, dy])
 
     assert_allclose(M @ s_actual, M @ s_expected)
+
+    # Compare the actual and expected sensitivity derivatives dxdw, dpdw, dydw, dzdw
+    assert_allclose(drdw_expected, drdw)
+    assert_allclose(dzdw_expected, dzdw)
 
     # # Get the canonicalization matrix R
     # R = stepper.info().R  # TODO: Stepper has no info method yet.
@@ -354,12 +369,7 @@ def test_active_stepper(args):
     # assert_allclose(resy, resy_expected)
     # assert_allclose(z, z_expected)
 
-    # TODO Don't forget to uncomment code below for testing sensitivity calculation
-    # # Create a Stability object with expected state
-    # expected_stability = create_expected_stability(A, x, b, z, xlower, xupper)
+    # Create a Stability object with expected state
+    expected_stability = create_expected_stability(Ax, x, b, z, xlower, xupper)
 
-    # check_stability(stability, expected_stability)
-
-    # # Compare the actual and expected sensitivity derivatives
-    # assert_allclose(drdp_expected, drdp)
-    # assert_allclose(dzdp_expected, dzdp)
+    check_stability(stability, expected_stability)

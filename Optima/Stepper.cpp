@@ -373,17 +373,22 @@ struct Stepper::Impl
         const auto nw = xw.cols();
 
         // Ensure consistent dimensions of vectors/matrices.
+        assert( fxw.rows() == nx );
+        assert(  hw.rows() == mn );
+        assert(  bw.rows() == ml );
+        assert(  vw.rows() == np );
         assert(  xw.rows() == nx );
+        assert(  pw.rows() == np );
         assert(  yw.rows() == m  );
         assert(  zw.rows() == nx );
-        assert( fxw.rows() == nx );
-        assert(  bw.rows() == ml );
-        assert(  hw.rows() == mn );
+        assert( fxw.cols() == nw );
+        assert(  hw.cols() == nw );
+        assert(  bw.cols() == nw );
+        assert(  vw.cols() == nw );
+        assert(  xw.cols() == nw );
+        assert(  pw.cols() == nw );
         assert(  yw.cols() == nw );
         assert(  zw.cols() == nw );
-        assert( fxw.cols() == nw );
-        assert(  bw.cols() == nw );
-        assert(  hw.cols() == nw );
 
         // The indices of the stable and unstable variables
         auto js = stability.indicesStableVariables();
