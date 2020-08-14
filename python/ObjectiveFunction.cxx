@@ -28,15 +28,17 @@ void exportObjectiveFunction(py::module& m)
 {
     py::class_<ObjectiveRequirement>(m, "ObjectiveRequirement")
         .def(py::init<>())
-        .def_readwrite("f", &ObjectiveRequirement::f, "The boolean flag that indicates the need for the objective value.")
-        .def_readwrite("g", &ObjectiveRequirement::g, "The boolean flag that indicates the need for the objective gradient.")
-        .def_readwrite("H", &ObjectiveRequirement::H, "The boolean flag that indicates the need for the objective Hessian.")
+        .def_readwrite("f", &ObjectiveRequirement::f, "The flag indicating if the objective function f(x, p) needs to be evaluated.")
+        .def_readwrite("fx", &ObjectiveRequirement::fx, "The flag indicating if the gradient function fx(x, p) needs to be evaluated.")
+        .def_readwrite("fxx", &ObjectiveRequirement::fxx, "The flag indicating if the Jacobian function fxx(x, p) needs to be evaluated.")
+        .def_readwrite("fxp", &ObjectiveRequirement::fxp, "The flag indicating if the Jacobian function fxp(x, p) needs to be evaluated.")
         ;
 
     py::class_<ObjectiveResult4py>(m, "ObjectiveResult")
-        .def_readwrite("f", &ObjectiveResult4py::f, "The evaluated value of the objective function.")
-        .def_readwrite("g", &ObjectiveResult4py::g, "The evaluated gradient of the objective function.")
-        .def_readwrite("H", &ObjectiveResult4py::H, "The evaluated Hessian of the objective function.")
+        .def_readwrite("f", &ObjectiveResult4py::f, "The evaluated objective function f(x, p).")
+        .def_readwrite("fx", &ObjectiveResult4py::fx, "The evaluated gradient of the objective function f(x, p) with respect to x.")
+        .def_readwrite("fxx", &ObjectiveResult4py::fxx, "The evaluated Jacobian of the gradient function fx(x, p) with respect to x, i.e., the Hessian of f(x, p) with respect to x.")
+        .def_readwrite("fxp", &ObjectiveResult4py::fxp, "The evaluated Jacobian of the gradient function fx(x, p) with respect to p.")
         .def_readwrite("requires", &ObjectiveResult4py::requires, "The requirements in the evaluation of the objective function.")
         .def_readwrite("failed", &ObjectiveResult4py::failed, "The boolean flag that indicates if the objective function evaluation failed.")
         ;
