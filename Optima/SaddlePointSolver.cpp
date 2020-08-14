@@ -173,12 +173,14 @@ struct SaddlePointSolver::Impl
 
         // Find the number of basic variables in xu (those with weights below zero)
         // Walk from last to first basic variable, since the unstable basic variables are at the end of ibasic
+        nbu = 0;
         for(auto i = 1; i <= nb; ++i)
             if(weights[ibasic[nb - i]] < 0.0) ++nbu;
             else break;
 
         // Find the number of non-basic variables in xu (those with weights below zero)
         // Walk from last to first non-basic variable, since the unstable non-basic variables are at the end of inonbasic
+        nnu = 0;
         for(auto i = 1; i <= nn; ++i)
             if(weights[inonbasic[nn - i]] < 0.0) ++nnu;
             else break;
