@@ -45,18 +45,22 @@ struct OutputOptions : OutputterOptions
     /// The prefix for the primal variables `x`.
     std::string xprefix = "x";
 
+    /// The prefix for the parameter variables `p`.
+    std::string pprefix = "p";
+
     /// The prefix for the dual variables `y`.
     std::string yprefix = "y";
 
-    /// The prefix for the dual variables `z`.
+    /// The prefix for the complementarity variables `z`.
     std::string zprefix = "z";
-
-    /// The prefix for the dual variables `w`.
-    std::string wprefix = "w";
 
     /// The names of the primal variables `x`.
     /// Numbers will be used if not properly set (e.g., `x[0]`, `x[1]`)
     std::vector<std::string> xnames;
+
+    /// The names of the parameter variables `p`.
+    /// Numbers will be used if not properly set (e.g., `p[0]`, `p[1]`)
+    std::vector<std::string> pnames;
 
     /// The names of the dual variables `y`.
     /// Numbers will be used if not properly set (e.g., `y[0]`, `y[1]`)
