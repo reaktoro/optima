@@ -29,29 +29,32 @@ namespace Optima {
 /// The arguments for the construction of a StabilityChecker object.
 struct StabilityCheckerInitArgs
 {
-    Index n;                ///< The number of primal variables *x*.
+    Index nx;               ///< The number of primal variables *x*.
+    Index np;               ///< The number of parameter variables *p*.
     Index m;                ///< The number of Lagrange multipliers *y*.
-    MatrixConstRef A;       ///< The coefficient matrix of the linear equality constraints.
+    MatrixConstRef Ax;      ///< The coefficient matrix *Ax* of the linear equality constraints.
+    MatrixConstRef Ap;      ///< The coefficient matrix *Ap* of the linear equality constraints.
 };
 
 /// The arguments for method StabilityChecker::initialize.
 struct StabilityCheckerInitializeArgs
 {
-    MatrixConstRef A;       ///< The coefficient matrix of the linear equality constraints.
     VectorConstRef b;       ///< The right-hand side vector *b* of the linear equality constraints *Ax = b*.
-    VectorConstRef xlower;  ///< The lower bounds of the primal variables.
-    VectorConstRef xupper;  ///< The upper bounds of the primal variables.
+    VectorConstRef xlower;  ///< The lower bounds of the primal variables *x*.
+    VectorConstRef xupper;  ///< The upper bounds of the primal variables *x*.
+    VectorConstRef plower;  ///< The lower bounds of the parameter variables *p*.
+    VectorConstRef pupper;  ///< The upper bounds of the parameter variables *p*.
 };
 
 /// The arguments for method StabilityChecker::update.
 struct StabilityCheckerUpdateArgs
 {
-    MatrixConstRef W;       ///< The coefficient matrix W = [A; J] of the linear/nonlinear equality constraints.
-    VectorConstRef x;       ///< The current state of the primal variables.
-    VectorConstRef y;       ///< The current state of the Lagrange multipliers.
-    VectorConstRef g;       ///< The gradient of the objective function.
-    VectorConstRef xlower;  ///< The lower bounds of the primal variables.
-    VectorConstRef xupper;  ///< The upper bounds of the primal variables.
+    VectorConstRef x;       ///< The current state of the primal variables *x*.
+    VectorConstRef y;       ///< The current state of the Lagrange multipliers *y*.
+    VectorConstRef fx;      ///< The evaluated gradient of the objective function *f(x, p)* with respect to *x*.
+    MatrixConstRef hx;      ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *x*.
+    VectorConstRef xlower;  ///< The lower bounds of the primal variables *x*.
+    VectorConstRef xupper;  ///< The upper bounds of the primal variables *x*.
 };
 
 /// Used for checking the stability of the variables with respect to bounds.

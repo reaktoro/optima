@@ -31,13 +31,14 @@ using std::vector;
 
 struct StabilityChecker::Impl
 {
-    Matrix W;                ///< The coefficient matrix W = [A; J] of the linear/nonlinear equality constraints.
-    Vector z;                ///< The instability measures of the variables defined as z = g + tr(W)*y.
-    Index n  = 0;            ///< The number of variables in x.
+    Matrix A;                ///< The coefficient matrix A = [Ax Ap].
+    Vector z;                ///< The instability measures of the variables defined as z = g + tr(Wx)*y.
+    Index nx  = 0;           ///< The number of variables in *x*.
+    Index np  = 0;           ///< The number of variables in *p*.
     Index ml = 0;            ///< The number of linear equality constraints.
     Index mn = 0;            ///< The number of non-linear equality constraints.
     Index m  = 0;            ///< The number of equality constraints (m = ml + mn).
-    Index t  = 0;            ///< The total number of variables in x and y (t = n + m).
+    Index t  = 0;            ///< The total number of variables in x, p and y (t = nx + ny + m).
     Indices ipositiverows;   ///< The indices of the rows in matrix A that only have positive or zero coefficients.
     Indices inegativerows;   ///< The indices of the rows in matrix A that only have negative or zero coefficients.
     Indices iordering;       ///< The ordering of the primal variables *x* as *stable*, *lower unstable*, *upper unstable*, *strictly lower unstable*, *strictly upper unstable*.
@@ -51,36 +52,37 @@ struct StabilityChecker::Impl
 
     /// Construct a StabilityChecker::Impl instance.
     Impl(StabilityCheckerInitArgs args)
-    : n(args.n), m(args.m), W(args.m, args.n)
+    : nx(args.nx), np(args.np), m(args.m)
     {
         // Ensure the step calculator is initialized with a positive number of variables.
-        Assert(n > 0, "Could not proceed with StabilityChecker initialization.",
-            "The number of variables is zero.");
+        Assert(nx > 0, "Could not proceed with StabilityChecker initialization.",
+            "The number of primal variables x is zero.");
 
         // Initialize the number of linear and nonlinear equality constraints
-        ml = args.A.rows();
+        ml = args.Ax.rows();
         mn = m - ml;
 
-        // Initialize the matrix W = [A; J], with J=0 at this initialization time (updated at each decompose call)
-        W << args.A, zeros(mn, n);
+        // Initialize matrix A = [Ax Ap]
+        A.resize(ml, nx + np);
+        A << args.Ax, args.Ap;
 
-        // Initialize total number of variables x and y
-        t  = n + m;
+        // Initialize total number of variables
+        t  = nx + np + m;
 
         // Initialize auxiliary vectors
-        z  = zeros(n);
+        z  = zeros(nx);
 
         // Initialize the indices of the rows in matrix A that only have positive or zero coefficients.
         std::vector<Index> iposrows;
         for(auto i = 0; i < ml; ++i)
-            if(args.A.row(i).minCoeff() >= 0.0)
+            if(A.row(i).minCoeff() >= 0.0)
                 iposrows.push_back(i);
         ipositiverows = Indices::Map(iposrows.data(), iposrows.size());
 
         // Initialize the indices of the rows in matrix A that only have negative or zero coefficients.
         std::vector<Index> inegrows;
         for(auto i = 0; i < ml; ++i)
-            if(args.A.row(i).maxCoeff() <= 0.0)
+            if(A.row(i).maxCoeff() <= 0.0)
                 inegrows.push_back(i);
         inegativerows = Indices::Map(inegrows.data(), inegrows.size());
     }
@@ -89,17 +91,22 @@ struct StabilityChecker::Impl
     auto initialize(StabilityCheckerInitializeArgs args) -> void
     {
         // Auxiliary references
-        const auto A      = args.A;
         const auto b      = args.b;
         const auto xlower = args.xlower;
         const auto xupper = args.xupper;
+        const auto plower = args.plower;
+        const auto pupper = args.pupper;
 
         // Ensure consistent dimensions of vectors/matrices.
-        assert(A.cols() == n || ml == 0);
-        assert(A.rows() == ml);
         assert(b.rows() == ml);
-        assert(xlower.rows() == n);
-        assert(xupper.rows() == n);
+        assert(xlower.rows() == nx);
+        assert(xupper.rows() == nx);
+        assert(plower.rows() == np);
+        assert(pupper.rows() == np);
+
+        // View to sub-matrices Ax and Ap in A = [Ax Ap]
+        const auto Ax = A.leftCols(nx);
+        const auto Ap = A.rightCols(np);
 
         //======================================================================
         // IDENTIFY STRICTLY LOWER/UPPER UNSTABLE VARIABLES
@@ -110,43 +117,43 @@ struct StabilityChecker::Impl
         // coefficients cannot be satisfied with primal values that are inside
         // the feasible domain.
         //======================================================================
-        bslu.resize(n, false);
-        bsuu.resize(n, false);
+        bslu.resize(nx, false);
+        bsuu.resize(nx, false);
 
         for(auto i : ipositiverows)
-            if(A.row(i)*xlower >= b[i])
-                for(auto j = 0; j < n; ++j)
-                    if(A(i, j) != 0.0)
+            if(Ax.row(i).dot(xlower) + Ap.row(i).dot(plower) >= b[i])
+                for(auto j = 0; j < nx; ++j)
+                    if(Ax(i, j) != 0.0)
                         bslu[j] = true;
 
         for(auto i : ipositiverows)
-            if(A.row(i)*xupper <= b[i])
-                for(auto j = 0; j < n; ++j)
-                    if(A(i, j) != 0.0)
+            if(Ax.row(i).dot(xupper) + Ap.row(i).dot(pupper) <= b[i])
+                for(auto j = 0; j < nx; ++j)
+                    if(Ax(i, j) != 0.0)
                         bsuu[j] = true;
 
         for(auto i : inegativerows)
-            if(A.row(i)*xlower <= b[i])
-                for(auto j = 0; j < n; ++j)
-                    if(A(i, j) != 0.0)
+            if(Ax.row(i).dot(xlower) + Ap.row(i).dot(plower) <= b[i])
+                for(auto j = 0; j < nx; ++j)
+                    if(Ax(i, j) != 0.0)
                         bslu[j] = true;
 
         for(auto i : inegativerows)
-            if(A.row(i)*xupper >= b[i])
-                for(auto j = 0; j < n; ++j)
-                    if(A(i, j) != 0.0)
+            if(Ax.row(i).dot(xupper) + Ap.row(i).dot(pupper) >= b[i])
+                for(auto j = 0; j < nx; ++j)
+                    if(Ax(i, j) != 0.0)
                         bsuu[j] = true;
 
-        // Reset the order of the variables
-        iordering.resize(n);
-        for(auto i = 0; i < n; ++i)
+        // Reset the order of the variables in x
+        iordering.resize(nx);
+        for(auto i = 0; i < nx; ++i)
             iordering[i] = i;
 
         // Organize the variables so that strictly lower and upper unstable ones are in the back.
         auto is_strictly_lower_unstable_fn = [&](Index i) { return bslu[i]; };
         auto is_strictly_upper_unstable_fn = [&](Index i) { return bsuu[i]; };
 
-        const auto pos0 = n;
+        const auto pos0 = nx;
         const auto pos1 = moveRightIf(iordering.head(pos0), is_strictly_upper_unstable_fn);
         const auto pos2 = moveRightIf(iordering.head(pos1), is_strictly_lower_unstable_fn);
 
@@ -159,41 +166,46 @@ struct StabilityChecker::Impl
         const auto islu = iordering.head(pos1).tail(nslu);
 
         // Update the stability state of the variables
-        stability.update({ iordering, n - nslu - nsuu, 0, 0, nslu, nsuu });
+        stability.update({ iordering, nx - nslu - nsuu, 0, 0, nslu, nsuu });
     }
 
     /// Update the stability checker.
     auto update(StabilityCheckerUpdateArgs args) -> void
     {
         // Auxiliary references
-        auto W          = args.W;
-        auto x          = args.x;
-        auto y          = args.y;
-        auto g          = args.g;
-        auto xlower     = args.xlower;
-        auto xupper     = args.xupper;
-        const auto A    = W.topRows(ml);
+        const auto x = args.x;
+        const auto y = args.y;
+        const auto fx = args.fx;
+        const auto hx = args.hx;
+        const auto xlower = args.xlower;
+        const auto xupper = args.xupper;
 
         // Ensure consistent dimensions of vectors/matrices.
-        assert(W.cols() == n || m == 0);
-        assert(W.rows() == m);
-        assert(x.rows() == n);
+        assert(x.rows() == nx);
         assert(y.rows() == m);
-        assert(g.rows() == n);
-        assert(xlower.rows() == n);
-        assert(xupper.rows() == n);
+        assert(fx.rows() == nx);
+        assert(hx.rows() == mn);
+        assert(xlower.rows() == nx);
+        assert(xupper.rows() == nx);
+
+        // Views to sub-vectors yl and yn in y = [yl, yn]
+        const auto yl = y.head(ml);
+        const auto yn = y.tail(mn);
+
+        // View to sub-matrix Ax in A = [Ax Ap]
+        const auto Ax = A.leftCols(nx);
 
         // Calculate the optimality residuals
-        z.noalias() = g + tr(W)*y;
+        z.noalias() = fx + tr(Ax)*yl + tr(hx)*yn;
 
         // The function that computes the z-threshold for variable xi to determine its stability.
         const auto zeps = [&](auto i)
         {
             // The threshold below is computed taking into account the order of
-            // magnitude of g[i] as well as m = rows(W), because of
-            // accumulation of round-off errors from tr(W)*y.
+            // magnitude of fx[i] as well as m = rows(W), because of
+            // accumulation of round-off errors from tr(Wx)*y.
             const auto eps = std::numeric_limits<double>::epsilon();
-            return (1 + abs(g[i])) * eps * m;
+            return (1 + abs(fx[i])) * eps * m;
         };
 
         // Update the ordering of the variables with lower and upper bounds
@@ -206,7 +218,7 @@ struct StabilityChecker::Impl
         const auto nsuu = stability.numStrictlyUpperUnstableVariables();
 
         // Organize the primal variables in the order: (stable, lower unstable, upper unstable, strictly lower unstable, strictly upper unstable).
-        const auto pos0 = n - nslu - nsuu;
+        const auto pos0 = nx - nslu - nsuu;
         const auto pos1 = moveRightIf(iordering.head(pos0), is_upper_unstable_fn);
         const auto pos2 = moveRightIf(iordering.head(pos1), is_lower_unstable_fn);
 
