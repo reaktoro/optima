@@ -21,11 +21,16 @@ from numpy.linalg import norm
 from pytest import approx, mark
 from itertools import product
 
-from utils.matrices import testing_matrices_W, matrix_non_singular
+from utils.matrices import testing_matrices_W, matrix_non_singular, pascal_matrix
 
-# The number of variables and number of equality constraints
-n = 15
+# The number of x variables
+nx = 15
+
+# The number of equality constraints
 m = 5
+
+# The tested number of p variables
+tested_np = [0, 5]
 
 # Tested cases for the matrix W
 tested_matrices_W = testing_matrices_W
@@ -65,7 +70,8 @@ tested_methods = [
 ]
 
 # Combination of all tested cases
-testdata = product(tested_matrices_W,
+testdata = product(tested_np,
+                   tested_matrices_W,
                    tested_structures_H,
                    tested_ifixed,
                    tested_ilower,
@@ -73,24 +79,33 @@ testdata = product(tested_matrices_W,
                    tested_methods)
 
 
-def create_objective_fn(H, c):
-    def fn(x, res):
-        res.f = 0.5 * (x.T @ H @ x) + c.T @ x
-        res.g = H @ x + c
-        res.H = H
+def create_objective_fn(Hxx, Hxp, cx):
+    def fn(x, p, res):
+        res.f   = 0.5 * (x.T @ Hxx @ x) + x.T @ Hxp @ p + cx.T @ x
+        res.fx  = Hxx @ x + Hxp @ p + cx
+        res.fxx = Hxx
+        res.fxp = Hxp
     return fn
 
 
-def create_constraint_fn():
-    def fn(x, res):
+def create_constraint_hfn():
+    def fn(x, p, res):
         pass
+    return fn
+
+
+def create_constraint_vfn(Vpx, Vpp, cp):
+    def fn(x, p, res):
+        res.h  = Vpx @ x + Vpp @ p + cp
+        res.hx = Vpx
+        res.hp = Vpp
     return fn
 
 
 @mark.parametrize("args", testdata)
 def test_basic_solver(args):
 
-    assemble_W, structure_H, ifixed, ilower, iupper, method = args
+    np, assemble_W, structure_H, ifixed, ilower, iupper, method = args
 
     # Add the indices of fixed variables to those that have lower and upper bounds
     # since fixed variables are those that have identical lower and upper bounds
@@ -102,18 +117,33 @@ def test_basic_solver(args):
     nupper = len(iupper)
     nfixed = len(ifixed)
 
-    # The total number of variables x and y
-    t = n + m
+    # The total number of variables x, p, y
+    t = nx + np + m
 
-    # Assemble the coefficient matrix W = [A; J]
-    W = assemble_W(m, n, ifixed)
+    # Assemble the coefficient matrix W = [Ax Ap; Jx Jp]
+    W = assemble_W(m, nx + np, ifixed)
 
-    # For the moment, set A in Ax = B to W
-    A = W
+    # For the moment, set h = 0
+    ml = m
+    mn = 0
 
-    # Create vectors for the lower and upper bounds of the variables
-    xlower = full(n, -inf)
-    xupper = full(n,  inf)
+    # Extract the blocks of W = [Wx; Wp] = [Ax Ap; Jx Jp] = [A; J]
+    Wx = W[:, :nx]
+    Wp = W[:, nx:]
+
+    Ax = Wx[:ml, :]
+    Ap = Wp[:ml, :]
+
+    Jx = Wx[ml:, :]
+    Jp = Wp[ml:, :]
+
+    # Create vectors for the lower and upper bounds of the x variables
+    xlower = full(nx, -inf)
+    xupper = full(nx,  inf)
+
+    # Create vectors for the lower and upper bounds of the p variables
+    plower = full(np, -inf)
+    pupper = full(np,  inf)
 
     # Set lower and upper bounds to negative and positive sequence respectively
     xlower[ilower] = -linspace(1.0, nlower, nlower) * 100
@@ -134,76 +164,86 @@ def test_basic_solver(args):
     # Create vector s = (x, y) with the expected solution of the optimization problem
     s = linspace(1.0, t, t)
 
-    # Get references to the subvectors x and y in s
-    x = s[:n]
-    y = s[n:]
+    # Get references to the subvectors x, p, y in s
+    x = s[:nx]
+    p = s[nx:nx+np]
+    y = s[nx+np:]
 
     # Set lower/upper unstable variables in x to their respective lower/upper bounds
     x[iunstable_lower] = xlower[iunstable_lower]
     x[iunstable_upper] = xupper[iunstable_upper]
 
     # Create the expected vector z = g + tr(A)yl + tr(J)yn
-    z = zeros(n)
+    z = zeros(nx)
     z[iunstable_lower] =  123  # lower unstable variables have positive value for z
     z[iunstable_upper] = -123  # upper unstable variables have negative value for z
 
-    # Create the Hessian matrix *H*
-    H = matrix_non_singular(n)
+    # Create matrices Hxx, Hxp, Vpx, Vpp
+    Hxx = matrix_non_singular(nx)
+    Hxp = pascal_matrix(nx, np) * 3  # ensure distinct from Vpx for more realistic cases
+    Vpx = pascal_matrix(np, nx) * 5  # ensure distinct from Hxp for more realistic cases
+    Vpp = matrix_non_singular(np)
 
-    # Ensure off-diagonal entries are zero if Rangespace method is used
+    # Ensure Hxx is diagonal in case Rangespace method is used
     if method == SaddlePointMethod.Rangespace:
-        H = diag(diag(H))
+        Hxx = abs(diag(diag(Hxx)))
+        Hxp = zeros((nx, np))  # TODO: This should not be forced zero to pass the tests with Rangespace - improve this!
+        Vpx = zeros((np, nx))  # TODO: This should not be forced zero to pass the tests with Rangespace - improve this!
 
-    # Zero out rows and columns in H corresponding to fixed variables for the sake of computing consistent c vector below
-    H[ifixed, :] = H[:, ifixed] = 0.0
+    # Zero out rows and columns in Hxx, Hxp, Vpx corresponding to fixed variables.
+    # This is needed for consistent computation of vector cx below.
+    Hxx[ifixed, :] = 0.0
+    Hxx[:, ifixed] = 0.0
+    Hxp[ifixed, :] = 0.0
+    Vpx[:, ifixed] = 0.0
 
-    # Compute the expected gradient vector at the solution using z = g + tr(A)yl + tr(J)yn
-    g = z - A.T @ y
+    # Compute the expected gradient vector at the solution using z = gx + tr(Ax)*yl + tr(Jx)*yn = gx + tr(Wx)*y
+    gx = z - Wx.T @ y
 
-    # Compute the c vector in f(x) = 1/2 tr(x)Hx + tr(c)x using g = H @ x + c
-    c = g - H @ x
+    # Compute vector cx in f(x, p) = 1/2 tr(x)*Hxx*x + tr(x)*Hxp*p + tr(cx)*x using gx = Hxx*x + tr(p)*tr(Hxp) + cx
+    cx = gx - (Hxx @ x) - (Hxp @ p).T
 
-    # Create the objective function with assembled H and c
-    obj = create_objective_fn(H, c)
+    # Compute vector cp in v(x, p) = Vpx*x + Vpp*p + cp, and since v(x,p) = 0, thus cp = -(Vpx*x + Vpp*p)
+    cp = -(Vpx @ x + Vpp @ p)
 
-    # Create the nonlinear equality constraint function h(x)
-    h = create_constraint_fn()
+    # Create the objective function with assembled Hxx, Hxp, cx
+    obj = create_objective_fn(Hxx, Hxp, cx)
 
-    # Compute vector b in Ax = b
-    b = A @ x
+    # Create the nonlinear equality constraint function h(x, p)
+    h = create_constraint_hfn()
 
-    # Create the ordering vector that will order the
-    # variables as (*stable*, *lower unstable*, *upper unstable*)
-    iordering = arange(n)
+    # Create the nonlinear external constraint function v(x, p)
+    v = create_constraint_vfn(Vpx, Vpp, cp)
 
-    # Create the index numbers that will contain the number
-    # of *lower unstable* (nlu) and *upper unstable* (nuu) variables
-    nlu = IndexNumber()
-    nuu = IndexNumber()
+    # Compute vector b in Ax*x + Ap*p = b
+    b = Ax @ x + Ap @ p
 
-    # Keep references to current x, y, z as they are the expected solution
+    # Keep references to current x, p, y, z as they are the expected solution
     x_expected = x
+    p_expected = p
     y_expected = y
     z_expected = z
 
     # Create vectors for the solution of the optimization problem
-    x = zeros(n)
+    x = zeros(nx)
+    p = zeros(np)
     y = zeros(m)
-    z = zeros(n)
+    z = zeros(nx)
 
     # Create the stability state of the variables
     stability = Stability()
 
     # Create the options for the optimization calculation
     options = Options()
-    options.output.active = False
+    # options.output.active = True
     options.kkt.method = method
+    options.max_iterations = 10
 
     # Solve the optimization problem
-    solver = BasicSolver(n, m, A)
+    solver = BasicSolver(nx, np, m, Ax, Ap)
     solver.setOptions(options)
 
-    res = solver.solve(obj, h, b, xlower, xupper, x, y, z, stability)
+    res = solver.solve(obj, h, v, b, xlower, xupper, plower, pupper, x, p, y, z, stability)
 
     if not res.succeeded:
 
@@ -215,6 +255,9 @@ def test_basic_solver(args):
         print(f"x(actual)   = {x}")
         print(f"x(expected) = {x_expected}")
         print(f"x(diff) = {abs(x - x_expected)}")
+        print(f"p(actual)   = {p}")
+        print(f"p(expected) = {p_expected}")
+        print(f"p(diff) = {abs(p - p_expected)}")
         print(f"y(actual)   = {y}")
         print(f"y(expected) = {y_expected}")
         print(f"y(diff) = {abs(y - y_expected)}")

@@ -30,44 +30,53 @@ using namespace Optima;
 
 void exportBasicSolver(py::module& m)
 {
-    auto init = [](Index n, Index m, MatrixConstRef4py A) -> BasicSolver
+    auto init = [](Index nx, Index np, Index m, MatrixConstRef4py Ax, MatrixConstRef4py Ap) -> BasicSolver
     {
-        return BasicSolver({n, m, A});
+        return BasicSolver({ nx, np, m, Ax, Ap });
     };
 
     auto solve = [](BasicSolver& self,
-        const ObjectiveFunction4py& obj4py,
-        const ConstraintFunction4py& h4py,
+        ObjectiveFunction4py const& obj4py,
+        ConstraintFunction4py const& h4py,
+        ConstraintFunction4py const& v4py,
         VectorConstRef b,
         VectorConstRef xlower,
         VectorConstRef xupper,
+        VectorConstRef plower,
+        VectorConstRef pupper,
         VectorRef x,
+        VectorRef p,
         VectorRef y,
         VectorRef z,
         Stability& stability) -> Result
     {
         auto obj = convert(obj4py);
         auto h = convert(h4py);
-        return self.solve({ obj, h, b, xlower, xupper, x, y, z, stability });
+        auto v = convert(v4py);
+        return self.solve({ obj, h, v, b, xlower, xupper, plower, pupper, x, p, y, z, stability });
     };
 
-    Matrix tmp_dxdp, tmp_dydp, tmp_dzdp;
+    Matrix tmp_xw, tmp_pw, tmp_yw, tmp_zw;
     auto sensitivities = [=](BasicSolver& self,
-        MatrixConstRef4py dgdp,
-        MatrixConstRef4py dhdp,
-        MatrixConstRef4py dbdp,
+        MatrixConstRef4py fxw,
+        MatrixConstRef4py hw,
+        MatrixConstRef4py bw,
+        MatrixConstRef4py vw,
         Stability const& stability,
-        MatrixRef4py dxdp,
-        MatrixRef4py dydp,
-        MatrixRef4py dzdp) mutable
+        MatrixRef4py xw,
+        MatrixRef4py pw,
+        MatrixRef4py yw,
+        MatrixRef4py zw) mutable
     {
-        tmp_dxdp.resize(dxdp.rows(), dxdp.cols());
-        tmp_dydp.resize(dydp.rows(), dydp.cols());
-        tmp_dzdp.resize(dzdp.rows(), dzdp.cols());
-        self.sensitivities({dgdp, dhdp, dbdp, stability, tmp_dxdp, tmp_dydp, tmp_dzdp});
-        dxdp = tmp_dxdp;
-        dydp = tmp_dydp;
-        dzdp = tmp_dzdp;
+        tmp_xw.resize(xw.rows(), xw.cols());
+        tmp_pw.resize(pw.rows(), pw.cols());
+        tmp_yw.resize(yw.rows(), yw.cols());
+        tmp_zw.resize(zw.rows(), zw.cols());
+        self.sensitivities({ fxw, hw, bw, vw, stability, tmp_xw, tmp_pw, tmp_yw, tmp_zw });
+        xw = tmp_xw;
+        pw = tmp_pw;
+        yw = tmp_yw;
+        zw = tmp_zw;
     };
 
     py::class_<BasicSolver>(m, "BasicSolver")

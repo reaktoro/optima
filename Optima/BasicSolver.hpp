@@ -37,21 +37,27 @@ class Result;
 /// The data needed in the constructor of class BasicSolver.
 struct BasicSolverInitArgs
 {
-    Index n;          ///< The number of primal variables *x*.
-    Index m;          ///< The number of linear and nonlinear equality constraints in *Ax = b* and *h(x) = 0*.
-    MatrixConstRef A; ///< The coefficient matrix *A* of the linear equality constraints.
+    Index nx;           ///< The number of primal variables *x*.
+    Index np;           ///< The number of parameter variables *p*.
+    Index m;            ///< The number of linear and nonlinear equality constraints in *Ax*x + Ap*p = b* and *h(x, p) = 0*.
+    MatrixConstRef Ax;  ///< The coefficient matrix *Ax* of the linear equality constraints.
+    MatrixConstRef Ap;  ///< The coefficient matrix *Ap* of the linear equality constraints.
 };
 
 /// The data needed in method BasicSolver::solve.
 struct BasicSolverSolveArgs
 {
     ObjectiveFunction const& obj;  ///< The objective function *f(x)* of the basic optimization problem.
-    ConstraintFunction const& h;   ///< The nonlinear equality constraint function *h(x)*.
-    VectorConstRef b;              ///< The right-hand side vector *b* of the linear equality constraints *Ax = b*.
-    VectorConstRef xlower;         ///< The lower bounds of the primal variables.
-    VectorConstRef xupper;         ///< The upper bounds of the primal variables.
+    ConstraintFunction const& h;   ///< The nonlinear equality constraint function *h(x, p)*.
+    ConstraintFunction const& v;   ///< The nonlinear constraint function *v(x, p)*.
+    VectorConstRef b;              ///< The right-hand side vector *b* of the linear equality constraints *Ax*x + Ap*p = b*.
+    VectorConstRef xlower;         ///< The lower bounds of the primal variables *x*.
+    VectorConstRef xupper;         ///< The upper bounds of the primal variables *x*.
+    VectorConstRef plower;         ///< The lower bounds of the parameter variables *p*.
+    VectorConstRef pupper;         ///< The upper bounds of the parameter variables *p*.
     VectorRef x;                   ///< The output primal variables *x* of the basic optimization problem.
-    VectorRef y;                   ///< The output Lagrange multipliers *y* with respect to constraints *Ax = b* and *h(x) = 0*.
+    VectorRef p;                   ///< The output parameter variables *p* of the basic optimization problem.
+    VectorRef y;                   ///< The output Lagrange multipliers *y* with respect to constraints *Ax*x + Ap*p = b* and *h(x, p) = 0*.
     VectorRef z;                   ///< The output instability measures of the primal variables defined as *z = g + tr(A)yl + tr(J)yn*.
     Stability& stability;          ///< The output stability state of the primal variables *x*.
 };
@@ -59,18 +65,20 @@ struct BasicSolverSolveArgs
 /// The arguments for method BasicSolver::sensitivities.
 struct BasicSolverSensitivitiesArgs
 {
-    MatrixConstRef dgdp;         ///< The derivatives *∂g/∂p*.
-    MatrixConstRef dhdp;         ///< The derivatives *∂h/∂p*.
-    MatrixConstRef dbdp;         ///< The derivatives *∂b/∂p*.
-    Stability const& stability;  ///< The stability state of the primal variables *x*.
-    MatrixRef dxdp;              ///< The output sensitivity derivatives *∂x/∂p*.
-    MatrixRef dydp;              ///< The output sensitivity derivatives *∂y/∂p*.
-    MatrixRef dzdp;              ///< The output sensitivity derivatives *∂z/∂p*.
+    MatrixConstRef fxw;         ///< The derivatives *∂fx/∂w*.
+    MatrixConstRef hw;          ///< The derivatives *∂h/∂w*.
+    MatrixConstRef bw;          ///< The derivatives *∂b/∂w*.
+    MatrixConstRef vw;          ///< The derivatives *∂v/∂w*.
+    Stability const& stability; ///< The stability state of the primal variables *x*.
+    MatrixRef xw;               ///< The output sensitivity derivatives *∂x/∂w*.
+    MatrixRef pw;               ///< The output sensitivity derivatives *∂p/∂w*.
+    MatrixRef yw;               ///< The output sensitivity derivatives *∂y/∂w*.
+    MatrixRef zw;               ///< The output sensitivity derivatives *∂z/∂w*.
 };
 
 /// The solver for optimization problems in its basic form.
 ///
-/// @eqc{\min_{x}f(x)\quad\text{subject to\ensuremath{\quad\left\{ \begin{array}{c}Ax=b\\h(x)=0\\x_{l}\leq x\leq x_{u}\end{array}\right.}}}
+/// @eqc{\min_{x}f(x,p)\quad\text{subject to\ensuremath{\quad\left\{ \begin{array}{c}A_{\mathrm{x}}x+A_{\mathrm{p}}p=b\\[1mm]h(x,p)=0\\[1mm]x_{l}\leq x\leq x_{u}\end{array}\right.}}\quad\text{and}\quad v(x,p)=0}
 ///
 class BasicSolver
 {

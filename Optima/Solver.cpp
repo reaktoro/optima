@@ -33,92 +33,69 @@ namespace detail {
 
 auto initBasicSolver(const Problem& problem) -> BasicSolver
 {
-    const auto [nx, mbe, mbg, mhe, mhg] = problem.dims;
+    const auto [nx, np, mbe, mbg, mhe, mhg] = problem.dims;
 
-    const auto nu = mbg;
-    const auto nv = mhg;
-    const auto n  = nx + nu + nv;
-    const auto mb = mbe + mbg;
-    const auto mh = mhe + mhg;
-    const auto m  = mb + mh;
+    const auto nr   = mbg;
+    const auto ns   = mhg;
+    const auto nxrs = nx + nr + ns;
+    const auto mb   = mbe + mbg;
+    const auto mh   = mhe + mhg;
+    const auto m    = mb + mh;
 
-    // Create matrix A = [ [Ae, 0, 0], [Ag, I, 0] ]
-    Matrix A = zeros(mb, n);
-    A.leftCols(nx) << problem.Ae, problem.Ag;
-    A.middleCols(nx, nu).bottomRows(nu).diagonal().fill(1.0);
+    // Create matrix Ax = [ [Aex, 0, 0], [Agx, I, 0] ]
+    Matrix Ax = zeros(mb, nxrs);
+    Ax.leftCols(nx) << problem.Aex, problem.Agx;
+    Ax.middleCols(nx, nr).bottomRows(nr).diagonal().fill(1.0);
 
-    return BasicSolver({n, m, A});
+    // Create matrix Ap = [ [Aep], [Agp] ]
+    Matrix Ap = zeros(mb, np);
+    Ap << problem.Aep, problem.Agp;
+
+    return BasicSolver({ nxrs, np, m, Ax, Ap });
 }
 
 } // namespace detail
 
 struct Solver::Impl
 {
-    /// The basic optimization solver.
-    BasicSolver basicsolver;
-
-    /// The dimension information of variables and constraints in the optimization problem.
-    Dims dims;
-
-    /// The number of variables in bar(x) = (x, u, v).
-    Index n = 0;
-
-    /// The number of variables x in bar(x) = (x, u, v).
-    Index nx = 0;
-
-    /// The number of variables u in bar(x) = (x, u, v).
-    Index nu = 0;
-
-    /// The number of variables v in bar(x) = (x, u, v).
-    Index nv = 0;
-
-    /// The dimension of vector b = [be, bg].
-    Index mb = 0;
-
-    /// The dimension of vector h = [he, hg].
-    Index mh = 0;
-
-    /// The dimension of number m = mb + mh.
-    Index m = 0;
-
-    /// The right-hand side vector b = [be, bg] in the basic optimization problem.
-    Vector b;
-
-    /// The lower bounds of vector bar(x) = [x, u, v] in the basic optimization problem.
-    Vector xbar_lower;
-
-    /// The upper bounds of vector bar(x) = [x, u, v] in the basic optimization problem.
-    Vector xbar_upper;
-
-    /// The ordering of the variables bar(x) = [x, u, v] as (*stable*, *lower unstable*, *upper unstable*).
-    Indices iordering;
-
-    /// The number of lower unstable variables in bar(x) = [x, u, v].
-    IndexNumber nlu;
-
-    /// The number of upper unstable variables in bar(x) = [x, u, v].
-    IndexNumber nuu;
+    BasicSolver basicsolver; ///< The basic optimization solver.
+    Dims dims;               ///< The dimension information of variables and constraints in the optimization problem.
+    Index nx   = 0;          ///< The number of variables x in xrs = (x, r, s) = (x, xbg, xhg) = xbar.
+    Index nr   = 0;          ///< The number of variables r in xrs = (x, r, s) = (x, xbg, xhg) = xbar.
+    Index ns   = 0;          ///< The number of variables s in xrs = (x, r, s) = (x, xbg, xhg) = xbar.
+    Index nxrs = 0;          ///< The number of variables in xrs = (x, xbg, xhg).
+    Index np   = 0;          ///< The number of parameter variables p.
+    Index mb   = 0;          ///< The dimension of vector b = (be, bg).
+    Index mh   = 0;          ///< The dimension of vector h = (he, hg).
+    Index m    = 0;          ///< The dimension of number m = mb + mh.
+    Vector b;                ///< The right-hand side vector b = (be, bg) in the basic optimization problem.
+    Vector xrslower;         ///< The lower bounds of vector xrs = (x, xbg, xhg) in the basic optimization problem.
+    Vector xrsupper;         ///< The upper bounds of vector xrs = (x, xbg, xhg) in the basic optimization problem.
+    Indices iordering;       ///< The ordering of the variables xrs = (x, xbg, xhg) as (*stable*, *lower unstable*, *upper unstable*).
+    IndexNumber nlu;         ///< The number of lower unstable variables in xrs = (x, xbg, xhg).
+    IndexNumber nuu;         ///< The number of upper unstable variables in xrs = (x, xbg, xhg).
 
     /// Construct a Solver instance with given optimization problem.
     Impl(const Problem& problem)
     : basicsolver(detail::initBasicSolver(problem)), dims(problem.dims)
     {
         // Initialize dimension variables
-        nx = dims.x;
-        nu = dims.bg;
-        nv = dims.hg;
-        n  = nx + nu + nv;
-        mb = dims.be + dims.bg;
-        mh = dims.he + dims.hg;
-        m  = mb + mh;
+        nx   = dims.x;
+        nr   = dims.bg;
+        ns   = dims.hg;
+        nxrs = nx + nr + ns;
+        np   = dims.p;
+        mb   = dims.be + dims.bg;
+        mh   = dims.he + dims.hg;
+        m    = mb + mh;
 
         // Initialize vectors
-        xbar_lower.resize(n);
-        xbar_upper.resize(n);
+        xrslower.resize(nxrs);
+        xrsupper.resize(nxrs);
         b.resize(m);
 
         // Initialize the ordering of the variables.
-        iordering = indices(n);
+        iordering = indices(nxrs);
     }
 
     /// Set the options for the optimization calculation.
@@ -130,69 +107,156 @@ struct Solver::Impl
     /// Solve the optimization problem.
     auto solve(State& state, const Problem& problem) -> Result
     {
+        // Auxiliary references
+        const auto plower = problem.plower;
+        const auto pupper = problem.pupper;
+
         // Create the objective function for the basic problem
-        auto f = [&](VectorConstRef xbar, ObjectiveResult& res)
+        auto f = [&](VectorConstRef xrs, VectorConstRef p, ObjectiveResult& res)
         {
-            const auto x = xbar.head(nx);
+            // Views to sub-vectors in xrs = (x, r, s)
+            const auto x = xrs.head(nx);
+            const auto r = xrs.segment(nx, nr);
+            const auto s = xrs.tail(ns);
 
-            auto gx = res.g.head(nx);
-            auto Hx = res.H.topLeftCorner(nx, nx);
+            // Views to sub-vectors in fxrs = (fx, fr, fs)
+            auto fx = res.fx.head(nx);
+            auto fr = res.fx.segment(nx, nr);
+            auto fs = res.fx.tail(ns);
 
-            res.H.rightCols(nu + nv).fill(0.0);
-            res.H.bottomLeftCorner(nu + nv, nx).fill(0.0);
+            // Views to sub-matrices in fxrsxrs = [ [fxx fxr fxs], [frx frr frs], [fsx fsr fss] ]
+            auto fxx = res.fxx.topRows(nx).leftCols(nx);
+            auto fxr = res.fxx.topRows(nx).middleCols(nx, nr);
+            auto fxs = res.fxx.topRows(nx).rightCols(ns);
 
-            ObjectiveResult r{res.f, gx, Hx};
-            r.requires = res.requires;
+            auto frx = res.fxx.middleRows(nx, nr).leftCols(nx);
+            auto frr = res.fxx.middleRows(nx, nr).middleCols(nx, nr);
+            auto frs = res.fxx.middleRows(nx, nr).rightCols(ns);
 
-            problem.f(x, r);
+            auto fsx = res.fxx.bottomRows(ns).leftCols(nx);
+            auto fsr = res.fxx.bottomRows(ns).middleCols(nx, nr);
+            auto fss = res.fxx.bottomRows(ns).rightCols(ns);
 
-            res.failed = r.failed;
+            // Views to sub-matrices in fxrsp = [ [fxp], [frp], [fsp] ]
+            auto fxp = res.fxp.topRows(nx);
+            auto frp = res.fxp.middleRows(nx, nr);
+            auto fsp = res.fxp.bottomRows(ns);
+
+            // Set blocks to zero, except fx, fxx, fxp (computed via the objective function next)
+            fr.fill(0.0);
+            fs.fill(0.0);
+            fxr.fill(0.0);
+            fxs.fill(0.0);
+            frx.fill(0.0);
+            frr.fill(0.0);
+            frs.fill(0.0);
+            fsx.fill(0.0);
+            fsr.fill(0.0);
+            fss.fill(0.0);
+            frp.fill(0.0);
+            fsp.fill(0.0);
+
+            // Use the objective function to compute f, fx, fxx, fxp
+            ObjectiveResult fres{res.f, fx, fxx, fxp};
+            fres.requires = res.requires;
+
+            problem.f(x, p, fres);
+
+            res.failed = fres.failed;
         };
 
         // Create the non-linear equality constraint for the basic problem
-        auto h = [&](VectorConstRef xbar, ConstraintResult& res)
+        auto h = [&](VectorConstRef xrs, VectorConstRef p, ConstraintResult& res)
         {
-            const auto x = xbar.head(nx);
-            const auto v = xbar.head(nv);
+            // Views to sub-vectors in xrs = (x, r, s)
+            const auto x = xrs.head(nx);
+            const auto r = xrs.segment(nx, nr);
+            const auto s = xrs.tail(ns);
 
-            auto he = res.h.head(dims.he);
-            auto hg = res.h.tail(dims.hg);
-            auto Je = res.J.topLeftCorner(dims.he, nx);
-            auto Jg = res.J.bottomLeftCorner(dims.hg, nx);
+            // Views to sub-vectors in h = (he, hg)
+            auto he = res.h.topRows(dims.he);
+            auto hg = res.h.bottomRows(dims.hg);
 
-            res.J.rightCols(nu + nv).fill(0.0);
-            res.J.bottomRightCorner(nv, nv).diagonal().fill(1.0);
+            // Views to sub-matrices in dh/d(xrs) = [ [he_x he_r he_s], [hg_x hg_r hg_s] ]
+            auto he_x = res.hx.topRows(dims.he).leftCols(nx);
+            auto he_r = res.hx.topRows(dims.he).middleCols(nx, nr);
+            auto he_s = res.hx.topRows(dims.he).rightCols(ns);
 
-            ConstraintResult re{he, Je};
-            ConstraintResult rg{hg, Jg};
+            auto hg_x = res.hx.bottomRows(dims.hg).leftCols(nx);
+            auto hg_r = res.hx.bottomRows(dims.hg).middleCols(nx, nr);
+            auto hg_s = res.hx.bottomRows(dims.hg).rightCols(ns);
 
-            problem.he(x, re);
-            problem.hg(x, rg);
+            // Views to sub-matrices in dh/dp = [he_p; hg_p]
+            auto he_p = res.hp.topRows(dims.he);
+            auto hg_p = res.hp.bottomRows(dims.hg);
 
-            hg.noalias() += v;
+            // Set all blocks to zero, except hg_s which is I and he_x and hg_x computed next via he and hg functions
+            he_r.fill(0.0);
+            he_s.fill(0.0);
+            hg_r.fill(0.0);
+            hg_s.fill(0.0);
+            hg_s.diagonal().fill(1.0);
+
+            ConstraintResult re{he, he_x, he_p};
+            ConstraintResult rg{hg, hg_x, hg_p};
+
+            problem.he(x, p, re);
+            problem.hg(x, p, rg);
+
+            hg.noalias() += s;
 
             res.failed = re.failed || rg.failed;
         };
 
-        // Initialize vector with lower bounds for bar(x) = [x, u, v]
-        xbar_lower.head(nx) = problem.xlower;
-        xbar_lower.tail(nu + nv).fill(-infinity());
+        // Create the external non-linear constraint for the basic problem
+        auto v = [&](VectorConstRef xrs, VectorConstRef p, ConstraintResult& res)
+        {
+            // Views to sub-vectors in xrs = (x, r, s)
+            const auto x = xrs.head(nx);
+            const auto r = xrs.segment(nx, nr);
+            const auto s = xrs.tail(ns);
 
-        // Initialize vector with upper bounds for bar(x) = [x, u, v]
-        xbar_upper.head(nx) = problem.xupper;
-        xbar_lower.tail(nu + nv).fill(0.0);
+            // Views to sub-matrices in dv/d(xrs) = [ vx vr vs ]
+            auto vx = res.hx.leftCols(nx);
+            auto vr = res.hx.middleCols(nx, nr);
+            auto vs = res.hx.rightCols(ns);
 
-        // Initialize vector b = [be, bg]
+            // Auxiliary references to v and vp = dv/dp
+            auto v = res.h;
+            auto vp = res.hp;
+
+            // Set vr = dv/dr = 0 and vs = dv/ds = 0
+            vr.fill(0.0);
+            vs.fill(0.0);
+
+            // Compute v, vx, vp using the given external constraint function v(x, p)
+            ConstraintResult vres{v, vx, vp};
+
+            problem.v(x, p, vres);
+
+            res.failed = vres.failed;
+        };
+
+        // Initialize vector with lower bounds for bar(x) = (x, xbg, xhg)
+        xrslower.head(nx) = problem.xlower;
+        xrslower.tail(nr + ns).fill(-infinity());
+
+        // Initialize vector with upper bounds for bar(x) = (x, xbg, xhg)
+        xrsupper.head(nx) = problem.xupper;
+        xrslower.tail(nr + ns).fill(0.0);
+
+        // Initialize vector b = (be, bg)
         b << problem.be, problem.bg;
 
         // Create references to state members
         auto xbar       = state.xbar;
-        auto ybar       = state.y;
+        auto y          = state.y;
+        auto p          = state.p;
         auto zbar       = state.zbar;
         auto& stability = state.stability;
 
         // Solve the constructed basic optimization problem
-        auto result = basicsolver.solve({ f, h, b, xbar_lower, xbar_upper, xbar, ybar, zbar, stability });
+        auto result = basicsolver.solve({ f, h, v, b, xrslower, xrsupper, plower, pupper, xbar, p, y, zbar, stability });
 
         return result;
     }

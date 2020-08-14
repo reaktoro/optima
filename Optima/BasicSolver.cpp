@@ -13,7 +13,7 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program. If not, see <http://www.gnu.org/licenses/>.
+// along with this program. If not, see <http://www.fxnu.org/licenses/>.
 
 #include "BasicSolver.hpp"
 
@@ -23,11 +23,11 @@
 
 // Optima includes
 #include <Optima/Analysis.hpp>
-#include <Optima/Stepper.hpp>
 #include <Optima/Exception.hpp>
 #include <Optima/Options.hpp>
 #include <Optima/Outputter.hpp>
 #include <Optima/Result.hpp>
+#include <Optima/Stepper.hpp>
 #include <Optima/Timing.hpp>
 #include <Optima/Utils.hpp>
 
@@ -50,22 +50,27 @@ struct BasicSolver::Impl
     //======================================================================
 
     Stepper stepper; ///< The calculator of the Newton step (dx, dy).
-    Matrix A;        ///< The constant coefficient matrix A in the linear equality constraints in Ax = b.
-    Index n;         ///< The number of variables in x.
-    Index mb;        ///< The number of linear equality constraints in Ax = b.
-    Index mh;        ///< The number of non-linear equality constraints in h(x) = 0.
-    Index m;         ///< The number of constraints in Ax = b and h(x) = 0.
-    Index t;         ///< The total number of variables in (x, y).
+    Matrix Ax;       ///< The constant coefficient matrix A in the linear equality constraints in Ax*x + Ap*p = b.
+    Matrix Ap;       ///< The constant coefficient matrix A in the linear equality constraints in Ax*x + Ap*p = b.
+    Index nx;        ///< The number of primal variables x.
+    Index np;        ///< The number of parameter variables p.
+    Index mb;        ///< The number of linear equality constraints in Ax*x + Ap*p = b.
+    Index mh;        ///< The number of non-linear equality constraints in h(x, p) = 0.
+    Index m;         ///< The number of constraints in Ax*x + Ap*p = b and h(x, p) = 0.
+    Index t;         ///< The total number of variables in (x, p, y).
 
     //======================================================================
     // DATA INITIALIZED AT THE BEGINNING OF EACH SOLVE OPERATION
     //======================================================================
 
-    ObjectiveFunction objectivefn;   ///< The objective function *f(x)* of the basic optimization problem.
-    ConstraintFunction constraintfn; ///< The nonlinear equality constraint function *h(x)*.
-    Vector b;                        ///< The right-hand side vector *b* of the linear equality constraints *Ax = b*.
-    Vector xlower;                   ///< The lower bounds of the primal variables.
-    Vector xupper;                   ///< The upper bounds of the primal variables.
+    ObjectiveFunction objectivefn;   ///< The objective function *f(x, p)* of the basic optimization problem.
+    ConstraintFunction constraintfn; ///< The nonlinear equality constraint function *h(x, p)*.
+    ConstraintFunction vfn;          ///< The external nonlinear constraint function *v(x, p)*.
+    Vector b;                        ///< The right-hand side vector *b* of the linear equality constraints *Ax*x + Ap*p = b*.
+    Vector xlower;                   ///< The lower bounds of the primal variables *x*.
+    Vector xupper;                   ///< The upper bounds of the primal variables *x*.
+    Vector plower;                   ///< The lower bounds of the parameter variables *p*.
+    Vector pupper;                   ///< The upper bounds of the parameter variables *p*.
     Stability stability;             ///< The stability state of the primal variables *x*.
 
     //======================================================================
@@ -74,28 +79,40 @@ struct BasicSolver::Impl
 
     Result result;     ///< The result of the optimization problem.
     Analysis analysis; ///< The data for convergence analysis of the optimization calculation.
-    Vector h;          ///< The result of the non-linear equality constraint function h(x).
-    Matrix J;          ///< The Jacobian matrix J of the non-linear equality constraint function h(x).
-    double f;          ///< The evaluated objective function f(x).
-    Vector g;          ///< The evaluated gradient of the objective function f(x).
-    Matrix H;          ///< The evaluated Hessian of the objective function f(x).
+    double f;          ///< The evaluated objective function f(x, p).
+    Vector fx;         ///< The evaluated gradient of the objective function f(x, p) with respect to x.
+    Matrix fxx;        ///< The evaluated Jacobian of the gradient function fx(x, p) with respect to x, i.e., the Hessian of f(x, p).
+    Matrix fxp;        ///< The evaluated Jacobian of the gradient function fx(x, p) with respect to p.
+    Vector h;          ///< The evaluated equality constraint function h(x, p).
+    Matrix hx;         ///< The evaluated Jacobian of the equality constraint function h(x, p) with respect to x.
+    Matrix hp;         ///< The evaluated Jacobian of the equality constraint function h(x, p) with respect to p.
+    Vector v;          ///< The evaluated external constraint function v(x, p).
+    Matrix vx;         ///< The evaluated Jacobian of the external constraint function v(x, p) with respect to x.
+    Matrix vp;         ///< The evaluated Jacobian of the external constraint function v(x, p) with respect to p.
     Vector dx;         ///< The Newton step for the primal variables *x*.
+    Vector dp;         ///< The Newton step for the parameter variables *p*.
     Vector dy;         ///< The Newton step for the Lagrange multipliers *y*.
     Vector rx;         ///< The residuals of the first-order optimality conditions.
+    Vector rp;         ///< The residuals of the external constraint functions *v(x, p)*.
     Vector ry;         ///< The residuals of the linear/nonlinear feasibility conditions.
     Vector ex;         ///< The relative errors of the first-order optimality conditions.
+    Vector ep;         ///< The relative errors of the external constraint functions *v(x, p)*.
     Vector ey;         ///< The relative errors of the linear/nonlinear feasibility conditions.
     Vector x;          ///< The current value of x.
+    Vector p;          ///< The current value of p.
     Vector y;          ///< The current value of y.
-    Vector z;          ///< The current value of z = g + tr(W)y.
+    Vector z;          ///< The current value of z = g + tr(Ax)yl + tr(hx)*yn.
     Vector xtrial;     ///< The trial iterate x(trial).
+    Vector ptrial;     ///< The trial iterate p(trial).
     Vector ytrial;     ///< The trial iterate y(trial).
     Vector xbar;       ///< The auxiliary vector x used during the line-search algorithm.
+    Vector pbar;       ///< The auxiliary vector p used during the line-search algorithm.
     Vector ybar;       ///< The auxiliary vector y used during the line-search algorithm.
     Vector dxtrial;    ///< The trial Newton step dx(trial).
+    Vector dptrial;    ///< The trial Newton step dp(trial).
     Vector dytrial;    ///< The trial Newton step dy(trial).
-    double L;          ///< The current value L(x, y) of the Lagrange function.
-    double E;          ///< The current error E(x, y) = ||grad(L)||^2.
+    double L;          ///< The current value L(x, p, y) of the Lagrange function.
+    double E;          ///< The current error E(x, p, y) = ||grad(L)||^2.
 
     //======================================================================
     // OTHER DATA
@@ -106,36 +123,52 @@ struct BasicSolver::Impl
 
     /// Construct a BasicSolver::Impl instance with given details of the optimization problem.
     Impl(BasicSolverInitArgs args)
-    : stepper({ args.n, args.m, args.A }), A(args.A)
+    : stepper({ args.nx, args.np, args.m, args.Ax, args.Ap }), Ax(args.Ax), Ap(args.Ap)
     {
         // Initialize the members related to number of variables and constraints
-        n  = args.n;
+        nx = args.nx;
+        np = args.np;
         m  = args.m;
-        mb = args.A.rows();
+        mb = args.Ax.rows();
         mh = m - mb;
-        t  = n + m;
+        t  = nx + np + m;
 
         // Ensure consistent dimensions of vectors/matrices.
-        assert(n > 0);
+        assert(nx > 0);
         assert(mb <= m);
 
         // Allocate memory
+        fx      = zeros(nx);
+        fxx     = zeros(nx, nx);
+        fxp     = zeros(nx, np);
+        b       = zeros(mb);
         h       = zeros(mh);
-        J       = zeros(mh, n);
-        g       = zeros(n);
-        H       = zeros(n, n);
-        dx      = zeros(n);
+        hx      = zeros(mh, nx);
+        hp      = zeros(mh, np);
+        v       = zeros(np);
+        vx      = zeros(np, nx);
+        vp      = zeros(np, np);
+        dx      = zeros(nx);
+        dp      = zeros(np);
         dy      = zeros(m);
-        rx      = zeros(n);
+        rx      = zeros(nx);
+        rp      = zeros(np);
         ry      = zeros(m);
-        ex      = zeros(n);
+        ex      = zeros(nx);
+        ep      = zeros(np);
         ey      = zeros(m);
-        x       = zeros(n);
+        x       = zeros(nx);
+        p       = zeros(np);
         y       = zeros(m);
-        z       = zeros(n);
-        xtrial  = zeros(n);
+        z       = zeros(nx);
+        xtrial  = zeros(nx);
+        ptrial  = zeros(np);
         ytrial  = zeros(m);
-        dxtrial = zeros(n);
+        xbar    = zeros(nx);
+        pbar    = zeros(np);
+        ybar    = zeros(m);
+        dxtrial = zeros(nx);
+        dptrial = zeros(np);
         dytrial = zeros(m);
     }
 
@@ -159,7 +192,7 @@ struct BasicSolver::Impl
         Timer timer;
 
         // Finish the calculation if the problem has no variable
-        if(n == 0)
+        if(nx == 0 && np == 0)
         {
             result.succeeded = true;
             result.time = timer.elapsed();
@@ -213,9 +246,9 @@ struct BasicSolver::Impl
     {
         Timer timer;
 
-        auto [dgdp, dhdp, dbdp, stability, dxdp, dydp, dzdp] = args;
+        auto [fxw, hw, bw, vw, stability, xw, pw, yw, zw] = args;
 
-        stepper.sensitivities({ dgdp, dhdp, dbdp, stability, dxdp, dydp, dzdp });
+        stepper.sensitivities({ fxw, hw, bw, vw, stability, xw, pw, yw, zw });
 
         result.time_sensitivities = timer.elapsed();
 
@@ -227,15 +260,17 @@ struct BasicSolver::Impl
     {
         if(!options.output.active) return;
         outputter.addEntry("Iteration");
-        outputter.addEntry("f(x)");
-        outputter.addEntry("L(x, y)");
-        outputter.addEntry("E(x, y)");
+        outputter.addEntry("f(x, p)");
+        outputter.addEntry("L(x, p, y)");
+        outputter.addEntry("E(x, p, y)");
         outputter.addEntry("Optimality");
         outputter.addEntry("Feasibility");
-        outputter.addEntries(options.output.xprefix, n, options.output.xnames);
+        outputter.addEntries(options.output.xprefix, nx, options.output.xnames);
+        outputter.addEntries(options.output.pprefix, np, options.output.pnames);
         outputter.addEntries(options.output.yprefix, m, options.output.ynames);
-        outputter.addEntries(options.output.zprefix, n, options.output.xnames);
-        outputter.addEntries("r", n, options.output.xnames);
+        outputter.addEntries(options.output.zprefix, nx, options.output.xnames);
+        outputter.addEntries("rx", nx, options.output.xnames);
+        outputter.addEntries("rp", np, options.output.pnames);
         outputter.outputHeader();
     };
 
@@ -257,9 +292,11 @@ struct BasicSolver::Impl
         outputter.addValue(result.error_optimality);
         outputter.addValue(result.error_feasibility);
         outputter.addValues(x);
+        outputter.addValues(p);
         outputter.addValues(y);
         outputter.addValues(z);
         outputter.addValues(abs(rx));
+        outputter.addValues(abs(rp));
         outputter.outputState();
     };
 
@@ -277,11 +314,18 @@ struct BasicSolver::Impl
                 "No constraint function given.");
 
         // Ensure consistent dimensions of vectors/matrices.
-        assert(args.x.rows() == n);
+        assert(args.x.rows() == nx);
+        assert(args.p.rows() == np);
         assert(args.y.rows() == m);
         assert(args.b.rows() == mb);
-        assert(args.xlower.rows() == n);
-        assert(args.xupper.rows() == n);
+        assert(args.xlower.rows() == nx);
+        assert(args.xupper.rows() == nx);
+        assert(args.plower.rows() == np);
+        assert(args.pupper.rows() == np);
+
+        // Ensure functions h and v are given if mh > 0 and np > 0 respectively
+        assert(mh == 0 || args.h);
+        assert(np == 0 || args.v);
 
         // Clear previous state of the Outputter instance
         outputter.clear();
@@ -289,40 +333,51 @@ struct BasicSolver::Impl
         // Initialize the problem related data-members
         objectivefn  = args.obj;
         constraintfn = args.h;
+        vfn          = args.v;
         b            = args.b;
         xlower       = args.xlower;
         xupper       = args.xupper;
+        plower       = args.plower;
+        pupper       = args.pupper;
 
-        // Initialize vectors x and y with given initial guesses
+        // Initialize vectors x, p, y with given initial guesses
         x = args.x;
+        p = args.p;
         y = args.y;
 
         // Initialize the stability of the variables with given initial state
         stability = args.stability;
 
-        // Ensure the initial guess for `x` does not violate lower/upper bounds
+        // Ensure the initial guesses for `x` and `p` do not violate their lower/upper bounds
         x.noalias() = min(max(args.x, xlower), xupper);
+        p.noalias() = min(max(args.p, plower), pupper);
 
     	// Initialize the Newton step calculator once for the upcoming decompose/solve calls
-        stepper.initialize({ b, xlower, xupper, x, stability });
+        stepper.initialize({ b, xlower, xupper, plower, pupper, x, stability });
 
         // Initialize the convergence analysis data of the optimization calculation
         analysis.initialize(options.max_iterations);
 
         // Evaluate the objective function f and its gradient g at x0 (initial guess)
-        const auto fres = evaluateObjectiveFn(x, { .f=true, .g=true, .H=true }); // TODO: The Hessian computation at this point should be eliminated in the future. Check how this can be done safely.
+        const auto fres = evaluateObjectiveFn(x, p, { .f=true, .fx=true, .fxx=true }); // TODO: The Hessian computation at this point should be eliminated in the future. Check how this can be done safely.
 
         // Return false if objective function evaluation failed.
         if(fres.failed) return FAILED;
 
         // Evaluate the equality constraint function h at x0 (initial guess)
-        const auto hres = evaluateConstraintFn(x);
+        const auto hres = evaluateConstraintFn(x, p);
 
         // Return false if constraint function evaluation failed.
         if(hres.failed) return FAILED;
 
-        // Canonicalize the W = [A; J] matrix as a pre-step to calculate the Newton step
-        stepper.canonicalize({ x, y, g, H, J, xlower, xupper, stability });
+        // Evaluate the external constraint function v at x0 (initial guess)
+        const auto vres = evaluateExternalConstraintFn(x, p);
+
+        // Return false if external constraint function evaluation failed.
+        if(vres.failed) return FAILED;
+
+        // Canonicalize the Ax matrix as a pre-step to calculate the Newton step
+        stepper.canonicalize({ x, p, y, fx, fxx, fxp, vx, vp, hx, hp, xlower, xupper, plower, pupper, stability });
 
         // Return true as initialize step was successful.
         return SUCCEEDED;
@@ -331,8 +386,9 @@ struct BasicSolver::Impl
     // Finalize the calculation by setting back computed state.
     auto finalize(BasicSolverSolveArgs args) -> void
 	{
-        // Set back in args the solution state of variables x, y, z
+        // Set back in args the solution state of variables x, p, y, z
         args.x = x;
+        args.p = p;
         args.y = y;
         args.z = z;
 
@@ -341,33 +397,33 @@ struct BasicSolver::Impl
     }
 
     // Evaluate the objective function.
-    auto evaluateObjectiveFn(const Vector& x, ObjectiveRequirement req) -> ObjectiveResult
+    auto evaluateObjectiveFn(const Vector& x, const Vector& p, ObjectiveRequirement req) -> ObjectiveResult
 	{
         // Start time measuring.
     	Timer timer;
 
-        // Create an ObjectiveResult with f, g, H to be filled
-        ObjectiveResult res(f, g, H);
+        // Create an ObjectiveResult with f, fx, fxx to be filled
+        ObjectiveResult res(f, fx, fxx, fxp);
 
         // The computation requirements for f, g, and H
         res.requires = req;
 
-        // Evaluate the objective function f(x)
-        objectivefn(x, res);
+        // Evaluate the objective function f(x, p)
+        objectivefn(x, p, res);
 
         // Check the objective function produces finite numbers at this point
         if(res.requires.f && isinf(f))
             res.failed = true;
-        if(res.requires.g && !g.allFinite())
+        if(res.requires.fx && !fx.allFinite())
             res.failed = true;
-        if(res.requires.H && !H.allFinite())
+        if(res.requires.fxx && !fxx.allFinite())
             res.failed = true;
 
         // Update the number of objective function calls
         result.num_objective_evals   += 1;
         result.num_objective_evals_f += res.requires.f;
-        result.num_objective_evals_g += res.requires.g;
-        result.num_objective_evals_H += res.requires.H;
+        result.num_objective_evals_g += res.requires.fx;
+        result.num_objective_evals_H += res.requires.fxx;
 
         // Update the time spent on objective function evaluation
         result.time_objective_evals += timer.elapsed();
@@ -375,24 +431,50 @@ struct BasicSolver::Impl
         return res;
 	}
 
-    // Evaluate the equality constraint function h(x)
-    auto evaluateConstraintFn(const Vector& x) -> ConstraintResult
+    // Evaluate the equality constraint function h(x, p)
+    auto evaluateConstraintFn(const Vector& x, const Vector& p) -> ConstraintResult
 	{
         // Start time measuring.
     	Timer timer;
 
-        // Create a ConstraintResult with h and J to be filled
-        ConstraintResult res{h, J};
+        // Create a ConstraintResult with h, hx, hp to be filled
+        ConstraintResult res{h, hx, hp};
 
         // Skip if there are no non-linear equality constraints
         if(mh == 0)
             return res;
 
-        // Evaluate the constraint function h(x)
-        constraintfn(x, res);
+        // Evaluate the constraint function h(x, p)
+        constraintfn(x, p, res);
 
         // Check the constraint function produces finite numbers at this point
-        if(!h.allFinite() || !J.allFinite())
+        if(!h.allFinite() || !hx.allFinite() || !hp.allFinite())
+            res.failed = true;
+
+        // Update the time spent on constraint function evaluation
+        result.time_constraint_evals += timer.elapsed();
+
+        return res;
+	}
+
+    // Evaluate the external constraint function v(x, p)
+    auto evaluateExternalConstraintFn(const Vector& x, const Vector& p) -> ConstraintResult
+	{
+        // Start time measuring.
+    	Timer timer;
+
+        // Create a ConstraintResult with v, vx, vp to be filled
+        ConstraintResult res{v, vx, vp};
+
+        // Skip if there are no p-variables
+        if(np == 0)
+            return res;
+
+        // Evaluate the constraint function v(x, p)
+        vfn(x, p, res);
+
+        // Check the external constraint function produces finite numbers at this point
+        if(!v.allFinite() || !vx.allFinite() || !vp.allFinite())
             res.failed = true;
 
         // Update the time spent on constraint function evaluation
@@ -405,7 +487,7 @@ struct BasicSolver::Impl
 	auto updateResiduals() -> void
 	{
         // Compute the current optimality and feasibility residuals (rx, ry) and relative errors (ex, ey)
-        stepper.residuals({ x, y, b, h, g, rx, ry, ex, ey, z });
+        stepper.residuals({ x, p, y, b, h, v, fx, hx, rx, rp, ry, ex, ep, ey, z });
 
 		// Update the current optimality, feasibility and complementarity errors
 		result.error_optimality  = norminf(ex);
@@ -417,66 +499,66 @@ struct BasicSolver::Impl
 			result.error_feasibility
 		});
 
-        // Update the Lagrange function L(x, y) = f + tr(yb)*(Ax - b) + tr(yh)*h
+        // Update the Lagrange function L(x, p, y) = f + tr(yb)*(Ax*x + Ap*p - b) + tr(yh)*h
         const auto yb = y.head(mb);
         const auto yh = y.tail(mh);
 
-        L = f + yb.dot(A*x - b) + yh.dot(h);
+        L = f + yb.dot(Ax*x + Ap*p - b) + yh.dot(h);
 
-        // Update the error E(x, y) = ||g + tr(W)y||^2 + ||Ax - b||^2 + ||h(x)||^2.
-        stepper.steepestDescentLagrange({ x, y, b, h, g, rx, ry });
-        E = rx.squaredNorm() + ry.squaredNorm();
+        // Update the error E(x, p, y) = ||g + tr(Ax)yb + tr(hx)yh||^2 + ||Ax*x + Ap*p - b||^2 + ||h(x, p)||^2 + ||v(x, p)||^2.
+        stepper.steepestDescentLagrange({ x, p, y, fx, b, h, v, dx, dp, dy });
+        E = rx.squaredNorm() + rp.squaredNorm() + ry.squaredNorm();
 
         // Store both L and E in the analysis container
         analysis.L.push_back(L);
         analysis.E.push_back(E);
 	}
 
-	// Compute the Lagrange function L(x, y) used in the line search algorithm.
-	auto computeLagrangeFn(const Vector& x, const Vector& y) -> double
+	// Compute the Lagrange function L(x, p, y) used in the line search algorithm.
+	auto computeLagrangeFn(const Vector& x, const Vector& p, const Vector& y) -> double
     {
-        // Evaluate the objective function f(x) and its gradient g(x)
-        const auto fres = evaluateObjectiveFn(x, { .f=true, .g=true, .H=false });
+        // Evaluate the objective function f(x, p) and its gradient fx(x, p)
+        const auto fres = evaluateObjectiveFn(x, p, { .f=true, .fx=true, .fxx=false });
 
         // Return +inf if objective function evaluation failed.
         if(fres.failed) return infinity();
 
-        // Evaluate the equality constraint function h(x)
-        const auto hres = evaluateConstraintFn(x);
+        // Evaluate the equality constraint function h(x, p)
+        const auto hres = evaluateConstraintFn(x, p);
 
         // Return +inf if constraint function evaluation failed.
         if(hres.failed) return infinity();
 
-        // Update the Lagrange function L(x, y) = f + tr(yb)*(Ax - b) + tr(yh)*h
+        // Update the Lagrange function L(x, p, y) = f + tr(yb)*(Ax*x + Ap*p - b) + tr(yh)*h
         const auto yb = y.head(mb);
         const auto yh = y.tail(mh);
 
-        L = f + yb.dot(A*x - b) + yh.dot(h);
+        L = f + yb.dot(Ax*x + Ap*p - b) + yh.dot(h);
 
         return L;
     }
 
-	// Compute the error function E(x, y) used in the line search algorithm.
-	auto computeError(const Vector& x, const Vector& y) -> double
+	// Compute the error function E(x, p, y) used in the line search algorithm.
+	auto computeError(const Vector& x, const Vector& p, const Vector& y) -> double
     {
-        // Evaluate the objective function gradient g(x) only
-        const auto fres = evaluateObjectiveFn(x, { .f=false, .g=true, .H=false });
+        // Evaluate the objective function gradient fx(x, p) only
+        const auto fres = evaluateObjectiveFn(x, p, { .f=false, .fx=true, .fxx=false });
 
         // Return +inf if objective function evaluation failed.
         if(fres.failed) return infinity();
 
-        // Evaluate the equality constraint function h(x)
-        const auto hres = evaluateConstraintFn(x);
+        // Evaluate the equality constraint function h(x, p)
+        const auto hres = evaluateConstraintFn(x, p);
 
         // Return +inf if constraint function evaluation failed.
         if(hres.failed) return infinity();
 
         // Compute the current optimality and feasibility residuals.
         // This can be achieved with Stepper::steepestDescentLagrange method.
-        stepper.steepestDescentLagrange({ x, y, b, h, g, rx, ry });
+        stepper.steepestDescentLagrange({ x, p, y, fx, b, h, v, dx, dp, dy });
 
-		// Return the error E(x, y) = ||g + tr(W)y||^2 + ||Ax - b||^2 + ||h(x)||^2.
-		return rx.squaredNorm() + ry.squaredNorm();
+		// Return the error E(x, p, y) = ||g + tr(W)y||^2 + ||Ax*x + Ap*p - b||^2 + ||h(x, p)||^2 + ||v(x, p)||^2.
+		return rx.squaredNorm() + rp.squaredNorm() + ry.squaredNorm();
     }
 
     // The function that computes the Newton step
@@ -486,20 +568,20 @@ struct BasicSolver::Impl
     	Timer timer;
 
         // Evaluate only the Hessian of the objective function, since the gradient has already been evaluated.
-        const auto fres = evaluateObjectiveFn(x, { .f=false, .g=false, .H=true });
+        const auto fres = evaluateObjectiveFn(x, p, { .f=false, .fx=false, .fxx=true });
 
         // Ensure the Hessian computation was successul.
         if(fres.failed)
             return FAILED;
 
         // Canonicalize the W = [A; J] matrix as a pre-step to calculate the Newton step
-        stepper.canonicalize({ x, y, g, H, J, xlower, xupper, stability });
+        stepper.canonicalize({ x, p, y, fx, fxx, fxp, vx, vp, hx, hp, xlower, xupper, plower, pupper, stability });
 
     	// Decompose the Jacobian matrix and calculate a Newton step
-        stepper.decompose({ x, y, g, H, J, xlower, xupper, stability });
+        stepper.decompose({ x, p, y, fx, fxx, fxp, vx, vp, hx, hp, xlower, xupper, plower, pupper, stability });
 
         // Calculate the Newton step
-        stepper.solve({ x, y, b, h, g, H, stability, dx, dy });
+        stepper.solve({ x, p, y, fx, b, h, v, stability, dx, dp, dy });
 
         // Update the time spent in linear systems
 		result.time_linear_systems += timer.elapsed();
@@ -508,36 +590,39 @@ struct BasicSolver::Impl
         return SUCCEEDED;
     };
 
-	// Update the variables (x, y) with a Newton step.
+	// Update the variables (x, p, y) with a Newton step.
 	auto applyNewtonStep() -> bool
     {
-        // Compute the Newton steps dx and dy
+        // Compute the Newton steps dx, dp, dy
         if(computeNewtonStep() == FAILED)
             return FAILED;
 
-        // Compute x(trial) and y(trial) taking care of the bounds of x
+        // Compute x(trial), p(trial), y(trial) taking care of the bounds of x and p
         xtrial = x;
+        ptrial = p;
         performAggressiveStep(xtrial, dx, xlower, xupper);
+        performAggressiveStep(ptrial, dp, plower, pupper);
         ytrial = y + dy;
 
-        // Determine if line-search operations are needed, based on errors at x(trial) and y(trial).
-        if(isLineSearchNeeded(xtrial, ytrial))
-            if(initiateLineSearch(xtrial, ytrial) == FAILED)
+        // Determine if line-search operations are needed, based on errors at x(trial), p(trial), y(trial).
+        if(isLineSearchNeeded(xtrial, ptrial, ytrial))
+            if(initiateLineSearch(xtrial, ptrial, ytrial) == FAILED)
                 return FAILED;
 
-        // Update x and y to their respective trial states
+        // Update x, p, y to their respective trial states
         x = xtrial;
+        p = ptrial;
         y = ytrial;
 
         // The Newton step approach was successful.
         return SUCCEEDED;
     }
 
-    /// Return true if current trial state for x and y demands a line-search procedure.
-    auto isLineSearchNeeded(const Vector& xtrial, const Vector& ytrial) -> bool
+    /// Return true if current trial state for x, p, y demands a line-search procedure.
+    auto isLineSearchNeeded(const Vector& xtrial, const Vector& ptrial, const Vector& ytrial) -> bool
     {
         // Compute the new error E after Newton step approach
-        const auto Enew = computeError(xtrial, ytrial);
+        const auto Enew = computeError(xtrial, ptrial, ytrial);
 
         // The error E at the initial guess
         const auto E0 = analysis.E.front();
@@ -546,7 +631,7 @@ struct BasicSolver::Impl
         const auto Eold = analysis.E.back();
 
         //======================================================================
-        // Return true if Enew == inf (i.e., evaluation of f(x) or h(x) failed!).
+        // Return true if Enew == inf (i.e., evaluation of f(x, p) or h(x, p) failed!).
         //======================================================================
         if(isinf(Enew))
             return true;
@@ -573,35 +658,41 @@ struct BasicSolver::Impl
     }
 
     /// Perform a line-search along the computed Newton direction.
-    auto initiateLineSearch(Vector& xtrial, Vector& ytrial) -> bool
+    auto initiateLineSearch(Vector& xtrial, Vector& ptrial, Vector& ytrial) -> bool
     {
-        // Start with x(bar) = x(current)
+        // Start with x(bar) = x(current), p(bar) = p(current), y(bar) = y(current)
         xbar = x;
+        pbar = p;
+        ybar = y;
 
-        // Step x(bar) until the full-length of `dx` if no bounds are violated.
-        // Otherwise, stop at the first hit lower/upper bound.
+        // Step x(bar) until the full-length of dx if no bounds are violated.
+        // Otherwise, stop at the first hit lower/upper bound of x.
         const auto maxlength = performConservativeStep(xbar, dx, xlower, xupper);
 
-        // Compute y(bar) considering the length obtained in the previous step.
-        ybar = y + maxlength*dy;
+        // Step p(bar) taking care of the bounds of p
+        performAggressiveStep(pbar, dp, plower, pupper);
+
+        // Update y(bar) considering the length obtained in the previous step for x.
+        ybar += maxlength*dy;
 
         // Compute the new error E after conservative Newton step approach
-        const auto Ebar = computeError(xbar, ybar);
+        const auto Ebar = computeError(xbar, pbar, ybar);
 
         // Check if Ebar is infinity. This condition is a result of a failure
-        // in the evaluation of the objective and constraint functions f(x) and
-        // h(x). This backtrack step procedure will compute x(bar) and y(bar)
+        // in the evaluation of the objective and constraint functions f(x, p) and
+        // h(x, p). This backtrack step procedure will compute x(bar), p(bar) y(bar)
         // that does not cause failures in the evaluation of such functions.
         if(isinf(Ebar))
-            if(initiateBacktrackStepping(xbar, ybar) == FAILED)
+            if(initiateBacktrackStepping(xbar, pbar, ybar) == FAILED)
                 return FAILED;
 
         // Define the function phi(alpha) = E(x + alpha*dx) that we want to minimize.
         const auto phi = [&](double alpha) -> double
         {
             xtrial.noalias() = x*(1 - alpha) + alpha*xbar; // using x + alpha*(xbar - x) is sensitive to round-off errors!
+            ptrial.noalias() = p*(1 - alpha) + alpha*pbar; // using p + alpha*(pbar - p) is sensitive to round-off errors!
             ytrial.noalias() = y*(1 - alpha) + alpha*ybar; // using y + alpha*(ybar - y) is sensitive to round-off errors!
-            return computeError(xtrial, ytrial);
+            return computeError(xtrial, ptrial, ytrial);
         };
 
         // The tolerance and maximum number of iterations used in the line-search minimization procedure.
@@ -614,12 +705,13 @@ struct BasicSolver::Impl
         // lower/upper bound is violated.
         const auto alphamin = minimizeBrent(phi, 0.0, 1.0, tol, maxiters);
 
-        // Calculate x(trial) and y(trial) using the minimizer alpha value
+        // Calculate x(trial), p(trial), y(trial) using the minimizer alpha value
         xtrial.noalias() = x*(1 - alphamin) + alphamin*xbar; // using x + alpha*(xbar - x) is sensitive to round-off errors!
+        ptrial.noalias() = p*(1 - alphamin) + alphamin*pbar; // using p + alpha*(pbar - p) is sensitive to round-off errors!
         ytrial.noalias() = y*(1 - alphamin) + alphamin*ybar; // using y + alpha*(ybar - y) is sensitive to round-off errors!
 
         // Compute the new error E after the line-search operation.
-        const auto Enew = computeError(xtrial, ytrial);
+        const auto Enew = computeError(xtrial, ptrial, ytrial);
 
         // Return failed status only if the new error is infinity (i.e. when
         // the evaluation of the objective/constraint functions fail at the
@@ -636,7 +728,7 @@ struct BasicSolver::Impl
     }
 
 	// Perform shorter and shorter Newton steps until objective function does not fail.
-	auto initiateBacktrackStepping(Vector& xbar, Vector& ybar) -> bool
+	auto initiateBacktrackStepping(Vector& xbar, Vector& pbar, Vector& ybar) -> bool
     {
         // The parameter used to decrease the Newton steps during the backtrack search
         const auto factor = options.backtrack.factor;
@@ -650,13 +742,15 @@ struct BasicSolver::Impl
         for(auto i = 0; i < maxiters; ++i)
         {
             xtrial.noalias() = x*(1 - alpha) + alpha*xbar; // using x + alpha*(xbar - x) is sensitive to round-off errors!
+            ptrial.noalias() = p*(1 - alpha) + alpha*pbar; // using p + alpha*(pbar - p) is sensitive to round-off errors!
             ytrial.noalias() = y*(1 - alpha) + alpha*ybar; // using y + alpha*(ybar - y) is sensitive to round-off errors!
 
-            const auto Enew = computeError(xtrial, ytrial);
+            const auto Enew = computeError(xtrial, ptrial, ytrial);
 
             if(!isinf(Enew))
             {
 		        xbar = xtrial;
+		        pbar = ptrial;
 		        ybar = ytrial;
                 return SUCCEEDED;
             }
@@ -667,32 +761,37 @@ struct BasicSolver::Impl
         return FAILED;
     }
 
-	// Update the variables (x, y) with a steepest descent step.
+	// Update the variables (x, p, y) with a steepest descent step.
 	auto applySteepestDescentStep() -> bool
     {
         // Evaluate the Hessian of the objective function
-        const auto fres = evaluateObjectiveFn(x, { .f=false, .g=true, .H=true });
+        const auto fres = evaluateObjectiveFn(x, p, { .f=false, .fx=true, .fxx=true });
 
         // Ensure the Hessian computation was successul.
         if(fres.failed)
             return FAILED;
 
-        // Compute the steepest descent steps dx and dy
-        stepper.steepestDescentError({ x, y, b, h, g, H, J, dx, dy });
+        // Compute the steepest descent steps dx, dp, dy
+        stepper.steepestDescentError({ x, p, y, fx, fxx, fxp, b, h, hx, hp, v, vx, vp, dx, dp, dy });
 
-        // Start with x(bar) = x(current)
+        // Start with x(bar) = x(current), p(bar) = p(current), y(bar) = y(current)
         xbar = x;
+        pbar = p;
+        ybar = y;
 
         // Step x(bar) until the full-length of `dx` if no bounds are violated.
         // Otherwise, stop at the first hit lower/upper bound.
         const auto maxlength = performConservativeStep(xbar, dx, xlower, xupper);
 
-        // Compute y(bar) considering the length obtained in the previous step.
-        ybar = y + maxlength*dy;
+        // Step p(bar) taking care of the bounds of p
+        performAggressiveStep(pbar, dp, plower, pupper);
 
-        // Compute the Lagrange value L at x(bar) and y(bar) after a full
+        // Update y(bar) considering the length obtained in the previous step.
+        ybar += maxlength*dy;
+
+        // Compute the Lagrange value L at x(bar), p(bar) y(bar) after a full
         // steepest descent step (or tamed to avoid bound violation!).
-        const auto Ebar = computeError(xbar, ybar);
+        const auto Ebar = computeError(xbar, pbar, ybar);
 
         // The Lagrange value L at the previous iteration.
         const auto Eold = analysis.E.back();
@@ -707,16 +806,18 @@ struct BasicSolver::Impl
         if(Ebar < Eold)
         {
             x = xbar;
+            p = pbar;
             y = ybar;
             return SUCCEEDED;
         }
 
-        // Define the function phi(alpha) = L(x + alpha*dx, y + alpha*dy) that we want to minimize.
+        // Define the function phi(alpha) = L(x + alpha*dx, p + alpha*dp, y + alpha*dy) that we want to minimize.
         const auto phi = [&](double alpha) -> double
         {
             xtrial.noalias() = x*(1 - alpha) + alpha*xbar; // using x + alpha*(xbar - x) is sensitive to round-off errors!
+            ptrial.noalias() = p*(1 - alpha) + alpha*pbar; // using p + alpha*(pbar - p) is sensitive to round-off errors!
             ytrial.noalias() = y*(1 - alpha) + alpha*ybar; // using y + alpha*(ybar - y) is sensitive to round-off errors!
-            return computeError(xtrial, ytrial);
+            return computeError(xtrial, ptrial, ytrial);
         };
 
         // The tolerance and maximum number of iterations used in the steepest descent minimization procedure.
@@ -729,45 +830,52 @@ struct BasicSolver::Impl
         // lower/upper bound is violated.
         const auto alphamin = minimizeBrent(phi, 0.0, 1.0, tol, maxiters);
 
-        // Calculate x(trial) and y(trial) using the minimizer alpha value
+        // Calculate x(trial), p(trial), y(trial) using the minimizer alpha value
         xtrial.noalias() = x*(1 - alphamin) + alphamin*xbar; // using x + alpha*(xbar - x) is sensitive to round-off errors!
+        ptrial.noalias() = p*(1 - alphamin) + alphamin*pbar; // using p + alpha*(pbar - p) is sensitive to round-off errors!
         ytrial.noalias() = y*(1 - alphamin) + alphamin*ybar; // using y + alpha*(ybar - y) is sensitive to round-off errors!
 
         // Compute the new Lagrange value L after the steepest descent operation.
-        const auto Enew = computeError(xtrial, ytrial);
+        const auto Enew = computeError(xtrial, ptrial, ytrial);
 
         // Return failed status if the Lagrange function did not decrease along
         // the steepest descent minimization operation.
         if(Enew > Eold)
             return FAILED;
 
-        // Update x and y to their respective trial states
+        // Update x, p, y to their respective trial states
         x = xtrial;
+        p = ptrial;
         y = ytrial;
 
         // The steepest descent step approach was successful.
         return SUCCEEDED;
     }
 
-	// Update the variables (x, y) with a steepest descent step.
+	// Update the variables (x, p, y) with a steepest descent step.
 	auto applySteepestDescentLagrangeStep() -> bool
     {
-        // Compute the steepest descent steps dx and dy
-        stepper.steepestDescentLagrange({ x, y, b, h, g, dx, dy });
+        // Compute the steepest descent steps dx, dp, dy
+        stepper.steepestDescentLagrange({ x, p, y, fx, b, h, v, dx, dp, dy });
 
-        // Start with x(bar) = x(current)
+        // Start with x(bar) = x(current), p(bar) = p(current), y(bar) = y(current)
         xbar = x;
+        pbar = p;
+        ybar = y;
 
         // Step x(bar) until the full-length of `dx` if no bounds are violated.
         // Otherwise, stop at the first hit lower/upper bound.
         const auto maxlength = performConservativeStep(xbar, dx, xlower, xupper);
 
-        // Compute y(bar) considering the length obtained in the previous step.
-        ybar = y + maxlength*dy;
+        // Step p(bar) taking care of the bounds of p
+        performAggressiveStep(pbar, dp, plower, pupper);
 
-        // Compute the Lagrange value L at x(bar) and y(bar) after a full
+        // Update y(bar) considering the length obtained in the previous step.
+        ybar += maxlength*dy;
+
+        // Compute the Lagrange value L at x(bar), p(bar) y(bar) after a full
         // steepest descent step (or tamed to avoid bound violation!).
-        const auto Lbar = computeLagrangeFn(xbar, ybar);
+        const auto Lbar = computeLagrangeFn(xbar, pbar, ybar);
 
         // The Lagrange value L at the previous iteration.
         const auto Lold = analysis.L.back();
@@ -782,12 +890,12 @@ struct BasicSolver::Impl
         if(Lbar < Lold)
             return SUCCEEDED;
 
-        // Define the function phi(alpha) = L(x + alpha*dx, y + alpha*dy) that we want to minimize.
+        // Define the function phi(alpha) = L(x + alpha*dx, p + alpha*dp, y + alpha*dy) that we want to minimize.
         const auto phi = [&](double alpha) -> double
         {
             xtrial.noalias() = x*(1 - alpha) + alpha*xbar; // using x + alpha*(xbar - x) is sensitive to round-off errors!
             ytrial.noalias() = y*(1 - alpha) + alpha*ybar; // using y + alpha*(ybar - y) is sensitive to round-off errors!
-            return computeLagrangeFn(xtrial, ytrial);
+            return computeLagrangeFn(xtrial, ptrial, ytrial);
         };
 
         // The tolerance and maximum number of iterations used in the steepest descent minimization procedure.
@@ -800,12 +908,13 @@ struct BasicSolver::Impl
         // lower/upper bound is violated.
         const auto alphamin = minimizeBrent(phi, 0.0, 1.0, tol, maxiters);
 
-        // Calculate x(trial) and y(trial) using the minimizer alpha value
+        // Calculate x(trial), p(trial), y(trial) using the minimizer alpha value
         xtrial.noalias() = x*(1 - alphamin) + alphamin*xbar; // using x + alpha*(xbar - x) is sensitive to round-off errors!
+        ptrial.noalias() = p*(1 - alphamin) + alphamin*pbar; // using p + alpha*(pbar - p) is sensitive to round-off errors!
         ytrial.noalias() = y*(1 - alphamin) + alphamin*ybar; // using y + alpha*(ybar - y) is sensitive to round-off errors!
 
         // Compute the new Lagrange value L after the steepest descent operation.
-        const auto Lnew = computeLagrangeFn(xtrial, ytrial);
+        const auto Lnew = computeLagrangeFn(xtrial, ptrial, ytrial);
 
         // Return failed status if the Lagrange function did not decrease along
         // the steepest descent minimization operation.
