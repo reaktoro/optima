@@ -537,6 +537,7 @@ auto rationalize(double* data, unsigned size, unsigned maxden) -> void
 /// Replace residual round-off errors by zeros in a vector.
 auto cleanResidualRoundoffErrors(VectorRef vec) -> void
 {
+    if(vec.size() == 0) return;
     const auto eps = std::numeric_limits<double>::epsilon();
     const auto max = vec.array().abs().maxCoeff();
     const auto rows = vec.rows();
@@ -549,6 +550,7 @@ auto cleanResidualRoundoffErrors(VectorRef vec) -> void
 /// Replace residual round-off errors by zeros in a matrix.
 auto cleanResidualRoundoffErrors(MatrixRef mat) -> void
 {
+    if(mat.size() == 0) return;
     const auto eps = std::numeric_limits<double>::epsilon();
     const auto max = mat.array().abs().maxCoeff();
     const auto rows = mat.rows();
