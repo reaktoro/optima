@@ -114,7 +114,7 @@ public:
     OutputOptions output;
 
     /// The tolerance for the residual of the optimality conditions.
-    double tolerance = 1.0e-6;
+    double tolerance = 1.0e-8;
 
     /// The tolerance for the variation in primal variables x.
     /// Set this to a value greater than zero to stop the calculation
@@ -129,7 +129,7 @@ public:
     double tolerancef = 0.0;
 
     /// The relative tolerance for the linear equality contraints.
-    double tolerance_linear_equality_constraints = 1.0e-14;
+    double tolerance_linear_equality_constraints = 1.0e-8;
 
     /// The maximum number of iterations in the optimization calculations.
     unsigned max_iterations = 200;
