@@ -38,6 +38,7 @@ void exportCanonicalizer(py::module& m)
 
     py::class_<Canonicalizer>(m, "Canonicalizer")
         .def(py::init<>())
+        .def(py::init<const Canonicalizer&>())
         .def(py::init(init))
         .def("numVariables", &Canonicalizer::numVariables)
         .def("numEquations", &Canonicalizer::numEquations)
