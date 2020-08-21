@@ -24,6 +24,9 @@ from itertools import product
 # The tested number of variables in x.
 tested_dims_x = [10]
 
+# The tested number of variables in p.
+tested_dims_p = [0, 5]
+
 # The tested number of linear equality constraint equations.
 tested_dims_be = list(range(2))
 
@@ -39,6 +42,7 @@ tested_dims_hg = list(range(2))
 # Combination of all tested cases
 testdata = product(
     tested_dims_x,
+    tested_dims_p,
     tested_dims_be,
     tested_dims_bg,
     tested_dims_he,
@@ -48,13 +52,14 @@ testdata = product(
 @mark.parametrize("args", testdata)
 def test_problem(args):
 
-    nx, mbe, mbg, mhe, mhg = args
+    nx, np, mbe, mbg, mhe, mhg = args
 
     n = nx + mbg + mhg
     m = mbe + mbg + mhe + mhg
 
     dims = Dims()
     dims.x = nx
+    dims.p = np
     dims.be = mbe
     dims.bg = mbg
     dims.he = mhe
@@ -62,8 +67,10 @@ def test_problem(args):
 
     problem = Problem(dims)
 
-    assert allclose(problem.Ae, zeros((mbe, nx)))
-    assert allclose(problem.Ag, zeros((mbg, nx)))
+    assert allclose(problem.Aex, zeros((mbe, nx)))
+    assert allclose(problem.Aep, zeros((mbe, np)))
+    assert allclose(problem.Agx, zeros((mbg, nx)))
+    assert allclose(problem.Agp, zeros((mbg, np)))
     assert allclose(problem.be, zeros(mbe))
     assert allclose(problem.bg, zeros(mbg))
     assert allclose(problem.xlower, ones(nx) * -inf)
