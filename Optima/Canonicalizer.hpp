@@ -107,6 +107,12 @@ public:
     /// Update the canonical form with a new ordering for the variables.
     auto updateWithNewOrdering(IndicesConstRef ordering) -> void;
 
+    /// Reset to the canonical matrix form computed initially.
+    /// This method exists so that after several variable swapping operations
+    /// have taken place, which produce accumulated round-off errors, the first
+    /// canonical form can be recovered.
+    auto reset() -> void;
+
     /// Perform a cleanup procedure to remove residual round-off errors from the canonical form.
     auto cleanResidualRoundoffErrors() -> void;
 

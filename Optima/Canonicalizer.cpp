@@ -32,35 +32,44 @@ struct Canonicalizer::Impl
     /// The full-pivoting LU decomposition of A so that P*A*Q = L*U;
     Eigen::FullPivLU<Matrix> lu;
 
-    /// The matrix `S` in the canonical form `C = [I S]`.
+    /// The current canonicalizer matrix R such that RAQ = C = [I S].
+    Matrix R;
+
+    /// The current matrix S in the canonical form C = [I S].
     Matrix S;
 
-    /// The permutation matrix `P`.
+    /// The permutation matrix P.
     Indices P;
 
-    /// The transpose of the permutation matrix `P`.
+    /// The transpose of the permutation matrix P.
     Indices Ptr;
 
-    /// The permutation matrix `Q`.
+    /// The permutation matrix Q.
     Indices Q;
 
-    /// The auxiliary permutation matrix `Q`.
+    /// The auxiliary permutation matrix Q.
     Indices Qaux;
 
     /// The inverse permutation of the new ordering of the variables
     Indices inv_ordering;
 
-    /// The canonicalizer matrix `R`.
-    Matrix R;
-
-    /// The matrix `M` used in the swap operation.
+    /// The matrix M used in the swap operation.
     Vector M;
 
-    /// The permutation matrix `Kb` used in the weighted update method.
+    /// The permutation matrix Kb used in the weighted update method.
     PermutationMatrix Kb;
 
-    /// The permutation matrix `Kn` used in the weighted update method.
+    /// The permutation matrix Kn used in the weighted update method.
     PermutationMatrix Kn;
+
+    /// The backup matrix R used to reset this object to a state with non-accumulated round-off errors.
+    Matrix R0;
+
+    /// The backup matrix S used to reset this object to a state with non-accumulated round-off errors.
+    Matrix S0;
+
+    /// The backup permutation matrix Q used to reset this object to a state with non-accumulated round-off errors.
+    Indices Q0;
 
     /// The threshold used to compare numbers.
     double threshold;
@@ -140,6 +149,11 @@ struct Canonicalizer::Impl
         // Compute sigma for given matrix A
         sigma = A.size() ? A.cwiseAbs().maxCoeff() : 0.0;
         sigma = A.size() ? std::pow(10, 1 + std::ceil(std::log10(sigma))) : 0.0;
+
+        // Set the backup matrices R0, S0, Q0 for resetting purposes
+        R0 = R;
+        S0 = S;
+        Q0 = Q;
     }
 
     /// Swap a basic variable by a non-basic variable.
@@ -259,6 +273,14 @@ struct Canonicalizer::Impl
         Kn.transpose().applyThisOnTheLeft(inonbasic);
     }
 
+    /// Reset to the canonical matrix form computed initially.
+    auto reset() -> void
+    {
+        R = R0;
+        S = S0;
+        Q = Q0;
+    }
+
     /// Perform a cleanup procedure to remove residual round-off errors from the canonical form.
     auto cleanResidualRoundoffErrors() -> void
     {
@@ -366,6 +388,11 @@ auto Canonicalizer::updateWithSwapBasicVariable(Index ibasic, Index inonbasic) -
 auto Canonicalizer::updateWithPriorityWeights(VectorConstRef weights) -> void
 {
     pimpl->updateWithPriorityWeights(weights);
+}
+
+auto Canonicalizer::reset() -> void
+{
+    pimpl->reset();
 }
 
 auto Canonicalizer::cleanResidualRoundoffErrors() -> void

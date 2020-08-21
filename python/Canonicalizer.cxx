@@ -54,6 +54,7 @@ void exportCanonicalizer(py::module& m)
         .def("compute", compute)
         .def("updateWithSwapBasicVariable", &Canonicalizer::updateWithSwapBasicVariable)
         .def("updateWithPriorityWeights", &Canonicalizer::updateWithPriorityWeights)
+        .def("reset", &Canonicalizer::reset)
         .def("cleanResidualRoundoffErrors", &Canonicalizer::cleanResidualRoundoffErrors)
         ;
 }

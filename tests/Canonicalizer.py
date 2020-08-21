@@ -18,11 +18,18 @@
 from optima import *
 from numpy import *
 from numpy.linalg import norm, inv
+from numpy.testing import assert_array_almost_equal
 from pytest import approx, mark
 from itertools import product
 
 from utils.matrices import testing_matrices_W
 
+
+# Tested number of columns
+tested_n = [15, 20, 30, 50]
+
+# Tested number of rows
+tested_m = range(5, 15, 3)
 
 # Tested cases for the structures of matrix W = [A; J]
 tested_matrices_W = testing_matrices_W
@@ -36,6 +43,8 @@ tested_jfixed = [
 
 # Combination of all tested cases
 testdata = product(
+    tested_n,
+    tested_m,
     tested_matrices_W,
     tested_jfixed)
 
@@ -47,23 +56,10 @@ def check_canonical_form(canonicalizer, A):
     Q = canonicalizer.Q()
     C = canonicalizer.C()
 
-
     # Check R*A*Q == C
     Cstar = R @ A[:,Q]
 
-    assert allclose(Cstar, C)
-
-    # Assemble Qtr, the transpose of the permutation matrix Q
-    Qtr = arange(n)
-    Qtr[Q] = arange(n)
-
-    # Calculate the invR, the inverse of matrix R
-    Rinv = inv(R)
-
-    # Check inv(R) * C * tr(Q) == A
-    Astar = Rinv @ C[:, Qtr]
-
-    assert allclose(Astar, A)
+    assert_array_almost_equal(Cstar, C)
 
 
 def check_canonical_ordering(canonicalizer, weigths):
@@ -83,6 +79,7 @@ def check_canonicalizer(canonicalizer, A):
     n = canonicalizer.numVariables()
     m = canonicalizer.numEquations()
     nb = canonicalizer.numBasicVariables()
+    nn = canonicalizer.numNonBasicVariables()
 
     #---------------------------------------------------------------------------
     # Check the computed canonical form
@@ -93,12 +90,13 @@ def check_canonicalizer(canonicalizer, A):
     # Perform a series of basis swap operations and check the canonical form
     #---------------------------------------------------------------------------
     for i in range(nb):
-        for j in range(n - nb):
+        for j in range(0, nn, nb):  # only after every nb columns (to avoid too long test execution)
             S = canonicalizer.S()
             if abs(S[i, j]) > 1e-12:  # new basic variable needs to have sufficiently large pivot value
                 canonicalizer.updateWithSwapBasicVariable(i, j)
                 canonicalizer.cleanResidualRoundoffErrors()
                 check_canonical_form(canonicalizer, A)
+        canonicalizer.reset()  # ensure the canonical form is reset periodically so that accumulated round-off errors are removed
 
     #---------------------------------------------------------------------------
     # Set weights for the variables to update the basic/non-basic partition
@@ -116,10 +114,7 @@ def check_canonicalizer(canonicalizer, A):
 @mark.parametrize("args", testdata)
 def test_canonicalizer(args):
 
-    assemble_W, jfixed = args
-
-    m = 12
-    n = 15
+    n, m, assemble_W, jfixed = args
 
     A = assemble_W(m, n, jfixed)
 
