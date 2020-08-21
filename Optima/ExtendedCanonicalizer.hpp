@@ -29,13 +29,21 @@ namespace Optima {
 /// Used to describe a matrix \eq{\begin{bmatrix}A\\J\end{bmatrix}} in canonical form.
 /// The canonical form of a matrix \eq{A} is represented as:
 /// \eqq{C = RAQ = \begin{bmatrix}I & S\end{bmatrix},}
-/// where \eq{Q} is a permutation matrix, and \eq{R} is the *canonicalizer matrix* of \eq{A}.
-/// The matrices \eq{A} and \eq{J} have a behavior in which \eq{A}
-/// is always constant, whereas \eq{J} varies more often. This more advanced canonicalization
-/// class permits a more efficient update of the canonical form of \eq{[A; J]} when \eq{J} changes.
-/// This happens when an optimization problem has a non-linear equality constraint, whose Jacobian
-/// changes in every iteration (the matrix \eq{J}). The matrix \eq{A}, on the other hand, is related
-/// to the linear equality constraint whose coefficient matrix remains the same throughout the calculation.
+/// where \eq{Q} is a permutation matrix, and \eq{R} is the *canonicalizer
+/// matrix* of \eq{A}. The matrices \eq{A} and \eq{J} have a behavior in which
+/// \eq{A} is always constant, whereas \eq{J} varies more often. This more
+/// advanced canonicalization class permits a more efficient update of the
+/// canonical form of \eq{[A; J]} when \eq{J} changes. This happens when an
+/// optimization problem has a non-linear equality constraint, whose Jacobian
+/// changes in every iteration (the matrix \eq{J}). The matrix \eq{A}, on the
+/// other hand, is related to the linear equality constraint whose coefficient
+/// matrix remains the same throughout the calculation.
+///
+/// @warning ExtendedCanonicalizer assumes that rows in *J* are not linearly
+/// dependent on rows in *A* and vice-versa. This assumption should be sensible
+/// in most application cases. However, when testing, it may happen that *W =
+/// [A; J]* is produced so that this assumption is not respected.
+///----------------------------------------------------------------------------------------------
 class ExtendedCanonicalizer
 {
 public:

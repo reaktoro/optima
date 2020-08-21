@@ -18,7 +18,7 @@
 from optima import *
 from numpy import *
 from numpy.linalg import norm, inv
-from numpy.testing import assert_allclose
+from numpy.testing import assert_array_almost_equal
 from pytest import approx, mark
 from itertools import product
 
@@ -36,19 +36,7 @@ def check_canonical_form(canonicalizer, A, J):
     # Check R*[A; J]*Q == C
     Cstar = R @ M[:,Q]
 
-    assert allclose(Cstar, C)
-
-    # Assemble Qtr, the transpose of the permutation matrix Q
-    Qtr = arange(n)
-    Qtr[Q] = arange(n)
-
-    # Calculate the invR, the inverse of matrix R
-    Rinv = inv(R)
-
-    # Check inv(R) * C * tr(Q) == [A; J]
-    Mstar = Rinv @ C[:, Qtr]
-
-    assert allclose(Mstar, M)
+    assert_array_almost_equal(Cstar, C)
 
 
 def check_canonical_ordering(canonicalizer, weigths):
@@ -76,10 +64,10 @@ def check_new_ordering(canonicalizer, Kb, Kn):
 
     nb = len(Kb)
 
-    assert_allclose(Rnew[:nb, :],  R[Kb, :])
-    assert_allclose(Snew,  S[Kb, :][:, Kn])
-    assert_allclose(Qnew[:nb],  Q[:nb][Kb])
-    assert_allclose(Qnew[nb:],  Q[nb:][Kn])
+    assert_array_almost_equal(Rnew[:nb, :],  R[Kb, :])
+    assert_array_almost_equal(Snew,  S[Kb, :][:, Kn])
+    assert_array_almost_equal(Qnew[:nb],  Q[:nb][Kb])
+    assert_array_almost_equal(Qnew[nb:],  Q[nb:][Kn])
 
 
 def check_canonicalizer(canonicalizer, A, J):
@@ -90,7 +78,7 @@ def check_canonicalizer(canonicalizer, A, J):
     #---------------------------------------------------------------------------
     # Check the computed canonical form with certain weights
     #---------------------------------------------------------------------------
-    weigths = random.rand(n)
+    weigths = linspace(1, n, n)
 
     canonicalizer.updateWithPriorityWeights(J, weigths)
     canonicalizer.cleanResidualRoundoffErrors()
@@ -100,7 +88,7 @@ def check_canonicalizer(canonicalizer, A, J):
     #---------------------------------------------------------------------------
     # Set weights for the variables to update the basic/non-basic partition
     #---------------------------------------------------------------------------
-    weigths = random.rand(n)
+    weigths = linspace(n, 1, n)
 
     Jnew = J + J
 
@@ -128,17 +116,23 @@ def check_canonicalizer(canonicalizer, A, J):
     check_new_ordering(canonicalizer, Kb, Kn)  # reversed ordering
 
 
-# Tested cases for the matrix W
+# Tested number of columns in W = [A; J]
+tested_n = [15, 20, 30, 50]
+
+# Tested number of rows in A
+tested_mu = range(5, 15, 3)
+
+# Tested number of rows in J
+tested_ml = range(0, 5)
+
+# Tested cases for the matrix W = [A; J]
 tested_matrices_W = testing_matrices_W
 
-# Tested number of rows in matrix Au and Al (upper and lower blocks of A)
-tested_mu = [7, 3]
-tested_ml = [5, 1]
-
 # Combination of all tested cases
-testdata = product(tested_matrices_W,
+testdata = product(tested_n,
                    tested_mu,
-                   tested_ml)
+                   tested_ml,
+                   tested_matrices_W,)
 
 @mark.parametrize("args", testdata)
 def test_canonicalizer(args):
@@ -146,15 +140,26 @@ def test_canonicalizer(args):
     set_printoptions(linewidth=100000, precision=6, floatmode='fixed', threshold=100000)
 
 
-    assemble_W, mu, ml = args
+    n, mu, ml, assemble_W = args
 
-    n = 15
     m = mu + ml
+
+    # Skip tests in which there are more rows than columns
+    if m > n: return
 
     W = assemble_W(m, n)
 
     A = W[:mu, :]
     J = W[mu:, :]
+
+    #----------------------------------------------------------------------------------------------
+    # WARNING!!
+    #
+    # ExtendedCanonicalizer assumes that rows in J are not linearly dependent
+    # on rows in A. When testing, ensure this does not happen. This assumption
+    # should be sensible in most application cases. However, when testing, it
+    # may happen that W is produced so that this assumption is not respected.
+    #----------------------------------------------------------------------------------------------
 
     canonicalizer = ExtendedCanonicalizer(A)
     canonicalizer.cleanResidualRoundoffErrors()
