@@ -106,18 +106,6 @@ public:
 
     /// The derivatives *∂v/∂w*.
     Matrix vw;
-
-    /// The nonlinear equality constraint function \eq{h_{\mathrm{e}}(x, p)=0} (to be used in python only!).
-    ConstraintFunction4py __4py_he;
-
-    /// The nonlinear inequality constraint function \eq{h_{\mathrm{g}}(x, p)\geq0} (to be used in python only!).
-    ConstraintFunction4py __4py_hg;
-
-    /// The external nonlinear constraint function \eq{v(x, p)=0} (to be used in python only!).
-    ConstraintFunction4py __4py_v;
-
-    /// The objective function \eq{f(x, p)} of the optimization problem (to be used in python only!).
-    ObjectiveFunction4py __4py_f;
 };
 
 } // namespace Optima

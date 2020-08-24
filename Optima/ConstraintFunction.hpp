@@ -49,7 +49,7 @@ using ConstraintFunction = std::function<void(VectorConstRef, VectorConstRef, Co
 /// The signature of a constraint function in Python.
 using ConstraintFunction4py = std::function<void(VectorConstRef, VectorConstRef, ConstraintResult4py*)>;
 
-/// Convert an ConstraintFunction4Py function to a ConstraintFunction function.
+/// Convert an ConstraintFunction4py function to a ConstraintFunction function.
 inline auto convert(const ConstraintFunction4py& obj4py)
 {
     return [=](VectorConstRef x, VectorConstRef p, ConstraintResult& res)

@@ -49,7 +49,8 @@ auto initBasicSolver(const Problem& problem) -> BasicSolver
 
     // Create matrix Ap = [ [Aep], [Agp] ]
     Matrix Ap = zeros(mb, np);
-    Ap << problem.Aep, problem.Agp;
+
+    if(np > 0) Ap << problem.Aep, problem.Agp;
 
     return BasicSolver({ nxrs, np, m, Ax, Ap });
 }
@@ -110,6 +111,10 @@ struct Solver::Impl
         // Auxiliary references
         const auto plower = problem.plower;
         const auto pupper = problem.pupper;
+
+        assert(problem.f);
+        assert(problem.dims.he == 0 || problem.he);
+        assert(problem.dims.hg == 0 || problem.hg);
 
         // Create the objective function for the basic problem
         auto f = [&](VectorConstRef xrs, VectorConstRef p, ObjectiveResult& res)
@@ -200,8 +205,8 @@ struct Solver::Impl
             ConstraintResult re{he, he_x, he_p};
             ConstraintResult rg{hg, hg_x, hg_p};
 
-            problem.he(x, p, re);
-            problem.hg(x, p, rg);
+            if(problem.dims.he) problem.he(x, p, re);
+            if(problem.dims.hg) problem.hg(x, p, rg);
 
             hg.noalias() += s;
 

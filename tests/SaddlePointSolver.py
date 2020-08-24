@@ -208,7 +208,6 @@ def test_saddle_point_solver(args):
             print(f"ml = {ml}")
             print(f"mn = {mn}")
             print(f"assemble_W = {assemble_W}")
-            print(f"structure_H = {structure_H}")
             print(f"ifixed = {ifixed}")
             print(f"variable_condition = {variable_condition}")
             print(f"method = {method}")

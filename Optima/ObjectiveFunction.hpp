@@ -76,7 +76,7 @@ using ObjectiveFunction = std::function<void(VectorConstRef, VectorConstRef, Obj
 /// @return An ObjectiveResult4py object with the evaluated result of the objective function.
 using ObjectiveFunction4py = std::function<void(VectorConstRef, VectorConstRef, ObjectiveResult4py*)>;
 
-/// Convert an ObjectiveFunction4Py function to an ObjectiveFunction function.
+/// Convert an ObjectiveFunction4py function to an ObjectiveFunction function.
 inline auto convert(const ObjectiveFunction4py& obj4py)
 {
     return [=](VectorConstRef x, VectorConstRef p, ObjectiveResult& res)
