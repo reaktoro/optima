@@ -255,9 +255,8 @@ struct SaddlePointSolver::Impl
             const auto idx = jb[i];                     // the global index of the basic variable
             const auto Hii = Hd[idx];                   // the corresponding diagonal entry in the H matrix
             const auto a1 = 1.0;                        // the max value along the corresponding column of the identity matrix
-            const auto a2 = norminf(args.Hxx.col(idx)); // the max value along the corresponding column of the Hxx matrix
-            const auto a3 = norminf(args.Hpx.col(idx)); // the max value along the corresponding column of the Hpx matrix
-            return abs(Hii) >= std::max({a1, a2, a3});  // return true if diagonal entry is dominant
+            const auto a2 = norminf(args.Hpx.col(idx)); // the max value along the corresponding column of the Hpx matrix
+            return abs(Hii) >= std::max(a1, a2);        // return true if diagonal entry is dominant with respect to Hpx and Ibb only (not Hxx!)
         };
 
         // Return true if the i-th non-basic variable is a pivot/explicit variable
@@ -266,9 +265,8 @@ struct SaddlePointSolver::Impl
             const auto idx = jn[i];                     // the global index of the non-basic variable
             const auto Hii = Hd[idx];                   // the corresponding diagonal entry in the H matrix
             const auto a1 = norminf(Sbn.col(i));        // the max value along the corresponding column of the Sbn matrix
-            const auto a2 = norminf(args.Hxx.col(idx)); // the max value along the corresponding column of the Hxx matrix
-            const auto a3 = norminf(args.Hpx.col(idx)); // the max value along the corresponding column of the Hpx matrix
-            return abs(Hii) >= std::max({a1, a2, a3});  // return true if diagonal entry is dominant
+            const auto a2 = norminf(args.Hpx.col(idx)); // the max value along the corresponding column of the Hpx matrix
+            return abs(Hii) >= std::max(a1, a2);        // return true if diagonal entry is dominant with respect to Hpx and Sbn only (not Hxx!)
         };
 
         // Find the number of pivot basic variables (those with |Hbebe| >= I and |Hbebe| >= |cols(H, jbe)|)
