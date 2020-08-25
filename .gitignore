@@ -26,3 +26,4 @@ __pycache__/
 
 # Visual Studio Code related files
 .vscode
+.history
