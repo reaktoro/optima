@@ -104,8 +104,8 @@ public:
     /// @param weights The priority weights of the variables.
     auto updateWithPriorityWeights(VectorConstRef weights) -> void;
 
-    /// Update the canonical form with a new ordering for the variables.
-    auto updateWithNewOrdering(IndicesConstRef ordering) -> void;
+    /// Update the ordering of the basic and non-basic variables.
+    auto updateOrdering(IndicesConstRef Kb, IndicesConstRef Kn) -> void;
 
     /// Reset to the canonical matrix form computed initially.
     /// This method exists so that after several variable swapping operations

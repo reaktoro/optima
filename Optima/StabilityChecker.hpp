@@ -31,7 +31,8 @@ struct StabilityCheckerInitArgs
 {
     Index nx;               ///< The number of primal variables *x*.
     Index np;               ///< The number of parameter variables *p*.
-    Index m;                ///< The number of Lagrange multipliers *y*.
+    Index ny;               ///< The number of Lagrange multipliers *y*.
+    Index nz;               ///< The number of Lagrange multipliers *z*.
     MatrixConstRef Ax;      ///< The coefficient matrix *Ax* of the linear equality constraints.
     MatrixConstRef Ap;      ///< The coefficient matrix *Ap* of the linear equality constraints.
 };
@@ -51,6 +52,7 @@ struct StabilityCheckerUpdateArgs
 {
     VectorConstRef x;       ///< The current state of the primal variables *x*.
     VectorConstRef y;       ///< The current state of the Lagrange multipliers *y*.
+    VectorConstRef z;       ///< The current state of the Lagrange multipliers *z*.
     VectorConstRef fx;      ///< The evaluated gradient of the objective function *f(x, p)* with respect to *x*.
     MatrixConstRef hx;      ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *x*.
     VectorConstRef xlower;  ///< The lower bounds of the primal variables *x*.

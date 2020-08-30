@@ -32,13 +32,11 @@ using std::vector;
 struct StabilityChecker::Impl
 {
     Matrix A;                ///< The coefficient matrix A = [Ax Ap].
-    Vector z;                ///< The instability measures of the variables defined as z = g + tr(Wx)*y.
-    Index nx  = 0;           ///< The number of variables in *x*.
-    Index np  = 0;           ///< The number of variables in *p*.
-    Index ml = 0;            ///< The number of linear equality constraints.
-    Index mn = 0;            ///< The number of non-linear equality constraints.
-    Index m  = 0;            ///< The number of equality constraints (m = ml + mn).
-    Index t  = 0;            ///< The total number of variables in x, p and y (t = nx + ny + m).
+    Vector s;                ///< The stability measures of the variables defined as s = g + tr(Ax)*y + tr(hx)*z.
+    Index nx  = 0;           ///< The number of primal variables *x*.
+    Index np  = 0;           ///< The number of parameter variables *p*.
+    Index ny  = 0;           ///< The number of Lagrange variables *y*.
+    Index nz  = 0;           ///< The number of Lagrange variables *z*.
     Indices ipositiverows;   ///< The indices of the rows in matrix A that only have positive or zero coefficients.
     Indices inegativerows;   ///< The indices of the rows in matrix A that only have negative or zero coefficients.
     Indices iordering;       ///< The ordering of the primal variables *x* as *stable*, *lower unstable*, *upper unstable*, *strictly lower unstable*, *strictly upper unstable*.
@@ -52,36 +50,29 @@ struct StabilityChecker::Impl
 
     /// Construct a StabilityChecker::Impl instance.
     Impl(StabilityCheckerInitArgs args)
-    : nx(args.nx), np(args.np), m(args.m)
+    : nx(args.nx), np(args.np), ny(args.ny), nz(args.nz)
     {
         // Ensure the step calculator is initialized with a positive number of variables.
         Assert(nx > 0, "Could not proceed with StabilityChecker initialization.",
             "The number of primal variables x is zero.");
 
-        // Initialize the number of linear and nonlinear equality constraints
-        ml = args.Ax.rows();
-        mn = m - ml;
-
         // Initialize matrix A = [Ax Ap]
-        A.resize(ml, nx + np);
+        A.resize(ny, nx + np);
         A << args.Ax, args.Ap;
 
-        // Initialize total number of variables
-        t  = nx + np + m;
-
         // Initialize auxiliary vectors
-        z  = zeros(nx);
+        s  = zeros(nx);
 
         // Initialize the indices of the rows in matrix A that only have positive or zero coefficients.
         std::vector<Index> iposrows;
-        for(auto i = 0; i < ml; ++i)
+        for(auto i = 0; i < ny; ++i)
             if(A.row(i).minCoeff() >= 0.0)
                 iposrows.push_back(i);
         ipositiverows = Indices::Map(iposrows.data(), iposrows.size());
 
         // Initialize the indices of the rows in matrix A that only have negative or zero coefficients.
         std::vector<Index> inegrows;
-        for(auto i = 0; i < ml; ++i)
+        for(auto i = 0; i < ny; ++i)
             if(A.row(i).maxCoeff() <= 0.0)
                 inegrows.push_back(i);
         inegativerows = Indices::Map(inegrows.data(), inegrows.size());
@@ -98,7 +89,7 @@ struct StabilityChecker::Impl
         const auto pupper = args.pupper;
 
         // Ensure consistent dimensions of vectors/matrices.
-        assert(b.rows() == ml);
+        assert(b.rows() == ny);
         assert(xlower.rows() == nx);
         assert(xupper.rows() == nx);
         assert(plower.rows() == np);
@@ -172,45 +163,39 @@ struct StabilityChecker::Impl
     /// Update the stability checker.
     auto update(StabilityCheckerUpdateArgs args) -> void
     {
-        // Auxiliary references
         const auto x = args.x;
         const auto y = args.y;
+        const auto z = args.z;
         const auto fx = args.fx;
         const auto hx = args.hx;
         const auto xlower = args.xlower;
         const auto xupper = args.xupper;
 
-        // Ensure consistent dimensions of vectors/matrices.
         assert(x.rows() == nx);
-        assert(y.rows() == m);
+        assert(y.rows() == ny);
+        assert(z.rows() == nz);
         assert(fx.rows() == nx);
-        assert(hx.rows() == mn);
+        assert(hx.rows() == nz);
         assert(xlower.rows() == nx);
         assert(xupper.rows() == nx);
 
-        // Views to sub-vectors yl and yn in y = [yl, yn]
-        const auto yl = y.head(ml);
-        const auto yn = y.tail(mn);
-
-        // View to sub-matrix Ax in A = [Ax Ap]
         const auto Ax = A.leftCols(nx);
 
-        // Calculate the optimality residuals
-        z.noalias() = fx + tr(Ax)*yl + tr(hx)*yn;
+        s.noalias() = fx + tr(Ax)*y + tr(hx)*z;
 
-        // The function that computes the z-threshold for variable xi to determine its stability.
-        const auto zeps = [&](auto i)
+        // The function that computes the s-threshold for variable xi to determine its stability.
+        const auto s_eps = [&](auto i)
         {
             // The threshold below is computed taking into account the order of
-            // magnitude of fx[i] as well as m = rows(W), because of
-            // accumulation of round-off errors from tr(Wx)*y.
+            // magnitude of fx[i] as well as m = ny + nz, because of
+            // accumulation of round-off errors from tr(Ax)*y + tr(hx)*z.
             const auto eps = std::numeric_limits<double>::epsilon();
+            const auto m = ny + nz;
             return (1 + abs(fx[i])) * eps * m;
         };
 
-        // Update the ordering of the variables with lower and upper bounds
-        auto is_lower_unstable_fn = [&](Index i) { return x[i] == xlower[i] && z[i] > -zeps(i); };
-        auto is_upper_unstable_fn = [&](Index i) { return x[i] == xupper[i] && z[i] < +zeps(i); };
+        auto is_lower_unstable_fn = [&](Index i) { return x[i] == xlower[i] && s[i] > -s_eps(i); };
+        auto is_upper_unstable_fn = [&](Index i) { return x[i] == xupper[i] && s[i] < +s_eps(i); };
 
         iordering = stability.indicesVariables();
 

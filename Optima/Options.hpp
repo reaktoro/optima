@@ -48,11 +48,14 @@ struct OutputOptions : OutputterOptions
     /// The prefix for the parameter variables `p`.
     std::string pprefix = "p";
 
-    /// The prefix for the dual variables `y`.
+    /// The prefix for the Lagrange multipliers `y`.
     std::string yprefix = "y";
 
-    /// The prefix for the complementarity variables `z`.
+    /// The prefix for the Lagrange multipliers `z`.
     std::string zprefix = "z";
+
+    /// The prefix for the stability variables `s`.
+    std::string sprefix = "s";
 
     /// The names of the primal variables `x`.
     /// Numbers will be used if not properly set (e.g., `x[0]`, `x[1]`)
@@ -62,9 +65,13 @@ struct OutputOptions : OutputterOptions
     /// Numbers will be used if not properly set (e.g., `p[0]`, `p[1]`)
     std::vector<std::string> pnames;
 
-    /// The names of the dual variables `y`.
+    /// The names of the Lagrange multipliers `y`.
     /// Numbers will be used if not properly set (e.g., `y[0]`, `y[1]`)
     std::vector<std::string> ynames;
+
+    /// The names of the Lagrange multipliers `z`.
+    /// Numbers will be used if not properly set (e.g., `z[0]`, `z[1]`)
+    std::vector<std::string> znames;
 
     /// Assign a boolean value to `active` member.
     auto operator=(bool active) -> OutputOptions&;

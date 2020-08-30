@@ -20,6 +20,14 @@
 // C++ includes
 #include <cassert>
 
+
+
+#include <iostream>
+#define PRINT(X) std::cout << #X " = \n" << X << "\n" << std::endl;
+
+
+
+
 // Optima includes
 #include <Optima/Exception.hpp>
 #include <Optima/LU.hpp>
@@ -31,36 +39,48 @@ using std::abs;
 
 struct SaddlePointSolverRangespace::Impl
 {
-    Vector ax;  ///< The workspace for the right-hand side vector ax
-    Vector ap;  ///< The workspace for the right-hand side vector ap
-    Vector bb;  ///< The workspace for the right-hand side vectors bb
-    Vector Hd;  ///< The workspace for the diagonal entries in the Hss matrix.
-    Matrix Bw;  ///< The workspace for the Bnb matrix
-    Matrix Tw;  ///< The workspace for the Tbb matrix
-    Matrix Mw;  ///< The workspace for the M matrix in decompose and solve methods.
-    Vector rw;  ///< The workspace for the r vector in solve method.
-    LU lu;      ///< The LU decomposition solver.
+    Vector ax;       ///< The workspace for the right-hand side vector ax
+    Vector ap;       ///< The workspace for the right-hand side vector ap
+    Vector az;       ///< The workspace for the right-hand side vector az
+    Vector bb;       ///< The workspace for the right-hand side vectors bb
+    Vector Hd;       ///< The workspace for the diagonal entries in the Hss matrix.
+    Matrix Bw;       ///< The workspace for the Bnb = inv(Hnn)*tr(Sbn) matrix.
+    Matrix Lw;       ///< The workspace for the Lbez = inv(Hbebe)*tr(Jbe) and Lnez = inv(Hnene)*tr(Jne) matrices.
+    Matrix Tw;       ///< The workspace for the Tbb = Sbn*inv(Hnn)*tr(Sbn) matrix.
+    Matrix Mw;       ///< The workspace for the M matrix in decompose and solve methods.
+    Vector rw;       ///< The workspace for the r vector in solve method.
+    Matrix barHsp;   ///< The workspace for matrix bar(Hsp)
+    Matrix barVps;   ///< The workspace for matrix bar(Vps)
+    Matrix barJs;    ///< The workspace for matrix bar(Js)
+    Matrix barSbsne; ///< The workspace for matrix bar(Sbsne)
+    LU lu;           ///< The LU decomposition solver.
 
     /// Construct a default SaddlePointSolverRangespace::Impl instance.
-    Impl(Index nx, Index np, Index m)
+    Impl(Index nx, Index np, Index ny, Index nz)
     {
-        // Allocate memory for auxiliary vectors/matrices
         ax.resize(nx);
         ap.resize(np);
-        bb.resize(m);
+        az.resize(nz);
+        bb.resize(ny);
         Hd.resize(nx);
-        Bw.resize(nx, m);
-        Tw.resize(m, m);
-        Mw.resize(nx + np + m, nx + np + m);
-        rw.resize(nx + np + m);
+        Bw.resize(nx, ny);
+        Lw.resize(nx, nz);
+        Tw.resize(ny, ny);
+        Mw.resize(nx + np + ny + nz, nx + np + ny + nz);
+        rw.resize(nx + np + ny + nz);
+        barHsp.resize(nx, np);
+        barVps.resize(np, nx);
+        barJs.resize(nz, nx);
+        barSbsne.resize(ny, nx);
     }
 
     /// Decompose the coefficient matrix of the canonical saddle point problem.
     auto decompose(CanonicalSaddlePointMatrix args) -> void
     {
-        // The dimension variables needed below
         const auto ns  = args.dims.ns;
         const auto np  = args.dims.np;
+        const auto ny  = args.dims.ny;
+        const auto nz  = args.dims.nz;
         const auto nbs = args.dims.nbs;
         const auto nns = args.dims.nns;
         const auto nbe = args.dims.nbe;
@@ -68,66 +88,87 @@ struct SaddlePointSolverRangespace::Impl
         const auto nne = args.dims.nne;
         const auto nni = args.dims.nni;
 
-        // Views to the sub-matrices of Sbsns = [Sbene Sbeni; Sbine Sbini]
         const auto Sbsns = args.Sbsns;
+        const auto Sbene = Sbsns.topLeftCorner(nbe, nne);
         const auto Sbeni = Sbsns.topRightCorner(nbe, nni);
+        const auto Sbine = Sbsns.bottomLeftCorner(nbi, nne);
         const auto Sbini = Sbsns.bottomRightCorner(nbi, nni);
         const auto Sbsne = Sbsns.leftCols(nne);
 
-        // Views to the sub-matrices of Sbsnp = [Sbenp Sbinp]
-        const auto Sbsnp = args.Sbsnp;
-        const auto Sbenp = Sbsnp.topRows(nbe);
-        const auto Sbinp = Sbsnp.bottomRows(nbi);
+        const auto Sbsp = args.Sbsp;
+        const auto Sbep = Sbsp.topRows(nbe);
+        const auto Sbip = Sbsp.bottomRows(nbi);
 
-        // View to the sub-matrix Vnpnp === Vpp
-        const auto Vnpnp = args.Hpp;
+        const auto Hbsp = args.Hsp.leftCols(nbs);
+        const auto Hnsp = args.Hsp.rightCols(nns);
+        const auto Hbep = Hbsp.leftCols(nbe);
+        const auto Hnep = Hnsp.leftCols(nne);
+        const auto Hbip = Hbsp.rightCols(nbi);
+        const auto Hnip = Hnsp.rightCols(nni);
 
-        // View to the sub-matrices Vnpbs = [Vnpbe Vnpbi]
-        const auto Vnpbs = args.Hps.leftCols(nbs);
-        const auto Vnpbe = Vnpbs.leftCols(nbe);
-        const auto Vnpbi = Vnpbs.rightCols(nbi);
+        const auto Vpp  = args.Vpp;
+        const auto Vpbs = args.Vps.leftCols(nbs);
+        const auto Vpns = args.Vps.rightCols(nns);
+        const auto Vpbe = Vpbs.leftCols(nbe);
+        const auto Vpne = Vpns.leftCols(nne);
+        const auto Vpbi = Vpbs.rightCols(nbi);
+        const auto Vpni = Vpns.rightCols(nni);
 
-        // View to the sub-matrices Vnpns = [Vnpne Vnpni]
-        const auto Vnpns = args.Hps.rightCols(nns);
-        const auto Vnpne = Vnpns.leftCols(nne);
-        const auto Vnpni = Vnpns.rightCols(nni);
+        const auto Jp = args.Jp;
+        const auto Js  = args.Js;
+        const auto Jbs = Js.leftCols(nbs);
+        const auto Jns = Js.rightCols(nns);
+        const auto Jbe = Jbs.leftCols(nbe);
+        const auto Jne = Jns.leftCols(nne);
+        const auto Jbi = Jbs.rightCols(nbi);
+        const auto Jni = Jns.rightCols(nni);
 
-        // The identity matrices Ibebe and Ibibi
         const auto Ibebe = identity(nbe, nbe);
         const auto Ibibi = identity(nbi, nbi);
 
-        // Views to the sub-vectors of Hs = [Hbebe Hbibi Hnene Hnini]
-        auto Hs    = Hd.head(ns);
-        auto Hbsbs = Hs.head(nbs);
-        auto Hnsns = Hs.tail(nns);
-        auto Hbebe = Hbsbs.head(nbe);
-        auto Hbibi = Hbsbs.tail(nbi);
-        auto Hnene = Hnsns.head(nne);
-        auto Hnini = Hnsns.tail(nni);
+        auto Hs = Hd.head(ns);
 
-        // Initialize Hs = [Hbebe Hbibi Hnene Hnini] above
         Hs = args.Hss.diagonal();
 
-        // The auxiliary matrix Bnebs = inv(Hnene) * tr(Sbsne) and its submatrices
-        auto Bnebs = Bw.topLeftCorner(nne, nbs);
-        auto Bnebe = Bnebs.leftCols(nbe);
-        auto Bnebi = Bnebs.rightCols(nbi);
+        const auto Hbsbs = Hs.head(nbs);
+        const auto Hnsns = Hs.tail(nns);
+        const auto Hbebe = Hbsbs.head(nbe);
+        const auto Hbibi = Hbsbs.tail(nbi);
+        const auto Hnene = Hnsns.head(nne);
+        const auto Hnini = Hnsns.tail(nni);
 
-        // Initialize Bnebs = inv(Hnene) * tr(Sbsne) above
-        Bnebs.noalias() = diag(inv(Hnene)) * tr(Sbsne);
+        const auto invHbebe = diag(inv(Hbebe));
+        const auto invHnene = diag(inv(Hnene));
 
-        // The auxiliary matrix Tbsbs = Sbsne * Bnebs and its submatrices
+        auto barHbep  = barHsp.topRows(nbe);
+        auto barHnep  = barHsp.bottomRows(nne);
+        auto barVpbe  = barVps.leftCols(nbe);
+        auto barVpne  = barVps.rightCols(nne);
+        auto barJbe   = barJs.leftCols(nbe);
+        auto barJne   = barJs.rightCols(nne);
+        auto barSbene = barSbsne.topRows(nbe);
+        auto barSbine = barSbsne.bottomRows(nbi);
+
+        barHbep  = invHbebe * Hbep;
+        barHnep  = invHnene * Hnep;
+        barVpbe  = Vpbe * invHbebe;
+        barVpne  = Vpne * invHnene;
+        barJbe   = Jbe * invHbebe;
+        barJne   = Jne * invHnene;
+        barSbsne = Sbsne * invHnene;
+
         auto Tbsbs = Tw.topLeftCorner(nbs, nbs);
-        auto Tbibi = Tbsbs.bottomRightCorner(nbi, nbi);
-        auto Tbibe = Tbsbs.bottomLeftCorner(nbi, nbe);
-        auto Tbebi = Tbsbs.topRightCorner(nbe, nbi);
-        auto Tbebe = Tbsbs.topLeftCorner(nbe, nbe);
 
-        // Initialize Tbsbs = Sbsne * Bnebs above
-        Tbsbs.noalias() = Sbsne * Bnebs;
+        Tbsbs.noalias() = Sbsne * tr(barSbsne);
 
-        // The matrix M of the system of linear equations
-        auto M = Mw.topLeftCorner(nbe + nbi + nni + np, nbe + nbi + nni + np);
+        const auto Tbibi = Tbsbs.bottomRightCorner(nbi, nbi);
+        const auto Tbibe = Tbsbs.bottomLeftCorner(nbi, nbe);
+        const auto Tbebi = Tbsbs.topRightCorner(nbe, nbi);
+        const auto Tbebe = Tbsbs.topLeftCorner(nbe, nbe);
+
+        const auto t = np + nz + nbi + nbe + nni;
+
+        auto M = Mw.topLeftCorner(t, t);
 
         //======================================================================
         // IMPORTANT NOTE
@@ -138,71 +179,168 @@ struct SaddlePointSolverRangespace::Impl
         // robustness) can be compromised.
         //======================================================================
 
-        auto Mbe = M.topRows(nbe);
-        auto Mbi = M.middleRows(nbe, nbi);
-        auto Mni = M.middleRows(nbe + nbi, nni);
-        auto Mnp = M.bottomRows(np);
+        auto M1 = M.topRows(np);
+        auto M2 = M.middleRows(np, nz);
+        auto M3 = M.middleRows(np + nz, nbi);
+        auto M4 = M.middleRows(np + nz + nbi, nbe);
+        auto M5 = M.bottomRows(nni);
 
-        auto Mbebe = Mbe.leftCols(nbe);
-        auto Mbebi = Mbe.middleCols(nbe, nbi);
-        auto Mbeni = Mbe.middleCols(nbe + nbi, nni);
-        auto Mbenp = Mbe.rightCols(np);
+        auto M11 = M1.leftCols(np);
+        auto M12 = M1.middleCols(np, nz);
+        auto M13 = M1.middleCols(np + nz, nbi);
+        auto M14 = M1.middleCols(np + nz + nbi, nbe);
+        auto M15 = M1.rightCols(nni);
 
-        auto Mbibe = Mbi.leftCols(nbe);
-        auto Mbibi = Mbi.middleCols(nbe, nbi);
-        auto Mbini = Mbi.middleCols(nbe + nbi, nni);
-        auto Mbinp = Mbi.rightCols(np);
+        auto M21 = M2.leftCols(np);
+        auto M22 = M2.middleCols(np, nz);
+        auto M23 = M2.middleCols(np + nz, nbi);
+        auto M24 = M2.middleCols(np + nz + nbi, nbe);
+        auto M25 = M2.rightCols(nni);
 
-        auto Mnibe = Mni.leftCols(nbe);
-        auto Mnibi = Mni.middleCols(nbe, nbi);
-        auto Mnini = Mni.middleCols(nbe + nbi, nni);
-        auto Mninp = Mni.rightCols(np);
+        auto M31 = M3.leftCols(np);
+        auto M32 = M3.middleCols(np, nz);
+        auto M33 = M3.middleCols(np + nz, nbi);
+        auto M34 = M3.middleCols(np + nz + nbi, nbe);
+        auto M35 = M3.rightCols(nni);
 
-        auto Mnpbe = Mnp.leftCols(nbe);
-        auto Mnpbi = Mnp.middleCols(nbe, nbi);
-        auto Mnpni = Mnp.middleCols(nbe + nbi, nni);
-        auto Mnpnp = Mnp.rightCols(np);
+        auto M41 = M4.leftCols(np);
+        auto M42 = M4.middleCols(np, nz);
+        auto M43 = M4.middleCols(np + nz, nbi);
+        auto M44 = M4.middleCols(np + nz + nbi, nbe);
+        auto M45 = M4.rightCols(nni);
 
-        //======================================================================
-        // TODO: The current implementation of this solver neglects the
-        // contribution of matrix Hsp in the mathematical formulation! There
-        // could have other rangespace solvers in which both Hsp and Hps are
-        // considered or neglected (in which case, only Vpp considered).
-        //======================================================================
+        auto M51 = M5.leftCols(np);
+        auto M52 = M5.middleCols(np, nz);
+        auto M53 = M5.middleCols(np + nz, nbi);
+        auto M54 = M5.middleCols(np + nz + nbi, nbe);
+        auto M55 = M5.rightCols(nni);
 
-        // Setting the 1st column of M with dimension nbe (corresponding to ybe)
-        Mbebe.noalias() = Ibebe + diag(Hbebe) * Tbebe;
-        Mbibe.noalias() = -Tbibe;
-        Mnibe.noalias() = tr(Sbeni);
-        Mnpbe.noalias() = -Vnpbe * diag(inv(Hbebe)) - Vnpne * Bnebe;
+        M11.noalias() = Vpp - Vpbe*barHbep - Vpne*barHnep + barVpne*tr(Sbine)*Hbip;
+        M12.noalias() = -barVpbe*tr(Jbe) - barVpne*tr(Jne) + barVpne*tr(Sbine)*tr(Jbi);
+        M13.noalias() = Vpbi + barVpne*tr(Sbine)*Hbibi;
+        M14.noalias() = -barVpbe - barVpne*tr(Sbene);
+        M15.noalias() = Vpni;
 
-        // Setting the 2nd column of M with dimension nbi (corresponding to xbi)
-        Mbebi.noalias() = diag(-Hbebe) * Tbebi * diag(Hbibi);
-        Mbibi.noalias() = Ibibi + Tbibi * diag(Hbibi);
-        Mnibi.noalias() = -tr(Sbini) * diag(Hbibi);
-        Mnpbi.noalias() = Vnpbi + Vnpne * Bnebi * diag(Hbibi);
+        M11.noalias() = Jp - Jbe*barHbep - Jne*barHnep + barJne*tr(Sbine)*Hbip;
+        M12.noalias() = -barJbe*tr(Jbe) - barJne*tr(Jne) + barJne*tr(Sbine)*tr(Jbi);
+        M13.noalias() = Jbi + barJne*tr(Sbine)*Hbibi;
+        M14.noalias() = -barJbe - barJne*tr(Sbene);
+        M15.noalias() = Jni;
 
-        // Setting the 3rd column of M with dimension nni (corresponding to xni)
-        Mbeni.noalias() = diag(-Hbebe) * Sbeni;
-        Mbini.noalias() = Sbini;
-        Mnini           = diag(Hnini);
-        Mnpni.noalias() = Vnpni;
+        M11.noalias() = Sbip - barSbine*Hnep + Tbibi*Hbip;
+        M12.noalias() = -barSbine*tr(Jne) + Tbibi*tr(Jbi);
+        M13.noalias() = Ibibi + Tbibi*Hbibi;
+        M14.noalias() = -Tbibe;
+        M15.noalias() = Sbini;
 
-        // Setting the 4th column of M with dimension np (corresponding to p)
-        Mbenp.noalias() = diag(-Hbebe) * Sbenp;
-        Mbinp.noalias() = Sbinp;
-        Mninp.fill(0.0);
-        Mnpnp.noalias() = Vnpnp;
+        M11.noalias() = Sbep - barHbep - barSbene*Hnep + Tbebi*Hbip;
+        M12.noalias() = -tr(barJbe) - barSbene*tr(Jne) + Tbebi*tr(Jbi);
+        M13.noalias() = Tbebi*Hbibi;
+        M14 = diag(inv(-Hbebe)); M14 -= Tbebe;
+        M15.noalias() = Sbeni;
+
+        M11.noalias() = Hnip - tr(Sbini)*Hbip;
+        M12.noalias() = tr(Jni) - tr(Sbini)*tr(Jbi);
+        M13.noalias() = -tr(Sbini)*Hbibi;
+        M14.noalias() = tr(Sbeni);
+        M15.noalias() = Hnini;
+
+        // M11.noalias() =  Vpp - Vpbe*invHbebe*Hbep - Vpne*invHnene*Hnep + Vpne*invHnene*tr(Sbine)*Hbip;
+        // M12.noalias() = -Vpbe*invHbebe*tr(Jbe) - Vpne*invHnene*tr(Jne) + Vpne*invHnene*tr(Sbine)*tr(Jbi);
+        // M13.noalias() =  Vpbi + Vpne*invHnene*tr(Sbine)*Hbibi;
+        // M14.noalias() = -Vpbe*invHbebe - Vpne*invHnene*tr(Sbene);
+        // M15.noalias() =  Vpni;
+
+        // M21.noalias() = Jp - Jbe*invHbebe*Hbep - Jne*invHnene*Hnep + Jne*invHnene*tr(Sbine)*Hbip;
+        // M22.noalias() = -Jbe*invHbebe*tr(Jbe) - Jne*invHnene*tr(Jne) + Jne*invHnene*tr(Sbine)*tr(Jbi);
+        // M23.noalias() = Jbi + Jne*invHnene*tr(Sbine)*Hbibi;
+        // M24.noalias() = -Jbe*invHbebe - Jne*invHnene*tr(Sbene);
+        // M25.noalias() = Jni;
+
+        // M31.noalias() = Sbip - Sbine*invHnene*Hnep + Sbine*invHnene*tr(Sbine)*Hbip;
+        // M32.noalias() = -Sbine*invHnene*tr(Jne) + Sbine*invHnene*tr(Sbine)*tr(Jbi);
+        // M33.noalias() = Ibibi + Sbine*invHnene*tr(Sbine)*Hbibi;
+        // M34.noalias() = -Sbine*invHnene*tr(Sbene);
+        // M35.noalias() = Sbini;
+
+        // M41.noalias() = Sbep - invHbebe*Hbep - Sbene*invHnene*Hnep + Sbene*invHnene*tr(Sbine)*Hbip;
+        // M42.noalias() = invHbebe*tr(-Jbe) - Sbene*invHnene*tr(Jne) + Sbene*invHnene*tr(Sbine)*tr(Jbi);
+        // M43.noalias() = Sbene*invHnene*tr(Sbine)*Hbibi;
+        // M44 = diag(inv(-Hbebe)); M44 -= Sbene*invHnene*tr(Sbene);
+        // M45.noalias() = Sbeni;
+
+        // M51.noalias() = Hnip - tr(Sbini)*Hbip;
+        // M52.noalias() = tr(Jni) - tr(Sbini)*tr(Jbi);
+        // M53.noalias() = -tr(Sbini)*Hbibi;
+        // M54.noalias() = tr(Sbeni);
+        // M55.noalias() = Hnini;
+
+
+
+
+
+
+        // // Setting the 1st column of M with dimension nbe (corresponding to ybe)
+        // Mbibi.noalias() = Ibibi + Tbibi * diag(Hbibi);
+        // Mbebi.noalias() = Tbebi * diag(Hbibi);
+        // Mnibi.noalias() = -tr(Sbini) * diag(Hbibi);
+        // Mpbi.noalias() = Vpbi + Vpne * Bnebi * diag(Hbibi);
+
+        // // Setting the 2nd column of M with dimension nbi (corresponding to xbi)
+        // Mbibe.noalias() = -Tbibe;
+        // Mbebe = diag(inv(-Hbebe)); Mbebe -= Tbebe;
+        // Mnibe.noalias() = tr(Sbeni);
+        // Mpbe.noalias() = -Vpbe * diag(inv(Hbebe)) - Vpne * Bnebe;
+
+        // // Setting the 3rd column of M with dimension nni (corresponding to xni)
+        // Mbini = Sbini;
+        // Mbeni = Sbeni;
+        // Mnini = diag(Hnini);
+        // Mpni = Vpni;
+
+        // // Setting the 4th column of M with dimension np (corresponding to p)
+        // Mbip = Sbip;
+        // Mbep = Sbep;
+        // Mnip.fill(0.0);
+        // Mpp = Vpp;
+
+        std::cout << "================================================================================================================================================" << std::endl;
+        PRINT(M);
+        std::cout << "================================================================================================================================================" << std::endl;
+        // PRINT(Mbebe);
+        // PRINT(Mbibe);
+        // PRINT(Mnibe);
+        // PRINT(Mpbe);
+        // PRINT(Mbebi);
+        // PRINT(Mbibi);
+        // PRINT(Mnibi);
+        // PRINT(Mpbi);
+        // PRINT(Mbeni);
+        // PRINT(Mbini);
+        // PRINT(Mnini);
+        // PRINT(Mpni);
+        // PRINT(Mbep);
+        // PRINT(Mbip);
+        // PRINT(Mnip);
+        // PRINT(Mpp);
 
         lu.decompose(M);
+
+        Matrix mlu = lu.matrixLU();
+
+        const Matrix L = mlu.triangularView<Eigen::UnitLower>();
+        const Matrix U = mlu.triangularView<Eigen::Upper>();
+
+        PRINT(L);
+        PRINT(U);
     }
 
     /// Solve the canonical saddle point problem.
     auto solve(CanonicalSaddlePointProblem args) -> void
     {
-        // The dimension variables needed below
         const auto ns  = args.dims.ns;
         const auto np  = args.dims.np;
+        const auto nz  = args.dims.nz;
         const auto nbs = args.dims.nbs;
         const auto nns = args.dims.nns;
         const auto nbe = args.dims.nbe;
@@ -210,95 +348,101 @@ struct SaddlePointSolverRangespace::Impl
         const auto nne = args.dims.nne;
         const auto nni = args.dims.nni;
 
-        // View in Hd for the Hs entries in the diagonal of Hss
-        const auto Hs = Hd.head(ns);
-
-        // Views to the sub-matrices of the canonical matrix S
         const auto Sbsns = args.Sbsns;
         const auto Sbene = Sbsns.topLeftCorner(nbe, nne);
+        const auto Sbeni = Sbsns.topRightCorner(nbe, nni);
         const auto Sbine = Sbsns.bottomLeftCorner(nbi, nne);
         const auto Sbini = Sbsns.bottomRightCorner(nbi, nni);
+        const auto Sbsne = Sbsns.leftCols(nne);
 
-        // Views to the sub-vectors of Hs = [Hbebe Hbibi Hnene Hnini]
+        const auto Sbsp = args.Sbsp;
+        const auto Sbep = Sbsp.topRows(nbe);
+        const auto Sbip = Sbsp.bottomRows(nbi);
+
+        const auto Hbsp = args.Hsp.leftCols(nbs);
+        const auto Hnsp = args.Hsp.rightCols(nns);
+        const auto Hbep = Hbsp.leftCols(nbe);
+        const auto Hnep = Hnsp.leftCols(nne);
+        const auto Hbip = Hbsp.rightCols(nbi);
+        const auto Hnip = Hnsp.rightCols(nni);
+
+        const auto Vpp  = args.Vpp;
+        const auto Vpbs = args.Vps.leftCols(nbs);
+        const auto Vpns = args.Vps.rightCols(nns);
+        const auto Vpbe = Vpbs.leftCols(nbe);
+        const auto Vpne = Vpns.leftCols(nne);
+        const auto Vpbi = Vpbs.rightCols(nbi);
+        const auto Vpni = Vpns.rightCols(nni);
+
+        const auto Jp = args.Jp;
+        const auto Js  = args.Js;
+        const auto Jbs = Js.leftCols(nbs);
+        const auto Jns = Js.rightCols(nns);
+        const auto Jbe = Jbs.leftCols(nbe);
+        const auto Jne = Jns.leftCols(nne);
+        const auto Jbi = Jbs.rightCols(nbi);
+        const auto Jni = Jns.rightCols(nni);
+
+        const auto Hs = Hd.head(ns);
+
         const auto Hbsbs = Hs.head(nbs);
         const auto Hnsns = Hs.tail(nns);
         const auto Hbebe = Hbsbs.head(nbe);
         const auto Hbibi = Hbsbs.tail(nbi);
         const auto Hnene = Hnsns.head(nne);
+        const auto Hnini = Hnsns.tail(nni);
 
-        // View to the sub-matrix Vnpnp === Vpp
-        const auto Vnpnp = args.Hpp;
+        const auto barVpne = barVps.rightCols(nne);
+        const auto barJne  = barJs.rightCols(nne);
 
-        // View to the sub-matrices Vnpbs = [Vnpbe Vnpbi]
-        const auto Vnpbs = args.Hps.leftCols(nbs);
-        const auto Vnpbe = Vnpbs.leftCols(nbe);
-        const auto Vnpbi = Vnpbs.rightCols(nbi);
+        const auto Tbsbs = Tw.topLeftCorner(nbs, nbs);
+        const auto Tbibi = Tbsbs.bottomRightCorner(nbi, nbi);
+        const auto Tbibe = Tbsbs.bottomLeftCorner(nbi, nbe);
+        const auto Tbebi = Tbsbs.topRightCorner(nbe, nbi);
+        const auto Tbebe = Tbsbs.topLeftCorner(nbe, nbe);
 
-        // View to the sub-matrices Vnpns = [Vnpne Vnpni]
-        const auto Vnpns = args.Hps.rightCols(nns);
-        const auto Vnpne = Vnpns.leftCols(nne);
-        const auto Vnpni = Vnpns.rightCols(nni);
-
-        // The auxiliary matrix Bnebs = inv(Hnene) * tr(Sbsne) and its submatrices
-        auto Bnebs = Bw.topLeftCorner(nne, nbs);
-        auto Bnebe = Bnebs.leftCols(nbe);
-        auto Bnebi = Bnebs.rightCols(nbi);
-
-        // The auxiliary matrix Tbsbs = Sbsne * Bnebs and its submatrices
-        auto Tbsbs = Tw.topLeftCorner(nbs, nbs);
-        auto Tbibi = Tbsbs.bottomRightCorner(nbi, nbi);
-        auto Tbibe = Tbsbs.bottomLeftCorner(nbi, nbe);
-        auto Tbebi = Tbsbs.topRightCorner(nbe, nbi);
-        auto Tbebe = Tbsbs.topLeftCorner(nbe, nbe);
-
-        // Use ax as workspace for vector as
-        auto as = ax.head(ns);
-
-        // Use bb as workspace for vector bbs
-        auto bbs = bb.head(nbs);
-
-        // Views to the sub-vectors of as = [abs, ans]
+        auto as  = ax.head(ns);
         auto abs = as.head(nbs);
         auto ans = as.tail(nns);
-
-        // Views to the sub-vectors of abs = [abe, abi]
         auto abe = abs.head(nbe);
-        auto abi = abs.tail(nbi);
-
-        // Views to the sub-vectors of ans = [ane, ani]
         auto ane = ans.head(nne);
+        auto abi = abs.tail(nbi);
         auto ani = ans.tail(nni);
 
-        // Views to the sub-vectors in bbs = [bbe, bbi]
+        auto bbs = bb.head(nbs);
         auto bbe = bbs.head(nbe);
         auto bbi = bbs.tail(nbi);
 
-        // Initialize vectors as, ap and bbs
         as = args.as;
         ap = args.ap;
-        bbs = args.bbs;
+        bbs = args.aybs;
 
         abe.noalias() = abe/Hbebe;
         ane.noalias() = ane/Hnene;
 
-        ap.noalias() = ap - Vnpbe*abe - Vnpne*ane + Vnpne*Bnebi*abi;
-
-        bbe.noalias() = bbe - Sbene*ane + Tbebi*abi - abe;
+        ap.noalias()  = ap - Vpbe*abe - Vpne*ane + barVpne*tr(Sbine)*abi;
+        az.noalias()  = az - Jbe*abe - Jne*ane + barJne*tr(Sbine)*abi;
         bbi.noalias() = bbi - Sbine*ane + Tbibi*abi;
-        ani.noalias() = ani - tr(Sbini) * abi;
+        bbe.noalias() = bbe - abe - Sbene*ane + Tbebi*abi;
+        ani.noalias() = ani - tr(Sbini)*abi;
 
-        bbe.noalias()  = diag(-Hbebe)*bbe;
+        const auto t = np + nz + nbi + nbe + nni;
 
-        auto r = rw.head(nbe + nbi + nni + np);
+        auto r = rw.head(t);
 
-        auto ybe = r.head(nbe);
-        auto xbi = r.segment(nbe, nbi);
-        auto xni = r.segment(nbe + nbi, nni);
-        auto xnp = r.segment(nbe + nbi + nni, np);
+        auto p   = r.head(np);
+        auto z   = r.segment(np, nz);
+        auto xbi = r.segment(np + nz, nbi);
+        auto ybe = r.segment(np + nz + nbi, nbe);
+        auto xni = r.tail(nni);
 
-        r << bbe, bbi, ani, ap;
+        r << ap, az, bbi, bbe, ani;
+
+        PRINT(r);
 
         lu.solve(r);
+
+        PRINT(r);
 
         const auto rank = lu.rank();
 
@@ -308,18 +452,19 @@ struct SaddlePointSolverRangespace::Impl
         auto xbe = abe;
         auto xne = ane;
 
-        ybi.noalias() = abi - diag(Hbibi)*xbi;
-        xbe.noalias() = abe - ybe/Hbebe;
-        xne.noalias() = ane - Bnebe*ybe - Bnebi*ybi;
+        ybi.noalias() = abi - Hbip*p - tr(Jbi)*z - diag(Hbibi)*xbi;
+        xbe.noalias() = abe - (Hbep*p + tr(Jbe)*z + ybe) / Hbebe;
+        xne.noalias() = ane - (Hnep*p + tr(Jne)*z + tr(Sbene)*ybe + tr(Sbine)*ybi) / Hnene;
 
         args.xs << xbe, xbi, xne, xni;
-        args.p = xnp;
+        args.p = p;
+        args.z = z;
         args.ybs << ybe, ybi;
     }
 };
 
-SaddlePointSolverRangespace::SaddlePointSolverRangespace(Index nx, Index np, Index m)
-: pimpl(new Impl(nx, np, m))
+SaddlePointSolverRangespace::SaddlePointSolverRangespace(Index nx, Index np, Index ny, Index nz)
+: pimpl(new Impl(nx, np, ny, nz))
 {}
 
 SaddlePointSolverRangespace::SaddlePointSolverRangespace(const SaddlePointSolverRangespace& other)

@@ -47,37 +47,43 @@ public:
     /// The number of evaluations of the objective function in the optimization calculation.
     Index num_objective_evals = 0;
 
-    /// The number of evaluations of *f(x)* in the optimization calculation.
+    /// The number of evaluations of *f(x, p)* in the optimization calculation.
     Index num_objective_evals_f = 0;
 
-    /// The number of evaluations of *g(x)* in the optimization calculation.
-    Index num_objective_evals_g = 0;
+    /// The number of evaluations of *fx(x, p)* in the optimization calculation.
+    Index num_objective_evals_fx = 0;
 
-    /// The number of evaluations of *H(x)* in the optimization calculation.
-    Index num_objective_evals_H = 0;
+    /// The number of evaluations of *fxx(x, p)* in the optimization calculation.
+    Index num_objective_evals_fxx = 0;
 
-    /// The wall time spent for the optimization calculation (in units of s).
+    /// The number of evaluations of *fxp(x, p)* in the optimization calculation.
+    Index num_objective_evals_fxp = 0;
+
+    /// The wall time spent for the optimization calculation (in unit of s).
     double time = 0;
 
-    /// The wall time spent for all objective evaluations (in units of s).
+    /// The wall time spent for all objective evaluations (in unit of s).
     double time_objective_evals = 0;
 
-    /// The wall time spent for evaluating just *f(x)* (in units of s).
+    /// The wall time spent for evaluating just *f(x, p)* (in unit of s).
     double time_objective_evals_f = 0;
 
-    /// The wall time spent for evaluating just *g(x)* (in units of s).
-    double time_objective_evals_g = 0;
+    /// The wall time spent for evaluating just *fx(x, p)* (in unit of s).
+    double time_objective_evals_fx = 0;
 
-    /// The wall time spent for evaluating just *H(x)* (in units of s).
-    double time_objective_evals_H = 0;
+    /// The wall time spent for evaluating just *fxx(x, p)* (in unit of s).
+    double time_objective_evals_fxx = 0;
 
-    /// The wall time spent for all contraint evaluations (in units of s).
+    /// The wall time spent for evaluating just *fxp(x, p)* (in unit of s).
+    double time_objective_evals_fxp = 0;
+
+    /// The wall time spent for all contraint evaluations (in unit of s).
     double time_constraint_evals = 0;
 
-    /// The wall time spent for all linear system solutions (in units of s).
+    /// The wall time spent for all linear system solutions (in unit of s).
     double time_linear_systems = 0;
 
-    /// The wall time spent for computing the sensitivity derivatives (in units of s).
+    /// The wall time spent for computing the sensitivity derivatives (in unit of s).
     double time_sensitivities = 0;
 
     /// Update this Result instance with another by addition.

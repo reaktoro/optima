@@ -74,6 +74,25 @@ def check_canonical_ordering(canonicalizer, weigths):
         assert weigths[inonbasic[i]] <= weigths[inonbasic[i - 1]]
 
 
+def check_new_ordering(canonicalizer, Kb, Kn):
+    R = array(canonicalizer.R())  # create a copy of internal reference
+    S = array(canonicalizer.S())  # create a copy of internal reference
+    Q = array(canonicalizer.Q())  # create a copy of internal reference
+
+    canonicalizer.updateOrdering(Kb, Kn)
+
+    Rnew = canonicalizer.R()
+    Snew = canonicalizer.S()
+    Qnew = canonicalizer.Q()
+
+    nb = len(Kb)
+
+    assert_array_almost_equal(Rnew[:nb, :],  R[Kb, :])
+    assert_array_almost_equal(Snew,  S[Kb, :][:, Kn])
+    assert_array_almost_equal(Qnew[:nb],  Q[:nb][Kb])
+    assert_array_almost_equal(Qnew[nb:],  Q[nb:][Kn])
+
+
 def check_canonicalizer(canonicalizer, A):
     # Auxiliary variables
     n = canonicalizer.numVariables()
@@ -109,6 +128,19 @@ def check_canonicalizer(canonicalizer, A):
     check_canonical_form(canonicalizer, A)
 
     check_canonical_ordering(canonicalizer, weigths)
+
+    #---------------------------------------------------------------------------
+    # Check changing ordering of basic and non-basic variables work
+    #---------------------------------------------------------------------------
+    Kb = list(range(nb))
+    Kn = list(range(nn))
+
+    check_new_ordering(canonicalizer, Kb, Kn)  # identical ordering
+
+    Kb = list(reversed(range(nb)))
+    Kn = list(reversed(range(nn)))
+
+    check_new_ordering(canonicalizer, Kb, Kn)  # reversed ordering
 
 
 @mark.parametrize("args", testdata)

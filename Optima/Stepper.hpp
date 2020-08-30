@@ -35,7 +35,8 @@ struct StepperInitArgs
 {
     Index nx;                   ///< The number of primal variables *x*.
     Index np;                   ///< The number of parameter variables *p*.
-    Index m;                    ///< The number of Lagrange multipliers *y*.
+    Index ny;                   ///< The number of Lagrange multipliers *y*.
+    Index nz;                   ///< The number of Lagrange multipliers *z*.
     MatrixConstRef Ax;          ///< The coefficient matrix *Ax* of the linear equality constraints.
     MatrixConstRef Ap;          ///< The coefficient matrix *Ap* of the linear equality constraints.
 };
@@ -58,6 +59,7 @@ struct StepperCanonicalizeArgs
     VectorConstRef x;           ///< The current state of the primal variables *x*.
     VectorConstRef p;           ///< The current state of the parameter variables *p*.
     VectorConstRef y;           ///< The current state of the Lagrange multipliers *y*.
+    VectorConstRef z;           ///< The current state of the Lagrange multipliers *z*.
     VectorConstRef fx;          ///< The evaluated gradient of the objective function *f(x, p)* with respect to *x*.
     MatrixConstRef fxx;         ///< The evaluated Jacobian of the gradient function *fx(x, p)* with respect to *x*, i.e., the Hessian of *f(x)*.
     MatrixConstRef fxp;         ///< The evaluated Jacobian of the gradient function *fx(x, p)* with respect to *p*.
@@ -78,6 +80,7 @@ struct StepperResidualsArgs
     VectorConstRef x;           ///< The current state of the primal variables *x*.
     VectorConstRef p;           ///< The current state of the parameter variables *p*.
     VectorConstRef y;           ///< The current state of the Lagrange multipliers *y*.
+    VectorConstRef z;           ///< The current state of the Lagrange multipliers *z*.
     VectorConstRef b;           ///< The right-hand side vector *b* of the linear equality constraints *Ax*x + Ap*p = b*.
     VectorConstRef h;           ///< The evaluated equality constraint function *h(x, p)*.
     VectorConstRef v;           ///< The evaluated external constraint function *v(x, p)*.
@@ -85,31 +88,13 @@ struct StepperResidualsArgs
     MatrixConstRef hx;          ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *x*.
     VectorRef rx;               ///< The output residuals of the first-order optimality conditions.
     VectorRef rp;               ///< The output residuals of the external constraint functions *v(x, p)*.
-    VectorRef ry;               ///< The output residuals of the linear/nonlinear feasibility conditions.
+    VectorRef ry;               ///< The output residuals of the linear feasibility conditions *Ax*x + Ap*p - b* in canonical form.
+    VectorRef rz;               ///< The output residuals of the nonlinear feasibility conditions *h(x, p) = 0*.
     VectorRef ex;               ///< The output relative errors of the first-order optimality conditions.
-    VectorRef ep;               ///< The output relative errors of the external constraint functions *v(x, p)*.
-    VectorRef ey;               ///< The output relative errors of the linear/nonlinear feasibility conditions.
-    VectorRef z;                ///< The output *unstabilities* of the variables defined as *z = g + tr(Wx)y* where *Wx = [Ax; Jx]*.
-};
-
-/// The arguments for method Stepper::decompose.
-struct StepperDecomposeArgs
-{
-    VectorConstRef x;           ///< The current state of the primal variables *x*.
-    VectorConstRef p;           ///< The current state of the parameter variables *p*.
-    VectorConstRef y;           ///< The current state of the Lagrange multipliers *y*.
-    VectorConstRef fx;          ///< The evaluated gradient of the objective function *f(x, p)* with respect to *x*.
-    MatrixConstRef fxx;         ///< The evaluated Jacobian of the gradient function *fx(x, p)* with respect to *x*, i.e., the Hessian of *f(x)*.
-    MatrixConstRef fxp;         ///< The evaluated Jacobian of the gradient function *fx(x, p)* with respect to *p*.
-    MatrixConstRef vx;          ///< The evaluated Jacobian of the external constraint function *v(x, p)* with respect to *x*.
-    MatrixConstRef vp;          ///< The evaluated Jacobian of the external constraint function *v(x, p)* with respect to *p*.
-    MatrixConstRef hx;          ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *x*.
-    MatrixConstRef hp;          ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *p*.
-    VectorConstRef xlower;      ///< The lower bounds of the primal variables *x*.
-    VectorConstRef xupper;      ///< The upper bounds of the primal variables *x*.
-    VectorConstRef plower;      ///< The lower bounds of the parameter variables *p*.
-    VectorConstRef pupper;      ///< The upper bounds of the parameter variables *p*.
-    Stability const& stability; ///< The output stability state of the primal variables *x*.
+    VectorRef ep;               ///< The output relative errors of the external constraint functions *v(x, p) = 0*.
+    VectorRef ey;               ///< The output relative errors of the linear feasibility conditions *Ax*x + Ap*p - b* in canonical form.
+    VectorRef ez;               ///< The output relative errors of the nonlinear feasibility conditions *h(x, p) = 0*.
+    VectorRef s;                ///< The output *stabilities* of the variables defined as *s = g + tr(Ax)y + tr(Jx)*z*.
 };
 
 /// The arguments for method Stepper::solve.
@@ -118,6 +103,7 @@ struct StepperSolveArgs
     VectorConstRef x;           ///< The current state of the primal variables *x*.
     VectorConstRef p;           ///< The current state of the parameter variables *p*.
     VectorConstRef y;           ///< The current state of the Lagrange multipliers *y*.
+    VectorConstRef z;           ///< The current state of the Lagrange multipliers *z*.
     VectorConstRef fx;          ///< The evaluated gradient of the objective function *f(x, p)* with respect to *x*.
     VectorConstRef b;           ///< The right-hand side vector *b* of the linear equality constraints *Ax*x + Ap*p = b*.
     VectorConstRef h;           ///< The evaluated equality constraint function *h(x, p)*.
@@ -126,6 +112,7 @@ struct StepperSolveArgs
     VectorRef dx;               ///< The output step for the primal variables *x*.
     VectorRef dp;               ///< The output step for the parameter variables *p*.
     VectorRef dy;               ///< The output step for the Lagrange multipliers *y*.
+    VectorRef dz;               ///< The output step for the Lagrange multipliers *z*.
 };
 
 /// The arguments for method Stepper::sensitivities.
@@ -140,6 +127,7 @@ struct StepperSensitivitiesArgs
     MatrixRef pw;               ///< The output sensitivity derivatives *∂p/∂w*.
     MatrixRef yw;               ///< The output sensitivity derivatives *∂y/∂w*.
     MatrixRef zw;               ///< The output sensitivity derivatives *∂z/∂w*.
+    MatrixRef sw;               ///< The output sensitivity derivatives *∂s/∂w*.
 };
 
 /// The arguments for method Stepper::steepestDescent.
@@ -148,6 +136,7 @@ struct StepperSteepestDescentLagrangeArgs
     VectorConstRef x;           ///< The current state of the primal variables *x*.
     VectorConstRef p;           ///< The current state of the parameter variables *p*.
     VectorConstRef y;           ///< The current state of the Lagrange multipliers *y*.
+    VectorConstRef z;           ///< The current state of the Lagrange multipliers *z*.
     VectorConstRef fx;          ///< The evaluated gradient of the objective function *f(x, p)* with respect to *x*.
     VectorConstRef b;           ///< The right-hand side vector *b* of the linear equality constraints *Ax*x + Ap*p = b*.
     VectorConstRef h;           ///< The evaluated equality constraint function *h(x, p)*.
@@ -155,6 +144,7 @@ struct StepperSteepestDescentLagrangeArgs
     VectorRef dx;               ///< The output steepest descent direction for the primal variables *x*.
     VectorRef dp;               ///< The output steepest descent direction for the parameter variables *p*.
     VectorRef dy;               ///< The output steepest descent direction for the Lagrange multipliers *y*.
+    VectorRef dz;               ///< The output steepest descent direction for the Lagrange multipliers *z*.
 };
 
 /// The arguments for method Stepper::steepestDescentError.
@@ -163,6 +153,7 @@ struct StepperSteepestDescentErrorArgs
     VectorConstRef x;           ///< The current state of the primal variables *x*.
     VectorConstRef p;           ///< The current state of the parameter variables *p*.
     VectorConstRef y;           ///< The current state of the Lagrange multipliers *y*.
+    VectorConstRef z;           ///< The current state of the Lagrange multipliers *z*.
     VectorConstRef fx;          ///< The evaluated gradient of the objective function *f(x, p)* with respect to *x*.
     MatrixConstRef fxx;         ///< The evaluated Jacobian of the gradient function *fx(x, p)* with respect to *x*, i.e., the Hessian of *f(x)*.
     MatrixConstRef fxp;         ///< The evaluated Jacobian of the gradient function *fx(x, p)* with respect to *p*.
@@ -176,25 +167,7 @@ struct StepperSteepestDescentErrorArgs
     VectorRef dx;               ///< The output steepest descent direction for the primal variables *x*.
     VectorRef dp;               ///< The output steepest descent direction for the parameter variables *x*.
     VectorRef dy;               ///< The output steepest descent direction for the Lagrange multipliers *y*.
-};
-
-/// The return type of method Stepper::info.
-struct StepperInfo
-{
-    /// The indices of the basic variables.
-    IndicesConstRef jb;
-
-    /// The indices of the non-basic variables.
-    IndicesConstRef jn;
-
-    /// The canonicalization matrix *R* of *W = [A; J]*.
-    MatrixConstRef R;
-
-    /// The matrix *S* in the canonical form of *W = [A; J]*.
-    MatrixConstRef S;
-
-    /// The permutation matrix *Q* in the canonical form of *W = [A; J]*.
-    IndicesConstRef Q;
+    VectorRef dz;               ///< The output steepest descent direction for the Lagrange multipliers *z*.
 };
 
 /// The class that implements the step calculation.
@@ -219,7 +192,7 @@ public:
     /// Initialize the Newton step solver.
     auto initialize(StepperInitializeArgs args) -> void;
 
-    /// Canonicalize matrix *W = [A; J]* in the Newton step problem.
+    /// Canonicalize matrix *A = [Ax Ap]* in the Newton step problem.
     /// @note Ensure method @ref initialize is called first.
     auto canonicalize(StepperCanonicalizeArgs args) -> void;
 
@@ -229,7 +202,7 @@ public:
 
     /// Decompose the saddle point matrix in the Newton step problem.
     /// @note Ensure method @ref canonicalize is called first.
-    auto decompose(StepperDecomposeArgs args) -> void;
+    auto decompose() -> void;
 
     /// Solve the saddle point problem in the Newton step problem.
     /// @note Ensure method @ref decompose is called first.

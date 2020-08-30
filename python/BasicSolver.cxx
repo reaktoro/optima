@@ -30,9 +30,9 @@ using namespace Optima;
 
 void exportBasicSolver(py::module& m)
 {
-    auto init = [](Index nx, Index np, Index m, MatrixConstRef4py Ax, MatrixConstRef4py Ap) -> BasicSolver
+    auto init = [](Index nx, Index np, Index ny, Index nz, MatrixConstRef4py Ax, MatrixConstRef4py Ap) -> BasicSolver
     {
-        return BasicSolver({ nx, np, m, Ax, Ap });
+        return BasicSolver({ nx, np, ny, nz, Ax, Ap });
     };
 
     auto solve = [](BasicSolver& self,
@@ -48,15 +48,16 @@ void exportBasicSolver(py::module& m)
         VectorRef p,
         VectorRef y,
         VectorRef z,
+        VectorRef s,
         Stability& stability) -> Result
     {
         auto obj = convert(obj4py);
         auto h = convert(h4py);
         auto v = convert(v4py);
-        return self.solve({ obj, h, v, b, xlower, xupper, plower, pupper, x, p, y, z, stability });
+        return self.solve({ obj, h, v, b, xlower, xupper, plower, pupper, x, p, y, z, s, stability });
     };
 
-    Matrix tmp_xw, tmp_pw, tmp_yw, tmp_zw;
+    Matrix tmp_xw, tmp_pw, tmp_yw, tmp_zw, tmp_sw;
     auto sensitivities = [=](BasicSolver& self,
         MatrixConstRef4py fxw,
         MatrixConstRef4py hw,
@@ -66,17 +67,20 @@ void exportBasicSolver(py::module& m)
         MatrixRef4py xw,
         MatrixRef4py pw,
         MatrixRef4py yw,
-        MatrixRef4py zw) mutable
+        MatrixRef4py zw,
+        MatrixRef4py sw) mutable
     {
         tmp_xw.resize(xw.rows(), xw.cols());
         tmp_pw.resize(pw.rows(), pw.cols());
         tmp_yw.resize(yw.rows(), yw.cols());
         tmp_zw.resize(zw.rows(), zw.cols());
-        self.sensitivities({ fxw, hw, bw, vw, stability, tmp_xw, tmp_pw, tmp_yw, tmp_zw });
+        tmp_sw.resize(sw.rows(), sw.cols());
+        self.sensitivities({ fxw, hw, bw, vw, stability, tmp_xw, tmp_pw, tmp_yw, tmp_zw, tmp_sw });
         xw = tmp_xw;
         pw = tmp_pw;
         yw = tmp_yw;
         zw = tmp_zw;
+        sw = tmp_sw;
     };
 
     py::class_<BasicSolver>(m, "BasicSolver")

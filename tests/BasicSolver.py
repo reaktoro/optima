@@ -173,7 +173,7 @@ def test_basic_solver(args):
     x[iunstable_lower] = xlower[iunstable_lower]
     x[iunstable_upper] = xupper[iunstable_upper]
 
-    # Create the expected vector z = g + tr(A)yl + tr(J)yn
+    # Create the expected vector z = g + tr(Ax)*y + tr(Jx)*z
     z = zeros(nx)
     z[iunstable_lower] =  123  # lower unstable variables have positive value for z
     z[iunstable_upper] = -123  # upper unstable variables have negative value for z
@@ -197,7 +197,7 @@ def test_basic_solver(args):
     Hxp[ifixed, :] = 0.0
     Vpx[:, ifixed] = 0.0
 
-    # Compute the expected gradient vector at the solution using z = gx + tr(Ax)*yl + tr(Jx)*yn = gx + tr(Wx)*y
+    # Compute the expected gradient vector at the solution using z = gx + tr(Ax)*y + tr(Jx)*z
     gx = z - Wx.T @ y
 
     # Compute vector cx in f(x, p) = 1/2 tr(x)*Hxx*x + tr(x)*Hxp*p + tr(cx)*x using gx = Hxx*x + tr(p)*tr(Hxp) + cx
@@ -240,7 +240,7 @@ def test_basic_solver(args):
     options.max_iterations = 10
 
     # Solve the optimization problem
-    solver = BasicSolver(nx, np, m, Ax, Ap)
+    solver = BasicSolver(nx, np, ny, nz, Ax, Ap)
     solver.setOptions(options)
 
     res = solver.solve(obj, h, v, b, xlower, xupper, plower, pupper, x, p, y, z, stability)

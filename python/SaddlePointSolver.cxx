@@ -28,52 +28,71 @@ using namespace Optima;
 
 void exportSaddlePointSolver(py::module& m)
 {
-    auto init = [](Index nx, Index np, Index m, MatrixConstRef4py Ax, MatrixConstRef4py Ap) -> SaddlePointSolver
+    auto init = [](Index nx, Index np, Index ny, Index nz, MatrixConstRef4py Ax, MatrixConstRef4py Ap) -> SaddlePointSolver
     {
-        return SaddlePointSolver({ nx, np, m, Ax, Ap });
+        return SaddlePointSolver({ nx, np, ny, nz, Ax, Ap });
     };
 
-    auto canonicalize = [](SaddlePointSolver& self, MatrixConstRef4py Hxx, MatrixConstRef4py Hxp, MatrixConstRef4py Hpx, MatrixConstRef4py Hpp, MatrixConstRef4py Jx, MatrixConstRef4py Jp, VectorConstRef wx, IndicesConstRef ju)
+    auto canonicalize = [](SaddlePointSolver& self, MatrixConstRef4py Hxx, MatrixConstRef4py Hxp, MatrixConstRef4py Hpx, MatrixConstRef4py Hpp, MatrixConstRef4py Jx, MatrixConstRef4py Jp, IndicesConstRef ju, VectorConstRef wx)
     {
-        return self.canonicalize({ Hxx, Hxp, Hpx, Hpp, Jx, Jp, wx, ju });
+        return self.canonicalize({ Hxx, Hxp, Hpx, Hpp, Jx, Jp, ju, wx });
     };
 
-    auto decompose = [](SaddlePointSolver& self, MatrixConstRef4py Hxx, MatrixConstRef4py Hxp, MatrixConstRef4py Hpx, MatrixConstRef4py Hpp, MatrixConstRef4py Jx, MatrixConstRef4py Jp, IndicesConstRef ju)
+    auto rhs1 = [](SaddlePointSolver& self, VectorConstRef ax, VectorConstRef ap, VectorConstRef ay, VectorConstRef az)
     {
-        return self.decompose({ Hxx, Hxp, Hpx, Hpp, Jx, Jp, ju });
+        return self.rhs({ ax, ap, ay, az });
     };
 
-    auto solve1 = [](SaddlePointSolver& self, VectorConstRef ax, VectorConstRef ap, VectorConstRef b, VectorRef x, VectorRef p, VectorRef y)
+    auto rhs2 = [](SaddlePointSolver& self, VectorConstRef fx, VectorConstRef x, VectorConstRef p, VectorConstRef y, VectorConstRef z, VectorConstRef v, VectorConstRef h, VectorConstRef b)
     {
-        self.solve({ ax, ap, b, x, p, y });
+        return self.rhs({ fx, x, p, y, z, v, h, b });
     };
 
-    auto solve2 = [](SaddlePointSolver& self, VectorRef x, VectorRef p, VectorRef y)
+    auto rhs3 = [](SaddlePointSolver& self, VectorConstRef fx, VectorConstRef x, VectorConstRef p, VectorConstRef v, VectorConstRef h, VectorConstRef b)
     {
-        self.solve({ x, p, y });
+        return self.rhs({ fx, x, p, v, h, b });
     };
 
-    auto solve3 = [](SaddlePointSolver& self, VectorConstRef x, VectorConstRef p, VectorConstRef g, VectorConstRef v, VectorConstRef b, VectorConstRef h, VectorRef xbar, VectorRef pbar, VectorRef ybar)
+    auto decompose = [](SaddlePointSolver& self)
     {
-        self.solve({ x, p, g, v, b, h, xbar, pbar, ybar });
+        return self.decompose();
     };
 
-    auto residuals1 = [](SaddlePointSolver& self, VectorConstRef x, VectorConstRef p, VectorConstRef b, VectorRef r, VectorRef e)
+    auto solve = [](SaddlePointSolver& self, VectorRef sx, VectorRef sp, VectorRef sy, VectorRef sz)
     {
-        self.residuals({ x, p, b, r, e });
+        self.solve({ sx, sp, sy, sz });
     };
 
-    auto residuals2 = [](SaddlePointSolver& self, VectorConstRef x, VectorConstRef p, VectorConstRef b, VectorConstRef h, VectorRef r, VectorRef e)
+    auto multiply = [](SaddlePointSolver& self, VectorConstRef rx, VectorConstRef rp, VectorConstRef ry, VectorConstRef rz, VectorRef ax, VectorRef ap, VectorRef ay, VectorRef az)
     {
-        self.residuals({ x, p, b, h, r, e });
+        self.multiply({ rx, rp, ry, rz, ax, ap, ay, az });
     };
 
-    py::class_<SaddlePointSolverInfo>(m, "SaddlePointSolverInfo")
-        .def_readonly("jb", &SaddlePointSolverInfo::jb)
-        .def_readonly("jn", &SaddlePointSolverInfo::jn)
-        .def_readonly("R", &SaddlePointSolverInfo::R)
-        .def_readonly("S", &SaddlePointSolverInfo::S)
-        .def_readonly("Q", &SaddlePointSolverInfo::Q)
+    py::class_<SaddlePointSolverState>(m, "SaddlePointSolverState")
+        .def_readonly("dims", &SaddlePointSolverState::dims)
+        .def_readonly("js", &SaddlePointSolverState::js)
+        .def_readonly("jbs", &SaddlePointSolverState::jbs)
+        .def_readonly("jns", &SaddlePointSolverState::jns)
+        .def_readonly("ju", &SaddlePointSolverState::ju)
+        .def_readonly("jbu", &SaddlePointSolverState::jbu)
+        .def_readonly("jnu", &SaddlePointSolverState::jnu)
+        .def_readonly("R", &SaddlePointSolverState::R)
+        .def_readonly("Hss", &SaddlePointSolverState::Hss)
+        .def_readonly("Hsp", &SaddlePointSolverState::Hsp)
+        .def_readonly("Vps", &SaddlePointSolverState::Vps)
+        .def_readonly("Vpp", &SaddlePointSolverState::Vpp)
+        .def_readonly("As", &SaddlePointSolverState::As)
+        .def_readonly("Au", &SaddlePointSolverState::Au)
+        .def_readonly("Ap", &SaddlePointSolverState::Ap)
+        .def_readonly("Js", &SaddlePointSolverState::Js)
+        .def_readonly("Jp", &SaddlePointSolverState::Jp)
+        .def_readonly("Sbsns", &SaddlePointSolverState::Sbsns)
+        .def_readonly("Sbsp", &SaddlePointSolverState::Sbsp)
+        .def_readonly("as", &SaddlePointSolverState::as)
+        .def_readonly("au", &SaddlePointSolverState::au)
+        .def_readonly("ap", &SaddlePointSolverState::ap)
+        .def_readonly("ay", &SaddlePointSolverState::ay)
+        .def_readonly("az", &SaddlePointSolverState::az)
         ;
 
     py::class_<SaddlePointSolver>(m, "SaddlePointSolver")
@@ -82,11 +101,11 @@ void exportSaddlePointSolver(py::module& m)
         .def("options", &SaddlePointSolver::options)
         .def("canonicalize", canonicalize)
         .def("decompose", decompose)
-        .def("solve", solve1)
-        .def("solve", solve2)
-        .def("solve", solve3)
-        .def("residuals", residuals1)
-        .def("residuals", residuals2)
-        .def("info", &SaddlePointSolver::info, py::return_value_policy::reference_internal)
+        .def("rhs", rhs1)
+        .def("rhs", rhs2)
+        .def("rhs", rhs3)
+        .def("solve", solve)
+        .def("multiply", &SaddlePointSolver::state)
+        .def("state", &SaddlePointSolver::state, py::return_value_policy::reference_internal)
         ;
 }

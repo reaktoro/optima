@@ -27,11 +27,14 @@ struct State::Impl
     /// The variables \eq{\bar{x} = (x, u, v)} of the basic optimization problem.
     Vector xbar;
 
-    /// The Lagrange multipliers \eq{y=(y_{b_{\mathrm{e}}},y_{b_{\mathrm{g}}},y_{h_{\mathrm{e}}},y_{h_{\mathrm{g}}})} of the optimization problem.
+    /// The Lagrange multipliers \eq{y=(y_{\mathrm{e}},y_{\mathrm{g}})} of the optimization problem.
     Vector ybar;
 
-    /// The variables \eq{\bar{z}=(z,y_{b_{\mathrm{g}}},y_{h_{\mathrm{g}}})} of the basic optimization problem.
+    /// The Lagrange multipliers \eq{z=(z_{\mathrm{e}},z_{\mathrm{g}})} of the optimization problem.
     Vector zbar;
+
+    /// The variables \eq{(s,y_{\mathrm{g}},z_{\mathrm{g}})} of the basic optimization problem.
+    Vector sbar;
 
     /// The parameter variables \eq{p} of the basic optimization problem.
     Vector p;
@@ -39,8 +42,9 @@ struct State::Impl
     /// Construct a State::Impl object with given dimensions information.
     Impl(const Dims& dims)
     : xbar(zeros(dims.x + dims.bg + dims.hg)),
-      ybar(zeros(dims.be + dims.bg + dims.he + dims.hg)),
-      zbar(zeros(dims.x + dims.bg + dims.hg)),
+      ybar(zeros(dims.be + dims.bg)),
+      zbar(zeros(dims.he + dims.hg)),
+      sbar(zeros(dims.x + dims.bg + dims.hg)),
       p(zeros(dims.p))
     {}
 };
@@ -51,13 +55,14 @@ State::State(const Dims& dims)
   x(pimpl->xbar.head(dims.x)),
   p(pimpl->p),
   y(pimpl->ybar),
-  ybe(pimpl->ybar.head(dims.be)),
-  ybg(pimpl->ybar.segment(dims.be, dims.bg)),
-  yhe(pimpl->ybar.segment(dims.be + dims.bg, dims.he)),
-  yhg(pimpl->ybar.tail(dims.hg)),
-  z(pimpl->zbar.head(dims.x)),
+  ye(pimpl->ybar.head(dims.be)),
+  yg(pimpl->ybar.tail(dims.bg)),
+  z(pimpl->zbar),
+  ze(pimpl->zbar.head(dims.he)),
+  zg(pimpl->zbar.tail(dims.hg)),
+  s(pimpl->sbar.head(dims.x)),
   xbar(pimpl->xbar),
-  zbar(pimpl->zbar),
+  sbar(pimpl->sbar),
   xbg(pimpl->xbar.segment(dims.x, dims.bg)),
   xhg(pimpl->xbar.tail(dims.hg)),
   stability({indices(dims.x), dims.x})
@@ -69,13 +74,14 @@ State::State(const State& other)
   x(pimpl->xbar.head(other.dims.x)),
   p(pimpl->p),
   y(pimpl->ybar),
-  ybe(pimpl->ybar.head(other.dims.be)),
-  ybg(pimpl->ybar.segment(other.dims.be, other.dims.bg)),
-  yhe(pimpl->ybar.segment(other.dims.be + other.dims.bg, other.dims.he)),
-  yhg(pimpl->ybar.tail(other.dims.hg)),
-  z(pimpl->zbar.head(other.dims.x)),
+  ye(pimpl->ybar.head(other.dims.be)),
+  yg(pimpl->ybar.tail(other.dims.bg)),
+  z(pimpl->zbar),
+  ze(pimpl->zbar.head(other.dims.he)),
+  zg(pimpl->zbar.tail(other.dims.hg)),
+  s(pimpl->sbar.head(other.dims.x)),
   xbar(pimpl->xbar),
-  zbar(pimpl->zbar),
+  sbar(pimpl->sbar),
   xbg(pimpl->xbar.segment(other.dims.x, other.dims.bg)),
   xhg(pimpl->xbar.tail(other.dims.hg)),
   stability(other.stability)

@@ -60,5 +60,7 @@ void exportLU(py::module& m)
         .def("solve", solve1)
         .def("solve", solve2)
         .def("rank", &LU::rank)
+        .def("P", &LU::P)
+        .def("Q", &LU::Q)
         ;
 }

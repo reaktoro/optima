@@ -157,7 +157,7 @@ def test_active_stability_checker(args):
     z = g + Wx.T @ y
 
     # Create a StabilityChecker object
-    checker = StabilityChecker(nx, np, m, Ax, Ap)
+    checker = StabilityChecker(nx, np, ny, nz, Ax, Ap)
 
     checker.initialize(b, xlower, xupper, plower, pupper)
 

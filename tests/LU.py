@@ -24,45 +24,59 @@ from itertools import product
 
 from utils.matrices import matrix_non_singular
 
-# The number of variables
-n = 20
+# Tested number of variables in x
+tested_n = [20, 40, 60]
+# tested_n = [5, 10]
+
+# Tested rank deficiency of matrix A
+tested_rank_deficiency = [0, 1, 5, 10, 15]
+# tested_rank_deficiency = [4]
 
 # Combination of all tested cases
-testdata = product()
+testdata = product(tested_n,
+                   tested_rank_deficiency)
 
 @mark.parametrize("args", testdata)
 def test_lu(args):
 
-    _ = args
+    n, rank_deficiency = args
 
 
-    def check(A, x_expected, rank_expected):
+    def check(A, x_expected, rank_expected, linearly_dependent_rows):
         b = A @ x_expected
         lu = LU(A)
         x = zeros(n)
         lu.solve(b, x)
         r = lu.rank()
+        Q = lu.Q()
 
+        set_printoptions(precision=6, linewidth=1000, suppress=True)
         assert r == rank_expected
-        assert norm(A[:r, :r] @ x[:r] - b[:r]) / norm(b)
-        assert all(isnan(x[r:]))
+        print()
+        print(f"linearly_dependent_rows = {linearly_dependent_rows}")
+        print(f"x = {x}")
+        print(f"x[Q[r:]] = {x[Q[r:]]}")
+        print()
+        assert_allclose(A @ x, b)
+        # assert all(isnan(x[linearly_dependent_rows]))
+        # print(f"x = {x}")
+        # print(f"x[linearly_dependent_rows] = {x[linearly_dependent_rows]}")
+
+        # assert all(x[linearly_dependent_rows] == [])
+        # assert linearly_dependent_rows == []
 
 
     x = linspace(1, n, n)
 
-    r = n
+    linearly_dependent_rows = list(range(1, n, math.ceil(n / rank_deficiency))) \
+        if rank_deficiency != 0 else []
+
+    rank_expected = n - len(linearly_dependent_rows)
+
     A = matrix_non_singular(n)
 
-    check(A, x, r)
+    # Change the rows of A so that linearly dependent rows are produced
+    for row in linearly_dependent_rows:
+        A[row, :] = row * A[0, :]
 
-    r = n - 1
-    A = matrix_non_singular(n)
-    A[n - r:, :] = 10 * A[:r, :]  # last r rows = first r rows times 10
-
-    check(A, x, r)
-
-    r = n - 2
-    A = matrix_non_singular(n)
-    A[n - r:, :] = 100 * A[:r, :]  # last r rows = first r rows times 10
-
-    check(A, x, r)
+    check(A, x, rank_expected, linearly_dependent_rows)

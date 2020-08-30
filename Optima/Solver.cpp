@@ -33,26 +33,25 @@ namespace detail {
 
 auto initBasicSolver(const Problem& problem) -> BasicSolver
 {
-    const auto [nx, np, mbe, mbg, mhe, mhg] = problem.dims;
+    const auto [nx, np, nbe, nbg, nhe, nhg] = problem.dims;
 
-    const auto nr   = mbg;
-    const auto ns   = mhg;
+    const auto nr   = nbg;
+    const auto ns   = nhg;
     const auto nxrs = nx + nr + ns;
-    const auto mb   = mbe + mbg;
-    const auto mh   = mhe + mhg;
-    const auto m    = mb + mh;
+    const auto ny   = nbe + nbg;
+    const auto nz   = nhe + nhg;
 
     // Create matrix Ax = [ [Aex, 0, 0], [Agx, I, 0] ]
-    Matrix Ax = zeros(mb, nxrs);
+    Matrix Ax = zeros(ny, nxrs);
     Ax.leftCols(nx) << problem.Aex, problem.Agx;
     Ax.middleCols(nx, nr).bottomRows(nr).diagonal().fill(1.0);
 
     // Create matrix Ap = [ [Aep], [Agp] ]
-    Matrix Ap = zeros(mb, np);
+    Matrix Ap = zeros(ny, np);
 
     if(np > 0) Ap << problem.Aep, problem.Agp;
 
-    return BasicSolver({ nxrs, np, m, Ax, Ap });
+    return BasicSolver({ nxrs, np, ny, nz, Ax, Ap });
 }
 
 } // namespace detail
@@ -66,9 +65,8 @@ struct Solver::Impl
     Index ns   = 0;          ///< The number of variables s in xrs = (x, r, s) = (x, xbg, xhg) = xbar.
     Index nxrs = 0;          ///< The number of variables in xrs = (x, xbg, xhg).
     Index np   = 0;          ///< The number of parameter variables p.
-    Index mb   = 0;          ///< The dimension of vector b = (be, bg).
-    Index mh   = 0;          ///< The dimension of vector h = (he, hg).
-    Index m    = 0;          ///< The dimension of number m = mb + mh.
+    Index ny   = 0;          ///< The number of Lagrange multipliers y (i.e., the dimension of vector b = (be, bg)).
+    Index nz   = 0;          ///< The number of Lagrange multipliers z (i.e., the dimension of vector h = (he, hg)).
     Vector b;                ///< The right-hand side vector b = (be, bg) in the basic optimization problem.
     Vector xrslower;         ///< The lower bounds of vector xrs = (x, xbg, xhg) in the basic optimization problem.
     Vector xrsupper;         ///< The upper bounds of vector xrs = (x, xbg, xhg) in the basic optimization problem.
@@ -86,14 +84,13 @@ struct Solver::Impl
         ns   = dims.hg;
         nxrs = nx + nr + ns;
         np   = dims.p;
-        mb   = dims.be + dims.bg;
-        mh   = dims.he + dims.hg;
-        m    = mb + mh;
+        ny   = dims.be + dims.bg;
+        nz   = dims.he + dims.hg;
 
         // Initialize vectors
         xrslower.resize(nxrs);
         xrsupper.resize(nxrs);
-        b.resize(m);
+        b.resize(ny);
 
         // Initialize the ordering of the variables.
         iordering = indices(nxrs);
@@ -115,6 +112,7 @@ struct Solver::Impl
         assert(problem.f);
         assert(problem.dims.he == 0 || problem.he);
         assert(problem.dims.hg == 0 || problem.hg);
+        assert(problem.dims.p == 0 || problem.v);
 
         // Create the objective function for the basic problem
         auto f = [&](VectorConstRef xrs, VectorConstRef p, ObjectiveResult& res)
@@ -255,13 +253,14 @@ struct Solver::Impl
 
         // Create references to state members
         auto xbar       = state.xbar;
-        auto y          = state.y;
         auto p          = state.p;
-        auto zbar       = state.zbar;
+        auto y          = state.y;
+        auto z          = state.z;
+        auto sbar       = state.sbar;
         auto& stability = state.stability;
 
         // Solve the constructed basic optimization problem
-        auto result = basicsolver.solve({ f, h, v, b, xrslower, xrsupper, plower, pupper, xbar, p, y, zbar, stability });
+        auto result = basicsolver.solve({ f, h, v, b, xrslower, xrsupper, plower, pupper, xbar, p, y, z, sbar, stability });
 
         return result;
     }

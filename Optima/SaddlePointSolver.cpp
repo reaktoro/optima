@@ -22,14 +22,13 @@
 #include <cmath>
 
 // Optima includes
+#include <Optima/Canonicalizer.hpp>
 #include <Optima/Exception.hpp>
-#include <Optima/ExtendedCanonicalizer.hpp>
 #include <Optima/IndexUtils.hpp>
 #include <Optima/SaddlePointOptions.hpp>
 #include <Optima/SaddlePointSolverFullspace.hpp>
 #include <Optima/SaddlePointSolverNullspace.hpp>
 #include <Optima/SaddlePointSolverRangespace.hpp>
-#include <Optima/SaddlePointTypes.hpp>
 #include <Optima/Utils.hpp>
 
 namespace Optima {
@@ -38,20 +37,28 @@ using std::abs;
 
 struct SaddlePointSolver::Impl
 {
-    ExtendedCanonicalizer canonicalizer;    ///< The canonicalizer of the Jacobian matrix *W = [A; J]*.
+    Matrix Ax;                              ///< The matrix block Ax of the saddle point problem.
+    Matrix Ap;                              ///< The matrix block Ap of the saddle point problem.
+    Canonicalizer canonicalizer;            ///< The canonicalizer of matrix *Ax*.
     SaddlePointSolverRangespace rangespace; ///< The canonical saddle point solver based on a rangespace algorithm.
     SaddlePointSolverNullspace nullspace;   ///< The canonical saddle point solver based on a nullspace algorithm.
     SaddlePointSolverFullspace fullspace;   ///< The canonical saddle point solver based on a fullspace algorithm.
     SaddlePointOptions options;             ///< The options used to solve the saddle point problems.
-    SaddlePointProblemDims dims;            ///< The dimensions of the saddle point problem.
-    Matrix W;                               ///< The W = [Ax Ap; Jx Jp] matrix in the saddle point matrix.
-    Matrix S;                               ///< The S = [Sbsns Sbsnu Sbsnp; 0 Sbunu Sbunp] matrix that stores the canonical form of W = [Ax Ap; Jx Jp].
+    SaddlePointDims dims;                   ///< The dimensions of the saddle point problem.
+    Matrix S;                               ///< The S = [Sbsns Sbsnu Sbsp; 0 Sbunu Sbup] matrix that stores the canonical form of A = [Ax Ap].
     Matrix Hw;                              ///< The workspace for H matrix.
+    Matrix Vw;                              ///< The workspace for V matrix.
+    Matrix Jw;                              ///< The workspace for J matrix.
+    Vector gw;                              ///< The workspace for right-hand side vector g
     Vector axw;                             ///< The workspace for right-hand side vector ax
     Vector apw;                             ///< The workspace for right-hand side vector ap
+    Vector ayw;                             ///< The workspace for right-hand side vector ay
+    Vector azw;                             ///< The workspace for right-hand side vector az
     Vector bw;                              ///< The workspace for right-hand side vector b
     Vector xw;                              ///< The workspace for solution vector x
+    Vector pw;                              ///< The workspace for solution vector p
     Vector yw;                              ///< The workspace for solution vector y
+    Vector zw;                              ///< The workspace for solution vector z
     Vector weights;                         ///< The priority weights for the selection of basic variables.
     Indices iordering;                      ///< The ordering of the variables as (stable-basic, stable-non-basic, unstable-basic, unstable-non-basic).
     Indices Kb;                             ///< The permutation matrix used to order the basic variables as xb = (xbe, xbi, xbu) with `e` and `i` denoting pivot and non-pivot
@@ -60,54 +67,74 @@ struct SaddlePointSolver::Impl
 
     /// Construct a SaddlePointSolver::Impl instance with given data.
     Impl(SaddlePointSolverInitArgs args)
-    : canonicalizer(args.Ax),
-      rangespace(args.nx, args.np, args.m),
-      nullspace(args.nx, args.np, args.m),
-      fullspace(args.nx, args.np, args.m)
+    : Ax(args.Ax), Ap(args.Ap), canonicalizer(args.Ax),
+      rangespace(args.nx, args.np, args.ny, args.nz),
+      nullspace(args.nx, args.np, args.ny, args.nz),
+      fullspace(args.nx, args.np, args.ny, args.nz)
     {
         // Ensure consistent and proper dimensions
         assert(args.nx > 0);
-        assert(args.Ax.rows() == 0 || args.Ax.rows() <= args.m);
-        assert(args.Ap.rows() == 0 || args.Ap.rows() <= args.m);
+        assert(args.Ax.rows() == 0 || args.Ax.rows() <= args.ny);
+        assert(args.Ap.rows() == 0 || args.Ap.rows() <= args.ny);
         assert(args.Ax.rows() == 0 || args.Ax.cols() == args.nx);
         assert(args.Ap.rows() == 0 || args.Ap.cols() == args.np);
 
-        // Initialize the number of variables x, xs, xu, p
+        // Initialize the number of variables x, xs, xu, p, y, z
         const auto nx = dims.nx = args.nx;
         const auto ns = dims.ns = nx;
         const auto nu = dims.nu = 0;
         const auto np = dims.np = args.np;
-        const auto n  = dims.n  = nx + np;
-
-        // Set the number of variables y, yl, yn
-        const auto m  = dims.m  = args.m;
-        const auto ml = dims.ml = args.Ax.rows();
-        const auto mn = dims.mn = m - ml;
+        const auto ny = dims.ny = args.ny;
+        const auto nz = dims.nz = args.nz;
 
         // Allocate auxiliary memory
-        W.resize(m, nx + np);
-        S.resize(m, nx + np);
-        Hw.resize(nx + np, nx + np);
+        S.resize(ny, nx + np);
+        Hw.resize(nx, nx + np);
+        Vw.resize(np, nx + np);
+        Jw.resize(nz, nx + np);
+        gw.resize(nx);
         xw.resize(nx);
-        yw.resize(m);
+        pw.resize(np);
+        yw.resize(ny);
+        zw.resize(nz);
         axw.resize(nx);
         apw.resize(np);
-        bw.resize(m);
+        ayw.resize(ny);
+        azw.resize(nz);
+        bw.resize(ny);
         weights.resize(nx);
-
-        // Initialize the upper part of W = [A; J] = [Ax Ap; Jx Jp]
-        W.topLeftCorner(ml, nx) = args.Ax;
-        W.topRightCorner(ml, np) = args.Ap;
 
         // Initialize the ordering of the variables x = (xs, xu)
         iordering = canonicalizer.Q();
     }
 
-    /// Canonicalize the *W = [A; J]* matrix of the saddle point problem.
-    auto canonicalize(SaddlePointSolverCanonicalizeArgs args) -> void
+    /// Decompose the canonical saddle point matrix.
+    auto decomposeCanonical(CanonicalSaddlePointMatrix args) -> void
+    {
+        switch(options.method)
+        {
+        case SaddlePointMethod::Nullspace: nullspace.decompose(args); break;
+        case SaddlePointMethod::Rangespace: rangespace.decompose(args); break;
+        default: fullspace.decompose(args); break;
+        }
+    }
+
+    /// Solve the canonical saddle point problem.
+    auto solveCanonical(CanonicalSaddlePointProblem args) -> void
+    {
+        switch(options.method)
+        {
+        case SaddlePointMethod::Nullspace: nullspace.solve(args); break;
+        case SaddlePointMethod::Rangespace: rangespace.solve(args); break;
+        default: fullspace.solve(args); break;
+        }
+    }
+
+    /// Canonicalize the saddle point matrix.
+    auto canonicalize(SaddlePointSolverCanonicalize1Args args) -> void
     {
         // Unpack the dimension variables
-        auto& [n, nx, np, ns, nu, m, ml, mn, nb, nn, nl, nbs, nbu, nns, nnu, nbe, nne, nbi, nni] = dims;
+        auto& [nx, ns, nu, ny, nz, np, nb, nn, nl, nbs, nbu, nns, nnu, nbe, nne, nbi, nni] = dims;
 
         // Update the number of variables in xu and xs, where x = (xs, xu)
         nu = args.ju.size();
@@ -122,10 +149,6 @@ struct SaddlePointSolver::Impl
         // Skip the rest if there is no stable variables
         if(degenerate)
             return;
-
-        // Update the lower part of W = [A; J] = [Ax Ap; Jx Jp]
-        W.bottomLeftCorner(mn, nx) = args.Jx;
-        W.bottomRightCorner(mn, np) = args.Jp;
 
         // Change the ordering of the variables as x = (xs, xu)
         const auto pos = moveIntersectionRight(iordering, args.ju);
@@ -151,8 +174,8 @@ struct SaddlePointSolver::Impl
         // in *xs* that can be basic instead.
         wu = -linspace(nu, 1, nu);
 
-        // Update the canonical form of W = [A; J]
-        canonicalizer.updateWithPriorityWeights(args.Jx, weights);
+        // Update the canonical form of Ax
+        canonicalizer.updateWithPriorityWeights(weights);
 
         // Remove residual round-off errors in Sbn after canonical form update.
         // This is an important step to ensure that residual coefficients such
@@ -168,8 +191,12 @@ struct SaddlePointSolver::Impl
         nb = canonicalizer.numBasicVariables();
         nn = canonicalizer.numNonBasicVariables();
 
-        // Update the number of linearly dependent rows in W = [A; J]
-        nl = m - nb;
+        //=========================================================================================
+        // Identify stable and unstable basic variables
+        //=========================================================================================
+
+        // Update the number of linearly dependent rows in A = [Ax Ap]
+        nl = ny - nb;
 
         // Find the number of basic variables in xu (those with weights below zero)
         // Walk from last to first basic variable, since the unstable basic variables are at the end of ibasic
@@ -230,10 +257,7 @@ struct SaddlePointSolver::Impl
         const auto jb = canonicalizer.indicesBasicVariables();
         const auto jn = canonicalizer.indicesNonBasicVariables();
 
-        // The Wp matrix in W = [Wx Wp] = [Ax Ap; Jx Jp]
-        const auto Wp = W.rightCols(np);
-
-        // View to the sub-matrices Sbn and Sbp in S = [Sbn Sbp] = [Sbsns Sbsnu Sbsnp; 0 Sbunu Sbunp]
+        // View to the sub-matrices Sbn and Sbp in S = [Sbn Sbp] = [Sbsns Sbsnu Sbsp; 0 Sbunu Sbup]
         auto Sbn = S.topLeftCorner(nb, nn);
         auto Sbp = S.topRightCorner(nb, np);
 
@@ -243,8 +267,8 @@ struct SaddlePointSolver::Impl
         // Update Sbn from the just canonicalized matrx Wx = [Ax; Jx]
         Sbn = canonicalizer.S();
 
-        // Compute the Sbp matrix to complete the canonicalization of W = [Ax Ap; Jx Jp], i.e. R*W*Q' = [Ibb Sbn Sbp]
-        Sbp = Rt * Wp;
+        // Compute the Sbp matrix to complete the canonicalization of A = [Ax Ap], i.e. R*A*Q' = [Ibb Sbn Sbp]
+        Sbp = Rt * Ap;
 
         // Remove also residual round-off errors from Sbp.
         cleanResidualRoundoffErrors(Sbp);
@@ -255,8 +279,8 @@ struct SaddlePointSolver::Impl
             const auto idx = jb[i];                     // the global index of the basic variable
             const auto Hii = Hd[idx];                   // the corresponding diagonal entry in the H matrix
             const auto a1 = 1.0;                        // the max value along the corresponding column of the identity matrix
-            const auto a2 = norminf(args.Hpx.col(idx)); // the max value along the corresponding column of the Hpx matrix
-            return abs(Hii) >= std::max(a1, a2);        // return true if diagonal entry is dominant with respect to Hpx and Ibb only (not Hxx!)
+            const auto a2 = norminf(args.Vpx.col(idx)); // the max value along the corresponding column of the Vpx matrix
+            return abs(Hii) >= std::max(a1, a2);        // return true if diagonal entry is dominant with respect to Vpx and Ibb only (not Hxx!)
         };
 
         // Return true if the i-th non-basic variable is a pivot/explicit variable
@@ -265,8 +289,8 @@ struct SaddlePointSolver::Impl
             const auto idx = jn[i];                     // the global index of the non-basic variable
             const auto Hii = Hd[idx];                   // the corresponding diagonal entry in the H matrix
             const auto a1 = norminf(Sbn.col(i));        // the max value along the corresponding column of the Sbn matrix
-            const auto a2 = norminf(args.Hpx.col(idx)); // the max value along the corresponding column of the Hpx matrix
-            return abs(Hii) >= std::max(a1, a2);        // return true if diagonal entry is dominant with respect to Hpx and Sbn only (not Hxx!)
+            const auto a2 = norminf(args.Vpx.col(idx)); // the max value along the corresponding column of the Vpx matrix
+            return abs(Hii) >= std::max(a1, a2);        // return true if diagonal entry is dominant with respect to Vpx and Sbn only (not Hxx!)
         };
 
         // Find the number of pivot basic variables (those with |Hbebe| >= I and |Hbebe| >= |cols(H, jbe)|)
@@ -303,106 +327,69 @@ struct SaddlePointSolver::Impl
 
         // Update the order of x variables as x = (xs, xu) = (xbs, xns, xbu, xnu)
         iordering << jbs, jns, jbu, jnu;
-    }
 
-    /// Decompose the canonical saddle point matrix.
-    auto decomposeCanonical(CanonicalSaddlePointMatrix args) -> void
-    {
-        switch(options.method)
-        {
-        case SaddlePointMethod::Nullspace: nullspace.decompose(args); break;
-        case SaddlePointMethod::Rangespace: rangespace.decompose(args); break;
-        default: fullspace.decompose(args); break;
-        }
-    }
+        //=========================================================================================
+        // Initialize matrices Hss, Hsp, Vps, Vpp, Js, Jp
+        //=========================================================================================
 
-    /// Solve the canonical saddle point problem.
-    auto solveCanonical(CanonicalSaddlePointProblem args) -> void
-    {
-        switch(options.method)
-        {
-        case SaddlePointMethod::Nullspace: nullspace.solve(args); break;
-        case SaddlePointMethod::Rangespace: rangespace.solve(args); break;
-        default: fullspace.solve(args); break;
-        }
-    }
+        // Views to the sub-matrices Hss, Hsp
+        auto Hss = Hw.topLeftCorner(ns, ns);
+        auto Hsp = Hw.topRightCorner(ns, np);
 
-    /// Decompose the coefficient matrix of the saddle point problem into canonical form.
-    /// @note Ensure method @ref canonicalize has been called before this method.
-    auto decompose(SaddlePointSolverDecomposeArgs args) -> void
-    {
-        // Auxiliary dimension variables used below
-        const auto nb  = dims.nb;
-        const auto ns  = dims.ns;
-        const auto np  = dims.np;
-        const auto nbs = dims.nbs;
-        const auto nns = dims.nns;
+        // Views to the sub-matrices Js, Jp
+        auto Js = Jw.leftCols(ns);
+        auto Jp = Jw.rightCols(np);
 
-        // The indices of the xs variables in x = (xs, xu).
-        const auto js = iordering.head(ns);
+        // Views to the sub-matrices Vps, Vpp
+        auto Vps = Vw.leftCols(ns);
+        auto Vpp = Vw.rightCols(np);
 
-        // View to the sub-matrices Sbsns and Sbsnp in S = [Sbsns Sbsnu Sbsnp; 0 Sbunu Sbunp]
-        const auto Sbsns = S.topLeftCorner(nbs, nns);
-        const auto Sbsnp = S.topRightCorner(nbs, np);
-
-        // Views to the sub-matrices Hss, Hsp, Hps, Hpp
-        auto Hww = Hw.topLeftCorner(ns + np, ns + np);
-        auto Hss = Hww.topLeftCorner(ns, ns);
-        auto Hsp = Hww.topRightCorner(ns, np);
-        auto Hps = Hww.bottomLeftCorner(np, ns);
-        auto Hpp = Hww.bottomRightCorner(np, np);
-
-        // Transfer the Hxx, Hxp, Hpx, Hpp entries to Hw taking into account the method in use
+        // Initialize matrices Hss and Hsp taking into account the method in use
+        Hsp = rows(args.Hxp, js);
         if(options.method == SaddlePointMethod::Rangespace)
              Hss.diagonal() = args.Hxx.diagonal()(js);
         else Hss = args.Hxx(js, js);
 
-        Hsp = rows(args.Hxp, js);
-        Hps = cols(args.Hpx, js);
-        Hpp = args.Hpp;
+        // Initialize matrices Vps and Vpp
+        Vps = cols(args.Vpx, js);
+        Vpp = args.Vpp;
 
-        // Decompose the canonical saddle point matrix.
-        decomposeCanonical({ dims, Hss, Hsp, Hps, Hpp, Sbsns, Sbsnp });
+        // Initialize matrices Js and Jp
+        Js = cols(args.Jx, js);
+        Jp = args.Jp;
     }
 
-    /// Solve the saddle point problem.
-    /// @note Ensure method @ref decompose has been called before this method.
-    auto solve(SaddlePointSolverSolveArgs args) -> void
+    /// Compute the right-hand side vector in the canonical saddle point problem.
+    /// @note Ensure method @ref canonicalize has been called before this method.
+    auto rhs(SaddlePointSolverRhs1Args args) -> void
     {
-        // Auxiliary dimension variables used below
-        const auto ns  = dims.ns;
         const auto nu  = dims.nu;
-        const auto np  = dims.np;
         const auto nbs = dims.nbs;
         const auto nbu = dims.nbu;
         const auto nns = dims.nns;
         const auto nl  = dims.nl;
 
-        // Unpack references in args
-        auto [ax, ap, b, x, p, y] = args;
-
-        // The canonicalizer matrix R in the canonical form of W
-        const auto R = canonicalizer.R();
-
-        // The indices of the xs, xu variables where x = (xs, xu)
-        const auto js = iordering.head(ns);
+        const auto au = axw.tail(nu);
         const auto ju = iordering.tail(nu);
+        const auto Au = cols(Ax, ju);
+        const auto R  = canonicalizer.R();
 
-        // View to the sub-matrix of W corresponding to xu variables
-        const auto Wu = cols(W, ju);
+        axw = args.ax(iordering);
+        apw = args.ap;
+        azw = args.az;
 
-        // Organize args.a in axw in the ordering axw = (as, au))
-        axw = ax(iordering);
+        // NOTE: It is extremely important to use this logic below, of
+        // eliminating contribution in ay from unstable-variables using matrix
+        // Au instead of working on the canonical level, using matrices Sbsnu
+        // and Sbunu. By doing this, we can better control the feasibility
+        // error when the unstable-variables correspond to variables on lower
+        // bounds (i.e. 1e-40) and they can contaminate the canonical
+        // residuals. If they are very small, they will either vanish in the
+        // operation below using R or via the clean residual round-off errors.
+        ayw.noalias() = R * (args.ay - Au * au);
 
-        // View to the sub-vectors axw = (as, au) and ap
-        auto as = axw.head(ns);
-        auto au = axw.tail(nu);
-
-        // Compute b' = R*(b - Wu*au)
-        bw.noalias() = R * (b - Wu * au);
-
-        // Ensure residual round-off errors are cleaned in b'.
-        // This improves accuracy and statbility in degenerate cases when some
+        // Ensure residual round-off errors are cleaned in ay'.
+        // This improves accuracy and stability in degenerate cases when some
         // variables need to have tiny values. For example, suppose the
         // equality constraints effectively enforce `xi - 2xj = 0`, for
         // variables `i` and `j`, which, combined with the optimality
@@ -410,330 +397,453 @@ struct SaddlePointSolver::Impl
         // instead, we don't clean these residual round-off errors, we may
         // instead have `xi - 2xj = eps`, where `eps` is a small residual error
         // (e.g., 1e-16). This will cause `xi = eps`, and not `xi = 2e-31`.
-        cleanResidualRoundoffErrors(bw);
+        cleanResidualRoundoffErrors(ayw);
 
-        // View to the bbs sub-vector in bw = b' = R*(b - Wu*au)
-        auto bbs = bw.head(nbs);
+        auto aybu = ayw.segment(nbs, nbu);
+        auto ayl  = ayw.tail(nl);
 
-        // View to the sub-matrices Sbsns and Sbsnp in S = [Sbsns Sbsnu Sbsnp; 0 Sbunu Sbunp]
-        const auto Sbsns = S.topLeftCorner(nbs, nns);
-        const auto Sbsnp = S.topRightCorner(nbs, np);
-
-        // Views to the sub-matrices Hss, Hsp, Hps, Hpp
-        auto Hww = Hw.topLeftCorner(ns + np, ns + np);
-        auto Hss = Hww.topLeftCorner(ns, ns);
-        auto Hsp = Hww.topRightCorner(ns, np);
-        auto Hps = Hww.bottomLeftCorner(np, ns);
-        auto Hpp = Hww.bottomRightCorner(np, np);
-
-        // View to sub-vectors in xw = (xs, xu)
-        auto xs = xw.head(ns);
-        auto xu = xw.tail(nu);
-
-        // Set the xu to the values in au
-        xu = au;
-
-        // View to sub-vectors ybs, ybu, ybl in yw = [ybs, ybu, ybl]
-        auto ybs = yw.head(nbs);
-        auto ybu = yw.segment(nbs, nbu);
-        auto ybl = yw.tail(nl);
-
-        // Set to zero the y variables w.r.t unstable basic variables
-        // and linearly independent rows in matrix W = [A; J].
-        ybu.fill(0.0);
-        ybl.fill(0.0);
-
-        // Solve the canonical saddle point problem.
-        solveCanonical({ dims, Hss, Hsp, Hps, Hpp, Sbsns, Sbsnp, as, ap, bbs, xs, p, ybs });
-
-        // Compute y = tr(R) * y'
-        y.noalias() = tr(R) * yw;
-
-        // Transfer xw to x undoing the previously performed permutation
-        x(iordering) = xw;
+        aybu.fill(0.0); // ensure residuals w.r.t. basic unstable variables are zero
+        ayl.fill(0.0); // ensure residuals w.r.t. linearly dependent rows in Ax are zero
     }
 
-    /// Solve the saddle point problem.
-    /// @note Ensure method @ref decompose has been called before this method.
-    auto solve(SaddlePointSolverSolveAlternativeArgs args) -> void
+    /// Compute the right-hand side vector in the canonical saddle point problem.
+    /// @note Ensure method @ref canonicalize has been called before this method.
+    auto rhs(SaddlePointSolverRhs2Args args) -> void
     {
-        auto [ax, ap, b] = args;
-        auto [x, p, y] = args;
-        solve({ ax, ap, b, x, p, y });
-    }
+        const auto ns  = dims.ns;
+        const auto nu  = dims.nu;
+        const auto np  = dims.np;
+        const auto ny  = dims.ny;
+        const auto nz  = dims.nz;
+        const auto nbs = dims.nbs;
+        const auto nbu = dims.nbu;
+        const auto nns = dims.nns;
+        const auto nl  = dims.nl;
 
-    /// Solve the saddle point problem.
-    /// @note Ensure method @ref decompose has been called before this method.
-    auto solve(SaddlePointSolverSolveAdvancedArgs args) -> void
-    {
-        // Unpack the data members in args
-        const auto [x, p, g, v, b, h, xbar, pbar, ybar] = args;
-
-        // Auxiliary dimension variables used below
-        const auto nx = dims.nx;
-        const auto ns = dims.ns;
-        const auto nu = dims.nu;
-        const auto np = dims.np;
-        const auto ml = dims.ml;
-        const auto mn = dims.mn;
-
-        // The indices of the xs and xu variables
         const auto js = iordering.head(ns);
         const auto ju = iordering.tail(nu);
 
-        // Indexed view to the sub-vectors in x = (xs, xu)
-        auto xs = x(js);
-        auto xu = x(ju);
+        const auto As = cols(Ax, js);
+        const auto Au = cols(Ax, ju);
 
-        // The vectors ax' = H*x - g and bw = [b, Jx*x + Jp*p - h]
-        auto ax = xbar; // using xbar as workspace!
-        auto ap = pbar; // using pbar as workspace!
-        auto bw = ybar; // using ybar as workspace!
+        const auto Js = Jw.leftCols(ns);
+        const auto Jp = Jw.rightCols(np);
 
-        // Indexed view to the sub-vectors ax = (as, au)
-        auto as = ax(js);
-        auto au = ax(ju);
+        const auto R = canonicalizer.R();
 
-        // Indexed view to the sub-vector gs in g = (gs, gu) where g = fx
-        const auto gs = g(js);
+        const auto Sbsns = S.topLeftCorner(nbs, nns);
+        const auto Sbsp  = S.topRightCorner(nbs, np);
 
-        // Views to the sub-matrices Hss, Hsp, Hps, Hpp
-        const auto Hww = Hw.topLeftCorner(ns + np, ns + np);
-        const auto Hss = Hww.topLeftCorner(ns, ns);
-        const auto Hsp = Hww.topRightCorner(ns, np);
-        const auto Hps = Hww.bottomLeftCorner(np, ns);
-        const auto Hpp = Hww.bottomRightCorner(np, np);
+        const auto xs = xw.head(ns) = args.x(js);
+        const auto xu = xw.tail(nu) = args.x(ju);
 
-        // Compute as = Hss * xs + Hsp * p - gs
-        as = Hsp * p - gs;
-        if(options.method == SaddlePointMethod::Rangespace)
-            as += Hss.diagonal().cwiseProduct(xs);
-        else as += Hss * xs;
+        const auto xbs = xs.head(nbs);
+        const auto xns = xs.tail(nns);
 
-        // Compute ap = Hps * xs + Hpp * p - v
-        ap = Hps * xs + Hpp * p - v;
+        const auto gs = gw.head(ns) = args.fx(js);
 
-        // Set au = xu so that fixed/unstable variables satisfy xbar(ju) = x(ju)!
-        au = xu;
+        const auto bbs = bw.head(nbs);
 
-        // Views to sub-matrices Jx and Jp in W = [Ax Ap; Jx Jp]
-        const auto Jx = W.bottomLeftCorner(mn, nx);
-        const auto Jp = W.bottomRightCorner(mn, np);
+        auto as   = axw.head(ns);
+        auto au   = axw.tail(nu);
+        auto ap   = apw.head(np);
+        auto az   = azw.head(nz);
+        auto aybs = ayw.head(nbs);
+        auto aybu = ayw.segment(nbs, nbu);
+        auto ayl  = ayw.tail(nl);
 
-        // Compute bw = (b, Jx * x + Jp * p - h)
-        bw << b, Jx*x + Jp*p - h;
+        bw.noalias() = R * (args.b - Au * xu); // eliminate contribution from unstable variables and apply R!
 
-        // Compute the solution vectors xbar and ybar in the saddle point problem.
-        solve({ ax, ap, bw, xbar, pbar, ybar });
+        cleanResidualRoundoffErrors(bw); // ensure residual round-off errors are removed! For example, removing 1e-15 among numbers 1.2, 55.2
+
+        as.noalias() = -(gs + tr(As) * args.y + tr(Js) * args.z);
+
+        au.fill(0.0);
+
+        ap = -args.v;
+        az = -args.h;
+
+        aybs = bbs - xbs - Sbsns * xns - Sbsp * args.p;
+        aybu.fill(0.0); // ensure residuals w.r.t. basic unstable variables are zero
+        ayl.fill(0.0); // ensure residuals w.r.t. linearly dependent rows in Ax are zero
     }
 
-    /// Calculate the relative canonical residual of equation `W*x - b`.
+    /// Compute the right-hand side vector in the canonical saddle point problem.
     /// @note Ensure method @ref canonicalize has been called before this method.
-    auto residuals(SaddlePointSolverResidualArgs args) -> void
+    auto rhs(SaddlePointSolverRhs3Args args) -> void
     {
-        // Auxiliary dimension variables used below
-        const auto nx  = dims.nx;
-        const auto np  = dims.np;
         const auto ns  = dims.ns;
         const auto nu  = dims.nu;
+        const auto np  = dims.np;
+        const auto ny  = dims.ny;
+        const auto nz  = dims.nz;
+        const auto nbs = dims.nbs;
+        const auto nbu = dims.nbu;
+        const auto nns = dims.nns;
+        const auto nl  = dims.nl;
+
+        const auto js = iordering.head(ns);
+        const auto ju = iordering.tail(nu);
+
+        const auto As = cols(Ax, js);
+        const auto Au = cols(Ax, ju);
+
+        const auto Hss = Hw.topLeftCorner(ns, ns);
+        const auto Hsp = Hw.topRightCorner(ns, np);
+
+        const auto Js = Jw.leftCols(ns);
+        const auto Jp = Jw.rightCols(np);
+
+        const auto Vps = Vw.leftCols(ns);
+        const auto Vpp = Vw.rightCols(np);
+
+        const auto R = canonicalizer.R();
+
+        const auto Sbsns = S.topLeftCorner(nbs, nns);
+        const auto Sbsp  = S.topRightCorner(nbs, np);
+
+        const auto xs = xw.head(ns) = args.x(js);
+        const auto xu = xw.tail(nu) = args.x(ju);
+
+        const auto xbs = xs.head(nbs);
+        const auto xns = xs.tail(nns);
+
+        const auto gs = gw.head(ns) = args.fx(js);
+
+        const auto bbs = bw.head(nbs);
+
+        auto as   = axw.head(ns);
+        auto au   = axw.tail(nu);
+        auto ap   = apw.head(np);
+        auto az   = azw.head(nz);
+        auto aybs = ayw.head(nbs);
+        auto aybu = ayw.segment(nbs, nbu);
+        auto ayl  = ayw.tail(nl);
+
+        bw.noalias() = R * (args.b - Au * xu); // eliminate contribution from unstable variables and apply R!
+
+        cleanResidualRoundoffErrors(bw); // ensure residual round-off errors are removed! For example, removing 1e-15 among numbers 1.2, 55.2
+
+        as = Hsp*args.p - gs;
+        if(options.method == SaddlePointMethod::Rangespace)
+            as += Hss.diagonal().cwiseProduct(xs);
+        else as.noalias() += Hss*xs;
+
+        au = xu;
+
+        ap = Vps*xs + Vpp*args.p - args.v;
+        az = Js*xs + Jp*args.p - args.h;
+
+        aybs = bbs;
+        aybu.fill(0.0); // ensure residuals w.r.t. basic unstable variables are zero
+        ayl.fill(0.0); // ensure residuals w.r.t. linearly dependent rows in Ax are zero
+    }
+
+    /// Decompose the coefficient matrix of the canonical saddle point problem.
+    /// @note Ensure method @ref canonicalize has been called before this method.
+    auto decompose() -> void
+    {
+        const auto ns  = dims.ns;
+        const auto np  = dims.np;
+        const auto nbs = dims.nbs;
+        const auto nns = dims.nns;
+
+        const auto Hss = Hw.topLeftCorner(ns, ns);
+        const auto Hsp = Hw.topRightCorner(ns, np);
+
+        const auto Js = Jw.leftCols(ns);
+        const auto Jp = Jw.rightCols(np);
+
+        const auto Vps = Vw.leftCols(ns);
+        const auto Vpp = Vw.rightCols(np);
+
+        const auto Sbsns = S.topLeftCorner(nbs, nns);
+        const auto Sbsp  = S.topRightCorner(nbs, np);
+
+        decomposeCanonical({ dims, Hss, Hsp, Vps, Vpp, Js, Jp, Sbsns, Sbsp });
+    }
+
+    /// Solve the saddle point problem.
+    /// @note Ensure method @ref decompose has been called before this method.
+    auto solve(SaddlePointSolverSolve1Args args) -> void
+    {
+        const auto nx  = dims.nx;
+        const auto ns  = dims.ns;
+        const auto nu  = dims.nu;
+        const auto np  = dims.np;
+        const auto nz  = dims.nz;
+        const auto ny  = dims.ny;
+        const auto nbs = dims.nbs;
+        const auto nbu = dims.nbu;
+        const auto nns = dims.nns;
+        const auto nl  = dims.nl;
+
+        const auto js = iordering.head(ns);
+        const auto ju = iordering.tail(nu);
+
+        const auto Hss = Hw.topLeftCorner(ns, ns);
+        const auto Hsp = Hw.topRightCorner(ns, np);
+
+        const auto Js = Jw.leftCols(ns);
+        const auto Jp = Jw.rightCols(np);
+
+        const auto Vps = Vw.leftCols(ns);
+        const auto Vpp = Vw.rightCols(np);
+
+        const auto Sbsns = S.topLeftCorner(nbs, nns);
+        const auto Sbsp  = S.topRightCorner(nbs, np);
+
+        const auto R = canonicalizer.R();
+
+        const auto as   = axw.head(ns);
+        const auto au   = axw.tail(nu);
+        const auto ap   = apw.head(np);
+        const auto az   = azw.head(nz);
+        const auto aybs = ayw.head(nbs);
+
+        auto x   = xw.head(nx);
+        auto xs  = xw.head(ns);
+        auto xu  = xw.tail(nu);
+        auto y   = yw.head(ny);
+        auto ybs = yw.head(nbs);
+        auto ybu = yw.segment(nbs, nbu);
+        auto yl  = yw.tail(nl);
+        auto p   = args.sp;
+        auto z   = args.sz;
+
+        ybu.fill(0.0); // zero for y values associated with unstable basic variables
+        yl.fill(0.0);  // zero for y values associated with linearly dependent rows in Ax
+
+        solveCanonical({ dims, Hss, Hsp, Vps, Vpp, Js, Jp, Sbsns, Sbsp, as, ap, az, aybs, xs, p, z, ybs });
+
+        //======================================================================
+        // Note: In case of singular saddle point problem, null values may be
+        // produced because linearly dependent rows are ignored. The variables
+        // associated with these rows are then set to null. Here is the action
+        // we make at this point:
+        //   - For null values in y'bs, where y' = (y'bs, y'bu, y'l) and y =
+        //     tr(R)*y', we transform them to zero. This is to avoid further
+        //     spreading of null values during the product tr(R)*y'.
+        //   - For null values in xs, p, z, these are left unchanged so that
+        //     client code can act upon it accordingly.
+        //======================================================================
+
+        ybs = ybs.array().isNaN().select(0.0, ybs);
+
+        args.sx(js) = xs;
+        args.sx(ju) = au;
+        args.sp = p;
+        args.sz = z;
+        args.sy.noalias() = tr(R) * y;
+    }
+
+    /// Multiply the The arguments for method SaddlePointSolver::multiply.
+    /// @note Ensure method @ref canonicalize has been called before this method.
+    auto multiply(SaddlePointSolverMultiplyArgs args) -> void
+    {
+        const auto ns = dims.ns;
+        const auto nu = dims.nu;
+        const auto np = dims.np;
+
+        const auto js = iordering.head(ns);
+        const auto ju = iordering.tail(nu);
+
+        const auto Hss = Hw.topLeftCorner(ns, ns);
+        const auto Hsp = Hw.topRightCorner(ns, np);
+
+        const auto Js = Jw.leftCols(ns);
+        const auto Jp = Jw.rightCols(np);
+
+        const auto Vps = Vw.leftCols(ns);
+        const auto Vpp = Vw.rightCols(np);
+
+        const auto As = cols(Ax, js);
+        const auto Au = cols(Ax, ju);
+
+        auto as = args.ax(js);
+        auto au = args.ax(ju);
+        auto ap = args.ap;
+        auto ay = args.ay;
+        auto az = args.az;
+
+        const auto rs = xw.head(ns) = args.rx(js);
+        const auto ru = xw.tail(ns) = args.rx(ju);
+        const auto rp = args.rp;
+        const auto ry = args.ry;
+        const auto rz = args.rz;
+
+        as = Hsp*rp + tr(As)*ry + tr(Js)*rz;
+        if(options.method == SaddlePointMethod::Rangespace)
+            as += Hss.diagonal().cwiseProduct(rs);
+        else as += Hss*rs;
+
+        au.noalias() = ru;
+        ap.noalias() = Vps*rs + Vpp*rp;
+        az.noalias() = Js*rs + Jp*rp;
+        ay.noalias() = As*rs + Au*ru + Ap*rp;
+    }
+
+    /// Return the state of the canonical saddle point solver.
+    auto state() const -> SaddlePointSolverState
+    {
+        const auto nx  = dims.nx;
+        const auto ns  = dims.ns;
+        const auto nu  = dims.nu;
+        const auto np  = dims.np;
+        const auto nz  = dims.nz;
+        const auto ny  = dims.ny;
         const auto nbs = dims.nbs;
         const auto nbu = dims.nbu;
         const auto nns = dims.nns;
         const auto nnu = dims.nnu;
         const auto nl  = dims.nl;
 
-        // The canonicalizer matrix R in the canonical form of W
-        const auto R = canonicalizer.R();
-
-        // Use `axw` as workspace for x in the order [xbs, xns, xbu, xnu]
-        axw = args.x(iordering);
-
-        // Reference to p in args
-        const auto xp = args.p;
-
-        // View to the sub-vectors of x = (xs, xu)
-        auto xs = axw.head(ns);
-        auto xu = axw.tail(nu);
-
-        // View to the sub-vectors of xs = [xbs, xns]
-        auto xbs = xs.head(nbs);
-        auto xns = xs.tail(nns);
-
-        // View to the sub-matrices Sbsns and Sbsnp in S = [Sbsns Sbsnu Sbsnp; 0 Sbunu Sbunp]
-        const auto Sbsns = S.topLeftCorner(nbs, nns);
-        const auto Sbsnp = S.topRightCorner(nbs, np);
-
-        // The indices of the xs, xu variables where x = (xs, xu)
         const auto js = iordering.head(ns);
         const auto ju = iordering.tail(nu);
 
-        // The residual vector r = [rbs rbu rbl]
-        auto rbs = args.r.head(nbs);         // corresponding to stable basic variables
-        auto rbu = args.r.segment(nbs, nbu); // corresponding to unstable basic variables
-        auto rbl = args.r.tail(nl);          // corresponding to linearly dependent equations
+        const auto jbs = js.head(nbs);
+        const auto jns = js.tail(nns);
 
-        // The relative residual error vector e = [ebs ebu ebl]
-        auto ebs = args.e.head(nbs);         // corresponding to free basic variables
-        auto ebu = args.e.segment(nbs, nbu); // corresponding to fixed basic variables
-        auto ebl = args.e.tail(nl);          // corresponding to linearly dependent equations
+        const auto jbu = ju.head(nbu);
+        const auto jnu = ju.tail(nnu);
 
-        // View to the sub-matrix of W corresponding to xu variables
-        const auto Wu = cols(W, ju);
+        const auto Hss = Hw.topLeftCorner(ns, ns);
+        const auto Hsp = Hw.topRightCorner(ns, np);
 
-        //======================================================================
-        // NOTE: It is extremely important to use this logic below, of
-        // eliminating contribution in b from unstable-variables using matrix W =
-        // [A; J] instead of working on the canonical level, using matrices
-        // Sbsnu and Sbfnf. instead of the canonical form. By doing this, we
-        // can better control the feasibility error when the unstable-variables
-        // correspond to variables on lower bounds (i.e. 1e-40) and they can
-        // contaminate the canonical residuals. If they are very small, they
-        // will either vanish in the operation below using R or via the clean
-        // residual round-off errors.
-        //
-        // TODO: Check if the contribution in b from unstable-variables can still
-        // be done at the canonical level, but the clean-round-off-errors
-        // operation happens at the end of the removal process.
-        //======================================================================
+        const auto Js = Jw.leftCols(ns);
+        const auto Jp = Jw.rightCols(np);
 
-        // Compute b' = R*(b - Wu*xu)
-        bw.noalias() = R * (args.b - Wu * xu);
+        const auto As = cols(Ax, js);
+        const auto Au = cols(Ax, ju);
 
-        // Ensure residual round-off errors are cleaned in b'.
-        cleanResidualRoundoffErrors(bw);
+        const auto Vps = Vw.leftCols(ns);
+        const auto Vpp = Vw.rightCols(np);
 
-        // View to the sub-vectors of right-hand side vector b = [bbs bbf bbl]
-        auto bbs = bw.head(nbs);
-        auto bbf = bw.segment(nbs, nbu);
-        auto bbl = bw.tail(nl);
+        const auto Sbsns = S.topLeftCorner(nbs, nns);
+        const auto Sbsp  = S.topRightCorner(nbs, np);
 
-        // Compute rbs = xbs + Sbsns*xns + Sbsnp*xnp - bbs'
-        rbs.noalias() = xbs;
-        rbs.noalias() += Sbsns*xns;
-        rbs.noalias() += Sbsnp*xp;
-        rbs.noalias() -= bbs;
+        const auto R = canonicalizer.R();
 
-        // Set the residuals to absolute values
-        rbs.noalias() = rbs.cwiseAbs();
+        const auto as = axw.head(ns);
+        const auto au = axw.tail(nu);
+        const auto ap = apw.head(np);
+        const auto az = azw.head(nz);
+        const auto ay = ayw.head(ny);
 
-        // Set the residuals with respect to unstable basic variables to zero.
-        rbu.fill(0.0);
-
-        // Set the residuals with respect to linearly dependent equations to zero.
-        rbl.fill(0.0);
-
-        // Note: Even if there are inconsistencies above (e.g. some of these
-        // residuals are not zero, like when SiO2 is unstable with 1 mol and it
-        // the only species in a chemical system with element Si, but b[Si] = 2
-        // mol) we consider that this is an input error and try to find a
-        // solution that is feasible with respect to the stable-variables.
-
-        // Compute the relative error ebs by normalizing rbs by xbs', where xbs'[i] = xbs[i] if xbs[i] != 0 else 1
-        ebs.noalias() = rbs.cwiseQuotient((xbs.array() != 0.0).select(xbs, 1.0));
-
-        // Set the errors with respect to unstable basic variables to zero.
-        ebu.fill(0.0);
-
-        // Set the errors with respect to linearly dependent equations to zero.
-        ebl.fill(0.0);
+        return { dims, js, jbs, jns, ju, jbu, jnu, R, Hss, Hsp, Vps, Vpp,
+            As, Au, Ap, Js, Jp, Sbsns, Sbsp, as, au, ap, ay, az };
     }
 
-    /// Calculate the relative canonical residual of equation `W*x - [b; J*x + h]`.
-    /// @note Ensure method @ref canonicalize has been called before this method.
-    auto residuals(SaddlePointSolverResidualAdvancedArgs args) -> void
-    {
-        // Auxiliary dimension variables used below
-        const auto nx = dims.nx;
-        const auto np = dims.np;
-        const auto mn = dims.mn;
+    // /// Calculate the relative canonical residual of equation `W*x - b`.
+    // /// @note Ensure method @ref canonicalize has been called before this method.
+    // auto residuals(SaddlePointSolverResidualArgs args) -> void
+    // {
+    //     // Auxiliary dimension variables used below
+    //     const auto nx  = dims.nx;
+    //     const auto np  = dims.np;
+    //     const auto ns  = dims.ns;
+    //     const auto nu  = dims.nu;
+    //     const auto nbs = dims.nbs;
+    //     const auto nbu = dims.nbu;
+    //     const auto nns = dims.nns;
+    //     const auto nnu = dims.nnu;
+    //     const auto nl  = dims.nl;
 
-        // Unpack the data members in args
-        auto [x, p, b, h, r, e] = args;
+    //     // The canonicalizer matrix R of matrix Ax
+    //     const auto R = canonicalizer.R();
 
-        // The vector bw = [b; Jx*x + Jp*p + h] (using args.r as workspace)
-        auto bw = args.r;
+    //     // Use `axw` as workspace for x in the order [xbs, xns, xbu, xnu]
+    //     axw = args.x(iordering);
 
-        // Views to sub-matrices Jx and Jp in W = [Ax Ap; Jx Jp]
-        const auto Jx = W.bottomLeftCorner(mn, nx);
-        const auto Jp = W.bottomRightCorner(mn, np);
+    //     // Reference to p in args
+    //     const auto xp = args.p;
 
-        // Compute bw = (b, Jx * x + Jp * p - h)
-        bw << b, Jx*x + Jp*p - h;
+    //     // View to the sub-vectors of x = (xs, xu)
+    //     auto xs = axw.head(ns);
+    //     auto xu = axw.tail(nu);
 
-        /// Calculate the canonical residual of equation `W*x - b'`.
-        residuals({ x, p, bw, r, e });
-    }
+    //     // View to the sub-vectors of xs = [xbs, xns]
+    //     auto xbs = xs.head(nbs);
+    //     auto xns = xs.tail(nns);
 
-    /// Calculate the multiplication of the saddle point matrix with a vector *(x, y)*.
-    /// @note Ensure method @ref canonicalize has been called before this method.
-    auto multiply(SaddlePointSolverMultiplyArgs args) -> void
-    {
-        // // Unpack the data members in args
-        // const auto [x, y, a, b] = args;
+    //     // View to the sub-matrices Sbsns and Sbsp in S = [Sbsns Sbsnu Sbsp; 0 Sbunu Sbup]
+    //     const auto Sbsns = S.topLeftCorner(nbs, nns);
+    //     const auto Sbsp  = S.topRightCorner(nbs, np);
 
-        // // Auxiliary dimension variables used below
-        // const auto nx  = dims.nx;
-        // const auto np  = dims.np;
-        // const auto nu  = dims.nu;
-        // const auto nbs = dims.nbs;
-        // const auto nbu = dims.nbu;
-        // const auto nns = dims.nns;
-        // const auto nnu = dims.nnu;
-        // const auto nl  = dims.nl;
+    //     // The indices of the xs, xu variables where x = (xs, xu)
+    //     const auto js = iordering.head(ns);
+    //     const auto ju = iordering.tail(nu);
 
-        // // Alias to the matrices of the canonicalization process
-        // auto S = canonicalizer.S();
-        // auto R = canonicalizer.R();
+    //     // The residual vector r = [rbs rbu rbl]
+    //     auto rbs = args.r.head(nbs);         // corresponding to stable basic variables
+    //     auto rbu = args.r.segment(nbs, nbu); // corresponding to unstable basic variables
+    //     auto rbl = args.r.tail(nl);          // corresponding to linearly dependent equations
 
-        // // The indices of the xs, xu variables in x = (xs, xu)
-        // auto js = iordering.head(ns);
-        // auto ju = iordering.tail(nu);
-        // // auto jp = iordering.tail(np); TODO: Check this <<<<<<<<<<------------------------------
+    //     // The relative residual error vector e = [ebs ebu ebl]
+    //     auto ebs = args.e.head(nbs);         // corresponding to free basic variables
+    //     auto ebu = args.e.segment(nbs, nbu); // corresponding to fixed basic variables
+    //     auto ebl = args.e.tail(nl);          // corresponding to linearly dependent equations
 
-        // // Use `xw` as workspace for x in the order (xs, xu)
-        // xw = args.x(iordering);
+    //     // View to the sub-matrix of W corresponding to xu variables
+    //     const auto Wu = cols(W, ju);
 
-        // // View to sub-vectors in xw = (xs, xu)
-        // const auto xs = xw.head(ns);
-        // const auto xp = xw.tail(nu);
-        // const auto xu = xw.tail(nu);
+    //     //======================================================================
+    //     // NOTE: It is extremely important to use this logic below, of
+    //     // eliminating contribution in b from unstable-variables using matrix W =
+    //     // [A; J] instead of working on the canonical level, using matrices
+    //     // Sbsnu and Sbfnf. instead of the canonical form. By doing this, we
+    //     // can better control the feasibility error when the unstable-variables
+    //     // correspond to variables on lower bounds (i.e. 1e-40) and they can
+    //     // contaminate the canonical residuals. If they are very small, they
+    //     // will either vanish in the operation below using R or via the clean
+    //     // residual round-off errors.
+    //     //
+    //     // TODO: Check if the contribution in b from unstable-variables can still
+    //     // be done at the canonical level, but the clean-round-off-errors
+    //     // operation happens at the end of the removal process.
+    //     //======================================================================
 
-        // // View to the sub-matrices Hxx, Hpx, Hpp in Hw = [Hxx 0 0; Hpx Hpp 0; 0 0 0]
-        // const auto Hxx = Hw.topLeftCorner(nx, nx);
-        // const auto Hpx = Hw.middleRows(nx, np).leftCols(nx);
-        // const auto Hpp = Hw.middleRows(nx, np).middleCols(nx, np);
+    //     // Compute b' = R*(b - Wu*xu)
+    //     bw.noalias() = R * (args.b - Wu * xu);
 
-        // // View to the sub-matrices Sbsns and Sbsnp in S = [Sbsns Sbsnu Sbsnp; 0 Sbunu Sbunp]
-        // const auto Sbsns = S.topLeftCorner(nbs, nns);
-        // const auto Sbsnp = S.topRightCorner(nbs, np);
+    //     // Ensure residual round-off errors are cleaned in b'.
+    //     cleanResidualRoundoffErrors(bw);
 
-        // // View to the sub-vectors of xs = [xbs, xns]
-        // auto xbs = xs.head(nbs);
-        // auto xns = xs.tail(nns);
+    //     // View to the sub-vectors of right-hand side vector b = [bbs bbf bbl]
+    //     auto bbs = bw.head(nbs);
+    //     auto bbf = bw.segment(nbs, nbu);
+    //     auto bbl = bw.tail(nl);
 
-        // // View to the bbs sub-vector in bw = b' = R*(b - Wu*au)
-        // auto bbs = bw.head(nbs);
+    //     // Compute rbs = xbs + Sbsns*xns + Sbsp*xnp - bbs'
+    //     rbs.noalias() = xbs;
+    //     rbs.noalias() += Sbsns*xns;
+    //     rbs.noalias() += Sbsp*xp;
+    //     rbs.noalias() -= bbs;
 
-        // // Set the unstable-variables xu to the values in au
-        // xu = au;
+    //     // Set the residuals to absolute values
+    //     rbs.noalias() = rbs.cwiseAbs();
 
-        // // View to sub-vectors ybs, ybu, ybl in yw = [ybs, ybu, ybl]
-        // auto ybs = yw.head(nbs);
-        // auto ybu = yw.segment(nbs, nbu);
-        // auto ybl = yw.tail(nl);
+    //     // Set the residuals with respect to unstable basic variables to zero.
+    //     rbu.fill(0.0);
 
-    }
+    //     // Set the residuals with respect to linearly dependent equations to zero.
+    //     rbl.fill(0.0);
 
-    /// Return the current state info of the saddle point solver.
-    auto info() const -> SaddlePointSolverInfo
-    {
-        const auto jb = canonicalizer.indicesBasicVariables();
-        const auto jn = canonicalizer.indicesNonBasicVariables();
-        const auto S  = canonicalizer.S();
-        const auto R  = canonicalizer.R();
-        const auto Q  = canonicalizer.Q();
-        return { jb, jn, R, S, Q };
-    }
+    //     // Note: Even if there are inconsistencies above (e.g. some of these
+    //     // residuals are not zero, like when SiO2 is unstable with 1 mol and it
+    //     // the only species in a chemical system with element Si, but b[Si] = 2
+    //     // mol) we consider that this is an input error and try to find a
+    //     // solution that is feasible with respect to the stable-variables.
+
+    //     // Compute the relative error ebs by normalizing rbs by xbs', where xbs'[i] = xbs[i] if xbs[i] != 0 else 1
+    //     ebs.noalias() = rbs.cwiseQuotient((xbs.array() != 0.0).select(xbs, 1.0));
+
+    //     // Set the errors with respect to unstable basic variables to zero.
+    //     ebu.fill(0.0);
+
+    //     // Set the errors with respect to linearly dependent equations to zero.
+    //     ebl.fill(0.0);
+    // }
 };
 
 SaddlePointSolver::SaddlePointSolver(SaddlePointSolverInitArgs args)
@@ -763,50 +873,44 @@ auto SaddlePointSolver::options() const -> const SaddlePointOptions&
     return pimpl->options;
 }
 
-auto SaddlePointSolver::canonicalize(SaddlePointSolverCanonicalizeArgs args) -> void
+auto SaddlePointSolver::canonicalize(SaddlePointSolverCanonicalize1Args args) -> void
 {
-    return pimpl->canonicalize(args);
+    pimpl->canonicalize(args);
 }
 
-auto SaddlePointSolver::decompose(SaddlePointSolverDecomposeArgs args) -> void
+auto SaddlePointSolver::rhs(SaddlePointSolverRhs1Args args) -> void
 {
-    return pimpl->decompose(args);
+    pimpl->rhs(args);
 }
 
-auto SaddlePointSolver::solve(SaddlePointSolverSolveArgs args) -> void
+auto SaddlePointSolver::rhs(SaddlePointSolverRhs2Args args) -> void
 {
-    return pimpl->solve(args);
+    pimpl->rhs(args);
 }
 
-auto SaddlePointSolver::solve(SaddlePointSolverSolveAlternativeArgs args) -> void
+auto SaddlePointSolver::rhs(SaddlePointSolverRhs3Args args) -> void
 {
-    auto [x, p, y] = args;
-    return pimpl->solve({x, p, y, x, p, y});
+    pimpl->rhs(args);
 }
 
-auto SaddlePointSolver::solve(SaddlePointSolverSolveAdvancedArgs args) -> void
+auto SaddlePointSolver::decompose() -> void
 {
-    return pimpl->solve(args);
+    pimpl->decompose();
 }
 
-auto SaddlePointSolver::residuals(SaddlePointSolverResidualArgs args) -> void
+auto SaddlePointSolver::solve(SaddlePointSolverSolve1Args args) -> void
 {
-    return pimpl->residuals(args);
-}
-
-auto SaddlePointSolver::residuals(SaddlePointSolverResidualAdvancedArgs args) -> void
-{
-    return pimpl->residuals(args);
+    pimpl->solve(args);
 }
 
 auto SaddlePointSolver::multiply(SaddlePointSolverMultiplyArgs args) -> void
 {
-    return pimpl->multiply(args);
+    pimpl->multiply(args);
 }
 
-auto SaddlePointSolver::info() const -> SaddlePointSolverInfo
+auto SaddlePointSolver::state() const -> SaddlePointSolverState
 {
-    return pimpl->info();
+    return pimpl->state();
 }
 
 } // namespace Optima

@@ -27,9 +27,9 @@ using namespace Optima;
 
 void exportStepper(py::module& m)
 {
-    auto init = [](Index nx, Index np, Index m, MatrixConstRef4py Ax, MatrixConstRef4py Ap) -> Stepper
+    auto init = [](Index nx, Index np, Index ny, Index nz, MatrixConstRef4py Ax, MatrixConstRef4py Ap) -> Stepper
     {
-        return Stepper({ nx, np, m, Ax, Ap });
+        return Stepper({ nx, np, ny, nz, Ax, Ap });
     };
 
     auto initialize = [](Stepper& self,
@@ -48,6 +48,7 @@ void exportStepper(py::module& m)
         VectorConstRef x,
         VectorConstRef p,
         VectorConstRef y,
+        VectorConstRef z,
         VectorConstRef fx,
         MatrixConstRef4py fxx,
         MatrixConstRef4py fxp,
@@ -61,13 +62,14 @@ void exportStepper(py::module& m)
         VectorConstRef pupper,
         Stability& stability)
     {
-        self.canonicalize({ x, p, y, fx, fxx, fxp, vx, vp, hx, hp, xlower, xupper, plower, pupper, stability });
+        self.canonicalize({ x, p, y, z, fx, fxx, fxp, vx, vp, hx, hp, xlower, xupper, plower, pupper, stability });
     };
 
     auto residuals = [](Stepper& self,
         VectorConstRef x,
         VectorConstRef p,
         VectorConstRef y,
+        VectorConstRef z,
         VectorConstRef b,
         VectorConstRef h,
         VectorConstRef v,
@@ -76,38 +78,26 @@ void exportStepper(py::module& m)
         VectorRef rx,
         VectorRef rp,
         VectorRef ry,
+        VectorRef rz,
         VectorRef ex,
         VectorRef ep,
         VectorRef ey,
-        VectorRef z)
+        VectorRef ez,
+        VectorRef s)
     {
-        self.residuals({ x, p, y, b, h, v, fx, hx, rx, rp, ry, ex, ep, ey, z });
+        self.residuals({ x, p, y, z, b, h, v, fx, hx, rx, rp, ry, rz, ex, ep, ey, ez, s });
     };
 
-    auto decompose = [](Stepper& self,
-        VectorConstRef x,
-        VectorConstRef p,
-        VectorConstRef y,
-        VectorConstRef fx,
-        MatrixConstRef4py fxx,
-        MatrixConstRef4py fxp,
-        MatrixConstRef4py vx,
-        MatrixConstRef4py vp,
-        MatrixConstRef4py hx,
-        MatrixConstRef4py hp,
-        VectorConstRef xlower,
-        VectorConstRef xupper,
-        VectorConstRef plower,
-        VectorConstRef pupper,
-        Stability const& stability)
+    auto decompose = [](Stepper& self)
     {
-        self.decompose({ x, p, y, fx, fxx, fxp, vx, vp, hx, hp, xlower, xupper, plower, pupper, stability });
+        self.decompose();
     };
 
     auto solve = [](Stepper& self,
         VectorConstRef x,
         VectorConstRef p,
         VectorConstRef y,
+        VectorConstRef z,
         VectorConstRef fx,
         VectorConstRef b,
         VectorConstRef h,
@@ -115,12 +105,13 @@ void exportStepper(py::module& m)
         Stability const& stability,
         VectorRef dx,
         VectorRef dp,
-        VectorRef dy)
+        VectorRef dy,
+        VectorRef dz)
     {
-        self.solve({ x, p, y, fx, b, h, v, stability, dx, dp, dy });
+        self.solve({ x, p, y, z, fx, b, h, v, stability, dx, dp, dy, dz });
     };
 
-    Matrix tmp_xw, tmp_pw, tmp_yw, tmp_zw;
+    Matrix tmp_xw, tmp_pw, tmp_yw, tmp_zw, tmp_sw;
     auto sensitivities = [=](Stepper& self,
         MatrixConstRef4py fxw,
         MatrixConstRef4py hw,
@@ -130,13 +121,15 @@ void exportStepper(py::module& m)
         MatrixRef4py xw,
         MatrixRef4py pw,
         MatrixRef4py yw,
-        MatrixRef4py zw) mutable
+        MatrixRef4py zw,
+        MatrixRef4py sw) mutable
     {
         tmp_xw.resize(xw.rows(), xw.cols());
         tmp_pw.resize(pw.rows(), pw.cols());
         tmp_yw.resize(yw.rows(), yw.cols());
         tmp_zw.resize(zw.rows(), zw.cols());
-        self.sensitivities({ fxw, hw, bw, vw, stability, tmp_xw, tmp_pw, tmp_yw, tmp_zw });
+        tmp_sw.resize(sw.rows(), sw.cols());
+        self.sensitivities({ fxw, hw, bw, vw, stability, tmp_xw, tmp_pw, tmp_yw, tmp_zw, tmp_sw });
         xw = tmp_xw;
         pw = tmp_pw;
         yw = tmp_yw;

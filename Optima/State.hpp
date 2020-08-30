@@ -58,43 +58,52 @@ public:
     /// The parameter variables \eq{p} of the optimization problem.
     VectorRef p;
 
-    /// The Lagrange multipliers \eq{y=(y_{b_{\mathrm{e}}},y_{b_{\mathrm{g}}},y_{h_{\mathrm{e}}},y_{h_{\mathrm{g}}})} of the optimization problem.
+    /// The Lagrange multipliers \eq{y=(y_{\mathrm{e}},y_{\mathrm{g}})} of the optimization problem.
     VectorRef y;
 
-    /// The Lagrange multipliers with respect to constraints \eq{A_{\mathrm{e}}x=b_{\mathrm{e}}}.
-    VectorRef ybe;
+    /// The Lagrange multipliers with respect to constraints \eq{A_{\mathrm{ex}}x+A_{\mathrm{ep}}p=b_{\mathrm{e}}}.
+    VectorRef ye;
 
-    /// The Lagrange multipliers with respect to constraints \eq{A_{\mathrm{g}}x\ge b_{\mathrm{g}}}.
-    VectorRef ybg;
+    /// The Lagrange multipliers with respect to constraints \eq{A_{\mathrm{gx}}x+A_{\mathrm{gp}}p\geq b_{\mathrm{g}}}.
+    VectorRef yg;
 
-    /// The Lagrange multipliers with respect to constraints \eq{h_{\mathrm{e}}(x)=0}.
-    VectorRef yhe;
-
-    /// The Lagrange multipliers with respect to constraints \eq{h_{\mathrm{g}}(x)\geq0}.
-    VectorRef yhg;
-
-    /// The instability measures of variables \eq{x} defined as \eq{z=g+A_{\mathrm{e}}^{T}y_{b_{\mathrm{e}}}+A_{\mathrm{g}}^{T}y_{b_{\mathrm{g}}}+J_{\mathrm{e}}^{T}y_{h_{\mathrm{e}}}+J_{\mathrm{g}}^{T}y_{h_{\mathrm{g}}}}.
+    /// The Lagrange multipliers \eq{z=(z_{\mathrm{e}},z_{\mathrm{g}})} of the optimization problem.
     VectorRef z;
 
-    /// The sensitivity derivatives \eq{\partial x/\partial p} with respect to parameters \eq{p}.
-    Matrix dxdp;
+    /// The Lagrange multipliers with respect to constraints \eq{h_{\mathrm{e}}(x)=0}.
+    VectorRef ze;
 
-    /// The sensitivity derivatives \eq{\partial y/\partial p} with respect to parameters \eq{p}.
-    Matrix dydp;
+    /// The Lagrange multipliers with respect to constraints \eq{h_{\mathrm{g}}(x)\geq0}.
+    VectorRef zg;
 
-    /// The sensitivity derivatives \eq{\partial z/\partial p} with respect to parameters \eq{p}.
-    Matrix dzdp;
+    /// The stability measures of variables \eq{x} defined as \eq{s=g+A_{\mathrm{ex}}^{T}y_{\mathrm{e}}+A_{\mathrm{gx}}^{T}y_{\mathrm{g}}+J_{\mathrm{ex}}^{T}z_{\mathrm{e}}+J_{\mathrm{gx}}^{T}z_{\mathrm{g}}}.
+    VectorRef s;
 
-    /// The variables \eq{\bar{x} = (x,x_{b_{\mathrm{g}}},x_{h_{\mathrm{g}}})} of the basic optimization problem.
+    /// The sensitivity derivatives \eq{\partial x/\partial w} with respect to parameters \eq{w}.
+    Matrix dxdw;
+
+    /// The sensitivity derivatives \eq{\partial p/\partial w} with respect to parameters \eq{w}.
+    Matrix dpdw;
+
+    /// The sensitivity derivatives \eq{\partial y/\partial w} with respect to parameters \eq{w}.
+    Matrix dydw;
+
+    /// The sensitivity derivatives \eq{\partial z/\partial w} with respect to parameters \eq{w}.
+    Matrix dzdw;
+
+    /// The sensitivity derivatives \eq{\partial s/\partial w} with respect to parameters \eq{w}.
+    Matrix dsdw;
+
+    /// The variables \eq{(x,x_{\mathrm{b_{g}}},x_{\mathrm{h_{g}}})} of the basic optimization problem.
     VectorRef xbar;
 
-    /// The variables \eq{\bar{z}=(z,y_{b_{\mathrm{g}}},y_{h_{\mathrm{g}}})} of the basic optimization problem.
-    VectorRef zbar;
+    /// The variables \eq{(s,y_{\mathrm{g}},z_{\mathrm{g}})} of the basic optimization problem.
+    VectorRef sbar;
 
-    /// The variables \eq{x_{b_{\mathrm{g}}}} in \eq{\bar{x} = (x,x_{b_{\mathrm{g}}},x_{h_{\mathrm{g}}})} of the basic optimization problem.
+    /// The variables \eq{x_{b_{\mathrm{g}}}} in \eq{(x,x_{\mathrm{b_{g}}},x_{\mathrm{h_{g}}})} of the basic optimization problem.
     VectorRef xbg;
 
-    /// The variables \eq{x_{h_{\mathrm{g}}}} in \eq{\bar{x} = (x,x_{b_{\mathrm{g}}},x_{h_{\mathrm{g}}})} of the basic optimization problem.
+    /// The variables \eq{x_{h_{\mathrm{g}}}} in \eq{(x,x_{\mathrm{b_{g}}},x_{\mathrm{h_{g}}})} of the basic optimization problem.
     VectorRef xhg;
 
     /// The stability state of the primal variables *x*.

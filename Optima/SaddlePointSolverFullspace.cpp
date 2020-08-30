@@ -39,91 +39,99 @@ struct SaddlePointSolverFullspace::Impl
     Eigen::PartialPivLU<Matrix> lu; ///< The LU decomposition solver.
 
     /// Construct a default SaddlePointSolverFullspace::Impl instance.
-    Impl(Index nx, Index np, Index m)
-    : mat(nx + np + m, nx + np + m), vec(nx + np + m)
+    Impl(Index nx, Index np, Index ny, Index nz)
+    : mat(nx + np + ny + nz, nx + np + ny + nz), vec(nx + np + ny + nz)
     {}
 
     /// Decompose the coefficient matrix of the canonical saddle point problem.
     auto decompose(CanonicalSaddlePointMatrix args) -> void
     {
-        // The dimension variables needed below
         const auto ns  = args.dims.ns;
         const auto nbs = args.dims.nbs;
         const auto nns = args.dims.nns;
         const auto np  = args.dims.np;
+        const auto nz  = args.dims.nz;
 
-        // The matrix where the canonical saddle point matrix is assembled
-        auto M = mat.topLeftCorner(ns + np + nbs, ns + np + nbs);
+        const auto t = ns + np + nz + nbs;
 
-        // The 1st, 2nd, 3rd, 4th blocks of rows in M
+        auto M = mat.topLeftCorner(t, t);
+
         auto M1 = M.topRows(nbs);
         auto M2 = M.middleRows(nbs, nns);
         auto M3 = M.middleRows(nbs + nns, np);
-        auto M4 = M.bottomRows(nbs);
+        auto M4 = M.middleRows(nbs + nns + np, nz);
+        auto M5 = M.bottomRows(nbs);
 
-        // The matrices Hbsbs, Hbsns, Hnsbs, Hnsns in Hss
         const auto Hbsbs = args.Hss.topRows(nbs).leftCols(nbs);
         const auto Hbsns = args.Hss.topRows(nbs).rightCols(nns);
         const auto Hnsbs = args.Hss.bottomRows(nns).leftCols(nbs);
         const auto Hnsns = args.Hss.bottomRows(nns).rightCols(nns);
 
-        // The matrices Hbsnp and Hnsnp in in Hsp
-        const auto Hbsnp = args.Hsp.topRows(nbs);
-        const auto Hnsnp = args.Hsp.bottomRows(nns);
+        const auto Hbsp = args.Hsp.topRows(nbs);
+        const auto Hnsp = args.Hsp.bottomRows(nns);
 
-        // The matrices Sbsns and Sbsnp
+        const auto Jp  = args.Jp;
+        const auto Js  = args.Js;
+        const auto Jbs = Js.leftCols(nbs);
+        const auto Jns = Js.rightCols(nns);
+
         const auto Sbsns = args.Sbsns;
-        const auto Sbsnp = args.Sbsnp;
+        const auto Sbsp  = args.Sbsp;
 
-        // The matrices Vnpbs, Vnpns, Vnpnp
-        const auto Vnpbs = args.Hps.leftCols(nbs);
-        const auto Vnpns = args.Hps.rightCols(nns);
-        const auto Vnpnp = args.Hpp;
+        const auto Vpbs = args.Vps.leftCols(nbs);
+        const auto Vpns = args.Vps.rightCols(nns);
+        const auto Vpp = args.Vpp;
 
-        // The identity matrix Ibsbs
-        auto Ibsbs = identity(nbs, nbs);
+        const auto Ibsbs = identity(nbs, nbs);
 
-        // The zero matrices 0npbs and 0bsbs
-        auto Onpbs = zeros(np, nbs);
-        auto Obsbs = zeros(nbs, nbs);
+        const auto Opz   = zeros(np, nz);
+        const auto Opbs  = zeros(np, nbs);
+        const auto Obsbs = zeros(nbs, nbs);
+        const auto Obsz  = zeros(nbs, nz);
+        const auto Ozbs  = zeros(nz, nbs);
+        const auto Ozz   = zeros(nz, nz);
 
-        // Assemble the matrix M
-        if(nbs) M1 << Hbsbs, Hbsns, Hbsnp, Ibsbs;
-        if(nns) M2 << Hnsbs, Hnsns, Hnsnp, tr(Sbsns);
-        if( np) M3 << Vnpbs, Vnpns, Vnpnp, Onpbs;
-        if(nbs) M4 << Ibsbs, Sbsns, Sbsnp, Obsbs;
+        if(nbs) M1 << Hbsbs, Hbsns, Hbsp, tr(Jbs), Ibsbs;
+        if(nns) M2 << Hnsbs, Hnsns, Hnsp, tr(Jns), tr(Sbsns);
+        if( np) M3 << Vpbs, Vpns, Vpp, Opz, Opbs;
+        if( nz) M4 << Jbs, Jns, Jp, Ozz, Ozbs;
+        if(nbs) M5 << Ibsbs, Sbsns, Sbsp, Obsz, Obsbs;
 
-        // Compute the LU decomposition of M
         lu.compute(M);
     }
 
     /// Solve the canonical saddle point problem.
     auto solve(CanonicalSaddlePointProblem args) -> void
     {
-        // The dimension variables needed below
         const auto ns  = args.dims.ns;
         const auto nbs = args.dims.nbs;
         const auto nns = args.dims.nns;
         const auto np  = args.dims.np;
+        const auto nz  = args.dims.nz;
 
-        // The vector where the right-hand side of the linear system is assembled
-        auto r = vec.head(ns + np + nbs);
+        const auto t = ns + np + nz + nbs;
 
-        // Assemble the right-hand side vector r = (as, ap, bbs)
-        r << args.as, args.ap, args.bbs;
+        auto r = vec.head(t);
 
-        // Solve the system of linear equations using the LU decomposition of M.
+        auto xbs = r.head(nbs);
+        auto xns = r.segment(nbs, nns);
+        auto p   = r.segment(nbs + nns, np);
+        auto z   = r.segment(nbs + nns + np, nz);
+        auto ybs = r.tail(nbs);
+
+        r << args.as, args.ap, args.az, args.aybs;
+
         r.noalias() = lu.solve(r);
 
-        // Get the result of xs, p, ybs from r, which now holds r = (xs, p, ybs)
-        args.xs  = r.head(ns);
-        args.p   = r.segment(ns, np);
-        args.ybs = r.tail(nbs);
+        args.xs << xbs, xns;
+        args.p = p;
+        args.z = z;
+        args.ybs = ybs;
     }
 };
 
-SaddlePointSolverFullspace::SaddlePointSolverFullspace(Index nx, Index np, Index m)
-: pimpl(new Impl(nx, np, m))
+SaddlePointSolverFullspace::SaddlePointSolverFullspace(Index nx, Index np, Index ny, Index nz)
+: pimpl(new Impl(nx, np, ny, nz))
 {}
 
 SaddlePointSolverFullspace::SaddlePointSolverFullspace(const SaddlePointSolverFullspace& other)

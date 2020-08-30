@@ -261,7 +261,7 @@ def test_active_stepper(args):
     options.kkt.method = method
 
     # Create a Newton step calculator
-    stepper = Stepper(nx, np, m, Ax, Ap)
+    stepper = Stepper(nx, np, ny, nz, Ax, Ap)
     stepper.setOptions(options)
 
     # Initialize, decompose the saddle point matrix, and solve the Newton step

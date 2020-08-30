@@ -39,7 +39,8 @@ struct BasicSolverInitArgs
 {
     Index nx;           ///< The number of primal variables *x*.
     Index np;           ///< The number of parameter variables *p*.
-    Index m;            ///< The number of linear and nonlinear equality constraints in *Ax*x + Ap*p = b* and *h(x, p) = 0*.
+    Index ny;           ///< The number of Lagrange multipliers *y* (i.e. number of rows in *A = [Ax Ap]*).
+    Index nz;           ///< The number of Lagrange multipliers *z* (i.e. number of equations in *h(x, p) = 0*).
     MatrixConstRef Ax;  ///< The coefficient matrix *Ax* of the linear equality constraints.
     MatrixConstRef Ap;  ///< The coefficient matrix *Ap* of the linear equality constraints.
 };
@@ -50,15 +51,16 @@ struct BasicSolverSolveArgs
     ObjectiveFunction const& obj;  ///< The objective function *f(x)* of the basic optimization problem.
     ConstraintFunction const& h;   ///< The nonlinear equality constraint function *h(x, p)*.
     ConstraintFunction const& v;   ///< The nonlinear constraint function *v(x, p)*.
-    VectorConstRef b;              ///< The right-hand side vector *b* of the linear equality constraints *Ax*x + Ap*p = b*.
+    VectorConstRef b;              ///< The right-hand side vector *b* of the linear equality constraints <em>Ax*x + Ap*p = b</em>.
     VectorConstRef xlower;         ///< The lower bounds of the primal variables *x*.
     VectorConstRef xupper;         ///< The upper bounds of the primal variables *x*.
     VectorConstRef plower;         ///< The lower bounds of the parameter variables *p*.
     VectorConstRef pupper;         ///< The upper bounds of the parameter variables *p*.
     VectorRef x;                   ///< The output primal variables *x* of the basic optimization problem.
     VectorRef p;                   ///< The output parameter variables *p* of the basic optimization problem.
-    VectorRef y;                   ///< The output Lagrange multipliers *y* with respect to constraints *Ax*x + Ap*p = b* and *h(x, p) = 0*.
-    VectorRef z;                   ///< The output instability measures of the primal variables defined as *z = g + tr(A)yl + tr(J)yn*.
+    VectorRef y;                   ///< The output Lagrange multipliers *y* with respect to constraints <em>Ax*x + Ap*p = b</em>.
+    VectorRef z;                   ///< The output Lagrange multipliers *z* with respect to constraints *h(x, p) = 0*.
+    VectorRef s;                   ///< The output stability measures of the primal variables defined as *s = g + tr(Ax)y + tr(Jx)z*.
     Stability& stability;          ///< The output stability state of the primal variables *x*.
 };
 
@@ -74,6 +76,7 @@ struct BasicSolverSensitivitiesArgs
     MatrixRef pw;               ///< The output sensitivity derivatives *∂p/∂w*.
     MatrixRef yw;               ///< The output sensitivity derivatives *∂y/∂w*.
     MatrixRef zw;               ///< The output sensitivity derivatives *∂z/∂w*.
+    MatrixRef sw;               ///< The output sensitivity derivatives *∂s/∂w*.
 };
 
 /// The solver for optimization problems in its basic form.
