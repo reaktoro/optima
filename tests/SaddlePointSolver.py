@@ -22,24 +22,29 @@ from numpy.testing import assert_allclose
 from pytest import approx, mark
 from itertools import product
 
-from utils.matrices import testing_matrices_W, matrix_non_singular, pascal_matrix
+from utils.matrices import testing_matrices_A, matrix_non_singular, pascal_matrix
 
 
-def print_state(M, r, s, m, nx, np):
+def print_state(M, r, s, nx, np, ny, nz):
     set_printoptions(linewidth=1000, suppress=True)
     slu = eigen.solve(M, r)
     # print( 'M        = \n', M )
     # print( 'r        = ', r )
-    print( 'x        = ', s[:nx] )
-    print( 'x(lu)    = ', slu[:nx] )
-    print( 'x(diff)  = ', abs(s[:nx] - slu[:nx]) )
-    print( 'p        = ', s[nx:nx+np] )
-    print( 'p(lu)    = ', slu[nx:nx+np] )
-    print( 'p(diff)  = ', abs(s[nx:nx+np] - slu[nx:nx+np]) )
-    print( 'y        = ', s[nx+np:] )
-    print( 'y(lu)    = ', slu[nx+np:] )
-    print( 'y(diff)  = ', abs(s[nx+np:] - slu[nx+np:]) )
-    print( 'res      = ', M.dot(s) - r )
+    sx, sp, sy, sz = split(s, [nx, nx+np, nx+np+ny])
+    slux, slup, sluy, sluz = split(slu, [nx, nx+np, nx+np+ny])
+    print( 'x        = ', sx             )
+    print( 'x(lu)    = ', slux           )
+    print( 'x(diff)  = ', abs(sx - slux) )
+    print( 'p        = ', sp             )
+    print( 'p(lu)    = ', slup           )
+    print( 'p(diff)  = ', abs(sp - slup) )
+    print( 'y        = ', sy             )
+    print( 'y(lu)    = ', sluy           )
+    print( 'y(diff)  = ', abs(sy - sluy) )
+    print( 'z        = ', sz             )
+    print( 'z(lu)    = ', sluz           )
+    print( 'z(diff)  = ', abs(sz - sluz) )
+    print( 'res      = ', M.dot(s) - r   )
     print( 'res(lu)  = ', M.dot(slu) - r )
 
 
@@ -49,16 +54,16 @@ nx = 20
 # Tested number of parameter variables p
 tested_np = [0, 5]
 
-# Tested number of rows in matrix Ax and Ap
-tested_ml = [6, 4]
+# Tested number of Lagrange multipliers y (i.e., number of rows in A = [Ax Ap])
+tested_ny = [4, 6]
 
-# Tested number of rows in matrix Jx and Jp
-tested_mn = [3, 1, 0]
+# Tested number of Lagrange multipliers z (i.e., number of rows in J = [Jx Jp])
+tested_nz = [0, 5]
 
-# Tested cases for the matrix W = [Ax Ap; Jx Jp]
-tested_matrices_W = testing_matrices_W
+# Tested cases for matrix A = [Ax Ap]
+tested_matrices_A = testing_matrices_A
 
-# Tested cases for the indices of fixed variables
+# Tested cases for the indices of unstable variables (i.e. fixed at given values)
 tested_ifixed = [
     arange(0),
     arange(1),
@@ -81,9 +86,9 @@ tested_methods = [
 
 # Combination of all tested cases
 testdata = product(tested_np,
-                   tested_ml,
-                   tested_mn,
-                   tested_matrices_W,
+                   tested_ny,
+                   tested_nz,
+                   tested_matrices_A,
                    tested_ifixed,
                    tested_variable_conditions,
                    tested_methods)
@@ -91,28 +96,27 @@ testdata = product(tested_np,
 @mark.parametrize("args", testdata)
 def test_saddle_point_solver(args):
 
-    np, ml, mn, assemble_W, ifixed, variable_condition, method = args
+    np, ny, nz, assemble_A, ifixed, variable_condition, method = args
 
-    m = ml + mn
-
-    t = nx + np + m
+    t = nx + np + ny + nz
 
     nf = len(ifixed)
 
-    expected_xpy = linspace(1, t, t)
+    expected_xpyz = linspace(1, t, t)
 
-    # Assemble the coefficient matrix W = [Ax Ap; Jx Jp]
-    W = assemble_W(m, nx + np, ifixed)
+    # Assemble the coefficient matrix A = [Ax Ap]
+    A = assemble_A(ny, nx + np, ifixed)
 
-    # Extract the blocks of W = [Wx; Wp] = [Ax Ap; Jx Jp] = [A; J]
-    Wx = W[:, :nx]
-    Wp = W[:, nx:]
+    # Extract the blocks of A = [Ax Ap]
+    Ax = A[:, :nx]
+    Ap = A[:, nx:]
 
-    Ax = Wx[:ml, :]
-    Ap = Wp[:ml, :]
+    # Assemble the coefficient matrix J = [Jx Jp]
+    J = pascal_matrix(nz, nx + np)
 
-    Jx = Wx[ml:, :]
-    Jp = Wp[ml:, :]
+    # Extract the blocks of J = [Jx Jp]
+    Jx = J[:, :nx]
+    Jp = J[:, nx:]
 
     # Create the blocks Hxx, Hxp
     Hxx = matrix_non_singular(nx)
@@ -121,10 +125,6 @@ def test_saddle_point_solver(args):
     # Create the blocks Vpx, Vpp
     Vpx = pascal_matrix(np, nx)
     Vpp = matrix_non_singular(np)
-
-    # Create the zero blocks Opy, Oyy
-    Opy = zeros((np, m))
-    Oyy = zeros((m, m))
 
     # Ensure Hxx is diagonal in case Rangespace method is used
     if method == SaddlePointMethod.Rangespace:
@@ -140,8 +140,8 @@ def test_saddle_point_solver(args):
         jexplicit = []
         jimplicit = slice(nx)
     if variable_condition == 'explicit-variables-some':
-        jexplicit = slice(m)
-        jimplicit = slice(m, nx)
+        jexplicit = slice(ny)
+        jimplicit = slice(ny, nx)
 
     # Adjust the diagonal entries to control number of pivot variables
     Hxx[jexplicit, jexplicit] *= 1.0e+08
@@ -154,29 +154,40 @@ def test_saddle_point_solver(args):
     Hxp[ifixed, :] = 0.0       # zero out rows in Hxx corresponding to fixed variables
     Vpx[:, ifixed] = 0.0       # zero out cols in Vpx corresponding to fixed variables
 
-    # The WxT = tr(Wx) matrix in M
-    WxT = Wx.T
-    WxT[ifixed, :] = 0.0      # zero out rows in WxT corresponding to fixed variables
+    # The AxT = tr(Ax) and JxT = tr(Jx) matrix blocks in M
+    AxT = Ax.T
+    JxT = Jx.T
+
+    AxT[ifixed, :] = 0.0      # zero out rows in AxT corresponding to fixed variables
+    JxT[ifixed, :] = 0.0      # zero out rows in JxT corresponding to fixed variables
+
+    # Create the zero blocks Opz, Opy, Ozz, Ozy, Oyz, Oyy
+    Opz = zeros((np, nz))
+    Opy = zeros((np, ny))
+    Ozz = zeros((nz, nz))
+    Ozy = zeros((nz, ny))
+    Oyz = zeros((ny, nz))
+    Oyy = zeros((ny, ny))
 
     # Assemble the coefficient matrix M
-    M = block([[Hxx, Hxp, WxT], [Vpx, Vpp, Opy], [Wx, Wp, Oyy]])
+    M = block([
+        [Hxx, Hxp, JxT, AxT],
+        [Vpx, Vpp, Opz, Opy],
+        [ Jx,  Jp, Ozz, Ozy],
+        [ Ax,  Ap, Oyz, Oyy]]
+    )
 
     # Compute the right-hand side vector r = M * expected
-    r = M @ expected_xpy
+    r = M @ expected_xpyz
 
-    # The right-hand side vectors ax, ap, b
-    ax = r[:nx]
-    ap = r[nx:nx+np]
-    b  = r[nx+np:]
+    # The right-hand side vectors ax, ap, ay, az
+    ax, ap, az, ay = split(r, [nx, nx + np, nx + np + nz])
 
-    # The component vectors in b = [bl, bn]
-    bl = b[:ml]
-    bn = b[ml:]
-
-    # The solution vectors x, p, y
+    # The solution vectors x, p, y, z
     x = ax.copy()
     p = ap.copy()
-    y = b.copy()
+    y = ay.copy()
+    z = az.copy()
 
     # The scaling vector used as weights for the canonicalization
     w = linspace(1, nx, nx)
@@ -188,15 +199,15 @@ def test_saddle_point_solver(args):
     # Create a SaddlePointSolver to solve the saddle point problem
     solver = SaddlePointSolver(nx, np, ny, nz, Ax, Ap)
     solver.setOptions(options)
-    solver.canonicalize(Hxx, Hxp, Vpx, Vpp, Jx, Jp, w, ifixed)
-    solver.decompose(Hxx, Hxp, Vpx, Vpp, Jx, Jp, ifixed)
+    solver.canonicalize(Hxx, Hxp, Vpx, Vpp, Jx, Jp, ifixed, w)
+    solver.decompose()
 
-    def check_solution(x, p, y):
-        # Create solution vector s = [x, p, y]
-        s = concatenate([x, p, y])
+    def check_solution(x, p, y, z):
+        # Create solution vector s = [x, p, z, y]
+        s = concatenate([x, p, z, y])
 
         # Check the residual of the equation M * s = r
-        # assert_allclose(M @ s, M @ expected_xpy)
+        # assert_allclose(M @ s, M @ expected_xpyz)
 
         tol = 1e-13
 
@@ -204,36 +215,46 @@ def test_saddle_point_solver(args):
 
         if not succeeded:
             print()
+            print(f"nx = {nx}")
             print(f"np = {np}")
-            print(f"ml = {ml}")
-            print(f"mn = {mn}")
-            print(f"assemble_W = {assemble_W}")
+            print(f"ny = {ny}")
+            print(f"nz = {nz}")
+            print(f"assemble_A = {assemble_A}")
             print(f"ifixed = {ifixed}")
             print(f"variable_condition = {variable_condition}")
             print(f"method = {method}")
             print()
 
-            print_state(M, r, s, m, nx, np)
+            print_state(M, r, s, nx, np, ny, nz)
 
         assert norm(M @ s - r) / norm(r) < tol
 
-    # Check the overload solve(x, p, y) works
-    solver.solve(x, p, y)
+    #---------------------------------------------------------------
+    # Check the overload rhs(ax, ap, ay, az) works
+    #---------------------------------------------------------------
+    solver.rhs(ax, ap, ay, az)
+    solver.solve(x, p, y, z)
 
-    check_solution(x, p, y)
+    check_solution(x, p, y, z)
 
-    #---------------------------------------------------------------------------
-    # Check the overload method solve(x, p, g, v, b, h, xbar, pbar, ybar) works
-    #---------------------------------------------------------------------------
+    #---------------------------------------------------------------
+    # Check the overload method rhs(g, x, p, y, z, v, h, b) works
+    #---------------------------------------------------------------
     x0 = linspace(1, nx, nx) * 10
-    p0 = linspace(1, np, np) * 100
+    p0 = linspace(1, np, np) * 20
+    y0 = linspace(1, ny, ny) * 30
+    z0 = linspace(1, nz, nz) * 40
 
-    x0[ifixed] = expected_xpy[ifixed]  # this is needed because fixed variables end up with what ever is in x0
+    g0 = -ax - AxT @ y0 - JxT @ z0  # compute g0 using the fact that ax = -(g0 + tr(Ax)*y0 + tr(Jx)*z0)
+    v0 = -ap                        # compute v0 using the fact that ap = -v0
+    h0 = -az                        # compute h0 using the fact that az = -h0
+    b0 =  ay + Ax @ x0 + Ap @ p0    # compute b0 using the fact that ay = -(Ax * x0 + Ap * p0 - b0)
 
-    g = Hxx @ x0 + Hxp @ p0 - ax   # compute g so that Hxx * x0 + Hxp * p0 - g === ax
-    v = Vpx @ x0 + Vpp @ p0 - ap   # compute g so that Hxx * x0 + Hxp * p0 - g === ap
-    h = Jx @ x0 + Jp @ p0 - bn     # compute h so that Jx * x0 + Jp * p0 - h === bn
+    solver.rhs(g0, x0, p0, y0, z0, v0, h0, b0)
+    solver.solve(x, p, y, z)
 
-    solver.solve(x0, p0, g, v, bl, h, x, p, y)
+    assert all(x[ifixed] == 0.0)  # ensure x[i] = 0 for i in fixed/unstable variables for this rhs setup
 
-    check_solution(x, p, y)
+    x[ifixed] = expected_xpyz[ifixed]  # replace these zeros by expected x so that the common test framework next succeeds
+
+    check_solution(x, p, y, z)

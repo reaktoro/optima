@@ -23,7 +23,8 @@
 
 
 #include <iostream>
-#define PRINT(X) std::cout << #X " = \n" << X << "\n" << std::endl;
+// #define PRINT(X) std::cout << #X " = \n" << X << "\n" << std::endl;
+#define PRINT(X)
 
 
 
@@ -52,7 +53,7 @@ struct SaddlePointSolverRangespace::Impl
     Matrix barHsp;   ///< The workspace for matrix bar(Hsp)
     Matrix barVps;   ///< The workspace for matrix bar(Vps)
     Matrix barJs;    ///< The workspace for matrix bar(Js)
-    Matrix barSbsne; ///< The workspace for matrix bar(Sbsne)
+    Matrix barSbsns; ///< The workspace for matrix bar(Sbsns)
     LU lu;           ///< The LU decomposition solver.
 
     /// Construct a default SaddlePointSolverRangespace::Impl instance.
@@ -71,7 +72,7 @@ struct SaddlePointSolverRangespace::Impl
         barHsp.resize(nx, np);
         barVps.resize(np, nx);
         barJs.resize(nz, nx);
-        barSbsne.resize(ny, nx);
+        barSbsns.resize(ny, nx);
     }
 
     /// Decompose the coefficient matrix of the canonical saddle point problem.
@@ -99,12 +100,12 @@ struct SaddlePointSolverRangespace::Impl
         const auto Sbep = Sbsp.topRows(nbe);
         const auto Sbip = Sbsp.bottomRows(nbi);
 
-        const auto Hbsp = args.Hsp.leftCols(nbs);
-        const auto Hnsp = args.Hsp.rightCols(nns);
-        const auto Hbep = Hbsp.leftCols(nbe);
-        const auto Hnep = Hnsp.leftCols(nne);
-        const auto Hbip = Hbsp.rightCols(nbi);
-        const auto Hnip = Hnsp.rightCols(nni);
+        const auto Hbsp = args.Hsp.topRows(nbs);
+        const auto Hnsp = args.Hsp.bottomRows(nns);
+        const auto Hbep = Hbsp.topRows(nbe);
+        const auto Hnep = Hnsp.topRows(nne);
+        const auto Hbip = Hbsp.bottomRows(nbi);
+        const auto Hnip = Hnsp.bottomRows(nni);
 
         const auto Vpp  = args.Vpp;
         const auto Vpbs = args.Vps.leftCols(nbs);
@@ -146,6 +147,7 @@ struct SaddlePointSolverRangespace::Impl
         auto barVpne  = barVps.rightCols(nne);
         auto barJbe   = barJs.leftCols(nbe);
         auto barJne   = barJs.rightCols(nne);
+        auto barSbsne = barSbsns.topLeftCorner(nbs, nne);
         auto barSbene = barSbsne.topRows(nbe);
         auto barSbine = barSbsne.bottomRows(nbi);
 
@@ -155,7 +157,8 @@ struct SaddlePointSolverRangespace::Impl
         barVpne  = Vpne * invHnene;
         barJbe   = Jbe * invHbebe;
         barJne   = Jne * invHnene;
-        barSbsne = Sbsne * invHnene;
+        barSbene = Sbene * invHnene;
+        barSbine = Sbine * invHnene;
 
         auto Tbsbs = Tw.topLeftCorner(nbs, nbs);
 
@@ -217,33 +220,33 @@ struct SaddlePointSolverRangespace::Impl
 
         M11.noalias() = Vpp - Vpbe*barHbep - Vpne*barHnep + barVpne*tr(Sbine)*Hbip;
         M12.noalias() = -barVpbe*tr(Jbe) - barVpne*tr(Jne) + barVpne*tr(Sbine)*tr(Jbi);
-        M13.noalias() = Vpbi + barVpne*tr(Sbine)*Hbibi;
+        M13.noalias() = Vpbi + barVpne*tr(Sbine)*diag(Hbibi);
         M14.noalias() = -barVpbe - barVpne*tr(Sbene);
         M15.noalias() = Vpni;
 
-        M11.noalias() = Jp - Jbe*barHbep - Jne*barHnep + barJne*tr(Sbine)*Hbip;
-        M12.noalias() = -barJbe*tr(Jbe) - barJne*tr(Jne) + barJne*tr(Sbine)*tr(Jbi);
-        M13.noalias() = Jbi + barJne*tr(Sbine)*Hbibi;
-        M14.noalias() = -barJbe - barJne*tr(Sbene);
-        M15.noalias() = Jni;
+        M21.noalias() = Jp - Jbe*barHbep - Jne*barHnep + barJne*tr(Sbine)*Hbip;
+        M22.noalias() = -barJbe*tr(Jbe) - barJne*tr(Jne) + barJne*tr(Sbine)*tr(Jbi);
+        M23.noalias() = Jbi + barJne*tr(Sbine)*diag(Hbibi);
+        M24.noalias() = -barJbe - barJne*tr(Sbene);
+        M25.noalias() = Jni;
 
-        M11.noalias() = Sbip - barSbine*Hnep + Tbibi*Hbip;
-        M12.noalias() = -barSbine*tr(Jne) + Tbibi*tr(Jbi);
-        M13.noalias() = Ibibi + Tbibi*Hbibi;
-        M14.noalias() = -Tbibe;
-        M15.noalias() = Sbini;
+        M31.noalias() = Sbip - barSbine*Hnep + Tbibi*Hbip;
+        M32.noalias() = -barSbine*tr(Jne) + Tbibi*tr(Jbi);
+        M33.noalias() = Ibibi + Tbibi*diag(Hbibi);
+        M34.noalias() = -Tbibe;
+        M35.noalias() = Sbini;
 
-        M11.noalias() = Sbep - barHbep - barSbene*Hnep + Tbebi*Hbip;
-        M12.noalias() = -tr(barJbe) - barSbene*tr(Jne) + Tbebi*tr(Jbi);
-        M13.noalias() = Tbebi*Hbibi;
-        M14 = diag(inv(-Hbebe)); M14 -= Tbebe;
-        M15.noalias() = Sbeni;
+        M41.noalias() = Sbep - barHbep - barSbene*Hnep + Tbebi*Hbip;
+        M42.noalias() = -tr(barJbe) - barSbene*tr(Jne) + Tbebi*tr(Jbi);
+        M43.noalias() = Tbebi*diag(Hbibi);
+        M44 = diag(inv(-Hbebe)); M44 -= Tbebe;
+        M45.noalias() = Sbeni;
 
-        M11.noalias() = Hnip - tr(Sbini)*Hbip;
-        M12.noalias() = tr(Jni) - tr(Sbini)*tr(Jbi);
-        M13.noalias() = -tr(Sbini)*Hbibi;
-        M14.noalias() = tr(Sbeni);
-        M15.noalias() = Hnini;
+        M51.noalias() = Hnip - tr(Sbini)*Hbip;
+        M52.noalias() = tr(Jni) - tr(Sbini)*tr(Jbi);
+        M53.noalias() = -tr(Sbini)*diag(Hbibi);
+        M54.noalias() = tr(Sbeni);
+        M55 = diag(Hnini);
 
         // M11.noalias() =  Vpp - Vpbe*invHbebe*Hbep - Vpne*invHnene*Hnep + Vpne*invHnene*tr(Sbine)*Hbip;
         // M12.noalias() = -Vpbe*invHbebe*tr(Jbe) - Vpne*invHnene*tr(Jne) + Vpne*invHnene*tr(Sbine)*tr(Jbi);
@@ -304,9 +307,9 @@ struct SaddlePointSolverRangespace::Impl
         // Mnip.fill(0.0);
         // Mpp = Vpp;
 
-        std::cout << "================================================================================================================================================" << std::endl;
+        // std::cout << "================================================================================================================================================" << std::endl;
         PRINT(M);
-        std::cout << "================================================================================================================================================" << std::endl;
+        // std::cout << "================================================================================================================================================" << std::endl;
         // PRINT(Mbebe);
         // PRINT(Mbibe);
         // PRINT(Mnibe);
@@ -359,12 +362,12 @@ struct SaddlePointSolverRangespace::Impl
         const auto Sbep = Sbsp.topRows(nbe);
         const auto Sbip = Sbsp.bottomRows(nbi);
 
-        const auto Hbsp = args.Hsp.leftCols(nbs);
-        const auto Hnsp = args.Hsp.rightCols(nns);
-        const auto Hbep = Hbsp.leftCols(nbe);
-        const auto Hnep = Hnsp.leftCols(nne);
-        const auto Hbip = Hbsp.rightCols(nbi);
-        const auto Hnip = Hnsp.rightCols(nni);
+        const auto Hbsp = args.Hsp.topRows(nbs);
+        const auto Hnsp = args.Hsp.bottomRows(nns);
+        const auto Hbep = Hbsp.topRows(nbe);
+        const auto Hnep = Hnsp.topRows(nne);
+        const auto Hbip = Hbsp.bottomRows(nbi);
+        const auto Hnip = Hnsp.bottomRows(nni);
 
         const auto Vpp  = args.Vpp;
         const auto Vpbs = args.Vps.leftCols(nbs);
@@ -415,6 +418,7 @@ struct SaddlePointSolverRangespace::Impl
 
         as = args.as;
         ap = args.ap;
+        az = args.az;
         bbs = args.aybs;
 
         abe.noalias() = abe/Hbebe;
@@ -446,7 +450,7 @@ struct SaddlePointSolverRangespace::Impl
 
         const auto rank = lu.rank();
 
-        assert(r.head(rank).allFinite());
+        assert(r.head(rank).allFinite()); // If FullPivLu is used, then this need to be checked based on the last indices of permutation matrix Q of the LU decomp PAQ = LU
 
         auto ybi = bbi;
         auto xbe = abe;

@@ -22,7 +22,7 @@ from numpy.testing import assert_array_almost_equal
 from pytest import approx, mark
 from itertools import product
 
-from utils.matrices import testing_matrices_W
+from utils.matrices import testing_matrices_A
 
 
 # Tested number of columns
@@ -31,8 +31,8 @@ tested_n = [15, 20, 30, 50]
 # Tested number of rows
 tested_m = range(5, 15, 3)
 
-# Tested cases for the structures of matrix W = [A; J]
-tested_matrices_W = testing_matrices_W
+# Tested cases for the structures of matrix A
+tested_matrices_A = testing_matrices_A
 
 # Tested cases for the indices of fixed variables
 tested_jfixed = [
@@ -45,7 +45,7 @@ tested_jfixed = [
 testdata = product(
     tested_n,
     tested_m,
-    tested_matrices_W,
+    tested_matrices_A,
     tested_jfixed)
 
 
@@ -146,9 +146,9 @@ def check_canonicalizer(canonicalizer, A):
 @mark.parametrize("args", testdata)
 def test_canonicalizer(args):
 
-    n, m, assemble_W, jfixed = args
+    n, m, assemble_A, jfixed = args
 
-    A = assemble_W(m, n, jfixed)
+    A = assemble_A(m, n, jfixed)
 
     canonicalizer = Canonicalizer(A)
     canonicalizer.cleanResidualRoundoffErrors()

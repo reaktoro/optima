@@ -22,7 +22,7 @@ from numpy.testing import assert_array_almost_equal
 from pytest import approx, mark
 from itertools import product
 
-from utils.matrices import testing_matrices_W
+from utils.matrices import testing_matrices_A
 
 
 def check_canonical_form(canonicalizer, A, J):
@@ -126,13 +126,13 @@ tested_mu = range(5, 15, 3)
 tested_ml = range(0, 5)
 
 # Tested cases for the matrix W = [A; J]
-tested_matrices_W = testing_matrices_W
+tested_matrices_A = testing_matrices_A
 
 # Combination of all tested cases
 testdata = product(tested_n,
                    tested_mu,
                    tested_ml,
-                   tested_matrices_W,)
+                   tested_matrices_A,)
 
 @mark.parametrize("args", testdata)
 def test_canonicalizer(args):

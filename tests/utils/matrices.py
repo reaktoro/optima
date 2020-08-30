@@ -28,11 +28,11 @@ def pascal_matrix(m, n):
         m {int} -- The number of rows in the matrix
         n {int} -- The number of columns in the matrix
     """
-    W = ones((m, n))
+    A = ones((m, n))
     for i in range(1, m):
         for j in range(1, n):
-            W[i, j] = W[i, j - 1] + W[i - 1, j]
-    return W
+            A[i, j] = A[i, j - 1] + A[i - 1, j]
+    return A
 
 
 def matrix_with_linearly_independent_rows_only(m, n, ifixed=[]):
@@ -66,9 +66,9 @@ def matrix_with_one_linearly_dependent_row(m, n, ifixed=[]):
     Returns:
         [array] -- The matrix with asked structure.
     """
-    W = matrix_with_linearly_independent_rows_only(m, n, ifixed)
-    W[2, :] = 2*W[0, :] + W[1, :]
-    return W
+    A = matrix_with_linearly_independent_rows_only(m, n, ifixed)
+    A[2, :] = 2*A[0, :] + A[1, :]
+    return A
 
 
 def matrix_with_two_linearly_dependent_rows(m, n, ifixed=[]):
@@ -84,40 +84,40 @@ def matrix_with_two_linearly_dependent_rows(m, n, ifixed=[]):
     Returns:
         [array] -- The matrix with asked structure.
     """
-    W = matrix_with_linearly_independent_rows_only(m, n, ifixed)
-    W[1, :] = 2*W[0, :] + W[1, :]
-    W[2, :] = W[0, :]
-    return W
+    A = matrix_with_linearly_independent_rows_only(m, n, ifixed)
+    A[1, :] = 2*A[0, :] + A[1, :]
+    A[2, :] = A[0, :]
+    return A
 
 
 def matrix_with_one_basic_fixed_variable(m, n, ifixed=[]):
-    W = matrix_with_linearly_independent_rows_only(m, n, ifixed)
+    A = matrix_with_linearly_independent_rows_only(m, n, ifixed)
     if len(ifixed) != 0:
         ifree = list(set(range(n)) - set(ifixed))  # indices of free variables
-        W[-1, ifree] = 0.0  # last row is all zeros, except columns corresponding to fixed variables
-    return W
+        A[-1, ifree] = 0.0  # last row is all zeros, except columns corresponding to fixed variables
+    return A
 
 
 def matrix_with_two_basic_fixed_variables(m, n, ifixed=[]):
-    W = matrix_with_linearly_independent_rows_only(m, n, ifixed)
+    A = matrix_with_linearly_independent_rows_only(m, n, ifixed)
     if len(ifixed) != 0:
         ifree = list(set(range(n)) - set(ifixed))  # indices of free variables
-        W[-2, ifree] = 0.0   # second-last row is all zeros, except columns corresponding to fixed variables
-        W[-1, ifree] = 0.0  # last row is all zeros, except columns corresponding to fixed variables
-    return W
+        A[-2, ifree] = 0.0   # second-last row is all zeros, except columns corresponding to fixed variables
+        A[-1, ifree] = 0.0  # last row is all zeros, except columns corresponding to fixed variables
+    return A
 
 
 def matrix_with_one_zero_column(m, n, ifixed=[]):
-    W = matrix_with_linearly_independent_rows_only(m, n, ifixed)
-    W[:, 0] = 0.0  # first column of the matrix is zero (i.e. when first variable does not participate in any linear constraints)
-    return W
+    A = matrix_with_linearly_independent_rows_only(m, n, ifixed)
+    A[:, 0] = 0.0  # first column of the matrix is zero (i.e. when first variable does not participate in any linear constraints)
+    return A
 
 
 def matrix_with_two_zero_columns(m, n, ifixed=[]):
-    W = matrix_with_linearly_independent_rows_only(m, n, ifixed)
-    W[:, 0] = 0.0  # first column of the matrix is zero (i.e. when first variable does not participate in any linear constraints)
-    W[:, 1] = 0.0  # second column of the matrix is zero (i.e. when second variable does not participate in any linear constraints)
-    return W
+    A = matrix_with_linearly_independent_rows_only(m, n, ifixed)
+    A[:, 0] = 0.0  # first column of the matrix is zero (i.e. when first variable does not participate in any linear constraints)
+    A[:, 1] = 0.0  # second column of the matrix is zero (i.e. when second variable does not participate in any linear constraints)
+    return A
 
 
 def matrix_non_singular(n):
@@ -128,7 +128,7 @@ def matrix_non_singular(n):
 
 
 # The functions that create matrices with different structures
-testing_matrices_W = [
+testing_matrices_A = [
     matrix_with_linearly_independent_rows_only,
     matrix_with_one_linearly_dependent_row,
     matrix_with_two_linearly_dependent_rows,

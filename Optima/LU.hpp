@@ -63,11 +63,8 @@ struct LU
     /// Return the matrix containing the lower and upper triangular factors.
     auto matrixLU() const -> MatrixConstRef;
 
-    /// Return the permutation matrix factor *P* of the LU decomposition *PAQ = LU*.
-    auto P() const -> IndicesConstRef;
-
-    /// Return the permutation matrix factor *Q* of the LU decomposition *PAQ = LU*.
-    auto Q() const -> IndicesConstRef;
+    /// Return the permutation matrix factor *P* of the LU decomposition *PA = LU*.
+    auto P() const -> PermutationMatrix;
 
 private:
     struct Impl;

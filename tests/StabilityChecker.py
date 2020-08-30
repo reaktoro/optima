@@ -20,7 +20,7 @@ from numpy import *
 from pytest import approx, mark
 from itertools import product
 
-from utils.matrices import testing_matrices_W, matrix_non_singular
+from utils.matrices import testing_matrices_A, matrix_non_singular
 from utils.stability import create_expected_stability, check_stability
 
 
@@ -30,8 +30,8 @@ nx = 15
 # Tested number of parameter variables p
 tested_np = [0, 5]
 
-# Tested cases for the matrix W
-tested_matrices_W = testing_matrices_W
+# Tested cases for matrix A = [Ax Ap]
+tested_matrices_A = testing_matrices_A
 
 # Tested cases for the indices of fixed variables
 tested_ifixed = [
@@ -61,7 +61,7 @@ tested_ml = [6, 4]
 tested_mn = [3, 1, 0]
 
 # Combination of all tested cases
-testdata = product(tested_matrices_W,
+testdata = product(tested_matrices_A,
                    tested_np,
                    tested_ml,
                    tested_mn,
@@ -73,7 +73,7 @@ testdata = product(tested_matrices_W,
 @mark.parametrize("args", testdata)
 def test_active_stability_checker(args):
 
-    assemble_W, np, ml, mn, ifixed, ilower, iupper = args
+    assemble_A, np, ml, mn, ifixed, ilower, iupper = args
 
     # Add the indices of fixed variables to those that have lower and upper bounds
     # since fixed variables are those that have identical lower and upper bounds
@@ -85,14 +85,14 @@ def test_active_stability_checker(args):
     nupper = len(iupper)
     nfixed = len(ifixed)
 
-    # The total number of rows in W = [Ax Ap; Jx Jp]
+    # The total number of rows in A = [Ax Ap]
     m = ml + mn
 
     # The total number of variables x, p, y
     t = nx + np + m
 
-    # Assemble the coefficient matrix W = [Ax Ap; Jx Jp]
-    W = assemble_W(m, nx + np, ifixed)
+    # Assemble the coefficient matrix A = [Ax Ap]
+    W = assemble_A(m, nx + np, ifixed)
 
     # Extract the blocks of W = [Wx; Wp] = [Ax Ap; Jx Jp] = [Ax Ap; Jx Jp]
     Wx = W[:, :nx]
@@ -153,7 +153,7 @@ def test_active_stability_checker(args):
     # Compute the residual vector h of the nonlinear equality constraints h(x, p) = 0
     h = zeros(mn)
 
-    # The *unstabilities* of the variables defined as *z = g + tr(W)y* where *W = [Ax Ap; Jx Jp]*.
+    # The *unstabilities* of the variables defined as *z = g + tr(W)y* where *A = [Ax Ap]*.
     z = g + Wx.T @ y
 
     # Create a StabilityChecker object

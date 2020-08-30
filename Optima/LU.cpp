@@ -20,27 +20,18 @@
 // C++ includes
 #include <cassert>
 
-// Optima includes
-#include <Optima/IndexUtils.hpp>
-
 // Eigen includes
-#include <Optima/deps/eigen3/Eigen/src/LU/FullPivLU.h>
+#include <Optima/deps/eigen3/Eigen/src/LU/PartialPivLU.h>
 
 namespace Optima {
 
 struct LU::Impl
 {
     /// The base LU solver from Eigen library.
-    Eigen::FullPivLU<Matrix> lusolver;
+    Eigen::PartialPivLU<Matrix> lu;
 
-    /// The auxiliary matrix B in case X is provided as input/output when solving AX = B.
-    Matrix B;
-
-    /// The permutation matrix *P* of the LU decomposition *PAQ = LU*.
-    Indices P;
-
-    /// The permutation matrix *Q* of the LU decomposition *PAQ = LU*.
-    Indices Q;
+    /// The rank of matrix `A`
+    Index rank;
 
     /// Construct a default Impl object.
     Impl()
@@ -55,80 +46,58 @@ struct LU::Impl
     /// Return true if empty.
     auto empty() const -> bool
     {
-        return lusolver.size() == 0;
+        return lu.matrixLU().size() == 0;
     }
 
     /// Compute the LU decomposition of the given matrix.
     auto decompose(MatrixConstRef A) -> void
     {
+        // The number of rows and cols of A
+        const Index m = A.rows();
+        const Index n = A.cols();
+
         // Check if number of rows and columns are equal
-        assert(A.rows() == A.cols() && "Could not decompose the given matrix, "
-            "which has different number of rows and columns.");
+        assert(n == m && "Could not decompose the given matrix, which has different number of rows and columns.");
 
-        // Perform a full pivoting decomposition of A, determining its rank
-        lusolver.compute(A);
+        // Perform a fast partial pivoting decomposition of A
+        lu.compute(A);
 
-        // Store permutation matrices P and Q in indices form
-        P = lusolver.permutationP().indices().cast<Index>();
-        Q = lusolver.permutationQ().indices().cast<Index>();
-    }
-
-    /// Solve the linear system `AX = B` using the calculated LU decomposition when full rank.
-    auto solveFullRank(MatrixConstRef B, MatrixRef X) -> void
-    {
-        X = lusolver.solve(B);
-    }
-
-    /// Solve the linear system `AX = B` using the calculated LU decomposition when rank deficient.
-    auto solveRankDeficient(MatrixConstRef B, MatrixRef X) -> void
-    {
-        X = lusolver.solve(B);
-        // const auto L = lusolver.matrixLU().triangularView<Eigen::UnitLower>();
-        // const auto U = lusolver.matrixLU().triangularView<Eigen::Upper>();
-        // const auto P = lusolver.permutationP();
-        // const auto Q = lusolver.permutationQ();
-
-        // P.applyThisOnTheLeft(X);
-        // X = L.solve(X);
-        // X = U.solve(X);
-
-
-
-        // const auto L = lusolver.matrixLU().triangularView<Eigen::UnitLower>();
-        // const auto P = lusolver.permutationP();
-        // const auto Urr = Uw.topLeftCorner(rank, rank).triangularView<Eigen::Upper>();
-        // const auto n = L.rows();
-
-        // Xw.resize(X.rows(), X.cols());
-        // auto Xr = Xw.topRows(rank);
-        // auto Xs = Xw.bottomRows(n - rank);
-
-        // P.applyThisOnTheLeft(X);
-        // X = L.solve(X);
-
-        // Xw = rows(X, jx);
-
-        // Xr = Urr.solve(Xr);
-
-        // // For the bottom part, corresponding to linearly dependent rows, set X to a quiet NaN.
-        // Xs.fill(std::numeric_limits<double>::quiet_NaN());
-
-        // rows(X, jx) = Xw;
-    }
-
-    /// Solve the linear system `AX = B` using the calculated LU decomposition.
-    auto solve(MatrixConstRef B, MatrixRef X) -> void
-    {
-        solveRankDeficient(B, X);
-        // const auto n = lusolver.matrixLU().rows();
-        // if(rank == n) solveFullRank(X);
-        // else solveRankDeficient(X);
+        // Compute the rank of the matrix
+        const auto eps = std::numeric_limits<double>::epsilon();
+        const auto D = lu.matrixLU().diagonal().cwiseAbs();
+        const auto maxdiagcoeff = D.maxCoeff();
+        const auto threshold = maxdiagcoeff * eps * n;
+        rank = n; // start full rank, decrease as we go along through the diagonal of U (from the bottom!)
+        for(auto i = 1; i <= n; ++i)
+            if(D[n - i] <= threshold)
+                --rank; // current diagonal entry in U is either zero or residual (as a result of round-off errors)
+            else break; // stop searching for zero or residual values along the diagonal of U
     }
 
     /// Solve the linear system `AX = B` using the calculated LU decomposition.
     auto solve(MatrixRef X) -> void
     {
-        solve(B = X, X);
+        const Index n = lu.matrixLU().rows();
+
+        assert(n == X.rows());
+
+        // Get references to P, L, U from the decomposition so that P*A = L*U
+        const auto M = lu.matrixLU().topLeftCorner(rank, rank);
+        const auto L = M.triangularView<Eigen::UnitLower>();
+        const auto U = M.triangularView<Eigen::Upper>();
+        const auto P = lu.permutationP();
+
+        auto Xt = X.topRows(rank);
+        auto Xb = X.bottomRows(n - rank);
+
+        P.applyThisOnTheLeft(X);
+        Xt = L.solve(Xt);
+        Xt = U.solve(Xt);
+
+        // For the bottom part, corresponding to
+        // linearly dependent rows, set X to a quiet NaN.
+        const auto nan = std::numeric_limits<double>::quiet_NaN();
+        Xb.fill(nan);
     }
 };
 
@@ -165,7 +134,8 @@ auto LU::decompose(MatrixConstRef A) -> void
 
 auto LU::solve(MatrixConstRef B, MatrixRef X) -> void
 {
-    pimpl->solve(B, X);
+    X = B;
+    pimpl->solve(X);
 }
 
 auto LU::solve(MatrixRef X) -> void
@@ -175,22 +145,17 @@ auto LU::solve(MatrixRef X) -> void
 
 auto LU::rank() const -> Index
 {
-    return pimpl->lusolver.rank();
+    return pimpl->rank;
 }
 
 auto LU::matrixLU() const -> MatrixConstRef
 {
-    return pimpl->lusolver.matrixLU();
+    return pimpl->lu.matrixLU();
 }
 
-auto LU::P() const -> IndicesConstRef
+auto LU::P() const -> PermutationMatrix
 {
-    return pimpl->P;
-}
-
-auto LU::Q() const -> IndicesConstRef
-{
-    return pimpl->Q;
+    return pimpl->lu.permutationP();
 }
 
 } // namespace Optima

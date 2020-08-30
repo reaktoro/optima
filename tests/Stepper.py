@@ -22,7 +22,7 @@ from numpy.testing import assert_allclose
 from pytest import approx, mark
 from itertools import product
 
-from utils.matrices import testing_matrices_W, matrix_non_singular, pascal_matrix
+from utils.matrices import testing_matrices_A, matrix_non_singular, pascal_matrix
 from utils.stability import create_expected_stability, check_stability
 
 
@@ -40,8 +40,8 @@ nx = 15
 # Tested number of parameter variables p
 tested_np = [0, 5]
 
-# Tested cases for the matrix W
-tested_matrices_W = testing_matrices_W
+# Tested cases for matrix A = [Ax Ap]
+tested_matrices_A = testing_matrices_A
 
 # Tested cases for the structure of matrix H
 tested_structures_H = [
@@ -85,7 +85,7 @@ tested_mn = [3, 1, 0]
 
 # Combination of all tested cases
 testdata = product(tested_np,
-                   tested_matrices_W,
+                   tested_matrices_A,
                    tested_structures_H,
                    tested_ml,
                    tested_mn,
@@ -98,7 +98,7 @@ testdata = product(tested_np,
 @mark.parametrize("args", testdata)
 def test_active_stepper(args):
 
-    np, assemble_W, structure_H, ml, mn, ifixed, ilower, iupper, method = args
+    np, assemble_A, structure_H, ml, mn, ifixed, ilower, iupper, method = args
 
     # Add the indices of fixed variables to those that have lower and upper bounds
     # since fixed variables are those that have identical lower and upper bounds
@@ -110,14 +110,14 @@ def test_active_stepper(args):
     nupper = len(iupper)
     nfixed = len(ifixed)
 
-    # The total number of rows in W = [Ax Ap; Jx Jp]
+    # The total number of rows in A = [Ax Ap]
     m = ml + mn
 
     # The total number of variables x, p, y
     t = nx + np + m
 
-    # Assemble the coefficient matrix W = [Ax Ap; Jx Jp]
-    W = assemble_W(m, nx + np, ifixed)
+    # Assemble the coefficient matrix A = [Ax Ap]
+    W = assemble_A(m, nx + np, ifixed)
 
     # Extract the blocks of W = [Wx; Wp] = [Ax Ap; Jx Jp] = [A; J]
     Wx = W[:, :nx]
@@ -251,7 +251,7 @@ def test_active_stepper(args):
     errx = zeros(nx)  # The relative residual errors of the first-order optimality conditions.
     errp = zeros(np)  # The relative residuals of the external constraints v(x, p) = 0.
     erry = zeros(m)   # The relative residual errors of the linear/nonlinear feasibility conditions.
-    z    = zeros(nx)  # The *unstabilities* of the variables defined as *z = g + tr(Wx)y* where *W = [Ax Ap; Jx Jp]*.
+    z    = zeros(nx)  # The *unstabilities* of the variables defined as *z = g + tr(Wx)y* where *A = [Ax Ap]*.
 
     # Create the stability state of the variables
     stability = Stability()
@@ -322,7 +322,7 @@ def test_active_stepper(args):
     def print_state():
         set_printoptions(suppress=True, linewidth=1000, precision=3)
         print()
-        print(f"assemble_W  = {assemble_W}")
+        print(f"assemble_A  = {assemble_A}")
         print(f"structure_H = {structure_H}")
         print(f"ml          = {ml}")
         print(f"mn          = {mn}")

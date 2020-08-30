@@ -21,7 +21,7 @@ from numpy.linalg import norm
 from pytest import approx, mark
 from itertools import product
 
-from utils.matrices import testing_matrices_W, matrix_non_singular, pascal_matrix
+from utils.matrices import testing_matrices_A, matrix_non_singular, pascal_matrix
 
 # The number of x variables
 nx = 15
@@ -32,8 +32,8 @@ m = 5
 # The tested number of p variables
 tested_np = [0, 5]
 
-# Tested cases for the matrix W
-tested_matrices_W = testing_matrices_W
+# Tested cases for matrix A = [Ax Ap]
+tested_matrices_A = testing_matrices_A
 
 # Tested cases for the structure of matrix H
 tested_structures_H = [
@@ -71,7 +71,7 @@ tested_methods = [
 
 # Combination of all tested cases
 testdata = product(tested_np,
-                   tested_matrices_W,
+                   tested_matrices_A,
                    tested_structures_H,
                    tested_ifixed,
                    tested_ilower,
@@ -105,7 +105,7 @@ def create_constraint_vfn(Vpx, Vpp, cp):
 @mark.parametrize("args", testdata)
 def test_basic_solver(args):
 
-    np, assemble_W, structure_H, ifixed, ilower, iupper, method = args
+    np, assemble_A, structure_H, ifixed, ilower, iupper, method = args
 
     # Add the indices of fixed variables to those that have lower and upper bounds
     # since fixed variables are those that have identical lower and upper bounds
@@ -120,8 +120,8 @@ def test_basic_solver(args):
     # The total number of variables x, p, y
     t = nx + np + m
 
-    # Assemble the coefficient matrix W = [Ax Ap; Jx Jp]
-    W = assemble_W(m, nx + np, ifixed)
+    # Assemble the coefficient matrix A = [Ax Ap]
+    W = assemble_A(m, nx + np, ifixed)
 
     # For the moment, set h = 0
     ml = m

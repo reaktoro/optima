@@ -170,7 +170,6 @@ struct SaddlePointSolverNullspace::Impl
         Hnsbe.noalias() -= tr(Sbins) * Hbibe;
         Hnsns.noalias() -= tr(Sbins) * Hbins;
         Hnsp.noalias()  -= tr(Sbins) * Hbip;
-        Jns.noalias()   -= Jbi * Sbins;
 
         if(nbe) M1 << Hbebe, Hbens, Hbep, tr(Jbe), Ibebe;
         if(nns) M2 << Hnsbe, Hnsns, Hnsp, tr(Jns), tr(Sbens);
