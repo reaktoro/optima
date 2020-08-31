@@ -616,9 +616,9 @@ struct SaddlePointSolver::Impl
         auto xs  = xw.head(ns);
         auto xu  = xw.tail(nu);
         auto y   = yw.head(ny);
-        auto ybs = yw.head(nbs);
-        auto ybu = yw.segment(nbs, nbu);
-        auto yl  = yw.tail(nl);
+        auto ybs = y.head(nbs);
+        auto ybu = y.segment(nbs, nbu);
+        auto yl  = y.tail(nl);
         auto p   = args.sp;
         auto z   = args.sz;
 

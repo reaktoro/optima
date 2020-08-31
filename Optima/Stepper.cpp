@@ -192,7 +192,8 @@ struct Stepper::Impl
         // Get a reference to the stability state of the variables
         const auto& stability = stabilitychecker.stability();
 
-        // The indices of all unstable variables
+        // The indices of stable and unstable variables
+        auto js = stability.indicesStableVariables();
         auto ju = stability.indicesUnstableVariables();
 
         // The indices of all strictly unstable variables
@@ -242,7 +243,8 @@ struct Stepper::Impl
 
         const auto spstate = spsolver.state();
 
-        rx = abs(spstate.ay);
+        rx(js) = abs(spstate.as);
+        rx(ju) = abs(spstate.au);
         rp = abs(spstate.ap);
         ry = abs(spstate.ay);
         rz = abs(spstate.az);
@@ -305,6 +307,68 @@ struct Stepper::Impl
         spsolver.decompose();
     }
 
+    // /// Solve the saddle point problem.
+    // /// @note Ensure method @ref decompose is called first.
+    // auto solve(StepperSolveArgs args) -> void
+    // {
+    //     // Auxiliary constant references
+    //     const auto x  = args.x;
+    //     const auto p  = args.p;
+    //     const auto y  = args.y;
+    //     const auto z  = args.z;
+    //     const auto fx = args.fx;
+    //     const auto b  = args.b;
+    //     const auto h  = args.h;
+    //     const auto v  = args.v;
+    //     const auto& stability = args.stability;
+
+    //     // Auxiliary references
+    //     auto dx = args.dx;
+    //     auto dp = args.dp;
+    //     auto dy = args.dy;
+    //     auto dz = args.dz;
+
+    //     // The indices of all unstable variables
+    //     auto ju = stability.indicesUnstableVariables();
+
+    //     // The indices of the strictly lower and upper unstable variables
+    //     auto jsu = stability.indicesStrictlyUnstableVariables();
+
+    //     // In the computation of xbar and ybar below use x' where x'[i] is x[i]
+    //     // if i is not a strictly unstable variable, and zero if so. This is to
+    //     // ensure that the strictly unstable variables are not even taken into
+    //     // account in the calculation, not even in the linear equality
+    //     // constraints. It is like if they were not part of the problem.
+
+    //     auto xprime = dx; // use dx as workspace for x'
+    //     xprime = x;
+    //     xprime(jsu).fill(0.0);
+
+    //     // Solve the saddle point problem.
+    //     // Note: For numerical accuracy, it is important to compute
+    //     // directly the next x and y iterates, instead of dx and dy.
+    //     // This is because the latter causes very small values on the
+    //     // right-hand side of the saddle point problem, and algebraic
+    //     // manipulation of these small values results in round-off errors.
+    //     spsolver.solve({ xbar, pbar, ybar, zbar });
+
+    //     // Finalize the computation of the steps dx, dp, dy, dz
+    //     dx.noalias() = xbar - xprime;
+    //     dp.noalias() = pbar - p;
+    //     dy.noalias() = ybar - y;
+    //     dz.noalias() = zbar - z;
+
+    //     // Replace NaN values by zero step lengths. If NaN is produced
+    //     // following a saddle point solve operation, this indicates the LU
+    //     // solver detected linearly dependent rows. Variables associated with
+    //     // these rows are excluded from the solution procedure of the linear
+    //     // system of equations. We ensure here that such variables remain
+    //     // constant during the next stepping operation, by setting their step
+    //     // lengths to zero.
+    //     dx = dx.array().isNaN().select(0.0, dx);
+    //     dy = dy.array().isNaN().select(0.0, dy);
+    // }
+
     /// Solve the saddle point problem.
     /// @note Ensure method @ref decompose is called first.
     auto solve(StepperSolveArgs args) -> void
@@ -320,51 +384,24 @@ struct Stepper::Impl
         const auto v  = args.v;
         const auto& stability = args.stability;
 
-        // Auxiliary references
         auto dx = args.dx;
         auto dp = args.dp;
         auto dy = args.dy;
         auto dz = args.dz;
 
-        // The indices of all unstable variables
-        auto ju = stability.indicesUnstableVariables();
+        spsolver.solve({ dx, dp, dy, dz });
 
-        // The indices of the strictly lower and upper unstable variables
-        auto jsu = stability.indicesStrictlyUnstableVariables();
-
-        // In the computation of xbar and ybar below use x' where x'[i] is x[i]
-        // if i is not a strictly unstable variable, and zero if so. This is to
-        // ensure that the strictly unstable variables are not even taken into
-        // account in the calculation, not even in the linear equality
-        // constraints. It is like if they were not part of the problem.
-
-        auto xprime = dx; // use dx as workspace for x'
-        xprime = x;
-        xprime(jsu).fill(0.0);
-
-        // Solve the saddle point problem.
-        // Note: For numerical accuracy, it is important to compute
-        // directly the next x and y iterates, instead of dx and dy.
-        // This is because the latter causes very small values on the
-        // right-hand side of the saddle point problem, and algebraic
-        // manipulation of these small values results in round-off errors.
-        spsolver.solve({ xbar, pbar, ybar, zbar });
-
-        // Finalize the computation of the steps dx, dp, dy, dz
-        dx.noalias() = xbar - xprime;
-        dp.noalias() = pbar - p;
-        dy.noalias() = ybar - y;
-        dz.noalias() = zbar - z;
-
-        // Replace NaN values by zero step lengths. If NaN is produced
-        // following a saddle point solve operation, this indicates the LU
-        // solver detected linearly dependent rows. Variables associated with
-        // these rows are excluded from the solution procedure of the linear
-        // system of equations. We ensure here that such variables remain
-        // constant during the next stepping operation, by setting their step
-        // lengths to zero.
-        dx = dx.array().isNaN().select(0.0, dx);
-        dy = dy.array().isNaN().select(0.0, dy);
+        // // Replace NaN values by zero step lengths. If NaN is produced
+        // // following a saddle point solve operation, this indicates the LU
+        // // solver detected linearly dependent rows. Variables associated with
+        // // these rows are excluded from the solution procedure of the linear
+        // // system of equations. We ensure here that such variables remain
+        // // constant during the next stepping operation, by setting their step
+        // // lengths to zero.
+        // dx = dx.array().isNaN().select(0.0, dx);
+        // dp = dp.array().isNaN().select(0.0, dp);
+        // dy = dy.array().isNaN().select(0.0, dy);
+        // dz = dz.array().isNaN().select(0.0, dz);
     }
 
     /// Compute the sensitivity derivatives of the saddle point problem.
@@ -418,8 +455,8 @@ struct Stepper::Impl
             spsolver.solve({ xw.col(i), pw.col(i), yw.col(i), zw.col(i) });
         }
 
-        zw(js, all).fill(0.0);
-        zw(ju, all) = fxw(ju, all) + tr(Ax(all, ju)) * yw + tr(hx(all, ju)) * zw;
+        sw(js, all).fill(0.0);
+        sw(ju, all) = fxw(ju, all) + tr(Ax(all, ju)) * yw + tr(hx(all, ju)) * zw;
     }
 
     /// Compute the steepest descent direction with respect to Lagrange function.

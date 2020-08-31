@@ -19,53 +19,60 @@ from optima import *
 from numpy import *
 
 
-def create_expected_stability(Ax, x, b, z, xlower, xupper):
+def create_expected_stability(Ax, Ap, x, p, b, s, xlower, xupper, plower, pupper):
     """Return an expected Stability object for given state variables.
 
     Arguments:
         Ax {array} -- The coefficient matrix Ax
+        Ap {array} -- The coefficient matrix Ap
         x {array} -- The primal variables x
+        p {array} -- The parameter variables p
         b {array} -- The right-hand side vector b
-        z {array} -- The unstabilities of the variables z = g + tr(W)*y
+        s {array} -- The stabilities of the variables s = g + tr(Ax)*y + tr(Jx)*z
         xlower {array} -- The lower bounds for x
         xupper {array} -- The upper bounds for x
+        plower {array} -- The lower bounds for p
+        pupper {array} -- The upper bounds for p
     """
 
-    n = len(x)
-    m = len(b)
+    nx = len(x)
+    np = len(p)
+    ny = len(b)
+
+    A = block([Ax, Ap])
 
     ipositiverows = []
     inegativerows = []
-    for i in range(m):
-        if min(Ax[i, :]) >= 0.0:
+    for i in range(ny):
+        if min(A[i, :]) >= 0.0:
             ipositiverows.append(i)
-        if max(Ax[i, :]) <= 0.0:
+        if max(A[i, :]) <= 0.0:
             inegativerows.append(i)
 
     istrictly_lower_unstable = set()
     istrictly_upper_unstable = set()
 
     for i in ipositiverows:
-        if dot(Ax[i, :], xlower) >= b[i]:
-            for j in range(n):
+        if dot(Ax[i, :], xlower) + dot(Ap[i, :], plower) >= b[i]:
+            for j in range(nx):
                 if Ax[i, j] != 0.0:
                     istrictly_lower_unstable.add(j)
 
     for i in ipositiverows:
-        if dot(Ax[i, :], xupper) <= b[i]:
-            for j in range(n):
+        if dot(Ax[i, :], xupper) + dot(Ap[i, :], pupper) <= b[i]:
+            for j in range(nx):
                 if Ax[i, j] != 0.0:
                     istrictly_upper_unstable.add(j)
 
     for i in inegativerows:
-        if dot(Ax[i, :], xlower) <= b[i]:
-            for j in range(n):
+        if dot(Ax[i, :], xlower) + dot(Ap[i, :], plower) <= b[i]:
+            for j in range(nx):
                 if Ax[i, j] != 0.0:
                     istrictly_lower_unstable.add(j)
 
     for i in inegativerows:
-        if dot(Ax[i, :], xupper) >= b[i]:
-            for j in range(n):
+        if dot(Ax[i, :], xupper) + dot(Ap[i, :], pupper) >= b[i]:
+            for j in range(nx):
                 if Ax[i, j] != 0.0:
                     istrictly_upper_unstable.add(j)
 
@@ -79,18 +86,18 @@ def create_expected_stability(Ax, x, b, z, xlower, xupper):
     ilower_unstable = []
     iupper_unstable = []
 
-    for i in range(n):
+    for i in range(nx):
         if i in istrictly_lower_unstable or i in istrictly_upper_unstable:
             continue
 
-        if x[i] == xlower[i] and z[i] > 0.0:
+        if x[i] == xlower[i] and s[i] > 0.0:
             ilower_unstable.append(i)
 
-        if x[i] == xupper[i] and z[i] < 0.0:
+        if x[i] == xupper[i] and s[i] < 0.0:
             iupper_unstable.append(i)
 
     iunstable = ilower_unstable + iupper_unstable + istrictly_lower_unstable + istrictly_upper_unstable
-    istable = list(set(range(n)) - set(iunstable))
+    istable = list(set(range(nx)) - set(iunstable))
 
     data = StabilityData()
     data.iordering = istable + iunstable

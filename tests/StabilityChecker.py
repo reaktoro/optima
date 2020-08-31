@@ -164,6 +164,6 @@ def test_active_stability_checker(args):
     checker.update(x, y, g, Jx, xlower, xupper)
 
     # Create a Stability object with expected state
-    expected_stability = create_expected_stability(Ax, x, b, z, xlower, xupper)
+    expected_stability = create_expected_stability(Ax, Ap, x, p, b, s, xlower, xupper, plower, pupper)
 
     check_stability(checker.stability(), expected_stability)

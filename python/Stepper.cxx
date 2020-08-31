@@ -134,6 +134,7 @@ void exportStepper(py::module& m)
         pw = tmp_pw;
         yw = tmp_yw;
         zw = tmp_zw;
+        sw = tmp_sw;
     };
 
     py::class_<Stepper>(m, "Stepper")
