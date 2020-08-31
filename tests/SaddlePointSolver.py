@@ -255,6 +255,21 @@ def test_saddle_point_solver(args):
 
     assert all(x[ifixed] == 0.0)  # ensure x[i] = 0 for i in fixed/unstable variables for this rhs setup
 
-    x[ifixed] = expected_xpyz[ifixed]  # replace these zeros by expected x so that the common test framework next succeeds
+    x[ifixed] = expected_xpyz[ifixed]  # replace these zeros by expected x so that the common test framework next succeeds (this is not a hack for a failing test!)
+
+    check_solution(x, p, y, z)
+
+    #---------------------------------------------------------------
+    # Check the overload method rhs(g, x, p, v, h, b) works
+    #---------------------------------------------------------------
+    g0 = Hxx @ x0 + Hxp @ p0 - ax   # compute g0 using the fact that ax = Hxx*x0 + Hxp*p0 - g0
+    v0 = Vpx @ x0 + Vpp @ p0 - ap   # compute v0 using the fact that ap = Vpx*x0 + Vpp*p0 - v0
+    h0 = Jx @ x0 + Jp @ p0 - az     # compute h0 using the fact that az = Jx*x0 + Jp*p0 - h0
+    b0 = ay                         # compute b0 using the fact that ay = b0
+
+    x0[ifixed] = expected_xpyz[ifixed]  # replace x0[i] for fixed/unstable variables i with their expected values so that the common test framework next succeeds  (this is not a hack for a failing test!)
+
+    solver.rhs(g0, x0, p0, v0, h0, b0)
+    solver.solve(x, p, y, z)
 
     check_solution(x, p, y, z)
