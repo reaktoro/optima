@@ -129,8 +129,6 @@ def test_saddle_point_solver(args):
     # Ensure Hxx is diagonal in case Rangespace method is used
     if method == SaddlePointMethod.Rangespace:
         Hxx = abs(diag(linspace(1, nx, num=nx)))
-        Hxp = zeros((nx, np))  # TODO: This should not be forced zero to pass the tests with Rangespace - improve this!
-        Vpx = zeros((np, nx))  # TODO: This should not be forced zero to pass the tests with Rangespace - improve this!
 
     # The sequence along the diagonal that is affected to control the number of pivot variables
     if variable_condition == 'explicit-variables-all':
