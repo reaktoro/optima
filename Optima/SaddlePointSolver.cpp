@@ -329,19 +329,19 @@ struct SaddlePointSolver::Impl
         iordering << jbs, jns, jbu, jnu;
 
         //=========================================================================================
-        // Initialize matrices Hss, Hsp, Vps, Vpp, Js, Jp
+        // Initialize matrices Hss, Hsp, Vps, Vpu, Vpp, Js, Ju, Jp
         //=========================================================================================
 
         // Views to the sub-matrices Hss, Hsp
         auto Hss = Hw.topLeftCorner(ns, ns);
         auto Hsp = Hw.topRightCorner(ns, np);
 
-        // Views to the sub-matrices Js, Jp
-        auto Js = Jw.leftCols(ns);
+        // Views to the sub-matrices in J = [Jx Jp] = [Js Ju Jp]
+        auto Jx = Jw.leftCols(nx);
         auto Jp = Jw.rightCols(np);
 
-        // Views to the sub-matrices Vps, Vpp
-        auto Vps = Vw.leftCols(ns);
+        // Views to the sub-matrices in V = [Vpx Vpp] = [Vps Vpu Vpp]
+        auto Vpx = Vw.leftCols(nx);
         auto Vpp = Vw.rightCols(np);
 
         // Initialize matrices Hss and Hsp taking into account the method in use
@@ -350,12 +350,12 @@ struct SaddlePointSolver::Impl
              Hss.diagonal() = args.Hxx.diagonal()(js);
         else Hss = args.Hxx(js, js);
 
-        // Initialize matrices Vps and Vpp
-        Vps = cols(args.Vpx, js);
+        // Initialize matrices Vpx and Vpp
+        Vpx = cols(args.Vpx, iordering);
         Vpp = args.Vpp;
 
-        // Initialize matrices Js and Jp
-        Js = cols(args.Jx, js);
+        // Initialize matrices Jx and Jp
+        Jx = cols(args.Jx, iordering);
         Jp = args.Jp;
     }
 
@@ -363,20 +363,32 @@ struct SaddlePointSolver::Impl
     /// @note Ensure method @ref canonicalize has been called before this method.
     auto rhs(SaddlePointSolverRhs1Args args) -> void
     {
+        const auto nx  = dims.nx;
+        const auto ns  = dims.ns;
         const auto nu  = dims.nu;
         const auto nbs = dims.nbs;
         const auto nbu = dims.nbu;
         const auto nns = dims.nns;
         const auto nl  = dims.nl;
 
-        const auto au = axw.tail(nu);
-        const auto ju = iordering.tail(nu);
-        const auto Au = cols(Ax, ju);
         const auto R  = canonicalizer.R();
 
+        const auto ju = iordering.tail(nu);
+
+        const auto Au = cols(Ax, ju);
+
+        const auto Vpx = Vw.leftCols(nx);
+        const auto Vpu = Vpx.rightCols(nu);
+
+        const auto Jx = Jw.leftCols(nx);
+        const auto Ju = Jx.rightCols(nu);
+
         axw = args.ax(iordering);
-        apw = args.ap;
-        azw = args.az;
+
+        const auto au = axw.tail(nu);
+
+        apw = args.ap - Vpu * au;
+        azw = args.az - Ju * au;
 
         // NOTE: It is extremely important to use this logic below, of
         // eliminating contribution in ay from unstable-variables using matrix
@@ -452,16 +464,15 @@ struct SaddlePointSolver::Impl
         auto aybu = ayw.segment(nbs, nbu);
         auto ayl  = ayw.tail(nl);
 
-        bw.noalias() = R * (args.b - Au * xu); // eliminate contribution from unstable variables and apply R!
-
-        cleanResidualRoundoffErrors(bw); // ensure residual round-off errors are removed! For example, removing 1e-15 among numbers 1.2, 55.2
-
         as.noalias() = -(gs + tr(As) * args.y + tr(Js) * args.z);
-
         au.fill(0.0);
 
         ap = -args.v;
         az = -args.h;
+
+        bw.noalias() = R * (args.b - Au * xu); // eliminate contribution from unstable variables and apply R!
+
+        cleanResidualRoundoffErrors(bw); // ensure residual round-off errors are removed! For example, removing 1e-15 among numbers 1.2, 55.2
 
         aybs = bbs - xbs - Sbsns * xns - Sbsp * args.p;
         aybu.fill(0.0); // ensure residuals w.r.t. basic unstable variables are zero

@@ -102,8 +102,6 @@ def test_saddle_point_solver(args):
 
     nf = len(ifixed)
 
-    expected_xpyz = linspace(1, t, t)
-
     # Assemble the coefficient matrix A = [Ax Ap]
     A = assemble_A(ny, nx + np, ifixed)
 
@@ -150,11 +148,10 @@ def test_saddle_point_solver(args):
     Hxx[ifixed, ifixed] = 1.0  # set one to diagonal entries in Hxx corresponding to fixed variables
 
     Hxp[ifixed, :] = 0.0       # zero out rows in Hxx corresponding to fixed variables
-    Vpx[:, ifixed] = 0.0       # zero out cols in Vpx corresponding to fixed variables
 
     # The AxT = tr(Ax) and JxT = tr(Jx) matrix blocks in M
-    AxT = Ax.T
-    JxT = Jx.T
+    AxT = copy(Ax.T)
+    JxT = copy(Jx.T)
 
     AxT[ifixed, :] = 0.0      # zero out rows in AxT corresponding to fixed variables
     JxT[ifixed, :] = 0.0      # zero out rows in JxT corresponding to fixed variables
@@ -175,17 +172,11 @@ def test_saddle_point_solver(args):
         [ Ax,  Ap, Oyz, Oyy]]
     )
 
-    # Compute the right-hand side vector r = M * expected
-    r = M @ expected_xpyz
-
-    # The right-hand side vectors ax, ap, ay, az
-    ax, ap, az, ay = split(r, [nx, nx + np, nx + np + nz])
-
     # The solution vectors x, p, y, z
-    x = ax.copy()
-    p = ap.copy()
-    y = ay.copy()
-    z = az.copy()
+    x = zeros(nx)
+    p = zeros(np)
+    y = zeros(ny)
+    z = zeros(nz)
 
     # The scaling vector used as weights for the canonicalization
     w = linspace(1, nx, nx)
@@ -230,6 +221,17 @@ def test_saddle_point_solver(args):
     #---------------------------------------------------------------
     # Check the overload rhs(ax, ap, ay, az) works
     #---------------------------------------------------------------
+
+    expected_xpyz = linspace(1, t, t)
+
+    expected_xpyz[ifixed] *= 999.9  # ensure large values for fixed variables in case debugging is needed
+
+    # Compute the right-hand side vector r = M * expected
+    r = M @ expected_xpyz
+
+    # The right-hand side vectors ax, ap, ay, az
+    ax, ap, az, ay = split(r, [nx, nx + np, nx + np + nz])
+
     solver.rhs(ax, ap, ay, az)
     solver.solve(x, p, y, z)
 
@@ -243,29 +245,42 @@ def test_saddle_point_solver(args):
     y0 = linspace(1, ny, ny) * 30
     z0 = linspace(1, nz, nz) * 40
 
-    g0 = -ax - AxT @ y0 - JxT @ z0  # compute g0 using the fact that ax = -(g0 + tr(Ax)*y0 + tr(Jx)*z0)
-    v0 = -ap                        # compute v0 using the fact that ap = -v0
-    h0 = -az                        # compute h0 using the fact that az = -h0
-    b0 =  ay + Ax @ x0 + Ap @ p0    # compute b0 using the fact that ay = -(Ax * x0 + Ap * p0 - b0)
+    # For this rhs overload, solution x satisfies x[iunstable] = 0
+    expected_xpyz[ifixed] = 0.0
+
+    # Update the right-hand side vector r = (ax, ap, az, ay)
+    r = M @ expected_xpyz
+
+    # The right-hand side vectors ax, ap, ay, az
+    ax, ap, az, ay = split(r, [nx, nx + np, nx + np + nz])
+
+    g0 = -ax - Ax.T @ y0 - Jx.T @ z0  # compute g0 using the fact that ax = -(g0 + tr(Ax)*y0 + tr(Jx)*z0)
+    v0 = -ap                          # compute v0 using the fact that ap = -v0
+    h0 = -az                          # compute h0 using the fact that az = -h0
+    b0 =  ay + Ax @ x0 + Ap @ p0      # compute b0 using the fact that ay = -(Ax * x0 + Ap * p0 - b0)
 
     solver.rhs(g0, x0, p0, y0, z0, v0, h0, b0)
     solver.solve(x, p, y, z)
-
-    assert all(x[ifixed] == 0.0)  # ensure x[i] = 0 for i in fixed/unstable variables for this rhs setup
-
-    x[ifixed] = expected_xpyz[ifixed]  # replace these zeros by expected x so that the common test framework next succeeds (this is not a hack for a failing test!)
 
     check_solution(x, p, y, z)
 
     #---------------------------------------------------------------
     # Check the overload method rhs(g, x, p, v, h, b) works
     #---------------------------------------------------------------
+
+    # For this rhs overload, solution x satisfies x[iunstable] = x0[iunstable]
+    expected_xpyz[ifixed] = x0[ifixed]
+
+    # Update the right-hand side vector r = (ax, ap, az, ay)
+    r = M @ expected_xpyz
+
+    # The right-hand side vectors ax, ap, ay, az
+    ax, ap, az, ay = split(r, [nx, nx + np, nx + np + nz])
+
     g0 = Hxx @ x0 + Hxp @ p0 - ax   # compute g0 using the fact that ax = Hxx*x0 + Hxp*p0 - g0
     v0 = Vpx @ x0 + Vpp @ p0 - ap   # compute v0 using the fact that ap = Vpx*x0 + Vpp*p0 - v0
     h0 = Jx @ x0 + Jp @ p0 - az     # compute h0 using the fact that az = Jx*x0 + Jp*p0 - h0
     b0 = ay                         # compute b0 using the fact that ay = b0
-
-    x0[ifixed] = expected_xpyz[ifixed]  # replace x0[i] for fixed/unstable variables i with their expected values so that the common test framework next succeeds  (this is not a hack for a failing test!)
 
     solver.rhs(g0, x0, p0, v0, h0, b0)
     solver.solve(x, p, y, z)
