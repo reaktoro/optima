@@ -20,18 +20,11 @@
 // C++ includes
 #include <cassert>
 
-
-
-#include <iostream>
-// #define PRINT(X) std::cout << #X " = \n" << X << "\n" << std::endl;
-#define PRINT(X)
-
-
-
+// Eigen includes
+#include <Optima/deps/eigen3/Eigen/src/LU/FullPivLU.h>
 
 // Optima includes
 #include <Optima/Exception.hpp>
-#include <Optima/LU.hpp>
 #include <Optima/Utils.hpp>
 
 namespace Optima {
@@ -50,11 +43,20 @@ struct SaddlePointSolverRangespace::Impl
     Matrix Tw;       ///< The workspace for the Tbb = Sbn*inv(Hnn)*tr(Sbn) matrix.
     Matrix Mw;       ///< The workspace for the M matrix in decompose and solve methods.
     Vector rw;       ///< The workspace for the r vector in solve method.
+    Vector sw;       ///< The workspace for the s vector in solve method.
     Matrix barHsp;   ///< The workspace for matrix bar(Hsp)
     Matrix barVps;   ///< The workspace for matrix bar(Vps)
     Matrix barJs;    ///< The workspace for matrix bar(Js)
     Matrix barSbsns; ///< The workspace for matrix bar(Sbsns)
-    LU lu;           ///< The LU decomposition solver.
+
+    //======================================================================
+    // Note: The full pivoting strategy is needed at the moment to resolve
+    // singular matrices. Using a partial pivoting scheme via PartialPivLU
+    // would need to be combined with a search for linearly dependent rows in
+    // the produced upper triangular matrix U.
+    //======================================================================
+
+    Eigen::FullPivLU<Matrix> lu; ///< The LU decomposition solver.
 
     /// Construct a default SaddlePointSolverRangespace::Impl instance.
     Impl(Index nx, Index np, Index ny, Index nz)
@@ -69,6 +71,7 @@ struct SaddlePointSolverRangespace::Impl
         Tw.resize(ny, ny);
         Mw.resize(nx + np + ny + nz, nx + np + ny + nz);
         rw.resize(nx + np + ny + nz);
+        sw.resize(nx + np + ny + nz);
         barHsp.resize(nx, np);
         barVps.resize(np, nx);
         barJs.resize(nz, nx);
@@ -248,94 +251,7 @@ struct SaddlePointSolverRangespace::Impl
         M54.noalias() = tr(Sbeni);
         M55 = diag(Hnini);
 
-        // M11.noalias() =  Vpp - Vpbe*invHbebe*Hbep - Vpne*invHnene*Hnep + Vpne*invHnene*tr(Sbine)*Hbip;
-        // M12.noalias() = -Vpbe*invHbebe*tr(Jbe) - Vpne*invHnene*tr(Jne) + Vpne*invHnene*tr(Sbine)*tr(Jbi);
-        // M13.noalias() =  Vpbi + Vpne*invHnene*tr(Sbine)*Hbibi;
-        // M14.noalias() = -Vpbe*invHbebe - Vpne*invHnene*tr(Sbene);
-        // M15.noalias() =  Vpni;
-
-        // M21.noalias() = Jp - Jbe*invHbebe*Hbep - Jne*invHnene*Hnep + Jne*invHnene*tr(Sbine)*Hbip;
-        // M22.noalias() = -Jbe*invHbebe*tr(Jbe) - Jne*invHnene*tr(Jne) + Jne*invHnene*tr(Sbine)*tr(Jbi);
-        // M23.noalias() = Jbi + Jne*invHnene*tr(Sbine)*Hbibi;
-        // M24.noalias() = -Jbe*invHbebe - Jne*invHnene*tr(Sbene);
-        // M25.noalias() = Jni;
-
-        // M31.noalias() = Sbip - Sbine*invHnene*Hnep + Sbine*invHnene*tr(Sbine)*Hbip;
-        // M32.noalias() = -Sbine*invHnene*tr(Jne) + Sbine*invHnene*tr(Sbine)*tr(Jbi);
-        // M33.noalias() = Ibibi + Sbine*invHnene*tr(Sbine)*Hbibi;
-        // M34.noalias() = -Sbine*invHnene*tr(Sbene);
-        // M35.noalias() = Sbini;
-
-        // M41.noalias() = Sbep - invHbebe*Hbep - Sbene*invHnene*Hnep + Sbene*invHnene*tr(Sbine)*Hbip;
-        // M42.noalias() = invHbebe*tr(-Jbe) - Sbene*invHnene*tr(Jne) + Sbene*invHnene*tr(Sbine)*tr(Jbi);
-        // M43.noalias() = Sbene*invHnene*tr(Sbine)*Hbibi;
-        // M44 = diag(inv(-Hbebe)); M44 -= Sbene*invHnene*tr(Sbene);
-        // M45.noalias() = Sbeni;
-
-        // M51.noalias() = Hnip - tr(Sbini)*Hbip;
-        // M52.noalias() = tr(Jni) - tr(Sbini)*tr(Jbi);
-        // M53.noalias() = -tr(Sbini)*Hbibi;
-        // M54.noalias() = tr(Sbeni);
-        // M55.noalias() = Hnini;
-
-
-
-
-
-
-        // // Setting the 1st column of M with dimension nbe (corresponding to ybe)
-        // Mbibi.noalias() = Ibibi + Tbibi * diag(Hbibi);
-        // Mbebi.noalias() = Tbebi * diag(Hbibi);
-        // Mnibi.noalias() = -tr(Sbini) * diag(Hbibi);
-        // Mpbi.noalias() = Vpbi + Vpne * Bnebi * diag(Hbibi);
-
-        // // Setting the 2nd column of M with dimension nbi (corresponding to xbi)
-        // Mbibe.noalias() = -Tbibe;
-        // Mbebe = diag(inv(-Hbebe)); Mbebe -= Tbebe;
-        // Mnibe.noalias() = tr(Sbeni);
-        // Mpbe.noalias() = -Vpbe * diag(inv(Hbebe)) - Vpne * Bnebe;
-
-        // // Setting the 3rd column of M with dimension nni (corresponding to xni)
-        // Mbini = Sbini;
-        // Mbeni = Sbeni;
-        // Mnini = diag(Hnini);
-        // Mpni = Vpni;
-
-        // // Setting the 4th column of M with dimension np (corresponding to p)
-        // Mbip = Sbip;
-        // Mbep = Sbep;
-        // Mnip.fill(0.0);
-        // Mpp = Vpp;
-
-        // std::cout << "================================================================================================================================================" << std::endl;
-        PRINT(M);
-        // std::cout << "================================================================================================================================================" << std::endl;
-        // PRINT(Mbebe);
-        // PRINT(Mbibe);
-        // PRINT(Mnibe);
-        // PRINT(Mpbe);
-        // PRINT(Mbebi);
-        // PRINT(Mbibi);
-        // PRINT(Mnibi);
-        // PRINT(Mpbi);
-        // PRINT(Mbeni);
-        // PRINT(Mbini);
-        // PRINT(Mnini);
-        // PRINT(Mpni);
-        // PRINT(Mbep);
-        // PRINT(Mbip);
-        // PRINT(Mnip);
-        // PRINT(Mpp);
-
-        lu.decompose(M);
-
-        Matrix mlu = lu.matrixLU();
-
-        const Matrix L = mlu.triangularView<Eigen::UnitLower>();
-        const Matrix U = mlu.triangularView<Eigen::Upper>();
-
-        PRINT(L);
-        PRINT(U);
+        lu.compute(M);
     }
 
     /// Solve the canonical saddle point problem.
@@ -433,24 +349,17 @@ struct SaddlePointSolverRangespace::Impl
         const auto t = np + nz + nbi + nbe + nni;
 
         auto r = rw.head(t);
+        auto s = sw.head(t);
 
-        auto p   = r.head(np);
-        auto z   = r.segment(np, nz);
-        auto xbi = r.segment(np + nz, nbi);
-        auto ybe = r.segment(np + nz + nbi, nbe);
-        auto xni = r.tail(nni);
+        auto p   = s.head(np);
+        auto z   = s.segment(np, nz);
+        auto xbi = s.segment(np + nz, nbi);
+        auto ybe = s.segment(np + nz + nbi, nbe);
+        auto xni = s.tail(nni);
 
         r << ap, az, bbi, bbe, ani;
 
-        PRINT(r);
-
-        lu.solve(r);
-
-        PRINT(r);
-
-        const auto rank = lu.rank();
-
-        assert(r.head(rank).allFinite()); // If FullPivLu is used, then this need to be checked based on the last indices of permutation matrix Q of the LU decomp PAQ = LU
+        s.noalias() = lu.solve(r);
 
         auto ybi = bbi;
         auto xbe = abe;

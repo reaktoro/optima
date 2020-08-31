@@ -21,7 +21,7 @@
 #include <cassert>
 
 // Eigen includes
-#include <Optima/deps/eigen3/Eigen/src/LU/PartialPivLU.h>
+#include <Optima/deps/eigen3/Eigen/src/LU/FullPivLU.h>
 
 // Optima includes
 #include <Optima/Exception.hpp>
@@ -46,7 +46,14 @@ struct SaddlePointSolverNullspace::Impl
     Matrix Mw;  ///< The workspace for the matrix M in the decompose and solve methods.
     Vector rw;  ///< The workspace for the vector r in the decompose and solve methods.
 
-    Eigen::PartialPivLU<Matrix> lu; ///< The LU decomposition solver.
+    //======================================================================
+    // Note: The full pivoting strategy is needed at the moment to resolve
+    // singular matrices. Using a partial pivoting scheme via PartialPivLU
+    // would need to be combined with a search for linearly dependent rows in
+    // the produced upper triangular matrix U.
+    //======================================================================
+
+    Eigen::FullPivLU<Matrix> lu; ///< The LU decomposition solver.
 
     /// Construct a default SaddlePointSolverNullspace::Impl instance.
     Impl(Index nx, Index np, Index ny, Index nz)
