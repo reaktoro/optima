@@ -20,11 +20,9 @@
 // C++ includes
 #include <cassert>
 
-// Eigen includes
-#include <Optima/deps/eigen3/Eigen/src/LU/FullPivLU.h>
-
 // Optima includes
 #include <Optima/Exception.hpp>
+#include <Optima/LU.hpp>
 #include <Optima/Utils.hpp>
 
 namespace Optima {
@@ -45,15 +43,7 @@ struct SaddlePointSolverNullspace::Impl
     Matrix Jp;  ///< The workspace for the auxiliary matrices Jp.
     Matrix Mw;  ///< The workspace for the matrix M in the decompose and solve methods.
     Vector rw;  ///< The workspace for the vector r in the decompose and solve methods.
-
-    //======================================================================
-    // Note: The full pivoting strategy is needed at the moment to resolve
-    // singular matrices. Using a partial pivoting scheme via PartialPivLU
-    // would need to be combined with a search for linearly dependent rows in
-    // the produced upper triangular matrix U.
-    //======================================================================
-
-    Eigen::FullPivLU<Matrix> lu; ///< The LU decomposition solver.
+    LU lu;      ///< The LU decomposition solver.
 
     /// Construct a default SaddlePointSolverNullspace::Impl instance.
     Impl(Index nx, Index np, Index ny, Index nz)
@@ -184,7 +174,7 @@ struct SaddlePointSolverNullspace::Impl
         if( nz) M4 << Jbe, Jns, Jp, Ozz, Ozbe;
         if(nbe) M5 << Ibebe, Sbens, Sbep, Obez, Obebe;
 
-        lu.compute(M);
+        if(t) lu.decompose(M);
     }
 
     /// Solve the canonical saddle point problem.
@@ -267,9 +257,9 @@ struct SaddlePointSolverNullspace::Impl
         auto z   = r.segment(nbe + nns + np, nz);
         auto ybe = r.tail(nbe);
 
-        r << abe, ans, ap, az, bbe;
+        if(t) r << abe, ans, ap, az, bbe;
 
-        r.noalias() = lu.solve(r);
+        if(t) lu.solve(r);
 
         auto xbi = bbi;
         auto ybi = abi;

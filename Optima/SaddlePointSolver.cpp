@@ -25,6 +25,7 @@
 #include <Optima/Canonicalizer.hpp>
 #include <Optima/Exception.hpp>
 #include <Optima/IndexUtils.hpp>
+#include <Optima/Macros.hpp>
 #include <Optima/SaddlePointOptions.hpp>
 #include <Optima/SaddlePointSolverFullspace.hpp>
 #include <Optima/SaddlePointSolverNullspace.hpp>
@@ -60,7 +61,7 @@ struct SaddlePointSolver::Impl
     Vector yw;                              ///< The workspace for solution vector y
     Vector zw;                              ///< The workspace for solution vector z
     Vector weights;                         ///< The priority weights for the selection of basic variables.
-    Indices iordering;                      ///< The ordering of the variables as (stable-basic, stable-non-basic, unstable-basic, unstable-non-basic).
+    Indices jx;                             ///< The order of x variables as x = (xbs, xns, xbu, xnu).
     Indices Kb;                             ///< The permutation matrix used to order the basic variables as xb = (xbe, xbi, xbu) with `e` and `i` denoting pivot and non-pivot
     Indices Kn;                             ///< The permutation matrix used to order the non-basic variables as xn = (xne, xni, xnu) with `e` and `i` denoting pivot and non-pivot
     bool degenerate = false;                ///< The boolean flag that indicates that the decomposed saddle point matrix was degenerate with no stable variables.
@@ -104,8 +105,8 @@ struct SaddlePointSolver::Impl
         bw.resize(ny);
         weights.resize(nx);
 
-        // Initialize the ordering of the variables x = (xs, xu)
-        iordering = canonicalizer.Q();
+        // Initialize the order of x variables
+        jx = canonicalizer.Q();
     }
 
     /// Decompose the canonical saddle point matrix.
@@ -151,15 +152,15 @@ struct SaddlePointSolver::Impl
             return;
 
         // Change the ordering of the variables as x = (xs, xu)
-        const auto pos = moveIntersectionRight(iordering, args.ju);
+        const auto pos = moveIntersectionRight(jx, args.ju);
 
         // Ensure the indices of xu variables are valid.
-        Assert(pos == ns, "Cannot proceed with SaddlePointSolver::canonicalize",
+        assert(pos == ns && "Cannot proceed with SaddlePointSolver::canonicalize. "
             "There are invalid indices of xu variables.");
 
-        // The indices of the xs and xu variables using iordering
-        const auto js = iordering.head(ns);
-        const auto ju = iordering.tail(nu);
+        // The indices of the xs and xu variables using jx
+        const auto js = jx.head(ns);
+        const auto ju = jx.tail(nu);
 
         // The priority weights of xs and xu variables to become basic variables
         auto ws = weights(js);
@@ -215,6 +216,14 @@ struct SaddlePointSolver::Impl
         // Update the number of stable basic and stable non-basic variables
         nbs = nb - nbu;
         nns = nn - nnu;
+
+        // error(np > 0 && nbs != ny, "Cannot proceed with method "
+        //     "SaddlePointSolver::canonicalize. This is due to a current "
+        //     "limitation in which if the number of parameter variables *p* "
+        //     "(np = " + std::to_string(np) + ") is greater than one, then the "
+        //     "coefficient matrix Ax needs to be full rank and equal to the number "
+        //     "of basic stable variables (rank[Ax] = " + std::to_string(nb) + ", "
+        //     "rows[Ax] = " + std::to_string(ny) + ", nbs = " + std::to_string(nbs) + ").");
 
         //=========================================================================================
         // Update the order of the stable-variables as xs = (xbe, xbi, xbu, xne, xni, xnu), where:
@@ -326,7 +335,7 @@ struct SaddlePointSolver::Impl
         const auto jnu = jn.tail(nnu);
 
         // Update the order of x variables as x = (xs, xu) = (xbs, xns, xbu, xnu)
-        iordering << jbs, jns, jbu, jnu;
+        jx << jbs, jns, jbu, jnu;
 
         //=========================================================================================
         // Initialize matrices Hss, Hsp, Vps, Vpu, Vpp, Js, Ju, Jp
@@ -351,11 +360,11 @@ struct SaddlePointSolver::Impl
         else Hss = args.Hxx(js, js);
 
         // Initialize matrices Vpx and Vpp
-        Vpx = cols(args.Vpx, iordering);
+        Vpx = cols(args.Vpx, jx);
         Vpp = args.Vpp;
 
         // Initialize matrices Jx and Jp
-        Jx = cols(args.Jx, iordering);
+        Jx = cols(args.Jx, jx);
         Jp = args.Jp;
     }
 
@@ -373,7 +382,7 @@ struct SaddlePointSolver::Impl
 
         const auto R  = canonicalizer.R();
 
-        const auto ju = iordering.tail(nu);
+        const auto ju = jx.tail(nu);
 
         const auto Au = cols(Ax, ju);
 
@@ -383,7 +392,7 @@ struct SaddlePointSolver::Impl
         const auto Jx = Jw.leftCols(nx);
         const auto Ju = Jx.rightCols(nu);
 
-        axw = args.ax(iordering);
+        axw = args.ax(jx);
 
         const auto au = axw.tail(nu);
 
@@ -432,8 +441,8 @@ struct SaddlePointSolver::Impl
         const auto nns = dims.nns;
         const auto nl  = dims.nl;
 
-        const auto js = iordering.head(ns);
-        const auto ju = iordering.tail(nu);
+        const auto js = jx.head(ns);
+        const auto ju = jx.tail(nu);
 
         const auto As = cols(Ax, js);
         const auto Au = cols(Ax, ju);
@@ -493,8 +502,8 @@ struct SaddlePointSolver::Impl
         const auto nns = dims.nns;
         const auto nl  = dims.nl;
 
-        const auto js = iordering.head(ns);
-        const auto ju = iordering.tail(nu);
+        const auto js = jx.head(ns);
+        const auto ju = jx.tail(nu);
 
         const auto As = cols(Ax, js);
         const auto Au = cols(Ax, ju);
@@ -589,8 +598,8 @@ struct SaddlePointSolver::Impl
         const auto nns = dims.nns;
         const auto nl  = dims.nl;
 
-        const auto js = iordering.head(ns);
-        const auto ju = iordering.tail(nu);
+        const auto js = jx.head(ns);
+        const auto ju = jx.tail(nu);
 
         const auto Hss = Hw.topLeftCorner(ns, ns);
         const auto Hsp = Hw.topRightCorner(ns, np);
@@ -627,20 +636,6 @@ struct SaddlePointSolver::Impl
 
         solveCanonical({ dims, Hss, Hsp, Vps, Vpp, Js, Jp, Sbsns, Sbsp, as, ap, az, aybs, xs, p, z, ybs });
 
-        //======================================================================
-        // Note: In case of singular saddle point problem, null values may be
-        // produced because linearly dependent rows are ignored. The variables
-        // associated with these rows are then set to null. Here is the action
-        // we make at this point:
-        //   - For null values in y'bs, where y' = (y'bs, y'bu, y'l) and y =
-        //     tr(R)*y', we transform them to zero. This is to avoid further
-        //     spreading of null values during the product tr(R)*y'.
-        //   - For null values in xs, p, z, these are left unchanged so that
-        //     client code can act upon it accordingly.
-        //======================================================================
-
-        ybs = ybs.array().isNaN().select(0.0, ybs);
-
         args.sx(js) = xs;
         args.sx(ju) = au;
         args.sp = p;
@@ -656,8 +651,8 @@ struct SaddlePointSolver::Impl
         const auto nu = dims.nu;
         const auto np = dims.np;
 
-        const auto js = iordering.head(ns);
-        const auto ju = iordering.tail(nu);
+        const auto js = jx.head(ns);
+        const auto ju = jx.tail(nu);
 
         const auto Hss = Hw.topLeftCorner(ns, ns);
         const auto Hsp = Hw.topRightCorner(ns, np);
@@ -709,8 +704,8 @@ struct SaddlePointSolver::Impl
         const auto nnu = dims.nnu;
         const auto nl  = dims.nl;
 
-        const auto js = iordering.head(ns);
-        const auto ju = iordering.tail(nu);
+        const auto js = jx.head(ns);
+        const auto ju = jx.tail(nu);
 
         const auto jbs = js.head(nbs);
         const auto jns = js.tail(nns);
@@ -764,7 +759,7 @@ struct SaddlePointSolver::Impl
     //     const auto R = canonicalizer.R();
 
     //     // Use `axw` as workspace for x in the order [xbs, xns, xbu, xnu]
-    //     axw = args.x(iordering);
+    //     axw = args.x(jx);
 
     //     // Reference to p in args
     //     const auto xp = args.p;
@@ -782,8 +777,8 @@ struct SaddlePointSolver::Impl
     //     const auto Sbsp  = S.topRightCorner(nbs, np);
 
     //     // The indices of the xs, xu variables where x = (xs, xu)
-    //     const auto js = iordering.head(ns);
-    //     const auto ju = iordering.tail(nu);
+    //     const auto js = jx.head(ns);
+    //     const auto ju = jx.tail(nu);
 
     //     // The residual vector r = [rbs rbu rbl]
     //     auto rbs = args.r.head(nbs);         // corresponding to stable basic variables

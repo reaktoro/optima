@@ -20,11 +20,9 @@
 // C++ includes
 #include <cassert>
 
-// Eigen includes
-#include <Optima/deps/eigen3/Eigen/src/LU/FullPivLU.h>
-
 // Optima includes
 #include <Optima/Exception.hpp>
+#include <Optima/LU.hpp>
 #include <Optima/Utils.hpp>
 
 namespace Optima {
@@ -35,15 +33,7 @@ struct SaddlePointSolverFullspace::Impl
 {
     Matrix mat; ///< The matrix used as a workspace for the decompose and solve methods.
     Vector vec; ///< The vector used as a workspace for the decompose and solve methods
-
-    //======================================================================
-    // Note: The full pivoting strategy is needed at the moment to resolve
-    // singular matrices. Using a partial pivoting scheme via PartialPivLU
-    // would need to be combined with a search for linearly dependent rows in
-    // the produced upper triangular matrix U.
-    //======================================================================
-
-    Eigen::FullPivLU<Matrix> lu; ///< The LU decomposition solver.
+    LU lu;      ///< The LU decomposition solver.
 
     /// Construct a default SaddlePointSolverFullspace::Impl instance.
     Impl(Index nx, Index np, Index ny, Index nz)
@@ -104,7 +94,7 @@ struct SaddlePointSolverFullspace::Impl
         if( nz) M4 << Jbs, Jns, Jp, Ozz, Ozbs;
         if(nbs) M5 << Ibsbs, Sbsns, Sbsp, Obsz, Obsbs;
 
-        lu.compute(M);
+        lu.decompose(M);
     }
 
     /// Solve the canonical saddle point problem.
@@ -128,7 +118,7 @@ struct SaddlePointSolverFullspace::Impl
 
         r << args.as, args.ap, args.az, args.aybs;
 
-        r.noalias() = lu.solve(r);
+        lu.solve(r);
 
         args.xs << xbs, xns;
         args.p = p;

@@ -18,20 +18,20 @@
 from optima import *
 from numpy import *
 from numpy.linalg import norm
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_array_almost_equal
 from pytest import approx, mark
 from itertools import product
 
-from utils.matrices import testing_matrices_A, matrix_non_singular, pascal_matrix
+from utils.matrices import assemble_matrix_Ax, matrix_non_singular, pascal_matrix
 
 
 def print_state(M, r, s, nx, np, ny, nz):
-    set_printoptions(linewidth=1000, suppress=True)
     slu = eigen.solve(M, r)
     # print( 'M        = \n', M )
     # print( 'r        = ', r )
     sx, sp, sy, sz = split(s, [nx, nx+np, nx+np+ny])
     slux, slup, sluy, sluz = split(slu, [nx, nx+np, nx+np+ny])
+    print()
     print( 'x        = ', sx             )
     print( 'x(lu)    = ', slux           )
     print( 'x(diff)  = ', abs(sx - slux) )
@@ -46,22 +46,26 @@ def print_state(M, r, s, nx, np, ny, nz):
     print( 'z(diff)  = ', abs(sz - sluz) )
     print( 'res      = ', M.dot(s) - r   )
     print( 'res(lu)  = ', M.dot(slu) - r )
+    print()
 
 
 # The number of primal variables x
-nx = 20
+tested_nx = [10, 15, 20]
 
 # Tested number of parameter variables p
 tested_np = [0, 5]
 
 # Tested number of Lagrange multipliers y (i.e., number of rows in A = [Ax Ap])
-tested_ny = [4, 6]
+tested_ny = [4, 6, 8]
 
 # Tested number of Lagrange multipliers z (i.e., number of rows in J = [Jx Jp])
 tested_nz = [0, 5]
 
-# Tested cases for matrix A = [Ax Ap]
-tested_matrices_A = testing_matrices_A
+# Tested number of unstable/fixed basic variables
+tested_nbu = [0, 1, 2]
+
+# Tested number of linearly dependent rows in Ax
+tested_nl = [0, 1, 2]
 
 # Tested cases for the indices of unstable variables (i.e. fixed at given values)
 tested_ifixed = [
@@ -84,30 +88,41 @@ tested_methods = [
     SaddlePointMethod.Rangespace
 ]
 
-# Combination of all tested cases
-testdata = product(tested_np,
-                   tested_ny,
-                   tested_nz,
-                   tested_matrices_A,
-                   tested_ifixed,
-                   tested_variable_conditions,
-                   tested_methods)
+@mark.parametrize("nx"                , tested_nx)
+@mark.parametrize("np"                , tested_np)
+@mark.parametrize("ny"                , tested_ny)
+@mark.parametrize("nz"                , tested_nz)
+@mark.parametrize("nbu"               , tested_nbu)
+@mark.parametrize("nl"                , tested_nl)
+@mark.parametrize("ifixed"            , tested_ifixed)
+@mark.parametrize("variable_condition", tested_variable_conditions)
+@mark.parametrize("method"            , tested_methods)
+def test_saddle_point_solver(nx, np, ny, nz, nbu, nl, ifixed, variable_condition, method):
 
-@mark.parametrize("args", testdata)
-def test_saddle_point_solver(args):
+    set_printoptions(linewidth=10000, suppress=True, precision=6)
 
-    np, ny, nz, assemble_A, ifixed, variable_condition, method = args
+    # Due to a current limitation in the algorithm, if number of parameter
+    # variables is non-zero and number of linearly dependent or number of basic
+    # unstable variables is non-zero, skip the test.
+    if np > 0 and nbu + nl > 0:
+        return
+
+    # Skip if there are no unstable/fixed variables, and the number of unstable
+    # basic variables is non-zero
+    if nbu > 0 and len(ifixed) == 0:
+        return
+
+    # Skip if there are more Lagrange multipliers than primal variables
+    if nx < ny + nz:
+        return
 
     t = nx + np + ny + nz
 
     nf = len(ifixed)
 
-    # Assemble the coefficient matrix A = [Ax Ap]
-    A = assemble_A(ny, nx + np, ifixed)
-
-    # Extract the blocks of A = [Ax Ap]
-    Ax = A[:, :nx]
-    Ap = A[:, nx:]
+    # Assemble the coefficient matrices Ax and Ap
+    Ax = assemble_matrix_Ax(ny, nx, nbu, nl, ifixed)
+    Ap = linspace(1, ny*np, ny*np).reshape((ny, np))
 
     # Assemble the coefficient matrix J = [Jx Jp]
     J = pascal_matrix(nz, nx + np)
@@ -130,14 +145,14 @@ def test_saddle_point_solver(args):
 
     # The sequence along the diagonal that is affected to control the number of pivot variables
     if variable_condition == 'explicit-variables-all':
-        jexplicit = slice(nx)
+        jexplicit = list(range(nx))
         jimplicit = []
     if variable_condition == 'explicit-variables-none':
         jexplicit = []
-        jimplicit = slice(nx)
+        jimplicit = list(range(nx))
     if variable_condition == 'explicit-variables-some':
-        jexplicit = slice(ny)
-        jimplicit = slice(ny, nx)
+        jexplicit = list(range(ny))
+        jimplicit = list(range(ny, nx))
 
     # Adjust the diagonal entries to control number of pivot variables
     Hxx[jexplicit, jexplicit] *= 1.0e+08
@@ -172,12 +187,6 @@ def test_saddle_point_solver(args):
         [ Ax,  Ap, Oyz, Oyy]]
     )
 
-    # The solution vectors x, p, y, z
-    x = zeros(nx)
-    p = zeros(np)
-    y = zeros(ny)
-    z = zeros(nz)
-
     # The scaling vector used as weights for the canonicalization
     w = linspace(1, nx, nx)
 
@@ -191,43 +200,30 @@ def test_saddle_point_solver(args):
     solver.canonicalize(Hxx, Hxp, Vpx, Vpp, Jx, Jp, ifixed, w)
     solver.decompose()
 
-    def check_solution(x, p, y, z):
-        # Create solution vector s = [x, p, z, y]
-        s = concatenate([x, p, z, y])
-
-        # Check the residual of the equation M * s = r
-        # assert_allclose(M @ s, M @ expected_xpyz)
-
-        tol = 1e-13
-
-        succeeded = norm(M @ s - r) / norm(r) < tol
+    def check_solution():
+        succeeded = norm(M @ s - r) / norm(r) < 1e-12
 
         if not succeeded:
-            print()
-            print(f"nx = {nx}")
-            print(f"np = {np}")
-            print(f"ny = {ny}")
-            print(f"nz = {nz}")
-            print(f"assemble_A = {assemble_A}")
-            print(f"ifixed = {ifixed}")
-            print(f"variable_condition = {variable_condition}")
-            print(f"method = {method}")
-            print()
-
             print_state(M, r, s, nx, np, ny, nz)
 
-        assert norm(M @ s - r) / norm(r) < tol
+        assert norm(M @ s - r) / norm(r) < 1e-12
 
     #---------------------------------------------------------------
     # Check the overload rhs(ax, ap, ay, az) works
     #---------------------------------------------------------------
 
-    expected_xpyz = linspace(1, t, t)
+    # The actual solution vector s = (x, p, z, y)
+    s = zeros(t)
 
-    expected_xpyz[ifixed] *= 999.9  # ensure large values for fixed variables in case debugging is needed
+    x, p, z, y = split(s, [nx, nx + np, nx + np + nz])
+
+    # The expected solution vector s_exp = (x0, p0, z0, y0)
+    s_exp = linspace(1, t, t)
+
+    s_exp[ifixed] *= 999.9  # ensure large values for fixed variables in case debugging is needed
 
     # Compute the right-hand side vector r = M * expected
-    r = M @ expected_xpyz
+    r = M @ s_exp
 
     # The right-hand side vectors ax, ap, ay, az
     ax, ap, az, ay = split(r, [nx, nx + np, nx + np + nz])
@@ -235,7 +231,7 @@ def test_saddle_point_solver(args):
     solver.rhs(ax, ap, ay, az)
     solver.solve(x, p, y, z)
 
-    check_solution(x, p, y, z)
+    check_solution()
 
     #---------------------------------------------------------------
     # Check the overload method rhs(g, x, p, y, z, v, h, b) works
@@ -246,10 +242,10 @@ def test_saddle_point_solver(args):
     z0 = linspace(1, nz, nz) * 40
 
     # For this rhs overload, solution x satisfies x[iunstable] = 0
-    expected_xpyz[ifixed] = 0.0
+    s_exp[ifixed] = 0.0
 
     # Update the right-hand side vector r = (ax, ap, az, ay)
-    r = M @ expected_xpyz
+    r = M @ s_exp
 
     # The right-hand side vectors ax, ap, ay, az
     ax, ap, az, ay = split(r, [nx, nx + np, nx + np + nz])
@@ -262,17 +258,17 @@ def test_saddle_point_solver(args):
     solver.rhs(g0, x0, p0, y0, z0, v0, h0, b0)
     solver.solve(x, p, y, z)
 
-    check_solution(x, p, y, z)
+    check_solution()
 
     #---------------------------------------------------------------
     # Check the overload method rhs(g, x, p, v, h, b) works
     #---------------------------------------------------------------
 
     # For this rhs overload, solution x satisfies x[iunstable] = x0[iunstable]
-    expected_xpyz[ifixed] = x0[ifixed]
+    s_exp[ifixed] = x0[ifixed]
 
     # Update the right-hand side vector r = (ax, ap, az, ay)
-    r = M @ expected_xpyz
+    r = M @ s_exp
 
     # The right-hand side vectors ax, ap, ay, az
     ax, ap, az, ay = split(r, [nx, nx + np, nx + np + nz])
@@ -285,4 +281,4 @@ def test_saddle_point_solver(args):
     solver.rhs(g0, x0, p0, v0, h0, b0)
     solver.solve(x, p, y, z)
 
-    check_solution(x, p, y, z)
+    check_solution()

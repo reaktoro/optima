@@ -99,8 +99,8 @@ struct Canonicalizer::Impl
     auto compute(MatrixConstRef A) -> void
     {
         // The number of rows and columns of A
-        const Index m = A.rows();
-        const Index n = A.cols();
+        const auto m = A.rows();
+        const auto n = A.cols();
 
         // Check if number of columns is greater/equal than number of rows
         assert(n >= m && "Could not canonicalize the given matrix. "
@@ -113,10 +113,11 @@ struct Canonicalizer::Impl
         lu.compute(A);
 
         // Get the rank of matrix A
-        const Index r = numBasicVariables();
+        const auto r = numBasicVariables();
 
         // Get the LU factors of matrix A
         const auto L   = lu.matrixLU().leftCols(m).triangularView<Eigen::UnitLower>();
+        const auto U   = lu.matrixLU().rightCols(n).triangularView<Eigen::Upper>();
         const auto Ubb = lu.matrixLU().topLeftCorner(r, r).triangularView<Eigen::Upper>();
         const auto Ubn = lu.matrixLU().topRightCorner(r, n - r);
 
@@ -132,8 +133,10 @@ struct Canonicalizer::Impl
 
         // Calculate the regularizer matrix R
         R = P.asPermutation();
+        // R.bottomRows(m - r).fill(0.0); // TODO: Decide on these temporary commented lines to ensure rows/cols in R corresponding to linearly dependent rows in A are zero.
         R = L.solve(R);
         R.topRows(r) = Ubb.solve(R.topRows(r));
+        // R.bottomRows(m - r).fill(0.0);
 
         // Calculate matrix S
         S = Ubn;
@@ -163,18 +166,18 @@ struct Canonicalizer::Impl
         const Index r = numBasicVariables();
 
         // Check if ib < rank(A)
-        Assert(ib < r,
-            "Could not swap basic and non-basic variables.",
+        assert(ib < r &&
+            "Could not swap basic and non-basic variables. "
                 "Expecting an index of basic variable below `r`, where `r = rank(A)`.");
 
         // Check if in < n - rank(A)
-        Assert(in < lu.cols() - r,
-            "Could not swap basic and non-basic variables.",
+        assert(in < lu.cols() - r &&
+            "Could not swap basic and non-basic variables. "
                 "Expecting an index of non-basic variable below `n - r`, where `r = rank(A)`.");
 
         // Check if S(ib, in) is different than zero
-        Assert(std::abs(S(ib, in)) > threshold,
-            "Could not swap basic and non-basic variables.",
+        assert(std::abs(S(ib, in)) > threshold &&
+            "Could not swap basic and non-basic variables. "
                 "Expecting a non-basic variable with non-zero pivot.");
 
         // Initialize the matrix M
@@ -393,7 +396,7 @@ auto Canonicalizer::C() const -> Matrix
     return res;
 }
 
-auto Canonicalizer::indicesLinearlyIndependentEquations() const -> IndicesConstRef
+auto Canonicalizer::indicesEquations() const -> IndicesConstRef
 {
     return pimpl->Ptr;
 }

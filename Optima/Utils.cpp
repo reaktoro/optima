@@ -257,11 +257,6 @@ auto greaterThan(double lhs, double rhs, double baseval) -> bool
     return lhs > rhs - 10.0 * epsilon * std::abs(baseval);
 }
 
-auto infinity() -> double
-{
-    return std::numeric_limits<double>::infinity();
-}
-
 auto bfgs() -> std::function<Matrix(const Vector&, const Vector&)>
 {
     Vector x0;

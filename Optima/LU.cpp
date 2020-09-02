@@ -21,14 +21,24 @@
 #include <cassert>
 
 // Eigen includes
-#include <Optima/deps/eigen3/Eigen/src/LU/PartialPivLU.h>
+#include <Optima/deps/eigen3/Eigen/src/LU/FullPivLU.h>
+
+// Optima includes
+#include <Optima/Macros.hpp>
 
 namespace Optima {
 
 struct LU::Impl
 {
+    //======================================================================
+    // Note: The full pivoting strategy is needed at the moment to resolve
+    // singular matrices. Using a partial pivoting scheme via PartialPivLU
+    // would need to be combined with a search for linearly dependent rows in
+    // the produced upper triangular matrix U.
+    //======================================================================
+
     /// The base LU solver from Eigen library.
-    Eigen::PartialPivLU<Matrix> lu;
+    Eigen::FullPivLU<Matrix> lu;
 
     /// The rank of matrix `A`
     Index rank;
@@ -53,13 +63,11 @@ struct LU::Impl
     auto decompose(MatrixConstRef A) -> void
     {
         // The number of rows and cols of A
-        const Index m = A.rows();
-        const Index n = A.cols();
+        const auto m = A.rows();
+        const auto n = A.cols();
 
-        // Check if number of rows and columns are equal
-        assert(n == m && "Could not decompose the given matrix, which has different number of rows and columns.");
+        assert(n == m);
 
-        // Perform a fast partial pivoting decomposition of A
         lu.compute(A);
 
         // Compute the rank of the matrix
@@ -77,15 +85,15 @@ struct LU::Impl
     /// Solve the linear system `AX = B` using the calculated LU decomposition.
     auto solve(MatrixRef X) -> void
     {
-        const Index n = lu.matrixLU().rows();
+        const auto n = lu.matrixLU().rows();
 
         assert(n == X.rows());
 
-        // Get references to P, L, U from the decomposition so that P*A = L*U
         const auto M = lu.matrixLU().topLeftCorner(rank, rank);
         const auto L = M.triangularView<Eigen::UnitLower>();
         const auto U = M.triangularView<Eigen::Upper>();
         const auto P = lu.permutationP();
+        const auto Q = lu.permutationQ();
 
         auto Xt = X.topRows(rank);
         auto Xb = X.bottomRows(n - rank);
@@ -93,11 +101,8 @@ struct LU::Impl
         P.applyThisOnTheLeft(X);
         Xt = L.solve(Xt);
         Xt = U.solve(Xt);
-
-        // For the bottom part, corresponding to
-        // linearly dependent rows, set X to a quiet NaN.
-        const auto nan = std::numeric_limits<double>::quiet_NaN();
-        Xb.fill(nan);
+        Xb.fill(0.0);
+        Q.applyThisOnTheLeft(X);
     }
 };
 

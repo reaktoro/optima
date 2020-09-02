@@ -120,8 +120,7 @@ void Outputter::outputState()
 {
     if(options.active)
     {
-        Assert(entries.size() == values.size(), "Could not output the state of the calculation.",
-            "There are more entry names than values.");
+        assert(entries.size() == values.size());
         auto entry = entries.begin();
         for(const std::string& val : values)
             if(val == options.separator) std::cout << options.separator;

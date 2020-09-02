@@ -109,7 +109,16 @@ auto lessThan(double a, double b, double baseval) -> bool;
 auto greaterThan(double a, double b, double baseval) -> bool;
 
 /// Return the floating-point representation of positive infinity
-auto infinity() -> double;
+constexpr auto infinity() -> double
+{
+    return std::numeric_limits<double>::infinity();
+}
+
+/// Return the machine epsilon
+constexpr auto epsilon() -> double
+{
+    return std::numeric_limits<double>::epsilon();
+}
 
 /// Return an inverse Hessian function based on the BFGS Hessian approximation
 auto bfgs() -> std::function<Matrix(const Vector&, const Vector&)>;

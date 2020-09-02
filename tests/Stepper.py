@@ -350,7 +350,7 @@ def test_active_stepper(args):
     # Compare the actual and expected Newton steps dx, dp, dz, dy
     u_actual = concatenate([dx, dp, dz, dy])
 
-    print_state()
+    # print_state()
 
     u_expected = eigen.solve(M, r)
 

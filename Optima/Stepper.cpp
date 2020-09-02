@@ -59,7 +59,7 @@ struct Stepper::Impl
       spsolver({args.nx, args.np, args.ny, args.nz, args.Ax, args.Ap})
     {
         // Ensure the step calculator is initialized with a positive number of primal variables.
-        Assert(nx > 0, "Could not proceed with Stepper initialization.",
+        assert(nx > 0 && "Could not proceed with Stepper initialization. "
             "The number of primal variables x is zero.");
 
         // Initialize auxiliary vectors
@@ -109,7 +109,7 @@ struct Stepper::Impl
     auto canonicalize(StepperCanonicalizeArgs args) -> void
     {
         // Ensure the step calculator has been initialized.
-        Assert(nx != 0, "Could not proceed with Stepper::canonicalize.",
+        assert(nx != 0 && "Could not proceed with Stepper::canonicalize. "
             "Stepper object has not been initialized.");
 
         // Auxiliary references

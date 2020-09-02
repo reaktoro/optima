@@ -17,7 +17,7 @@
 
 from optima import *
 from numpy import *
-from numpy.linalg import norm, inv
+from numpy.linalg import norm
 from numpy.testing import assert_array_almost_equal
 from pytest import approx, mark
 from itertools import product

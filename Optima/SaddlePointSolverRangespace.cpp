@@ -20,11 +20,9 @@
 // C++ includes
 #include <cassert>
 
-// Eigen includes
-#include <Optima/deps/eigen3/Eigen/src/LU/FullPivLU.h>
-
 // Optima includes
 #include <Optima/Exception.hpp>
+#include <Optima/LU.hpp>
 #include <Optima/Utils.hpp>
 
 namespace Optima {
@@ -48,15 +46,7 @@ struct SaddlePointSolverRangespace::Impl
     Matrix barVps;   ///< The workspace for matrix bar(Vps)
     Matrix barJs;    ///< The workspace for matrix bar(Js)
     Matrix barSbsns; ///< The workspace for matrix bar(Sbsns)
-
-    //======================================================================
-    // Note: The full pivoting strategy is needed at the moment to resolve
-    // singular matrices. Using a partial pivoting scheme via PartialPivLU
-    // would need to be combined with a search for linearly dependent rows in
-    // the produced upper triangular matrix U.
-    //======================================================================
-
-    Eigen::FullPivLU<Matrix> lu; ///< The LU decomposition solver.
+    LU lu;           ///< The LU decomposition solver.
 
     /// Construct a default SaddlePointSolverRangespace::Impl instance.
     Impl(Index nx, Index np, Index ny, Index nz)
@@ -251,7 +241,7 @@ struct SaddlePointSolverRangespace::Impl
         M54.noalias() = tr(Sbeni);
         M55 = diag(Hnini);
 
-        lu.compute(M);
+        lu.decompose(M);
     }
 
     /// Solve the canonical saddle point problem.
@@ -351,15 +341,15 @@ struct SaddlePointSolverRangespace::Impl
         auto r = rw.head(t);
         auto s = sw.head(t);
 
-        auto p   = s.head(np);
-        auto z   = s.segment(np, nz);
-        auto xbi = s.segment(np + nz, nbi);
-        auto ybe = s.segment(np + nz + nbi, nbe);
-        auto xni = s.tail(nni);
+        auto p   = r.head(np);
+        auto z   = r.segment(np, nz);
+        auto xbi = r.segment(np + nz, nbi);
+        auto ybe = r.segment(np + nz + nbi, nbe);
+        auto xni = r.tail(nni);
 
         r << ap, az, bbi, bbe, ani;
 
-        s.noalias() = lu.solve(r);
+        lu.solve(r);
 
         auto ybi = bbi;
         auto xbe = abe;

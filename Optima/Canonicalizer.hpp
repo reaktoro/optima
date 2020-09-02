@@ -73,8 +73,8 @@ public:
     /// Return the canonicalized matrix \eq{C = RAQ = [I\quad S]}`.
     auto C() const -> Matrix;
 
-    /// Return the indices of the linearly independent rows of the original matrix.
-    auto indicesLinearlyIndependentEquations() const -> IndicesConstRef;
+    /// Return the indices of the original equations associated with canonical equations.
+    auto indicesEquations() const -> IndicesConstRef;
 
     /// Return the indices of the basic variables.
     auto indicesBasicVariables() const -> IndicesConstRef;

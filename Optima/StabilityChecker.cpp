@@ -53,7 +53,7 @@ struct StabilityChecker::Impl
     : nx(args.nx), np(args.np), ny(args.ny), nz(args.nz)
     {
         // Ensure the step calculator is initialized with a positive number of variables.
-        Assert(nx > 0, "Could not proceed with StabilityChecker initialization.",
+        assert(nx > 0 && "Could not proceed with StabilityChecker initialization. "
             "The number of primal variables x is zero.");
 
         // Initialize matrix A = [Ax Ap]

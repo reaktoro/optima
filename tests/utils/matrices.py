@@ -50,7 +50,32 @@ def matrix_with_linearly_independent_rows_only(m, n, ifixed=[]):
     """
     assert m <= n
     q,r = linalg.qr(pascal_matrix(n, n))
-    return q[:m, :]
+    return q[:m, :] @ q
+
+
+def assemble_matrix_Ax(m, n, nbu, nl, ju):
+    """Return a matrix Ax for testing purposes.
+
+    Arguments:
+        m {int} -- The number of rows in matrix A
+        n {int} -- The number of columns in matrix A
+        nbu {int} -- The number of basic unstable variables
+        nl {int} -- The number of linearly dependent rows in A
+        ju {int list} -- The indices of the unstable variables
+
+    Returns:
+        [array] -- The matrix A with asked structure and features.
+    """
+    assert m <= n
+    q,r = linalg.qr(pascal_matrix(n, n))
+    Ax = q[:m, :] @ q
+    if len(ju) != 0:
+        js = list(set(range(n)) - set(ju))  # indices of stable variables
+        for k in range(nbu):
+            Ax[int(m / (2*(k + 1))), js] = 0.0  # all zeros, except columns corresponding to unstable/fixed variables
+    for k in range(nl):
+        Ax[m - k - 1, :] = Ax[k, :]  # create linear dependency: last rows become first rows
+    return Ax
 
 
 def matrix_with_one_linearly_dependent_row(m, n, ifixed=[]):
@@ -85,7 +110,7 @@ def matrix_with_two_linearly_dependent_rows(m, n, ifixed=[]):
         [array] -- The matrix with asked structure.
     """
     A = matrix_with_linearly_independent_rows_only(m, n, ifixed)
-    A[1, :] = 2*A[0, :] + A[1, :]
+    A[1, :] = 2*A[0, :] + A[-1, :]
     A[2, :] = A[0, :]
     return A
 
@@ -94,7 +119,7 @@ def matrix_with_one_basic_fixed_variable(m, n, ifixed=[]):
     A = matrix_with_linearly_independent_rows_only(m, n, ifixed)
     if len(ifixed) != 0:
         ifree = list(set(range(n)) - set(ifixed))  # indices of free variables
-        A[-1, ifree] = 0.0  # last row is all zeros, except columns corresponding to fixed variables
+        A[int(m/2), ifree] = 0.0  # middle row is all zeros, except columns corresponding to fixed variables
     return A
 
 
@@ -102,8 +127,8 @@ def matrix_with_two_basic_fixed_variables(m, n, ifixed=[]):
     A = matrix_with_linearly_independent_rows_only(m, n, ifixed)
     if len(ifixed) != 0:
         ifree = list(set(range(n)) - set(ifixed))  # indices of free variables
-        A[-2, ifree] = 0.0   # second-last row is all zeros, except columns corresponding to fixed variables
-        A[-1, ifree] = 0.0  # last row is all zeros, except columns corresponding to fixed variables
+        A[int(m/2), ifree] = 0.0  # middle row is all zeros, except columns corresponding to fixed variables
+        A[int(m/4), ifree] = 0.0  # quarter row is all zeros, except columns corresponding to fixed variables
     return A
 
 
@@ -129,11 +154,11 @@ def matrix_non_singular(n):
 
 # The functions that create matrices with different structures
 testing_matrices_A = [
-    matrix_with_linearly_independent_rows_only,
-    matrix_with_one_linearly_dependent_row,
+    # matrix_with_linearly_independent_rows_only,
+    # matrix_with_one_linearly_dependent_row,
     matrix_with_two_linearly_dependent_rows,
-    matrix_with_one_basic_fixed_variable,
-    matrix_with_two_basic_fixed_variables,
-    matrix_with_one_zero_column,
-    matrix_with_two_zero_columns
+    # matrix_with_one_basic_fixed_variable,
+    # matrix_with_two_basic_fixed_variables,
+    # matrix_with_one_zero_column,
+    # matrix_with_two_zero_columns
 ]

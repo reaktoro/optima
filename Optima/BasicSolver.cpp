@@ -315,13 +315,13 @@ struct BasicSolver::Impl
     auto initialize(BasicSolverSolveArgs args) -> bool
 	{
         // Ensure the objective function has been given.
-        Assert(args.obj != nullptr,
-            "Could not proceed with BasicSolver::solve.",
+        assert(args.obj != nullptr &&
+            "Could not proceed with BasicSolver::solve. "
                 "No objective function given.");
 
         // Ensure the objective function has been given if number of nonlinear constraints is positive.
-        Assert(nz == 0 or args.h != nullptr,
-            "Could not proceed with BasicSolver::solve.",
+        assert(nz == 0 or args.h != nullptr &&
+            "Could not proceed with BasicSolver::solve. "
                 "No constraint function given.");
 
         // Ensure consistent dimensions of vectors/matrices.
