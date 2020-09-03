@@ -22,7 +22,7 @@ from numpy.testing import assert_allclose
 from pytest import approx, mark
 from itertools import product
 
-from utils.matrices import testing_matrices_A, matrix_non_singular, pascal_matrix
+from utils.matrices import assemble_matrix_Ax, matrix_non_singular, pascal_matrix
 from utils.stability import create_expected_stability, check_stability
 
 
@@ -33,13 +33,16 @@ nx = 10
 tested_np = [0, 5]
 
 # Tested number of Lagrange multipliers y (i.e., number of rows in A = [Ax Ap])
-tested_ny = [4, 6]
+tested_ny = [4, 8]
 
 # Tested number of Lagrange multipliers z (i.e., number of rows in J = [Jx Jp])
 tested_nz = [0, 5]
 
-# Tested cases for matrix A = [Ax Ap]
-tested_matrices_A = testing_matrices_A
+# Tested number of unstable/fixed basic variables
+tested_nbu = [0, 1, 2]
+
+# Tested number of linearly dependent rows in Ax
+tested_nl = [0, 1, 2]
 
 # Tested cases for the indices of fixed variables
 tested_ifixed = [
@@ -71,21 +74,31 @@ tested_methods = [
     SaddlePointMethod.Rangespace,
 ]
 
-# Combination of all tested cases
-testdata = product(tested_np,
-                   tested_ny,
-                   tested_nz,
-                   tested_matrices_A,
-                   tested_ifixed,
-                   tested_ilower,
-                   tested_iupper,
-                   tested_methods)
+@mark.parametrize("np"                , tested_np)
+@mark.parametrize("ny"                , tested_ny)
+@mark.parametrize("nz"                , tested_nz)
+@mark.parametrize("nbu"               , tested_nbu)
+@mark.parametrize("nl"                , tested_nl)
+@mark.parametrize("ifixed"            , tested_ifixed)
+@mark.parametrize("ilower"            , tested_ilower)
+@mark.parametrize("iupper"            , tested_iupper)
+@mark.parametrize("method"            , tested_methods)
+def test_active_stepper(np, ny, nz, nbu, nl, ifixed, ilower, iupper, method):
 
+    # Due to a current limitation in the algorithm, if number of parameter
+    # variables is non-zero and number of linearly dependent or number of basic
+    # unstable variables is non-zero, skip the test.
+    if np > 0 and nbu + nl > 0:
+        return
 
-@mark.parametrize("args", testdata)
-def test_active_stepper(args):
+    # Skip if there are no unstable/fixed variables, and the number of unstable
+    # basic variables is non-zero
+    if nbu > 0 and len(ifixed) == 0:
+        return
 
-    np, ny, nz, assemble_A, ifixed, ilower, iupper, method = args
+    # Skip if there are more Lagrange multipliers than primal variables
+    if nx < ny + nz:
+        return
 
     # Add the indices of fixed variables to those that have lower and upper bounds
     # since fixed variables are those that have identical lower and upper bounds
@@ -100,12 +113,9 @@ def test_active_stepper(args):
     # The total number of variables x, p, z, y
     t = nx + np + nz + ny
 
-    # Assemble the coefficient matrix A = [Ax Ap]
-    A = assemble_A(ny, nx + np, ifixed)
-
-    # Extract the blocks of A = [Ax Ap]
-    Ax = A[:, :nx]
-    Ap = A[:, nx:]
+    # Assemble the coefficient matrices Ax and Ap
+    Ax = assemble_matrix_Ax(ny, nx, nbu, nl, ifixed)
+    Ap = linspace(1, ny*np, ny*np).reshape((ny, np))
 
     # Assemble the coefficient matrix J = [Jx Jp]
     J = pascal_matrix(nz, nx + np)
@@ -181,8 +191,6 @@ def test_active_stepper(args):
     Hxp[iunstable, :] = 0.0       # zero out rows in Hxx corresponding to fixed variables
 
     # The AxT = tr(Ax) and JxT = tr(Jx) matrix blocks in M
-    # AxT = Ax.T
-    # JxT = Jx.T
     AxT = copy(Ax.T)
     JxT = copy(Jx.T)
 
@@ -316,11 +324,12 @@ def test_active_stepper(args):
         ux, up, uy, uz = split(u, [nx, nx+np, nx+np+ny])
         set_printoptions(suppress=True, linewidth=1000, precision=3)
         print()
-        print(f"assemble_A  = {assemble_A}")
         print(f"nx          = {nx}")
         print(f"np          = {np}")
         print(f"ny          = {ny}")
         print(f"nz          = {nz}")
+        print(f"nbu         = {nbu}")
+        print(f"nl          = {nl}")
         print(f"ifixed      = {ifixed}")
         print(f"ilower      = {ilower}")
         print(f"iupper      = {iupper}")
@@ -352,10 +361,7 @@ def test_active_stepper(args):
 
     # print_state()
 
-    u_expected = eigen.solve(M, r)
-
-    # assert_allclose(M @ u_actual, M @ u_expected)
-    assert_allclose(u_actual, u_expected)
+    assert_allclose(M @ u_actual, r)
 
     # Compare the actual and expected sensitivity derivatives dxdw, dpdw, dydw, dzdw, dsdw
     assert_allclose(drdw_expected, drdw)

@@ -18,9 +18,7 @@
 from optima import *
 from numpy import *
 from numpy.linalg import norm
-from numpy.testing import assert_allclose, assert_array_almost_equal
 from pytest import approx, mark
-from itertools import product
 
 from utils.matrices import assemble_matrix_Ax, matrix_non_singular, pascal_matrix
 
@@ -56,7 +54,7 @@ tested_nx = [10, 15, 20]
 tested_np = [0, 5]
 
 # Tested number of Lagrange multipliers y (i.e., number of rows in A = [Ax Ap])
-tested_ny = [4, 6, 8]
+tested_ny = [4, 8]
 
 # Tested number of Lagrange multipliers z (i.e., number of rows in J = [Jx Jp])
 tested_nz = [0, 5]
