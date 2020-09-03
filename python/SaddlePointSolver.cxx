@@ -68,6 +68,11 @@ void exportSaddlePointSolver(py::module& m)
         self.multiply({ rx, rp, ry, rz, ax, ap, ay, az });
     };
 
+    auto transposeMultiply = [](SaddlePointSolver& self, VectorConstRef rx, VectorConstRef rp, VectorConstRef ry, VectorConstRef rz, VectorRef ax, VectorRef ap, VectorRef ay, VectorRef az)
+    {
+        self.transposeMultiply({ rx, rp, ry, rz, ax, ap, ay, az });
+    };
+
     py::class_<SaddlePointSolverState>(m, "SaddlePointSolverState")
         .def_readonly("dims", &SaddlePointSolverState::dims)
         .def_readonly("js", &SaddlePointSolverState::js)
@@ -105,7 +110,8 @@ void exportSaddlePointSolver(py::module& m)
         .def("rhs", rhs2)
         .def("rhs", rhs3)
         .def("solve", solve)
-        .def("multiply", &SaddlePointSolver::state)
+        .def("multiply", multiply)
+        .def("transposeMultiply", transposeMultiply)
         .def("state", &SaddlePointSolver::state, py::return_value_policy::reference_internal)
         ;
 }

@@ -382,22 +382,9 @@ struct SaddlePointSolver::Impl
 
         const auto R  = canonicalizer.R();
 
-        const auto ju = jx.tail(nu);
-
-        const auto Au = cols(Ax, ju);
-
-        const auto Vpx = Vw.leftCols(nx);
-        const auto Vpu = Vpx.rightCols(nu);
-
-        const auto Jx = Jw.leftCols(nx);
-        const auto Ju = Jx.rightCols(nu);
-
         axw = args.ax(jx);
-
-        const auto au = axw.tail(nu);
-
-        apw = args.ap - Vpu * au;
-        azw = args.az - Ju * au;
+        apw = args.ap;
+        azw = args.az;
 
         // NOTE: It is extremely important to use this logic below, of
         // eliminating contribution in ay from unstable-variables using matrix
@@ -407,7 +394,7 @@ struct SaddlePointSolver::Impl
         // bounds (i.e. 1e-40) and they can contaminate the canonical
         // residuals. If they are very small, they will either vanish in the
         // operation below using R or via the clean residual round-off errors.
-        ayw.noalias() = R * (args.ay - Au * au);
+        ayw.noalias() = R * args.ay;
 
         // Ensure residual round-off errors are cleaned in ay'.
         // This improves accuracy and stability in degenerate cases when some
@@ -643,10 +630,11 @@ struct SaddlePointSolver::Impl
         args.sy.noalias() = tr(R) * y;
     }
 
-    /// Multiply the The arguments for method SaddlePointSolver::multiply.
+    /// Multiply the saddle point matrix with a given vector.
     /// @note Ensure method @ref canonicalize has been called before this method.
     auto multiply(SaddlePointSolverMultiplyArgs args) -> void
     {
+        const auto nx = dims.nx;
         const auto ns = dims.ns;
         const auto nu = dims.nu;
         const auto np = dims.np;
@@ -657,14 +645,15 @@ struct SaddlePointSolver::Impl
         const auto Hss = Hw.topLeftCorner(ns, ns);
         const auto Hsp = Hw.topRightCorner(ns, np);
 
-        const auto Js = Jw.leftCols(ns);
+        const auto Jx = Jw.leftCols(nx);
         const auto Jp = Jw.rightCols(np);
+        const auto Js = Jx.leftCols(ns);
 
-        const auto Vps = Vw.leftCols(ns);
+        const auto Vpx = Vw.leftCols(nx);
         const auto Vpp = Vw.rightCols(np);
+        const auto Vps = Vpx.leftCols(ns);
 
         const auto As = cols(Ax, js);
-        const auto Au = cols(Ax, ju);
 
         auto as = args.ax(js);
         auto au = args.ax(ju);
@@ -673,7 +662,7 @@ struct SaddlePointSolver::Impl
         auto az = args.az;
 
         const auto rs = xw.head(ns) = args.rx(js);
-        const auto ru = xw.tail(ns) = args.rx(ju);
+        const auto ru = xw.tail(nu) = args.rx(ju);
         const auto rp = args.rp;
         const auto ry = args.ry;
         const auto rz = args.rz;
@@ -686,7 +675,55 @@ struct SaddlePointSolver::Impl
         au.noalias() = ru;
         ap.noalias() = Vps*rs + Vpp*rp;
         az.noalias() = Js*rs + Jp*rp;
-        ay.noalias() = As*rs + Au*ru + Ap*rp;
+        ay.noalias() = As*rs + Ap*rp;
+    }
+
+    /// Multiply the transpose of the saddle point matrix with a given vector.
+    /// @note Ensure method @ref canonicalize has been called before this method.
+    auto transposeMultiply(SaddlePointSolverTransposeMultiplyArgs args) -> void
+    {
+        const auto nx = dims.nx;
+        const auto ns = dims.ns;
+        const auto nu = dims.nu;
+        const auto np = dims.np;
+
+        const auto js = jx.head(ns);
+        const auto ju = jx.tail(nu);
+
+        const auto Hss = Hw.topLeftCorner(ns, ns);
+        const auto Hsp = Hw.topRightCorner(ns, np);
+
+        const auto Jx = Jw.leftCols(nx);
+        const auto Jp = Jw.rightCols(np);
+        const auto Js = Jx.leftCols(ns);
+
+        const auto Vpx = Vw.leftCols(nx);
+        const auto Vpp = Vw.rightCols(np);
+        const auto Vps = Vpx.leftCols(ns);
+
+        const auto As = cols(Ax, js);
+
+        auto as = args.ax(js);
+        auto au = args.ax(ju);
+        auto ap = args.ap;
+        auto ay = args.ay;
+        auto az = args.az;
+
+        const auto rs = xw.head(ns) = args.rx(js);
+        const auto ru = xw.tail(nu) = args.rx(ju);
+        const auto rp = args.rp;
+        const auto ry = args.ry;
+        const auto rz = args.rz;
+
+        as = tr(Vps)*rp + tr(Js)*rz + tr(As)*ry;
+        if(options.method == SaddlePointMethod::Rangespace)
+            as += Hss.diagonal().cwiseProduct(rs);
+        else as += tr(Hss)*rs;
+
+        au = ru;
+        ap.noalias() = tr(Hsp)*rs + tr(Vpp)*rp + tr(Jp)*rz + tr(Ap)*ry;
+        az.noalias() = Js*rs;
+        ay.noalias() = As*rs;
     }
 
     /// Return the state of the canonical saddle point solver.
@@ -739,117 +776,6 @@ struct SaddlePointSolver::Impl
         return { dims, js, jbs, jns, ju, jbu, jnu, R, Hss, Hsp, Vps, Vpp,
             As, Au, Ap, Js, Jp, Sbsns, Sbsp, as, au, ap, ay, az };
     }
-
-    // /// Calculate the relative canonical residual of equation `W*x - b`.
-    // /// @note Ensure method @ref canonicalize has been called before this method.
-    // auto residuals(SaddlePointSolverResidualArgs args) -> void
-    // {
-    //     // Auxiliary dimension variables used below
-    //     const auto nx  = dims.nx;
-    //     const auto np  = dims.np;
-    //     const auto ns  = dims.ns;
-    //     const auto nu  = dims.nu;
-    //     const auto nbs = dims.nbs;
-    //     const auto nbu = dims.nbu;
-    //     const auto nns = dims.nns;
-    //     const auto nnu = dims.nnu;
-    //     const auto nl  = dims.nl;
-
-    //     // The canonicalizer matrix R of matrix Ax
-    //     const auto R = canonicalizer.R();
-
-    //     // Use `axw` as workspace for x in the order [xbs, xns, xbu, xnu]
-    //     axw = args.x(jx);
-
-    //     // Reference to p in args
-    //     const auto xp = args.p;
-
-    //     // View to the sub-vectors of x = (xs, xu)
-    //     auto xs = axw.head(ns);
-    //     auto xu = axw.tail(nu);
-
-    //     // View to the sub-vectors of xs = [xbs, xns]
-    //     auto xbs = xs.head(nbs);
-    //     auto xns = xs.tail(nns);
-
-    //     // View to the sub-matrices Sbsns and Sbsp in S = [Sbsns Sbsnu Sbsp; 0 Sbunu Sbup]
-    //     const auto Sbsns = S.topLeftCorner(nbs, nns);
-    //     const auto Sbsp  = S.topRightCorner(nbs, np);
-
-    //     // The indices of the xs, xu variables where x = (xs, xu)
-    //     const auto js = jx.head(ns);
-    //     const auto ju = jx.tail(nu);
-
-    //     // The residual vector r = [rbs rbu rbl]
-    //     auto rbs = args.r.head(nbs);         // corresponding to stable basic variables
-    //     auto rbu = args.r.segment(nbs, nbu); // corresponding to unstable basic variables
-    //     auto rbl = args.r.tail(nl);          // corresponding to linearly dependent equations
-
-    //     // The relative residual error vector e = [ebs ebu ebl]
-    //     auto ebs = args.e.head(nbs);         // corresponding to free basic variables
-    //     auto ebu = args.e.segment(nbs, nbu); // corresponding to fixed basic variables
-    //     auto ebl = args.e.tail(nl);          // corresponding to linearly dependent equations
-
-    //     // View to the sub-matrix of W corresponding to xu variables
-    //     const auto Wu = cols(W, ju);
-
-    //     //======================================================================
-    //     // NOTE: It is extremely important to use this logic below, of
-    //     // eliminating contribution in b from unstable-variables using matrix W =
-    //     // [A; J] instead of working on the canonical level, using matrices
-    //     // Sbsnu and Sbfnf. instead of the canonical form. By doing this, we
-    //     // can better control the feasibility error when the unstable-variables
-    //     // correspond to variables on lower bounds (i.e. 1e-40) and they can
-    //     // contaminate the canonical residuals. If they are very small, they
-    //     // will either vanish in the operation below using R or via the clean
-    //     // residual round-off errors.
-    //     //
-    //     // TODO: Check if the contribution in b from unstable-variables can still
-    //     // be done at the canonical level, but the clean-round-off-errors
-    //     // operation happens at the end of the removal process.
-    //     //======================================================================
-
-    //     // Compute b' = R*(b - Wu*xu)
-    //     bw.noalias() = R * (args.b - Wu * xu);
-
-    //     // Ensure residual round-off errors are cleaned in b'.
-    //     cleanResidualRoundoffErrors(bw);
-
-    //     // View to the sub-vectors of right-hand side vector b = [bbs bbf bbl]
-    //     auto bbs = bw.head(nbs);
-    //     auto bbf = bw.segment(nbs, nbu);
-    //     auto bbl = bw.tail(nl);
-
-    //     // Compute rbs = xbs + Sbsns*xns + Sbsp*xnp - bbs'
-    //     rbs.noalias() = xbs;
-    //     rbs.noalias() += Sbsns*xns;
-    //     rbs.noalias() += Sbsp*xp;
-    //     rbs.noalias() -= bbs;
-
-    //     // Set the residuals to absolute values
-    //     rbs.noalias() = rbs.cwiseAbs();
-
-    //     // Set the residuals with respect to unstable basic variables to zero.
-    //     rbu.fill(0.0);
-
-    //     // Set the residuals with respect to linearly dependent equations to zero.
-    //     rbl.fill(0.0);
-
-    //     // Note: Even if there are inconsistencies above (e.g. some of these
-    //     // residuals are not zero, like when SiO2 is unstable with 1 mol and it
-    //     // the only species in a chemical system with element Si, but b[Si] = 2
-    //     // mol) we consider that this is an input error and try to find a
-    //     // solution that is feasible with respect to the stable-variables.
-
-    //     // Compute the relative error ebs by normalizing rbs by xbs', where xbs'[i] = xbs[i] if xbs[i] != 0 else 1
-    //     ebs.noalias() = rbs.cwiseQuotient((xbs.array() != 0.0).select(xbs, 1.0));
-
-    //     // Set the errors with respect to unstable basic variables to zero.
-    //     ebu.fill(0.0);
-
-    //     // Set the errors with respect to linearly dependent equations to zero.
-    //     ebl.fill(0.0);
-    // }
 };
 
 SaddlePointSolver::SaddlePointSolver(SaddlePointSolverInitArgs args)
@@ -912,6 +838,11 @@ auto SaddlePointSolver::solve(SaddlePointSolverSolve1Args args) -> void
 auto SaddlePointSolver::multiply(SaddlePointSolverMultiplyArgs args) -> void
 {
     pimpl->multiply(args);
+}
+
+auto SaddlePointSolver::transposeMultiply(SaddlePointSolverTransposeMultiplyArgs args) -> void
+{
+    pimpl->transposeMultiply(args);
 }
 
 auto SaddlePointSolver::state() const -> SaddlePointSolverState

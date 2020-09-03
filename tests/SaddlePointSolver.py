@@ -66,7 +66,7 @@ tested_nbu = [0, 1, 2]
 tested_nl = [0, 1, 2]
 
 # Tested cases for the indices of unstable variables (i.e. fixed at given values)
-tested_ifixed = [
+tested_ju = [
     arange(0),
     arange(1),
     array([1, 3, 7, 9])
@@ -92,12 +92,15 @@ tested_methods = [
 @mark.parametrize("nz"                , tested_nz)
 @mark.parametrize("nbu"               , tested_nbu)
 @mark.parametrize("nl"                , tested_nl)
-@mark.parametrize("ifixed"            , tested_ifixed)
+@mark.parametrize("ju"                , tested_ju)
 @mark.parametrize("variable_condition", tested_variable_conditions)
 @mark.parametrize("method"            , tested_methods)
-def test_saddle_point_solver(nx, np, ny, nz, nbu, nl, ifixed, variable_condition, method):
+def test_saddle_point_solver(nx, np, ny, nz, nbu, nl, ju, variable_condition, method):
 
     set_printoptions(linewidth=10000, suppress=True, precision=6)
+
+    # The indices of the stable variables in x
+    js = list(set(range(nx)) - set(ju))
 
     # Due to a current limitation in the algorithm, if number of parameter
     # variables is non-zero and number of linearly dependent or number of basic
@@ -107,7 +110,7 @@ def test_saddle_point_solver(nx, np, ny, nz, nbu, nl, ifixed, variable_condition
 
     # Skip if there are no unstable/fixed variables, and the number of unstable
     # basic variables is non-zero
-    if nbu > 0 and len(ifixed) == 0:
+    if nbu > 0 and len(ju) == 0:
         return
 
     # Skip if there are more Lagrange multipliers than primal variables
@@ -116,10 +119,8 @@ def test_saddle_point_solver(nx, np, ny, nz, nbu, nl, ifixed, variable_condition
 
     t = nx + np + ny + nz
 
-    nf = len(ifixed)
-
     # Assemble the coefficient matrices Ax and Ap
-    Ax = assemble_matrix_Ax(ny, nx, nbu, nl, ifixed)
+    Ax = assemble_matrix_Ax(ny, nx, nbu, nl, ju)
     Ap = linspace(1, ny*np, ny*np).reshape((ny, np))
 
     # Assemble the coefficient matrix J = [Jx Jp]
@@ -156,19 +157,6 @@ def test_saddle_point_solver(nx, np, ny, nz, nbu, nl, ifixed, variable_condition
     Hxx[jexplicit, jexplicit] *= 1.0e+08
     Hxx[jimplicit, jimplicit] *= 1.0e-08
 
-    Hxx[ifixed, :] = 0.0       # zero out rows in Hxx corresponding to fixed variables
-    Hxx[:, ifixed] = 0.0       # zero out cols in Hxx corresponding to fixed variables
-    Hxx[ifixed, ifixed] = 1.0  # set one to diagonal entries in Hxx corresponding to fixed variables
-
-    Hxp[ifixed, :] = 0.0       # zero out rows in Hxx corresponding to fixed variables
-
-    # The AxT = tr(Ax) and JxT = tr(Jx) matrix blocks in M
-    AxT = copy(Ax.T)
-    JxT = copy(Jx.T)
-
-    AxT[ifixed, :] = 0.0      # zero out rows in AxT corresponding to fixed variables
-    JxT[ifixed, :] = 0.0      # zero out rows in JxT corresponding to fixed variables
-
     # Create the zero blocks Opz, Opy, Ozz, Ozy, Oyz, Oyy
     Opz = zeros((np, nz))
     Opy = zeros((np, ny))
@@ -179,11 +167,15 @@ def test_saddle_point_solver(nx, np, ny, nz, nbu, nl, ifixed, variable_condition
 
     # Assemble the coefficient matrix M
     M = block([
-        [Hxx, Hxp, JxT, AxT],
-        [Vpx, Vpp, Opz, Opy],
-        [ Jx,  Jp, Ozz, Ozy],
-        [ Ax,  Ap, Oyz, Oyy]]
+        [Hxx, Hxp, Jx.T, Ax.T],
+        [Vpx, Vpp,  Opz,  Opy],
+        [ Jx,  Jp,  Ozz,  Ozy],
+        [ Ax,  Ap,  Oyz,  Oyy]]
     )
+
+    M[ju, :]  = 0.0  # zero out rows in M corresponding to fixed/unstable variables
+    M[:, ju]  = 0.0  # zero out cols in M corresponding to fixed/unstable variables
+    M[ju, ju] = 1.0  # set one to diagonal entries in M corresponding to fixed/unstable variables
 
     # The scaling vector used as weights for the canonicalization
     w = linspace(1, nx, nx)
@@ -195,7 +187,7 @@ def test_saddle_point_solver(nx, np, ny, nz, nbu, nl, ifixed, variable_condition
     # Create a SaddlePointSolver to solve the saddle point problem
     solver = SaddlePointSolver(nx, np, ny, nz, Ax, Ap)
     solver.setOptions(options)
-    solver.canonicalize(Hxx, Hxp, Vpx, Vpp, Jx, Jp, ifixed, w)
+    solver.canonicalize(Hxx, Hxp, Vpx, Vpp, Jx, Jp, ju, w)
     solver.decompose()
 
     def check_solution():
@@ -205,6 +197,16 @@ def test_saddle_point_solver(nx, np, ny, nz, nbu, nl, ifixed, variable_condition
             print_state(M, r, s, nx, np, ny, nz)
 
         assert norm(M @ s - r) / norm(r) < 1e-12
+
+    # Views to the matrices Hxx, Hxp, Vpx
+    Hss = Hxx[js,:][:,js]
+    Hsu = Hxx[js,:][:,ju]
+    Hus = Hxx[ju,:][:,js]
+    Huu = Hxx[ju,:][:,ju]
+    Hsp = Hxp[js,:]
+    Hup = Hxp[ju,:]
+    Vps = Vpx[:, js]
+    Vpu = Vpx[:, ju]
 
     #---------------------------------------------------------------
     # Check the overload rhs(ax, ap, ay, az) works
@@ -218,7 +220,7 @@ def test_saddle_point_solver(nx, np, ny, nz, nbu, nl, ifixed, variable_condition
     # The expected solution vector s_exp = (x0, p0, z0, y0)
     s_exp = linspace(1, t, t)
 
-    s_exp[ifixed] *= 999.9  # ensure large values for fixed variables in case debugging is needed
+    s_exp[ju] *= 999.9  # ensure large values for fixed variables in case debugging is needed
 
     # Compute the right-hand side vector r = M * expected
     r = M @ s_exp
@@ -240,13 +242,20 @@ def test_saddle_point_solver(nx, np, ny, nz, nbu, nl, ifixed, variable_condition
     z0 = linspace(1, nz, nz) * 40
 
     # For this rhs overload, solution x satisfies x[iunstable] = 0
-    s_exp[ifixed] = 0.0
+    s_exp[ju] = 0.0
 
     # Update the right-hand side vector r = (ax, ap, az, ay)
     r = M @ s_exp
 
     # The right-hand side vectors ax, ap, ay, az
     ax, ap, az, ay = split(r, [nx, nx + np, nx + np + nz])
+
+    axs = ax[js]
+    axu = ax[ju]
+
+    As = Ax[:, js]
+    Au = Ax[:, ju]
+    Js = Jx[:, js]
 
     g0 = -ax - Ax.T @ y0 - Jx.T @ z0  # compute g0 using the fact that ax = -(g0 + tr(Ax)*y0 + tr(Jx)*z0)
     v0 = -ap                          # compute v0 using the fact that ap = -v0
@@ -263,7 +272,7 @@ def test_saddle_point_solver(nx, np, ny, nz, nbu, nl, ifixed, variable_condition
     #---------------------------------------------------------------
 
     # For this rhs overload, solution x satisfies x[iunstable] = x0[iunstable]
-    s_exp[ifixed] = x0[ifixed]
+    s_exp[ju] = x0[ju]
 
     # Update the right-hand side vector r = (ax, ap, az, ay)
     r = M @ s_exp
@@ -271,12 +280,40 @@ def test_saddle_point_solver(nx, np, ny, nz, nbu, nl, ifixed, variable_condition
     # The right-hand side vectors ax, ap, ay, az
     ax, ap, az, ay = split(r, [nx, nx + np, nx + np + nz])
 
-    g0 = Hxx @ x0 + Hxp @ p0 - ax   # compute g0 using the fact that ax = Hxx*x0 + Hxp*p0 - g0
-    v0 = Vpx @ x0 + Vpp @ p0 - ap   # compute v0 using the fact that ap = Vpx*x0 + Vpp*p0 - v0
-    h0 = Jx @ x0 + Jp @ p0 - az     # compute h0 using the fact that az = Jx*x0 + Jp*p0 - h0
-    b0 = ay                         # compute b0 using the fact that ay = b0
+    g0 = zeros(nx)
+    g0[js] = Hss @ x0[js] + Hsp @ p0 - ax[js]   # compute stable entries in g0 using the fact that as = Hss*xs0 + Hsp*p0 - gs0
+    g0[ju] = float("nan")                       # set to nan to ensure the unstable entries in g0 is indeed ignored
+    v0 = Vps @ x0[js] + Vpp @ p0 - ap   # compute v0 using the fact that ap = Vpx*x0 + Vpp*p0 - v0
+    h0 = Js @ x0[js] + Jp @ p0 - az     # compute h0 using the fact that az = Jx*x0 + Jp*p0 - h0
+    b0 = ay + Au @ x0[ju]               # compute b0 using the fact that ay = b0
 
     solver.rhs(g0, x0, p0, v0, h0, b0)
     solver.solve(x, p, y, z)
 
     check_solution()
+
+    #---------------------------------------------------------------
+    # Check method multiply(rx, rp, ry, rz, ax, ap, ay, az) works
+    #---------------------------------------------------------------
+    r = linspace(1, t, t)
+    a = zeros(t)
+
+    rx, rp, rz, ry = split(r, [nx, nx+np, nx+np+nz])
+    ax, ap, az, ay = split(a, [nx, nx+np, nx+np+nz])
+
+    solver.multiply(rx, rp, ry, rz, ax, ap, ay, az)
+
+    assert norm(M @ r - a) / norm(M @ r) < 1e-12
+
+    #---------------------------------------------------------------
+    # Check method transposeMultiply(rx, rp, ry, rz, ax, ap, ay, az) works
+    #---------------------------------------------------------------
+    r = linspace(1, t, t)
+    a = zeros(t)
+
+    rx, rp, rz, ry = split(r, [nx, nx+np, nx+np+nz])
+    ax, ap, az, ay = split(a, [nx, nx+np, nx+np+nz])
+
+    solver.transposeMultiply(rx, rp, ry, rz, ax, ap, ay, az)
+
+    assert norm(M.T @ r - a) / norm(M.T @ r) < 1e-12

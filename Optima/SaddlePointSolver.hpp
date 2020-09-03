@@ -104,8 +104,23 @@ struct SaddlePointSolverSolve1Args
 
 /// The arguments for method SaddlePointSolver::multiply.
 /// Use method SaddlePointSolver::multiply to compute the matrix-vector multplication below:
-/// @eqc{\begin{bmatrix}H_{\mathrm{ss}} & 0 & H_{\mathrm{sp}} & J_{\mathrm{s}}^{T} & A_{\mathrm{s}}^{T}\\0 & I_{\mathrm{uu}} & 0 & 0 & 0\\V_{\mathrm{ps}} & 0 & V_{\mathrm{pp}} & 0 & 0\\J_{\mathrm{s}} & 0 & J_{\mathrm{p}} & 0 & 0\\A_{\mathrm{s}} & A_{\mathrm{u}} & A_{\mathrm{p}} & 0 & 0\end{bmatrix}\begin{bmatrix}r_{\mathrm{s}}\\r_{\mathrm{u}}\\r_{\mathrm{p}}\\r_{\mathrm{z}}\\r_{\mathrm{y}}\end{bmatrix}=\begin{bmatrix}a_{\mathrm{s}}\\a_{\mathrm{u}}\\a_{\mathrm{p}}\\a_{\mathrm{z}}\\a_{\mathrm{y}}\end{bmatrix}}
+/// @eqc{\begin{bmatrix}H_{\mathrm{ss}} & 0 & H_{\mathrm{sp}} & J_{\mathrm{s}}^{T} & A_{\mathrm{s}}^{T}\\0 & I_{\mathrm{uu}} & 0 & 0 & 0\\V_{\mathrm{ps}} & 0 & V_{\mathrm{pp}} & 0 & 0\\J_{\mathrm{s}} & 0 & J_{\mathrm{p}} & 0 & 0\\A_{\mathrm{s}} & 0 & A_{\mathrm{p}} & 0 & 0\end{bmatrix}\begin{bmatrix}r_{\mathrm{s}}\\r_{\mathrm{u}}\\r_{\mathrm{p}}\\r_{\mathrm{z}}\\r_{\mathrm{y}}\end{bmatrix}=\begin{bmatrix}a_{\mathrm{s}}\\a_{\mathrm{u}}\\a_{\mathrm{p}}\\a_{\mathrm{z}}\\a_{\mathrm{y}}\end{bmatrix}}
 struct SaddlePointSolverMultiplyArgs
+{
+    VectorConstRef rx;    ///< The multplied vector *rx = (rs, ru)*.
+    VectorConstRef rp;    ///< The multplied vector *rp*.
+    VectorConstRef ry;    ///< The multplied vector *ry*.
+    VectorConstRef rz;    ///< The multplied vector *rz*.
+    VectorRef ax;         ///< The computed right-hand size vector *ax = (as, au)*.
+    VectorRef ap;         ///< The computed right-hand size vector *ap*.
+    VectorRef ay;         ///< The computed right-hand size vector *ay*.
+    VectorRef az;         ///< The computed right-hand size vector *az*.
+};
+
+/// The arguments for method SaddlePointSolver::transposeMultiply.
+/// Use method SaddlePointSolver::transposeMultiply to compute the transpose-matrix-vector multplication below:
+/// @eqc{\begin{bmatrix}H_{\mathrm{ss}}^{T} & 0 & V_{\mathrm{ps}}^{T} & J_{\mathrm{s}}^{T} & A_{\mathrm{s}}^{T}\\[1mm]0 & I_{\mathrm{uu}} & 0 & 0 & 0\\[1mm]H_{\mathrm{sp}}^{T} & 0 & V_{\mathrm{pp}}^{T} & J_{\mathrm{p}}^{T} & A_{\mathrm{p}}^{T}\\[1mm]J_{\mathrm{s}} & 0 & 0 & 0 & 0\\[1mm]A_{\mathrm{s}} & 0 & 0 & 0 & 0\end{bmatrix}\begin{bmatrix}r_{\mathrm{s}}\\[1mm]r_{\mathrm{u}}\\[1mm]r_{\mathrm{p}}\\[1mm]r_{\mathrm{z}}\\[1mm]r_{\mathrm{y}}\end{bmatrix}=\begin{bmatrix}a_{\mathrm{s}}\\[1mm]a_{\mathrm{u}}\\[1mm]a_{\mathrm{p}}\\[1mm]a_{\mathrm{z}}\\[1mm]a_{\mathrm{y}}\end{bmatrix}}
+struct SaddlePointSolverTransposeMultiplyArgs
 {
     VectorConstRef rx;    ///< The multplied vector *rx = (rs, ru)*.
     VectorConstRef rp;    ///< The multplied vector *rp*.
@@ -205,11 +220,17 @@ public:
     /// @note Ensure method @ref decompose and @ref rhs have been called before this method.
     auto solve(SaddlePointSolverSolve1Args args) -> void;
 
-    /// Multiply the The arguments for method SaddlePointSolver::multiply.
-    /// Use method SaddlePointSolver::multiply to compute the matrix-vector multplication below:
-    /// @eqc{\begin{bmatrix}H_{\mathrm{ss}} & 0 & H_{\mathrm{sp}} & J_{\mathrm{s}}^{T} & A_{\mathrm{s}}^{T}\\0 & I_{\mathrm{uu}} & 0 & 0 & 0\\V_{\mathrm{ps}} & 0 & V_{\mathrm{pp}} & 0 & 0\\J_{\mathrm{s}} & 0 & J_{\mathrm{p}} & 0 & 0\\A_{\mathrm{s}} & A_{\mathrm{u}} & A_{\mathrm{p}} & 0 & 0\end{bmatrix}\begin{bmatrix}r_{\mathrm{s}}\\r_{\mathrm{u}}\\r_{\mathrm{p}}\\r_{\mathrm{z}}\\r_{\mathrm{y}}\end{bmatrix}=\begin{bmatrix}a_{\mathrm{s}}\\a_{\mathrm{u}}\\a_{\mathrm{p}}\\a_{\mathrm{z}}\\a_{\mathrm{y}}\end{bmatrix}}
+    /// Multiply the saddle point matrix with a given vector.
+    /// This method computes the following matrix-vector multplication:
+    /// @eqc{\begin{bmatrix}H_{\mathrm{ss}} & 0 & H_{\mathrm{sp}} & J_{\mathrm{s}}^{T} & A_{\mathrm{s}}^{T}\\0 & I_{\mathrm{uu}} & 0 & 0 & 0\\V_{\mathrm{ps}} & 0 & V_{\mathrm{pp}} & 0 & 0\\J_{\mathrm{s}} & 0 & J_{\mathrm{p}} & 0 & 0\\A_{\mathrm{s}} & 0 & A_{\mathrm{p}} & 0 & 0\end{bmatrix}\begin{bmatrix}r_{\mathrm{s}}\\r_{\mathrm{u}}\\r_{\mathrm{p}}\\r_{\mathrm{z}}\\r_{\mathrm{y}}\end{bmatrix}=\begin{bmatrix}a_{\mathrm{s}}\\a_{\mathrm{u}}\\a_{\mathrm{p}}\\a_{\mathrm{z}}\\a_{\mathrm{y}}\end{bmatrix}}
     /// @note Ensure method @ref canonicalize has been called before this method.
     auto multiply(SaddlePointSolverMultiplyArgs args) -> void;
+
+    /// Multiply the transpose of the saddle point matrix with a given vector.
+    /// This method computes the following matrix-vector multplication:
+    /// @eqc{\begin{bmatrix}H_{\mathrm{ss}}^{T} & 0 & V_{\mathrm{ps}}^{T} & J_{\mathrm{s}}^{T} & A_{\mathrm{s}}^{T}\\[1mm]0 & I_{\mathrm{uu}} & 0 & 0 & 0\\[1mm]H_{\mathrm{sp}}^{T} & 0 & V_{\mathrm{pp}}^{T} & J_{\mathrm{p}}^{T} & A_{\mathrm{p}}^{T}\\[1mm]J_{\mathrm{s}} & 0 & 0 & 0 & 0\\[1mm]A_{\mathrm{s}} & 0 & 0 & 0 & 0\end{bmatrix}\begin{bmatrix}r_{\mathrm{s}}\\[1mm]r_{\mathrm{u}}\\[1mm]r_{\mathrm{p}}\\[1mm]r_{\mathrm{z}}\\[1mm]r_{\mathrm{y}}\end{bmatrix}=\begin{bmatrix}a_{\mathrm{s}}\\[1mm]a_{\mathrm{u}}\\[1mm]a_{\mathrm{p}}\\[1mm]a_{\mathrm{z}}\\[1mm]a_{\mathrm{y}}\end{bmatrix}}
+    /// @note Ensure method @ref canonicalize has been called before this method.
+    auto transposeMultiply(SaddlePointSolverTransposeMultiplyArgs args) -> void;
 
     /// Return the state of the canonical saddle point solver.
     auto state() const -> SaddlePointSolverState;
