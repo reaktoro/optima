@@ -40,6 +40,23 @@ void exportOptions(py::module& m)
         .def_readwrite("ynames", &OutputOptions::ynames)
         ;
 
+    py::class_<LineSearchOptions>(m, "LineSearchOptions")
+        .def_readwrite("tolerance", &LineSearchOptions::tolerance)
+        .def_readwrite("maxiters", &LineSearchOptions::maxiters)
+        .def_readwrite("trigger_when_current_error_is_greater_than_initial_error_by_factor", &LineSearchOptions::trigger_when_current_error_is_greater_than_initial_error_by_factor)
+        .def_readwrite("trigger_when_current_error_is_greater_than_previous_error_by_factor", &LineSearchOptions::trigger_when_current_error_is_greater_than_previous_error_by_factor)
+        ;
+
+    py::class_<BacktrackSearchOptions>(m, "BacktrackSearchOptions")
+        .def_readwrite("factor", &BacktrackSearchOptions::factor)
+        .def_readwrite("maxiters", &BacktrackSearchOptions::maxiters)
+        ;
+
+    py::class_<SteepestDescentOptions>(m, "SteepestDescentOptions")
+        .def_readwrite("tolerance", &SteepestDescentOptions::tolerance)
+        .def_readwrite("maxiters", &SteepestDescentOptions::maxiters)
+        ;
+
     py::class_<Options>(m, "Options")
         .def(py::init<>())
         .def_readwrite("output", &Options::output)
@@ -51,5 +68,8 @@ void exportOptions(py::module& m)
         .def_readwrite("tau", &Options::tau)
         .def_readwrite("step", &Options::step)
         .def_readwrite("kkt", &Options::kkt)
+        .def_readwrite("linesearch", &Options::linesearch)
+        .def_readwrite("steepestdescent", &Options::steepestdescent)
+        .def_readwrite("backtrack", &Options::backtrack)
         ;
 }
