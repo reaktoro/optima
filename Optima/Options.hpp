@@ -84,7 +84,7 @@ struct LineSearchOptions
     double tolerance = 1.0e-5;
 
     /// The maximum number of iterations during the minimization calculation in the line search operation.
-    double maxiters = 5;
+    double maxiters = 20;
 
     /// The parameter that triggers line-search when current error is greater than initial error by a given factor (`Enew > factor*E0`).
     double trigger_when_current_error_is_greater_than_initial_error_by_factor = 1.0;
