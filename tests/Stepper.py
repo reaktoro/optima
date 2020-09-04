@@ -74,15 +74,15 @@ tested_methods = [
     SaddlePointMethod.Rangespace,
 ]
 
-@mark.parametrize("np"                , tested_np)
-@mark.parametrize("ny"                , tested_ny)
-@mark.parametrize("nz"                , tested_nz)
-@mark.parametrize("nbu"               , tested_nbu)
-@mark.parametrize("nl"                , tested_nl)
-@mark.parametrize("ifixed"            , tested_ifixed)
-@mark.parametrize("ilower"            , tested_ilower)
-@mark.parametrize("iupper"            , tested_iupper)
-@mark.parametrize("method"            , tested_methods)
+@mark.parametrize("np"    , tested_np)
+@mark.parametrize("ny"    , tested_ny)
+@mark.parametrize("nz"    , tested_nz)
+@mark.parametrize("nbu"   , tested_nbu)
+@mark.parametrize("nl"    , tested_nl)
+@mark.parametrize("ifixed", tested_ifixed)
+@mark.parametrize("ilower", tested_ilower)
+@mark.parametrize("iupper", tested_iupper)
+@mark.parametrize("method", tested_methods)
 def test_active_stepper(np, ny, nz, nbu, nl, ifixed, ilower, iupper, method):
 
     # Due to a current limitation in the algorithm, if number of parameter

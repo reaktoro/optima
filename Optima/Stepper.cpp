@@ -373,35 +373,12 @@ struct Stepper::Impl
     /// @note Ensure method @ref decompose is called first.
     auto solve(StepperSolveArgs args) -> void
     {
-        // Auxiliary constant references
-        const auto x  = args.x;
-        const auto p  = args.p;
-        const auto y  = args.y;
-        const auto z  = args.z;
-        const auto fx = args.fx;
-        const auto b  = args.b;
-        const auto h  = args.h;
-        const auto v  = args.v;
-        const auto& stability = args.stability;
-
         auto dx = args.dx;
         auto dp = args.dp;
         auto dy = args.dy;
         auto dz = args.dz;
 
         spsolver.solve({ dx, dp, dy, dz });
-
-        // // Replace NaN values by zero step lengths. If NaN is produced
-        // // following a saddle point solve operation, this indicates the LU
-        // // solver detected linearly dependent rows. Variables associated with
-        // // these rows are excluded from the solution procedure of the linear
-        // // system of equations. We ensure here that such variables remain
-        // // constant during the next stepping operation, by setting their step
-        // // lengths to zero.
-        // dx = dx.array().isNaN().select(0.0, dx);
-        // dp = dp.array().isNaN().select(0.0, dp);
-        // dy = dy.array().isNaN().select(0.0, dy);
-        // dz = dz.array().isNaN().select(0.0, dz);
     }
 
     /// Compute the sensitivity derivatives of the saddle point problem.
@@ -477,29 +454,16 @@ struct Stepper::Impl
     /// Compute the steepest descent direction with respect to error function.
     auto steepestDescentError(StepperSteepestDescentErrorArgs args) -> void
     {
-        // // Unpack the data members in args
-        // auto [x, p, y, z, fx, fxx, fxp, b, h, hx, hp, v, vx, vp, dx, dp, s] = args;
+        auto [x, p, y, z, fx, b, h, v, dx, dp, dy, dz] = args;
 
-        // auto dxL = xbar;
-        // auto dpL = pbar;
-        // auto dyL = ybar;
+        auto dxL = xbar;
+        auto dpL = pbar;
+        auto dyL = ybar;
+        auto dzL = zbar;
 
-        // // Views to sub-vectors dylL and dynL in dyL = [dylL, dynL]
-        // const auto dylL = dyL.head(ny);
-        // const auto dynL = dyL.tail(mn);
+        steepestDescentLagrange({ x, p, y, z, fx, b, h, v, dxL, dpL, dyL, dzL });
 
-        // steepestDescentLagrange({ x, p, y, z, fx, b, h, v, dxLs dpL, dyL });
-
-        // const auto A = W.topRows(ny);
-
-        // W.bottomRows(mn) = J;
-
-        // dx.noalias() = tr(Ax)*dylL + tr(hx)*dynL;
-        // if(options.kkt.method == SaddlePointMethod::Rangespace)
-        //     dx.noalias() += H.diagonal().cwiseProduct(dxL);
-        // else dx.noalias() += H * dxL;
-
-        // dy.noalias() = A*dxL;
+        spsolver.transposeMultiply({ dxL, dpL, dyL, dzL, dx, dp, dy, dz });
     }
 };
 

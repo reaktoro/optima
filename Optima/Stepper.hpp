@@ -155,15 +155,9 @@ struct StepperSteepestDescentErrorArgs
     VectorConstRef y;           ///< The current state of the Lagrange multipliers *y*.
     VectorConstRef z;           ///< The current state of the Lagrange multipliers *z*.
     VectorConstRef fx;          ///< The evaluated gradient of the objective function *f(x, p)* with respect to *x*.
-    MatrixConstRef fxx;         ///< The evaluated Jacobian of the gradient function *fx(x, p)* with respect to *x*, i.e., the Hessian of *f(x)*.
-    MatrixConstRef fxp;         ///< The evaluated Jacobian of the gradient function *fx(x, p)* with respect to *p*.
     VectorConstRef b;           ///< The right-hand side vector *b* of the linear equality constraints *Ax*x + Ap*p = b*.
     VectorConstRef h;           ///< The evaluated equality constraint function *h(x, p)*.
-    MatrixConstRef hx;          ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *x*.
-    MatrixConstRef hp;          ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *p*.
     VectorConstRef v;           ///< The evaluated external constraint function *v(x, p)*.
-    MatrixConstRef vx;          ///< The evaluated Jacobian of the external constraint function *v(x, p)* with respect to *x*.
-    MatrixConstRef vp;          ///< The evaluated Jacobian of the external constraint function *v(x, p)* with respect to *p*.
     VectorRef dx;               ///< The output steepest descent direction for the primal variables *x*.
     VectorRef dp;               ///< The output steepest descent direction for the parameter variables *x*.
     VectorRef dy;               ///< The output steepest descent direction for the Lagrange multipliers *y*.
