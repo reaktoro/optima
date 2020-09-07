@@ -19,46 +19,42 @@ from optima import *
 from numpy import *
 from numpy.linalg import norm
 from pytest import approx, mark
-from itertools import product
 
-from utils.matrices import testing_matrices_A, matrix_non_singular, pascal_matrix
+from utils.matrices import assemble_matrix_Ax, matrix_non_singular, pascal_matrix
 
 # The number of x variables
 nx = 15
 
-# The number of equality constraints
-m = 5
-
-# The tested number of p variables
+# Tested number of parameter variables p
 tested_np = [0, 5]
 
-# Tested cases for matrix A = [Ax Ap]
-tested_matrices_A = testing_matrices_A
+# Tested number of Lagrange multipliers y (i.e., number of rows in A = [Ax Ap])
+tested_ny = [4, 8]
 
-# Tested cases for the structure of matrix H
-tested_structures_H = [
-    'dense',
-    'diagonal'
-]
+# Tested number of Lagrange multipliers z (i.e., number of rows in J = [Jx Jp])
+tested_nz = [0, 5]
+
+# Tested number of unstable/fixed basic variables
+tested_nbu = [0, 1]
+
+# Tested number of linearly dependent rows in Ax
+tested_nl = [0, 1]
 
 # Tested cases for the indices of fixed variables
 tested_ifixed = [
     [],
-    [0],
     [0, 1, 2]
 ]
 
 # Tested cases for the indices of variables with lower bounds
 tested_ilower = [
     [],
-    [0],
     [3, 4, 5]
 ]
 
 # Tested cases for the indices of variables with upper bounds
 tested_iupper = [
     [],
-    [0],
     [6, 7, 8]
 ]
 
@@ -68,15 +64,6 @@ tested_methods = [
     SaddlePointMethod.Nullspace,
     SaddlePointMethod.Rangespace,
 ]
-
-# Combination of all tested cases
-testdata = product(tested_np,
-                   tested_matrices_A,
-                   tested_structures_H,
-                   tested_ifixed,
-                   tested_ilower,
-                   tested_iupper,
-                   tested_methods)
 
 
 def create_objective_fn(Hxx, Hxp, cx):
@@ -102,10 +89,31 @@ def create_constraint_vfn(Vpx, Vpp, cp):
     return fn
 
 
-@mark.parametrize("args", testdata)
-def test_basic_solver(args):
+@mark.parametrize("np"    , tested_np)
+@mark.parametrize("ny"    , tested_ny)
+@mark.parametrize("nz"    , tested_nz)
+@mark.parametrize("nbu"   , tested_nbu)
+@mark.parametrize("nl"    , tested_nl)
+@mark.parametrize("ifixed", tested_ifixed)
+@mark.parametrize("ilower", tested_ilower)
+@mark.parametrize("iupper", tested_iupper)
+@mark.parametrize("method", tested_methods)
+def test_basic_solver(np, ny, nz, nbu, nl, ifixed, ilower, iupper, method):
 
-    np, assemble_A, structure_H, ifixed, ilower, iupper, method = args
+    # Due to a current limitation in the algorithm, if number of parameter
+    # variables is non-zero and number of linearly dependent or number of basic
+    # unstable variables is non-zero, skip the test.
+    if np > 0 and nbu + nl > 0:
+        return
+
+    # Skip if there are no unstable/fixed variables, and the number of unstable
+    # basic variables is non-zero
+    if nbu > 0 and len(ifixed) == 0:
+        return
+
+    # Skip if there are more Lagrange multipliers than primal variables
+    if nx < ny + nz:
+        return
 
     # Add the indices of fixed variables to those that have lower and upper bounds
     # since fixed variables are those that have identical lower and upper bounds
@@ -117,25 +125,19 @@ def test_basic_solver(args):
     nupper = len(iupper)
     nfixed = len(ifixed)
 
-    # The total number of variables x, p, y
-    t = nx + np + m
+    # The total number of variables x, p, y, z
+    t = nx + np + ny + nz
 
-    # Assemble the coefficient matrix A = [Ax Ap]
-    W = assemble_A(m, nx + np, ifixed)
+    # Assemble the coefficient matrices Ax and Ap
+    Ax = assemble_matrix_Ax(ny, nx, nbu, nl, ifixed)
+    Ap = linspace(1, ny*np, ny*np).reshape((ny, np))
 
-    # For the moment, set h = 0
-    ml = m
-    mn = 0
+    # Assemble the coefficient matrix J = [Jx Jp]
+    J = pascal_matrix(nz, nx + np)
 
-    # Extract the blocks of W = [Wx; Wp] = [Ax Ap; Jx Jp] = [A; J]
-    Wx = W[:, :nx]
-    Wp = W[:, nx:]
-
-    Ax = Wx[:ml, :]
-    Ap = Wp[:ml, :]
-
-    Jx = Wx[ml:, :]
-    Jp = Wp[ml:, :]
+    # Extract the blocks of J = [Jx Jp]
+    Jx = J[:, :nx]
+    Jp = J[:, nx:]
 
     # Create vectors for the lower and upper bounds of the x variables
     xlower = full(nx, -inf)
@@ -161,22 +163,20 @@ def test_basic_solver(args):
     iunstable_upper = list(set(head(iupper) + tail(iupper) + ifixed))
     iunstable = list(set(iunstable_lower + iunstable_upper))
 
-    # Create vector s = (x, y) with the expected solution of the optimization problem
-    s = linspace(1.0, t, t)
+    # Create vector u = (x, p, y, z) with the expected solution of the optimization problem
+    u = linspace(1.0, t, t)
 
-    # Get references to the subvectors x, p, y in s
-    x = s[:nx]
-    p = s[nx:nx+np]
-    y = s[nx+np:]
+    # Get references to the subvectors x, p, y, z in u
+    x, p, y, z = split(u, [nx, nx + np, nx + np + ny])
 
     # Set lower/upper unstable variables in x to their respective lower/upper bounds
     x[iunstable_lower] = xlower[iunstable_lower]
     x[iunstable_upper] = xupper[iunstable_upper]
 
-    # Create the expected vector z = g + tr(Ax)*y + tr(Jx)*z
-    z = zeros(nx)
-    z[iunstable_lower] =  123  # lower unstable variables have positive value for z
-    z[iunstable_upper] = -123  # upper unstable variables have negative value for z
+    # Create the expected vector s = g + tr(Ax)*y + tr(Jx)*z
+    s = zeros(nx)
+    s[iunstable_lower] =  123  # lower unstable variables have positive value for s
+    s[iunstable_upper] = -123  # upper unstable variables have negative value for s
 
     # Create matrices Hxx, Hxp, Vpx, Vpp
     Hxx = matrix_non_singular(nx)
@@ -187,8 +187,6 @@ def test_basic_solver(args):
     # Ensure Hxx is diagonal in case Rangespace method is used
     if method == SaddlePointMethod.Rangespace:
         Hxx = abs(diag(diag(Hxx)))
-        Hxp = zeros((nx, np))  # TODO: This should not be forced zero to pass the tests with Rangespace - improve this!
-        Vpx = zeros((np, nx))  # TODO: This should not be forced zero to pass the tests with Rangespace - improve this!
 
     # Zero out rows and columns in Hxx, Hxp, Vpx corresponding to fixed variables.
     # This is needed for consistent computation of vector cx below.
@@ -198,7 +196,7 @@ def test_basic_solver(args):
     Vpx[:, ifixed] = 0.0
 
     # Compute the expected gradient vector at the solution using z = gx + tr(Ax)*y + tr(Jx)*z
-    gx = z - Wx.T @ y
+    gx = s - Ax.T @ y - Jx.T @ z
 
     # Compute vector cx in f(x, p) = 1/2 tr(x)*Hxx*x + tr(x)*Hxp*p + tr(cx)*x using gx = Hxx*x + tr(p)*tr(Hxp) + cx
     cx = gx - (Hxx @ x) - (Hxp @ p).T
@@ -223,27 +221,31 @@ def test_basic_solver(args):
     p_expected = p
     y_expected = y
     z_expected = z
+    s_expected = s
 
     # Create vectors for the solution of the optimization problem
     x = zeros(nx)
     p = zeros(np)
-    y = zeros(m)
-    z = zeros(nx)
+    y = zeros(ny)
+    z = zeros(nz)
+    s = zeros(nx)
 
     # Create the stability state of the variables
     stability = Stability()
 
     # Create the options for the optimization calculation
     options = Options()
-    # options.output.active = True
+    options.output.active = True
     options.kkt.method = method
     options.max_iterations = 10
+    options.linesearch.trigger_when_current_error_is_greater_than_initial_error_by_factor = 1.0
+    options.linesearch.trigger_when_current_error_is_greater_than_previous_error_by_factor = 1.0
 
     # Solve the optimization problem
     solver = BasicSolver(nx, np, ny, nz, Ax, Ap)
     solver.setOptions(options)
 
-    res = solver.solve(obj, h, v, b, xlower, xupper, plower, pupper, x, p, y, z, stability)
+    res = solver.solve(obj, h, v, b, xlower, xupper, plower, pupper, x, p, y, z, s, stability)
 
     if not res.succeeded:
 
