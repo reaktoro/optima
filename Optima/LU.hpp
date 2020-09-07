@@ -32,9 +32,6 @@ struct LU
     /// Construct a default LU object.
     LU();
 
-    /// Construct an LU object with given matrix.
-    explicit LU(MatrixConstRef A);
-
     /// Construct a copy of an LU object.
     LU(const LU& other);
 
@@ -50,21 +47,41 @@ struct LU
     /// Compute the LU decomposition of the given matrix.
     auto decompose(MatrixConstRef A) -> void;
 
-    /// Solve the linear system `AX = B` using the calculated LU decomposition.
+    /// Solve the linear system `AX = B` using the LU decomposition obtained with @ref decompose.
+    /// @note Ensure method @ref decompose has been called before this method.
     auto solve(MatrixConstRef B, MatrixRef X) -> void;
 
-    /// Solve the linear system `AX = B` using the calculated LU decomposition.
+    /// Solve the linear system `AX = B` using the LU decomposition obtained with @ref decompose.
+    /// @param[in,out] X As input, matrix `B`. As output, matrix `X`.
+    /// @note Ensure method @ref decompose has been called before this method.
     auto solve(MatrixRef X) -> void;
 
-    /// Return the rank of the matrix.
-    /// @note: Method @ref decompose needs to be called first.
+    /// Solve the linear system `Ax = b` with a scaling strategy for increased robustness.
+    /// This method should be used when scaling of the LU decomposition of `A`
+    /// needs to take into account vector `b` for scaling purposes. This allows
+    /// determination of which equations are trully linearly dependent when
+    /// solving `Ax = b`.
+    /// @note This method does not require @ref decompose to be called beforehand.
+    /// @warning Once this method is called, any previous @ref decompose call is no longer recorded.
+    /// @warning Any small value in `b` is assumed here to be meaningful. This
+    /// means that small values as a result of residual round off-error should
+    /// have been cleaned off before this method is called. Otherwise, this
+    /// small value may produce incorrect solutions and wrong behavior when
+    /// identifying linearly dependent equations.
+    auto solveWithScaling(MatrixConstRef A, VectorConstRef b, VectorRef x) -> void;
+
+    /// Return the rank of the last LU decomposed matrix.
+    /// @note Ensure method @ref decompose or @ref solveWithScaling has been called before this method.
     auto rank() const -> Index;
 
     /// Return the matrix containing the lower and upper triangular factors.
     auto matrixLU() const -> MatrixConstRef;
 
-    /// Return the permutation matrix factor *P* of the LU decomposition *PA = LU*.
+    /// Return the permutation matrix factor *P* of the LU decomposition *PAQ = LU*.
     auto P() const -> PermutationMatrix;
+
+    /// Return the permutation matrix factor *P* of the LU decomposition *PAQ = LU*.
+    auto Q() const -> PermutationMatrix;
 
 private:
     struct Impl;

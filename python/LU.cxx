@@ -26,11 +26,6 @@ using namespace Optima;
 
 void exportLU(py::module& m)
 {
-    auto init = [](MatrixConstRef4py A) -> LU
-    {
-        return LU(A);
-    };
-
     auto decompose = [](LU& self, MatrixConstRef4py A)
     {
         return self.decompose(A);
@@ -52,15 +47,30 @@ void exportLU(py::module& m)
         X = Xtmp;
     };
 
+    auto solveWithScaling = [=](LU& self, MatrixConstRef4py A, VectorConstRef b, VectorRef x)
+    {
+        self.solveWithScaling(A, b, x);
+    };
+
+    auto P = [=](LU& self) -> Indices
+    {
+        self.P().indices();
+    };
+
+    auto Q = [=](LU& self) -> Indices
+    {
+        self.Q().indices();
+    };
+
     py::class_<LU>(m, "LU")
         .def(py::init<>())
-        .def(py::init(init))
         .def("empty", &LU::empty)
         .def("decompose", decompose)
         .def("solve", solve1)
         .def("solve", solve2)
+        .def("solveWithScaling", solveWithScaling)
         .def("rank", &LU::rank)
-        // .def("P", &LU::P)
-        // .def("Q", &LU::Q)
+        .def("P", P)
+        .def("Q", Q)
         ;
 }

@@ -26,11 +26,9 @@ from utils.matrices import matrix_non_singular
 
 # Tested number of variables in x
 tested_n = [20, 40, 60]
-# tested_n = [5, 10]
 
 # Tested rank deficiency of matrix A
 tested_rank_deficiency = [0, 1, 5, 10, 15]
-# tested_rank_deficiency = [4]
 
 # Combination of all tested cases
 testdata = product(tested_n,
@@ -44,26 +42,17 @@ def test_lu(args):
 
     def check(A, x_expected, rank_expected, linearly_dependent_rows):
         b = A @ x_expected
-        lu = LU(A)
+        lu = LU()
         x = zeros(n)
+        lu.decompose(A)
         lu.solve(b, x)
-        r = lu.rank()
-        Q = lu.Q()
 
-        set_printoptions(precision=6, linewidth=1000, suppress=True)
-        assert r == rank_expected
-        print()
-        print(f"linearly_dependent_rows = {linearly_dependent_rows}")
-        print(f"x = {x}")
-        print(f"x[Q[r:]] = {x[Q[r:]]}")
-        print()
         assert_allclose(A @ x, b)
-        # assert all(isnan(x[linearly_dependent_rows]))
-        # print(f"x = {x}")
-        # print(f"x[linearly_dependent_rows] = {x[linearly_dependent_rows]}")
 
-        # assert all(x[linearly_dependent_rows] == [])
-        # assert linearly_dependent_rows == []
+        lu.solveWithScaling(A, b, x)
+        r = lu.rank()
+
+        assert_allclose(A @ x, b)
 
 
     x = linspace(1, n, n)
