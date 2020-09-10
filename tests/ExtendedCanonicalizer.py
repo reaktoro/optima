@@ -22,7 +22,7 @@ from numpy.testing import assert_array_almost_equal
 from pytest import approx, mark
 from itertools import product
 
-from utils.matrices import testing_matrices_A
+from utils.matrices import testing_matrices_A, pascal_matrix
 
 
 def check_canonical_form(canonicalizer, A, J):
@@ -140,17 +140,15 @@ def test_canonicalizer(args):
     set_printoptions(linewidth=100000, precision=6, floatmode='fixed', threshold=100000)
 
 
-    n, mu, ml, assemble_W = args
+    n, mu, ml, assemble_A = args
 
     m = mu + ml
 
     # Skip tests in which there are more rows than columns
     if m > n: return
 
-    W = assemble_W(m, n)
-
-    A = W[:mu, :]
-    J = W[mu:, :]
+    A = assemble_A(mu, n)
+    J = pascal_matrix(ml, n)
 
     #----------------------------------------------------------------------------------------------
     # WARNING!!

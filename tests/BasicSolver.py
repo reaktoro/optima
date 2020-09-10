@@ -195,7 +195,7 @@ def test_basic_solver(np, ny, nz, nbu, nl, ifixed, ilower, iupper, method):
     Hxp[ifixed, :] = 0.0
     Vpx[:, ifixed] = 0.0
 
-    # Compute the expected gradient vector at the solution using z = gx + tr(Ax)*y + tr(Jx)*z
+    # Compute the expected gradient vector at the solution using s = gx + tr(Ax)*y + tr(Jx)*z
     gx = s - Ax.T @ y - Jx.T @ z
 
     # Compute vector cx in f(x, p) = 1/2 tr(x)*Hxx*x + tr(x)*Hxp*p + tr(cx)*x using gx = Hxx*x + tr(p)*tr(Hxp) + cx
@@ -235,7 +235,7 @@ def test_basic_solver(np, ny, nz, nbu, nl, ifixed, ilower, iupper, method):
 
     # Create the options for the optimization calculation
     options = Options()
-    options.output.active = True
+    options.output.active = False
     options.kkt.method = method
     options.max_iterations = 10
     options.linesearch.trigger_when_current_error_is_greater_than_initial_error_by_factor = 1.0

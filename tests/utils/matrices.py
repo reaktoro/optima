@@ -154,11 +154,11 @@ def matrix_non_singular(n):
 
 # The functions that create matrices with different structures
 testing_matrices_A = [
-    # matrix_with_linearly_independent_rows_only,
-    # matrix_with_one_linearly_dependent_row,
+    matrix_with_linearly_independent_rows_only,
+    matrix_with_one_linearly_dependent_row,
     matrix_with_two_linearly_dependent_rows,
-    # matrix_with_one_basic_fixed_variable,
-    # matrix_with_two_basic_fixed_variables,
-    # matrix_with_one_zero_column,
-    # matrix_with_two_zero_columns
+    matrix_with_one_basic_fixed_variable,
+    matrix_with_two_basic_fixed_variables,
+    matrix_with_one_zero_column,
+    matrix_with_two_zero_columns
 ]

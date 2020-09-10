@@ -52,50 +52,54 @@ testdata = product(
 @mark.parametrize("args", testdata)
 def test_state(args):
 
-    nx, np, mbe, mbg, mhe, mhg = args
+    nx, np, nbe, nbg, nhe, nhg = args
 
-    nxbar = nx + mbg + mhg
-    m = mbe + mbg + mhe + mhg
+    nxbar = nx + nbg + nhg
+    ny = nbe + nbg
+    nz = nhe + nhg
 
     dims = Dims()
     dims.x = nx
     dims.p = np
-    dims.be = mbe
-    dims.bg = mbg
-    dims.he = mhe
-    dims.hg = mhg
+    dims.be = nbe
+    dims.bg = nbg
+    dims.he = nhe
+    dims.hg = nhg
 
     state = State(dims)
 
     assert len(state.x) == nx
     assert len(state.p) == np
-    assert len(state.y) == m
-    assert len(state.ybe) == mbe
-    assert len(state.ybg) == mbg
-    assert len(state.yhe) == mhe
-    assert len(state.yhg) == mhg
-    assert len(state.z) == nx
+    assert len(state.y) == ny
+    assert len(state.ye) == nbe
+    assert len(state.yg) == nbg
+    assert len(state.z) == nz
+    assert len(state.ze) == nhe
+    assert len(state.zg) == nhg
+    assert len(state.s) == nx
     assert len(state.xbar) == nxbar
-    assert len(state.zbar) == nxbar
-    assert len(state.xbg) == mbg
-    assert len(state.xhg) == mhg
+    assert len(state.sbar) == nxbar
+    assert len(state.xbg) == nbg
+    assert len(state.xhg) == nhg
 
     assert allclose(state.x, zeros(nx))
     assert allclose(state.p, zeros(np))
-    assert allclose(state.y, zeros(m))
+    assert allclose(state.y, zeros(ny))
+    assert allclose(state.z, zeros(nz))
     assert allclose(state.xbar, zeros(nxbar))
-    assert allclose(state.zbar, zeros(nxbar))
+    assert allclose(state.sbar, zeros(nxbar))
 
     state.xbar = linspace(1.0, nxbar, nxbar)
-    state.zbar = linspace(1.0, nxbar, nxbar) * 3
-    state.y    = linspace(1.0, m, m) * 5
+    state.sbar = linspace(1.0, nxbar, nxbar) * 3
+    state.y    = linspace(1.0, ny, ny) * 5
+    state.z    = linspace(1.0, nz, nz) * 7
 
     assert allclose(state.x  , state.xbar[:nx])
-    assert allclose(state.ybe, state.y[:mbe])
-    assert allclose(state.ybg, state.y[mbe:][:mbg])
-    assert allclose(state.yhe, state.y[mbe:][mbg:][:mhe])
-    assert allclose(state.yhg, state.y[mbe:][mbg:][mhe:])
-    assert allclose(state.z  , state.zbar[:nx])
-    assert allclose(state.xbg, state.xbar[nx:][:mbg])
-    assert allclose(state.xhg, state.xbar[nx:][mbg:])
+    assert allclose(state.ye , state.y[:nbe])
+    assert allclose(state.yg , state.y[nbe:][:nbg])
+    assert allclose(state.ze , state.y[nbe:][nbg:][:nhe])
+    assert allclose(state.zg , state.y[nbe:][nbg:][nhe:])
+    assert allclose(state.s  , state.sbar[:nx])
+    assert allclose(state.xbg, state.xbar[nx:][:nbg])
+    assert allclose(state.xhg, state.xbar[nx:][nbg:])
 

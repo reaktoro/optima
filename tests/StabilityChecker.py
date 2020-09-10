@@ -20,7 +20,7 @@ from numpy import *
 from pytest import approx, mark
 from itertools import product
 
-from utils.matrices import testing_matrices_A, matrix_non_singular
+from utils.matrices import assemble_matrix_Ax, matrix_non_singular, pascal_matrix
 from utils.stability import create_expected_stability, check_stability
 
 
@@ -30,8 +30,17 @@ nx = 15
 # Tested number of parameter variables p
 tested_np = [0, 5]
 
-# Tested cases for matrix A = [Ax Ap]
-tested_matrices_A = testing_matrices_A
+# Tested number of Lagrange multipliers y (i.e., number of rows in A = [Ax Ap])
+tested_ny = [4, 8]
+
+# Tested number of Lagrange multipliers z (i.e., number of rows in J = [Jx Jp])
+tested_nz = [0, 5]
+
+# Tested number of unstable/fixed basic variables
+tested_nbu = [0, 1]
+
+# Tested number of linearly dependent rows in Ax
+tested_nl = [0, 1]
 
 # Tested cases for the indices of fixed variables
 tested_ifixed = [
@@ -56,24 +65,17 @@ tested_iupper = [
     list(range(nx))  # all variables with upper bounds
 ]
 
-# Tested number of rows in matrix A and J
-tested_ml = [6, 4]
-tested_mn = [3, 1, 0]
 
-# Combination of all tested cases
-testdata = product(tested_matrices_A,
-                   tested_np,
-                   tested_ml,
-                   tested_mn,
-                   tested_ifixed,
-                   tested_ilower,
-                   tested_iupper)
+@mark.parametrize("np"    , tested_np)
+@mark.parametrize("ny"    , tested_ny)
+@mark.parametrize("nz"    , tested_nz)
+@mark.parametrize("nbu"   , tested_nbu)
+@mark.parametrize("nl"    , tested_nl)
+@mark.parametrize("ifixed", tested_ifixed)
+@mark.parametrize("ilower", tested_ilower)
+@mark.parametrize("iupper", tested_iupper)
+def test_active_stability_checker(np, ny, nz, nbu, nl, ifixed, ilower, iupper):
 
-
-@mark.parametrize("args", testdata)
-def test_active_stability_checker(args):
-
-    assemble_A, np, ml, mn, ifixed, ilower, iupper = args
 
     # Add the indices of fixed variables to those that have lower and upper bounds
     # since fixed variables are those that have identical lower and upper bounds
@@ -85,24 +87,19 @@ def test_active_stability_checker(args):
     nupper = len(iupper)
     nfixed = len(ifixed)
 
-    # The total number of rows in A = [Ax Ap]
-    m = ml + mn
+    # The total number of variables x, p, y, z
+    t = nx + np + ny + nz
 
-    # The total number of variables x, p, y
-    t = nx + np + m
+    # Assemble the coefficient matrices Ax and Ap
+    Ax = assemble_matrix_Ax(ny, nx, nbu, nl, ifixed)
+    Ap = linspace(1, ny*np, ny*np).reshape((ny, np))
 
-    # Assemble the coefficient matrix A = [Ax Ap]
-    W = assemble_A(m, nx + np, ifixed)
+    # Assemble the coefficient matrix J = [Jx Jp]
+    J = pascal_matrix(nz, nx + np)
 
-    # Extract the blocks of W = [Wx; Wp] = [Ax Ap; Jx Jp] = [Ax Ap; Jx Jp]
-    Wx = W[:, :nx]
-    Wp = W[:, nx:]
-
-    Ax = Wx[:ml, :]
-    Ap = Wp[:ml, :]
-
-    Jx = Wx[ml:, :]
-    Jp = Wp[ml:, :]
+    # Extract the blocks of J = [Jx Jp]
+    Jx = J[:, :nx]
+    Jp = J[:, nx:]
 
     # Create vectors for the lower and upper bounds of the x variables
     xlower = -linspace(1.0, nx, nx) * 100
@@ -115,10 +112,11 @@ def test_active_stability_checker(args):
     # Set lower and upper bounds to equal values for fixed variables
     xlower[ifixed] = xupper[ifixed] = linspace(1, nfixed, nfixed) * 10
 
-    # Create vectors x, p, y
+    # Create vectors x, p, y, z
     x = linspace(1.0, nx, nx)
     p = linspace(1.0, np, np)
-    y = linspace(1.0, m, m)
+    y = linspace(1.0, ny, ny)
+    z = linspace(1.0, nz, nz)
 
     # Auxiliary functions to get head and tail of a sequence in a set
     head = lambda seq: [seq[ 0]] if len(seq) > 0 else []
@@ -137,13 +135,13 @@ def test_active_stability_checker(args):
     x[iunstable_lower] = xlower[iunstable_lower]
     x[iunstable_upper] = xupper[iunstable_upper]
 
-    # The gradient vector remembering that g + tr(W)y = z, with z = 0 for stable variables and z != 0 for unstable variables
+    # The gradient vector remembering that g + tr(Ax)*y + tr(Jx)*z = s, with s = 0 for stable variables and s != 0 for unstable variables
     g = ones(nx)
 
     # Ensure g has values for lower/upper unstable variables that make these recognized as unstable indeed
     # Note that:
-    #  - x[i] is lower unstable when x[i] == xlower[i] and z[i] > 0, where z = g + tr(W)*y
-    #  - x[i] is upper unstable when x[i] == xupper[i] and z[i] < 0, where z = g + tr(W)*y
+    #  - x[i] is lower unstable when x[i] == xlower[i] and z[i] > 0, where z = g + tr(Ax)*y + tr(Jx)*z
+    #  - x[i] is upper unstable when x[i] == xupper[i] and z[i] < 0, where z = g + tr(Ax)*y + tr(Jx)*z
     g[iunstable_lower] =  inf
     g[iunstable_upper] = -inf
 
@@ -151,17 +149,17 @@ def test_active_stability_checker(args):
     b = Ax @ xlower + Ap @ plower
 
     # Compute the residual vector h of the nonlinear equality constraints h(x, p) = 0
-    h = zeros(mn)
+    h = zeros(nz)
 
-    # The *unstabilities* of the variables defined as *z = g + tr(W)y* where *A = [Ax Ap]*.
-    z = g + Wx.T @ y
+    # The unstabilities of the variables defined as s = g + tr(Ax)*y + tr(Jx)*z where A = [Ax Ap].
+    s = g + Ax.T @ y - Jx.T @ z
 
     # Create a StabilityChecker object
     checker = StabilityChecker(nx, np, ny, nz, Ax, Ap)
 
     checker.initialize(b, xlower, xupper, plower, pupper)
 
-    checker.update(x, y, g, Jx, xlower, xupper)
+    checker.update(x, y, z, g, Jx, xlower, xupper)
 
     # Create a Stability object with expected state
     expected_stability = create_expected_stability(Ax, Ap, x, p, b, s, xlower, xupper, plower, pupper)
