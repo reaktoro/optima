@@ -49,11 +49,6 @@ def test_lu(args):
 
         assert_allclose(A @ x, b)
 
-        lu.solveWithScaling(A, b, x)
-        r = lu.rank()
-
-        assert_allclose(A @ x, b)
-
 
     x = linspace(1, n, n)
 

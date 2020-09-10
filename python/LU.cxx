@@ -31,25 +31,14 @@ void exportLU(py::module& m)
         return self.decompose(A);
     };
 
-    Matrix Xtmp;
-
-    auto solve1 = [=](LU& self, MatrixConstRef4py B, MatrixRef4py X) mutable
+    auto solve1 = [=](LU& self, VectorConstRef b, VectorRef x) mutable
     {
-        Xtmp.resize(X.rows(), X.cols());
-        self.solve(B, Xtmp);
-        X = Xtmp;
+        self.solve(b, x);
     };
 
-    auto solve2 = [=](LU& self, MatrixRef4py X) mutable
+    auto solve2 = [=](LU& self, VectorRef x) mutable
     {
-        Xtmp = X;
-        self.solve(Xtmp);
-        X = Xtmp;
-    };
-
-    auto solveWithScaling = [=](LU& self, MatrixConstRef4py A, VectorConstRef b, VectorRef x)
-    {
-        self.solveWithScaling(A, b, x);
+        self.solve(x);
     };
 
     auto P = [=](LU& self) -> Indices
@@ -68,7 +57,6 @@ void exportLU(py::module& m)
         .def("decompose", decompose)
         .def("solve", solve1)
         .def("solve", solve2)
-        .def("solveWithScaling", solveWithScaling)
         .def("rank", &LU::rank)
         .def("P", P)
         .def("Q", Q)

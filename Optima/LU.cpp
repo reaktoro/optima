@@ -40,8 +40,14 @@ struct LU::Impl
     /// The base LU solver from Eigen library.
     Eigen::FullPivLU<Matrix> lu;
 
-    /// The workspace for matrix Ab = inv(B)*A where B = diag(inv(b*)), b*[i] = b[i] if b[i] != 0 else 1.
-    Matrix Ab;
+    /// The workspace for modified matrix U.
+    Matrix U;
+
+    /// The flags that indicate if an equation is linearly independent (non-zero value).
+    Indices is_li;
+
+    /// The rank of the lineary system, not of the coefficient matrix (depends on right-hand side vector!)
+    Index rank;
 
     /// Construct a default Impl object.
     Impl()
@@ -68,83 +74,64 @@ struct LU::Impl
         lu.compute(A);
     }
 
-    /// Solve the linear system `AX = B` using the LU decomposition obtained with @ref decompose.
-    auto solve(MatrixConstRef B, MatrixRef X) -> void
+    /// Solve the linear system `Ax = b` using the LU decomposition obtained with @ref decompose.
+    auto solve(VectorConstRef b, VectorRef x) -> void
     {
-        X = B;
-        solve(X);
+        x = b;
+        solve(x);
     }
 
-    /// Solve the linear system `AX = B` using the LU decomposition obtained with @ref decompose.
-    auto solve(MatrixRef X) -> void
+    /// Solve the linear system `Ax = b` using the LU decomposition obtained with @ref decompose.
+    auto solve(VectorRef x) -> void
     {
-        const auto n = lu.rows();
-        const auto r = rank();
-        assert(n == X.rows());
-        assert(r <= n);
-        const auto P = lu.permutationP();
-        const auto Q = lu.permutationQ();
-        const auto M = lu.matrixLU().topLeftCorner(r, r);
-        const auto L = M.triangularView<Eigen::UnitLower>();
-        const auto U = M.triangularView<Eigen::Upper>();
-        auto Xt = X.topRows(r);
-        auto Xb = X.bottomRows(n - r);
+        const auto& n  = lu.rows();
+        const auto& P  = lu.permutationP();
+        const auto& Q  = lu.permutationQ();
+        const auto& M  = lu.matrixLU();
+        const auto& Lv = M.triangularView<Eigen::UnitLower>();
+        const auto& Uv = U.triangularView<Eigen::Upper>();
 
-        P.applyThisOnTheLeft(X);
-        Xt = L.solve(Xt);
-        Xt = U.solve(Xt);
-        Xb.fill(0.0);
-        Q.applyThisOnTheLeft(X);
-    }
-
-    /// Return the rank of the last LU decomposed matrix.
-    auto rank() const -> Index
-    {
-        const auto LU = lu.matrixLU();
-        const auto n = LU.rows();
-        const auto D = LU.diagonal().cwiseAbs();
-        const auto eps = std::numeric_limits<double>::epsilon();
-
-        Index r = n; // start full rank, decrease as we go along through the diagonal of U (from the bottom!)
-        for(auto i = 1; i <= n; ++i)
-            if(D[n - i] <= eps * norminf(LU.col(n - i).head(n - i)))
-                --r; // current diagonal entry in U is very small compared to others on the same column.
-            else break; // stop, because from now on there are only large enough diagonal values.
-
-        return r;
-    }
-
-    /// Solve the linear system `Ax = b` with a scaling strategy for increased robustness.
-    auto solveWithScaling(MatrixConstRef A, VectorConstRef b, VectorRef x) -> void
-    {
-        const auto m = A.rows();
-        const auto n = A.cols();
-
-        assert(n == m);
-        assert(n == b.rows());
         assert(n == x.rows());
 
-        //======================================================================
-        // IMPORTANT:
-        // Any small value in `b` is assumed here to be meaningful. This means that
-        // small values as a result of residual round off-error should have been
-        // cleaned off before this method is executed. Otherwise, this small
-        // value may produce incorrect solutions and wrong behavior when
-        // identifying linearly dependent equations.
-        //======================================================================
-        auto invB = x; // use x as workspace for invB
+        P.applyThisOnTheLeft(x);
+        x = Lv.solve(x);
+        assembleU(x);
+        x = Uv.solve(x);
+        Q.applyThisOnTheLeft(x);
+        Q.applyThisOnTheLeft(is_li);
+    }
 
-        invB = (b.array() == 0.0).select(1.0, b.cwiseInverse());
+    /// Assemble the U matrix with given y, where y is the solution of L*y = P*b.
+    auto assembleU(VectorRef y) -> void
+    {
+        const auto n = lu.rows();
 
-        Ab.noalias() = invB.asDiagonal() * A;
+        U.resize(n, n);
+        U = lu.matrixLU();
 
-        decompose(Ab);
+        is_li.setOnes(n); // set all equations as linearly independent to start with
 
-        auto eb = x; // use x as workspace for eb where eb[i] = 1 if b[i] != 0 else 0
+        const auto D = U.diagonal().cwiseAbs();
+        const auto eps = std::numeric_limits<double>::epsilon();
 
-        eb = (b.array() == 0.0).select(0.0, ones(n));
+        using std::max;
+        using std::abs;
 
-        solve(x); // equivalent to solve(eb, x)
+        rank = n; // start full rank, decrease as we go along through the diagonal of U (from the bottom!)
+        for(auto i = 1; i <= n; ++i)
+        {
+            // Check diagonal entry is not very small compared to other entries
+            // on same row and also right-hand side entry in y.
+            if(D[n - i] <= eps * max(abs(y[n - i]), norminf(U.row(n - i).tail(n - i))))
+            {
+                U.row(n - i).tail(n - i).fill(0.0); // avoid going to the lower triangular part
+                U.col(n - i).head(n - i).fill(0.0);
+                U(n - i, n - i) = 1.0; // diagonal entry is 1 while the rest entries along the same row/col are 0
+                y[n - i] = 0.0; // the solution of the corresponding unknown should be zero
+                is_li[n - i] = 0; // equation not linearly independent
+                --rank;
+            }
+        }
     }
 };
 
@@ -175,25 +162,20 @@ auto LU::decompose(MatrixConstRef A) -> void
     pimpl->decompose(A);
 }
 
-auto LU::solve(MatrixConstRef B, MatrixRef X) -> void
+auto LU::solve(VectorConstRef b, VectorRef x) -> void
 {
-    X = B;
-    pimpl->solve(X);
+    x = b;
+    pimpl->solve(x);
 }
 
-auto LU::solve(MatrixRef X) -> void
+auto LU::solve(VectorRef x) -> void
 {
-    pimpl->solve(X);
-}
-
-auto LU::solveWithScaling(MatrixConstRef A, VectorConstRef b, VectorRef x) -> void
-{
-    pimpl->solveWithScaling(A, b, x);
+    pimpl->solve(x);
 }
 
 auto LU::rank() const -> Index
 {
-    return pimpl->rank();
+    return pimpl->rank;
 }
 
 auto LU::matrixLU() const -> MatrixConstRef
