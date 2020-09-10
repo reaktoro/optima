@@ -90,7 +90,7 @@ struct LineSearchOptions
     double trigger_when_current_error_is_greater_than_initial_error_by_factor = 1.0;
 
     /// The parameter that triggers line-search when current error is greater than previous error by a given factor (`Enew > factor*Eold`).
-    double trigger_when_current_error_is_greater_than_previous_error_by_factor = 10.0;
+    double trigger_when_current_error_is_greater_than_previous_error_by_factor = 2.0;
 };
 
 /// The options for the backtrack linear search operation.
@@ -123,35 +123,8 @@ public:
     /// The tolerance for the residual of the optimality conditions.
     double tolerance = 1.0e-8;
 
-    /// The tolerance for the variation in primal variables x.
-    /// Set this to a value greater than zero to stop the calculation
-    /// whenever `max(abs(dx)) < tolerancex`, where `dx` is the current step
-    /// of the primal variables.
-    double tolerancex = 0.0;
-
-    /// The tolerance for the variation in objective value.
-    /// Set this to a value greater than zero to stop the calculation
-    /// whenever `abs(f - fprev) < tolerancef`, where `f` and `fprev` are the
-    /// current and previous value of the objective function.
-    double tolerancef = 0.0;
-
-    /// The relative tolerance for the linear equality contraints.
-    double tolerance_linear_equality_constraints = 1.0e-8;
-
     /// The maximum number of iterations in the optimization calculations.
     unsigned max_iterations = 200;
-
-    /// The perturbation/barrier parameter for the interior-point method.
-    double mu = 1.0e-20;
-
-    /// The fraction-to-the boundary parameter to relax the line-search backtracking step.
-    /// This parameter should be carefully selected as it can mistakenly drive some
-    /// primal variables prematurely to the bounds, keeping them trapped there until convergence.
-    /// The closest this parameter is to one, the more this effect is probable.
-    double tau = 0.99;
-
-    /// The step mode for the Newton updates.
-    StepMode step = Aggressive;
 
     /// The options for the solution of the KKT equations.
     SaddlePointOptions kkt;

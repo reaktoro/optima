@@ -470,7 +470,7 @@ struct SaddlePointSolver::Impl
 
         cleanResidualRoundoffErrors(bw); // ensure residual round-off errors are removed! For example, removing 1e-15 among numbers 1.2, 55.2
 
-        aybs = bbs - xbs - Sbsns * xns - Sbsp * args.p;
+        aybs = bbs - xbs - Sbsns * xns - Sbsp * args.p; // TODO: This produces round-off errors. Maybe consider the other rhs overload that does not need this computation.
         aybu.fill(0.0); // ensure residuals w.r.t. basic unstable variables are zero
         ayl.fill(0.0); // ensure residuals w.r.t. linearly dependent rows in Ax are zero
     }

@@ -761,39 +761,7 @@ struct BasicSolver::Impl
     /// Perform a line-search along the computed Newton direction.
     auto initiateLineSearch(Vector& xtrial, Vector& ptrial, Vector& ytrial, Vector& ztrial) -> bool
     {
-        stepper.steepestDescentLagrange({ x, p, y, z, fx, b, h, v, dxL, dpL, dyL, dzL });
-        stepper.steepestDescentError({ x, p, y, z, fx, b, h, v, dxE, dpE, dyE, dzE });
-
-        const auto EnewN = performLineSearch(dxN, dpN, dyN, dzN, xtrialN, ptrialN, ytrialN, ztrialN);
-        const auto EnewL = performLineSearch(dxL, dpL, dyL, dzL, xtrialL, ptrialL, ytrialL, ztrialL);
-        const auto EnewE = performLineSearch(dxE, dpE, dyE, dzE, xtrialE, ptrialE, ytrialE, ztrialE);
-        auto Enew = infinity();
-
-        if(EnewN < std::min(EnewL, EnewE))
-        {
-            xtrial = xtrialN;
-            ptrial = ptrialN;
-            ytrial = ytrialN;
-            ztrial = ztrialN;
-            Enew = EnewN;
-        }
-        else if(EnewL < std::min(EnewN, EnewE))
-        {
-            xtrial = xtrialL;
-            ptrial = ptrialL;
-            ytrial = ytrialL;
-            ztrial = ztrialL;
-            Enew = EnewL;
-        }
-        else if(EnewE < std::min(EnewN, EnewL))
-        {
-            xtrial = xtrialE;
-            ptrial = ptrialE;
-            ytrial = ytrialE;
-            ztrial = ztrialE;
-            Enew = EnewE;
-        }
-        else return FAILED;
+        const auto Enew = performLineSearch(dxN, dpN, dyN, dzN, xtrialN, ptrialN, ytrialN, ztrialN);
 
         if(isLineSearchNeeded(Enew))
         {
@@ -803,6 +771,14 @@ struct BasicSolver::Impl
             performAggressiveStep(ptrial, dpN, plower, pupper);
             ytrial = y + dyN;
             ztrial = z + dzN;
+            return SUCCEEDED;
+        }
+        else
+        {
+            xtrial = xtrialN;
+            ptrial = ptrialN;
+            ytrial = ytrialN;
+            ztrial = ztrialN;
             return SUCCEEDED;
         }
 
@@ -1081,10 +1057,6 @@ struct BasicSolver::Impl
 	/// Return true if the calculation converged.
     auto converged() const -> bool
     {
-        // Prevent successfull convergence if linear equality constraints have not converged yet
-        if(result.error_feasibility > options.tolerance_linear_equality_constraints)
-            return false;
-
         // Check if the calculation should stop based on optimality/feasibility errors
         return result.error < options.tolerance;
     };
