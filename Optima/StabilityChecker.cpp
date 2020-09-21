@@ -21,7 +21,9 @@
 #include <vector>
 
 // Optima includes
+#include <Optima/Canonicalizer.hpp>
 #include <Optima/Exception.hpp>
+#include <Optima/Macros.hpp>
 #include <Optima/IndexUtils.hpp>
 
 namespace Optima {
@@ -31,18 +33,19 @@ using std::vector;
 
 struct StabilityChecker::Impl
 {
-    Matrix A;                ///< The coefficient matrix A = [Ax Ap].
-    Vector s;                ///< The stability measures of the variables defined as s = g + tr(Ax)*y + tr(hx)*z.
-    Index nx  = 0;           ///< The number of primal variables *x*.
-    Index np  = 0;           ///< The number of parameter variables *p*.
-    Index ny  = 0;           ///< The number of Lagrange variables *y*.
-    Index nz  = 0;           ///< The number of Lagrange variables *z*.
-    Indices ipositiverows;   ///< The indices of the rows in matrix A that only have positive or zero coefficients.
-    Indices inegativerows;   ///< The indices of the rows in matrix A that only have negative or zero coefficients.
-    Indices iordering;       ///< The ordering of the primal variables *x* as *stable*, *lower unstable*, *upper unstable*, *strictly lower unstable*, *strictly upper unstable*.
-    vector<bool> bslu;       ///< The flags indicating strictly lower unstable status for each variable.
-    vector<bool> bsuu;       ///< The flags indicating strictly upper unstable status for each variable.
-    Stability stability;     ///< The stability state of the primal variables *x*.
+    Matrix A;                     ///< The coefficient matrix A = [Ax Ap].
+    Vector s;                     ///< The stability measures of the variables defined as s = g + tr(Ax)*y + tr(hx)*z.
+    Index nx  = 0;                ///< The number of primal variables *x*.
+    Index np  = 0;                ///< The number of parameter variables *p*.
+    Index ny  = 0;                ///< The number of Lagrange variables *y*.
+    Index nz  = 0;                ///< The number of Lagrange variables *z*.
+    Indices ipositiverows;        ///< The indices of the rows in matrix A that only have positive or zero coefficients.
+    Indices inegativerows;        ///< The indices of the rows in matrix A that only have negative or zero coefficients.
+    Indices iordering;            ///< The ordering of the primal variables *x* as *stable*, *lower unstable*, *upper unstable*, *strictly lower unstable*, *strictly upper unstable*.
+    vector<bool> bslu;            ///< The flags indicating strictly lower unstable status for each variable.
+    vector<bool> bsuu;            ///< The flags indicating strictly upper unstable status for each variable.
+    Stability stability;          ///< The stability state of the primal variables *x*.
+    Canonicalizer canonicalizer;  ///< The canonicalizer of matrix *Ax*.
 
     /// Construct a default StabilityChecker::Impl instance.
     Impl()
@@ -98,6 +101,10 @@ struct StabilityChecker::Impl
         // View to sub-matrices Ax and Ap in A = [Ax Ap]
         const auto Ax = A.leftCols(nx);
         const auto Ap = A.rightCols(np);
+
+
+        canonicalizer.compute(Ax);
+
 
         //======================================================================
         // IDENTIFY STRICTLY LOWER/UPPER UNSTABLE VARIABLES
@@ -181,21 +188,54 @@ struct StabilityChecker::Impl
 
         const auto Ax = A.leftCols(nx);
 
-        s.noalias() = fx + tr(Ax)*y + tr(hx)*z;
+        //======================================================================
+        // OLD WAY FOR DETECTING STABILITY
+        //======================================================================
+        // s.noalias() = fx + tr(Ax)*y + tr(hx)*z;
 
-        // The function that computes the s-threshold for variable xi to determine its stability.
-        const auto s_eps = [&](auto i)
-        {
-            // The threshold below is computed taking into account the order of
-            // magnitude of fx[i] as well as m = ny + nz, because of
-            // accumulation of round-off errors from tr(Ax)*y + tr(hx)*z.
-            const auto eps = std::numeric_limits<double>::epsilon();
-            const auto m = ny + nz;
-            return (1 + abs(fx[i])) * eps * m;
-        };
+        // // The function that computes the s-threshold for variable xi to determine its stability.
+        // const auto s_eps = [&](auto i)
+        // {
+        //     // The threshold below is computed taking into account the order of
+        //     // magnitude of fx[i] as well as m = ny + nz, because of
+        //     // accumulation of round-off errors from tr(Ax)*y + tr(hx)*z.
+        //     const auto eps = std::numeric_limits<double>::epsilon();
+        //     const auto m = ny + nz;
+        //     return (1 + abs(fx[i])) * eps * m;
+        // };
 
-        auto is_lower_unstable_fn = [&](Index i) { return x[i] == xlower[i] && s[i] > -s_eps(i); };
-        auto is_upper_unstable_fn = [&](Index i) { return x[i] == xupper[i] && s[i] < +s_eps(i); };
+        // auto is_lower_unstable_fn = [&](Index i) { return x[i] == xlower[i] && s[i] > -s_eps(i); };
+        // auto is_upper_unstable_fn = [&](Index i) { return x[i] == xupper[i] && s[i] < +s_eps(i); };
+
+        //======================================================================
+        // NEW EXPERIMENTAL WAY FOR DETECTING STABILITY
+        // This approach was introduced to take into account the possible infinitely
+        // many variations in the gradient vector that could still produce the same
+        // minimum state, but not consistent stability analysis.
+        //======================================================================
+
+        Vector d = min(x - xlower, xupper - x);
+
+        const auto DOUBLE_MAX = 1.79769e+308;
+        const auto DOUBLE_MAX_SQRT = 1.34078e+154;
+
+        d = d.array().isInf().select(DOUBLE_MAX_SQRT, d); // Enforce strong priority for not bounded variables to become basic variables.
+
+        canonicalizer.updateWithPriorityWeights(d);
+
+        const auto jb = canonicalizer.indicesBasicVariables();
+        const auto jn = canonicalizer.indicesNonBasicVariables();
+        const auto Sbn = canonicalizer.S();
+
+        const auto gb = fx(jb);
+        const auto gn = fx(jn);
+
+        s(jn) = gn - tr(Sbn) * gb;
+        s += tr(hx)*z; // TODO: The matrix W = [A; J] should be canonicalized together to avoid this extra step.
+        s(jb).fill(0.0);
+
+        auto is_lower_unstable_fn = [&](Index i) { return x[i] == xlower[i] && s[i] > 0.0; };
+        auto is_upper_unstable_fn = [&](Index i) { return x[i] == xupper[i] && s[i] < 0.0; };
 
         iordering = stability.indicesVariables();
 
