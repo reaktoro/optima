@@ -173,6 +173,7 @@ struct Stepper::Impl
         w = fxx.diagonal();
         w.array() += fakezero; // replaces zeros by fakezero to avoid division by zero next
         w.noalias() = abs(x - fx.cwiseQuotient(w)); /// w = |x - inv(diag(H')) * g|
+        // w.noalias() = abs(x); /// w = |x|    TODO: This seems to be the right way of doing this, to avoid as much as possible linear equations involving variables of strongly different order of magnitude.
 
         // Decompose the saddle point matrix.
         // This decomposition is later used in method solve, possibly many
