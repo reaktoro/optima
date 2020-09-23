@@ -1,24 +1,22 @@
-# Copy the optima directory to the binary directory
-file(COPY . DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-
-# Define a variable with the name of the compiled python module file as defined by pybind11 (which is used in the file setup.py.in)
+# The name of the compiled python module file as defined by pybind11 used in setup.py.in
 set(OPTIMA_PYTHON_MODULE_FILENAME optima4py${PYTHON_MODULE_EXTENSION})
+
+# The path in the binary dir where the python package is assembled
+set(OPTIMA_PYTHON_PACKAGE_PATH ${CMAKE_CURRENT_BINARY_DIR}/optima)
 
 # Configure the setup.py file
 set(SETUP_PY_IN ${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in)
-set(SETUP_PY ${CMAKE_CURRENT_BINARY_DIR}/setup.py)
-
-# Configure the setup.py script with the provided CMake variables
+set(SETUP_PY ${OPTIMA_PYTHON_PACKAGE_PATH}/setup.py) # ensure setup.py is inside the package dir
 configure_file(${SETUP_PY_IN} ${SETUP_PY})
 
-# Create a custom target to build optima python package during build stage
+# Create a custom target to build the python package during build stage
 add_custom_target(optima-setuptools ALL
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:optima4py>
-        ${CMAKE_CURRENT_BINARY_DIR}/$<TARGET_FILE_NAME:optima4py>
-    COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} --quiet install --prefix=${CMAKE_BINARY_DIR}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/optima ${OPTIMA_PYTHON_PACKAGE_PATH}
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:optima4py> ${OPTIMA_PYTHON_PACKAGE_PATH}
+    COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} --quiet install --force --prefix=${CMAKE_BINARY_DIR}
+    WORKING_DIRECTORY ${OPTIMA_PYTHON_PACKAGE_PATH})
 
-# Set dependencies of optima target
+# Set dependencies of the python package target
 add_dependencies(optima-setuptools optima4py)
 
 # Set the path where the python package is installed to CMAKE_INSTALL_PREFIX if not given
@@ -30,11 +28,12 @@ endif()
 # added directly to the string below. CMake complains about "Invalid escape sequence".
 file(TO_CMAKE_PATH "${OPTIMA_PYTHON_INSTALL_PREFIX}" OPTIMA_PYTHON_INSTALL_PREFIX)
 
-# Install the optima python package using setuptools
+# Install the python package using setuptools
 install(CODE
 "
     file(TO_NATIVE_PATH \"${OPTIMA_PYTHON_INSTALL_PREFIX}\" OPTIMA_PYTHON_INSTALL_PREFIX_NATIVE)
+
     execute_process(
         COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} install --prefix=\${OPTIMA_PYTHON_INSTALL_PREFIX_NATIVE}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+        WORKING_DIRECTORY ${OPTIMA_PYTHON_PACKAGE_PATH})
 ")

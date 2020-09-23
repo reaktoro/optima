@@ -1,2 +1,2 @@
 add_subdirectory(bindings)
-add_subdirectory(optima)
+add_subdirectory(package)
