@@ -1,0 +1,13 @@
+from distutils.core import setup
+
+setup(name='Optima',
+      version='${PROJECT_VERSION}',
+      description='The Python interface of the Optima library.',
+      author='Allan Leal',
+      author_email='allan.leal@erdw.ethz.ch',
+      url='github.com/allanleal/optima',
+      license='GNU LGPL v2.1',
+      package_dir={'optima': ''},
+      packages=['optima', 'optima._extensions'],
+      package_data={'optima': ['@OPTIMA_PYTHON_MODULE_FILENAME@']}
+      )

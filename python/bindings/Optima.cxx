@@ -45,7 +45,7 @@ void exportStepper(py::module& m);
 void exportTiming(py::module& m);
 void exportUtils(py::module& m);
 
-PYBIND11_MODULE(optima, m)
+PYBIND11_MODULE(optima4py, m)
 {
     exportEigen(m);
     exportBasicSolver(m);
