@@ -121,7 +121,13 @@ struct LU::Impl
         for(auto i = 1; i <= n; ++i)
         {
             // Check diagonal entry is not very small compared to other entries
-            // on same row and also right-hand side entry in y.
+            // on same row of U and also right-hand side entry in y. The idea
+            // is that if a diagonal entry is very small, but the other
+            // coefficients along the same row of U is also very small and the
+            // corresponding entry in y is equally small, then it is safe not
+            // to discard this linear equation. Otherwise, we discard it, to
+            // avoid extremely large values when we divide a larger number by
+            // the diagonal pivot (very small).
             if(D[n - i] <= eps * max(abs(y[n - i]), norminf(U.row(n - i).tail(n - i))))
             {
                 U.row(n - i).tail(n - i).fill(0.0); // avoid going to the lower triangular part
