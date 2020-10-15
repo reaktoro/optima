@@ -159,6 +159,9 @@ auto rationalize(double* data, unsigned size, unsigned maxden) -> void;
 /// value and the maximum absolute value in the matrix.
 auto cleanResidualRoundoffErrors(MatrixRef mat) -> void;
 
+/// Multiply a matrix and a vector and clean residual round-off errors.
+auto multiplyMatrixVectorWithoutResidualRoundOffError(MatrixConstRef A, VectorConstRef x) -> Vector;
+
 /// Used to describe the structure of a matrix.
 enum class MatrixStructure
 {

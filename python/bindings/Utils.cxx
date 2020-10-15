@@ -35,6 +35,11 @@ void exportUtils(py::module& m)
     auto largestStep1 = static_cast<double(*)(const Vector&, const Vector&)>(&largestStep);
     auto largestStep2 = static_cast<double(*)(const Vector&, const Vector&, const Vector&, const Vector&)>(&largestStep);
 
+    auto multiplyMatrixVectorWithoutResidualRoundOffError = [](MatrixConstRef4py A, VectorConstRef x)
+    {
+        return Optima::multiplyMatrixVectorWithoutResidualRoundOffError(A, x);
+    };
+
     m.def("largestStep", largestStep1);
     m.def("largestStep", largestStep2);
     m.def("performConservativeStep", &performConservativeStep);
@@ -48,8 +53,10 @@ void exportUtils(py::module& m)
     m.def("inverseShermanMorrison", &inverseShermanMorrison);
     m.def("rational", &rational);
     m.def("rationalize", &rationalize);
+    m.def("multiplyMatrixVectorWithoutResidualRoundOffError", multiplyMatrixVectorWithoutResidualRoundOffError);
     m.def("matrixStructure", &matrixStructure);
     m.def("isZeroMatrix", &isZeroMatrix);
     m.def("isDiagonalMatrix", &isDiagonalMatrix);
+    m.def("isDenseMatrix", &isDenseMatrix);
     m.def("isDenseMatrix", &isDenseMatrix);
 }

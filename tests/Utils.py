@@ -21,4 +21,31 @@ from pytest import approx
 
 
 def test_utils():
-    pass
+
+    #---------------------------------------------------------------
+    # Test method multiplyMatrixVectorWithoutResidualRoundOffError
+    #---------------------------------------------------------------
+
+    # The R = inv(Ab) matrix when primary species are: H2O, H+, CaCO3, CO2, O2
+
+    R = array([
+        [ 0.50,  0.00,  0.00,  0.00, -0.50],
+        [ 0.00,  0.00,  0.00,  0.00,  1.00],
+        [ 0.00,  0.00,  0.00,  1.00,  0.00],
+        [ 0.00,  0.00,  1.00, -1.00,  0.00],
+        [-0.25,  0.50, -1.00, -0.50,  0.25]
+    ])
+
+    nH2O   = 55.508
+    nCO2   = 3.743
+    nCaCO3 = 3.743
+
+    b = array([2*nH2O, nH2O + 2*nCO2 + 3*nCaCO3, nCO2 + nCaCO3, nCaCO3, 0.0])
+
+    bprime = multiplyMatrixVectorWithoutResidualRoundOffError(R, b)
+
+    assert bprime[0] == nH2O    # b'(H2O)
+    assert bprime[1] == 0.0     # b'(H+)
+    assert bprime[2] == nCaCO3  # b'(CaCO3)
+    assert bprime[3] == nCO2    # b'(CO2)
+    assert bprime[4] == 0.0     # b'(O2) (ensure here no residual round-off error - sharp zero!)

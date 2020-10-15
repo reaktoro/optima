@@ -557,6 +557,24 @@ auto cleanResidualRoundoffErrors(MatrixRef mat) -> void
                 mat(i, j) = 0.0;
 }
 
+auto multiplyMatrixVectorWithoutResidualRoundOffError(MatrixConstRef A, VectorConstRef x) -> Vector
+{
+    // In this method, we use b' = |A|*|x| as a reference to determine which
+    // small entries in b should be regarded as residual round-off error. The
+    // idea is that if b[i] is truly small, and not a result of round-off
+    // errors, then b'[i] should also be small.
+
+    Vector b = A * x;
+    const auto eps = std::numeric_limits<double>::epsilon();
+    for(auto i = 0; i < x.size(); ++i)
+    {
+        const double ref = A.row(i).cwiseAbs() * x.cwiseAbs();
+        if(std::abs(b[i]) < ref * eps)
+            b[i] = 0.0;
+    }
+    return b;
+}
+
 auto matrixStructure(MatrixConstRef mat) -> MatrixStructure
 {
     if(isDenseMatrix(mat)) return MatrixStructure::Dense;
