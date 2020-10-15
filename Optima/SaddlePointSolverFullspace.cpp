@@ -36,8 +36,8 @@ struct SaddlePointSolverFullspace::Impl
     LU lu;      ///< The LU decomposition solver.
 
     /// Construct a default SaddlePointSolverFullspace::Impl instance.
-    Impl(Index nx, Index np, Index ny, Index nz)
-    : mat(nx + np + ny + nz, nx + np + ny + nz), vec(nx + np + ny + nz)
+    Impl(Index nx, Index np, Index nw)
+    : mat(nx + np + nw, nx + np + nw), vec(nx + np + nw)
     {}
 
     /// Decompose the coefficient matrix of the canonical saddle point problem.
@@ -47,17 +47,16 @@ struct SaddlePointSolverFullspace::Impl
         const auto nbs = args.dims.nbs;
         const auto nns = args.dims.nns;
         const auto np  = args.dims.np;
-        const auto nz  = args.dims.nz;
+        const auto nw  = args.dims.nw;
 
-        const auto t = ns + np + nz + nbs;
+        const auto t = ns + np + nbs;
 
         auto M = mat.topLeftCorner(t, t);
 
         auto M1 = M.topRows(nbs);
         auto M2 = M.middleRows(nbs, nns);
         auto M3 = M.middleRows(nbs + nns, np);
-        auto M4 = M.middleRows(nbs + nns + np, nz);
-        auto M5 = M.bottomRows(nbs);
+        auto M4 = M.bottomRows(nbs);
 
         const auto Hbsbs = args.Hss.topRows(nbs).leftCols(nbs);
         const auto Hbsns = args.Hss.topRows(nbs).rightCols(nns);
@@ -66,11 +65,6 @@ struct SaddlePointSolverFullspace::Impl
 
         const auto Hbsp = args.Hsp.topRows(nbs);
         const auto Hnsp = args.Hsp.bottomRows(nns);
-
-        const auto Jp  = args.Jp;
-        const auto Js  = args.Js;
-        const auto Jbs = Js.leftCols(nbs);
-        const auto Jns = Js.rightCols(nns);
 
         const auto Sbsns = args.Sbsns;
         const auto Sbsp  = args.Sbsp;
@@ -81,18 +75,13 @@ struct SaddlePointSolverFullspace::Impl
 
         const auto Ibsbs = identity(nbs, nbs);
 
-        const auto Opz   = zeros(np, nz);
         const auto Opbs  = zeros(np, nbs);
         const auto Obsbs = zeros(nbs, nbs);
-        const auto Obsz  = zeros(nbs, nz);
-        const auto Ozbs  = zeros(nz, nbs);
-        const auto Ozz   = zeros(nz, nz);
 
-        if(nbs) M1 << Hbsbs, Hbsns, Hbsp, tr(Jbs), Ibsbs;
-        if(nns) M2 << Hnsbs, Hnsns, Hnsp, tr(Jns), tr(Sbsns);
-        if( np) M3 << Vpbs, Vpns, Vpp, Opz, Opbs;
-        if( nz) M4 << Jbs, Jns, Jp, Ozz, Ozbs;
-        if(nbs) M5 << Ibsbs, Sbsns, Sbsp, Obsz, Obsbs;
+        if(nbs) M1 << Hbsbs, Hbsns, Hbsp, Ibsbs;
+        if(nns) M2 << Hnsbs, Hnsns, Hnsp, tr(Sbsns);
+        if( np) M3 << Vpbs, Vpns, Vpp, Opbs;
+        if(nbs) M4 << Ibsbs, Sbsns, Sbsp, Obsbs;
 
         lu.decompose(M);
     }
@@ -104,31 +93,29 @@ struct SaddlePointSolverFullspace::Impl
         const auto nbs = args.dims.nbs;
         const auto nns = args.dims.nns;
         const auto np  = args.dims.np;
-        const auto nz  = args.dims.nz;
+        const auto nw  = args.dims.nw;
 
-        const auto t = ns + np + nz + nbs;
+        const auto t = ns + np + nbs;
 
         auto r = vec.head(t);
 
         auto xbs = r.head(nbs);
         auto xns = r.segment(nbs, nns);
         auto p   = r.segment(nbs + nns, np);
-        auto z   = r.segment(nbs + nns + np, nz);
-        auto ybs = r.tail(nbs);
+        auto wbs = r.tail(nbs);
 
-        r << args.as, args.ap, args.az, args.aybs;
+        r << args.as, args.ap, args.awbs;
 
         lu.solve(r);
 
         args.xs << xbs, xns;
         args.p = p;
-        args.z = z;
-        args.ybs = ybs;
+        args.wbs = wbs;
     }
 };
 
-SaddlePointSolverFullspace::SaddlePointSolverFullspace(Index nx, Index np, Index ny, Index nz)
-: pimpl(new Impl(nx, np, ny, nz))
+SaddlePointSolverFullspace::SaddlePointSolverFullspace(Index nx, Index np, Index nw)
+: pimpl(new Impl(nx, np, nw))
 {}
 
 SaddlePointSolverFullspace::SaddlePointSolverFullspace(const SaddlePointSolverFullspace& other)

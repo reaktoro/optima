@@ -30,7 +30,7 @@ class SaddlePointSolverRangespace
 {
 public:
     /// Construct a default SaddlePointSolverRangespace instance.
-    SaddlePointSolverRangespace(Index nx, Index np, Index ny, Index nz);
+    SaddlePointSolverRangespace(Index nx, Index np, Index nw);
 
     /// Construct a copy of a SaddlePointSolverRangespace instance.
     SaddlePointSolverRangespace(const SaddlePointSolverRangespace& other);

@@ -23,7 +23,7 @@
 
 namespace Optima {
 
-/// The dimension details in a general saddle point problem.
+/// The dimension details in a canonical saddle point problem.
 struct SaddlePointDims
 {
     Index nx  = 0; ///< The number of variables in *x = (xs, xu)*.
@@ -31,6 +31,7 @@ struct SaddlePointDims
     Index nu  = 0; ///< The number of variables in *xu*.
     Index ny  = 0; ///< The number of variables in *y*.
     Index nz  = 0; ///< The number of variables in *z*.
+    Index nw  = 0; ///< The number of variables in *w = (y, z)*.
     Index np  = 0; ///< The number of variables in *p*.
     Index nb  = 0; ///< The number of basic variables in *x*.
     Index nn  = 0; ///< The number of non-basic variables *x*.
@@ -48,15 +49,13 @@ struct SaddlePointDims
 /// The coefficient matrix in a canonical saddle point problem.
 struct CanonicalSaddlePointMatrix
 {
-    SaddlePointDims dims; ///< The dimension details in a general saddle point problem.
-    MatrixConstRef Hss;          ///< The Hessian matrix block *Hss* in the canonical saddle point problem.
-    MatrixConstRef Hsp;          ///< The Hessian matrix block *Hsp* in the canonical saddle point problem.
-    MatrixConstRef Vps;          ///< The matrix block *Vps* in the canonical saddle point problem.
-    MatrixConstRef Vpp;          ///< The matrix block *Vpp* in the canonical saddle point problem.
-    MatrixConstRef Js;           ///< The matrix block *Js* in the canonical saddle point problem.
-    MatrixConstRef Jp;           ///< The matrix block *Jp* in the canonical saddle point problem.
-    MatrixConstRef Sbsns;        ///< The matrix block *Sbsns* in the canonical saddle point problem.
-    MatrixConstRef Sbsp;         ///< The matrix block *Sbsp* in the canonical saddle point problem.
+    SaddlePointDims dims; ///< The dimension details of the canonical saddle point problem.
+    MatrixConstRef Hss;   ///< The Hessian matrix block *Hss* in the canonical saddle point problem.
+    MatrixConstRef Hsp;   ///< The Hessian matrix block *Hsp* in the canonical saddle point problem.
+    MatrixConstRef Vps;   ///< The matrix block *Vps* in the canonical saddle point problem.
+    MatrixConstRef Vpp;   ///< The matrix block *Vpp* in the canonical saddle point problem.
+    MatrixConstRef Sbsns; ///< The matrix block *Sbsns* in the canonical saddle point problem.
+    MatrixConstRef Sbsp;  ///< The matrix block *Sbsp* in the canonical saddle point problem.
 };
 
 /// The representation of a canonical saddle point problem.
@@ -64,12 +63,10 @@ struct CanonicalSaddlePointProblem : CanonicalSaddlePointMatrix
 {
     VectorConstRef as;   ///< The right-hand side vector *as* for the *xs* variables.
     VectorConstRef ap;   ///< The right-hand side vector *ap* for the *p* variables.
-    VectorConstRef az;   ///< The right-hand side vector *az* for the *z* variables.
-    VectorConstRef aybs; ///< The right-hand side vector *aybs*.
+    VectorConstRef awbs; ///< The right-hand side vector *awbs*.
     VectorRef xs;        ///< The solution vector *xs* in the canonical saddle point problem.
     VectorRef p;         ///< The solution vector *p* in the canonical saddle point problem.
-    VectorRef z;         ///< The solution vector *z* in the canonical saddle point problem.
-    VectorRef ybs;       ///< The solution vector *ybs* in the canonical saddle point problem.
+    VectorRef wbs;       ///< The solution vector *wbs* in the canonical saddle point problem.
 };
 
 } // namespace Optima

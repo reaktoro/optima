@@ -33,39 +33,33 @@ struct SaddlePointSolverRangespace::Impl
 {
     Vector ax;       ///< The workspace for the right-hand side vector ax
     Vector ap;       ///< The workspace for the right-hand side vector ap
-    Vector az;       ///< The workspace for the right-hand side vector az
-    Vector bb;       ///< The workspace for the right-hand side vectors bb
+    Vector aw;       ///< The workspace for the right-hand side vector aw
     Vector Hd;       ///< The workspace for the diagonal entries in the Hss matrix.
     Matrix Bw;       ///< The workspace for the Bnb = inv(Hnn)*tr(Sbn) matrix.
-    Matrix Lw;       ///< The workspace for the Lbez = inv(Hbebe)*tr(Jbe) and Lnez = inv(Hnene)*tr(Jne) matrices.
     Matrix Tw;       ///< The workspace for the Tbb = Sbn*inv(Hnn)*tr(Sbn) matrix.
     Matrix Mw;       ///< The workspace for the M matrix in decompose and solve methods.
     Vector rw;       ///< The workspace for the r vector in solve method.
     Vector sw;       ///< The workspace for the s vector in solve method.
     Matrix barHsp;   ///< The workspace for matrix bar(Hsp)
     Matrix barVps;   ///< The workspace for matrix bar(Vps)
-    Matrix barJs;    ///< The workspace for matrix bar(Js)
     Matrix barSbsns; ///< The workspace for matrix bar(Sbsns)
     LU lu;           ///< The LU decomposition solver.
 
     /// Construct a default SaddlePointSolverRangespace::Impl instance.
-    Impl(Index nx, Index np, Index ny, Index nz)
+    Impl(Index nx, Index np, Index nw)
     {
         ax.resize(nx);
         ap.resize(np);
-        az.resize(nz);
-        bb.resize(ny);
+        aw.resize(nw);
         Hd.resize(nx);
-        Bw.resize(nx, ny);
-        Lw.resize(nx, nz);
-        Tw.resize(ny, ny);
-        Mw.resize(nx + np + ny + nz, nx + np + ny + nz);
-        rw.resize(nx + np + ny + nz);
-        sw.resize(nx + np + ny + nz);
+        Bw.resize(nx, nw);
+        Tw.resize(nw, nw);
+        Mw.resize(nx + np + nw, nx + np + nw);
+        rw.resize(nx + np + nw);
+        sw.resize(nx + np + nw);
         barHsp.resize(nx, np);
         barVps.resize(np, nx);
-        barJs.resize(nz, nx);
-        barSbsns.resize(ny, nx);
+        barSbsns.resize(nw, nx);
     }
 
     /// Decompose the coefficient matrix of the canonical saddle point problem.
@@ -73,8 +67,7 @@ struct SaddlePointSolverRangespace::Impl
     {
         const auto ns  = args.dims.ns;
         const auto np  = args.dims.np;
-        const auto ny  = args.dims.ny;
-        const auto nz  = args.dims.nz;
+        const auto nw  = args.dims.nw;
         const auto nbs = args.dims.nbs;
         const auto nns = args.dims.nns;
         const auto nbe = args.dims.nbe;
@@ -107,15 +100,6 @@ struct SaddlePointSolverRangespace::Impl
         const auto Vpne = Vpns.leftCols(nne);
         const auto Vpbi = Vpbs.rightCols(nbi);
         const auto Vpni = Vpns.rightCols(nni);
-
-        const auto Jp = args.Jp;
-        const auto Js  = args.Js;
-        const auto Jbs = Js.leftCols(nbs);
-        const auto Jns = Js.rightCols(nns);
-        const auto Jbe = Jbs.leftCols(nbe);
-        const auto Jne = Jns.leftCols(nne);
-        const auto Jbi = Jbs.rightCols(nbi);
-        const auto Jni = Jns.rightCols(nni);
 
         const auto Ibebe = identity(nbe, nbe);
         const auto Ibibi = identity(nbi, nbi);
@@ -138,8 +122,6 @@ struct SaddlePointSolverRangespace::Impl
         auto barHnep  = barHsp.bottomRows(nne);
         auto barVpbe  = barVps.leftCols(nbe);
         auto barVpne  = barVps.rightCols(nne);
-        auto barJbe   = barJs.leftCols(nbe);
-        auto barJne   = barJs.rightCols(nne);
         auto barSbsne = barSbsns.topLeftCorner(nbs, nne);
         auto barSbene = barSbsne.topRows(nbe);
         auto barSbine = barSbsne.bottomRows(nbi);
@@ -148,8 +130,6 @@ struct SaddlePointSolverRangespace::Impl
         barHnep  = invHnene * Hnep;
         barVpbe  = Vpbe * invHbebe;
         barVpne  = Vpne * invHnene;
-        barJbe   = Jbe * invHbebe;
-        barJne   = Jne * invHnene;
         barSbene = Sbene * invHnene;
         barSbine = Sbine * invHnene;
 
@@ -162,7 +142,7 @@ struct SaddlePointSolverRangespace::Impl
         const auto Tbebi = Tbsbs.topRightCorner(nbe, nbi);
         const auto Tbebe = Tbsbs.topLeftCorner(nbe, nbe);
 
-        const auto t = np + nz + nbi + nbe + nni;
+        const auto t = np + nbi + nbe + nni;
 
         auto M = Mw.topLeftCorner(t, t);
 
@@ -176,70 +156,49 @@ struct SaddlePointSolverRangespace::Impl
         //======================================================================
 
         auto M1 = M.topRows(np);
-        auto M2 = M.middleRows(np, nz);
-        auto M3 = M.middleRows(np + nz, nbi);
-        auto M4 = M.middleRows(np + nz + nbi, nbe);
-        auto M5 = M.bottomRows(nni);
+        auto M2 = M.middleRows(np, nbi);
+        auto M3 = M.middleRows(np + nbi, nbe);
+        auto M4 = M.bottomRows(nni);
 
         auto M11 = M1.leftCols(np);
-        auto M12 = M1.middleCols(np, nz);
-        auto M13 = M1.middleCols(np + nz, nbi);
-        auto M14 = M1.middleCols(np + nz + nbi, nbe);
-        auto M15 = M1.rightCols(nni);
+        auto M12 = M1.middleCols(np, nbi);
+        auto M13 = M1.middleCols(np + nbi, nbe);
+        auto M14 = M1.rightCols(nni);
 
         auto M21 = M2.leftCols(np);
-        auto M22 = M2.middleCols(np, nz);
-        auto M23 = M2.middleCols(np + nz, nbi);
-        auto M24 = M2.middleCols(np + nz + nbi, nbe);
-        auto M25 = M2.rightCols(nni);
+        auto M22 = M2.middleCols(np, nbi);
+        auto M23 = M2.middleCols(np + nbi, nbe);
+        auto M24 = M2.rightCols(nni);
 
         auto M31 = M3.leftCols(np);
-        auto M32 = M3.middleCols(np, nz);
-        auto M33 = M3.middleCols(np + nz, nbi);
-        auto M34 = M3.middleCols(np + nz + nbi, nbe);
-        auto M35 = M3.rightCols(nni);
+        auto M32 = M3.middleCols(np, nbi);
+        auto M33 = M3.middleCols(np + nbi, nbe);
+        auto M34 = M3.rightCols(nni);
 
         auto M41 = M4.leftCols(np);
-        auto M42 = M4.middleCols(np, nz);
-        auto M43 = M4.middleCols(np + nz, nbi);
-        auto M44 = M4.middleCols(np + nz + nbi, nbe);
-        auto M45 = M4.rightCols(nni);
-
-        auto M51 = M5.leftCols(np);
-        auto M52 = M5.middleCols(np, nz);
-        auto M53 = M5.middleCols(np + nz, nbi);
-        auto M54 = M5.middleCols(np + nz + nbi, nbe);
-        auto M55 = M5.rightCols(nni);
+        auto M42 = M4.middleCols(np, nbi);
+        auto M43 = M4.middleCols(np + nbi, nbe);
+        auto M44 = M4.rightCols(nni);
 
         M11.noalias() = Vpp - Vpbe*barHbep - Vpne*barHnep + barVpne*tr(Sbine)*Hbip;
-        M12.noalias() = -barVpbe*tr(Jbe) - barVpne*tr(Jne) + barVpne*tr(Sbine)*tr(Jbi);
-        M13.noalias() = Vpbi + barVpne*tr(Sbine)*diag(Hbibi);
-        M14.noalias() = -barVpbe - barVpne*tr(Sbene);
-        M15.noalias() = Vpni;
+        M12.noalias() = Vpbi + barVpne*tr(Sbine)*diag(Hbibi);
+        M13.noalias() = -barVpbe - barVpne*tr(Sbene);
+        M14.noalias() = Vpni;
 
-        M21.noalias() = Jp - Jbe*barHbep - Jne*barHnep + barJne*tr(Sbine)*Hbip;
-        M22.noalias() = -barJbe*tr(Jbe) - barJne*tr(Jne) + barJne*tr(Sbine)*tr(Jbi);
-        M23.noalias() = Jbi + barJne*tr(Sbine)*diag(Hbibi);
-        M24.noalias() = -barJbe - barJne*tr(Sbene);
-        M25.noalias() = Jni;
+        M21.noalias() = Sbip - barSbine*Hnep + Tbibi*Hbip;
+        M22.noalias() = Ibibi + Tbibi*diag(Hbibi);
+        M23.noalias() = -Tbibe;
+        M24.noalias() = Sbini;
 
-        M31.noalias() = Sbip - barSbine*Hnep + Tbibi*Hbip;
-        M32.noalias() = -barSbine*tr(Jne) + Tbibi*tr(Jbi);
-        M33.noalias() = Ibibi + Tbibi*diag(Hbibi);
-        M34.noalias() = -Tbibe;
-        M35.noalias() = Sbini;
+        M31.noalias() = Sbep - barHbep - barSbene*Hnep + Tbebi*Hbip;
+        M32.noalias() = Tbebi*diag(Hbibi);
+        M33 = diag(inv(-Hbebe)); M44 -= Tbebe;
+        M34.noalias() = Sbeni;
 
-        M41.noalias() = Sbep - barHbep - barSbene*Hnep + Tbebi*Hbip;
-        M42.noalias() = -tr(barJbe) - barSbene*tr(Jne) + Tbebi*tr(Jbi);
-        M43.noalias() = Tbebi*diag(Hbibi);
-        M44 = diag(inv(-Hbebe)); M44 -= Tbebe;
-        M45.noalias() = Sbeni;
-
-        M51.noalias() = Hnip - tr(Sbini)*Hbip;
-        M52.noalias() = tr(Jni) - tr(Sbini)*tr(Jbi);
-        M53.noalias() = -tr(Sbini)*diag(Hbibi);
-        M54.noalias() = tr(Sbeni);
-        M55 = diag(Hnini);
+        M41.noalias() = Hnip - tr(Sbini)*Hbip;
+        M42.noalias() = -tr(Sbini)*diag(Hbibi);
+        M43.noalias() = tr(Sbeni);
+        M44 = diag(Hnini);
 
         lu.decompose(M);
     }
@@ -249,7 +208,7 @@ struct SaddlePointSolverRangespace::Impl
     {
         const auto ns  = args.dims.ns;
         const auto np  = args.dims.np;
-        const auto nz  = args.dims.nz;
+        const auto nw  = args.dims.nw;
         const auto nbs = args.dims.nbs;
         const auto nns = args.dims.nns;
         const auto nbe = args.dims.nbe;
@@ -283,15 +242,6 @@ struct SaddlePointSolverRangespace::Impl
         const auto Vpbi = Vpbs.rightCols(nbi);
         const auto Vpni = Vpns.rightCols(nni);
 
-        const auto Jp = args.Jp;
-        const auto Js  = args.Js;
-        const auto Jbs = Js.leftCols(nbs);
-        const auto Jns = Js.rightCols(nns);
-        const auto Jbe = Jbs.leftCols(nbe);
-        const auto Jne = Jns.leftCols(nne);
-        const auto Jbi = Jbs.rightCols(nbi);
-        const auto Jni = Jns.rightCols(nni);
-
         const auto Hs = Hd.head(ns);
 
         const auto Hbsbs = Hs.head(nbs);
@@ -302,7 +252,6 @@ struct SaddlePointSolverRangespace::Impl
         const auto Hnini = Hnsns.tail(nni);
 
         const auto barVpne = barVps.rightCols(nne);
-        const auto barJne  = barJs.rightCols(nne);
 
         const auto Tbsbs = Tw.topLeftCorner(nbs, nbs);
         const auto Tbibi = Tbsbs.bottomRightCorner(nbi, nbi);
@@ -318,56 +267,52 @@ struct SaddlePointSolverRangespace::Impl
         auto abi = abs.tail(nbi);
         auto ani = ans.tail(nni);
 
-        auto bbs = bb.head(nbs);
-        auto bbe = bbs.head(nbe);
-        auto bbi = bbs.tail(nbi);
+        auto awbs = aw.head(nbs);
+        auto awbe = awbs.head(nbe);
+        auto awbi = awbs.tail(nbi);
 
         as = args.as;
         ap = args.ap;
-        az = args.az;
-        bbs = args.aybs;
+        awbs = args.awbs;
 
         abe.noalias() = abe/Hbebe;
         ane.noalias() = ane/Hnene;
 
-        ap.noalias()  = ap - Vpbe*abe - Vpne*ane + barVpne*tr(Sbine)*abi;
-        az.noalias()  = az - Jbe*abe - Jne*ane + barJne*tr(Sbine)*abi;
-        bbi.noalias() = bbi - Sbine*ane + Tbibi*abi;
-        bbe.noalias() = bbe - abe - Sbene*ane + Tbebi*abi;
-        ani.noalias() = ani - tr(Sbini)*abi;
+        ap.noalias()   = ap - Vpbe*abe - Vpne*ane + barVpne*tr(Sbine)*abi;
+        awbi.noalias() = awbi - Sbine*ane + Tbibi*abi;
+        awbe.noalias() = awbe - abe - Sbene*ane + Tbebi*abi;
+        ani.noalias()  = ani - tr(Sbini)*abi;
 
-        const auto t = np + nz + nbi + nbe + nni;
+        const auto t = np + nbi + nbe + nni;
 
         auto r = rw.head(t);
         auto s = sw.head(t);
 
         auto p   = r.head(np);
-        auto z   = r.segment(np, nz);
-        auto xbi = r.segment(np + nz, nbi);
-        auto ybe = r.segment(np + nz + nbi, nbe);
+        auto xbi = r.segment(np, nbi);
+        auto wbe = r.segment(np + nbi, nbe);
         auto xni = r.tail(nni);
 
-        r << ap, az, bbi, bbe, ani;
+        r << ap, awbi, awbe, ani;
 
         lu.solve(r);
 
-        auto ybi = bbi;
+        auto wbi = awbi;
         auto xbe = abe;
         auto xne = ane;
 
-        ybi.noalias() = abi - Hbip*p - tr(Jbi)*z - diag(Hbibi)*xbi;
-        xbe.noalias() = abe - (Hbep*p + tr(Jbe)*z + ybe) / Hbebe;
-        xne.noalias() = ane - (Hnep*p + tr(Jne)*z + tr(Sbene)*ybe + tr(Sbine)*ybi) / Hnene;
+        wbi.noalias() = abi - Hbip*p - diag(Hbibi)*xbi;
+        xbe.noalias() = abe - (Hbep*p + wbe) / Hbebe;
+        xne.noalias() = ane - (Hnep*p + tr(Sbene)*wbe + tr(Sbine)*wbi) / Hnene;
 
         args.xs << xbe, xbi, xne, xni;
         args.p = p;
-        args.z = z;
-        args.ybs << ybe, ybi;
+        args.wbs << wbe, wbi;
     }
 };
 
-SaddlePointSolverRangespace::SaddlePointSolverRangespace(Index nx, Index np, Index ny, Index nz)
-: pimpl(new Impl(nx, np, ny, nz))
+SaddlePointSolverRangespace::SaddlePointSolverRangespace(Index nx, Index np, Index nw)
+: pimpl(new Impl(nx, np, nw))
 {}
 
 SaddlePointSolverRangespace::SaddlePointSolverRangespace(const SaddlePointSolverRangespace& other)

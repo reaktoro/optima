@@ -96,10 +96,10 @@ struct SaddlePointSolverRhs3Args
 /// The arguments for method SaddlePointSolver::solve.
 struct SaddlePointSolverSolve1Args
 {
-    VectorRef sx;         ///< The solution vector *ux* of the saddle point problem.
-    VectorRef sp;         ///< The solution vector *up* of the saddle point problem.
-    VectorRef sy;         ///< The solution vector *uy* of the saddle point problem.
-    VectorRef sz;         ///< The solution vector *uz* of the saddle point problem.
+    VectorRef sx;         ///< The solution vector *sx* of the saddle point problem.
+    VectorRef sp;         ///< The solution vector *sp* of the saddle point problem.
+    VectorRef sy;         ///< The solution vector *sy* of the saddle point problem.
+    VectorRef sz;         ///< The solution vector *sz* of the saddle point problem.
 };
 
 /// The arguments for method SaddlePointSolver::multiply.

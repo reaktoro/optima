@@ -30,7 +30,7 @@ class SaddlePointSolverFullspace
 {
 public:
     /// Construct a default SaddlePointSolverFullspace instance.
-    SaddlePointSolverFullspace(Index nx, Index np, Index ny, Index nz);
+    SaddlePointSolverFullspace(Index nx, Index np, Index nw);
 
     /// Construct a copy of a SaddlePointSolverFullspace instance.
     SaddlePointSolverFullspace(const SaddlePointSolverFullspace& other);
