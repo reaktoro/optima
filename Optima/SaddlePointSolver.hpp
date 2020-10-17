@@ -80,19 +80,6 @@ struct SaddlePointSolverRhs2Args
     VectorConstRef b;    ///< The right-hand side vector *b* of the saddle point problem.
 };
 
-/// The arguments for method SaddlePointSolver::rhs.
-/// Use this method if you are solving the following matrix equation:
-/// @eqc{\begin{bmatrix}H_{\mathrm{ss}} & 0 & H_{\mathrm{sp}} & J_{\mathrm{s}}^{T} & A_{\mathrm{s}}^{T}\\[1mm]0 & I_{\mathrm{uu}} & 0 & 0 & 0\\[1mm]V_{\mathrm{ps}} & 0 & V_{\mathrm{pp}} & 0 & 0\\[1mm]J_{\mathrm{s}} & 0 & J_{\mathrm{p}} & 0 & 0\\[1mm]A_{\mathrm{s}} & A_{\mathrm{u}} & A_{\mathrm{p}} & 0 & 0\end{bmatrix}\begin{bmatrix}x_{\mathrm{s}}\\[1mm]x_{\mathrm{u}}\\[1mm]p\\[1mm]z\\[1mm]y\end{bmatrix}=\begin{bmatrix}H_{\mathrm{ss}}\bar{x}_{\mathrm{s}}+H_{\mathrm{sp}}\bar{p}-g_{\mathrm{s}}\\[1mm]\bar{x}_{\mathrm{u}}\\[1mm]V_{\mathrm{ps}}\bar{x}_{\mathrm{s}}+V_{\mathrm{pp}}\bar{p}-v\\[1mm]J_{\mathrm{s}}\bar{x}_{\mathrm{s}}+J_{\mathrm{p}}\bar{p}-h\\[1mm]b\end{bmatrix}}
-struct SaddlePointSolverRhs3Args
-{
-    VectorConstRef fx;   ///< The right-hand side vector *fx* of the saddle point problem.
-    VectorConstRef x;    ///< The right-hand side vector *x* of the saddle point problem.
-    VectorConstRef p;    ///< The right-hand side vector *p* of the saddle point problem.
-    VectorConstRef v;    ///< The right-hand side vector *v* of the saddle point problem.
-    VectorConstRef h;    ///< The right-hand side vector *h* of the saddle point problem.
-    VectorConstRef b;    ///< The right-hand side vector *b* of the saddle point problem.
-};
-
 /// The arguments for method SaddlePointSolver::solve.
 struct SaddlePointSolverSolve1Args
 {
@@ -207,10 +194,6 @@ public:
     /// Compute the right-hand side vector in the canonical saddle point problem.
     /// @note Ensure method @ref canonicalize has been called before this method.
     auto rhs(SaddlePointSolverRhs2Args args) -> void;
-
-    /// Compute the right-hand side vector in the canonical saddle point problem.
-    /// @note Ensure method @ref canonicalize has been called before this method.
-    auto rhs(SaddlePointSolverRhs3Args args) -> void;
 
     /// Decompose the coefficient matrix of the canonical saddle point problem.
     /// @note Ensure method @ref canonicalize has been called before this method.

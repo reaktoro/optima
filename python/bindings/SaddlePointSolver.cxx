@@ -48,11 +48,6 @@ void exportSaddlePointSolver(py::module& m)
         return self.rhs({ fx, x, p, y, z, v, h, b });
     };
 
-    auto rhs3 = [](SaddlePointSolver& self, VectorConstRef fx, VectorConstRef x, VectorConstRef p, VectorConstRef v, VectorConstRef h, VectorConstRef b)
-    {
-        return self.rhs({ fx, x, p, v, h, b });
-    };
-
     auto decompose = [](SaddlePointSolver& self)
     {
         return self.decompose();
@@ -108,7 +103,6 @@ void exportSaddlePointSolver(py::module& m)
         .def("decompose", decompose)
         .def("rhs", rhs1)
         .def("rhs", rhs2)
-        .def("rhs", rhs3)
         .def("solve", solve)
         .def("multiply", multiply)
         .def("transposeMultiply", transposeMultiply)

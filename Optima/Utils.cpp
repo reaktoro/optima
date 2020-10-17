@@ -564,9 +564,11 @@ auto multiplyMatrixVectorWithoutResidualRoundOffError(MatrixConstRef A, VectorCo
     // idea is that if b[i] is truly small, and not a result of round-off
     // errors, then b'[i] should also be small.
 
+    assert(A.cols() == x.rows());
+
     Vector b = A * x;
     const auto eps = std::numeric_limits<double>::epsilon();
-    for(auto i = 0; i < x.size(); ++i)
+    for(auto i = 0; i < b.size(); ++i)
     {
         const double ref = A.row(i).cwiseAbs() * x.cwiseAbs();
         if(std::abs(b[i]) < ref * eps)

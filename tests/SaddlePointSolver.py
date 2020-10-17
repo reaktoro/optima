@@ -124,7 +124,7 @@ def test_saddle_point_solver(nx, np, ny, nz, nbu, nl, ju, variable_condition, me
     Ap = linspace(1, ny*np, ny*np).reshape((ny, np))
 
     # Assemble the coefficient matrix J = [Jx Jp]
-    J = pascal_matrix(nz, nx + np)
+    J = linspace(0, 1, nz*(nx + np)).reshape((nz, nx + np))
 
     # Extract the blocks of J = [Jx Jp]
     Jx = J[:, :nx]
@@ -271,26 +271,29 @@ def test_saddle_point_solver(nx, np, ny, nz, nbu, nl, ju, variable_condition, me
     # Check the overload method rhs(g, x, p, v, h, b) works
     #---------------------------------------------------------------
 
-    # For this rhs overload, solution x satisfies x[iunstable] = x0[iunstable]
-    s_exp[ju] = x0[ju]
+    # Note: This overload method has been deprecated. The code below is kept
+    # here just in case it becomes needed again.
 
-    # Update the right-hand side vector r = (ax, ap, az, ay)
-    r = M @ s_exp
+    # # For this rhs overload, solution x satisfies x[iunstable] = x0[iunstable]
+    # s_exp[ju] = x0[ju]
 
-    # The right-hand side vectors ax, ap, ay, az
-    ax, ap, az, ay = split(r, [nx, nx + np, nx + np + nz])
+    # # Update the right-hand side vector r = (ax, ap, az, ay)
+    # r = M @ s_exp
 
-    g0 = zeros(nx)
-    g0[js] = Hss @ x0[js] + Hsp @ p0 - ax[js]   # compute stable entries in g0 using the fact that as = Hss*xs0 + Hsp*p0 - gs0
-    g0[ju] = float("nan")                       # set to nan to ensure the unstable entries in g0 is indeed ignored
-    v0 = Vps @ x0[js] + Vpp @ p0 - ap   # compute v0 using the fact that ap = Vpx*x0 + Vpp*p0 - v0
-    h0 = Js @ x0[js] + Jp @ p0 - az     # compute h0 using the fact that az = Jx*x0 + Jp*p0 - h0
-    b0 = ay + Au @ x0[ju]               # compute b0 using the fact that ay = b0
+    # # The right-hand side vectors ax, ap, ay, az
+    # ax, ap, az, ay = split(r, [nx, nx + np, nx + np + nz])
 
-    solver.rhs(g0, x0, p0, v0, h0, b0)
-    solver.solve(x, p, y, z)
+    # g0 = zeros(nx)
+    # g0[js] = Hss @ x0[js] + Hsp @ p0 - ax[js]   # compute stable entries in g0 using the fact that as = Hss*xs0 + Hsp*p0 - gs0
+    # g0[ju] = float("nan")                       # set to nan to ensure the unstable entries in g0 is indeed ignored
+    # v0 = Vps @ x0[js] + Vpp @ p0 - ap   # compute v0 using the fact that ap = Vpx*x0 + Vpp*p0 - v0
+    # h0 = Js @ x0[js] + Jp @ p0 - az     # compute h0 using the fact that az = Jx*x0 + Jp*p0 - h0
+    # b0 = ay + Au @ x0[ju]               # compute b0 using the fact that ay = b0
 
-    check_solution()
+    # solver.rhs(g0, x0, p0, v0, h0, b0)
+    # solver.solve(x, p, y, z)
+
+    # check_solution()
 
     #---------------------------------------------------------------
     # Check method multiply(rx, rp, ry, rz, ax, ap, ay, az) works
