@@ -6,7 +6,6 @@ dependencies:
   - clangxx_osx-64=9.0.0  # [osx]
 
   # C++ libraries
-  - eigen
   - pybind11
   - catch2
 
