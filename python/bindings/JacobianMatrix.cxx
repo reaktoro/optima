@@ -21,6 +21,9 @@
 namespace py = pybind11;
 
 // Optima includes
+#include <Optima/JacobianBlockH.hpp>
+#include <Optima/JacobianBlockV.hpp>
+#include <Optima/JacobianBlockW.hpp>
 #include <Optima/JacobianMatrix.hpp>
 using namespace Optima;
 
