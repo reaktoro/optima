@@ -43,11 +43,8 @@ public:
     /// Assign a JacobianBlockV instance to this.
     auto operator=(JacobianBlockV other) -> JacobianBlockV& = delete;
 
-    /// The reference to the Vpx block matrix in V = [Vpx Vpp].
-    MatrixRef Vpx;
-
-    /// The reference to the Vpp block matrix in V = [Vpx Vpp].
-    MatrixRef Vpp;
+    MatrixRef Vpx; ///< The reference to the Vpx block matrix in V = [Vpx Vpp].
+    MatrixRef Vpp; ///< The reference to the Vpp block matrix in V = [Vpx Vpp].
 };
 
 } // namespace Optima

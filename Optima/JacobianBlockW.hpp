@@ -35,24 +35,6 @@ private:
     std::unique_ptr<Impl> pimpl;
 
 public:
-    /// The reference to the Ax block matrix in W = [Ax Ap; Jx Jp].
-    MatrixConstRef Ax;
-
-    /// The reference to the Ap block matrix in W = [Ax Ap; Jx Jp].
-    MatrixConstRef Ap;
-
-    /// The reference to the Jx block matrix in W = [Ax Ap; Jx Jp].
-    MatrixConstRef Jx;
-
-    /// The reference to the Jp block matrix in W = [Ax Ap; Jx Jp].
-    MatrixConstRef Jp;
-
-    /// The reference to the Wp block matrix in W = [Wx Wp] = [Ax Ap; Jx Jp].
-    MatrixConstRef Wx;
-
-    /// The reference to the Wp block matrix in W = [Wx Wp] = [Ax Ap; Jx Jp].
-    MatrixConstRef Wp;
-
     /// Construct a JacobianBlockW instance.
     /// @param nx The number of columns in Ax and Jx
     /// @param np The number of columns in Ap and Jp
@@ -77,15 +59,22 @@ public:
     /// The matrix components in the canonical form of matrix W.
     struct CanonicalForm
     {
-        MatrixConstRef  R;
-        MatrixConstRef  Sbn;
-        MatrixConstRef  Sbp;
-        IndicesConstRef jb;
-        IndicesConstRef jn;
+        MatrixConstRef  R;   ///< The canonicalizer matrix of W so that RWQ = [Ibb Sbn Sbp] with Q = (jb, jn).
+        MatrixConstRef  Sbn; ///< The matrix Sbn in the canonical form of W.
+        MatrixConstRef  Sbp; ///< The matrix Sbp in the canonical form of W.
+        IndicesConstRef jb;  ///< The indices of the basic variables in the canonical form of W.
+        IndicesConstRef jn;  ///< The indices of the non-basic variables in the canonical form of W.
     };
 
     /// Return a view to the components of the canonical form of matrix W.
     auto canonicalForm() const -> CanonicalForm;
+
+    MatrixConstRef Ax; ///< The reference to the Ax block matrix in W = [Ax Ap; Jx Jp].
+    MatrixConstRef Ap; ///< The reference to the Ap block matrix in W = [Ax Ap; Jx Jp].
+    MatrixConstRef Jx; ///< The reference to the Jx block matrix in W = [Ax Ap; Jx Jp].
+    MatrixConstRef Jp; ///< The reference to the Jp block matrix in W = [Ax Ap; Jx Jp].
+    MatrixConstRef Wx; ///< The reference to the Wp block matrix in W = [Wx Wp] = [Ax Ap; Jx Jp].
+    MatrixConstRef Wp; ///< The reference to the Wp block matrix in W = [Wx Wp] = [Ax Ap; Jx Jp].
 };
 
 } // namespace Optima

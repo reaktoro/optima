@@ -50,11 +50,8 @@ public:
     /// Specify whether Hxx has diagonal structure.
     auto isHxxDiagonal(bool enable) -> bool;
 
-    /// The reference to the Hxx block matrix in H = [Hxx Hxp].
-    MatrixRef Hxx;
-
-    /// The reference to the Hxp block matrix in H = [Hxx Hxp].
-    MatrixRef Hxp;
+    MatrixRef Hxx; ///< The reference to the Hxx block matrix in H = [Hxx Hxp].
+    MatrixRef Hxp; ///< The reference to the Hxp block matrix in H = [Hxx Hxp].
 };
 
 } // namespace Optima

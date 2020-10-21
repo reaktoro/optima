@@ -22,12 +22,14 @@
 
 // Optima includes
 #include <Optima/Index.hpp>
-#include <Optima/JacobianBlockH.hpp>
-#include <Optima/JacobianBlockV.hpp>
-#include <Optima/JacobianBlockW.hpp>
 #include <Optima/Matrix.hpp>
 
 namespace Optima {
+
+// Forward declarations
+class JacobianBlockH;
+class JacobianBlockV;
+class JacobianBlockW;
 
 /// Used to represent the Jacobian matrix of the optimization problem.
 class JacobianMatrix

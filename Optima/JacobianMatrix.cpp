@@ -20,8 +20,10 @@
 // Optima includes
 #include <Optima/Exception.hpp>
 #include <Optima/IndexUtils.hpp>
-#include <Optima/SaddlePointTypes.hpp>
 #include <Optima/Utils.hpp>
+#include <Optima/JacobianBlockH.hpp>
+#include <Optima/JacobianBlockV.hpp>
+#include <Optima/JacobianBlockW.hpp>
 
 namespace Optima {
 
