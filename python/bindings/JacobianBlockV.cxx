@@ -31,11 +31,17 @@ void exportJacobianBlockV(py::module& m)
         return JacobianBlockV(Vpx, Vpp);
     };
 
+    auto set_Vpx = [](JacobianBlockV& self, MatrixConstRef4py Vpx) { self.Vpx = Vpx; };
+    auto set_Vpp = [](JacobianBlockV& self, MatrixConstRef4py Vpp) { self.Vpp = Vpp; };
+
+    auto get_Vpx = [](const JacobianBlockV& self) { return self.Vpx; };
+    auto get_Vpp = [](const JacobianBlockV& self) { return self.Vpp; };
+
     py::class_<JacobianBlockV>(m, "JacobianBlockV")
         .def(py::init<Index, Index>())
         .def(py::init(init))
         .def(py::init<const JacobianBlockV&>())
-        .def_readwrite("Vpx", &JacobianBlockV::Vpx)
-        .def_readwrite("Vpp", &JacobianBlockV::Vpp)
+        .def_property("Vpx", get_Vpx, set_Vpx)
+        .def_property("Vpp", get_Vpp, set_Vpp)
         ;
 }

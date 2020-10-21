@@ -27,26 +27,21 @@ tested_np = [0, 5, 10]       # The tested number of p variables
 
 @mark.parametrize("nx", tested_nx)
 @mark.parametrize("np", tested_np)
-def test_jacobian_block_h(nx, np):
+def test_jacobian_block_v(nx, np):
 
-    Hxx = random.rand(nx, nx)
-    Hxp = random.rand(nx, np)
+    Vpx = random.rand(np, nx)
+    Vpp = random.rand(np, np)
 
-    H = JacobianBlockH(nx, np)
+    V = JacobianBlockV(nx, np)
 
-    H.Hxx = Hxx
-    H.Hxp = Hxp
+    V.Vpx = Vpx
+    V.Vpp = Vpp
 
-    assert (H.Hxx == Hxx).all()
-    assert (H.Hxp == Hxp).all()
+    assert (V.Vpx == Vpx).all()
+    assert (V.Vpp == Vpp).all()
 
-    H = JacobianBlockH(Hxx, Hxp)
+    V = JacobianBlockV(Vpx, Vpp)
 
-    assert (H.Hxx == Hxx).all()
-    assert (H.Hxp == Hxp).all()
+    assert (V.Vpx == Vpx).all()
+    assert (V.Vpp == Vpp).all()
 
-    assert H.isHxxDiagonal() == False
-
-    H.isHxxDiagonal(True)
-
-    assert H.isHxxDiagonal() == True
