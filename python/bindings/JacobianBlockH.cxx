@@ -31,13 +31,19 @@ void exportJacobianBlockH(py::module& m)
         return JacobianBlockH(Hxx, Hxp);
     };
 
+    auto set_Hxx = [](JacobianBlockH& self, MatrixConstRef4py Hxx) { self.Hxx = Hxx; };
+    auto set_Hxp = [](JacobianBlockH& self, MatrixConstRef4py Hxp) { self.Hxp = Hxp; };
+
+    auto get_Hxx = [](const JacobianBlockH& self) { return self.Hxx; };
+    auto get_Hxp = [](const JacobianBlockH& self) { return self.Hxp; };
+
     py::class_<JacobianBlockH>(m, "JacobianBlockH")
         .def(py::init<Index, Index>())
         .def(py::init(init))
         .def(py::init<const JacobianBlockH&>())
         .def("isHxxDiagonal", py::overload_cast<>(&JacobianBlockH::isHxxDiagonal, py::const_))
         .def("isHxxDiagonal", py::overload_cast<bool>(&JacobianBlockH::isHxxDiagonal))
-        .def_readwrite("Hxx", &JacobianBlockH::Hxx)
-        .def_readwrite("Hxp", &JacobianBlockH::Hxp)
+        .def_property("Hxx", get_Hxx, set_Hxx)
+        .def_property("Hxp", get_Hxp, set_Hxp)
         ;
 }
