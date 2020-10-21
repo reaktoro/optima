@@ -80,6 +80,7 @@ struct ExtendedCanonicalizer::Impl
             R = canonicalizerA.R();
             S = canonicalizerA.S();
             Q = canonicalizerA.Q();
+            return;
         }
 
         const auto& RA = canonicalizerA.R();
