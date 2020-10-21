@@ -77,8 +77,8 @@ struct JacobianBlockW::Impl
 
         const auto Rb = canonicalizer.R().topRows(nb);
 
-        auto Sbn = S.topRows(nb).leftCols(nn);
-        auto Sbp = S.topRows(nb).middleCols(nn, np);
+        auto Sbn = S.topLeftCorner(nb, nn);
+        auto Sbp = S.topRightCorner(nb, np);
 
         Sbn = canonicalizer.S();
         Sbp = Rb * Wp;
