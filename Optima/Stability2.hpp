@@ -31,8 +31,8 @@ struct StabilityUpdateArgs
     JacobianBlockW const& W; ///< The matrix W = [Wx Wp] = [Ax Ap; Jx Jp] and its current canonical form.
     VectorConstRef g;        ///< The gradient of the objective function with respect to x.
     VectorConstRef x;        ///< The values of the primal variables x.
-    VectorConstRef xlower;   ///< The lower bounds of the prima variables x.
-    VectorConstRef xupper;   ///< The upper bounds of the prima variables x.
+    VectorConstRef xlower;   ///< The lower bounds of the primal variables x.
+    VectorConstRef xupper;   ///< The upper bounds of the primal variables x.
 };
 
 /// The stability status of the x variables.
@@ -48,7 +48,7 @@ struct StabilityStatus
     IndicesConstRef jlu;   ///< The indices of the lower unstable variables in x.
     IndicesConstRef juu;   ///< The indices of the upper unstable variables in x.
     VectorConstRef s;      ///< The stability \eq{s=g-W_{\mathrm{x}}^{T}\lambda} of the x variables.
-    VectorConstRef lambda; ///< The canonical Lagrange multipliers \eq{lambda}.
+    VectorConstRef lmbda;  ///< The canonical Lagrange multipliers \eq{lambda}. Note: `lambda` is a reserved word in python.
 };
 
 /// Used to determine the stability of the primal \eq{x} variables.

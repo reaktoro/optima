@@ -32,20 +32,30 @@ Stability2::Stability2(Index nx)
 
 auto Stability2::update(StabilityUpdateArgs args) -> void
 {
+    const auto nx = jsu.size();
+
+    assert(nx == args.g.size());
+    assert(nx == args.x.size());
+    assert(nx == args.xlower.size());
+    assert(nx == args.xupper.size());
+
     const auto [R, Sbn, Sbp, jb, jn] = args.W.canonicalForm();
+
+    assert(nx == jb.size() + jn.size());
 
     const auto gb = args.g(jb);
     const auto gn = args.g(jn);
 
-    lambda = tr(R) * gb;
+    const auto nb = jb.size();
+    const auto Rb = R.topRows(nb);
+
+    lambda = tr(Rb) * gb;
 
     s(jn) = gn - tr(Sbn) * gb;
     s(jb).fill(0.0);
 
     auto is_lower_unstable = [&](Index i) { return args.x[i] == args.xlower[i] && s[i] > 0.0; };
     auto is_upper_unstable = [&](Index i) { return args.x[i] == args.xupper[i] && s[i] < 0.0; };
-
-    const auto nx = jsu.size();
 
     // Organize jsu = (js, jlu, juu) = (stable, lower unstable, upper unstable).
     const auto pos1 = moveRightIf(jsu, is_upper_unstable);

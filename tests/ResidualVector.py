@@ -41,7 +41,7 @@ tested_ju = [
 @mark.parametrize("nl",  tested_nl)
 @mark.parametrize("nbu", tested_nbu)
 @mark.parametrize("ju",  tested_ju)
-def test_jacobian_matrix(nx, np, ny, nz, nl, nbu, ju):
+def test_residual_vector(nx, np, ny, nz, nl, nbu, ju):
 
     # Ensure nx is larger than np and (ny + nz)
     if nx < np or nx < ny + nz: return

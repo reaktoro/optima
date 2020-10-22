@@ -33,17 +33,22 @@ void exportStability2(py::module& m)
         .def_readonly("jlu", &StabilityStatus::jlu)
         .def_readonly("juu", &StabilityStatus::juu)
         .def_readonly("s", &StabilityStatus::s)
-        .def_readonly("lambda", &StabilityStatus::lambda)
+        .def_readonly("lmbda", &StabilityStatus::lmbda)
         ;
 
-    auto update = [](Stability2& self, JacobianBlockW const& W, VectorConstRef g, VectorConstRef x, VectorConstRef xlower, VectorConstRef xupper)
+    auto update = [](Stability2& self,
+        JacobianBlockW const& W,
+        VectorConstRef g,
+        VectorConstRef x,
+        VectorConstRef xlower,
+        VectorConstRef xupper)
     {
         self.update({W, g, x, xlower, xupper});
     };
 
     py::class_<Stability2>(m, "Stability2")
         .def(py::init<Index>())
-        .def("update", &Stability2::update)
+        .def("update", update)
         .def("status", &Stability2::status)
         ;
 }
