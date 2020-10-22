@@ -70,7 +70,7 @@ public:
     /// The vector components in the canonical form of the residual vector.
     struct CanonicalForm
     {
-        VectorConstRef as;   ///< The vector as in the canonical residual vector.
+        VectorConstRef axs;  ///< The vector axs in the canonical residual vector.
         VectorConstRef ap;   ///< The vector ap in the canonical residual vector.
         VectorConstRef awbs; ///< The vector awbs in the canonical residual vector.
     };

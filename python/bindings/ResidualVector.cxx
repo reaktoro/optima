@@ -28,15 +28,29 @@ using namespace Optima;
 void exportResidualVector(py::module& m)
 {
     py::class_<ResidualVector::CanonicalForm>(m, "ResidualVectorCanonicalForm")
-        .def_readonly("as", &ResidualVector::CanonicalForm::as)
+        .def_readonly("axs", &ResidualVector::CanonicalForm::axs)
         .def_readonly("ap", &ResidualVector::CanonicalForm::ap)
         .def_readonly("awbs", &ResidualVector::CanonicalForm::awbs)
         ;
 
+    auto update = [](ResidualVector& self,
+        JacobianMatrix const& M,
+        VectorConstRef x,
+        VectorConstRef p,
+        VectorConstRef y,
+        VectorConstRef z,
+        VectorConstRef g,
+        VectorConstRef v,
+        VectorConstRef b,
+        VectorConstRef h)
+    {
+        self.update({M, x, p, y, z, g, v, b, h});
+    };
+
     py::class_<ResidualVector>(m, "ResidualVector")
         .def(py::init<Index, Index, Index, Index>())
         .def(py::init<const ResidualVector&>())
-        .def("update", &ResidualVector::update)
+        .def("update", update)
         .def("canonicalForm", &ResidualVector::canonicalForm)
         ;
 }
