@@ -20,8 +20,6 @@ from numpy import *
 from numpy.testing import assert_allclose, assert_almost_equal
 from pytest import approx, mark
 
-from utils.matrices import pascal_matrix
-
 tested_nx = [5, 10, 20, 50]  # The tested number of x variables
 tested_np = [0, 5, 10]       # The tested number of p variables
 

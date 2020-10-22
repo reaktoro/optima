@@ -73,9 +73,11 @@ struct JacobianMatrix::Impl
         Hprime.resize(nx, nx + np);
         Vprime.resize(np, nx + np);
         Wprime.resize(nw, nx + np);
+        jbn.resize(nx);
+        jsu.resize(nx);
     }
 
-    auto update(const JacobianBlockH& H, const JacobianBlockV& V, const JacobianBlockW& W, IndicesConstRef ju) -> void
+    auto update(const JacobianBlockH& H, const JacobianBlockV& V, const JacobianBlockW& W, IndicesConstRef ju0) -> void
     {
         const auto Wbar = W.canonicalForm();
 
@@ -83,8 +85,8 @@ struct JacobianMatrix::Impl
         // Initialize number of basic/non-basic stable/unstable variables
         //======================================================================
 
-        ns = nx - ju.size();
-        nu = ju.size();
+        ns = nx - ju0.size();
+        nu = ju0.size();
 
         nb = Wbar.jb.size();
         nn = Wbar.jn.size();
@@ -94,13 +96,8 @@ struct JacobianMatrix::Impl
         // Initialize matrices R, Sbn, Sbp and indices of variables jbn
         //======================================================================
 
-        auto Rb = R.topRows(nb);
-
         auto Sbn = S.topLeftCorner(nb, nn);
         auto Sbp = S.topRightCorner(nb, np);
-
-        auto jb = jbn.head(nb); // the indices of the basic variables
-        auto jn = jbn.tail(nn); // the indices of the non-basic variables
 
         R = Wbar.R;
 
@@ -108,6 +105,9 @@ struct JacobianMatrix::Impl
         Sbp = Wbar.Sbp;
 
         jbn << Wbar.jb, Wbar.jn; // the indices of the variables ordered as x = (xb, xn), but xb and xn not yet properly sorted
+
+        auto jb = jbn.head(nb); // the indices of the basic variables
+        auto jn = jbn.tail(nn); // the indices of the non-basic variables
 
         //======================================================================
         // Initialize permutation matrices Kb and Kn so that
@@ -120,33 +120,58 @@ struct JacobianMatrix::Impl
         Kn = indices(nn);
 
         bs.setOnes(nx); // 1 for stable, 0 for unstable
-        bs(ju).fill(0);
-
-        auto is_stable_basic = [&](auto i) { return bs[jb[i]]; }; // returts true if ith basic variable is stable
-        auto is_stable_nonbasic = [&](auto i) { return bs[jn[i]]; }; // returts true if ith non-basic variable is stable
-
-        // Partition Kb = (Kbs, Kbu) and Kn = (Kns, Knu)
-        nbs = moveLeftIf(Kb, is_stable_basic);    // as a result, update the number of basic stable variables
-        nns = moveLeftIf(Kn, is_stable_nonbasic); // as a result, update the number of non-basic stable variables
-
-        nbu = nb - nbs; // update the number of basic unstable variables
-        nnu = nn - nns; // update the number of non-basic unstable variables
-
-        // Sort Kbs and Kns in descending order of diagonal values in Hxx
-        auto Kbs = Kb.head(nbs);
-        auto Kns = Kn.head(nns);
+        bs(ju0).fill(0);
 
         const auto Hd = H.Hxx.diagonal(); // the diagonal entries in Hxx used to sort the variables
 
         using std::abs;
         using std::sort;
 
-        sort(Kbs.begin(), Kbs.end(), [&](auto l, auto r) { return abs(Hd[jb[l]]) > abs(Hd[jb[r]]); });
-        sort(Kns.begin(), Kns.end(), [&](auto l, auto r) { return abs(Hd[jn[l]]) > abs(Hd[jn[r]]); });
+        auto jbi_is_stable = [&](auto i) { return bs[jb[i]]; }; // returts true if ith basic variable is stable
+        auto jni_is_stable = [&](auto i) { return bs[jn[i]]; }; // returts true if ith non-basic variable is stable
+
+        // Partition Kb = (Kbs, Kbu) and Kn = (Kns, Knu)
+        nbs = moveLeftIf(Kb, jbi_is_stable); // as a result, update the number of basic stable variables
+        nns = moveLeftIf(Kn, jni_is_stable); // as a result, update the number of non-basic stable variables
+
+        nbu = nb - nbs; // update the number of basic unstable variables
+        nnu = nn - nns; // update the number of non-basic unstable variables
+
+        // Partition Kbs = (Kbe, Kbi) and Kns = (Kne, Kni)
+        auto Kbs = Kb.head(nbs);
+        auto Kns = Kn.head(nns);
+
+        // Return true if the i-th stable basic variable is a pivot/explicit variable
+        auto jbsi_is_explicit = [&](auto i)
+        {
+            const auto idx = jb[i];                     // the global index of the basic variable
+            const auto Hii = Hd[idx];                   // the corresponding diagonal entry in the H matrix
+            const auto a1 = 1.0;                        // the max value along the corresponding column of the identity matrix
+            const auto a2 = norminf(V.Vpx.col(idx));    // the max value along the corresponding column of the Vpx matrix
+            return abs(Hii) >= std::max(a1, a2);        // return true if diagonal entry is dominant with respect to Vpx and Ibb only (not Hxx!)
+        };
+
+        // Return true if the i-th stable non-basic variable is a pivot/explicit variable
+        auto jnsi_is_explicit = [&](auto i)
+        {
+            const auto idx = jn[i];                     // the global index of the non-basic variable
+            const auto Hii = Hd[idx];                   // the corresponding diagonal entry in the H matrix
+            const auto a1 = norminf(Sbn.col(i));        // the max value along the corresponding column of the Sbn matrix
+            const auto a2 = norminf(V.Vpx.col(idx));    // the max value along the corresponding column of the Vpx matrix
+            return abs(Hii) >= std::max(a1, a2);        // return true if diagonal entry is dominant with respect to Vpx and Sbn only (not Hxx!)
+        };
+
+        nbe = moveLeftIf(Kbs, jbsi_is_explicit); // as a result, update the number of basic stable explicit variables
+        nne = moveLeftIf(Kns, jnsi_is_explicit); // as a result, update the number of non-basic stable explicit variables
+
+        // Update the number of non-pivot/implicit stable basic and non-basic variables.
+        nbi = nbs - nbe;
+        nni = nns - nne;
 
         //======================================================================
-        // Apply permutation to R, Sbn, Sbp and indices of variables jbn
+        // Apply permutation to Rb, Sbn, Sbp and indices of variables jbn
         //======================================================================
+        auto Rb = R.topRows(nb);
 
         Kb.asPermutation().transpose().applyThisOnTheLeft(Sbn);
         Kb.asPermutation().transpose().applyThisOnTheLeft(Sbp);
@@ -158,49 +183,13 @@ struct JacobianMatrix::Impl
         Kb.asPermutation().transpose().applyThisOnTheLeft(jb); // jb is now ordered as (jbs, jbu) = (jbe, jbi, jbu)
         Kn.asPermutation().transpose().applyThisOnTheLeft(jn); // jn is now ordered as (jns, jnu) = (jne, jni, jnu)
 
-        //---------------------------------------------------------------------
+        // ---------------------------------------------------------------------
         // ***NOTE***
-        //---------------------------------------------------------------------
+        // ---------------------------------------------------------------------
         // At this point, Sbn and Sbp have now the following structure:
         //     Sbn = [Sbsns Sbsnu; 0 Sbunu; 0bl]
         //     Sbp = [Sbsp; Sbup; 0bl]
-        //---------------------------------------------------------------------
-
-        //=========================================================================================
-        // Identify the explicit/implicit basic/non-basic variables
-        //=========================================================================================
-
-        // Return true if the i-th basic variable is a pivot/explicit variable
-        const auto is_basic_explicit = [&](auto i)
-        {
-            const auto idx = jb[i];                     // the global index of the basic variable
-            const auto Hii = Hd[idx];                   // the corresponding diagonal entry in the H matrix
-            const auto a1 = 1.0;                        // the max value along the corresponding column of the identity matrix
-            const auto a2 = norminf(V.Vpx.col(idx));    // the max value along the corresponding column of the Vpx matrix
-            return abs(Hii) >= std::max(a1, a2);        // return true if diagonal entry is dominant with respect to Vpx and Ibb only (not Hxx!)
-        };
-
-        // Return true if the i-th non-basic variable is a pivot/explicit variable
-        const auto is_nonbasic_explicit = [&](auto i)
-        {
-            const auto idx = jn[i];                     // the global index of the non-basic variable
-            const auto Hii = Hd[idx];                   // the corresponding diagonal entry in the H matrix
-            const auto a1 = norminf(Sbn.col(i));        // the max value along the corresponding column of the Sbn matrix
-            const auto a2 = norminf(V.Vpx.col(idx));    // the max value along the corresponding column of the Vpx matrix
-            return abs(Hii) >= std::max(a1, a2);        // return true if diagonal entry is dominant with respect to Vpx and Sbn only (not Hxx!)
-        };
-
-        // Find the number of pivot/explicit basic variables (those with |Hbebe| >= I and |Hbebe| >= |cols(H, jbe)|)
-        // Walk from first to last stable basic variable, since they are ordered in decresiang order of |Hii| values
-        nbe = 0; while(nbe < nbs && is_basic_explicit(nbe)) ++nbe;
-
-        // Find the number of pivot/explicit non-basic variables (those with |Hnene| >= |Sbsne| and |Hnene| > |cols(H, jne)|)
-        // Walk from first to last stable non-basic variable, since they are ordered in decresiang order of |Hii| values
-        nne = 0; while(nne < nns && is_nonbasic_explicit(nne)) ++nne;
-
-        // Update the number of non-pivot/implicit stable basic and non-basic variables.
-        nbi = nbs - nbe;
-        nni = nns - nne;
+        // ---------------------------------------------------------------------
 
         //=========================================================================================
         // Update the order of x variables as x = (xs, xu) = (xbs, xns, xbu, xnu), where:
@@ -227,6 +216,7 @@ struct JacobianMatrix::Impl
 
         // The indices of the stable variables js = (jbs, jns) = (jbe, jbi, jne, jni)
         const auto js = jsu.head(ns);
+        const auto ju = jsu.tail(nu);
 
         //=========================================================================================
         // Initialize matrices Hss, Hsp
@@ -270,8 +260,8 @@ struct JacobianMatrix::Impl
         const auto Hsp = Hprime.topRightCorner(ns, np);
         const auto Vps = Vprime.topLeftCorner(np, ns);
         const auto Vpp = Vprime.topRightCorner(np, np);
-        const auto Sbsns = S.topLeftCorner(nbs, nns);
-        const auto Sbsp = S.topRightCorner(nbs, np);
+        const auto Sbn = S.topLeftCorner(nb, nn);
+        const auto Sbp = S.topRightCorner(nb, np);
         const auto Ws = Wprime.leftCols(ns);
         const auto Wu = Wprime.middleCols(ns, nu);
         const auto Wp = Wprime.rightCols(np);
@@ -286,7 +276,7 @@ struct JacobianMatrix::Impl
         const auto js = jsu.head(ns);
         const auto ju = jsu.tail(nu);
 
-        return {Hss, Hsp, Vps, Vpp, Sbsns, Sbsp, R, Ws, Wu, Wp, As, Au, Ap, Js, Ju, Jp, jb, jn, js, ju};
+        return {Hss, Hsp, Vps, Vpp, Sbn, Sbp, R, Ws, Wu, Wp, As, Au, Ap, Js, Ju, Jp, jb, jn, js, ju};
     }
 };
 

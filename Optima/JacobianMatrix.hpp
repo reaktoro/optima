@@ -79,26 +79,26 @@ public:
     /// The matrix components in the canonical form of the Jacobian matrix.
     struct CanonicalForm
     {
-        MatrixConstRef  Hss;   ///< The matrix Hss in the canonical Jacobian matrix.
-        MatrixConstRef  Hsp;   ///< The matrix Hsp in the canonical Jacobian matrix.
-        MatrixConstRef  Vps;   ///< The matrix Vps in the canonical Jacobian matrix.
-        MatrixConstRef  Vpp;   ///< The matrix Vpp in the canonical Jacobian matrix.
-        MatrixConstRef  Sbsns; ///< The matrix Sbsns in the canonical Jacobian matrix.
-        MatrixConstRef  Sbsp;  ///< The matrix Sbsp in the canonical Jacobian matrix.
-        MatrixConstRef  R;     ///< The canonicalizer matrix R so that R*W*Q = [Ibb Sbn Sbp], Q = [jb jn].
-        MatrixConstRef  Ws;    ///< The matrix Ws in W' = [Ws Wu Wp].
-        MatrixConstRef  Wu;    ///< The matrix Wu in W' = [Ws Wu Wp].
-        MatrixConstRef  Wp;    ///< The matrix Wp in W' = [Ws Wu Wp].
-        MatrixConstRef  As;    ///< The matrix As in W' = [Ws Wu Wp] = [As Au Ap; Js Ju Jp].
-        MatrixConstRef  Au;    ///< The matrix Au in W' = [Ws Wu Wp] = [As Au Ap; Js Ju Jp].
-        MatrixConstRef  Ap;    ///< The matrix Ap in W' = [Ws Wu Wp] = [As Au Ap; Js Ju Jp].
-        MatrixConstRef  Js;    ///< The matrix Js in W' = [Ws Wu Wp] = [As Au Ap; Js Ju Jp].
-        MatrixConstRef  Ju;    ///< The matrix Ju in W' = [Ws Wu Wp] = [As Au Ap; Js Ju Jp].
-        MatrixConstRef  Jp;    ///< The matrix Jp in W' = [Ws Wu Wp] = [As Au Ap; Js Ju Jp].
-        IndicesConstRef jb;    ///< The indices of the basic variables ordered as jb = (jbs, jbu).
-        IndicesConstRef jn;    ///< The indices of the non-basic variables ordered as jn = (jns, jnu).
-        IndicesConstRef js;    ///< The indices of the stable variables ordered as js = (jbs, jns).
-        IndicesConstRef ju;    ///< The indices of the unstable variables ordered as ju = (jbu, jnu).
+        MatrixConstRef  Hss; ///< The matrix Hss in the canonical Jacobian matrix.
+        MatrixConstRef  Hsp; ///< The matrix Hsp in the canonical Jacobian matrix.
+        MatrixConstRef  Vps; ///< The matrix Vps in the canonical Jacobian matrix.
+        MatrixConstRef  Vpp; ///< The matrix Vpp in the canonical Jacobian matrix.
+        MatrixConstRef  Sbn; ///< The matrix Sbn in the canonical Jacobian matrix.
+        MatrixConstRef  Sbp; ///< The matrix Sbp in the canonical Jacobian matrix.
+        MatrixConstRef  R;   ///< The canonicalizer matrix R so that R*W*Q = [Ibb Sbn Sbp], Q = [jb jn].
+        MatrixConstRef  Ws;  ///< The matrix Ws in W' = [Ws Wu Wp].
+        MatrixConstRef  Wu;  ///< The matrix Wu in W' = [Ws Wu Wp].
+        MatrixConstRef  Wp;  ///< The matrix Wp in W' = [Ws Wu Wp].
+        MatrixConstRef  As;  ///< The matrix As in W' = [Ws Wu Wp] = [As Au Ap; Js Ju Jp].
+        MatrixConstRef  Au;  ///< The matrix Au in W' = [Ws Wu Wp] = [As Au Ap; Js Ju Jp].
+        MatrixConstRef  Ap;  ///< The matrix Ap in W' = [Ws Wu Wp] = [As Au Ap; Js Ju Jp].
+        MatrixConstRef  Js;  ///< The matrix Js in W' = [Ws Wu Wp] = [As Au Ap; Js Ju Jp].
+        MatrixConstRef  Ju;  ///< The matrix Ju in W' = [Ws Wu Wp] = [As Au Ap; Js Ju Jp].
+        MatrixConstRef  Jp;  ///< The matrix Jp in W' = [Ws Wu Wp] = [As Au Ap; Js Ju Jp].
+        IndicesConstRef jb;  ///< The indices of the basic variables ordered as jb = (jbs, jbu).
+        IndicesConstRef jn;  ///< The indices of the non-basic variables ordered as jn = (jns, jnu).
+        IndicesConstRef js;  ///< The indices of the stable variables ordered as js = (jbs, jns).
+        IndicesConstRef ju;  ///< The indices of the unstable variables ordered as ju = (jbu, jnu).
     };
 
     /// Return a view to the components of the canonical form of the Jacobian matrix.

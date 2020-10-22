@@ -82,8 +82,8 @@ struct ResidualVector::Impl
         const auto Jp = Mbar.Jp;
 
         const auto Rbs   = Mbar.R.topRows(nbs);
-        const auto Sbsns = Mbar.Sbsns;
-        const auto Sbsp  = Mbar.Sbsp;
+        const auto Sbsns = Mbar.Sbn.topLeftCorner(nbs, nns);
+        const auto Sbsp  = Mbar.Sbp.topRows(nbs);
 
         const auto gs = g(js);
 
