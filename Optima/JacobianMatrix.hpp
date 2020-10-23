@@ -104,6 +104,9 @@ public:
     /// Return a view to the components of the canonical form of the Jacobian matrix.
     auto canonicalForm() const -> CanonicalForm;
 
+    /// Return the Jacobian matrix as an Matrix object.
+    auto matrix() const -> Matrix;
+
 private:
     struct Impl;
 

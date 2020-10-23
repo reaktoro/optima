@@ -25,7 +25,12 @@ tested_np  = [0, 5, 10]       # The tested number of p variables
 tested_ny  = [2, 5, 10]       # The tested number of y variables
 tested_nz  = [0, 2, 5]        # The tested number of z variables
 tested_nl  = [0, 1, 2]        # The tested number of linearly dependent rows in Ax
-tested_nbu = [0, 1, 2]        # The tested number of basic unstable variables
+
+# The tested indices of unstable basic variables in x
+tested_junit = [
+    [],
+    [1]
+]
 
 # The tested indices of unstable variables in x
 tested_ju = [
@@ -39,43 +44,22 @@ tested_ju = [
 @mark.parametrize("ny",  tested_ny)
 @mark.parametrize("nz",  tested_nz)
 @mark.parametrize("nl",  tested_nl)
-@mark.parametrize("nbu", tested_nbu)
+@mark.parametrize("junit", tested_junit)
 @mark.parametrize("ju",  tested_ju)
-def test_jacobian_matrix(nx, np, ny, nz, nl, nbu, ju):
+def test_jacobian_matrix(nx, np, ny, nz, nl, junit, ju,
+    createJacobianBlockW,
+    createJacobianBlockH,
+    createJacobianBlockV):
 
     # Ensure nx is larger than np and (ny + nz)
     if nx < np or nx < ny + nz: return
 
     # Ensure nl < ny
-    if ny < nl: return
+    if ny <= nl: return
 
-    Hxx = random.rand(nx, nx)
-    Hxp = random.rand(nx, np)
-    H = JacobianBlockH(Hxx, Hxp)
-
-    Vpx = random.rand(np, nx)
-    Vpp = random.rand(np, np)
-    V = JacobianBlockV(Vpx, Vpp)
-
-    Ax = random.rand(ny, nx)
-    Ap = random.rand(ny, np)
-
-    Ax[:nl, :] = 0.0  # set last nl rows to be zero so that we have nl linearly dependent rows in Ax
-
-    # Prepare Ax in case there are basic unstable variables.
-    if nbu > 0:
-        for i in range(nbu):
-            if i < len(ju):
-                Ax[i, :] = 0.0
-                Ax[:, ju[i]] = 1.0  # 1 for the unstable variable, 0 for all others
-
-    W = JacobianBlockW(nx, np, ny, nz, Ax, Ap)
-
-    weights = ones(nx)
-    Jx = random.rand(nz, nx)
-    Jp = random.rand(nz, np)
-
-    W.update(Jx, Jp, weights)
+    W = createJacobianBlockW(nx, np, ny, nz, nl, junit)
+    H = createJacobianBlockH(nx, np)
+    V = createJacobianBlockV(nx, np)
 
     M = JacobianMatrix(nx, np, ny, nz)
 
@@ -102,11 +86,11 @@ def test_jacobian_matrix(nx, np, ny, nz, nl, nbu, ju):
     js = Mbar.js
     ju = Mbar.ju
 
-    assert all(Mbar.Hss == Hxx[:, js][js, :])
-    assert all(Mbar.Hsp == Hxp[js, :])
+    assert all(Mbar.Hss == H.Hxx[:, js][js, :])
+    assert all(Mbar.Hsp == H.Hxp[js, :])
 
-    assert all(Mbar.Vps == Vpx[:, js])
-    assert all(Mbar.Vpp == Vpp)
+    assert all(Mbar.Vps == V.Vpx[:, js])
+    assert all(Mbar.Vpp == V.Vpp)
 
     #==========================================================================
     # Check Sbn, Sbp, R in the canonical form of Jacobian matrix
@@ -137,12 +121,12 @@ def test_jacobian_matrix(nx, np, ny, nz, nl, nbu, ju):
     assert all(Mbar.Ws == W.Wx[:, js])
     assert all(Mbar.Wu == W.Wx[:, ju])
     assert all(Mbar.Wp == W.Wp)
-    assert all(Mbar.As == Ax[:, js])
-    assert all(Mbar.Au == Ax[:, ju])
-    assert all(Mbar.Ap == Ap)
-    assert all(Mbar.Js == Jx[:, js])
-    assert all(Mbar.Ju == Jx[:, ju])
-    assert all(Mbar.Jp == Jp)
+    assert all(Mbar.As == W.Ax[:, js])
+    assert all(Mbar.Au == W.Ax[:, ju])
+    assert all(Mbar.Ap == W.Ap)
+    assert all(Mbar.Js == W.Jx[:, js])
+    assert all(Mbar.Ju == W.Jx[:, ju])
+    assert all(Mbar.Jp == W.Jp)
 
     #==========================================================================
     # Check dimension variables in the canonical form of Jacobian matrix
@@ -166,8 +150,8 @@ def test_jacobian_matrix(nx, np, ny, nz, nl, nbu, ju):
     jbs = jb[:nbs]
     jns = jn[:nns]
 
-    nbe = len([i for i in range(nbs) if abs(Hxx[jbs[i], jbs[i]]) >= max(1.0, abs(Vpx[:, jbs[i]]).max(initial=0.0))])
-    nne = len([i for i in range(nns) if abs(Hxx[jns[i], jns[i]]) >= max(abs(Sbn[:, i]).max(initial=0.0), abs(Vpx[:, jns[i]]).max(initial=0.0))])
+    nbe = len([i for i in range(nbs) if abs(H.Hxx[jbs[i], jbs[i]]) >= max(1.0, abs(V.Vpx[:, jbs[i]]).max(initial=0.0))])
+    nne = len([i for i in range(nns) if abs(H.Hxx[jns[i], jns[i]]) >= max(abs(Sbn[:, i]).max(initial=0.0), abs(V.Vpx[:, jns[i]]).max(initial=0.0))])
 
     nbi = nbs - nbe
     nni = nns - nne
@@ -192,3 +176,40 @@ def test_jacobian_matrix(nx, np, ny, nz, nl, nbu, ju):
     assert dims.nbi == nbi
     assert dims.nne == nne
     assert dims.nni == nni
+
+    #==========================================================================
+    # Check method JacobianMatrix::matrix()
+    #==========================================================================
+
+    Hxx = zeros((nx, nx))
+    for i in range(ns):
+        for j in range(ns):
+            Hxx[js[i], js[j]] = Mbar.Hss[i, j]
+    Hxx[ju, ju] = 1.0
+
+    Hxp = zeros((nx, np))
+    Hxp[js, :] = Mbar.Hsp
+
+    WxT = zeros((nx, nw))
+    WxT[js, :] = Mbar.Ws.T
+
+    Vpx = zeros((np, nx))
+    Vpx[:, js] = Mbar.Vps
+
+    Vpp = Mbar.Vpp
+
+    Wx = zeros((nw, nx))
+    Wx[:, js] = Mbar.Ws
+
+    Wp = Mbar.Wp
+
+    Opw = zeros((np, nw))
+    Oww = zeros((nw, nw))
+
+    Mmat = block([
+        [Hxx, Hxp, WxT],
+        [Vpx, Vpp, Opw],
+        [ Wx,  Wp, Oww],
+    ])
+
+    assert all(Mmat == M.matrix())

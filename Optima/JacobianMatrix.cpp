@@ -278,6 +278,47 @@ struct JacobianMatrix::Impl
 
         return {Hss, Hsp, Vps, Vpp, Sbn, Sbp, R, Ws, Wu, Wp, As, Au, Ap, Js, Ju, Jp, jb, jn, js, ju};
     }
+
+    auto matrix() const -> Matrix
+    {
+        const auto t = nx + np + ny + nz;
+
+        const auto Mbar = canonicalForm();
+
+        const auto Hss = Hprime.topLeftCorner(ns, ns);
+        const auto Hsp = Hprime.topRightCorner(ns, np);
+        const auto Vps = Vprime.topLeftCorner(np, ns);
+        const auto Vpp = Vprime.topRightCorner(np, np);
+        const auto Ws = Wprime.leftCols(ns);
+        const auto Wp = Wprime.rightCols(np);
+        const auto js = jsu.head(ns);
+        const auto ju = jsu.tail(nu);
+
+        Matrix mat = zeros(t, t);
+
+        auto matHxx = mat.topRows(nx).leftCols(nx);
+        auto matHxp = mat.topRows(nx).middleCols(nx, np);
+        auto matWxT = mat.topRows(nx).rightCols(nw);
+        auto matVpx = mat.middleRows(nx, np).leftCols(nx);
+        auto matVpp = mat.middleRows(nx, np).middleCols(nx, np);
+        auto matWx  = mat.bottomRows(nw).leftCols(nx);
+        auto matWp  = mat.bottomRows(nw).middleCols(nx, np);
+
+        using Eigen::all;
+
+        const auto Iuu = identity(nu, nu);
+
+        matHxx(js, js) = Hss;
+        matHxx(ju, ju) = Iuu;
+        matHxp(js, all) = Hsp;
+        matWxT(js, all) = tr(Ws);
+        matVpx(all, js) = Vps;
+        matVpp = Vpp;
+        matWx(all, js) = Ws;
+        matWp = Wp;
+
+        return mat;
+    }
 };
 
 JacobianMatrix::JacobianMatrix(Index nx, Index np, Index ny, Index nz)
@@ -310,6 +351,11 @@ auto JacobianMatrix::dims() const -> Dims
 auto JacobianMatrix::canonicalForm() const -> CanonicalForm
 {
     return pimpl->canonicalForm();
+}
+
+auto JacobianMatrix::matrix() const -> Matrix
+{
+    return pimpl->matrix();
 }
 
 } // namespace Optima
