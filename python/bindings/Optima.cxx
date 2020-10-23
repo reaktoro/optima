@@ -41,6 +41,7 @@ void exportResidualVector(py::module& m);
 void exportResult(py::module& m);
 void exportSaddlePointOptions(py::module& m);
 void exportSaddlePointSolver(py::module& m);
+void exportSolutionVector(py::module& m);
 void exportSolver(py::module& m);
 void exportStability(py::module& m);
 void exportStability2(py::module& m);
@@ -75,6 +76,7 @@ PYBIND11_MODULE(optima4py, m)
     exportResult(m);
     exportSaddlePointOptions(m);
     exportSaddlePointSolver(m);
+    exportSolutionVector(m);
     exportSolver(m);
     exportStability(m);
     exportStability2(m);
