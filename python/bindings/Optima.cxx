@@ -32,6 +32,8 @@ void exportJacobianBlockV(py::module& m);
 void exportJacobianBlockW(py::module& m);
 void exportJacobianMatrix(py::module& m);
 void exportLU(py::module& m);
+void exportNewtonStepOptions(py::module& m);
+void exportNewtonStepSolver(py::module& m);
 void exportNumber(py::module& m);
 void exportObjectiveFunction(py::module& m);
 void exportOutputter(py::module& m);
@@ -67,6 +69,8 @@ PYBIND11_MODULE(optima4py, m)
     exportJacobianBlockW(m);
     exportJacobianMatrix(m);
     exportLU(m);
+    exportNewtonStepOptions(m);
+    exportNewtonStepSolver(m);
     exportNumber(m);
     exportObjectiveFunction(m);
     exportOutputter(m);

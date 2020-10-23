@@ -77,15 +77,13 @@ void exportStepper(py::module& m)
         MatrixConstRef4py hx,
         VectorRef rx,
         VectorRef rp,
-        VectorRef ry,
-        VectorRef rz,
+        VectorRef rw,
         VectorRef ex,
         VectorRef ep,
-        VectorRef ey,
-        VectorRef ez,
+        VectorRef ew,
         VectorRef s)
     {
-        self.residuals({ x, p, y, z, b, h, v, fx, hx, rx, rp, ry, rz, ex, ep, ey, ez, s });
+        self.residuals({ x, p, y, z, b, h, v, fx, hx, rx, rp, rw, ex, ep, ew, s });
     };
 
     auto decompose = [](Stepper& self)
