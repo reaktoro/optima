@@ -35,26 +35,15 @@ tested_nuu = [0, 2]    # The tested number of upper unstable variables
 @mark.parametrize("nl",  tested_nl)
 @mark.parametrize("nlu",  tested_nlu)
 @mark.parametrize("nuu",  tested_nuu)
-def test_stability(nx, np, ny, nz, nl, nlu, nuu):
+def test_stability(nx, np, ny, nz, nl, nlu, nuu, createJacobianBlockW):
 
     # Ensure nx is larger than np and (ny + nz)
     if nx < np or nx < ny + nz: return
 
     # Ensure nl < ny
-    if ny < nl: return
+    if ny <= nl: return
 
-    Ax = random.rand(ny, nx)
-    Ap = random.rand(ny, np)
-
-    Ax[:nl, :] = 0.0  # set last nl rows to be zero so that we have nl linearly dependent rows in Ax
-
-    W = JacobianBlockW(nx, np, ny, nz, Ax, Ap)
-
-    weights = ones(nx)
-    Jx = random.rand(nz, nx)
-    Jp = random.rand(nz, np)
-
-    W.update(Jx, Jp, weights)
+    W = createJacobianBlockW(nx, np, ny, nz, nl)
 
     Wbar = W.canonicalForm()
 

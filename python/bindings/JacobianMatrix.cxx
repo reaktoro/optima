@@ -80,5 +80,6 @@ void exportJacobianMatrix(py::module& m)
         .def("update", &JacobianMatrix::update)
         .def("dims", &JacobianMatrix::dims)
         .def("canonicalForm", &JacobianMatrix::canonicalForm)
+        .def("matrix", &JacobianMatrix::matrix)
         ;
 }

@@ -25,13 +25,18 @@ tested_np  = [0, 5, 10]       # The tested number of p variables
 tested_ny  = [2, 5, 10]       # The tested number of y variables
 tested_nz  = [0, 2, 5]        # The tested number of z variables
 tested_nl  = [0, 1, 2]        # The tested number of linearly dependent rows in Ax
-tested_nbu = [0, 1, 2]        # The tested number of basic unstable variables
+
+# The tested indices of unstable basic variables in x
+tested_junit = [
+    [],
+    [1]
+]
 
 # The tested indices of unstable variables in x
 tested_ju = [
-    array([]),
-    array([1]),
-    array([1, 2, 3])
+    [],
+    [1],
+    [1, 2, 3]
 ]
 
 @mark.parametrize("nx",  tested_nx)
@@ -39,47 +44,17 @@ tested_ju = [
 @mark.parametrize("ny",  tested_ny)
 @mark.parametrize("nz",  tested_nz)
 @mark.parametrize("nl",  tested_nl)
-@mark.parametrize("nbu", tested_nbu)
+@mark.parametrize("junit", tested_junit)
 @mark.parametrize("ju",  tested_ju)
-def test_residual_vector(nx, np, ny, nz, nl, nbu, ju):
+def test_residual_vector(nx, np, ny, nz, nl, junit, ju, createJacobianMatrix):
 
     # Ensure nx is larger than np and (ny + nz)
     if nx < np or nx < ny + nz: return
 
     # Ensure nl < ny
-    if ny < nl: return
+    if ny <= nl: return
 
-    Hxx = random.rand(nx, nx)
-    Hxp = random.rand(nx, np)
-    H = JacobianBlockH(Hxx, Hxp)
-
-    Vpx = random.rand(np, nx)
-    Vpp = random.rand(np, np)
-    V = JacobianBlockV(Vpx, Vpp)
-
-    Ax = random.rand(ny, nx)
-    Ap = random.rand(ny, np)
-
-    Ax[:nl, :] = 0.0  # set last nl rows to be zero so that we have nl linearly dependent rows in Ax
-
-    # Prepare Ax in case there are basic unstable variables.
-    if nbu > 0:
-        for i in range(nbu):
-            if i < len(ju):
-                Ax[i, :] = 0.0
-                Ax[:, ju[i]] = 1.0  # 1 for the unstable variable, 0 for all others
-
-    W = JacobianBlockW(nx, np, ny, nz, Ax, Ap)
-
-    weights = ones(nx)
-    Jx = random.rand(nz, nx)
-    Jp = random.rand(nz, np)
-
-    W.update(Jx, Jp, weights)
-
-    M = JacobianMatrix(nx, np, ny, nz)
-
-    M.update(H, V, W, ju)
+    M = createJacobianMatrix(nx, np, ny, nz, nl, junit, ju)
 
     F = ResidualVector(nx, np, ny, nz)
 
@@ -98,15 +73,18 @@ def test_residual_vector(nx, np, ny, nz, nl, nbu, ju):
     nbs = dims.nbs
 
     Mbar = M.canonicalForm()
-    js  = Mbar.js
-    ju  = Mbar.ju
-    R   = Mbar.R
 
-    ax = -(g + Ax.T @ y + Jx.T @ z)
-    ax[ju] = 0.0
+    js, ju  = Mbar.js, Mbar.ju
+
+    R = Mbar.R
+
+    As, Au, Ap, Js = Mbar.As, Mbar.Au, Mbar.Ap, Mbar.Js
+
+    ax = zeros(nx)
+    ax[js] = -(g[js] + As.T @ y + Js.T @ z)
 
     ap = -v
-    ay = -(Ax @ x + Ap @ p - b)
+    ay = -(As @ x[js] + Au @ x[ju] + Ap @ p - b)
     az = -h
     aw = concatenate([ay, az])
     awbar = R @ aw

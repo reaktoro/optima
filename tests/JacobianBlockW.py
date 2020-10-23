@@ -37,7 +37,7 @@ def test_jacobian_block_w(nx, np, ny, nz, nl):
     if nx < np or nx < ny + nz: return
 
     # Ensure nl < ny
-    if ny < nl: return
+    if ny <= nl: return
 
     Ax = random.rand(ny, nx)
     Ap = random.rand(ny, np)
