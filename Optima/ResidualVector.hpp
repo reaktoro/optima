@@ -27,12 +27,13 @@
 namespace Optima {
 
 // Forward declarations
-class JacobianMatrix;
+class CanonicalVector;
+class MasterMatrix;
 
 /// The arguments in method @ref ResidualVector::update.
 struct ResidualVectorUpdateArgs
 {
-    JacobianMatrix const& M;
+    MasterMatrix const& M;
     VectorConstRef x;
     VectorConstRef p;
     VectorConstRef y;
@@ -67,16 +68,8 @@ public:
     /// Update the residual vector.
     auto update(ResidualVectorUpdateArgs args) -> void;
 
-    /// The vector components in the canonical form of the residual vector.
-    struct CanonicalForm
-    {
-        VectorConstRef axs;  ///< The vector axs in the canonical residual vector.
-        VectorConstRef ap;   ///< The vector ap in the canonical residual vector.
-        VectorConstRef awbs; ///< The vector awbs in the canonical residual vector.
-    };
-
-    /// Return a view to the components of the canonical form of the residual vector.
-    auto canonicalForm() const -> CanonicalForm;
+    /// Return the residual vector as a canonical vector.
+    auto canonicalVector() const -> CanonicalVector;
 };
 
 } // namespace Optima

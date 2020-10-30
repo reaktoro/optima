@@ -15,8 +15,36 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-
 from optima import *
 from numpy import *
-import pytest
+from numpy.testing import assert_allclose, assert_almost_equal
+from pytest import approx, mark
 
+tested_nx = [5, 10, 20, 50]  # The tested number of x variables
+tested_np = [0, 5, 10]       # The tested number of p variables
+
+@mark.parametrize("nx", tested_nx)
+@mark.parametrize("np", tested_np)
+def test_master_matrix_h(nx, np):
+
+    Hxx = random.rand(nx, nx)
+    Hxp = random.rand(nx, np)
+
+    H = MasterMatrixH(nx, np)
+
+    H.Hxx = Hxx
+    H.Hxp = Hxp
+
+    assert (H.Hxx == Hxx).all()
+    assert (H.Hxp == Hxp).all()
+
+    H = MasterMatrixH(Hxx, Hxp)
+
+    assert (H.Hxx == Hxx).all()
+    assert (H.Hxp == Hxp).all()
+
+    assert H.isHxxDiagonal() == False
+
+    H.isHxxDiagonal(True)
+
+    assert H.isHxxDiagonal() == True

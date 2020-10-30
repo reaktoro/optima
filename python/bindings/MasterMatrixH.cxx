@@ -21,31 +21,29 @@
 namespace py = pybind11;
 
 // Optima includes
-#include <Optima/MasterMatrix.hpp>
-#include <Optima/MasterVector.hpp>
-#include <Optima/ResidualVector.hpp>
+#include <Optima/MasterMatrixH.hpp>
 using namespace Optima;
 
-void exportResidualVector(py::module& m)
+void exportMasterMatrixH(py::module& m)
 {
-    auto update = [](ResidualVector& self,
-        MasterMatrix const& M,
-        VectorConstRef x,
-        VectorConstRef p,
-        VectorConstRef y,
-        VectorConstRef z,
-        VectorConstRef g,
-        VectorConstRef v,
-        VectorConstRef b,
-        VectorConstRef h)
+    auto init = [](MatrixConstRef4py Hxx, MatrixConstRef4py Hxp)
     {
-        self.update({M, x, p, y, z, g, v, b, h});
+        return MasterMatrixH(Hxx, Hxp);
     };
 
-    py::class_<ResidualVector>(m, "ResidualVector")
-        .def(py::init<Index, Index, Index, Index>())
-        .def(py::init<const ResidualVector&>())
-        .def("update", update)
-        .def("canonicalVector", &ResidualVector::canonicalVector)
+    auto set_Hxx = [](MasterMatrixH& self, MatrixConstRef4py Hxx) { self.Hxx = Hxx; };
+    auto set_Hxp = [](MasterMatrixH& self, MatrixConstRef4py Hxp) { self.Hxp = Hxp; };
+
+    auto get_Hxx = [](const MasterMatrixH& self) { return self.Hxx; };
+    auto get_Hxp = [](const MasterMatrixH& self) { return self.Hxp; };
+
+    py::class_<MasterMatrixH>(m, "MasterMatrixH")
+        .def(py::init<Index, Index>())
+        .def(py::init(init))
+        .def(py::init<const MasterMatrixH&>())
+        .def("isHxxDiagonal", py::overload_cast<>(&MasterMatrixH::isHxxDiagonal, py::const_))
+        .def("isHxxDiagonal", py::overload_cast<bool>(&MasterMatrixH::isHxxDiagonal))
+        .def_property("Hxx", get_Hxx, set_Hxx)
+        .def_property("Hxp", get_Hxp, set_Hxp)
         ;
 }

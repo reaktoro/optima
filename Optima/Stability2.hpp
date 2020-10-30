@@ -23,12 +23,12 @@
 namespace Optima {
 
 // Forward declarations
-class JacobianBlockW;
+class MasterMatrixW;
 
 /// The arguments in method @ref Stability::update.
 struct StabilityUpdateArgs
 {
-    JacobianBlockW const& W; ///< The matrix W = [Wx Wp] = [Ax Ap; Jx Jp] and its current canonical form.
+    MasterMatrixW const& W;  ///< The matrix W = [Wx Wp] = [Ax Ap; Jx Jp] and its current canonical form.
     VectorConstRef g;        ///< The gradient of the objective function with respect to x.
     VectorConstRef x;        ///< The values of the primal variables x.
     VectorConstRef xlower;   ///< The lower bounds of the primal variables x.

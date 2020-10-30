@@ -18,24 +18,33 @@
 #pragma once
 
 // Optima includes
-#include <Optima/BasicSolver.hpp>
-#include <Optima/Canonicalizer.hpp>
-#include <Optima/ConstraintFunction.hpp>
-#include <Optima/Exception.hpp>
-#include <Optima/ExtendedCanonicalizer.hpp>
 #include <Optima/Index.hpp>
-#include <Optima/IndexUtils.hpp>
-#include <Optima/LU.hpp>
 #include <Optima/Matrix.hpp>
-#include <Optima/ObjectiveFunction.hpp>
-#include <Optima/Options.hpp>
-#include <Optima/Outputter.hpp>
-#include <Optima/Problem.hpp>
-#include <Optima/Result.hpp>
-#include <Optima/SaddlePointOptions.hpp>
-#include <Optima/SaddlePointSolver.hpp>
-#include <Optima/Solver.hpp>
-#include <Optima/State.hpp>
-#include <Optima/Stepper.hpp>
-#include <Optima/Timing.hpp>
-#include <Optima/Utils.hpp>
+
+namespace Optima {
+
+/// Used to represent block matrix \eq{V} in @ref MasterMatrix.
+class MasterMatrixV
+{
+private:
+    Matrix _Vpx; ///< The Vpx block matrix in V = [Vpx Vpp].
+    Matrix _Vpp; ///< The Vpp block matrix in V = [Vpx Vpp].
+
+public:
+    /// Construct a MasterMatrixV instance.
+    MasterMatrixV(Index nx, Index np);
+
+    /// Construct a MasterMatrixV instance.
+    MasterMatrixV(MatrixConstRef Vpx, MatrixConstRef Vpp);
+
+    /// Construct a copy of a MasterMatrixV instance.
+    MasterMatrixV(const MasterMatrixV& other);
+
+    /// Assign a MasterMatrixV instance to this.
+    auto operator=(MasterMatrixV other) -> MasterMatrixV& = delete;
+
+    MatrixRef Vpx; ///< The reference to the Vpx block matrix in V = [Vpx Vpp].
+    MatrixRef Vpp; ///< The reference to the Vpp block matrix in V = [Vpx Vpp].
+};
+
+} // namespace Optima

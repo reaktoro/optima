@@ -46,7 +46,7 @@ tested_ju = [
 @mark.parametrize("nl",  tested_nl)
 @mark.parametrize("junit", tested_junit)
 @mark.parametrize("ju",  tested_ju)
-def test_residual_vector(nx, np, ny, nz, nl, junit, ju, createJacobianMatrix):
+def test_residual_vector(nx, np, ny, nz, nl, junit, ju, createMasterMatrix):
 
     # Ensure nx is larger than np and (ny + nz)
     if nx < np or nx < ny + nz: return
@@ -54,7 +54,7 @@ def test_residual_vector(nx, np, ny, nz, nl, junit, ju, createJacobianMatrix):
     # Ensure nl < ny
     if ny <= nl: return
 
-    M = createJacobianMatrix(nx, np, ny, nz, nl, junit, ju)
+    M = createMasterMatrix(nx, np, ny, nz, nl, junit, ju)
 
     F = ResidualVector(nx, np, ny, nz)
 
@@ -69,10 +69,10 @@ def test_residual_vector(nx, np, ny, nz, nl, junit, ju, createJacobianMatrix):
 
     F.update(M, x, p, y, z, g, v, b, h)
 
-    dims = M.dims()
-    nbs = dims.nbs
-
     Mbar = M.canonicalForm()
+
+    dims = Mbar.dims
+    nbs = dims.nbs
 
     js, ju  = Mbar.js, Mbar.ju
 
@@ -89,8 +89,8 @@ def test_residual_vector(nx, np, ny, nz, nl, junit, ju, createJacobianMatrix):
     aw = concatenate([ay, az])
     awbar = R @ aw
 
-    Fbar = F.canonicalForm()
+    a = F.canonicalVector()
 
-    assert_almost_equal(Fbar.axs, ax[js])
-    assert_almost_equal(Fbar.ap, ap)
-    assert_almost_equal(Fbar.awbs, awbar[:nbs])
+    assert_almost_equal(a.xs, ax[js])
+    assert_almost_equal(a.p, ap)
+    assert_almost_equal(a.wbs, awbar[:nbs])

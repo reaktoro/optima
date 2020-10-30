@@ -71,8 +71,6 @@ struct Solver::Impl
     Vector xrslower;         ///< The lower bounds of vector xrs = (x, xbg, xhg) in the basic optimization problem.
     Vector xrsupper;         ///< The upper bounds of vector xrs = (x, xbg, xhg) in the basic optimization problem.
     Indices iordering;       ///< The ordering of the variables xrs = (x, xbg, xhg) as (*stable*, *lower unstable*, *upper unstable*).
-    IndexNumber nlu;         ///< The number of lower unstable variables in xrs = (x, xbg, xhg).
-    IndexNumber nuu;         ///< The number of upper unstable variables in xrs = (x, xbg, xhg).
 
     /// Construct a Solver instance with given optimization problem.
     Impl(const Problem& problem)

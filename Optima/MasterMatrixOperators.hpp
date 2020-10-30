@@ -17,25 +17,25 @@
 
 #pragma once
 
-// Optima includes
-#include <Optima/BasicSolver.hpp>
-#include <Optima/Canonicalizer.hpp>
-#include <Optima/ConstraintFunction.hpp>
-#include <Optima/Exception.hpp>
-#include <Optima/ExtendedCanonicalizer.hpp>
-#include <Optima/Index.hpp>
-#include <Optima/IndexUtils.hpp>
-#include <Optima/LU.hpp>
-#include <Optima/Matrix.hpp>
-#include <Optima/ObjectiveFunction.hpp>
-#include <Optima/Options.hpp>
-#include <Optima/Outputter.hpp>
-#include <Optima/Problem.hpp>
-#include <Optima/Result.hpp>
-#include <Optima/SaddlePointOptions.hpp>
-#include <Optima/SaddlePointSolver.hpp>
-#include <Optima/Solver.hpp>
-#include <Optima/State.hpp>
-#include <Optima/Stepper.hpp>
-#include <Optima/Timing.hpp>
-#include <Optima/Utils.hpp>
+namespace Optima {
+
+// Forward declarations
+class MasterMatrix;
+class MasterVector;
+
+/// Used to represent the transpose of a master matrix.
+struct MasterMatrixTr
+{
+    const MasterMatrix& M; ///< The master matrix for which its transpose is needed.
+};
+
+/// Return a transpose representation of a master matrix.
+auto tr(const MasterMatrix& M) -> MasterMatrixTr;
+
+/// Return the multiplication of a master matrix and a master vector.
+auto operator*(const MasterMatrix& M, const MasterVector& u) -> MasterVector;
+
+/// Return the multiplication of the transpose of a master matrix and a master vector.
+auto operator*(const MasterMatrixTr& Mtr, const MasterVector& u) -> MasterVector;
+
+} // namespace Optima

@@ -23,46 +23,102 @@ from pytest import approx, mark
 from utils.matrices import assemble_matrix_Ax, matrix_non_singular, pascal_matrix
 
 # The number of x variables
-nx = 15
+nx = 8
 
 # Tested number of parameter variables p
-tested_np = [0, 5]
+# tested_np = [0, 5]
+tested_np = [0]
 
 # Tested number of Lagrange multipliers y (i.e., number of rows in A = [Ax Ap])
-tested_ny = [4, 8]
+# tested_ny = [4, 8]
+tested_ny = [4]
 
 # Tested number of Lagrange multipliers z (i.e., number of rows in J = [Jx Jp])
-tested_nz = [0, 5]
+# tested_nz = [0, 5]
+tested_nz = [0]
 
 # Tested number of unstable/fixed basic variables
-tested_nbu = [0, 1]
+# tested_nbu = [0, 1]
+tested_nbu = [0]
 
 # Tested number of linearly dependent rows in Ax
-tested_nl = [0, 1]
+# tested_nl = [0, 1]
+tested_nl = [0]
 
 # Tested cases for the indices of fixed variables
 tested_ifixed = [
-    [],
-    [0, 1, 2]
+    # [],
+    # [0, 1, 2]
+    [1]
 ]
 
 # Tested cases for the indices of variables with lower bounds
 tested_ilower = [
-    [],
+    # [],
+    # [3, 4, 5]
     [3, 4, 5]
 ]
 
 # Tested cases for the indices of variables with upper bounds
 tested_iupper = [
     [],
-    [6, 7, 8]
+    # [6, 7, 8]
 ]
+
+
+
+
+
+
+
+# # The number of x variables
+# nx = 7
+
+# # Tested number of parameter variables p
+# # tested_np = [0, 5]
+# tested_np = [0]
+
+# # Tested number of Lagrange multipliers y (i.e., number of rows in A = [Ax Ap])
+# # tested_ny = [4, 8]
+# tested_ny = [4]
+
+# # Tested number of Lagrange multipliers z (i.e., number of rows in J = [Jx Jp])
+# # tested_nz = [0, 5]
+# tested_nz = [0]
+
+# # Tested number of unstable/fixed basic variables
+# # tested_nbu = [0, 1]
+# tested_nbu = [0]
+
+# # Tested number of linearly dependent rows in Ax
+# # tested_nl = [0, 1]
+# tested_nl = [0]
+
+# # Tested cases for the indices of fixed variables
+# tested_ifixed = [
+#     # [],
+#     # [0, 1, 2]
+#     [0]
+# ]
+
+# # Tested cases for the indices of variables with lower bounds
+# tested_ilower = [
+#     # [],
+#     # [3, 4, 5]
+#     [2, 3]
+# ]
+
+# # Tested cases for the indices of variables with upper bounds
+# tested_iupper = [
+#     [],
+#     # [6, 7, 8]
+# ]
 
 # Tested cases for the saddle point methods
 tested_methods = [
     SaddlePointMethod.Fullspace,
-    SaddlePointMethod.Nullspace,
-    SaddlePointMethod.Rangespace,
+    # SaddlePointMethod.Nullspace,
+    # SaddlePointMethod.Rangespace,
 ]
 
 
@@ -235,7 +291,7 @@ def test_basic_solver(np, ny, nz, nbu, nl, ifixed, ilower, iupper, method):
 
     # Create the options for the optimization calculation
     options = Options()
-    options.output.active = False
+    options.output.active = True
     options.kkt.method = method
     options.max_iterations = 10
     options.linesearch.trigger_when_current_error_is_greater_than_initial_error_by_factor = 1.0

@@ -21,7 +21,7 @@
 namespace py = pybind11;
 
 // Optima includes
-#include <Optima/JacobianBlockW.hpp>
+#include <Optima/MasterMatrixW.hpp>
 #include <Optima/Stability2.hpp>
 using namespace Optima;
 
@@ -37,7 +37,7 @@ void exportStability2(py::module& m)
         ;
 
     auto update = [](Stability2& self,
-        JacobianBlockW const& W,
+        MasterMatrixW const& W,
         VectorConstRef g,
         VectorConstRef x,
         VectorConstRef xlower,

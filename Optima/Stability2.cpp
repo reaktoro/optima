@@ -22,7 +22,7 @@
 
 // Optima includes
 #include <Optima/IndexUtils.hpp>
-#include <Optima/JacobianBlockW.hpp>
+#include <Optima/MasterMatrixW.hpp>
 
 namespace Optima {
 
@@ -39,7 +39,7 @@ auto Stability2::update(StabilityUpdateArgs args) -> void
     assert(nx == args.xlower.size());
     assert(nx == args.xupper.size());
 
-    const auto [R, Sbn, Sbp, jb, jn] = args.W.canonicalForm();
+    const auto [R, Sbn, Sbp, jb, jn] = args.W.echelonForm();
 
     assert(nx == jb.size() + jn.size());
 

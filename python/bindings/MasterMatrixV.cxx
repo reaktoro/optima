@@ -21,31 +21,27 @@
 namespace py = pybind11;
 
 // Optima includes
-#include <Optima/MasterMatrix.hpp>
-#include <Optima/MasterVector.hpp>
-#include <Optima/ResidualVector.hpp>
+#include <Optima/MasterMatrixV.hpp>
 using namespace Optima;
 
-void exportResidualVector(py::module& m)
+void exportMasterMatrixV(py::module& m)
 {
-    auto update = [](ResidualVector& self,
-        MasterMatrix const& M,
-        VectorConstRef x,
-        VectorConstRef p,
-        VectorConstRef y,
-        VectorConstRef z,
-        VectorConstRef g,
-        VectorConstRef v,
-        VectorConstRef b,
-        VectorConstRef h)
+    auto init = [](MatrixConstRef4py Vpx, MatrixConstRef4py Vpp)
     {
-        self.update({M, x, p, y, z, g, v, b, h});
+        return MasterMatrixV(Vpx, Vpp);
     };
 
-    py::class_<ResidualVector>(m, "ResidualVector")
-        .def(py::init<Index, Index, Index, Index>())
-        .def(py::init<const ResidualVector&>())
-        .def("update", update)
-        .def("canonicalVector", &ResidualVector::canonicalVector)
+    auto set_Vpx = [](MasterMatrixV& self, MatrixConstRef4py Vpx) { self.Vpx = Vpx; };
+    auto set_Vpp = [](MasterMatrixV& self, MatrixConstRef4py Vpp) { self.Vpp = Vpp; };
+
+    auto get_Vpx = [](const MasterMatrixV& self) { return self.Vpx; };
+    auto get_Vpp = [](const MasterMatrixV& self) { return self.Vpp; };
+
+    py::class_<MasterMatrixV>(m, "MasterMatrixV")
+        .def(py::init<Index, Index>())
+        .def(py::init(init))
+        .def(py::init<const MasterMatrixV&>())
+        .def_property("Vpx", get_Vpx, set_Vpx)
+        .def_property("Vpp", get_Vpp, set_Vpp)
         ;
 }

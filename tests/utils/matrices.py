@@ -21,6 +21,105 @@ from numpy import *
 from utils.data import formula_matrix
 
 
+def createMasterMatrixW(nx, np, ny, nz, nl=0):
+    """Create a MasterMatrixW object with given parameters
+
+    Args:
+        nx (int): The number of columns in Wx = [Ax; Jx]
+        np (int): The number of columns in Wp = [Ap; Jp]
+        ny (int): The number of rows in Ax and Ap
+        nz (int): The number of rows in Jx and Jp
+        nl (int, optional): The number of zero rows at the bottom of Ax. Defaults to 0.
+
+    Returns:
+        MasterMatrixW: A MasterMatrixW object for testing purposes.
+    """
+
+    Ax = random.rand(ny, nx)
+    Ap = random.rand(ny, np)
+
+    Ax[ny - nl:ny, :] = 0.0  # set last nl rows to be zero so that we have nl linearly dependent rows in Ax
+
+    W = MasterMatrixW(nx, np, ny, nz, Ax, Ap)
+
+    weights = ones(nx)
+    Jx = random.rand(nz, nx)
+    Jp = random.rand(nz, np)
+
+    W.update(Jx, Jp, weights)
+
+    return W
+
+
+def createMasterMatrixH(nx, np):
+    """Create a MasterMatrixH object with given parameters
+
+    Args:
+        nx (int): The number of rows and columns in Hxx
+        np (int): The number of columns in Hxp
+
+    Returns:
+        MasterMatrixH: A MasterMatrixH object for testing purposes.
+    """
+
+    Hxx = random.rand(nx, nx)
+    Hxp = random.rand(nx, np)
+    H = MasterMatrixH(Hxx, Hxp)
+
+    return H
+
+
+def createMasterMatrixV(nx, np):
+    """Create a MasterMatrixV object with given parameters
+
+    Args:
+        nx (int): The number of columns in Vpx
+        np (int): The number of rows/columns in Vpp
+
+    Returns:
+        MasterMatrixV: A MasterMatrixV object for testing purposes.
+    """
+
+    Vpx = random.rand(np, nx)
+    Vpp = random.rand(np, np)
+    V = MasterMatrixV(Vpx, Vpp)
+
+    return V
+
+
+def createMasterMatrix(nx, np, ny, nz, nl=0, nu=0, diagHxx=False):
+    """Create a MasterMatrix object with given parameters
+
+    Args:
+        nx (int): The number of columns in Wx = [Ax; Jx]
+        np (int): The number of columns in Wp = [Ap; Jp]
+        ny (int): The number of rows in Ax and Ap
+        nz (int): The number of rows in Jx and Jp
+        nl (int, optional): The number of zero rows at the bottom of Ax. Defaults to 0.
+        nu (int, optional): The number of unstable non-basic variables in x. Defaults to 0.
+        diagHxx (bool, optional): The flag indicating Hxx is diagonal or not. Defaults to False.
+
+    Returns:
+        MasterMatrix: A MasterMatrix object for testing purposes.
+    """
+
+    H = createMasterMatrixH(nx, np)
+    V = createMasterMatrixV(nx, np)
+    W = createMasterMatrixW(nx, np, ny, nz)
+
+    if diagHxx:
+        H.Hxx[:] = diag(random.rand(nx))
+
+    Wbar = W.echelonForm()
+    ju = Wbar.jn[:nu]  # the first nu non-basic variables are unstable
+
+    J = MasterMatrix(nx, np, ny, nz)
+
+    J.update(H, V, W, ju)
+
+    return J
+
+
 def pascal_matrix(m, n):
     """Return a Pascal matrix with given dimensions.
 

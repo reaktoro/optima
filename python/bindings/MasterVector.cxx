@@ -21,31 +21,31 @@
 namespace py = pybind11;
 
 // Optima includes
-#include <Optima/MasterMatrix.hpp>
 #include <Optima/MasterVector.hpp>
-#include <Optima/ResidualVector.hpp>
 using namespace Optima;
 
-void exportResidualVector(py::module& m)
+void exportMasterVector(py::module& m)
 {
-    auto update = [](ResidualVector& self,
-        MasterMatrix const& M,
-        VectorConstRef x,
-        VectorConstRef p,
-        VectorConstRef y,
-        VectorConstRef z,
-        VectorConstRef g,
-        VectorConstRef v,
-        VectorConstRef b,
-        VectorConstRef h)
-    {
-        self.update({M, x, p, y, z, g, v, b, h});
-    };
+    py::class_<CanonicalVector>(m, "CanonicalVector")
+        .def_readonly("xs", &CanonicalVector::xs)
+        .def_readonly("p", &CanonicalVector::p)
+        .def_readonly("wbs", &CanonicalVector::wbs)
+        ;
 
-    py::class_<ResidualVector>(m, "ResidualVector")
+    py::class_<CanonicalVectorRef>(m, "CanonicalVectorRef")
+        .def_readwrite("xs", &CanonicalVectorRef::xs)
+        .def_readwrite("p", &CanonicalVectorRef::p)
+        .def_readwrite("wbs", &CanonicalVectorRef::wbs)
+        ;
+
+    py::class_<MasterVector>(m, "MasterVector")
         .def(py::init<Index, Index, Index, Index>())
-        .def(py::init<const ResidualVector&>())
-        .def("update", update)
-        .def("canonicalVector", &ResidualVector::canonicalVector)
+        .def(py::init<const MasterVector&>())
+        .def_readwrite("x", &MasterVector::x)
+        .def_readwrite("p", &MasterVector::p)
+        .def_readwrite("y", &MasterVector::y)
+        .def_readwrite("z", &MasterVector::z)
+        .def_readwrite("w", &MasterVector::w)
+        .def_readwrite("data", &MasterVector::data)
         ;
 }

@@ -15,27 +15,25 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#pragma once
+// pybind11 includes
+#include <pybind11/pybind11.h>
+#include <pybind11/eigen.h>
+namespace py = pybind11;
 
 // Optima includes
-#include <Optima/BasicSolver.hpp>
-#include <Optima/Canonicalizer.hpp>
-#include <Optima/ConstraintFunction.hpp>
-#include <Optima/Exception.hpp>
-#include <Optima/ExtendedCanonicalizer.hpp>
-#include <Optima/Index.hpp>
-#include <Optima/IndexUtils.hpp>
-#include <Optima/LU.hpp>
-#include <Optima/Matrix.hpp>
-#include <Optima/ObjectiveFunction.hpp>
-#include <Optima/Options.hpp>
-#include <Optima/Outputter.hpp>
-#include <Optima/Problem.hpp>
-#include <Optima/Result.hpp>
-#include <Optima/SaddlePointOptions.hpp>
-#include <Optima/SaddlePointSolver.hpp>
-#include <Optima/Solver.hpp>
-#include <Optima/State.hpp>
-#include <Optima/Stepper.hpp>
-#include <Optima/Timing.hpp>
-#include <Optima/Utils.hpp>
+#include <Optima/LinearSolver.hpp>
+#include <Optima/MasterMatrix.hpp>
+#include <Optima/MasterVector.hpp>
+using namespace Optima;
+
+void exportLinearSolver(py::module& m)
+{
+    py::class_<LinearSolver>(m, "LinearSolver")
+        .def(py::init<Index, Index, Index, Index>())
+        .def("setOptions", &LinearSolver::setOptions)
+        .def("options", &LinearSolver::options)
+        .def("decompose", &LinearSolver::decompose)
+        .def("solve", py::overload_cast<const MasterMatrix&, const MasterVector&, MasterVector&>(&LinearSolver::solve))
+        .def("solve", py::overload_cast<const MasterMatrix&, CanonicalVector, MasterVector&>(&LinearSolver::solve))
+        ;
+}

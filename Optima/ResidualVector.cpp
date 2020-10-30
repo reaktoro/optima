@@ -20,7 +20,8 @@
 // Optima includes
 #include <Optima/Exception.hpp>
 #include <Optima/IndexUtils.hpp>
-#include <Optima/JacobianMatrix.hpp>
+#include <Optima/MasterMatrix.hpp>
+#include <Optima/MasterVector.hpp>
 #include <Optima/Utils.hpp>
 
 namespace Optima {
@@ -33,7 +34,7 @@ struct ResidualVector::Impl
     const Index nz = 0;   ///< The number of variables z.
     const Index nw = 0;   ///< The number of variables w = (y, z).
 
-    JacobianMatrix::Dims dims; ///< /// The dimension details of the Jacobian matrix and its canonical form.
+    CanonicalDims dims; ///< /// The dimension details of the Jacobian matrix and its canonical form.
 
     Vector ap;
     Vector asu;
@@ -64,14 +65,14 @@ struct ResidualVector::Impl
         assert(b.size() == ny);
         assert(h.size() == nz);
 
-        dims = M.dims();
+        const auto Mbar = M.canonicalForm();
+
+        dims = Mbar.dims;
 
         const auto ns  = dims.ns;
         const auto nu  = dims.nu;
         const auto nbs = dims.nbs;
         const auto nns = dims.nns;
-
-        const auto Mbar = M.canonicalForm();
 
         const auto js = Mbar.js;
         const auto ju = Mbar.ju;
@@ -111,7 +112,7 @@ struct ResidualVector::Impl
         awbs.noalias() -= xbs + Sbsns*xns + Sbsp*args.p;
     }
 
-    auto canonicalForm() const -> CanonicalForm
+    auto canonicalVector() const -> CanonicalVector
     {
         const auto ns = dims.ns;
         const auto as = asu.head(ns);
@@ -141,9 +142,9 @@ auto ResidualVector::update(ResidualVectorUpdateArgs args) -> void
     pimpl->update(args);
 }
 
-auto ResidualVector::canonicalForm() const -> CanonicalForm
+auto ResidualVector::canonicalVector() const -> CanonicalVector
 {
-    return pimpl->canonicalForm();
+    return pimpl->canonicalVector();
 }
 
 } // namespace Optima

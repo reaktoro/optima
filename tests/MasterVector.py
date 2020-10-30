@@ -15,8 +15,30 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-
 from optima import *
 from numpy import *
-import pytest
+from pytest import mark
 
+tested_nx  = [5, 10, 20, 50]  # The tested number of x variables
+tested_np  = [0, 5, 10]       # The tested number of p variables
+tested_ny  = [0, 5]           # The tested number of y variables
+tested_nz  = [0, 5]           # The tested number of z variables
+
+@mark.parametrize("nx",  tested_nx)
+@mark.parametrize("np",  tested_np)
+@mark.parametrize("ny",  tested_ny)
+@mark.parametrize("nz",  tested_nz)
+def test_master_vector(nx, np, ny, nz):
+
+    u = MasterVector(nx, np, ny, nz)
+
+    u.x = random.rand(nx)
+    u.p = random.rand(np)
+    u.y = random.rand(ny)
+    u.z = random.rand(nz)
+
+    assert all(u.data == concatenate([u.x, u.p, u.y, u.z]))
+
+    u.data = random.rand(len(u.data))
+
+    assert all(u.data == concatenate([u.x, u.p, u.y, u.z]))

@@ -18,7 +18,8 @@
 from optima import *
 from numpy import *
 from numpy.testing import assert_almost_equal
-from pytest import approx, mark
+from pytest import mark
+from utils.matrices import createMasterMatrixW
 
 tested_nx  = [10, 20]  # The tested number of x variables
 tested_np  = [0, 5]    # The tested number of p variables
@@ -28,14 +29,14 @@ tested_nl  = [0, 2]    # The tested number of linearly dependent rows in Ax
 tested_nlu = [0, 2]    # The tested number of lower unstable variables
 tested_nuu = [0, 2]    # The tested number of upper unstable variables
 
-@mark.parametrize("nx",  tested_nx)
-@mark.parametrize("np",  tested_np)
-@mark.parametrize("ny",  tested_ny)
-@mark.parametrize("nz",  tested_nz)
-@mark.parametrize("nl",  tested_nl)
-@mark.parametrize("nlu",  tested_nlu)
-@mark.parametrize("nuu",  tested_nuu)
-def test_stability(nx, np, ny, nz, nl, nlu, nuu, createJacobianBlockW):
+@mark.parametrize("nx" , tested_nx)
+@mark.parametrize("np" , tested_np)
+@mark.parametrize("ny" , tested_ny)
+@mark.parametrize("nz" , tested_nz)
+@mark.parametrize("nl" , tested_nl)
+@mark.parametrize("nlu", tested_nlu)
+@mark.parametrize("nuu", tested_nuu)
+def test_stability(nx, np, ny, nz, nl, nlu, nuu):
 
     # Ensure nx is larger than np and (ny + nz)
     if nx < np or nx < ny + nz: return
@@ -43,9 +44,9 @@ def test_stability(nx, np, ny, nz, nl, nlu, nuu, createJacobianBlockW):
     # Ensure nl < ny
     if ny <= nl: return
 
-    W = createJacobianBlockW(nx, np, ny, nz, nl)
+    W = createMasterMatrixW(nx, np, ny, nz, nl)
 
-    Wbar = W.canonicalForm()
+    Wbar = W.echelonForm()
 
     jb = Wbar.jb
     jn = Wbar.jn
