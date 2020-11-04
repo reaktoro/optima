@@ -21,17 +21,12 @@
 #include <memory>
 
 // Optima includes
-#include <Optima/Index.hpp>
 #include <Optima/LinearSolverOptions.hpp>
-#include <Optima/Matrix.hpp>
+#include <Optima/CanonicalMatrix.hpp>
+#include <Optima/CanonicalVector.hpp>
+#include <Optima/MasterVector.hpp>
 
 namespace Optima {
-
-// Forward declarations
-class CanonicalVector;
-class CanonicalVectorRef;
-class MasterMatrix;
-class MasterVector;
 
 /// Used to solve the system of linear equations involving master matrices and master vectors.
 class LinearSolver
@@ -55,26 +50,26 @@ public:
     /// Return the current options of this linear solver.
     auto options() const -> const LinearSolverOptions&;
 
-    /// Decompose the canonical form of the given master matrix.
-    auto decompose(const MasterMatrix& M) -> void;
+    /// Decompose the canonical form of a master matrix.
+    auto decompose(CanonicalMatrixView Mc) -> void;
 
     /// Solve the linear problem.
     /// Using this method presumes method @ref decompose has already been
-    /// called. This will allow you to reuse the decomposition of the master
+    /// called. This will allow you to reuse the decomposition of the canonical
     /// matrix for multiple solve computations if needed.
-    /// @param M The master matrix in the linear problem.
+    /// @param Mc The canonical form of the master matrix in the linear problem.
     /// @param a The right-hand side master vector in the linear problem.
     /// @param[out] u The solution master vector in the linear problem.
-    auto solve(const MasterMatrix& M, const MasterVector& a, MasterVector& u) -> void;
+    auto solve(CanonicalMatrixView Mc, MasterVectorView a, MasterVectorRef u) -> void;
 
     /// Solve the linear problem.
     /// Using this method presumes method @ref decompose has already been
-    /// called. This will allow you to reuse the decomposition of the master
+    /// called. This will allow you to reuse the decomposition of the canonical
     /// matrix for multiple solve computations if needed.
-    /// @param M The master matrix in the linear problem.
-    /// @param a The right-hand side vector in the linear problem already in its canonical form.
+    /// @param Mc The canonical form of the master matrix in the linear problem.
+    /// @param ac The right-hand side vector in the linear problem already in its canonical form.
     /// @param[out] u The solution master vector in the linear problem.
-    auto solve(const MasterMatrix& M, CanonicalVector a, MasterVector& u) -> void;
+    auto solve(CanonicalMatrixView Mc, CanonicalVectorView ac, MasterVectorRef u) -> void;
 
 private:
     struct Impl;

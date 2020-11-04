@@ -22,8 +22,6 @@ namespace py = pybind11;
 
 // Optima includes
 #include <Optima/LinearSolver.hpp>
-#include <Optima/MasterMatrix.hpp>
-#include <Optima/MasterVector.hpp>
 using namespace Optima;
 
 void exportLinearSolver(py::module& m)
@@ -33,7 +31,7 @@ void exportLinearSolver(py::module& m)
         .def("setOptions", &LinearSolver::setOptions)
         .def("options", &LinearSolver::options)
         .def("decompose", &LinearSolver::decompose)
-        .def("solve", py::overload_cast<const MasterMatrix&, const MasterVector&, MasterVector&>(&LinearSolver::solve))
-        .def("solve", py::overload_cast<const MasterMatrix&, CanonicalVector, MasterVector&>(&LinearSolver::solve))
+        .def("solve", py::overload_cast<CanonicalMatrixView, MasterVectorView, MasterVectorRef>(&LinearSolver::solve))
+        .def("solve", py::overload_cast<CanonicalMatrixView, CanonicalVectorView, MasterVectorRef>(&LinearSolver::solve))
         ;
 }

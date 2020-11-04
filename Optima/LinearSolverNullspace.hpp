@@ -22,14 +22,10 @@
 
 // Optima includes
 #include <Optima/Index.hpp>
-#include <Optima/Matrix.hpp>
+#include <Optima/CanonicalMatrix.hpp>
+#include <Optima/CanonicalVector.hpp>
 
 namespace Optima {
-
-// Forward declarations
-class CanonicalMatrix;
-class CanonicalVector;
-class CanonicalVectorRef;
 
 /// Used to solve linear problems in their canonical form.
 class LinearSolverNullspace
@@ -48,7 +44,7 @@ public:
     auto operator=(LinearSolverNullspace other) -> LinearSolverNullspace&;
 
     /// Decompose the canonical matrix.
-    auto decompose(CanonicalMatrix M) -> void;
+    auto decompose(CanonicalMatrixView M) -> void;
 
     /// Solve the linear problem in its canonical form.
     /// Using this method presumes method @ref decompose has already been
@@ -57,7 +53,7 @@ public:
     /// @param M The canonical matrix in the canonical linear problem.
     /// @param a The right-hand side canonical vector in the canonical linear problem.
     /// @param[out] u The solution  vector in the canonical linear problem.
-    auto solve(CanonicalMatrix J, CanonicalVector a, CanonicalVectorRef u) -> void;
+    auto solve(CanonicalMatrixView M, CanonicalVectorView a, CanonicalVectorRef u) -> void;
 
 private:
     struct Impl;

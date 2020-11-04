@@ -22,8 +22,6 @@
 #include <Optima/LinearSolverFullspace.hpp>
 #include <Optima/LinearSolverNullspace.hpp>
 #include <Optima/LinearSolverRangespace.hpp>
-#include <Optima/MasterMatrix.hpp>
-#include <Optima/MasterVector.hpp>
 
 namespace Optima {
 
@@ -61,18 +59,13 @@ struct LinearSolver::Impl
     }
 
     /// Decompose the canonical matrix.
-    auto decomposeCanonical(CanonicalMatrix Mc) -> void
+    auto decomposeCanonical(CanonicalMatrixView Mc) -> void
     {
-        switch(options.method)
-        {
-        case LinearSolverMethod::Nullspace: nullspace.decompose(Mc); break;
-        case LinearSolverMethod::Rangespace: rangespace.decompose(Mc); break;
-        default: fullspace.decompose(Mc); break;
-        }
+
     }
 
     /// Solve the canonical linear problem.
-    auto solveCanonical(CanonicalMatrix Mc, CanonicalVector ac, CanonicalVectorRef uc) -> void
+    auto solveCanonical(CanonicalMatrixView Mc, CanonicalVectorView ac, CanonicalVectorRef uc) -> void
     {
         switch(options.method)
         {
@@ -82,25 +75,26 @@ struct LinearSolver::Impl
         }
     }
 
-    auto decompose(const MasterMatrix& M) -> void
+    auto decompose(CanonicalMatrixView Mc) -> void
     {
-        decomposeCanonical(M.canonicalMatrix());
+        switch(options.method)
+        {
+        case LinearSolverMethod::Nullspace: nullspace.decompose(Mc); break;
+        case LinearSolverMethod::Rangespace: rangespace.decompose(Mc); break;
+        default: fullspace.decompose(Mc); break;
+        }
     }
 
-    auto solve(const MasterMatrix& M, const MasterVector& a, MasterVector& u) -> void
+    auto solve(CanonicalMatrixView Mc, MasterVectorView a, MasterVectorRef u) -> void
     {
-        const auto Mbar = M.canonicalForm();
-
-        const auto dims = Mbar.dims;
-        const auto R    = Mbar.R;
-        const auto js   = Mbar.js;
-        const auto ju   = Mbar.ju;
-        const auto Wu   = Mbar.Wu;
+        const auto dims = Mc.dims;
+        const auto Rbs  = Mc.Rbs;
+        const auto js   = Mc.js;
+        const auto ju   = Mc.ju;
 
         const auto ns  = dims.ns;
         const auto nu  = dims.nu;
         const auto nbs = dims.nbs;
-        const auto nbu = dims.nbu;
         const auto nns = dims.nns;
 
         auto as = ax.head(ns);
@@ -110,52 +104,45 @@ struct LinearSolver::Impl
         au.noalias() = a.x(ju);
 
         auto awbs = aw.head(nbs);
-        aw.noalias() = R * a.w;
+        awbs = Rbs * a.w;
 
         const auto ap = a.p;
 
-        solve(M, {as, ap, awbs}, u);
+        solve(Mc, {as, au, ap, awbs}, u);
 
         u.x(ju) = au;
     }
 
-    auto solve(const MasterMatrix& M, CanonicalVector a, MasterVector& u) -> void
+    auto solve(CanonicalMatrixView Mc, CanonicalVectorView a, MasterVectorRef u) -> void
     {
-        const auto Mc = M.canonicalMatrix();
-        const auto Mbar = M.canonicalForm();
-
-        const auto dims = Mbar.dims;
-        const auto R    = Mbar.R;
-        const auto js   = Mbar.js;
-        const auto ju   = Mbar.ju;
+        const auto dims = Mc.dims;
+        const auto Rbs  = Mc.Rbs;
+        const auto js   = Mc.js;
+        const auto ju   = Mc.ju;
 
         const auto ns  = dims.ns;
+        const auto nu  = dims.nu;
         const auto nbs = dims.nbs;
-        const auto nbu = dims.nbu;
         const auto nl  = dims.nl;
 
         auto xs = x.head(ns);
+        auto xu = x.tail(nu);
 
         auto wbs = wbar.head(nbs);
-        auto wbu = wbar.segment(nbs, nbu);
-        auto wbl = wbar.tail(nl);
 
         const auto as = a.xs;
+        const auto au = a.xu;
         const auto ap = a.p;
         const auto awbs = a.wbs.head(nbs);
 
-        solveCanonical(Mc, {as, ap, awbs}, {xs, p, wbs});
+        solveCanonical(Mc, {as, au, ap, awbs}, {xs, xu, p, wbs});
 
-        wbu.fill(0.0);
-        wbl.fill(0.0);
-
-        w.noalias() = tr(R) * wbar;
+        w.noalias() = tr(Rbs) * wbs;
 
         u.x(js) = xs;
-        u.x(ju).fill(0.0);
+        u.x(ju) = xu;
         u.p = p;
-        u.y = w.head(ny);
-        u.z = w.tail(nz);
+        u.w = w;
     }
 };
 
@@ -186,19 +173,19 @@ auto LinearSolver::options() const -> const LinearSolverOptions&
     return pimpl->options;
 }
 
-auto LinearSolver::decompose(const MasterMatrix& M) -> void
+auto LinearSolver::decompose(CanonicalMatrixView Mc) -> void
 {
-    pimpl->decompose(M);
+    pimpl->decompose(Mc);
 }
 
-auto LinearSolver::solve(const MasterMatrix& M, const MasterVector& a, MasterVector& u) -> void
+auto LinearSolver::solve(CanonicalMatrixView Mc, MasterVectorView a, MasterVectorRef u) -> void
 {
-    pimpl->solve(M, a, u);
+    pimpl->solve(Mc, a, u);
 }
 
-auto LinearSolver::solve(const MasterMatrix& M, CanonicalVector a, MasterVector& u) -> void
+auto LinearSolver::solve(CanonicalMatrixView Mc, CanonicalVectorView ac, MasterVectorRef u) -> void
 {
-    pimpl->solve(M, a, u);
+    pimpl->solve(Mc, ac, u);
 }
 
 } // namespace Optima

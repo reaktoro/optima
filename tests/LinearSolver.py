@@ -28,6 +28,13 @@ tested_nz  = [0, 5]    # The tested number of z variables
 tested_nl  = [0, 2]    # The tested number of linearly dependent rows in Ax
 tested_nu  = [0, 2]    # The tested number of unstable variables
 
+# tested_nx  = [10]  # The tested number of x variables
+# tested_np  = [2]    # The tested number of p variables
+# tested_ny  = [5]   # The tested number of y variables
+# tested_nz  = [2]    # The tested number of z variables
+# tested_nl  = [2]    # The tested number of linearly dependent rows in Ax
+# tested_nu  = [0]    # The tested number of unstable variables
+
 # Tested cases for the linear solver methods
 tested_methods = [
     LinearSolverMethod.Fullspace,
@@ -44,8 +51,10 @@ tested_methods = [
 @mark.parametrize("method", tested_methods)
 def test_linear_solver(nx, np, ny, nz, nl, nu, method):
 
-    # Ensure nx is larger than np and (ny + nz)
-    if nx < np or nx < ny + nz: return
+    nw = ny + nz
+
+    # Ensure nx is larger than np and nw
+    if nx < np or nx < nw: return
 
     # Ensure nl < ny
     if ny <= nl: return
@@ -59,12 +68,17 @@ def test_linear_solver(nx, np, ny, nz, nl, nu, method):
 
     t = nx + np + ny + nz
 
-    uexp = MasterVector(nx, np, ny, nz)
-    uexp.data = linspace(1, t, t)
+    uexp = MasterVector(nx, np, nw)
+    uexp.x = linspace(1, nx, nx)
+    uexp.p = linspace(1, np, np)
+    uexp.w = linspace(1, nw, nw)
 
     a = M * uexp
 
-    Mbar = M.canonicalMatrix()
+    Mc = CanonicalMatrix(nx, np, ny, nz)
+    Mc.update(M)
+
+    Mbar = Mc.view()
 
     dims = Mbar.dims
     nbs = dims.nbs
@@ -75,9 +89,9 @@ def test_linear_solver(nx, np, ny, nz, nl, nu, method):
     linearsolver = LinearSolver(nx, np, ny, nz)
     linearsolver.setOptions(options)
 
-    u = MasterVector(nx, np, ny, nz)
+    u = MasterVector(nx, np, nw)
 
-    linearsolver.decompose(M)
-    linearsolver.solve(M, a, u)
+    linearsolver.decompose(Mbar)
+    linearsolver.solve(Mbar, a, u)
 
-    assert_almost_equal( (M * u).data, a.data )
+    assert_almost_equal( (M * u).array(), a.array() )

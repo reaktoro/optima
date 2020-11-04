@@ -113,7 +113,7 @@ struct ResidualVector::Impl
         awstar.head(ny) = b - Au*xu;
         awstar.tail(nz) = Js*xs + Jp*p - h;
 
-        awbs = multiplyMatrixViewVectorWithoutResidualRoundOffError(Rbs, awstar);
+        awbs = multiplyMatrixVectorWithoutResidualRoundOffError(Rbs, awstar);
         awbs.noalias() -= xbs + Sbsns*xns + Sbsp*args.p;
     }
 

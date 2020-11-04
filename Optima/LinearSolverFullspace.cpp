@@ -21,9 +21,9 @@
 #include <cassert>
 
 // Optima includes
+#include <Optima/CanonicalVector.hpp>
+#include <Optima/CanonicalMatrix.hpp>
 #include <Optima/Exception.hpp>
-#include <Optima/MasterMatrix.hpp>
-#include <Optima/MasterVector.hpp>
 #include <Optima/LU.hpp>
 
 namespace Optima {
@@ -40,7 +40,7 @@ struct LinearSolverFullspace::Impl
     {
     }
 
-    auto decompose(CanonicalMatrix J) -> void
+    auto decompose(CanonicalMatrixView J) -> void
     {
         const auto dims = J.dims;
 
@@ -87,7 +87,7 @@ struct LinearSolverFullspace::Impl
         lu.decompose(M);
     }
 
-    auto solve(CanonicalMatrix J, CanonicalVector a, CanonicalVectorRef u) -> void
+    auto solve(CanonicalMatrixView J, CanonicalVectorView a, CanonicalVectorRef u) -> void
     {
         const auto dims = J.dims;
 
@@ -137,12 +137,12 @@ auto LinearSolverFullspace::operator=(LinearSolverFullspace other) -> LinearSolv
     return *this;
 }
 
-auto LinearSolverFullspace::decompose(CanonicalMatrix M) -> void
+auto LinearSolverFullspace::decompose(CanonicalMatrixView M) -> void
 {
     pimpl->decompose(M);
 }
 
-auto LinearSolverFullspace::solve(CanonicalMatrix J, CanonicalVector a, CanonicalVectorRef u) -> void
+auto LinearSolverFullspace::solve(CanonicalMatrixView J, CanonicalVectorView a, CanonicalVectorRef u) -> void
 {
     pimpl->solve(J, a, u);
 }
