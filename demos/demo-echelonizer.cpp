@@ -25,16 +25,16 @@ int main(int argc, char **argv)
     std::cout << std::fixed;
     std::cout << "A = \n" << A << std::endl;
 
-    Canonicalizer canonicalizer(A);
+    Echelonizer echelonizer(A);
 
-    std::cout << "C = \n" << canonicalizer.C() << std::endl;
-    std::cout << "basic variables = " << canonicalizer.indicesBasicVariables().transpose() << std::endl;
-    std::cout << "non-basic variables = " << canonicalizer.indicesNonBasicVariables().transpose() << std::endl;
+    std::cout << "C = \n" << echelonizer.C() << std::endl;
+    std::cout << "basic variables = " << echelonizer.indicesBasicVariables().transpose() << std::endl;
+    std::cout << "non-basic variables = " << echelonizer.indicesNonBasicVariables().transpose() << std::endl;
 
     // Swap the first non-basic variable with the first basic variable
-    canonicalizer.updateWithSwapBasicVariable(0, 0);
+    echelonizer.updateWithSwapBasicVariable(0, 0);
 
-    std::cout << "updated C = \n" << canonicalizer.C() << std::endl;
-    std::cout << "updated basic variables = " << canonicalizer.indicesBasicVariables().transpose() << std::endl;
-    std::cout << "updated non-basic variables = " << canonicalizer.indicesNonBasicVariables().transpose() << std::endl;
+    std::cout << "updated C = \n" << echelonizer.C() << std::endl;
+    std::cout << "updated basic variables = " << echelonizer.indicesBasicVariables().transpose() << std::endl;
+    std::cout << "updated non-basic variables = " << echelonizer.indicesNonBasicVariables().transpose() << std::endl;
 }

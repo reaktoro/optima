@@ -26,27 +26,36 @@
 
 namespace Optima {
 
+/// Used to represent the echelon form of a matrix *A*.
+struct EchelonMatrix
+{
+    MatrixConstRef R;   ///< The echelonizer matrix of *A* so that *RAQ = [I S]* with *Q = (jb, jn)*.
+    MatrixConstRef S;   ///< The matrix *S* in the echelon form of *A*.
+    IndicesConstRef jb; ///< The indices of the basic variables in the echelon form of *A*.
+    IndicesConstRef jn; ///< The indices of the non-basic variables in the echelon form of *A*.
+};
+
 /// Used to describe a matrix \eq{A} in canonical form.
 /// The canonical form of a matrix \eq{A} is represented as:
 /// \eqq{C = RAQ = \begin{bmatrix}I & S\end{bmatrix},}
-/// where \eq{Q} is a permutation matrix, and \eq{R} is the *canonicalizer matrix* of \eq{A}.
-class Canonicalizer
+/// where \eq{Q} is a permutation matrix, and \eq{R} is the *echelonizer matrix* of \eq{A}.
+class Echelonizer
 {
 public:
-    /// Construct a default Canonicalizer instance.
-    Canonicalizer();
+    /// Construct a default Echelonizer instance.
+    Echelonizer();
 
-    /// Construct a Canonicalizer instance with given matrix.
-    Canonicalizer(MatrixConstRef A);
+    /// Construct a Echelonizer instance with given matrix.
+    Echelonizer(MatrixConstRef A);
 
-    /// Construct a copy of a Canonicalizer instance.
-    Canonicalizer(const Canonicalizer& other);
+    /// Construct a copy of a Echelonizer instance.
+    Echelonizer(const Echelonizer& other);
 
-    /// Destroy this Canonicalizer instance.
-    virtual ~Canonicalizer();
+    /// Destroy this Echelonizer instance.
+    virtual ~Echelonizer();
 
-    /// Assign a Canonicalizer instance to this.
-    auto operator=(Canonicalizer other) -> Canonicalizer&;
+    /// Assign a Echelonizer instance to this.
+    auto operator=(Echelonizer other) -> Echelonizer&;
 
     /// Return the number of variables.
     auto numVariables() const -> Index;
@@ -63,7 +72,7 @@ public:
     /// Return the matrix \eq{S} of the canonicalization.
     auto S() const -> MatrixConstRef;
 
-    /// Return the canonicalizer matrix \eq{R}.
+    /// Return the echelonizer matrix \eq{R}.
     auto R() const -> MatrixConstRef;
 
     /// Return the permutation matrix \eq{Q} of the canonicalization.

@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include "Canonicalizer.hpp"
+#include "Echelonizer.hpp"
 
 // Eigen includes
 #include <Optima/deps/eigen3/Eigen/Dense>
@@ -27,12 +27,12 @@
 
 namespace Optima {
 
-struct Canonicalizer::Impl
+struct Echelonizer::Impl
 {
     /// The full-pivoting LU decomposition of A so that P*A*Q = L*U;
     Eigen::FullPivLU<Matrix> lu;
 
-    /// The current canonicalizer matrix R such that RAQ = C = [I S].
+    /// The current echelonizer matrix R such that RAQ = C = [I S].
     Matrix R;
 
     /// The current matrix S in the canonical form C = [I S].
@@ -187,7 +187,7 @@ struct Canonicalizer::Impl
         const Index m = S.rows();
         const double aux = 1.0/S(ib, in);
 
-        // Update the canonicalizer matrix R (only its `r` upper rows, where `r = rank(A)`)
+        // Update the echelonizer matrix R (only its `r` upper rows, where `r = rank(A)`)
         R.row(ib) *= aux;
         for(Index i = 0; i < m; ++i)
             if(i != ib) R.row(i) -= S(i, in) * R.row(ib);
@@ -328,65 +328,65 @@ struct Canonicalizer::Impl
     }
 };
 
-Canonicalizer::Canonicalizer()
+Echelonizer::Echelonizer()
 : pimpl(new Impl())
 {}
 
-Canonicalizer::Canonicalizer(MatrixConstRef A)
+Echelonizer::Echelonizer(MatrixConstRef A)
 : pimpl(new Impl())
 {
     compute(A);
 }
 
-Canonicalizer::Canonicalizer(const Canonicalizer& other)
+Echelonizer::Echelonizer(const Echelonizer& other)
 : pimpl(new Impl(*other.pimpl))
 {}
 
-Canonicalizer::~Canonicalizer()
+Echelonizer::~Echelonizer()
 {}
 
-auto Canonicalizer::operator=(Canonicalizer other) -> Canonicalizer&
+auto Echelonizer::operator=(Echelonizer other) -> Echelonizer&
 {
     pimpl = std::move(other.pimpl);
     return *this;
 }
 
-auto Canonicalizer::numVariables() const -> Index
+auto Echelonizer::numVariables() const -> Index
 {
     return pimpl->lu.cols();
 }
 
-auto Canonicalizer::numEquations() const -> Index
+auto Echelonizer::numEquations() const -> Index
 {
     return pimpl->lu.rows();
 }
 
-auto Canonicalizer::numBasicVariables() const -> Index
+auto Echelonizer::numBasicVariables() const -> Index
 {
     return pimpl->numBasicVariables();
 }
 
-auto Canonicalizer::numNonBasicVariables() const -> Index
+auto Echelonizer::numNonBasicVariables() const -> Index
 {
     return numVariables() - numBasicVariables();
 }
 
-auto Canonicalizer::S() const -> MatrixConstRef
+auto Echelonizer::S() const -> MatrixConstRef
 {
     return pimpl->S;
 }
 
-auto Canonicalizer::R() const -> MatrixConstRef
+auto Echelonizer::R() const -> MatrixConstRef
 {
     return pimpl->R;
 }
 
-auto Canonicalizer::Q() const -> IndicesConstRef
+auto Echelonizer::Q() const -> IndicesConstRef
 {
     return pimpl->Q;
 }
 
-auto Canonicalizer::C() const -> Matrix
+auto Echelonizer::C() const -> Matrix
 {
     const Index m  = numEquations();
     const Index n  = numVariables();
@@ -396,47 +396,47 @@ auto Canonicalizer::C() const -> Matrix
     return res;
 }
 
-auto Canonicalizer::indicesEquations() const -> IndicesConstRef
+auto Echelonizer::indicesEquations() const -> IndicesConstRef
 {
     return pimpl->Ptr;
 }
 
-auto Canonicalizer::indicesBasicVariables() const -> IndicesConstRef
+auto Echelonizer::indicesBasicVariables() const -> IndicesConstRef
 {
     return Q().head(numBasicVariables());
 }
 
-auto Canonicalizer::indicesNonBasicVariables() const -> IndicesConstRef
+auto Echelonizer::indicesNonBasicVariables() const -> IndicesConstRef
 {
     return Q().tail(numNonBasicVariables());
 }
 
-auto Canonicalizer::compute(MatrixConstRef A) -> void
+auto Echelonizer::compute(MatrixConstRef A) -> void
 {
     pimpl->compute(A);
 }
 
-auto Canonicalizer::updateWithSwapBasicVariable(Index ibasic, Index inonbasic) -> void
+auto Echelonizer::updateWithSwapBasicVariable(Index ibasic, Index inonbasic) -> void
 {
     pimpl->updateWithSwapBasicVariable(ibasic, inonbasic);
 }
 
-auto Canonicalizer::updateWithPriorityWeights(VectorConstRef weights) -> void
+auto Echelonizer::updateWithPriorityWeights(VectorConstRef weights) -> void
 {
     pimpl->updateWithPriorityWeights(weights);
 }
 
-auto Canonicalizer::updateOrdering(IndicesConstRef Kb, IndicesConstRef Kn) -> void
+auto Echelonizer::updateOrdering(IndicesConstRef Kb, IndicesConstRef Kn) -> void
 {
     pimpl->updateOrdering(Kb, Kn);
 }
 
-auto Canonicalizer::reset() -> void
+auto Echelonizer::reset() -> void
 {
     pimpl->reset();
 }
 
-auto Canonicalizer::cleanResidualRoundoffErrors() -> void
+auto Echelonizer::cleanResidualRoundoffErrors() -> void
 {
     pimpl->cleanResidualRoundoffErrors();
 }
