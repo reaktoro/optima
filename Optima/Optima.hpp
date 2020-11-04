@@ -19,23 +19,43 @@
 
 // Optima includes
 #include <Optima/BasicSolver.hpp>
-#include <Optima/Canonicalizer.hpp>
+#include <Optima/CanonicalMatrix.hpp>
+#include <Optima/CanonicalVector.hpp>
 #include <Optima/ConstraintFunction.hpp>
+#include <Optima/Dims.hpp>
+#include <Optima/Echelonizer.hpp>
+#include <Optima/EchelonizerExtended.hpp>
+#include <Optima/Eigen.hpp>
 #include <Optima/Exception.hpp>
-#include <Optima/ExtendedCanonicalizer.hpp>
 #include <Optima/Index.hpp>
 #include <Optima/IndexUtils.hpp>
+#include <Optima/LinearSolver.hpp>
+#include <Optima/LinearSolverFullspace.hpp>
+#include <Optima/LinearSolverNullspace.hpp>
+#include <Optima/LinearSolverOptions.hpp>
+#include <Optima/LinearSolverRangespace.hpp>
 #include <Optima/LU.hpp>
+#include <Optima/Macros.hpp>
+#include <Optima/MasterMatrix.hpp>
+#include <Optima/MasterMatrixOps.hpp>
+#include <Optima/MasterVector.hpp>
 #include <Optima/Matrix.hpp>
+#include <Optima/MatrixRWQ.hpp>
 #include <Optima/ObjectiveFunction.hpp>
+#include <Optima/Optima.hpp>
 #include <Optima/Options.hpp>
 #include <Optima/Outputter.hpp>
 #include <Optima/Problem.hpp>
+#include <Optima/ResidualFunction.hpp>
+#include <Optima/ResidualVector.hpp>
 #include <Optima/Result.hpp>
-#include <Optima/SaddlePointOptions.hpp>
-#include <Optima/SaddlePointSolver.hpp>
 #include <Optima/Solver.hpp>
+#include <Optima/Stability.hpp>
+#include <Optima/Stability2.hpp>
+#include <Optima/StabilityChecker.hpp>
 #include <Optima/State.hpp>
 #include <Optima/Stepper.hpp>
 #include <Optima/Timing.hpp>
 #include <Optima/Utils.hpp>
+
+// TODO: Remove header files that may not make sense to export.

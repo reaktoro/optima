@@ -21,8 +21,41 @@ from numpy import *
 from utils.data import formula_matrix
 
 
-def createMasterMatrixW(nx, np, ny, nz, nl=0):
-    """Create a MasterMatrixW object with given parameters
+def createMatrixViewH(nx, np, diagHxx=False):
+    """Create a MatrixViewH object with given parameters
+
+    Args:
+        nx (int): The number of rows and columns in Hxx
+        np (int): The number of columns in Hxp
+        diagHxx (bool, optional): The flag indicating Hxx is diagonal or not. Defaults to False.
+
+    Returns:
+        MatrixViewH: A MatrixViewH object for testing purposes.
+    """
+
+    Hxx = diag(random.rand(nx)) if diagHxx else random.rand(nx, nx)
+    Hxp = random.rand(nx, np)
+    return MatrixViewH(Hxx, Hxp, diagHxx)
+
+
+def createMatrixViewV(nx, np):
+    """Create a MatrixViewV object with given parameters
+
+    Args:
+        nx (int): The number of columns in Vpx
+        np (int): The number of rows/columns in Vpp
+
+    Returns:
+        MatrixViewV: A MatrixViewV object for testing purposes.
+    """
+
+    Vpx = random.rand(np, nx)
+    Vpp = random.rand(np, np)
+    return MatrixViewV(Vpx, Vpp)
+
+
+def createMatrixViewW(nx, np, ny, nz, nl=0):
+    """Create a MatrixViewW object with given parameters
 
     Args:
         nx (int): The number of columns in Wx = [Ax; Jx]
@@ -32,59 +65,68 @@ def createMasterMatrixW(nx, np, ny, nz, nl=0):
         nl (int, optional): The number of zero rows at the bottom of Ax. Defaults to 0.
 
     Returns:
-        MasterMatrixW: A MasterMatrixW object for testing purposes.
+        MatrixViewW: A MatrixViewW object for testing purposes.
     """
-
     Ax = random.rand(ny, nx)
     Ap = random.rand(ny, np)
-
-    Ax[ny - nl:ny, :] = 0.0  # set last nl rows to be zero so that we have nl linearly dependent rows in Ax
-
-    W = MasterMatrixW(nx, np, ny, nz, Ax, Ap)
-
-    weights = ones(nx)
     Jx = random.rand(nz, nx)
     Jp = random.rand(nz, np)
 
-    W.update(Jx, Jp, weights)
+    Ax[ny - nl:ny, :] = 0.0  # set last nl rows to be zero so that we have nl linearly dependent rows in Ax
 
-    return W
+    Wx = block([[Ax], [Jx]])
+    Wp = block([[Ap], [Jp]])
 
-
-def createMasterMatrixH(nx, np):
-    """Create a MasterMatrixH object with given parameters
-
-    Args:
-        nx (int): The number of rows and columns in Hxx
-        np (int): The number of columns in Hxp
-
-    Returns:
-        MasterMatrixH: A MasterMatrixH object for testing purposes.
-    """
-
-    Hxx = random.rand(nx, nx)
-    Hxp = random.rand(nx, np)
-    H = MasterMatrixH(Hxx, Hxp)
-
-    return H
+    return MatrixViewW(Wx, Wp)
 
 
-def createMasterMatrixV(nx, np):
-    """Create a MasterMatrixV object with given parameters
+def createMatrixViewRWQ(ny, W):
+    """Create a MatrixViewRWQ object with given parameters
 
     Args:
-        nx (int): The number of columns in Vpx
-        np (int): The number of rows/columns in Vpp
+        ny (int): The number of rows in Ax and Ap
+        W (array): The matrix W = [Wx Wp] = [Ax Ap; Jx Jp]
 
     Returns:
-        MasterMatrixV: A MasterMatrixV object for testing purposes.
+        MatrixViewRWQ: A MatrixViewRWQ object for testing purposes.
     """
 
-    Vpx = random.rand(np, nx)
-    Vpp = random.rand(np, np)
-    V = MasterMatrixV(Vpx, Vpp)
+    Ax, Jx = vsplit(W.Wx, [ny])
+    Ap, Jp = vsplit(W.Wp, [ny])
 
-    return V
+    ny, nx = Ax.shape
+    nz, np = Jp.shape
+
+    weights = ones(nx)
+
+    matrixRWQ = MatrixRWQ(nx, np, ny, nz, Ax, Ap)
+    matrixRWQ.update(Jx, Jp, weights)
+
+    RWQ = matrixRWQ.view()
+
+    return RWQ
+
+
+def createIndicesStableUnstableVariables(nx, nu, RWQ):
+    """Return the indices of the stable and unstable variables
+
+    Args:
+        nx (int): The number of variables in x
+        nu (int): The number of unstable non-basic variables in x
+        RWQ (MatrixViewRWQ): The echelon matrix RWQ of W
+
+    Returns:
+        js: The indices of the stable variables in x
+        ju: The indices of the unstable variables in x
+    """
+
+    jn = RWQ.jn  # the indices of the non-basic variables
+
+    jx = range(nx)
+    ju = jn[:nu]  # the indices of non-basic unstable variables
+    js = array(list(set(jx) - set(ju)))
+
+    return js, ju
 
 
 def createMasterMatrix(nx, np, ny, nz, nl=0, nu=0, diagHxx=False):
@@ -103,21 +145,37 @@ def createMasterMatrix(nx, np, ny, nz, nl=0, nu=0, diagHxx=False):
         MasterMatrix: A MasterMatrix object for testing purposes.
     """
 
-    H = createMasterMatrixH(nx, np)
-    V = createMasterMatrixV(nx, np)
-    W = createMasterMatrixW(nx, np, ny, nz)
+    H = createMatrixViewH(nx, np, diagHxx)
+    V = createMatrixViewV(nx, np)
+    W = createMatrixViewW(nx, np, ny, nz, nl)
 
-    if diagHxx:
-        H.Hxx[:] = diag(random.rand(nx))
+    RWQ = createMatrixViewRWQ(ny, W)
 
-    Wbar = W.echelonForm()
-    ju = Wbar.jn[:nu]  # the first nu non-basic variables are unstable
+    js, ju = createIndicesStableUnstableVariables(nx, nu, RWQ)
 
-    J = MasterMatrix(nx, np, ny, nz)
+    M = MasterMatrix(H, V, W, RWQ, js, ju)
 
-    J.update(H, V, W, ju)
+    return M
 
-    return J
+
+def createCanonicalMatrixView(nx, np, ny, nz, M):
+    """Create a CanonicalMatrixView object with given parameters
+
+    Args:
+        M (MasterMatrix): The master matrix for which its canonical form is being computed.
+        nx (int): The number of columns in Wx = [Ax; Jx]
+        np (int): The number of columns in Wp = [Ap; Jp]
+        ny (int): The number of rows in Ax and Ap
+        nz (int): The number of rows in Jx and Jp
+
+    Returns:
+        CanonicalMatrixView: A CanonicalMatrixView object for testing purposes.
+    """
+
+    Mc = CanonicalMatrix(nx, np, ny, nz)
+    Mc.update(M)
+
+    return Mc.view()
 
 
 def pascal_matrix(m, n):
