@@ -30,10 +30,11 @@ struct BaseDims
     const Index ny; ///< The number of variables *y*.
     const Index nz; ///< The number of variables *z*.
     const Index nw; ///< The number of variables *w = (y, z)*.
+    const Index nt; ///< The total number of variables in *(x, p, y, z)*.
 
     /// Construct a BaseDims object with given dimensions.
     BaseDims(Index nx, Index np, Index ny, Index nz)
-    : nx(nx), np(np), ny(ny), nz(nz), nw(ny + nz) {}
+    : nx(nx), np(np), ny(ny), nz(nz), nw(ny + nz), nt(nx + np + nw) {}
 };
 
 } // namespace Optima

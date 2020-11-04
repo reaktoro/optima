@@ -61,7 +61,7 @@ struct CanonicalMatrix::Impl
     Impl(const BaseDims& basedims)
     : basedims(basedims)
     {
-        const auto [nx, np, ny, nz, nw] = basedims;
+        const auto [nx, np, ny, nz, nw, nt] = basedims;
 
         S = zeros(nw, nx + np);
         Hprime = zeros(nx, nx + np);
@@ -73,7 +73,7 @@ struct CanonicalMatrix::Impl
 
     auto update(const MasterMatrix& M) -> void
     {
-        const auto [nx, np, ny, nz, nw] = basedims;
+        const auto [nx, np, ny, nz, nw, nt] = basedims;
 
         const auto H   = M.H;
         const auto V   = M.V;
@@ -255,7 +255,7 @@ struct CanonicalMatrix::Impl
 
     auto view() const -> CanonicalMatrixView
     {
-        const auto [nx, np, ny, nz, nw] = basedims;
+        const auto [nx, np, ny, nz, nw, nt] = basedims;
 
         const auto dims = CanonicalDims{nx, np, ny, nz, nw, ns, nu, nb, nn, nl, nbs, nbu, nns, nnu, nbe, nbi, nne, nni};
         const auto Hss = Hprime.topLeftCorner(ns, ns);

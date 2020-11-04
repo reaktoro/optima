@@ -32,5 +32,6 @@ void exportBaseDims(py::module& m)
         .def_readonly("ny", &BaseDims::ny)
         .def_readonly("nz", &BaseDims::nz)
         .def_readonly("nw", &BaseDims::nw)
+        .def_readonly("nt", &BaseDims::nt)
         ;
 }
