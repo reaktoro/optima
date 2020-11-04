@@ -15,23 +15,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-// pybind11 includes
-#include <pybind11/pybind11.h>
-#include <pybind11/eigen.h>
-namespace py = pybind11;
+#pragma once
 
 // Optima includes
-#include <Optima/LinearSolver.hpp>
-using namespace Optima;
+#include <Optima/Index.hpp>
 
-void exportLinearSolver(py::module& m)
+namespace Optima {
+
+/// Used to represent the dimensions in a master matrix.
+struct MasterDims
 {
-    py::class_<LinearSolver>(m, "LinearSolver")
-        .def(py::init<const MasterDims&>())
-        .def("setOptions", &LinearSolver::setOptions)
-        .def("options", &LinearSolver::options)
-        .def("decompose", &LinearSolver::decompose)
-        .def("solve", py::overload_cast<CanonicalMatrixView, MasterVectorView, MasterVectorRef>(&LinearSolver::solve))
-        .def("solve", py::overload_cast<CanonicalMatrixView, CanonicalVectorView, MasterVectorRef>(&LinearSolver::solve))
-        ;
-}
+    const Index nx; ///< The number of variables *x*.
+    const Index np; ///< The number of variables *p*.
+    const Index ny; ///< The number of variables *y*.
+    const Index nz; ///< The number of variables *z*.
+    const Index nw; ///< The number of variables *w = (y, z)*.
+    const Index nt; ///< The total number of variables in *(x, p, y, z)*.
+
+    /// Construct a MasterDims object with given dimensions.
+    MasterDims(Index nx, Index np, Index ny, Index nz)
+    : nx(nx), np(np), ny(ny), nz(nz), nw(ny + nz), nt(nx + np + nw) {}
+};
+
+} // namespace Optima

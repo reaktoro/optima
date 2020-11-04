@@ -53,28 +53,19 @@ void exportMasterMatrix(py::module& m)
         .def_readonly("Vpp", &MatrixViewV::Vpp)
         ;
 
-    py::class_<MatrixViewW>(m, "MatrixViewW")
-        .def(py::init<MatrixConstRef4py, MatrixConstRef4py>(),
-            keep_argument_alive<0>(),
-            keep_argument_alive<1>())
-        .def_readonly("Wx", &MatrixViewW::Wx)
-        .def_readonly("Wp", &MatrixViewW::Wp)
-        ;
-
     py::class_<MasterMatrix>(m, "MasterMatrix")
-        .def(py::init<MatrixViewH, MatrixViewV, MatrixViewW, MatrixViewRWQ, IndicesConstRef, IndicesConstRef>(),
+        .def(py::init<MatrixViewH, MatrixViewV, MatrixRWQ const&, StablePartition const&>(),
             keep_argument_alive<0>(),
             keep_argument_alive<1>(),
             keep_argument_alive<2>(),
-            keep_argument_alive<3>(),
-            keep_argument_alive<4>(),
-            keep_argument_alive<5>())
-        .def_readonly("H"  , &MasterMatrix::H)
-        .def_readonly("V"  , &MasterMatrix::V)
-        .def_readonly("W"  , &MasterMatrix::W)
-        .def_readonly("RWQ", &MasterMatrix::RWQ)
-        .def_readonly("js" , &MasterMatrix::js)
-        .def_readonly("ju" , &MasterMatrix::ju)
+            keep_argument_alive<3>())
+        .def_readonly("dims", &MasterMatrix::dims)
+        .def_readonly("H"   , &MasterMatrix::H)
+        .def_readonly("V"   , &MasterMatrix::V)
+        .def_readonly("W"   , &MasterMatrix::W)
+        .def_readonly("RWQ" , &MasterMatrix::RWQ)
+        .def_readonly("js"  , &MasterMatrix::js)
+        .def_readonly("ju"  , &MasterMatrix::ju)
         .def("__mul__", [](const MasterMatrix& l, const MasterVectorView& r) { return l * r; })
         .def("array", [](const MasterMatrix& self) { return Matrix(self); })
         ;

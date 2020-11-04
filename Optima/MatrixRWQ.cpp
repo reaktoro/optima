@@ -26,20 +26,23 @@ namespace Optima {
 
 struct MatrixRWQ::Impl
 {
-    const Index nx;  ///< The number of columns in Ax and Jx
-    const Index np;  ///< The number of columns in Ap and Jp
-    const Index ny;  ///< The number of rows in Ax and Ap
-    const Index nz;  ///< The number of rows in Jx and Jp
-    const Index nw;  ///< The number of rows in W = [Ax Ap; Jx Jp]
-    Matrix W;        ///< The matrix W = [Ax Ap; Jx Jp]
-    Matrix S;        ///< The workspace matrix for S = [Sbn Sbp]
+    /// The number of columns in Ax and Jx
+    const MasterDims dims;
+
+    /// The matrix W = [Ax Ap; Jx Jp]
+    Matrix W;
+
+    /// The workspace matrix for S = [Sbn Sbp]
+    Matrix S;
 
     /// The echelonizer of matrix Wx = [Ax; Jx]
     EchelonizerExtended echelonizer;
 
-    Impl(Index nx, Index np, Index ny, Index nz, MatrixConstRef Ax, MatrixConstRef Ap)
-    : nx(nx), np(np), ny(ny), nz(nz), nw(ny + nz), echelonizer(Ax)
+    Impl(const MasterDims& dims, MatrixConstRef Ax, MatrixConstRef Ap)
+    : dims(dims), echelonizer(Ax)
     {
+        const auto [nx, np, ny, nz, nw, nt] = dims;
+
         assert( ny == Ax.rows() );
         assert( ny == Ap.rows() );
 
@@ -55,6 +58,8 @@ struct MatrixRWQ::Impl
 
     auto update(MatrixConstRef Jx, MatrixConstRef Jp, VectorConstRef weights) -> void
     {
+        const auto [nx, np, ny, nz, nw, nt] = dims;
+
         assert( nz == Jx.rows() );
         assert( nz == Jp.rows() );
         assert( nx == Jx.cols() );
@@ -88,8 +93,24 @@ struct MatrixRWQ::Impl
         cleanResidualRoundoffErrors(Sbp);
     }
 
-    auto view() const -> MatrixViewRWQ
+    auto asMatrixViewW() const -> MatrixViewW
     {
+        const auto [nx, np, ny, nz, nw, nt] = dims;
+
+        const auto Wx = W.leftCols(nx);
+        const auto Wp = W.rightCols(np);
+        const auto Ax = Wx.topRows(ny);
+        const auto Ap = Wp.topRows(ny);
+        const auto Jx = Wx.bottomRows(nz);
+        const auto Jp = Wp.bottomRows(nz);
+
+        return {Wx, Wp, Ax, Ap, Jx, Jp};
+    }
+
+    auto asMatrixViewRWQ() const -> MatrixViewRWQ
+    {
+        const auto [nx, np, ny, nz, nw, nt] = dims;
+
         const auto nb = echelonizer.numBasicVariables();
         const auto nn = echelonizer.numNonBasicVariables();
 
@@ -104,8 +125,8 @@ struct MatrixRWQ::Impl
     }
 };
 
-MatrixRWQ::MatrixRWQ(Index nx, Index np, Index ny, Index nz, MatrixConstRef Ax, MatrixConstRef Ap)
-: pimpl(new Impl(nx, np, ny, nz, Ax, Ap))
+MatrixRWQ::MatrixRWQ(const MasterDims& dims, MatrixConstRef Ax, MatrixConstRef Ap)
+: pimpl(new Impl(dims, Ax, Ap))
 {}
 
 MatrixRWQ::MatrixRWQ(const MatrixRWQ& other)
@@ -120,9 +141,29 @@ auto MatrixRWQ::update(MatrixConstRef Jx, MatrixConstRef Jp, VectorConstRef weig
     pimpl->update(Jx, Jp, weights);
 }
 
-auto MatrixRWQ::view() const -> MatrixViewRWQ
+auto MatrixRWQ::dims() const -> MasterDims
 {
-    return pimpl->view();
+    return pimpl->dims;
+}
+
+auto MatrixRWQ::asMatrixViewW() const -> MatrixViewW
+{
+    return pimpl->asMatrixViewW();
+}
+
+auto MatrixRWQ::asMatrixViewRWQ() const -> MatrixViewRWQ
+{
+    return pimpl->asMatrixViewRWQ();
+}
+
+MatrixRWQ::operator MatrixViewW() const
+{
+    return asMatrixViewW();
+}
+
+MatrixRWQ::operator MatrixViewRWQ() const
+{
+    return asMatrixViewRWQ();
 }
 
 } // namespace Optima

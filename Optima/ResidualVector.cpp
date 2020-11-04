@@ -34,7 +34,9 @@ struct ResidualVector::Impl
     const Index nz = 0;   ///< The number of variables z.
     const Index nw = 0;   ///< The number of variables w = (y, z).
 
-    CanonicalDims dims; ///< /// The dimension details of the Jacobian matrix and its canonical form.
+    Index ns;  ///< The number of stable variables
+    Index nu;  ///< The number of ustable variables
+    Index nbs; ///< The number of stable basic variables
 
     Vector ap;
     Vector asu;
@@ -42,7 +44,7 @@ struct ResidualVector::Impl
     Vector awstar;  ///< The workspace for auxiliary vector aw(star)
     Vector xsu;
 
-    Impl(Index nx, Index np, Index ny, Index nz)
+    Impl(const MasterDims& dims)
     : nx(nx), np(np), ny(ny), nz(nz), nw(ny + nz)
     {
         ap.resize(np);
@@ -65,14 +67,11 @@ struct ResidualVector::Impl
         assert(b.size() == ny);
         assert(h.size() == nz);
 
-        dims = Mc.dims;
+        ns  = Mc.dims.ns;
+        nu  = Mc.dims.nu;
+        nbs = Mc.dims.nbs;
 
-        const auto ns  = dims.ns;
-        const auto nu  = dims.nu;
-        const auto nbs = dims.nbs;
-        const auto nns = dims.nns;
-        const auto ny  = dims.ny;
-        const auto nz  = dims.nz;
+        const auto nns = Mc.dims.nns;
 
         const auto js = Mc.js;
         const auto ju = Mc.ju;
@@ -119,16 +118,14 @@ struct ResidualVector::Impl
 
     auto canonicalVector() const -> CanonicalVectorView
     {
-        const auto ns = dims.ns;
-        const auto nu = dims.nu;
         const auto as = asu.head(ns);
         const auto au = asu.tail(nu);
         return {as, au, ap, awbs};
     }
 };
 
-ResidualVector::ResidualVector(Index nx, Index np, Index ny, Index nz)
-: pimpl(new Impl(nx, np, ny, nz))
+ResidualVector::ResidualVector(const MasterDims& dims)
+: pimpl(new Impl(dims))
 {}
 
 ResidualVector::ResidualVector(const ResidualVector& other)

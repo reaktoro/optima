@@ -21,38 +21,16 @@
 #include <memory>
 
 // Optima includes
-#include <Optima/BaseDims.hpp>
+#include <Optima/CanonicalDims.hpp>
+#include <Optima/MasterDims.hpp>
 #include <Optima/MasterMatrix.hpp>
 
 namespace Optima {
 
-/// The dimension details of a master matrix in its canonical form.
-struct CanonicalDims
-{
-    Index nx;  ///< The number of variables x.
-    Index np;  ///< The number of variables p.
-    Index ny;  ///< The number of variables y.
-    Index nz;  ///< The number of variables z.
-    Index nw;  ///< The number of variables w = (y, z).
-    Index ns;  ///< The number of stable variables in x.
-    Index nu;  ///< The number of unstable variables in x.
-    Index nb;  ///< The number of basic variables in x.
-    Index nn;  ///< The number of non-basic variables in x.
-    Index nl;  ///< The number of linearly dependent rows in Wx = [Ax; Jx].
-    Index nbs; ///< The number of stable basic variables.
-    Index nbu; ///< The number of unstable basic variables.
-    Index nns; ///< The number of stable non-basic variables.
-    Index nnu; ///< The number of unstable non-basic variables.
-    Index nbe; ///< The number of stable explicit basic variables.
-    Index nbi; ///< The number of stable implicit basic variables.
-    Index nne; ///< The number of stable explicit non-basic variables.
-    Index nni; ///< The number of stable implicit non-basic variables.
-};
-
 /// Used to represent the canonical form of a master matrix.
 struct CanonicalMatrixView
 {
-    CanonicalDims dims;   ///< The dimension details of a master matrix in its canonical form.
+    CanonicalDims dims;   ///< The dimension details of the canonical master matrix.
     MatrixConstRef Hss;   ///< The matrix Hss in the canonical master matrix.
     MatrixConstRef Hsp;   ///< The matrix Hsp in the canonical master matrix.
     MatrixConstRef Vps;   ///< The matrix Vps in the canonical master matrix.
@@ -71,7 +49,10 @@ class CanonicalMatrix
 {
 public:
     /// Construct a CanonicalMatrix instance.
-    CanonicalMatrix(const BaseDims& dims);
+    CanonicalMatrix(const MasterDims& dims);
+
+    /// Construct a CanonicalMatrix instance.
+    CanonicalMatrix(const MasterMatrix& M);
 
     /// Construct a copy of a CanonicalMatrix instance.
     CanonicalMatrix(const CanonicalMatrix& other);
@@ -87,6 +68,9 @@ public:
 
     /// Return an immutable view to the canonical form of a master matrix.
     auto view() const -> CanonicalMatrixView;
+
+    /// Convert this CanonicalMatrix object into a CanonicalMatrixView object.
+    operator CanonicalMatrixView() const;
 
 private:
     struct Impl;

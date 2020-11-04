@@ -43,15 +43,15 @@ def testResidualVector(nx, np, ny, nz, nl, nu):
     # Ensure nl < ny
     if ny <= nl: return
 
-    M = createMasterMatrix(nx, np, ny, nz, nl, nu)
+    M = createMasterMatrix(dims, nl, nu)
 
-    Mbar = createCanonicalMatrixView(nx, np, ny, nz, M)
+    Mbar = createCanonicalMatrixView(dims, M)
 
     Wx, Wp = M.W.Wx, M.W.Wp
     Ax, Jx = vsplit(Wx, [ny])
     Ap, Jp = vsplit(Wp, [ny])
 
-    F = ResidualVector(nx, np, ny, nz)
+    F = ResidualVector(dims)
 
     x = random.rand(nx)
     p = random.rand(np)

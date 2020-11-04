@@ -17,21 +17,20 @@
 
 // pybind11 includes
 #include <pybind11/pybind11.h>
+#include <pybind11/eigen.h>
 namespace py = pybind11;
 
 // Optima includes
-#include <Optima/BaseDims.hpp>
+#include <Optima/StablePartition.hpp>
 using namespace Optima;
 
-void exportBaseDims(py::module& m)
+void exportStablePartition(py::module& m)
 {
-    py::class_<BaseDims>(m, "BaseDims")
-        .def(py::init<Index, Index, Index, Index>())
-        .def_readonly("nx", &BaseDims::nx)
-        .def_readonly("np", &BaseDims::np)
-        .def_readonly("ny", &BaseDims::ny)
-        .def_readonly("nz", &BaseDims::nz)
-        .def_readonly("nw", &BaseDims::nw)
-        .def_readonly("nt", &BaseDims::nt)
+    py::class_<StablePartition>(m, "StablePartition")
+        .def(py::init<Index>())
+        .def("setStable", &StablePartition::setStable)
+        .def("setUnstable", &StablePartition::setUnstable)
+        .def("stable", &StablePartition::stable, py::return_value_policy::reference_internal)
+        .def("unstable", &StablePartition::unstable, py::return_value_policy::reference_internal)
         ;
 }

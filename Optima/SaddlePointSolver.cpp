@@ -23,7 +23,7 @@
 
 // Optima includes
 #include <Optima/Exception.hpp>
-#include <Optima/ExtendedCanonicalizer.hpp>
+#include <Optima/EchelonizerExtended.hpp>
 #include <Optima/IndexUtils.hpp>
 #include <Optima/Macros.hpp>
 #include <Optima/SaddlePointOptions.hpp>
@@ -38,7 +38,7 @@ using std::abs;
 
 struct SaddlePointSolver::Impl
 {
-    ExtendedCanonicalizer canonicalizer;    ///< The canonicalizer of matrix *Wx = [Ax; Jx]*.
+    EchelonizerExtended echelonizer;    ///< The echelonizer of matrix *Wx = [Ax; Jx]*.
     SaddlePointSolverRangespace rangespace; ///< The canonical saddle point solver based on a rangespace algorithm.
     SaddlePointSolverNullspace nullspace;   ///< The canonical saddle point solver based on a nullspace algorithm.
     SaddlePointSolverFullspace fullspace;   ///< The canonical saddle point solver based on a fullspace algorithm.
@@ -67,7 +67,7 @@ struct SaddlePointSolver::Impl
 
     /// Construct a SaddlePointSolver::Impl instance with given data.
     Impl(SaddlePointSolverInitArgs args)
-    : canonicalizer(args.Ax),
+    : echelonizer(args.Ax),
       rangespace(args.nx, args.np, args.ny + args.nz),
       nullspace(args.nx, args.np, args.ny + args.nz),
       fullspace(args.nx, args.np, args.ny + args.nz),
@@ -107,7 +107,7 @@ struct SaddlePointSolver::Impl
         weights.resize(nx);
 
         // Initialize the order of x variables
-        jx = canonicalizer.Q();
+        jx = echelonizer.Q();
     }
 
     /// Decompose the canonical saddle point matrix.
@@ -166,21 +166,21 @@ struct SaddlePointSolver::Impl
         weights(ju) = -linspace(nu, 1, nu);
 
         // Update the canonical form of Wx = [Ax; Jx]
-        canonicalizer.updateWithPriorityWeights(args.Jx, weights);
+        echelonizer.updateWithPriorityWeights(args.Jx, weights);
 
         // Remove residual round-off errors in Sbn after canonical form update.
         // This is an important step to ensure that residual coefficients such
         // as 1.23456e-16 are not present in matrices R and Sbn of the new
         // canonical form R*Ax*Q = [Ibx Sbn].
-        canonicalizer.cleanResidualRoundoffErrors();
+        echelonizer.cleanResidualRoundoffErrors();
 
         // Get the updated indices of basic and non-basic variables
-        const auto ibasic = canonicalizer.indicesBasicVariables();
-        const auto inonbasic = canonicalizer.indicesNonBasicVariables();
+        const auto ibasic = echelonizer.indicesBasicVariables();
+        const auto inonbasic = echelonizer.indicesNonBasicVariables();
 
         // Update the number of basic and non-basic variables
-        nb = canonicalizer.numBasicVariables();
-        nn = canonicalizer.numNonBasicVariables();
+        nb = echelonizer.numBasicVariables();
+        nn = echelonizer.numNonBasicVariables();
 
         //=========================================================================================
         // Identify stable and unstable basic variables
@@ -249,12 +249,12 @@ struct SaddlePointSolver::Impl
         std::sort(Kbs.begin(), Kbs.end(), [&](auto l, auto r) { return abs(Hd[ibasic[l]]) > abs(Hd[ibasic[r]]); }); // Note: Use of > for stricter comparison during sort is needed. Don't use >=!
         std::sort(Kns.begin(), Kns.end(), [&](auto l, auto r) { return abs(Hd[inonbasic[l]]) > abs(Hd[inonbasic[r]]); }); // Note: Use of > for stricter comparison during sort is needed. Don't use >=!
 
-        // Update the ordering of the basic and non-basic variables in the canonicalizer object
-        canonicalizer.updateOrdering(Kb, Kn);
+        // Update the ordering of the basic and non-basic variables in the echelonizer object
+        echelonizer.updateOrdering(Kb, Kn);
 
         // Get the newly ordered indices of basic and non-basic variables after the above ordering update
-        const auto jb = canonicalizer.indicesBasicVariables();
-        const auto jn = canonicalizer.indicesNonBasicVariables();
+        const auto jb = echelonizer.indicesBasicVariables();
+        const auto jn = echelonizer.indicesNonBasicVariables();
 
         //=========================================================================================
         // Initialize matrix block Wp in W = [Ws Wu Wp]
@@ -271,14 +271,14 @@ struct SaddlePointSolver::Impl
         //=========================================================================================
 
         // The top nb rows of R = [Rb; 0l] where 0l is present in case of rank deficiency of Wx = [Ax; Jx].
-        const auto Rb = canonicalizer.R().topRows(nb);
+        const auto Rb = echelonizer.R().topRows(nb);
 
         // View to the sub-matrices Sbn and Sbp in S = [Sbn Sbp]
         auto Sbn = S.topLeftCorner(nb, nn);
         auto Sbp = S.topRightCorner(nb, np);
 
         // Update Sbn from the just canonicalized matrx Wx = [Ax; Jx]
-        Sbn = canonicalizer.S();
+        Sbn = echelonizer.S();
 
         // Compute Sbp = Rb*Wp
         Sbp = Rb * Wp;
@@ -385,6 +385,298 @@ struct SaddlePointSolver::Impl
         Jsu = cols(args.Jx, jx);
     }
 
+    /// Canonicalize the saddle point matrix.
+    auto canonicalize(SaddlePointSolverCanonicalize2Args args) -> void
+    {
+        // Update the priority weights to determine the basic variables in the
+        // canonical form Note that those non-positive priority weights are
+        // replaced with -1.0. This is to give a fair chance for the
+        // potentially unstable variables (attached to their bounds, and thus
+        // with zero priority weight) to become basic variables in case there
+        // are no other stable variable that could be basic.
+        weights = (args.wx.array() > 0.0).select(args.wx, -1.0);
+
+        // Update the canonical form of Wx = [Ax; Jx]
+        echelonizer.updateWithPriorityWeights(args.Jx, weights);
+
+        // Remove residual round-off errors in Sbn after canonical form update.
+        // This is an important step to ensure that residual coefficients such
+        // as 1.23456e-16 are not present in matrices R and Sbn of the new
+        // canonical form R*Ax*Q = [Ibx Sbn].
+        echelonizer.cleanResidualRoundoffErrors();
+    }
+
+    /// Decompose the coefficient matrix of the canonical saddle point problem.
+    /// @note Ensure method @ref canonicalize has been called before this method.
+    auto decompose() -> void
+    {
+        const auto ns  = dims.ns;
+        const auto np  = dims.np;
+        const auto nbs = dims.nbs;
+        const auto nns = dims.nns;
+
+        const auto Hss = H.topLeftCorner(ns, ns);
+        const auto Hsp = H.topRightCorner(ns, np);
+
+        const auto Vps = V.leftCols(ns);
+        const auto Vpp = V.rightCols(np);
+
+        const auto Sbsns = S.topLeftCorner(nbs, nns);
+        const auto Sbsp  = S.topRightCorner(nbs, np);
+
+        decomposeCanonical({ dims, Hss, Hsp, Vps, Vpp, Sbsns, Sbsp });
+    }
+
+    /// Decompose the coefficient matrix of the canonical saddle point problem.
+    /// @note Ensure method @ref canonicalize has been called before this method.
+    auto decompose(SaddlePointSolverDecomposeArgs args) -> void
+    {
+        // Unpack the dimension variables
+        auto& [nx, ns, nu, ny, nz, nw, np, nb, nn, nl, nbs, nbu, nns, nnu, nbe, nne, nbi, nni] = dims;
+
+        // Update the number of variables in xu and xs, where x = (xs, xu)
+        nu = args.ju.size();
+        ns = nx - nu;
+
+        // Ensure number of variables xs is positive.
+        assert(ns > 0);
+
+        // Change the ordering of the variables as x = (xs, xu)
+        const auto pos = moveIntersectionRight(jx, args.ju);
+
+        // Ensure the indices of xu variables are valid.
+        assert(pos == ns && "Cannot proceed with SaddlePointSolver::canonicalize. "
+            "There are out-of-range indices of unstable variables.");
+
+        // The indices of the xs and xu variables using jx
+        const auto js = jx.head(ns);
+        const auto ju = jx.tail(nu);
+
+        // Get the updated indices of basic and non-basic variables
+        const auto ibasic = echelonizer.indicesBasicVariables();
+        const auto inonbasic = echelonizer.indicesNonBasicVariables();
+
+        // Update the number of basic and non-basic variables
+        nb = echelonizer.numBasicVariables();
+        nn = echelonizer.numNonBasicVariables();
+
+        //=========================================================================================
+        // Identify stable and unstable basic variables
+        //=========================================================================================
+
+        // Update the number of linearly dependent rows in Wx = [Ax; Jx]
+        nl = nw - nb;
+
+        weights(js).fill(+1.0);
+        weights(ju).fill(-1.0);
+
+        // Find the number of basic variables (those with weights below zero)
+        // Walk from last to first basic variable, since the unstable basic variables are at the end of ibasic
+        nbu = 0;
+        for(auto i = 1; i <= nb; ++i)
+            if(weights[ibasic[nb - i]] < 0.0)
+                ++nbu;
+
+        // Find the number of non-basic variables (those with weights below zero)
+        // Walk from last to first non-basic variable, since the unstable non-basic variables are at the end of inonbasic
+        nnu = 0;
+        for(auto i = 1; i <= nn; ++i)
+            if(weights[inonbasic[nn - i]] < 0.0)
+                ++nnu;
+
+        // Update the number of stable basic and stable non-basic variables
+        nbs = nb - nbu;
+        nns = nn - nnu;
+
+        // error(np > 0 && nbs != nw, "Cannot proceed with method "
+        //     "SaddlePointSolver::canonicalize. This is due to a current "
+        //     "limitation in which if the number of parameter variables *p* "
+        //     "(np = " + std::to_string(np) + ") is greater than one, then the "
+        //     "coefficient matrix Wx = [Ax; Jx] needs to be full rank and equal to the number "
+        //     "of basic stable variables (rank[Ax] = " + std::to_string(nb) + ", "
+        //     "rows[Ax] = " + std::to_string(ny) + ", nbs = " + std::to_string(nbs) + ").");
+
+        //=========================================================================================
+        // Update the order of the stable-variables as xs = (xbe, xbi, xbu, xne, xni, xnu), where:
+        // -- xbe are stable explicit basic variables (pivots);
+        // -- xbi are stable implicit basic variables (non-pivots);
+        // -- xbu are unstable basic variables;
+        // -- xne are stable explicit non-basic variables (pivots);
+        // -- xni are stable implicit non-basic variables (non-pivots);
+        // -- xnu are unstable non-basic variables.
+        //-----------------------------------------------------------------------------------------
+        // Note: Pivot and non-pivot as in the Gaussian elimination sense. The pivot variables
+        // are those whose the corresponding diagonal entry in the H matrix is not
+        // dominant in the infinity norm.
+        //=========================================================================================
+
+        // Initialize the permutation matrices Kb and Kn with identity state
+        Kb = indices(nb);
+        Kn = indices(nn);
+
+        // The sub-vectors Kbs and Kns in Kb = [Kbs, Kbu] and Kn = [Kns, Knu, Knp]
+        // Note: Keep Kbu intact below to preserve position of xu basic
+        // variables (already at the end!). The same applies for Knu and Knp,
+        // since xnp variables are already at the very end (because of -inf
+        // priority weights) and the xnu variables before xnp variables and
+        // after xns variables.
+        auto Kbs = Kb.head(nbs);
+        auto Kns = Kn.head(nns);
+
+        // The diagonal entries in the Hxx matrix.
+        const auto Hd = args.Hxx.diagonal();
+
+        // Sort the basic and non-basic stable-variables in decreasing order w.r.t. absolute values of H diagonal entries.
+        std::sort(Kbs.begin(), Kbs.end(), [&](auto l, auto r) { return abs(Hd[ibasic[l]]) > abs(Hd[ibasic[r]]); }); // Note: Use of > for stricter comparison during sort is needed. Don't use >=!
+        std::sort(Kns.begin(), Kns.end(), [&](auto l, auto r) { return abs(Hd[inonbasic[l]]) > abs(Hd[inonbasic[r]]); }); // Note: Use of > for stricter comparison during sort is needed. Don't use >=!
+
+        // Update the ordering of the basic and non-basic variables in the echelonizer object
+        echelonizer.updateOrdering(Kb, Kn);
+
+        // Get the newly ordered indices of basic and non-basic variables after the above ordering update
+        const auto jb = echelonizer.indicesBasicVariables();
+        const auto jn = echelonizer.indicesNonBasicVariables();
+
+        //=========================================================================================
+        // Initialize matrix block Wp in W = [Ws Wu Wp]
+        //=========================================================================================
+
+        // Update the Wp block in W = [Ws Wu Wp] = [As Au Ap; Js Ju Jp]
+        auto Wp = W.rightCols(np);
+
+        Wp.topRows(ny) = Ap;
+        Wp.bottomRows(nz) = args.Jp;
+
+        //=========================================================================================
+        // Initialize matrix S = [Sbn Sbp] = [Sbsns Sbsnu Sbsp; 0 Sbunu Sbup]
+        //=========================================================================================
+
+        // The top nb rows of R = [Rb; 0l] where 0l is present in case of rank deficiency of Wx = [Ax; Jx].
+        const auto Rb = echelonizer.R().topRows(nb);
+
+        // View to the sub-matrices Sbn and Sbp in S = [Sbn Sbp]
+        auto Sbn = S.topLeftCorner(nb, nn);
+        auto Sbp = S.topRightCorner(nb, np);
+
+        // View to the sub-matrices Sbsns and Sbsp in S = [Sbsns Sbsnu Sbsp; 0 Sbunu Sbup]
+        const auto Sbsns = S.topLeftCorner(nbs, nns);
+        const auto Sbsp  = S.topRightCorner(nbs, np);
+
+        // Update Sbn from the just canonicalized matrx Wx = [Ax; Jx]
+        Sbn = echelonizer.S();
+
+        // Compute Sbp = Rb*Wp
+        Sbp = Rb * Wp;
+
+        // Remove also residual round-off errors from Sbp.
+        cleanResidualRoundoffErrors(Sbp);
+
+        //=========================================================================================
+        // Identify the explicit/implicit basic/non-basic variables
+        //=========================================================================================
+
+        // Return true if the i-th basic variable is a pivot/explicit variable
+        const auto is_basic_explicit = [&](auto i)
+        {
+            const auto idx = jb[i];                     // the global index of the basic variable
+            const auto Hii = Hd[idx];                   // the corresponding diagonal entry in the H matrix
+            const auto a1 = 1.0;                        // the max value along the corresponding column of the identity matrix
+            const auto a2 = norminf(args.Vpx.col(idx)); // the max value along the corresponding column of the Vpx matrix
+            return abs(Hii) >= std::max(a1, a2);        // return true if diagonal entry is dominant with respect to Vpx and Ibb only (not Hxx!)
+        };
+
+        // Return true if the i-th non-basic variable is a pivot/explicit variable
+        const auto is_nonbasic_explicit = [&](auto i)
+        {
+            const auto idx = jn[i];                     // the global index of the non-basic variable
+            const auto Hii = Hd[idx];                   // the corresponding diagonal entry in the H matrix
+            const auto a1 = norminf(Sbn.col(i));        // the max value along the corresponding column of the Sbn matrix
+            const auto a2 = norminf(args.Vpx.col(idx)); // the max value along the corresponding column of the Vpx matrix
+            return abs(Hii) >= std::max(a1, a2);        // return true if diagonal entry is dominant with respect to Vpx and Sbn only (not Hxx!)
+        };
+
+        // Find the number of pivot/explicit basic variables (those with |Hbebe| >= I and |Hbebe| >= |cols(H, jbe)|)
+        // Walk from first to last stable basic variable, since they are ordered in decresiang order of |Hii| values
+        nbe = 0; while(nbe < nbs && is_basic_explicit(nbe)) ++nbe;
+
+        // Find the number of pivot/explicit non-basic variables (those with |Hnene| >= |Sbsne| and |Hnene| > |cols(H, jne)|)
+        // Walk from first to last stable non-basic variable, since they are ordered in decresiang order of |Hii| values
+        nne = 0; while(nne < nns && is_nonbasic_explicit(nne)) ++nne;
+
+        // Update the number of non-pivot/implicit stable basic and non-basic variables.
+        nbi = nbs - nbe;
+        nni = nns - nne;
+
+        //=========================================================================================
+        // Update the order of x variables as x = (xs, xu) = (xbs, xns, xbu, xnu), where:
+        // -- xbs are basic xs variables;
+        // -- xns are non-basic xs variables;
+        // -- xbu are basic xu variables;
+        // -- xnu are non-basic xu variables.
+        //-----------------------------------------------------------------------------------------
+        // Note: By moving unstable-variables away, we now have:
+        // -- xbs = (xbe, xbi);
+        // -- xns = (xne, xni).
+        //=========================================================================================
+
+        // The indices of the basic variables in xs and xu (jbs and jbu respectively)
+        const auto jbs = jb.head(nbs);
+        const auto jbu = jb.tail(nbu);
+
+        // The indices of the non-basic variables in xs and xu (jns and jnu respectively)
+        const auto jns = jn.head(nns);
+        const auto jnu = jn.tail(nnu);
+
+        // Update the order of x variables as x = (xs, xu) = (xbs, xns, xbu, xnu)
+        jx << jbs, jns, jbu, jnu;
+
+        //=========================================================================================
+        // Initialize matrices Hss, Hsp
+        //=========================================================================================
+
+        // Views to the sub-matrices Hss, Hsp
+        auto Hss = H.topLeftCorner(ns, ns);
+        auto Hsp = H.topRightCorner(ns, np);
+
+        // Initialize matrices Hss and Hsp taking into account the method in use
+        Hsp = rows(args.Hxp, js);
+        if(options.method == SaddlePointMethod::Rangespace)
+             Hss.diagonal() = args.Hxx.diagonal()(js);
+        else Hss = args.Hxx(js, js);
+
+        //=========================================================================================
+        // Initialize matrices Vps, Vpu, Vpp
+        //=========================================================================================
+
+        // Views to the sub-matrices in V = [Vpx Vpp] = [Vps Vpu Vpp]
+        auto Vpx = V.leftCols(nx);
+        auto Vps = V.leftCols(ns);
+        auto Vpp = V.rightCols(np);
+
+        // Initialize matrices Vpx and Vpp
+        Vpx = cols(args.Vpx, jx);
+        Vpp = args.Vpp;
+
+        //=========================================================================================
+        // Initialize matrices Ws = [As; Js] and Wu = [Au; Ju] in W = [As Au Ap; Js Ju Jp]
+        //=========================================================================================
+
+        // Views to the sub-matrices in W = [Ws Wu Wp] = [Wsu Wp] = [Asu Ap; Jsu Jp]
+        auto Wsu = W.leftCols(nx);
+        auto Asu = Wsu.topRows(ny);
+        auto Jsu = Wsu.bottomRows(nz);
+
+        // Initialize matrices Ws and Wu.
+        Asu = cols(Ax, jx);
+        Jsu = cols(args.Jx, jx);
+
+        //=========================================================================================
+        // Decompose the canonical form of the saddle point matrix
+        //=========================================================================================
+
+        decomposeCanonical({ dims, Hss, Hsp, Vps, Vpp, Sbsns, Sbsp });
+    }
+
     /// Compute the right-hand side vector in the canonical saddle point problem.
     /// @note Ensure method @ref canonicalize has been called before this method.
     auto rhs(SaddlePointSolverRhs1Args args) -> void
@@ -399,7 +691,7 @@ struct SaddlePointSolver::Impl
         const auto nns = dims.nns;
         const auto nl  = dims.nl;
 
-        const auto R = canonicalizer.R();
+        const auto R = echelonizer.R();
 
         asu = args.ax(jx);
         ap = args.ap;
@@ -439,7 +731,7 @@ struct SaddlePointSolver::Impl
         const auto Js = W.bottomRows(nz).leftCols(ns);
         const auto Jp = W.bottomRows(nz).rightCols(np);
 
-        const auto R = canonicalizer.R();
+        const auto R = echelonizer.R();
         const auto Rbs = R.topRows(nbs);
 
         const auto Sbsns = S.topLeftCorner(nbs, nns);
@@ -475,27 +767,6 @@ struct SaddlePointSolver::Impl
         awbl.fill(0.0); // ensure residuals w.r.t. linearly dependent rows in Wx = [Ax; Jx] are zero
     }
 
-    /// Decompose the coefficient matrix of the canonical saddle point problem.
-    /// @note Ensure method @ref canonicalize has been called before this method.
-    auto decompose() -> void
-    {
-        const auto ns  = dims.ns;
-        const auto np  = dims.np;
-        const auto nbs = dims.nbs;
-        const auto nns = dims.nns;
-
-        const auto Hss = H.topLeftCorner(ns, ns);
-        const auto Hsp = H.topRightCorner(ns, np);
-
-        const auto Vps = V.leftCols(ns);
-        const auto Vpp = V.rightCols(np);
-
-        const auto Sbsns = S.topLeftCorner(nbs, nns);
-        const auto Sbsp  = S.topRightCorner(nbs, np);
-
-        decomposeCanonical({ dims, Hss, Hsp, Vps, Vpp, Sbsns, Sbsp });
-    }
-
     /// Solve the saddle point problem.
     /// @note Ensure method @ref decompose has been called before this method.
     auto solve(SaddlePointSolverSolve1Args args) -> void
@@ -523,7 +794,7 @@ struct SaddlePointSolver::Impl
         const auto Sbsns = S.topLeftCorner(nbs, nns);
         const auto Sbsp  = S.topRightCorner(nbs, np);
 
-        const auto R = canonicalizer.R();
+        const auto R = echelonizer.R();
 
         const auto as   = asu.head(ns);
         const auto au   = asu.tail(nu);
@@ -689,13 +960,13 @@ struct SaddlePointSolver::Impl
         const auto Sbsns = S.topLeftCorner(nbs, nns);
         const auto Sbsp  = S.topRightCorner(nbs, np);
 
-        const auto R = canonicalizer.R();
+        const auto R = echelonizer.R();
 
         const auto as = asu.head(ns);
         const auto au = asu.tail(nu);
 
         return { dims, js, jbs, jns, ju, jbu, jnu, R, Hss, Hsp, Vps, Vpp,
-            As, Au, Ap, Js, Jp, Sbsns, Sbsp, as, au, ap, ay, az };
+            As, Au, Ap, Js, Jp, Sbsns, Sbsp, as, au, ap, ay, az, aw };
     }
 };
 
@@ -731,6 +1002,21 @@ auto SaddlePointSolver::canonicalize(SaddlePointSolverCanonicalize1Args args) ->
     pimpl->canonicalize(args);
 }
 
+auto SaddlePointSolver::canonicalize(SaddlePointSolverCanonicalize2Args args) -> void
+{
+    pimpl->canonicalize(args);
+}
+
+auto SaddlePointSolver::decompose() -> void
+{
+    pimpl->decompose();
+}
+
+auto SaddlePointSolver::decompose(SaddlePointSolverDecomposeArgs args) -> void
+{
+    pimpl->decompose(args);
+}
+
 auto SaddlePointSolver::rhs(SaddlePointSolverRhs1Args args) -> void
 {
     pimpl->rhs(args);
@@ -739,11 +1025,6 @@ auto SaddlePointSolver::rhs(SaddlePointSolverRhs1Args args) -> void
 auto SaddlePointSolver::rhs(SaddlePointSolverRhs2Args args) -> void
 {
     pimpl->rhs(args);
-}
-
-auto SaddlePointSolver::decompose() -> void
-{
-    pimpl->decompose();
 }
 
 auto SaddlePointSolver::solve(SaddlePointSolverSolve1Args args) -> void

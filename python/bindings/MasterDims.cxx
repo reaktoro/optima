@@ -17,21 +17,21 @@
 
 // pybind11 includes
 #include <pybind11/pybind11.h>
-#include <pybind11/eigen.h>
 namespace py = pybind11;
 
 // Optima includes
-#include <Optima/LinearSolver.hpp>
+#include <Optima/MasterDims.hpp>
 using namespace Optima;
 
-void exportLinearSolver(py::module& m)
+void exportMasterDims(py::module& m)
 {
-    py::class_<LinearSolver>(m, "LinearSolver")
-        .def(py::init<const MasterDims&>())
-        .def("setOptions", &LinearSolver::setOptions)
-        .def("options", &LinearSolver::options)
-        .def("decompose", &LinearSolver::decompose)
-        .def("solve", py::overload_cast<CanonicalMatrixView, MasterVectorView, MasterVectorRef>(&LinearSolver::solve))
-        .def("solve", py::overload_cast<CanonicalMatrixView, CanonicalVectorView, MasterVectorRef>(&LinearSolver::solve))
+    py::class_<MasterDims>(m, "MasterDims")
+        .def(py::init<Index, Index, Index, Index>())
+        .def_readonly("nx", &MasterDims::nx)
+        .def_readonly("np", &MasterDims::np)
+        .def_readonly("ny", &MasterDims::ny)
+        .def_readonly("nz", &MasterDims::nz)
+        .def_readonly("nw", &MasterDims::nw)
+        .def_readonly("nt", &MasterDims::nt)
         ;
 }

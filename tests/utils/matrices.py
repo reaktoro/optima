@@ -21,56 +21,107 @@ from numpy import *
 from utils.data import formula_matrix
 
 
-def createMatrixViewH(basedims, diagHxx=False):
+class MasterParams:
+    """Store the parameters used in tests involving master variables"""
+
+    def __init__(self, nx, np, ny, nz, nl=0, nu=0, diagHxx=False):
+        """Initialize the parameters used to test library components involving master variables
+
+        Args:
+            nx (int): The number of x variables
+            np (int): The number of p variables
+            ny (int): The number of y variables
+            nz (int): The number of z variables
+            nl (int, optional): The number of linearly dependent rows in Ax. Defaults to 0
+            nu (int, optional): The number of unstable variables among non-basic variables. Defaults to 0
+            diagHxx (bool, optional): The flag indicating whether Hxx is diagonal. Defaults to False
+        """
+        self.nx = nx
+        self.np = np
+        self.ny = ny
+        self.nz = nz
+        self.nl = nl
+        self.nu = nu
+        self.diagHxx = diagHxx
+        self.dims = MasterDims(nx, np, ny, nz)
+
+
+    def invalid(self):
+        """Return true if the current choice of parameters corresponds to an invalid state."""
+        nx = self.nx
+        np = self.np
+        ny = self.ny
+        nz = self.nz
+        nl = self.nl
+        nu = self.nu
+        nw = self.dims.nw
+
+        # Ensure nx is larger than np and nw
+        if nx <= max(np, nw):
+            return True
+
+        # Ensure Ax has more rows (ny) than number of linearly dependent rows (nl)
+        if ny <= nl:
+            return True
+
+        return False
+
+
+def createMatrixViewH(params):
     """Create a MatrixViewH object with given parameters
 
     Args:
-        basedims (BaseDims): The dimensions in a base optimization problem
-        diagHxx (bool, optional): The flag indicating Hxx is diagonal or not. Defaults to False.
+        params (MasterParams): The parameters for tests involving master variables.
 
     Returns:
         MatrixViewH: A MatrixViewH object for testing purposes.
     """
 
-    nx = basedims.nx
-    np = basedims.np
+    nx = params.nx
+    np = params.np
+
+    diagHxx = params.diagHxx
+
     Hxx = diag(random.rand(nx)) if diagHxx else random.rand(nx, nx)
     Hxp = random.rand(nx, np)
+
     return MatrixViewH(Hxx, Hxp, diagHxx)
 
 
-def createMatrixViewV(basedims):
+def createMatrixViewV(params):
     """Create a MatrixViewV object with given parameters
 
     Args:
-        basedims (BaseDims): The dimensions in a base optimization problem
+        params (MasterParams): The parameters for tests involving master variables.
 
     Returns:
         MatrixViewV: A MatrixViewV object for testing purposes.
     """
 
-    nx = basedims.nx
-    np = basedims.np
+    nx = params.nx
+    np = params.np
     Vpx = random.rand(np, nx)
     Vpp = random.rand(np, np)
     return MatrixViewV(Vpx, Vpp)
 
 
-def createMatrixViewW(basedims, nl=0):
-    """Create a MatrixViewW object with given parameters
+def createMatrixRWQ(params):
+    """Create a MatrixRWQ object with given parameters
 
     Args:
-        basedims (BaseDims): The dimensions in a base optimization problem
-        nl (int, optional): The number of zero rows at the bottom of Ax. Defaults to 0.
+        params (MasterParams): The parameters for tests involving master variables.
 
     Returns:
-        MatrixViewW: A MatrixViewW object for testing purposes.
+        MatrixRWQ: A MatrixRWQ object for testing purposes.
     """
 
-    nx = basedims.nx
-    np = basedims.np
-    ny = basedims.ny
-    nz = basedims.nz
+    nx = params.nx
+    np = params.np
+    ny = params.ny
+    nz = params.nz
+    nl = params.nl
+
+    dims = params.dims
 
     Ax = random.rand(ny, nx)
     Ap = random.rand(ny, np)
@@ -82,103 +133,65 @@ def createMatrixViewW(basedims, nl=0):
     Wx = block([[Ax], [Jx]])
     Wp = block([[Ap], [Jp]])
 
-    return MatrixViewW(Wx, Wp)
-
-
-def createMatrixViewRWQ(basedims, W):
-    """Create a MatrixViewRWQ object with given parameters
-
-    Args:
-        basedims (BaseDims): The dimensions in a base optimization problem
-        W (array): The matrix W = [Wx Wp] = [Ax Ap; Jx Jp]
-
-    Returns:
-        MatrixViewRWQ: A MatrixViewRWQ object for testing purposes.
-    """
-
-    nx = basedims.nx
-    np = basedims.np
-    ny = basedims.ny
-    nz = basedims.nz
-
-    Ax, Jx = vsplit(W.Wx, [ny])
-    Ap, Jp = vsplit(W.Wp, [ny])
-
-    ny, nx = Ax.shape
-    nz, np = Jp.shape
-
     weights = ones(nx)
 
-    matrixRWQ = MatrixRWQ(nx, np, ny, nz, Ax, Ap)
-    matrixRWQ.update(Jx, Jp, weights)
-
-    RWQ = matrixRWQ.view()
+    RWQ = MatrixRWQ(dims, Ax, Ap)
+    RWQ.update(Jx, Jp, weights)
 
     return RWQ
 
 
-def createIndicesStableUnstableVariables(basedims, nu, RWQ):
+def createStablePartition(params, RWQ):
     """Return the indices of the stable and unstable variables
 
     Args:
-        basedims (BaseDims): The dimensions in a base optimization problem
-        nu (int): The number of unstable non-basic variables in x
+        params (MasterParams): The parameters for tests involving master variables.
         RWQ (MatrixViewRWQ): The echelon matrix RWQ of W
 
     Returns:
-        js: The indices of the stable variables in x
-        ju: The indices of the unstable variables in x
+        StablePartition: The indices of the stable and unstable variables in x
     """
+    nx = params.nx
+    nu = params.nu
+    RWQ = RWQ.asMatrixViewRWQ()
+    jsu = StablePartition(nx)
+    jsu.setUnstable(RWQ.jn[:nu])  # The first nu non-basic variables are unstable
 
-    jn = RWQ.jn  # the indices of the non-basic variables
-
-    nx = basedims.nx
-    jx = range(nx)
-    ju = jn[:nu]  # the indices of non-basic unstable variables
-    js = array(list(set(jx) - set(ju)))
-
-    return js, ju
+    return jsu
 
 
-def createMasterMatrix(basedims, nl=0, nu=0, diagHxx=False):
+def createMasterMatrix(params):
     """Create a MasterMatrix object with given parameters
 
     Args:
-        basedims (BaseDims): The dimensions in a base optimization problem
-        nl (int, optional): The number of zero rows at the bottom of Ax. Defaults to 0.
-        nu (int, optional): The number of unstable non-basic variables in x. Defaults to 0.
-        diagHxx (bool, optional): The flag indicating Hxx is diagonal or not. Defaults to False.
+        params (MasterParams): The parameters for tests involving master variables.
 
     Returns:
         MasterMatrix: A MasterMatrix object for testing purposes.
     """
 
-    H = createMatrixViewH(basedims, diagHxx)
-    V = createMatrixViewV(basedims)
-    W = createMatrixViewW(basedims, nl)
+    H = createMatrixViewH(params)
+    V = createMatrixViewV(params)
+    RWQ = createMatrixRWQ(params)
+    jsu = createStablePartition(params, RWQ)
 
-    RWQ = createMatrixViewRWQ(basedims, W)
-
-    js, ju = createIndicesStableUnstableVariables(basedims, nu, RWQ)
-
-    M = MasterMatrix(H, V, W, RWQ, js, ju)
+    M = MasterMatrix(H, V, RWQ, jsu)
 
     return M
 
 
-def createCanonicalMatrixView(basedims, M):
+def createCanonicalMatrixView(dims, M):
     """Create a CanonicalMatrixView object with given parameters
 
     Args:
-        basedims (BaseDims): The dimensions in a base optimization problem
+        dims (MasterDims): The dimensions in a master matrix.
         M (MasterMatrix): The master matrix for which its canonical form is being computed.
 
     Returns:
         CanonicalMatrixView: A CanonicalMatrixView object for testing purposes.
     """
 
-    Mc = CanonicalMatrix(basedims)
-    Mc.update(M)
+    Mc = CanonicalMatrix(M)
 
     return Mc.view()
 

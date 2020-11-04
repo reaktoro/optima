@@ -18,76 +18,72 @@
 from optima import *
 from numpy import *
 from numpy.testing import assert_almost_equal
-from pytest import mark, raises
+from pytest import mark
 from utils.matrices import *
 
 
-tested_nx  = [5, 10, 20]  # The tested number of x variables
-tested_np  = [0, 5, 10]   # The tested number of p variables
-tested_ny  = [2, 5, 10]   # The tested number of y variables
-tested_nz  = [0, 2, 5]    # The tested number of z variables
-tested_nl  = [0, 1, 2]    # The tested number of linearly dependent rows in Ax
-tested_nu  = [0, 1, 2]    # The tested number of unstable variables
+tested_nx      = [15, 20]       # The tested number of x variables
+tested_np      = [0, 5]         # The tested number of p variables
+tested_ny      = [2, 5]         # The tested number of y variables
+tested_nz      = [0, 5]         # The tested number of z variables
+tested_nl      = [0, 2]         # The tested number of linearly dependent rows in Ax
+tested_nu      = [0, 2]         # The tested number of unstable variables
+tested_diagHxx = [False, True]  # The tested options for Hxx structure
 
-@mark.parametrize("nx", tested_nx)
-@mark.parametrize("np", tested_np)
-@mark.parametrize("ny", tested_ny)
-@mark.parametrize("nz", tested_nz)
-@mark.parametrize("nl", tested_nl)
-@mark.parametrize("nu", tested_nu)
-def testCanonicalMatrix(nx, np, ny, nz, nl, nu):
+@mark.parametrize("nx"     , tested_nx)
+@mark.parametrize("np"     , tested_np)
+@mark.parametrize("ny"     , tested_ny)
+@mark.parametrize("nz"     , tested_nz)
+@mark.parametrize("nl"     , tested_nl)
+@mark.parametrize("nu"     , tested_nu)
+@mark.parametrize("diagHxx", tested_diagHxx)
+def testCanonicalMatrix(nx, np, ny, nz, nl, nu, diagHxx):
 
-    basedims = BaseDims(nx, np, ny, nz)
+    params = MasterParams(nx, np, ny, nz, nl, nu, diagHxx)
 
-    set_printoptions(linewidth=10000)
+    if params.invalid(): return
 
-    # Ensure nx is larger than np and (ny + nz)
-    if nx < np or nx < ny + nz: return
+    M = createMasterMatrix(params)
 
-    # Ensure nl < ny
-    if ny <= nl: return
+    Mbar = CanonicalMatrix(M)
 
-    M = createMasterMatrix(basedims, nl, nu)
+    Mc = Mbar.view()
 
-    H = M.H
-    V = M.V
-    W = M.W
-
-    canonicalmatrix = CanonicalMatrix(basedims)
-    canonicalmatrix.update(M)
-
-    Mbar = canonicalmatrix.view()
+    H   = M.H
+    V   = M.V
+    W   = M.W
+    RWQ = M.RWQ
 
     #==========================================================================
     # Check jb, jn, js, ju in the canonical form of master matrix
     #==========================================================================
 
     # Assert canonical forms of W and M have the same basic and non-basic variables
-    assert set(Mbar.jb) == set(M.RWQ.jb)
-    assert set(Mbar.jn) == set(M.RWQ.jn)
+    assert set(Mc.jb) == set(RWQ.jb)
+    assert set(Mc.jn) == set(RWQ.jn)
 
     # Assert the unstable variables are non-basic only
-    assert set(Mbar.ju).issubset(set(M.RWQ.jn))
+    assert set(Mc.ju).issubset(set(RWQ.jn))
 
     # Assert js and ju are disjoint and its union comprehends all variables
-    assert set(Mbar.js) & set(Mbar.ju) == set()
-    assert set(Mbar.js) | set(Mbar.ju) == set(range(nx))
+    assert set(Mc.js) & set(Mc.ju) == set()
+    assert set(Mc.js) | set(Mc.ju) == set(range(nx))
 
     # Assert js and ju are disjoint and its union comprehends all variables
-    assert set(Mbar.js) == set(M.js)
-    assert set(Mbar.ju) == set(M.ju)
+    assert set(Mc.js) == set(M.js)
+    assert set(Mc.ju) == set(M.ju)
 
     #==========================================================================
     # Check Hss, Hsp, Vps, Vpp in the canonical form of master matrix
     #==========================================================================
-    js = Mbar.js
-    ju = Mbar.ju
+    js = Mc.js
+    ju = Mc.ju
 
-    assert all(Mbar.Hss == M.H.Hxx[:, js][js, :])
-    assert all(Mbar.Hsp == M.H.Hxp[js, :])
+    assert all(Mc.Hss == H.Hxx[:, js][js, :])
+    assert all(Mc.Hsp == H.Hxp[js, :])
 
-    assert all(Mbar.Vps == M.V.Vpx[:, js])
-    assert all(Mbar.Vpp == M.V.Vpp)
+    assert all(Mc.Vps == V.Vpx[:, js])
+    assert all(Mc.Vpp == V.Vpp)
 
     #==========================================================================
     # Check Sbn, Sbp, R in the canonical form of master matrix
@@ -96,24 +92,24 @@ def testCanonicalMatrix(nx, np, ny, nz, nl, nu):
     # Q = (jb, jn) and R = [Rb; Rl], Rl is associated with linearly
     # dependent rows in Wx.
     #==========================================================================
-    nb  = Mbar.dims.nb
-    nbs = Mbar.dims.nbs
-    nns = Mbar.dims.nns
+    nb  = Mc.dims.nb
+    nbs = Mc.dims.nbs
+    nns = Mc.dims.nns
 
-    jb  = Mbar.jb
-    jn  = Mbar.jn
+    jb  = Mc.jb
+    jn  = Mc.jn
     jbs = jb[:nbs]
     jns = jn[:nns]
 
-    Rbs = Mbar.Rbs
+    Rbs = Mc.Rbs
 
     Ibsbs = eye(nbs)
-    Sbsns = Mbar.Sbsns
-    Sbsp  = Mbar.Sbsp
+    Sbsns = Mc.Sbsns
+    Sbsp  = Mc.Sbsp
 
-    assert_almost_equal(Ibsbs, Rbs @ M.W.Wx[:, jbs])
-    assert_almost_equal(Sbsns, Rbs @ M.W.Wx[:, jns])
-    assert_almost_equal(Sbsp,  Rbs @ M.W.Wp)
+    assert_almost_equal(Ibsbs, Rbs @ W.Wx[:, jbs])
+    assert_almost_equal(Sbsns, Rbs @ W.Wx[:, jns])
+    assert_almost_equal(Sbsp,  Rbs @ W.Wp)
 
     #==========================================================================
     # Check dimension variables in the canonical form of master matrix
@@ -143,7 +139,7 @@ def testCanonicalMatrix(nx, np, ny, nz, nl, nu):
     nbi = nbs - nbe
     nni = nns - nne
 
-    dims = Mbar.dims
+    dims = Mc.dims
 
     assert dims.nx == nx
     assert dims.np == np
@@ -163,40 +159,3 @@ def testCanonicalMatrix(nx, np, ny, nz, nl, nu):
     assert dims.nbi == nbi
     assert dims.nne == nne
     assert dims.nni == nni
-
-    # ==========================================================================
-    # Check method MasterMatrix::matrix()
-    # ==========================================================================
-
-    # Hxx = zeros((nx, nx))
-    # for i in range(ns):
-    #     for j in range(ns):
-    #         Hxx[js[i], js[j]] = Mbar.Hss[i, j]
-    # Hxx[ju, ju] = 1.0
-
-    # Hxp = zeros((nx, np))
-    # Hxp[js, :] = Mbar.Hsp
-
-    # WxT = zeros((nx, nw))
-    # WxT[js, :] = Mbar.Ws.T
-
-    # Vpx = zeros((np, nx))
-    # Vpx[:, js] = Mbar.Vps
-
-    # Vpp = Mbar.Vpp
-
-    # Wx = zeros((nw, nx))
-    # Wx[:, js] = Mbar.Ws
-
-    # Wp = Mbar.Wp
-
-    # Opw = zeros((np, nw))
-    # Oww = zeros((nw, nw))
-
-    # Mmat = block([
-    #     [Hxx, Hxp, WxT],
-    #     [Vpx, Vpp, Opw],
-    #     [ Wx,  Wp, Oww],
-    # ])
-
-    # assert all(Mmat == M.array())

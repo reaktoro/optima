@@ -23,7 +23,6 @@
 // Optima includes
 #include <Optima/ConstraintFunction.hpp>
 #include <Optima/Index.hpp>
-#include <Optima/Number.hpp>
 #include <Optima/Matrix.hpp>
 #include <Optima/ObjectiveFunction.hpp>
 #include <Optima/Stability.hpp>

@@ -19,16 +19,17 @@
 
 namespace Optima {
 
+MasterMatrix::MasterMatrix(MatrixViewH H, MatrixViewV V, MatrixRWQ const& RWQ, StablePartition const& jsu)
+: dims(RWQ.dims()), H(H), V(V), W(RWQ), RWQ(RWQ), js(jsu.stable()), ju(jsu.unstable())
+{}
+
 MasterMatrix::operator Matrix() const
 {
     using Eigen::all;
-    const auto nx = H.Hxx.rows();
-    const auto np = V.Vpp.rows();
-    const auto nw = W.Wx.rows();
-    const auto t = nx + np + nw;
+    const auto [nx, np, ny, nz, nw, nt] = dims;
     const auto ns = js.rows();
     const auto nu = ju.rows();
-    Matrix M = zeros(t, t);
+    Matrix M = zeros(nt, nt);
     auto Hxx = M.topRows(nx).leftCols(nx);
     auto Hxp = M.topRows(nx).middleCols(nx, np);
     auto WxT = M.topRows(nx).rightCols(nw);

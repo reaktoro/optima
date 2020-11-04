@@ -20,8 +20,8 @@
 namespace py = pybind11;
 
 void exportEigen(py::module& m);
-void exportBaseDims(py::module& m);
 void exportBasicSolver(py::module& m);
+void exportCanonicalDims(py::module& m);
 void exportCanonicalMatrix(py::module& m);
 void exportCanonicalVector(py::module& m);
 void exportConstraintFunction(py::module& m);
@@ -33,6 +33,7 @@ void exportIndexUtils(py::module& m);
 void exportLinearSolver(py::module& m);
 void exportLinearSolverOptions(py::module& m);
 void exportLU(py::module& m);
+void exportMasterDims(py::module& m);
 void exportMasterMatrix(py::module& m);
 void exportMasterMatrixOps(py::module& m);
 void exportMasterVector(py::module& m);
@@ -46,6 +47,7 @@ void exportResult(py::module& m);
 void exportSaddlePointOptions(py::module& m);
 void exportSaddlePointSolver(py::module& m);
 void exportSolver(py::module& m);
+void exportStablePartition(py::module& m);
 void exportStability(py::module& m);
 void exportStability2(py::module& m);
 void exportStabilityChecker(py::module& m);
@@ -57,8 +59,8 @@ void exportUtils(py::module& m);
 PYBIND11_MODULE(optima4py, m)
 {
     exportEigen(m);
-    exportBaseDims(m);
     exportBasicSolver(m);
+    exportCanonicalDims(m);
     exportCanonicalMatrix(m);
     exportCanonicalVector(m);
     exportConstraintFunction(m);
@@ -70,6 +72,7 @@ PYBIND11_MODULE(optima4py, m)
     exportLinearSolver(m);
     exportLinearSolverOptions(m);
     exportLU(m);
+    exportMasterDims(m);
     exportMasterMatrix(m);
     exportMasterMatrixOps(m);
     exportMasterVector(m);
@@ -83,6 +86,7 @@ PYBIND11_MODULE(optima4py, m)
     exportSaddlePointOptions(m);
     exportSaddlePointSolver(m);
     exportSolver(m);
+    exportStablePartition(m);
     exportStability(m);
     exportStability2(m);
     exportStabilityChecker(m);

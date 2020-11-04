@@ -74,6 +74,25 @@ struct StepperCanonicalizeArgs
     Stability& stability;       ///< The output stability state of the primal variables *x*.
 };
 
+/// The arguments for method Stepper::canonicalize.
+struct StepperCanonicalize2Args
+{
+    VectorConstRef x;           ///< The current state of the primal variables *x*.
+    MatrixConstRef hx;          ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *x*.
+};
+
+/// The arguments for method Stepper::decompose.
+struct StepperDecomposeArgs
+{
+    MatrixConstRef fxx;         ///< The evaluated Jacobian of the gradient function *fx(x, p)* with respect to *x*, i.e., the Hessian of *f(x)*.
+    MatrixConstRef fxp;         ///< The evaluated Jacobian of the gradient function *fx(x, p)* with respect to *p*.
+    MatrixConstRef vx;          ///< The evaluated Jacobian of the external constraint function *v(x, p)* with respect to *x*.
+    MatrixConstRef vp;          ///< The evaluated Jacobian of the external constraint function *v(x, p)* with respect to *p*.
+    MatrixConstRef hx;          ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *x*.
+    MatrixConstRef hp;          ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *p*.
+    IndicesConstRef ju;         ///< The indices of the unstable variables *xu* in *x = (xs, xu)*.
+};
+
 /// The arguments for method Stepper::residuals.
 struct StepperResidualsArgs
 {
@@ -88,13 +107,11 @@ struct StepperResidualsArgs
     MatrixConstRef hx;          ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *x*.
     VectorRef rx;               ///< The output residuals of the first-order optimality conditions.
     VectorRef rp;               ///< The output residuals of the external constraint functions *v(x, p)*.
-    VectorRef ry;               ///< The output residuals of the linear feasibility conditions *Ax*x + Ap*p - b* in canonical form.
-    VectorRef rz;               ///< The output residuals of the nonlinear feasibility conditions *h(x, p) = 0*.
+    VectorRef rw;               ///< The output residuals of the linear and nonlinear feasibility conditions in canonical form.
     VectorRef ex;               ///< The output relative errors of the first-order optimality conditions.
     VectorRef ep;               ///< The output relative errors of the external constraint functions *v(x, p) = 0*.
-    VectorRef ey;               ///< The output relative errors of the linear feasibility conditions *Ax*x + Ap*p - b* in canonical form.
-    VectorRef ez;               ///< The output relative errors of the nonlinear feasibility conditions *h(x, p) = 0*.
-    VectorRef s;                ///< The output *stabilities* of the variables defined as *s = g + tr(Ax)y + tr(Jx)*z*.
+    VectorRef ew;               ///< The output relative errors of the linear and nonlinear feasibility conditions in canonical form.
+    VectorRef s;                ///< The output *stabilities* of the variables defined as *s = g - tr(Wx)ω*.
 };
 
 /// The arguments for method Stepper::solve.
@@ -190,6 +207,10 @@ public:
     /// @note Ensure method @ref initialize is called first.
     auto canonicalize(StepperCanonicalizeArgs args) -> void;
 
+    /// Canonicalize matrix *A = [Ax Ap]* in the Newton step problem.
+    /// @note Ensure method @ref initialize is called first.
+    auto canonicalize(StepperCanonicalize2Args args) -> void;
+
     /// Calculate the current optimality and feasibility residuals.
     /// @note Ensure method @ref canonicalize is called first.
     auto residuals(StepperResidualsArgs args) -> void;
@@ -197,6 +218,10 @@ public:
     /// Decompose the saddle point matrix in the Newton step problem.
     /// @note Ensure method @ref canonicalize is called first.
     auto decompose() -> void;
+
+    /// Decompose the saddle point matrix in the Newton step problem.
+    /// @note Ensure method @ref canonicalize is called first.
+    auto decompose(StepperDecomposeArgs args) -> void;
 
     /// Solve the saddle point problem in the Newton step problem.
     /// @note Ensure method @ref decompose is called first.

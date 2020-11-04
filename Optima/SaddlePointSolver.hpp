@@ -54,6 +54,25 @@ struct SaddlePointSolverCanonicalize1Args
     VectorConstRef  wx;  ///< The priority weights for variables in *x* to become basic variables.
 };
 
+/// The arguments for method SaddlePointSolver::canonicalize.
+struct SaddlePointSolverCanonicalize2Args
+{
+    MatrixConstRef Jx;  ///< The matrix block *Jx* of the saddle point matrix.
+    VectorConstRef wx;  ///< The priority weights for variables in *x* to become basic variables.
+};
+
+/// The arguments for method SaddlePointSolver::decompose.
+struct SaddlePointSolverDecomposeArgs
+{
+    MatrixConstRef  Hxx; ///< The matrix block *Hxx* of the saddle point problem.
+    MatrixConstRef  Hxp; ///< The matrix block *Hxp* of the saddle point problem.
+    MatrixConstRef  Vpx; ///< The matrix block *Vpx* of the saddle point problem.
+    MatrixConstRef  Vpp; ///< The matrix block *Vpp* of the saddle point problem.
+    MatrixConstRef  Jx;  ///< The matrix block *Jx* of the saddle point matrix.
+    MatrixConstRef  Jp;  ///< The matrix block *Jp* of the saddle point matrix.
+    IndicesConstRef ju;  ///< The indices of the unstable variables *xu* in *x = (xs, xu)*.
+};
+
 /// The arguments for method SaddlePointSolver::rhs.
 /// Use this method if you are solving the following matrix equation:
 /// @eqc{\begin{bmatrix}H_{\mathrm{ss}} & 0 & H_{\mathrm{sp}} & J_{\mathrm{s}}^{T} & A_{\mathrm{s}}^{T}\\0 & I_{\mathrm{uu}} & 0 & 0 & 0\\V_{\mathrm{ps}} & 0 & V_{\mathrm{pp}} & 0 & 0\\J_{\mathrm{s}} & 0 & J_{\mathrm{p}} & 0 & 0\\A_{\mathrm{s}} & A_{\mathrm{u}} & A_{\mathrm{p}} & 0 & 0\end{bmatrix}\begin{bmatrix}x_{\mathrm{s}}\\x_{\mathrm{u}}\\p\\z\\y\end{bmatrix}=\begin{bmatrix}a_{\mathrm{s}}\\a_{\mathrm{u}}\\a_{\mathrm{p}}\\a_{\mathrm{z}}\\a_{\mathrm{y}}\end{bmatrix}}
@@ -87,6 +106,31 @@ struct SaddlePointSolverSolve1Args
     VectorRef sp;         ///< The solution vector *sp* of the saddle point problem.
     VectorRef sy;         ///< The solution vector *sy* of the saddle point problem.
     VectorRef sz;         ///< The solution vector *sz* of the saddle point problem.
+};
+
+/// The arguments for method SaddlePointSolver::solve.
+struct SaddlePointSolverSolve2Args
+{
+    VectorConstRef ax;    ///< The right-hand side vector *ax* of the saddle point problem.
+    VectorConstRef ap;    ///< The right-hand side vector *ap* of the saddle point problem.
+    VectorConstRef ay;    ///< The right-hand side vector *ay* of the saddle point problem.
+    VectorConstRef az;    ///< The right-hand side vector *az* of the saddle point problem.
+    VectorRef sx;         ///< The solution vector *sx* of the saddle point problem.
+    VectorRef sp;         ///< The solution vector *sp* of the saddle point problem.
+    VectorRef sy;         ///< The solution vector *sy* of the saddle point problem.
+    VectorRef sz;         ///< The solution vector *sz* of the saddle point problem.
+};
+
+/// The arguments for method SaddlePointSolver::solve.
+struct SaddlePointSolverSolve3Args
+{
+    VectorConstRef asu;   ///< The right-hand side vector *(as, au)* of the canonical saddle point problem.
+    VectorConstRef ap;    ///< The right-hand side vector *ap* of the canonical saddle point problem.
+    VectorConstRef awbs;  ///< The right-hand side vector *awbs* of the canonical saddle point problem.
+    VectorRef sx;         ///< The solution vector *sx* of the canonical saddle point problem.
+    VectorRef sp;         ///< The solution vector *sp* of the canonical saddle point problem.
+    VectorRef sy;         ///< The solution vector *sy* of the canonical saddle point problem.
+    VectorRef sz;         ///< The solution vector *sz* of the canonical saddle point problem.
 };
 
 /// The arguments for method SaddlePointSolver::multiply.
@@ -129,7 +173,7 @@ struct SaddlePointSolverState
     IndicesConstRef ju;    ///< The indices of the unstable variables in *x* as *xu = (xbu, xnu)*.
     IndicesConstRef jbu;   ///< The indices of the unstable basic variables in *x*.
     IndicesConstRef jnu;   ///< The indices of the unstable non-basic variables in *x*.
-    MatrixConstRef  R;     ///< The canonicalizer matrix *R* of *Ax*.
+    MatrixConstRef  R;     ///< The echelonizer matrix *R* of *Ax*.
     MatrixConstRef  Hss;   ///< The matrix block *Hss* of the canonical saddle point problem.
     MatrixConstRef  Hsp;   ///< The matrix block *Hsp* of the canonical saddle point problem.
     MatrixConstRef  Vps;   ///< The matrix block *Vps* of the canonical saddle point problem.
@@ -146,6 +190,7 @@ struct SaddlePointSolverState
     VectorConstRef  ap;    ///< The assembled right-hand side vector *ap* of the canonical saddle point problem.
     VectorConstRef  ay;    ///< The assembled right-hand side vector *ay* of the canonical saddle point problem.
     VectorConstRef  az;    ///< The assembled right-hand side vector *az* of the canonical saddle point problem.
+    VectorConstRef  aw;    ///< The assembled right-hand side vector *aw* of the canonical saddle point problem.
 };
 
 /// Used to solve saddle point problems.
@@ -187,6 +232,17 @@ public:
     /// Canonicalize the coefficient matrix in the saddle point problem.
     auto canonicalize(SaddlePointSolverCanonicalize1Args args) -> void;
 
+    /// Canonicalize the coefficient matrix in the saddle point problem.
+    auto canonicalize(SaddlePointSolverCanonicalize2Args args) -> void;
+
+    /// Decompose the coefficient matrix of the canonical saddle point problem.
+    /// @note Ensure method @ref canonicalize has been called before this method.
+    auto decompose() -> void;
+
+    /// Decompose the coefficient matrix of the canonical saddle point problem.
+    /// @note Ensure method @ref canonicalize has been called before this method.
+    auto decompose(SaddlePointSolverDecomposeArgs args) -> void;
+
     /// Compute the right-hand side vector in the canonical saddle point problem.
     /// @note Ensure method @ref canonicalize has been called before this method.
     auto rhs(SaddlePointSolverRhs1Args args) -> void;
@@ -194,10 +250,6 @@ public:
     /// Compute the right-hand side vector in the canonical saddle point problem.
     /// @note Ensure method @ref canonicalize has been called before this method.
     auto rhs(SaddlePointSolverRhs2Args args) -> void;
-
-    /// Decompose the coefficient matrix of the canonical saddle point problem.
-    /// @note Ensure method @ref canonicalize has been called before this method.
-    auto decompose() -> void;
 
     /// Solve the saddle point problem.
     /// @note Ensure method @ref decompose and @ref rhs have been called before this method.

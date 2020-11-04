@@ -21,6 +21,7 @@
 #include <memory>
 
 // Optima includes
+#include <Optima/MasterDims.hpp>
 #include <Optima/CanonicalVector.hpp>
 #include <Optima/CanonicalMatrix.hpp>
 
@@ -52,7 +53,7 @@ private:
 
 public:
     /// Construct a ResidualVector instance.
-    ResidualVector(Index nx, Index np, Index ny, Index nz);
+    ResidualVector(const MasterDims& dims);
 
     /// Construct a copy of a ResidualVector instance.
     ResidualVector(const ResidualVector& other);

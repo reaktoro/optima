@@ -23,9 +23,9 @@ tested_nx  = [5, 10, 20, 50]  # The tested number of x variables
 tested_np  = [0, 5, 10]       # The tested number of p variables
 tested_nw  = [5, 8]           # The tested number of w variables
 
-@mark.parametrize("nx",  tested_nx)
-@mark.parametrize("np",  tested_np)
-@mark.parametrize("nw",  tested_nw)
+@mark.parametrize("nx", tested_nx)
+@mark.parametrize("np", tested_np)
+@mark.parametrize("nw", tested_nw)
 def testMasterVector(nx, np, nw):
 
     u = MasterVector(nx, np, nw)

@@ -26,29 +26,8 @@ using namespace Optima;
 
 void exportCanonicalMatrix(py::module& m)
 {
-    py::class_<CanonicalDims>(m, "CanonicalDims")
-        .def(py::init<>())
-        .def_readwrite("nx" , &CanonicalDims::nx)
-        .def_readwrite("np" , &CanonicalDims::np)
-        .def_readwrite("ny" , &CanonicalDims::ny)
-        .def_readwrite("nz" , &CanonicalDims::nz)
-        .def_readwrite("nw" , &CanonicalDims::nw)
-        .def_readwrite("ns" , &CanonicalDims::ns)
-        .def_readwrite("nu" , &CanonicalDims::nu)
-        .def_readwrite("nb" , &CanonicalDims::nb)
-        .def_readwrite("nn" , &CanonicalDims::nn)
-        .def_readwrite("nl" , &CanonicalDims::nl)
-        .def_readwrite("nbs", &CanonicalDims::nbs)
-        .def_readwrite("nbu", &CanonicalDims::nbu)
-        .def_readwrite("nns", &CanonicalDims::nns)
-        .def_readwrite("nnu", &CanonicalDims::nnu)
-        .def_readwrite("nbe", &CanonicalDims::nbe)
-        .def_readwrite("nbi", &CanonicalDims::nbi)
-        .def_readwrite("nne", &CanonicalDims::nne)
-        .def_readwrite("nni", &CanonicalDims::nni)
-        ;
-
     py::class_<CanonicalMatrixView>(m, "CanonicalMatrixView")
+        .def(py::init<CanonicalMatrix const&>())
         .def_readonly("dims" , &CanonicalMatrixView::dims)
         .def_readonly("Hss"  , &CanonicalMatrixView::Hss)
         .def_readonly("Hsp"  , &CanonicalMatrixView::Hsp)
@@ -64,11 +43,14 @@ void exportCanonicalMatrix(py::module& m)
         ;
 
     py::class_<CanonicalMatrix>(m, "CanonicalMatrix")
-        .def(py::init<const BaseDims&>())
+        .def(py::init<const MasterDims&>())
+        .def(py::init<const MasterMatrix&>())
         .def(py::init<const CanonicalMatrix&>())
         .def("update", &CanonicalMatrix::update)
         .def("view", &CanonicalMatrix::view,
             py::keep_alive<1, 0>(), // keep this object (0) alive while returned object (1) exists
             py::keep_alive<0, 1>()) // keep returned object (1) alive while this object (0) exists
         ;
+
+    py::implicitly_convertible<CanonicalMatrix, CanonicalMatrixView>();
 }

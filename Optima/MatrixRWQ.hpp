@@ -21,12 +21,23 @@
 #include <memory>
 
 // Optima includes
-#include <Optima/Index.hpp>
+#include <Optima/MasterDims.hpp>
 #include <Optima/Matrix.hpp>
 
 namespace Optima {
 
-/// Used to represent the echelon form *RWQ = [Ibb Sbn Sbp]* of matrix *W = [Wx Wp] = [Ax Ap; Jx Jp]*.
+/// Used to represent a view to matrix *W = [Wx Wp] = [Ax Ap; Jx Jp]*.
+struct MatrixViewW
+{
+    MatrixConstRef Wx;  ///< The view to sub-matrix *Wx* in *W = [Wx Wp] = [Ax Ap; Jx Jp]*
+    MatrixConstRef Wp;  ///< The view to sub-matrix *Wp* in *W = [Wx Wp] = [Ax Ap; Jx Jp]*
+    MatrixConstRef Ax;  ///< The view to sub-matrix *Ax* in *W = [Wx Wp] = [Ax Ap; Jx Jp]*
+    MatrixConstRef Ap;  ///< The view to sub-matrix *Ap* in *W = [Wx Wp] = [Ax Ap; Jx Jp]*
+    MatrixConstRef Jx;  ///< The view to sub-matrix *Jx* in *W = [Wx Wp] = [Ax Ap; Jx Jp]*
+    MatrixConstRef Jp;  ///< The view to sub-matrix *Jp* in *W = [Wx Wp] = [Ax Ap; Jx Jp]*
+};
+
+/// Used to represent the echelon form *RWQ = [Ibb Sbn Sbp]* of matrix *W*.
 struct MatrixViewRWQ
 {
     MatrixConstRef R;   ///< The echelonizer matrix of W so that *RWQ = [Ibb Sbn Sbp]* with *Q = (jb, jn)*.
@@ -36,7 +47,7 @@ struct MatrixViewRWQ
     IndicesConstRef jn; ///< The indices of the non-basic variables in the echelon form of *W*.
 };
 
-/// Used to compute the echelon form of matrix of matrix *W = [Ax Ap; Jx Jp]*.
+/// Used to compute the echelon form of matrix *W = [Ax Ap; Jx Jp]*.
 class MatrixRWQ
 {
 private:
@@ -46,13 +57,10 @@ private:
 
 public:
     /// Construct a MatrixRWQ instance.
-    /// @param nx The number of columns in Ax and Jx
-    /// @param np The number of columns in Ap and Jp
-    /// @param ny The number of rows in Ax and Ap
-    /// @param nz The number of rows in Jx and Jp
-    /// @param Ax The matrix Ax in W = [Ax Ap; Jx Jp]
-    /// @param Ap The matrix Ap in W = [Ax Ap; Jx Jp]
-    MatrixRWQ(Index nx, Index np, Index ny, Index nz, MatrixConstRef Ax, MatrixConstRef Ap);
+    /// @param dims The dimensions of the master variables
+    /// @param Ax The matrix *Ax* in *W = [Ax Ap; Jx Jp]*.
+    /// @param Ap The matrix *Ap* in *W = [Ax Ap; Jx Jp]*.
+    MatrixRWQ(const MasterDims& dims, MatrixConstRef Ax, MatrixConstRef Ap);
 
     /// Construct a copy of a MatrixRWQ instance.
     MatrixRWQ(const MatrixRWQ& other);
@@ -66,8 +74,20 @@ public:
     /// Update the echelon form of matrix *W*.
     auto update(MatrixConstRef Jx, MatrixConstRef Jp, VectorConstRef weights) -> void;
 
+    /// Return the dimensions of the master variables.
+    auto dims() const -> MasterDims;
+
+    /// Return an immutable view to matrix *W*.
+    auto asMatrixViewW() const -> MatrixViewW;
+
     /// Return an immutable view to the echelon form of *W*.
-    auto view() const -> MatrixViewRWQ;
+    auto asMatrixViewRWQ() const -> MatrixViewRWQ;
+
+    /// Convert this MatrixRWQ object into a MatrixViewW object.
+    explicit operator MatrixViewW() const;
+
+    /// Convert this MatrixRWQ object into a MatrixViewRWQ object.
+    explicit operator MatrixViewRWQ() const;
 };
 
 } // namespace Optima

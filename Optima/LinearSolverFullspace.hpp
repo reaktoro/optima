@@ -21,7 +21,7 @@
 #include <memory>
 
 // Optima includes
-#include <Optima/Index.hpp>
+#include <Optima/MasterDims.hpp>
 #include <Optima/CanonicalMatrix.hpp>
 #include <Optima/CanonicalVector.hpp>
 
@@ -32,7 +32,7 @@ class LinearSolverFullspace
 {
 public:
     /// Construct a LinearSolverFullspace instance.
-    LinearSolverFullspace(Index nx, Index np, Index ny, Index nz);
+    LinearSolverFullspace(const MasterDims& dims);
 
     /// Construct a copy of a LinearSolverFullspace instance.
     LinearSolverFullspace(const LinearSolverFullspace& other);

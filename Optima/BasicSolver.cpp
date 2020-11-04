@@ -57,6 +57,7 @@ struct BasicSolver::Impl
     Index np;        ///< The number of parameter variables p.
     Index ny;        ///< The number of Lagrange multipliers y (i.e. linear equality constraints in Ax*x + Ap*p = b).
     Index nz;        ///< The number of Lagrange multipliers z (i.e. non-linear equality constraints in h(x, p) = 0).
+    Index nw;        ///< The number of Lagrange multipliers y and z.
 
     //======================================================================
     // DATA INITIALIZED AT THE BEGINNING OF EACH SOLVE OPERATION
@@ -104,15 +105,18 @@ struct BasicSolver::Impl
     Vector rp;         ///< The residuals of the external constraint functions *v(x, p)*.
     Vector ry;         ///< The residuals of the linear constraint equations *Ax*x + Ap*p = b*.
     Vector rz;         ///< The residuals of the nonlinear constraint equations *h(x, p) = 0*.
+    Vector rw;         ///< The residuals of the linear and nonlinear constraint equations.
     Vector ex;         ///< The relative errors of the first-order optimality conditions.
     Vector ep;         ///< The relative errors of the external constraint functions *v(x, p)*.
     Vector ey;         ///< The relative errors of the linear constraint equations *Ax*x + Ap*p = b*.
     Vector ez;         ///< The relative errors of the nonlinear constraint equations *h(x, p) = 0*.
+    Vector ew;         ///< The relative errors of the linear and nonlinear constraint equations.
     Vector x;          ///< The current value of primal variables x.
     Vector p;          ///< The current value of parameter variables p.
     Vector y;          ///< The current value of Lagrange multipliers y.
     Vector z;          ///< The current value of Lagrange multipliers z.
-    Vector s;          ///< The current value of stability measures s = g + tr(Ax)*y + tr(hx)*z.
+    Vector w;          ///< The current value of Lagrange multipliers w = (y, z).
+    Vector s;          ///< The current value of stability measures s = g - tr(Wx)*λ.
     Vector xtrial;     ///< The trial iterate x(trial).
     Vector ptrial;     ///< The trial iterate p(trial).
     Vector ytrial;     ///< The trial iterate y(trial).
@@ -156,6 +160,7 @@ struct BasicSolver::Impl
         np = args.np;
         ny = args.ny;
         nz = args.nz;
+        nw = ny + nz;
 
         // Ensure consistent dimensions of vectors/matrices.
         assert(nx > 0);
@@ -187,10 +192,12 @@ struct BasicSolver::Impl
         rp      = zeros(np);
         ry      = zeros(ny);
         rz      = zeros(nz);
+        rw      = zeros(nw);
         ex      = zeros(nx);
         ep      = zeros(np);
         ey      = zeros(ny);
         ez      = zeros(nz);
+        ew      = zeros(nw);
         x       = zeros(nx);
         p       = zeros(np);
         y       = zeros(ny);
@@ -546,8 +553,18 @@ struct BasicSolver::Impl
         // Canonicalize the Ax matrix as a pre-step to calculate the Newton step
         stepper.canonicalize({ x, p, y, z, fx, fxx, fxp, vx, vp, hx, hp, xlower, xupper, plower, pupper, stability });
 
+
+
+
+        const auto ju = stability.indicesUnstableVariables();
+        stepper.decompose({fxx, fxp, vx, vp, hx, hp, ju });
+
+
+
+
+
         // Compute the current optimality and feasibility residuals (rx, rp, ry, rz) and relative errors (ex, ep, ey, ez)
-        stepper.residuals({ x, p, y, z, b, h, v, fx, hx, rx, rp, ry, rz, ex, ep, ey, ez, s });
+        stepper.residuals({ x, p, y, z, b, h, v, fx, hx, rx, rp, rw, ex, ep, ew, s });
 
 		// Update the current optimality, feasibility and complementarity errors
 		result.error_optimality  = norminf(ex);
@@ -576,7 +593,11 @@ struct BasicSolver::Impl
     	Timer timer;
 
     	// Decompose the Jacobian matrix and calculate a Newton step
-        stepper.decompose();
+        // stepper.decompose();
+
+
+        const auto ju = stability.indicesUnstableVariables();
+        stepper.decompose({fxx, fxp, vx, vp, hx, hp, ju });
 
         // Calculate the Newton step
         stepper.solve({ x, p, y, z, fx, b, h, v, stability, dxN, dpN, dyN, dzN });

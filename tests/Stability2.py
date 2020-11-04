@@ -21,36 +21,40 @@ from numpy.testing import assert_almost_equal
 from pytest import mark
 from utils.matrices import *
 
-tested_nx  = [10, 20]  # The tested number of x variables
-tested_np  = [0, 5]    # The tested number of p variables
-tested_ny  = [5, 10]   # The tested number of y variables
-tested_nz  = [0, 5]    # The tested number of z variables
-tested_nl  = [0, 2]    # The tested number of linearly dependent rows in Ax
-tested_nlu = [0, 2]    # The tested number of lower unstable variables
-tested_nuu = [0, 2]    # The tested number of upper unstable variables
 
-@mark.parametrize("nx" , tested_nx)
-@mark.parametrize("np" , tested_np)
-@mark.parametrize("ny" , tested_ny)
-@mark.parametrize("nz" , tested_nz)
-@mark.parametrize("nl" , tested_nl)
-@mark.parametrize("nlu", tested_nlu)
-@mark.parametrize("nuu", tested_nuu)
-def test_stability(nx, np, ny, nz, nl, nlu, nuu):
+tested_nx      = [15, 20]       # The tested number of x variables
+tested_np      = [0, 5]         # The tested number of p variables
+tested_ny      = [2, 5]         # The tested number of y variables
+tested_nz      = [0, 5]         # The tested number of z variables
+tested_nl      = [0, 2]         # The tested number of linearly dependent rows in Ax
+tested_nlu     = [0, 2]         # The tested number of lower unstable variables
+tested_nuu     = [0, 2]         # The tested number of upper unstable variables
+tested_diagHxx = [False, True]  # The tested options for Hxx structure
 
-    # Ensure nx is larger than np and (ny + nz)
-    if nx < np or nx < ny + nz: return
+@mark.parametrize("nx"     , tested_nx)
+@mark.parametrize("np"     , tested_np)
+@mark.parametrize("ny"     , tested_ny)
+@mark.parametrize("nz"     , tested_nz)
+@mark.parametrize("nl"     , tested_nl)
+@mark.parametrize("nlu"    , tested_nlu)
+@mark.parametrize("nuu"    , tested_nuu)
+@mark.parametrize("diagHxx", tested_diagHxx)
+def testStability(nx, np, ny, nz, nl, nlu, nuu, diagHxx):
 
-    # Ensure nl < ny
-    if ny <= nl: return
+    nu = nlu + nuu
 
-    W = createMatrixViewW(nx, np, ny, nz, nl)
+    params = MasterParams(nx, np, ny, nz, nl, nu, diagHxx)
 
-    RWQ = createMatrixViewRWQ(ny, W)
+    if params.invalid(): return
 
-    jb = RWQ.jb
-    jn = RWQ.jn
-    R  = RWQ.R
+    RWQ = createMatrixRWQ(params)
+
+    W    = RWQ.asMatrixViewW()
+    Wbar = RWQ.asMatrixViewRWQ()
+
+    jb = Wbar.jb
+    jn = Wbar.jn
+    R  = Wbar.R
 
     nb = len(jb)
     nn = len(jn)

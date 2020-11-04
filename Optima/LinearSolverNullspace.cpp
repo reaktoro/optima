@@ -41,9 +41,10 @@ struct LinearSolverNullspace::Impl
     Vector rw;        ///< The workspace for the vector r in the decompose and solve methods.
     LU lu;            ///< The LU decomposition solver.
 
-    Impl(Index nx, Index np, Index ny, Index nz)
+    Impl(const MasterDims& dims)
     {
-        const auto nw = ny + nz;
+        const auto [nx, np, ny, nz, nw, nt] = dims;
+
         ax.resize(nx);
         ap.resize(np);
         aw.resize(nw);
@@ -51,8 +52,8 @@ struct LinearSolverNullspace::Impl
         Hxp.resize(nx, np);
         Vpx.resize(np, nx);
         Vpp.resize(np, np);
-        Mw.resize(nx + np + nw, nx + np + nw);
-        rw.resize(nx + np + nw);
+        Mw.resize(nt, nt);
+        rw.resize(nt);
     }
 
     auto decompose(CanonicalMatrixView J) -> void
@@ -240,8 +241,8 @@ struct LinearSolverNullspace::Impl
     }
 };
 
-LinearSolverNullspace::LinearSolverNullspace(Index nx, Index np, Index ny, Index nz)
-: pimpl(new Impl(nx, np, ny, nz))
+LinearSolverNullspace::LinearSolverNullspace(const MasterDims& dims)
+: pimpl(new Impl(dims))
 {}
 
 LinearSolverNullspace::LinearSolverNullspace(const LinearSolverNullspace& other)

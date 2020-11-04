@@ -19,15 +19,16 @@ from optima import *
 from numpy import *
 from numpy.testing import assert_almost_equal
 from pytest import approx, mark
-from utils.matrices import createMasterMatrix
+from utils.matrices import *
 
 
-tested_nx  = [15, 20]  # The tested number of x variables
-tested_np  = [0, 5]    # The tested number of p variables
-tested_ny  = [5, 10]   # The tested number of y variables
-tested_nz  = [0, 5]    # The tested number of z variables
-tested_nl  = [0, 2]    # The tested number of linearly dependent rows in Ax
-tested_nu  = [0, 2]    # The tested number of unstable variables
+tested_nx      = [15, 20]       # The tested number of x variables
+tested_np      = [0, 5]         # The tested number of p variables
+tested_ny      = [5, 8]         # The tested number of y variables
+tested_nz      = [0, 5]         # The tested number of z variables
+tested_nl      = [0, 2]         # The tested number of linearly dependent rows in Ax
+tested_nu      = [0, 2]         # The tested number of unstable variables
+tested_diagHxx = [False, True]  # The tested options for Hxx structure
 
 # Tested cases for the linear solver methods
 tested_methods = [
@@ -36,32 +37,27 @@ tested_methods = [
     LinearSolverMethod.Rangespace
 ]
 
-@mark.parametrize("nx"    , tested_nx)
-@mark.parametrize("np"    , tested_np)
-@mark.parametrize("ny"    , tested_ny)
-@mark.parametrize("nz"    , tested_nz)
-@mark.parametrize("nl"    , tested_nl)
-@mark.parametrize("nu"    , tested_nu)
-@mark.parametrize("method", tested_methods)
-def testLinearSolver(nx, np, ny, nz, nl, nu, method):
+@mark.parametrize("nx"     , tested_nx)
+@mark.parametrize("np"     , tested_np)
+@mark.parametrize("ny"     , tested_ny)
+@mark.parametrize("nz"     , tested_nz)
+@mark.parametrize("nl"     , tested_nl)
+@mark.parametrize("nu"     , tested_nu)
+@mark.parametrize("diagHxx", tested_diagHxx)
+@mark.parametrize("method" , tested_methods)
+def testLinearSolver(nx, np, ny, nz, nl, nu, diagHxx, method):
 
-    basedims = BaseDims(nx, np, ny, nz)
+    params = MasterParams(nx, np, ny, nz, nl, nu, diagHxx)
 
-    nw = basedims.nw
-    nt = basedims.nt
+    if params.invalid(): return
 
-    # Ensure nx is larger than np and nw
-    if nx < np or nx < nw: return
+    # Rangespace method onlf for diagonal Hxx matrices
+    if method == LinearSolverMethod.Rangespace and not diagHxx:
+        return
 
-    # Ensure nl < ny
-    if ny <= nl: return
+    M = createMasterMatrix(params)
 
-    # Ensure nl < ny
-    if ny <= nl: return
-
-    diagHxx = True if method == LinearSolverMethod.Rangespace else False
-
-    M = createMasterMatrix(basedims, nl, nu, diagHxx)
+    nw = params.dims.nw
 
     uexp = MasterVector(nx, np, nw)
     uexp.x = linspace(1, nx, nx)
@@ -70,18 +66,14 @@ def testLinearSolver(nx, np, ny, nz, nl, nu, method):
 
     a = M * uexp
 
-    Mc = CanonicalMatrix(basedims)
-    Mc.update(M)
+    Mbar = CanonicalMatrix(M)
 
-    Mbar = Mc.view()
-
-    dims = Mbar.dims
-    nbs = dims.nbs
+    Mc = Mbar.view()
 
     options = LinearSolverOptions()
     options.method = method
 
-    linearsolver = LinearSolver(nx, np, ny, nz)
+    linearsolver = LinearSolver(params.dims)
     linearsolver.setOptions(options)
 
     u = MasterVector(nx, np, nw)

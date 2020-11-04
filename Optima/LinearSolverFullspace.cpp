@@ -34,9 +34,9 @@ struct LinearSolverFullspace::Impl
     Vector vec; ///< The vector used as a workspace for the decompose and solve methods
     LU lu;      ///< The LU decomposition solver.
 
-    Impl(Index nx, Index np, Index ny, Index nz)
-    : mat(nx + np + ny + nz, nx + np + ny + nz),
-      vec(nx + np + ny + nz)
+    Impl(const MasterDims& dims)
+    : mat(dims.nt, dims.nt),
+      vec(dims.nt)
     {
     }
 
@@ -120,8 +120,8 @@ struct LinearSolverFullspace::Impl
     }
 };
 
-LinearSolverFullspace::LinearSolverFullspace(Index nx, Index np, Index ny, Index nz)
-: pimpl(new Impl(nx, np, ny, nz))
+LinearSolverFullspace::LinearSolverFullspace(const MasterDims& dims)
+: pimpl(new Impl(dims))
 {}
 
 LinearSolverFullspace::LinearSolverFullspace(const LinearSolverFullspace& other)

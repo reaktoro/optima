@@ -27,11 +27,7 @@ namespace Optima {
 
 struct LinearSolver::Impl
 {
-    const Index nx = 0; ///< The number of variables x.
-    const Index np = 0; ///< The number of variables p.
-    const Index ny = 0; ///< The number of variables y.
-    const Index nz = 0; ///< The number of variables z.
-    const Index nw = 0; ///< The number of variables w = (y, z).
+    const MasterDims dims; ///< The dimensions of the master variables.
 
     LinearSolverOptions options; ///< The options for the linear solver.
 
@@ -48,23 +44,19 @@ struct LinearSolver::Impl
     Vector ax; ///< The auxiliary solution vector ax.
     Vector aw; ///< The auxiliary solution vector aw.
 
-    Impl(Index nx, Index np, Index ny, Index nz)
-    : nx(nx), np(np), ny(ny), nz(nz), nw(ny + nz),
-      rangespace(nx, np, ny, nz),
-      nullspace(nx, np, ny, nz),
-      fullspace(nx, np, ny, nz),
-      x(zeros(nx)), p(zeros(np)), w(zeros(nw)), wbar(zeros(nw)),
-      ax(zeros(nx)), aw(zeros(nw))
+    Impl(const MasterDims& dims)
+    : dims(dims), rangespace(dims), nullspace(dims), fullspace(dims)
     {
+        const auto [nx, np, ny, nz, nw, nt] = dims;
+
+        x    = zeros(nx);
+        p    = zeros(np);
+        w    = zeros(nw);
+        wbar = zeros(nw);
+        ax   = zeros(nx);
+        aw   = zeros(nw);
     }
 
-    /// Decompose the canonical matrix.
-    auto decomposeCanonical(CanonicalMatrixView Mc) -> void
-    {
-
-    }
-
-    /// Solve the canonical linear problem.
     auto solveCanonical(CanonicalMatrixView Mc, CanonicalVectorView ac, CanonicalVectorRef uc) -> void
     {
         switch(options.method)
@@ -146,8 +138,8 @@ struct LinearSolver::Impl
     }
 };
 
-LinearSolver::LinearSolver(Index nx, Index np, Index ny, Index nz)
-: pimpl(new Impl(nx, np, ny, nz))
+LinearSolver::LinearSolver(const MasterDims& dims)
+: pimpl(new Impl(dims))
 {}
 
 LinearSolver::LinearSolver(const LinearSolver& other)

@@ -17,8 +17,9 @@
 
 from optima import *
 from numpy import *
-from numpy.testing import assert_allclose, assert_almost_equal
+from numpy.testing import assert_almost_equal
 from pytest import mark
+from utils.matrices import *
 
 tested_nx = [5, 10, 20, 50]  # The tested number of x variables
 tested_np = [0, 5, 10]       # The tested number of p variables
@@ -33,29 +34,14 @@ tested_nl = [0, 1, 2]        # The tested number of linearly dependent rows in A
 @mark.parametrize("nl", tested_nl)
 def testMatrixRWQ(nx, np, ny, nz, nl):
 
-    # Ensure nx is larger than np and (ny + nz)
-    if nx < np or nx < ny + nz: return
+    params = MasterParams(nx, np, ny, nz, nl)
 
-    # Ensure nl < ny
-    if ny <= nl: return
+    if params.invalid(): return
 
-    Ax = random.rand(ny, nx)
-    Ap = random.rand(ny, np)
-    Jx = random.rand(nz, nx)
-    Jp = random.rand(nz, np)
+    RWQ = createMatrixRWQ(params)
 
-    Ax[:nl, :] = 0.0  # set last nl rows to be zero so that we have nl linearly dependent rows in Ax
-
-    Wx = block([[Ax], [Jx]])
-    Wp = block([[Ap], [Jp]])
-
-    RWQ = MatrixRWQ(nx, np, ny, nz, Ax, Ap)
-
-    weights = ones(nx)
-
-    RWQ.update(Jx, Jp, weights)
-
-    Wbar = RWQ.view()
+    W    = RWQ.asMatrixViewW()
+    Wbar = RWQ.asMatrixViewRWQ()
 
     R   = Wbar.R
     Sbn = Wbar.Sbn
@@ -67,6 +53,6 @@ def testMatrixRWQ(nx, np, ny, nz, nl):
 
     Ibb = eye(nb)
 
-    assert_almost_equal(Ibb, R @ Wx[:, jb])
-    assert_almost_equal(Sbn, R @ Wx[:, jn])
-    assert_almost_equal(Sbp, R @ Wp)
+    assert_almost_equal(Ibb, R @ W.Wx[:, jb])
+    assert_almost_equal(Sbn, R @ W.Wx[:, jn])
+    assert_almost_equal(Sbp, R @ W.Wp)

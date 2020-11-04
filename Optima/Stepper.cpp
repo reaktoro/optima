@@ -39,22 +39,25 @@ struct Stepper::Impl
     Matrix Ap;                         ///< The coefficient matrix Ap in the linear equality constraints.
     Matrix hx;                         ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *x*.
     Vector s;                          ///< The stability measures of the variables defined as s = g + tr(Ax)*y + tr(hx)*z.
-    Vector w;                          ///< The weights of the variables used to determine which ones are basic/nonbasic.
+    Vector weights;                    ///< The weights of the variables used to determine which ones are basic/nonbasic.
     Vector xbar;                       ///< The solution vector x in the saddle point problem.
     Vector pbar;                       ///< The solution vector p in the saddle point problem.
     Vector ybar;                       ///< The solution vector y in the saddle point problem.
     Vector zbar;                       ///< The solution vector z in the saddle point problem.
-    Vector bprime;                     ///< The auxiliary vector b' = R*[b, hx*x + h] used to compute feasibility residuals.
+    Vector wbar;                       ///< The solution vector w = (y, z) in the saddle point problem.
+    Vector xsu;                        ///< The auxiliary vector for x in the order x = (xs, xu)
+    Vector gsu;                        ///< The auxiliary vector for g in the order g = (gs, gu)
     Index nx = 0;                      ///< The number of primal variables in x.
     Index np = 0;                      ///< The number of parameter variables in p.
     Index ny = 0;                      ///< The number of Lagrange multipliers in y.
     Index nz = 0;                      ///< The number of Lagrange multipliers in z.
+    Index nw = 0;                      ///< The number of Lagrange multipliers y and z.
     StabilityChecker stabilitychecker; ///< The stability checker of the primal variables
     SaddlePointSolver spsolver;        ///< The saddle point solver.
 
     /// Construct a Stepper::Impl instance.
     Impl(StepperInitArgs args)
-    : nx(args.nx), np(args.np), ny(args.ny), nz(args.nz), Ax(args.Ax), Ap(args.Ap),
+    : nx(args.nx), np(args.np), ny(args.ny), nz(args.nz), nw(args.ny + args.nz), Ax(args.Ax), Ap(args.Ap),
       stabilitychecker({args.nx, args.np, args.ny, args.nz, args.Ax, args.Ap}),
       spsolver({args.nx, args.np, args.ny, args.nz, args.Ax, args.Ap})
     {
@@ -68,7 +71,10 @@ struct Stepper::Impl
         pbar = zeros(np);
         ybar = zeros(ny);
         zbar = zeros(nz);
-        bprime = zeros(ny);
+        wbar = zeros(nw);
+
+        xsu = zeros(nx);
+        gsu = zeros(nx);
     }
 
     /// Initialize the step calculator before calling decompose multiple times.
@@ -155,8 +161,18 @@ struct Stepper::Impl
         assert(plower.rows() == np);
         assert(pupper.rows() == np);
 
+
+        Vector d = min(x - xlower, xupper - x);
+        d = d.array().isInf().select(abs(x), d); // Enforce strong priority for not bounded variables to become basic variables.
+        weights.noalias() = abs(d); /// w = |x|    TODO: This seems to be the right way of doing this, to avoid as much as possible linear equations involving variables of strongly different order of magnitude.
+
+
         // Update the stability state of the primal variables
         stabilitychecker.update({ x, y, z, fx, hx, xlower, xupper });
+
+        // Indices empty;
+        // spsolver.canonicalize({ fxx, fxp, vx, vp, hx, hp, empty, weights });
+        // stabilitychecker.update({ jb, jn, Sbn, x, fx, xlower, xupper });
 
         // Set the output Stability object
         stability = stabilitychecker.stability();
@@ -169,18 +185,53 @@ struct Stepper::Impl
         const auto ju = stability.indicesUnstableVariables();
 
         // Compute the weights used to determine basic/nonbasic variables
-        const auto fakezero = 1.491667e-154; // === sqrt(double-min) where double-min = 2.22507e-308
-        w = fxx.diagonal();
-        w.array() += fakezero; // replaces zeros by fakezero to avoid division by zero next
-        w.noalias() = abs(x - fx.cwiseQuotient(w)); /// w = |x - inv(diag(H')) * g|
-        // w.noalias() = abs(x); /// w = |x|    TODO: This seems to be the right way of doing this, to avoid as much as possible linear equations involving variables of strongly different order of magnitude.
+        // const auto fakezero = 1.491667e-154; // === sqrt(double-min) where double-min = 2.22507e-308
+        // w = fxx.diagonal();
+        // w.array() += fakezero; // replaces zeros by fakezero to avoid division by zero next
+        // w.noalias() = abs(x - fx.cwiseQuotient(w)); /// w = |x - inv(diag(H')) * g|
+        // weights.noalias() = abs(x); /// w = |x|    TODO: This seems to be the right way of doing this, to avoid as much as possible linear equations involving variables of strongly different order of magnitude.
 
         // Decompose the saddle point matrix.
         // This decomposition is later used in method solve, possibly many
         // times! Consider lower/upper unstable variables as "fixed" variables
         // in the saddle point problem. Reason: we do not need to compute
         // Newton steps for the currently unstable variables!
-        spsolver.canonicalize({ fxx, fxp, vx, vp, hx, hp, ju, w });
+        // spsolver.canonicalize({ fxx, fxp, vx, vp, hx, hp, ju, weights });
+
+
+
+        spsolver.canonicalize({ hx, weights });
+    }
+
+    /// Canonicalize the matrix *A = [Ax Ap]* in the saddle point matrix.
+    auto canonicalize(StepperCanonicalize2Args args) -> void
+    {
+        // Ensure the step calculator has been initialized.
+        assert(nx != 0 && "Could not proceed with Stepper::canonicalize. "
+            "Stepper object has not been initialized.");
+
+        // Auxiliary references
+        const auto x = args.x;
+
+        // Update the Jacobian of the equality constraint function h(x, p) with respect to x
+        hx = args.hx;
+
+        // Ensure consistent dimensions of vectors/matrices.
+        assert(x.rows() == nx);
+
+        // Compute the weights used to determine basic/nonbasic variables
+        // const auto fakezero = 1.491667e-154; // === sqrt(double-min) where double-min = 2.22507e-308
+        // w = fxx.diagonal();
+        // w.array() += fakezero; // replaces zeros by fakezero to avoid division by zero next
+        // w.noalias() = abs(x - fx.cwiseQuotient(w)); /// w = |x - inv(diag(H')) * g|
+        weights.noalias() = abs(x); /// w = |x|    TODO: This seems to be the right way of doing this, to avoid as much as possible linear equations involving variables of strongly different order of magnitude.
+
+        // Decompose the saddle point matrix.
+        // This decomposition is later used in method solve, possibly many
+        // times! Consider lower/upper unstable variables as "fixed" variables
+        // in the saddle point problem. Reason: we do not need to compute
+        // Newton steps for the currently unstable variables!
+        spsolver.canonicalize({ hx, weights });
     }
 
     /// Calculate the current optimality and feasibility residuals.
@@ -188,7 +239,7 @@ struct Stepper::Impl
     auto residuals(StepperResidualsArgs args) -> void
     {
         // Auxiliary references
-        auto [x, p, y, z, b, h, v, fx, hx, rx, rp, ry, rz, ex, ep, ey, ez, s] = args;
+        auto [x, p, y, z, b, h, v, fx, hx, rx, rp, rw, ex, ep, ew, s] = args;
 
         // Get a reference to the stability state of the variables
         const auto& stability = stabilitychecker.stability();
@@ -210,12 +261,10 @@ struct Stepper::Impl
         assert( fx.rows() == nx );
         assert( rx.rows() == nx );
         assert( rp.rows() == np );
-        assert( ry.rows() == ny );
-        assert( rz.rows() == nz );
+        assert( rw.rows() == nw );
         assert( ex.rows() == nx );
         assert( ep.rows() == np );
-        assert( ey.rows() == ny );
-        assert( ez.rows() == nz );
+        assert( ew.rows() == nw );
         assert(  s.rows() == nx );
 
         //======================================================================
@@ -247,13 +296,11 @@ struct Stepper::Impl
         rx(js) = abs(spstate.as);
         rx(ju) = abs(spstate.au);
         rp = abs(spstate.ap);
-        ry = abs(spstate.ay);
-        rz = abs(spstate.az);
+        rw = abs(spstate.aw);
 
         ex = rx.array() / (1 + fx.array().abs());
         ep = rp;
-        ey = ry;
-        ez = rz;
+        ew = rw;
 
         const auto dims = spstate.dims;
         const auto nbs  = dims.nbs;
@@ -261,17 +308,17 @@ struct Stepper::Impl
         const auto nl   = dims.nl;
         const auto jbs  = spstate.jbs;
 
-        const auto rybs = ry.head(nbs);
-        const auto rybu = ry.segment(nbs, nbu);
-        const auto ryl  = ry.tail(nl);
+        const auto rwbs = rw.head(nbs);
+        const auto rwbu = rw.segment(nbs, nbu);
+        const auto rwbl = rw.tail(nl);
 
-        auto eybs = ey.head(nbs);
-        auto eybu = ey.segment(nbs, nbu);
-        auto eyl  = ey.tail(nl);
+        auto ewbs = ew.head(nbs);
+        auto ewbu = ew.segment(nbs, nbu);
+        auto ewbl = ew.tail(nl);
 
         const auto xbs = x(jbs);
 
-        eybs.noalias() = rybs.cwiseQuotient((xbs.array() != 0.0).select(xbs, 1.0));
+        ewbs.noalias() = rwbs.cwiseQuotient((xbs.array() != 0.0).select(xbs, 1.0));
 
         // spsolver.residuals({ xprime, p, b, h, ry, ey });
 
@@ -296,6 +343,169 @@ struct Stepper::Impl
         // ex = rx.array() / (1 + fx.array().abs());
     }
 
+    // /// Calculate the current optimality and feasibility residuals.
+    // /// @note Ensure method @ref canonicalize is called first.
+    // auto residuals(StepperResidualsArgs args) -> void
+    // {
+    //     // Auxiliary references
+    //     auto [x, p, y, z, b, h, v, fx, hx, rx, rp, rw, ex, ep, ew, s] = args;
+
+    //     const auto spstate = spsolver.state();
+    //     const auto dims = spstate.dims;
+
+    //     const auto ns    = spstate.dims.ns;
+    //     const auto nu    = spstate.dims.nu;
+    //     const auto np    = spstate.dims.np;
+    //     const auto ny    = spstate.dims.ny;
+    //     const auto nz    = spstate.dims.nz;
+    //     const auto nbs   = spstate.dims.nbs;
+    //     const auto nbu   = spstate.dims.nbu;
+    //     const auto nns   = spstate.dims.nns;
+    //     const auto nl    = spstate.dims.nl;
+    //     const auto js    = spstate.js;
+    //     const auto ju    = spstate.ju;
+    //     const auto As    = spstate.As;
+    //     const auto Au    = spstate.Au;
+    //     const auto Js    = spstate.Js;
+    //     const auto Jp    = spstate.Jp;
+    //     const auto R     = spstate.R;
+    //     const auto Rbs   = R.topRows(nbs);
+    //     const auto Sbsns = spstate.Sbsns;
+    //     const auto Sbsp  = spstate.Sbsp;
+
+    //     const auto xs    = xsu.head(ns) = args.x(js);
+    //     const auto xu    = xsu.tail(nu) = args.x(ju);
+
+    //     const auto xbs = xs.head(nbs);
+    //     const auto xns = xs.tail(nns);
+
+    //     const auto gs = gsu.head(ns) = args.fx(js);
+
+    //     auto as   = asu.head(ns);
+    //     auto au   = asu.tail(nu);
+    //     auto awbs = aw.head(nbs);
+    //     auto awbu = aw.segment(nbs, nbu);
+    //     auto awbl = aw.tail(nl);
+
+    //     as.noalias() = -(gs + tr(As) * args.y + tr(Js) * args.z);
+    //     au.fill(0.0);
+
+    //     ap = -args.v;
+    //     az = -args.h;
+
+    //     awstar.head(ny) = args.b - Au*xu;
+    //     awstar.tail(nz) = Js*xs + Jp*args.p - args.h;
+
+    //     awbs = multiplyMatrixVectorWithoutResidualRoundOffError(Rbs, awstar);
+    //     awbs.noalias() -= xbs + Sbsns*xns + Sbsp*args.p;
+
+    //     awbu.fill(0.0); // ensure residuals w.r.t. basic unstable variables are zero
+    //     awbl.fill(0.0); // ensure residuals w.r.t. linearly dependent rows in Wx = [Ax; Jx] are zero
+
+
+
+    //     // Get a reference to the stability state of the variables
+    //     const auto& stability = stabilitychecker.stability();
+
+    //     // The indices of stable and unstable variables
+    //     auto js = stability.indicesStableVariables();
+    //     auto ju = stability.indicesUnstableVariables();
+
+    //     // The indices of all strictly unstable variables
+    //     auto jsu = stability.indicesStrictlyUnstableVariables();
+
+    //     // Ensure consistent dimensions of vectors/matrices.
+    //     assert(  x.rows() == nx );
+    //     assert(  p.rows() == np );
+    //     assert(  y.rows() == ny );
+    //     assert(  z.rows() == nz );
+    //     assert(  b.rows() == ny );
+    //     assert(  h.rows() == nz );
+    //     assert( fx.rows() == nx );
+    //     assert( rx.rows() == nx );
+    //     assert( rp.rows() == np );
+    //     assert( rw.rows() == nw );
+    //     assert( ex.rows() == nx );
+    //     assert( ep.rows() == np );
+    //     assert( ew.rows() == nw );
+    //     assert(  s.rows() == nx );
+
+    //     //======================================================================
+    //     // Compute the canonical feasibility residuals using xb + S*xn - b' = 0
+    //     //======================================================================
+    //     // The computation logic below is aimed at producing feasibility
+    //     // residuals less affected by round-off errors. For certain
+    //     // applications (e.g. chemical equilibrium), in which some variables
+    //     // attain very small values (e.g. H2, O2), and there might be an
+    //     // algebraic relation between them (e.g. x[H2] = 2*x[O2] when only H2O,
+    //     // H+, OH-, H2, O2 are considered) that strongly affects the
+    //     // first-order optimality equations, this strategy is important.
+    //     //======================================================================
+
+    //     // Ensure the strictly unstable variables are ignored for feasibility
+    //     // residuals. It is like if they were excluded from the computation,
+    //     // but their final values forced to their bounds.
+
+    //     // Use rx as a workspace for x' where x'[i] = 0 if i in jsu else x[i]
+    //     auto xprime = rx;
+
+    //     xprime = x;
+    //     xprime(jsu).fill(0.0);
+
+    //     spsolver.rhs({ fx, xprime, p, y, z, v, h, b });
+
+    //     const auto spstate = spsolver.state();
+
+    //     rx(js) = abs(spstate.as);
+    //     rx(ju) = abs(spstate.au);
+    //     rp = abs(spstate.ap);
+    //     rw = abs(spstate.aw);
+
+    //     ex = rx.array() / (1 + fx.array().abs());
+    //     ep = rp;
+    //     ew = rw;
+
+    //     const auto dims = spstate.dims;
+    //     const auto nbs  = dims.nbs;
+    //     const auto nbu  = dims.nbu;
+    //     const auto nl   = dims.nl;
+    //     const auto jbs  = spstate.jbs;
+
+    //     const auto rwbs = rw.head(nbs);
+    //     const auto rwbu = rw.segment(nbs, nbu);
+    //     const auto rwbl = rw.tail(nl);
+
+    //     auto ewbs = ew.head(nbs);
+    //     auto ewbu = ew.segment(nbs, nbu);
+    //     auto ewbl = ew.tail(nl);
+
+    //     const auto xbs = x(jbs);
+
+    //     ewbs.noalias() = rwbs.cwiseQuotient((xbs.array() != 0.0).select(xbs, 1.0));
+
+    //     // spsolver.residuals({ xprime, p, b, h, ry, ey });
+
+    //     // Compute the relative errors of the linear/nonlinear feasibility conditions.
+
+    //     //======================================================================
+    //     // Compute the optimality residuals using g + tr(Ax)*y + tr(hx)*z = 0
+    //     //======================================================================
+
+    //     // Calculate the stability measure of the variables.
+    //     s.noalias() = fx + tr(Ax)*y + tr(hx)*z;
+
+    //     // // Calculate the residuals of the first-order optimality conditions
+    //     // rx = s.array().abs();
+
+    //     // // Set residuals with respect to unstable variables to zero. This
+    //     // // ensures that they are not taken into account when checking for
+    //     // // convergence.
+    //     // rx(ju).fill(0.0);
+
+    //     // // Compute the relative errors of the first-order optimality conditions.
+    //     // ex = rx.array() / (1 + fx.array().abs());
+    // }
+
     /// Decompose the saddle point matrix.
     /// @note Ensure method @ref canonicalize is called first.
     auto decompose() -> void
@@ -306,6 +516,14 @@ struct Stepper::Impl
         // in the saddle point problem. Reason: we do not need to compute
         // Newton steps for the currently unstable variables!
         spsolver.decompose();
+    }
+
+    /// Decompose the saddle point matrix.
+    /// @note Ensure method @ref canonicalize is called first.
+    auto decompose(StepperDecomposeArgs args) -> void
+    {
+        const auto [fxx, fxp, vx, vp, hx, hp, ju] = args;
+        spsolver.decompose({fxx, fxp, vx, vp, hx, hp, ju });
     }
 
     // /// Solve the saddle point problem.
@@ -501,6 +719,11 @@ auto Stepper::canonicalize(StepperCanonicalizeArgs args) -> void
     pimpl->canonicalize(args);
 }
 
+auto Stepper::canonicalize(StepperCanonicalize2Args args) -> void
+{
+    pimpl->canonicalize(args);
+}
+
 auto Stepper::residuals(StepperResidualsArgs args) -> void
 {
     pimpl->residuals(args);
@@ -509,6 +732,11 @@ auto Stepper::residuals(StepperResidualsArgs args) -> void
 auto Stepper::decompose() -> void
 {
     pimpl->decompose();
+}
+
+auto Stepper::decompose(StepperDecomposeArgs args) -> void
+{
+    pimpl->decompose(args);
 }
 
 auto Stepper::solve(StepperSolveArgs args) -> void

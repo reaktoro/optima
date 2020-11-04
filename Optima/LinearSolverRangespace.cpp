@@ -44,18 +44,19 @@ struct LinearSolverRangespace::Impl
     Matrix barSbsns;  ///< The workspace for matrix bar(Sbsns)
     LU lu;            ///< The LU decomposition solver.
 
-    Impl(Index nx, Index np, Index ny, Index nz)
+    Impl(const MasterDims& dims)
     {
-        const auto nw = ny + nz;
+        const auto [nx, np, ny, nz, nw, nt] = dims;
+
         ax.resize(nx);
         ap.resize(np);
         aw.resize(nw);
         Hd.resize(nx);
         Bw.resize(nx, nw);
         Tw.resize(nw, nw);
-        Mw.resize(nx + np + nw, nx + np + nw);
-        rw.resize(nx + np + nw);
-        sw.resize(nx + np + nw);
+        Mw.resize(nt, nt);
+        rw.resize(nt);
+        sw.resize(nt);
         barHsp.resize(nx, np);
         barVps.resize(np, nx);
         barSbsns.resize(nw, nx);
@@ -312,8 +313,8 @@ struct LinearSolverRangespace::Impl
     }
 };
 
-LinearSolverRangespace::LinearSolverRangespace(Index nx, Index np, Index ny, Index nz)
-: pimpl(new Impl(nx, np, ny, nz))
+LinearSolverRangespace::LinearSolverRangespace(const MasterDims& dims)
+: pimpl(new Impl(dims))
 {}
 
 LinearSolverRangespace::LinearSolverRangespace(const LinearSolverRangespace& other)

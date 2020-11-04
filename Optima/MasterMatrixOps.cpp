@@ -23,7 +23,7 @@ namespace Optima {
 auto operator*(const MasterMatrix& M, const MasterVectorView& u) -> MasterVector
 {
     using Eigen::all;
-    const auto [H, V, W, RWQ, js, ju] = M;
+    const auto [dims, H, V, W, RWQ, js, ju] = M;
     const auto us = u.x(js).eval();
     const auto uu = u.x(ju);
     const auto up = u.p;
@@ -50,7 +50,7 @@ auto operator*(const MasterMatrix& M, const MasterVectorView& u) -> MasterVector
 auto operator*(const MasterMatrixViewTr& trM, const MasterVectorView& u) -> MasterVector
 {
     using Eigen::all;
-    const auto [H, V, W, RWQ, js, ju] = trM.M;
+    const auto [dims, H, V, W, RWQ, js, ju] = trM.M;
     const auto us = u.x(js).eval();
     const auto uu = u.x(ju);
     const auto up = u.p;

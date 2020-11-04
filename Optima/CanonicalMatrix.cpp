@@ -25,7 +25,7 @@ namespace Optima {
 
 struct CanonicalMatrix::Impl
 {
-    const BaseDims basedims; ///< The dimensions of the variables x, p, y, z, w.
+    const MasterDims dims; ///< The dimensions of the variables x, p, y, z, w.
 
     Index ns = 0;       ///< The number of stable variables.
     Index nu = 0;       ///< The number of unstable variables.
@@ -58,10 +58,12 @@ struct CanonicalMatrix::Impl
     Matrix Vprime;      ///< The matrix V' = [Vps Vpu Vpp].
     Matrix Wprime;      ///< The matrix W' = [Ws Wu Wp] = [As Au Ap; Js Ju Jp].
 
-    Impl(const BaseDims& basedims)
-    : basedims(basedims)
+    bool diagHxx = false; ///< The flag indicating whether Hxx is diagonal.
+
+    Impl(const MasterDims& dims)
+    : dims(dims)
     {
-        const auto [nx, np, ny, nz, nw, nt] = basedims;
+        const auto [nx, np, ny, nz, nw, nt] = dims;
 
         S = zeros(nw, nx + np);
         Hprime = zeros(nx, nx + np);
@@ -71,9 +73,15 @@ struct CanonicalMatrix::Impl
         jsu.resize(nx);
     }
 
+    Impl(const MasterMatrix& M)
+    : Impl(M.dims)
+    {
+        update(M);
+    }
+
     auto update(const MasterMatrix& M) -> void
     {
-        const auto [nx, np, ny, nz, nw, nt] = basedims;
+        const auto [nx, np, ny, nz, nw, nt] = dims;
 
         const auto H   = M.H;
         const auto V   = M.V;
@@ -231,6 +239,8 @@ struct CanonicalMatrix::Impl
         Hss = H.Hxx(js, js);
         Hsp = H.Hxp(js, all);
 
+        diagHxx = H.isHxxDiag;
+
         //=========================================================================================
         // Initialize matrices Vps, Vpp
         //=========================================================================================
@@ -255,7 +265,7 @@ struct CanonicalMatrix::Impl
 
     auto view() const -> CanonicalMatrixView
     {
-        const auto [nx, np, ny, nz, nw, nt] = basedims;
+        const auto [nx, np, ny, nz, nw, nt] = dims;
 
         const auto dims = CanonicalDims{nx, np, ny, nz, nw, ns, nu, nb, nn, nl, nbs, nbu, nns, nnu, nbe, nbi, nne, nni};
         const auto Hss = Hprime.topLeftCorner(ns, ns);
@@ -274,8 +284,12 @@ struct CanonicalMatrix::Impl
     }
 };
 
-CanonicalMatrix::CanonicalMatrix(const BaseDims& basedims)
-: pimpl(new Impl(basedims))
+CanonicalMatrix::CanonicalMatrix(const MasterDims& dims)
+: pimpl(new Impl(dims))
+{}
+
+CanonicalMatrix::CanonicalMatrix(const MasterMatrix& M)
+: pimpl(new Impl(M))
 {}
 
 CanonicalMatrix::CanonicalMatrix(const CanonicalMatrix& other)
@@ -299,6 +313,11 @@ auto CanonicalMatrix::update(const MasterMatrix& M) -> void
 auto CanonicalMatrix::view() const -> CanonicalMatrixView
 {
     return pimpl->view();
+}
+
+CanonicalMatrix::operator CanonicalMatrixView() const
+{
+    return view();
 }
 
 } // namespace Optima

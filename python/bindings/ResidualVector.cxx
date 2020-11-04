@@ -43,7 +43,7 @@ void exportResidualVector(py::module& m)
     };
 
     py::class_<ResidualVector>(m, "ResidualVector")
-        .def(py::init<Index, Index, Index, Index>())
+        .def(py::init<const MasterDims&>())
         .def(py::init<const ResidualVector&>())
         .def("update", update)
         .def("canonicalVector", &ResidualVector::canonicalVector,

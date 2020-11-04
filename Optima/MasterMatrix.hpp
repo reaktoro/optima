@@ -18,9 +18,10 @@
 #pragma once
 
 // Optima includes
-#include <Optima/Index.hpp>
+#include <Optima/MasterDims.hpp>
 #include <Optima/Matrix.hpp>
 #include <Optima/MatrixRWQ.hpp>
+#include <Optima/StablePartition.hpp>
 
 namespace Optima {
 
@@ -39,24 +40,34 @@ struct MatrixViewV
     MatrixConstRef Vpp; ///< The matrix *Vpp* in *V = [Vpx Vpp]*.
 };
 
-/// Used to represent matrix *W = [Wx Wp] = [Ax Ap; Jx Jp]* in a master matrix.
-struct MatrixViewW
-{
-    MatrixConstRef Wx; ///< The matrix *Wx* in *W = [Wx Wp] = [Ax Ap; Jx Jp]*.
-    MatrixConstRef Wp; ///< The matrix *Wp* in *W = [Wx Wp] = [Ax Ap; Jx Jp]*.
-};
-
 /// Used to represent a master matrix.
 struct MasterMatrix
 {
-    MatrixViewH H;      ///< The matrix *H = [Hxx Hxp]* in the master matrix.
-    MatrixViewV V;      ///< The matrix *V = [Vpx Vpp]* in the master matrix.
-    MatrixViewW W;      ///< The matrix *W = [Ax Ap; Jx Jp]* in the master matrix.
-    MatrixViewRWQ RWQ;  ///< The echelon form *RWQ = [Ibb Sbn Sbp]* of matrix *W* in the master matrix.
-    IndicesConstRef js; ///< The indices of the stable variables in *x*.
-    IndicesConstRef ju; ///< The indices of the unstable non-basic variables in *x*.
+    /// The dimension details of the master matrix.
+    const MasterDims dims;
 
-    /// Convert this MasterMatrixBase object into a Matrix object.
+    /// The matrix *H = [Hxx Hxp]* in the master matrix.
+    const MatrixViewH H;
+
+    /// The matrix *V = [Vpx Vpp]* in the master matrix.
+    const MatrixViewV V;
+
+    /// The matrix *W = [Ax Ap; Jx Jp]* in the master matrix.
+    const MatrixViewW W;
+
+    /// The echelon form *RWQ = [Ibb Sbn Sbp]* of matrix *W* in the master matrix.
+    const MatrixViewRWQ RWQ;
+
+    /// The indices of the stable variables in *x*.
+    const IndicesConstRef js;
+
+    /// The indices of the unstable variables in *x*.
+    const IndicesConstRef ju;
+
+    /// Construct a MasterMatrix object.
+    MasterMatrix(MatrixViewH H, MatrixViewV V, MatrixRWQ const& RWQ, StablePartition const& jsu);
+
+    /// Convert this MasterMatrix object into a Matrix object.
     operator Matrix() const;
 };
 

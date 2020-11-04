@@ -26,7 +26,18 @@ using namespace Optima;
 
 void exportMatrixRWQ(py::module& m)
 {
+    py::class_<MatrixViewW>(m, "MatrixViewW")
+        .def(py::init<MatrixRWQ const&>())
+        .def_readonly("Wx" , &MatrixViewW::Wx)
+        .def_readonly("Wp" , &MatrixViewW::Wp)
+        .def_readonly("Ax" , &MatrixViewW::Ax)
+        .def_readonly("Ap" , &MatrixViewW::Ap)
+        .def_readonly("Jx" , &MatrixViewW::Jx)
+        .def_readonly("Jp" , &MatrixViewW::Jp)
+        ;
+
     py::class_<MatrixViewRWQ>(m, "MatrixViewRWQ")
+        .def(py::init<MatrixRWQ const&>())
         .def_readonly("R"  , &MatrixViewRWQ::R)
         .def_readonly("Sbn", &MatrixViewRWQ::Sbn)
         .def_readonly("Sbp", &MatrixViewRWQ::Sbp)
@@ -34,9 +45,9 @@ void exportMatrixRWQ(py::module& m)
         .def_readonly("jn" , &MatrixViewRWQ::jn)
         ;
 
-    auto init = [](Index nx, Index np, Index ny, Index nz, MatrixConstRef4py Ax, MatrixConstRef4py Ap)
+    auto init = [](const MasterDims& dims, MatrixConstRef4py Ax, MatrixConstRef4py Ap)
     {
-        return MatrixRWQ(nx, np, ny, nz, Ax, Ap);
+        return MatrixRWQ(dims, Ax, Ap);
     };
 
     auto update = [](MatrixRWQ& self, MatrixConstRef4py Jx, MatrixConstRef4py Jp, VectorConstRef weights)
@@ -48,8 +59,11 @@ void exportMatrixRWQ(py::module& m)
         .def(py::init(init))
         .def(py::init<const MatrixRWQ&>())
         .def("update", update)
-        .def("view", &MatrixRWQ::view,
-            py::keep_alive<1, 0>(), // keep this object alive while returned object exists
-            py::keep_alive<0, 1>()) // keep returned object alive while this object exists
+        .def("dims", &MatrixRWQ::dims)
+        .def("asMatrixViewW", &MatrixRWQ::asMatrixViewW, py::return_value_policy::reference_internal)
+        .def("asMatrixViewRWQ", &MatrixRWQ::asMatrixViewRWQ, py::return_value_policy::reference_internal)
         ;
+
+    py::implicitly_convertible<MatrixRWQ, MatrixViewW>();
+    py::implicitly_convertible<MatrixRWQ, MatrixViewRWQ>();
 }

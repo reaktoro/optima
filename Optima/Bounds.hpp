@@ -17,24 +17,44 @@
 
 #pragma once
 
+// C++ includes
+#include <memory>
+
 // Optima includes
 #include <Optima/Index.hpp>
+#include <Optima/Matrix.hpp>
 
 namespace Optima {
 
-/// Used to represent the dimensions in a base optimization problem.
-struct BaseDims
+/// Used to represent the lower and upper bounds of variables.
+class Bounds
 {
-    const Index nx; ///< The number of variables *x*.
-    const Index np; ///< The number of variables *p*.
-    const Index ny; ///< The number of variables *y*.
-    const Index nz; ///< The number of variables *z*.
-    const Index nw; ///< The number of variables *w = (y, z)*.
-    const Index nt; ///< The total number of variables in *(x, p, y, z)*.
+public:
+    /// Construct a default Bounds instance.
+    Bounds(Index size);
 
-    /// Construct a BaseDims object with given dimensions.
-    BaseDims(Index nx, Index np, Index ny, Index nz)
-    : nx(nx), np(np), ny(ny), nz(nz), nw(ny + nz), nt(nx + np + nw) {}
+    /// Construct a Bounds instance with given lower and upper bounds.
+    Bounds(VectorConstRef lower, VectorConstRef upper);
+
+    /// Construct a copy of a Bounds instance.
+    Bounds(const Bounds& other);
+
+    /// Destroy this Bounds instance.
+    virtual ~Bounds();
+
+    /// Assign a Bounds instance to this.
+    auto operator=(Bounds other) -> Bounds&;
+
+    /// Return the lower bounds of the variables.
+    auto lower() const -> VectorConstRef;
+
+    /// Return the upper bounds of the variables.
+    auto upper() const -> VectorConstRef;
+
+private:
+    struct Impl;
+
+    std::unique_ptr<Impl> pimpl;
 };
 
 } // namespace Optima

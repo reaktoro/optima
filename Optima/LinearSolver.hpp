@@ -21,6 +21,7 @@
 #include <memory>
 
 // Optima includes
+#include <Optima/MasterDims.hpp>
 #include <Optima/LinearSolverOptions.hpp>
 #include <Optima/CanonicalMatrix.hpp>
 #include <Optima/CanonicalVector.hpp>
@@ -33,7 +34,7 @@ class LinearSolver
 {
 public:
     /// Construct a LinearSolver instance.
-    LinearSolver(Index nx, Index np, Index ny, Index nz);
+    LinearSolver(const MasterDims& dims);
 
     /// Construct a copy of a LinearSolver instance.
     LinearSolver(const LinearSolver& other);

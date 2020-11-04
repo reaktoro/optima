@@ -21,7 +21,7 @@
 #include <memory>
 
 // Optima includes
-#include <Optima/Index.hpp>
+#include <Optima/MasterDims.hpp>
 #include <Optima/CanonicalMatrix.hpp>
 #include <Optima/CanonicalVector.hpp>
 
@@ -32,7 +32,7 @@ class LinearSolverRangespace
 {
 public:
     /// Construct a LinearSolverRangespace instance.
-    LinearSolverRangespace(Index nx, Index np, Index ny, Index nz);
+    LinearSolverRangespace(const MasterDims& dims);
 
     /// Construct a copy of a LinearSolverRangespace instance.
     LinearSolverRangespace(const LinearSolverRangespace& other);

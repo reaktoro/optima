@@ -21,7 +21,7 @@
 #include <vector>
 
 // Optima includes
-#include <Optima/Canonicalizer.hpp>
+#include <Optima/Echelonizer.hpp>
 #include <Optima/Exception.hpp>
 #include <Optima/Macros.hpp>
 #include <Optima/IndexUtils.hpp>
@@ -45,7 +45,7 @@ struct StabilityChecker::Impl
     vector<bool> bslu;            ///< The flags indicating strictly lower unstable status for each variable.
     vector<bool> bsuu;            ///< The flags indicating strictly upper unstable status for each variable.
     Stability stability;          ///< The stability state of the primal variables *x*.
-    Canonicalizer canonicalizer;  ///< The canonicalizer of matrix *Ax*.
+    Echelonizer echelonizer;  ///< The echelonizer of matrix *Ax*.
 
     /// Construct a default StabilityChecker::Impl instance.
     Impl()
@@ -103,7 +103,7 @@ struct StabilityChecker::Impl
         const auto Ap = A.rightCols(np);
 
 
-        canonicalizer.compute(Ax);
+        echelonizer.compute(Ax);
 
 
         //======================================================================
@@ -219,13 +219,17 @@ struct StabilityChecker::Impl
         const auto DOUBLE_MAX = 1.79769e+308;
         const auto DOUBLE_MAX_SQRT = 1.34078e+154;
 
-        d = d.array().isInf().select(DOUBLE_MAX_SQRT, d); // Enforce strong priority for not bounded variables to become basic variables.
+        // d = d.array().isInf().select(DOUBLE_MAX_SQRT, d); // Enforce strong priority for not bounded variables to become basic variables.
+        // d = (d.array() == 0.0).select(-DOUBLE_MAX_SQRT, d); // Enforce weak priority for variables on the bounds.
 
-        canonicalizer.updateWithPriorityWeights(d);
+        d = d.array().isInf().select(abs(x), d); // Enforce strong priority for not bounded variables to become basic variables.
 
-        const auto jb = canonicalizer.indicesBasicVariables();
-        const auto jn = canonicalizer.indicesNonBasicVariables();
-        const auto Sbn = canonicalizer.S();
+        Vector weights = (d.array() > 0.0).select(d, -1.0);
+        echelonizer.updateWithPriorityWeights(weights);
+
+        const auto jb = echelonizer.indicesBasicVariables();
+        const auto jn = echelonizer.indicesNonBasicVariables();
+        const auto Sbn = echelonizer.S();
 
         const auto gb = fx(jb);
         const auto gn = fx(jn);
@@ -236,6 +240,39 @@ struct StabilityChecker::Impl
 
         auto is_lower_unstable_fn = [&](Index i) { return x[i] == xlower[i] && s[i] > 0.0; };
         auto is_upper_unstable_fn = [&](Index i) { return x[i] == xupper[i] && s[i] < 0.0; };
+
+        iordering = stability.indicesVariables();
+
+        const auto nslu = stability.numStrictlyLowerUnstableVariables();
+        const auto nsuu = stability.numStrictlyUpperUnstableVariables();
+
+        // Organize the primal variables in the order: (stable, lower unstable, upper unstable, strictly lower unstable, strictly upper unstable).
+        const auto pos0 = nx - nslu - nsuu;
+        const auto pos1 = moveRightIf(iordering.head(pos0), is_upper_unstable_fn);
+        const auto pos2 = moveRightIf(iordering.head(pos1), is_lower_unstable_fn);
+
+        // Update the number of upper unstable, lower unstable, and stable variables
+        const auto nuu  = pos0 - pos1;
+        const auto nlu  = pos1 - pos2;
+        const auto ns   = pos2;
+
+        // Update the stability state of the variables
+        stability.update({ iordering, ns, nlu, nuu, nslu, nsuu });
+    }
+
+    /// Update the stability checker.
+    auto update2(StabilityCheckerUpdate2Args args) -> void
+    {
+        const auto [jb, jn, Sbn, x, fx, xlower, xupper] = args;
+
+        const auto gb = fx(jb);
+        const auto gn = fx(jn);
+
+        s(jn) = gn - tr(Sbn) * gb;
+        s(jb).fill(0.0);
+
+        auto is_lower_unstable_fn = [&](Index i) { return args.x[i] == args.xlower[i] && s[i] > 0.0; };
+        auto is_upper_unstable_fn = [&](Index i) { return args.x[i] == args.xupper[i] && s[i] < 0.0; };
 
         iordering = stability.indicesVariables();
 
@@ -286,6 +323,11 @@ auto StabilityChecker::initialize(StabilityCheckerInitializeArgs args) -> void
 auto StabilityChecker::update(StabilityCheckerUpdateArgs args) -> void
 {
     pimpl->update(args);
+}
+
+auto StabilityChecker::update2(StabilityCheckerUpdate2Args args) -> void
+{
+    pimpl->update2(args);
 }
 
 auto StabilityChecker::stability() const -> const Stability&

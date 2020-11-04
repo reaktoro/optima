@@ -59,6 +59,18 @@ struct StabilityCheckerUpdateArgs
     VectorConstRef xupper;  ///< The upper bounds of the primal variables *x*.
 };
 
+/// The arguments for method StabilityChecker::update.
+struct StabilityCheckerUpdate2Args
+{
+    IndicesConstRef jb;
+    IndicesConstRef jn;
+    MatrixConstRef Sbn;
+    VectorConstRef x;       ///< The current state of the primal variables *x*.
+    VectorConstRef fx;      ///< The evaluated gradient of the objective function *f(x, p)* with respect to *x*.
+    VectorConstRef xlower;  ///< The lower bounds of the primal variables *x*.
+    VectorConstRef xupper;  ///< The upper bounds of the primal variables *x*.
+};
+
 /// Used for checking the stability of the variables with respect to bounds.
 class StabilityChecker
 {
@@ -92,6 +104,13 @@ public:
     /// variables*, which are variables that are currently on their bounds and
     /// cannot be moved aways without increasing the Lagrange function.
     auto update(StabilityCheckerUpdateArgs args) -> void;
+
+    /// Update the stability checker.
+    /// This method should be called at the beginning of each iteration of the
+    /// optimization calculation. It will detect *lower and upper unstable
+    /// variables*, which are variables that are currently on their bounds and
+    /// cannot be moved aways without increasing the Lagrange function.
+    auto update2(StabilityCheckerUpdate2Args args) -> void;
 
     /// Return the current stability state of the primal variables *x*.
     auto stability() const -> const Stability&;
