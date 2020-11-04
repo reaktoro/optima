@@ -17,19 +17,20 @@
 
 // pybind11 includes
 #include <pybind11/pybind11.h>
+#include <pybind11/eigen.h>
 #include <pybind11/operators.h>
 namespace py = pybind11;
 
 // Optima includes
-#include <Optima/MasterMatrixOperators.hpp>
-#include <Optima/MasterMatrix.hpp>
-#include <Optima/MasterVector.hpp>
+#include <Optima/MasterMatrixOps.hpp>
 using namespace Optima;
 
-void exportMasterMatrixOperators(py::module& m)
+void exportMasterMatrixOps(py::module& m)
 {
-    py::class_<MasterMatrixTr>(m, "MasterMatrixTr")
-        .def_property_readonly("M", [](const MasterMatrixTr& self) { return self.M; })
-        .def("__mul__", [](const MasterMatrixTr& l, const MasterVector& r) { return l * r; })
+    py::class_<MasterMatrixViewTr>(m, "MasterMatrixViewTr")
+        .def_property_readonly("M", [](const MasterMatrixViewTr& self) { return self.M; })
+        .def("__mul__", [](const MasterMatrixViewTr& l, const MasterVectorView& r) { return l * r; })
         ;
+
+    m.def("tr", [](const MasterMatrix& M) { return tr(M); });
 }

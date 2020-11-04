@@ -23,78 +23,59 @@ namespace py = pybind11;
 
 // Optima includes
 #include <Optima/MasterMatrix.hpp>
-#include <Optima/MasterMatrixH.hpp>
-#include <Optima/MasterMatrixV.hpp>
-#include <Optima/MasterMatrixW.hpp>
-#include <Optima/MasterMatrixOperators.hpp>
+#include <Optima/MasterMatrixOps.hpp>
 #include <Optima/MasterVector.hpp>
 using namespace Optima;
 
+/// Used to indicate that the k-th argument in a method should be kept alive in Python.
+/// Note: pybind11's numbering convention for `py::keep_alive` starts with `2`
+/// for arguments. Index `1` denotes the `this` pointer and `0` the returned object.
+/// Here, however, `0` denotes the first argument in C++, which is not the `this` pointer.
+template<size_t k>
+using keep_argument_alive = py::keep_alive<1, k + 2>;
+
 void exportMasterMatrix(py::module& m)
 {
-    py::class_<CanonicalDims>(m, "CanonicalDims")
-        .def(py::init<>())
-        .def_readwrite("nx", &CanonicalDims::nx)
-        .def_readwrite("np", &CanonicalDims::np)
-        .def_readwrite("ny", &CanonicalDims::ny)
-        .def_readwrite("nz", &CanonicalDims::nz)
-        .def_readwrite("nw", &CanonicalDims::nw)
-        .def_readwrite("ns", &CanonicalDims::ns)
-        .def_readwrite("nu", &CanonicalDims::nu)
-        .def_readwrite("nb", &CanonicalDims::nb)
-        .def_readwrite("nn", &CanonicalDims::nn)
-        .def_readwrite("nl", &CanonicalDims::nl)
-        .def_readwrite("nbs", &CanonicalDims::nbs)
-        .def_readwrite("nbu", &CanonicalDims::nbu)
-        .def_readwrite("nns", &CanonicalDims::nns)
-        .def_readwrite("nnu", &CanonicalDims::nnu)
-        .def_readwrite("nbe", &CanonicalDims::nbe)
-        .def_readwrite("nbi", &CanonicalDims::nbi)
-        .def_readwrite("nne", &CanonicalDims::nne)
-        .def_readwrite("nni", &CanonicalDims::nni)
+    py::class_<MatrixViewH>(m, "MatrixViewH")
+        .def(py::init<MatrixConstRef4py, MatrixConstRef4py, bool>(),
+            keep_argument_alive<0>(),
+            keep_argument_alive<1>())
+        .def_readonly("Hxx"      , &MatrixViewH::Hxx)
+        .def_readonly("Hxp"      , &MatrixViewH::Hxp)
+        .def_readonly("isHxxDiag", &MatrixViewH::isHxxDiag)
         ;
 
-    py::class_<CanonicalMatrix>(m, "CanonicalMatrix")
-        .def_readonly("dims", &CanonicalMatrix::dims)
-        .def_readonly("Hss", &CanonicalMatrix::Hss)
-        .def_readonly("Hsp", &CanonicalMatrix::Hsp)
-        .def_readonly("Vps", &CanonicalMatrix::Vps)
-        .def_readonly("Vpp", &CanonicalMatrix::Vpp)
-        .def_readonly("Sbn", &CanonicalMatrix::Sbsns)
-        .def_readonly("Sbp", &CanonicalMatrix::Sbsp)
+    py::class_<MatrixViewV>(m, "MatrixViewV")
+        .def(py::init<MatrixConstRef4py, MatrixConstRef4py>(),
+            keep_argument_alive<0>(),
+            keep_argument_alive<1>())
+        .def_readonly("Vpx", &MatrixViewV::Vpx)
+        .def_readonly("Vpp", &MatrixViewV::Vpp)
         ;
 
-    py::class_<CanonicalDetails>(m, "CanonicalDetails")
-        .def_readonly("dims", &CanonicalDetails::dims)
-        .def_readonly("Hss", &CanonicalDetails::Hss)
-        .def_readonly("Hsp", &CanonicalDetails::Hsp)
-        .def_readonly("Vps", &CanonicalDetails::Vps)
-        .def_readonly("Vpp", &CanonicalDetails::Vpp)
-        .def_readonly("Sbn", &CanonicalDetails::Sbn)
-        .def_readonly("Sbp", &CanonicalDetails::Sbp)
-        .def_readonly("R", &CanonicalDetails::R)
-        .def_readonly("Ws", &CanonicalDetails::Ws)
-        .def_readonly("Wu", &CanonicalDetails::Wu)
-        .def_readonly("Wp", &CanonicalDetails::Wp)
-        .def_readonly("As", &CanonicalDetails::As)
-        .def_readonly("Au", &CanonicalDetails::Au)
-        .def_readonly("Ap", &CanonicalDetails::Ap)
-        .def_readonly("Js", &CanonicalDetails::Js)
-        .def_readonly("Ju", &CanonicalDetails::Ju)
-        .def_readonly("Jp", &CanonicalDetails::Jp)
-        .def_readonly("jb", &CanonicalDetails::jb)
-        .def_readonly("jn", &CanonicalDetails::jn)
-        .def_readonly("js", &CanonicalDetails::js)
-        .def_readonly("ju", &CanonicalDetails::ju)
+    py::class_<MatrixViewW>(m, "MatrixViewW")
+        .def(py::init<MatrixConstRef4py, MatrixConstRef4py>(),
+            keep_argument_alive<0>(),
+            keep_argument_alive<1>())
+        .def_readonly("Wx", &MatrixViewW::Wx)
+        .def_readonly("Wp", &MatrixViewW::Wp)
         ;
 
     py::class_<MasterMatrix>(m, "MasterMatrix")
-        .def(py::init<Index, Index, Index, Index>())
-        .def(py::init<const MasterMatrix&>())
-        .def("update", &MasterMatrix::update)
-        .def("canonicalMatrix", &MasterMatrix::canonicalMatrix)
-        .def("canonicalForm", &MasterMatrix::canonicalForm)
-        .def("matrix", &MasterMatrix::matrix)
-        .def("__mul__", [](const MasterMatrix& l, const MasterVector& r) { return l * r; })
+        .def(py::init<MatrixViewH, MatrixViewV, MatrixViewW, MatrixViewRWQ, IndicesConstRef, IndicesConstRef>(),
+            keep_argument_alive<0>(),
+            keep_argument_alive<1>(),
+            keep_argument_alive<2>(),
+            keep_argument_alive<3>(),
+            keep_argument_alive<4>(),
+            keep_argument_alive<5>())
+        .def_readonly("H"  , &MasterMatrix::H)
+        .def_readonly("V"  , &MasterMatrix::V)
+        .def_readonly("W"  , &MasterMatrix::W)
+        .def_readonly("RWQ", &MasterMatrix::RWQ)
+        .def_readonly("js" , &MasterMatrix::js)
+        .def_readonly("ju" , &MasterMatrix::ju)
+        .def("__mul__", [](const MasterMatrix& l, const MasterVectorView& r) { return l * r; })
+        .def("array", [](const MasterMatrix& self) { return Matrix(self); })
         ;
 }

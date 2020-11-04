@@ -17,61 +17,56 @@
 
 #pragma once
 
-// C++ includes
-#include <memory>
-
 // Optima includes
 #include <Optima/Index.hpp>
 #include <Optima/Matrix.hpp>
 
 namespace Optima {
 
-/// Used to represent the canonical vector *us = (xs, p, wbs)*.
-class CanonicalVector
+/// Used as a base template type for master vector types.
+template<typename Vec>
+struct MasterVectorBase
 {
-public:
-    VectorConstRef xs;  ///< The vector xs in the canonical vector.
-    VectorConstRef p;   ///< The vector p in the canonical vector.
-    VectorConstRef wbs; ///< The vector wbs in the canonical vector.
+    Vec x; ///< The vector *x* in *u = (x, p, w)*.
+    Vec p; ///< The vector *p* in *u = (x, p, w)*.
+    Vec w; ///< The vector *w* in *u = (x, p, w)*.
+
+    /// Construct a MasterVectorBase object.
+    MasterVectorBase(Index nx, Index np, Index nw)
+    : MasterVectorBase(zeros(nx + np + nw), nx, np, nw) {}
+
+    /// Construct a MasterVectorBase object.
+    template<typename Data>
+    MasterVectorBase(Data&& data, Index nx, Index np, Index nw)
+    : x(data.head(nx)), p(data.segment(nx, np)), w(data.tail(nw)) {}
+
+    /// Construct a MasterVectorBase object.
+    MasterVectorBase(const Vec& x, const Vec& p, const Vec& w)
+    : x(x), p(p), w(w) {}
+
+    /// Construct a MasterVectorBase object.
+    MasterVectorBase(Vec& x, Vec& p, Vec& w)
+    : x(x), p(p), w(w) {}
+
+    /// Construct a MasterVectorBase object with given immutable MasterVectorBase object.
+    template<typename V>
+    MasterVectorBase(const MasterVectorBase<V>& other)
+    : x(other.x), p(other.p), w(other.w) {}
+
+    /// Construct a MasterVectorBase object with given mutable MasterVectorBase object.
+    template<typename V>
+    MasterVectorBase(MasterVectorBase<V>& other)
+    : x(other.x), p(other.p), w(other.w) {}
+
+    /// Return the size of this MasterVectorBase object.
+    auto size() const { return x.size() + p.size() + w.size(); }
+
+    /// Convert this MasterVectorBase object into a Vector object.
+    operator Vector() const { Vector res(size()); res << x, p, w; return res; }
 };
 
-/// Used to represent the canonical vector *us = (xs, p, wbs)*.
-class CanonicalVectorRef
-{
-public:
-    VectorRef xs;  ///< The vector xs in the canonical vector.
-    VectorRef p;   ///< The vector p in the canonical vector.
-    VectorRef wbs; ///< The vector wbs in the canonical vector.
-};
-
-/// Used to represent the vector *u = (x, p, y, z)*.
-class MasterVector
-{
-private:
-    struct Impl;
-
-    std::unique_ptr<Impl> pimpl;
-
-public:
-    /// Construct a MasterVector instance.
-    MasterVector(Index nx, Index np, Index ny, Index nz);
-
-    /// Construct a copy of a MasterVector instance.
-    MasterVector(const MasterVector& other);
-
-    /// Destroy this MasterVector instance.
-    virtual ~MasterVector();
-
-    /// Assign a MasterVector instance to this.
-    auto operator=(MasterVector other) -> MasterVector&;
-
-    VectorRef x; ///< The reference to the vector segment *x* in *u = (x, p, y, z)*.
-    VectorRef p; ///< The reference to the vector segment *p* in *u = (x, p, y, z)*.
-    VectorRef y; ///< The reference to the vector segment *y* in *u = (x, p, y, z)*.
-    VectorRef z; ///< The reference to the vector segment *z* in *u = (x, p, y, z)*.
-    VectorRef w; ///< The reference to the vector segment *w = (y, z)* in *u = (x, p, y, z)*.
-
-    VectorRef data; ///< The access to the underlying vector data in *u = (x, p, y, z)*.
-};
+using MasterVector     = MasterVectorBase<Vector>;
+using MasterVectorRef  = MasterVectorBase<VectorRef>;
+using MasterVectorView = MasterVectorBase<VectorConstRef>;
 
 } // namespace Optima

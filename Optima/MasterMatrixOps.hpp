@@ -15,33 +15,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include "MasterMatrixH.hpp"
+#pragma once
 
 // Optima includes
-#include <Optima/Exception.hpp>
+#include <Optima/MasterMatrix.hpp>
+#include <Optima/MasterVector.hpp>
 
 namespace Optima {
 
-MasterMatrixH::MasterMatrixH(Index nx, Index np)
-: MasterMatrixH(zeros(nx, nx), zeros(nx, np))
-{}
-
-MasterMatrixH::MasterMatrixH(MatrixConstRef Hxx, MatrixConstRef Hxp)
-: _Hxx(Hxx), _Hxp(Hxp), isdiag(false), Hxx(_Hxx), Hxp(_Hxp)
-{}
-
-MasterMatrixH::MasterMatrixH(const MasterMatrixH& other)
-: _Hxx(other._Hxx), _Hxp(other._Hxp), isdiag(other.isdiag), Hxx(_Hxx), Hxp(_Hxp)
-{}
-
-auto MasterMatrixH::isHxxDiagonal() const -> bool
+/// Used to represent the transpose view of a master matrix.
+struct MasterMatrixViewTr
 {
-    return isdiag;
-}
+    const MasterMatrix& M; ///< The underlying master matrix in the transpose expression.
+};
 
-auto MasterMatrixH::isHxxDiagonal(bool enable) -> bool
-{
-    isdiag = enable;
-}
+/// Return a transpose representation of a master matrix.
+inline auto tr(const MasterMatrix& M) -> MasterMatrixViewTr { return { M }; }
+
+/// Return the product of a master matrix and a master vector.
+auto operator*(const MasterMatrix& M, const MasterVectorView& u) -> MasterVector;
+
+/// Return the product of a master matrix transpose and a master vector.
+auto operator*(const MasterMatrixViewTr& trM, const MasterVectorView& u) -> MasterVector;
 
 } // namespace Optima

@@ -26,26 +26,42 @@ using namespace Optima;
 
 void exportMasterVector(py::module& m)
 {
-    py::class_<CanonicalVector>(m, "CanonicalVector")
-        .def_readonly("xs", &CanonicalVector::xs)
-        .def_readonly("p", &CanonicalVector::p)
-        .def_readonly("wbs", &CanonicalVector::wbs)
-        ;
-
-    py::class_<CanonicalVectorRef>(m, "CanonicalVectorRef")
-        .def_readwrite("xs", &CanonicalVectorRef::xs)
-        .def_readwrite("p", &CanonicalVectorRef::p)
-        .def_readwrite("wbs", &CanonicalVectorRef::wbs)
-        ;
-
     py::class_<MasterVector>(m, "MasterVector")
-        .def(py::init<Index, Index, Index, Index>())
+        .def(py::init<Index, Index, Index>())
+        .def(py::init<VectorConstRef, Index, Index, Index>())
         .def(py::init<const MasterVector&>())
+        .def(py::init<const MasterVectorRef&>())
+        .def(py::init<const MasterVectorView&>())
         .def_readwrite("x", &MasterVector::x)
         .def_readwrite("p", &MasterVector::p)
-        .def_readwrite("y", &MasterVector::y)
-        .def_readwrite("z", &MasterVector::z)
         .def_readwrite("w", &MasterVector::w)
-        .def_readwrite("data", &MasterVector::data)
+        .def("size", &MasterVector::size)
+        .def("array", [](const MasterVector& self) { return Vector(self); })
         ;
+
+    py::class_<MasterVectorRef>(m, "MasterVectorRef")
+        .def(py::init<VectorRef, Index, Index, Index>())
+        .def(py::init<MasterVector&>())
+        .def(py::init<MasterVectorRef&>())
+        .def_readwrite("x", &MasterVectorRef::x)
+        .def_readwrite("p", &MasterVectorRef::p)
+        .def_readwrite("w", &MasterVectorRef::w)
+        .def("size", &MasterVectorRef::size)
+        .def("array", [](const MasterVectorRef& self) { return Vector(self); })
+        ;
+
+    py::class_<MasterVectorView>(m, "MasterVectorView")
+        .def(py::init<VectorConstRef, Index, Index, Index>())
+        .def(py::init<const MasterVector&>())
+        .def(py::init<const MasterVectorRef&>())
+        .def_readonly("x", &MasterVectorView::x)
+        .def_readonly("p", &MasterVectorView::p)
+        .def_readonly("w", &MasterVectorView::w)
+        .def("size", &MasterVectorView::size)
+        .def("array", [](const MasterVectorView& self) { return Vector(self); })
+        ;
+
+    py::implicitly_convertible<MasterVector, MasterVectorRef>();
+    py::implicitly_convertible<MasterVector, MasterVectorView>();
+    py::implicitly_convertible<MasterVectorRef, MasterVectorView>();
 }
