@@ -19,7 +19,7 @@ from optima import *
 from numpy import *
 from numpy.testing import assert_almost_equal
 from pytest import mark
-from utils.matrices import createMasterMatrixW
+from utils.matrices import *
 
 tested_nx  = [10, 20]  # The tested number of x variables
 tested_np  = [0, 5]    # The tested number of p variables
@@ -44,13 +44,13 @@ def test_stability(nx, np, ny, nz, nl, nlu, nuu):
     # Ensure nl < ny
     if ny <= nl: return
 
-    W = createMasterMatrixW(nx, np, ny, nz, nl)
+    W = createMatrixViewW(nx, np, ny, nz, nl)
 
-    Wbar = W.echelonForm()
+    RWQ = createMatrixViewRWQ(ny, W)
 
-    jb = Wbar.jb
-    jn = Wbar.jn
-    R  = Wbar.R
+    jb = RWQ.jb
+    jn = RWQ.jn
+    R  = RWQ.R
 
     nb = len(jb)
     nn = len(jn)
@@ -92,7 +92,7 @@ def test_stability(nx, np, ny, nz, nl, nlu, nuu):
     #==========================================================================
 
     stability = Stability2(nx)
-    stability.update(W, g, x, xlower, xupper)
+    stability.update(RWQ, g, x, xlower, xupper)
 
     status = stability.status()
 

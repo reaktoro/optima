@@ -23,16 +23,16 @@
 namespace Optima {
 
 // Forward declarations
-class MasterMatrixW;
+class MatrixViewRWQ;
 
 /// The arguments in method @ref Stability::update.
 struct StabilityUpdateArgs
 {
-    MasterMatrixW const& W;  ///< The matrix W = [Wx Wp] = [Ax Ap; Jx Jp] and its current canonical form.
-    VectorConstRef g;        ///< The gradient of the objective function with respect to x.
-    VectorConstRef x;        ///< The values of the primal variables x.
-    VectorConstRef xlower;   ///< The lower bounds of the primal variables x.
-    VectorConstRef xupper;   ///< The upper bounds of the primal variables x.
+    MatrixViewRWQ const& RWQ; ///< The echelon form RWQ = [Ibb Sbn Sbp] of matrix W.
+    VectorConstRef g;         ///< The gradient of the objective function with respect to x.
+    VectorConstRef x;         ///< The values of the primal variables x.
+    VectorConstRef xlower;    ///< The lower bounds of the primal variables x.
+    VectorConstRef xupper;    ///< The upper bounds of the primal variables x.
 };
 
 /// The stability status of the x variables.

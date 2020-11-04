@@ -21,29 +21,29 @@
 namespace py = pybind11;
 
 // Optima includes
-#include <Optima/MasterMatrixW.hpp>
+#include <Optima/MasterMatrix.hpp>
 #include <Optima/Stability2.hpp>
 using namespace Optima;
 
 void exportStability2(py::module& m)
 {
     py::class_<StabilityStatus>(m, "StabilityStatus")
-        .def_readonly("js", &StabilityStatus::js)
-        .def_readonly("ju", &StabilityStatus::ju)
-        .def_readonly("jlu", &StabilityStatus::jlu)
-        .def_readonly("juu", &StabilityStatus::juu)
-        .def_readonly("s", &StabilityStatus::s)
+        .def_readonly("js"   , &StabilityStatus::js)
+        .def_readonly("ju"   , &StabilityStatus::ju)
+        .def_readonly("jlu"  , &StabilityStatus::jlu)
+        .def_readonly("juu"  , &StabilityStatus::juu)
+        .def_readonly("s"    , &StabilityStatus::s)
         .def_readonly("lmbda", &StabilityStatus::lmbda)
         ;
 
     auto update = [](Stability2& self,
-        MasterMatrixW const& W,
+        MatrixViewRWQ RWQ,
         VectorConstRef g,
         VectorConstRef x,
         VectorConstRef xlower,
         VectorConstRef xupper)
     {
-        self.update({W, g, x, xlower, xupper});
+        self.update({RWQ, g, x, xlower, xupper});
     };
 
     py::class_<Stability2>(m, "Stability2")
