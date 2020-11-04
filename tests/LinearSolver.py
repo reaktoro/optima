@@ -51,7 +51,8 @@ tested_methods = [
 @mark.parametrize("method", tested_methods)
 def test_linear_solver(nx, np, ny, nz, nl, nu, method):
 
-    nw = ny + nz
+    basedims = BaseDims(nx, np, ny, nz)
+    nw = basedims.nw
 
     # Ensure nx is larger than np and nw
     if nx < np or nx < nw: return
@@ -75,7 +76,7 @@ def test_linear_solver(nx, np, ny, nz, nl, nu, method):
 
     a = M * uexp
 
-    Mc = CanonicalMatrix(nx, np, ny, nz)
+    Mc = CanonicalMatrix(basedims)
     Mc.update(M)
 
     Mbar = Mc.view()

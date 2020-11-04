@@ -43,11 +43,9 @@ tested_nu  = [0, 1]        # The tested number of unstable variables
 @mark.parametrize("nu", tested_nu)
 def testCanonicalMatrix(nx, np, ny, nz, nl, nu):
 
-
+    basedims = BaseDims(nx, np, ny, nz)
 
     set_printoptions(linewidth=10000)
-
-
 
     # Ensure nx is larger than np and (ny + nz)
     if nx < np or nx < ny + nz: return
@@ -72,7 +70,7 @@ def testCanonicalMatrix(nx, np, ny, nz, nl, nu):
     V = M.V
     W = M.W
 
-    canonicalmatrix = CanonicalMatrix(nx, np, ny, nz)
+    canonicalmatrix = CanonicalMatrix(basedims)
     canonicalmatrix.update(M)
 
     Mbar = canonicalmatrix.view()

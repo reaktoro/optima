@@ -27,10 +27,10 @@ void exportBaseDims(py::module& m)
 {
     py::class_<BaseDims>(m, "BaseDims")
         .def(py::init<Index, Index, Index, Index>())
-        .def("nx", &BaseDims::nx)
-        .def("np", &BaseDims::np)
-        .def("ny", &BaseDims::ny)
-        .def("nz", &BaseDims::nz)
-        .def("nw", &BaseDims::nw)
+        .def_readonly("nx", &BaseDims::nx)
+        .def_readonly("np", &BaseDims::np)
+        .def_readonly("ny", &BaseDims::ny)
+        .def_readonly("nz", &BaseDims::nz)
+        .def_readonly("nw", &BaseDims::nw)
         ;
 }

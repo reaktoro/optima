@@ -21,6 +21,7 @@
 #include <memory>
 
 // Optima includes
+#include <Optima/BaseDims.hpp>
 #include <Optima/MasterMatrix.hpp>
 
 namespace Optima {
@@ -70,7 +71,7 @@ class CanonicalMatrix
 {
 public:
     /// Construct a CanonicalMatrix instance.
-    CanonicalMatrix(Index nx, Index np, Index ny, Index nz);
+    CanonicalMatrix(const BaseDims& dims);
 
     /// Construct a copy of a CanonicalMatrix instance.
     CanonicalMatrix(const CanonicalMatrix& other);

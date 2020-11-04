@@ -64,7 +64,7 @@ void exportCanonicalMatrix(py::module& m)
         ;
 
     py::class_<CanonicalMatrix>(m, "CanonicalMatrix")
-        .def(py::init<Index, Index, Index, Index>())
+        .def(py::init<const BaseDims&>())
         .def(py::init<const CanonicalMatrix&>())
         .def("update", &CanonicalMatrix::update)
         .def("view", &CanonicalMatrix::view,

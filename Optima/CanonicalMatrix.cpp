@@ -25,11 +25,7 @@ namespace Optima {
 
 struct CanonicalMatrix::Impl
 {
-    const Index nx = 0; ///< The number of variables x.
-    const Index np = 0; ///< The number of variables p.
-    const Index ny = 0; ///< The number of variables y.
-    const Index nz = 0; ///< The number of variables z.
-    const Index nw = 0; ///< The number of variables w = (y, z).
+    const BaseDims basedims; ///< The dimensions of the variables x, p, y, z, w.
 
     Index ns = 0;       ///< The number of stable variables.
     Index nu = 0;       ///< The number of unstable variables.
@@ -62,9 +58,11 @@ struct CanonicalMatrix::Impl
     Matrix Vprime;      ///< The matrix V' = [Vps Vpu Vpp].
     Matrix Wprime;      ///< The matrix W' = [Ws Wu Wp] = [As Au Ap; Js Ju Jp].
 
-    Impl(Index nx, Index np, Index ny, Index nz)
-    : nx(nx), np(np), ny(ny), nz(nz), nw(ny + nz)
+    Impl(const BaseDims& basedims)
+    : basedims(basedims)
     {
+        const auto [nx, np, ny, nz, nw] = basedims;
+
         S = zeros(nw, nx + np);
         Hprime = zeros(nx, nx + np);
         Vprime = zeros(np, nx + np);
@@ -75,6 +73,8 @@ struct CanonicalMatrix::Impl
 
     auto update(const MasterMatrix& M) -> void
     {
+        const auto [nx, np, ny, nz, nw] = basedims;
+
         const auto H   = M.H;
         const auto V   = M.V;
         const auto W   = M.W;
@@ -255,6 +255,8 @@ struct CanonicalMatrix::Impl
 
     auto view() const -> CanonicalMatrixView
     {
+        const auto [nx, np, ny, nz, nw] = basedims;
+
         const auto dims = CanonicalDims{nx, np, ny, nz, nw, ns, nu, nb, nn, nl, nbs, nbu, nns, nnu, nbe, nbi, nne, nni};
         const auto Hss = Hprime.topLeftCorner(ns, ns);
         const auto Hsp = Hprime.topRightCorner(ns, np);
@@ -272,8 +274,8 @@ struct CanonicalMatrix::Impl
     }
 };
 
-CanonicalMatrix::CanonicalMatrix(Index nx, Index np, Index ny, Index nz)
-: pimpl(new Impl(nx, np, ny, nz))
+CanonicalMatrix::CanonicalMatrix(const BaseDims& basedims)
+: pimpl(new Impl(basedims))
 {}
 
 CanonicalMatrix::CanonicalMatrix(const CanonicalMatrix& other)
