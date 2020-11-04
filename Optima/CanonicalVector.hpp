@@ -23,20 +23,51 @@
 
 namespace Optima {
 
-/// Used to represent the canonical solution vector *us = (xs, p, wbs)* in the optimization problem.
-struct CanonicalVectorRef
+/// Used as a base template type for canonical vector types.
+template<typename Vec>
+struct CanonicalVectorBase
 {
-    VectorRef xs;  ///< The constant view to sub-vector *xs*.
-    VectorRef p;   ///< The constant view to sub-vector *p*.
-    VectorRef wbs; ///< The constant view to sub-vector *wbs*.
+    Vec xs;  ///< The vector *xs* in *uc = (xs, xu, p, wbs)*.
+    Vec xu;  ///< The vector *xu* in *uc = (xs, xu, p, wbs)*.
+    Vec p;   ///< The vector *p* in *uc = (xs, xu, p, wbs)*.
+    Vec wbs; ///< The vector *wbs* in *uc = (xs, xu, p, wbs)*.
+
+    /// Construct a CanonicalVectorBase object.
+    CanonicalVectorBase(Index ns, Index nu, Index np, Index nbs)
+    : CanonicalVectorBase(zeros(ns + nu + np + nbs), ns, nu, np, nbs) {}
+
+    /// Construct a CanonicalVectorBase object.
+    template<typename Data>
+    CanonicalVectorBase(Data&& data, Index ns, Index nu, Index np, Index nbs)
+    : xs(data.head(ns)), xu(data.segment(ns, nu)), p(data.segment(ns + nu, np)), wbs(data.tail(nbs)) {}
+
+    /// Construct a CanonicalVectorBase object.
+    CanonicalVectorBase(const Vec& xs, const Vec& xu, const Vec& p, const Vec& wbs)
+    : xs(xs), xu(xu), p(p), wbs(wbs) {}
+
+    /// Construct a CanonicalVectorBase object.
+    CanonicalVectorBase(Vec& xs, Vec& xu, Vec& p, Vec& wbs)
+    : xs(xs), xu(xu), p(p), wbs(wbs) {}
+
+    /// Construct a CanonicalVectorBase object with given immutable CanonicalVectorBase object.
+    template<typename V>
+    CanonicalVectorBase(const CanonicalVectorBase<V>& other)
+    : xs(other.xs), xu(other.xu), p(other.p), wbs(other.wbs) {}
+
+    /// Construct a CanonicalVectorBase object with given mutable CanonicalVectorBase object.
+    template<typename V>
+    CanonicalVectorBase(CanonicalVectorBase<V>& other)
+    : xs(other.xs), xu(other.xu), p(other.p), wbs(other.wbs) {}
+
+    /// Return the size of this CanonicalVectorBase object.
+    auto size() const { return xs.size() + xu.size() + p.size() + wbs.size(); }
+
+    /// Convert this CanonicalVectorBase object into a Vector object.
+    operator Vector() const { Vector res(size()); res << xs, xu, p, wbs; return res; }
 };
 
-/// Used to represent the canonical solution vector *us = (xs, p, wbs)* in the optimization problem.
-struct CanonicalVectorConstRef
-{
-    VectorConstRef xs;  ///< The constant view to sub-vector *xs*.
-    VectorConstRef p;   ///< The constant view to sub-vector *p*.
-    VectorConstRef wbs; ///< The constant view to sub-vector *wbs*.
-};
+using CanonicalVector     = CanonicalVectorBase<Vector>;
+using CanonicalVectorRef  = CanonicalVectorBase<VectorRef>;
+using CanonicalVectorView = CanonicalVectorBase<VectorConstRef>;
 
 } // namespace Optima

@@ -25,13 +25,13 @@ from itertools import product
 from utils.matrices import testing_matrices_A, pascal_matrix
 
 
-def check_canonical_form(canonicalizer, A, J):
+def check_canonical_form(echelonizer, A, J):
     # Auxiliary varibles
     M = concatenate([A, J], 0)
     m, n = M.shape
-    R = canonicalizer.R()
-    Q = canonicalizer.Q()
-    C = canonicalizer.C()
+    R = echelonizer.R()
+    Q = echelonizer.Q()
+    C = echelonizer.C()
 
     # Check R*[A; J]*Q == C
     Cstar = R @ M[:,Q]
@@ -39,28 +39,28 @@ def check_canonical_form(canonicalizer, A, J):
     assert_array_almost_equal(Cstar, C)
 
 
-def check_canonical_ordering(canonicalizer, weigths):
-    n = canonicalizer.numVariables()
-    nb = canonicalizer.numBasicVariables()
-    nn = canonicalizer.numNonBasicVariables()
-    ibasic = canonicalizer.indicesBasicVariables()
-    inonbasic = canonicalizer.indicesNonBasicVariables()
+def check_canonical_ordering(echelonizer, weigths):
+    n = echelonizer.numVariables()
+    nb = echelonizer.numBasicVariables()
+    nn = echelonizer.numNonBasicVariables()
+    ibasic = echelonizer.indicesBasicVariables()
+    inonbasic = echelonizer.indicesNonBasicVariables()
     for i in range(1, nb):
         assert weigths[ibasic[i]] <= weigths[ibasic[i - 1]]
     for i in range(1, nn):
         assert weigths[inonbasic[i]] <= weigths[inonbasic[i - 1]]
 
 
-def check_new_ordering(canonicalizer, Kb, Kn):
-    R = array(canonicalizer.R())  # create a copy of internal reference
-    S = array(canonicalizer.S())  # create a copy of internal reference
-    Q = array(canonicalizer.Q())  # create a copy of internal reference
+def check_new_ordering(echelonizer, Kb, Kn):
+    R = array(echelonizer.R())  # create a copy of internal reference
+    S = array(echelonizer.S())  # create a copy of internal reference
+    Q = array(echelonizer.Q())  # create a copy of internal reference
 
-    canonicalizer.updateOrdering(Kb, Kn)
+    echelonizer.updateOrdering(Kb, Kn)
 
-    Rnew = canonicalizer.R()
-    Snew = canonicalizer.S()
-    Qnew = canonicalizer.Q()
+    Rnew = echelonizer.R()
+    Snew = echelonizer.S()
+    Qnew = echelonizer.Q()
 
     nb = len(Kb)
 
@@ -70,20 +70,20 @@ def check_new_ordering(canonicalizer, Kb, Kn):
     assert_array_almost_equal(Qnew[nb:],  Q[nb:][Kn])
 
 
-def check_canonicalizer(canonicalizer, A, J):
+def check_echelonizer(echelonizer, A, J):
     # Auxiliary variables
-    n = canonicalizer.numVariables()
-    m = canonicalizer.numEquations()
+    n = echelonizer.numVariables()
+    m = echelonizer.numEquations()
 
     #---------------------------------------------------------------------------
     # Check the computed canonical form with certain weights
     #---------------------------------------------------------------------------
     weigths = linspace(1, n, n)
 
-    canonicalizer.updateWithPriorityWeights(J, weigths)
-    canonicalizer.cleanResidualRoundoffErrors()
+    echelonizer.updateWithPriorityWeights(J, weigths)
+    echelonizer.cleanResidualRoundoffErrors()
 
-    check_canonical_form(canonicalizer, A, J)
+    check_canonical_form(echelonizer, A, J)
 
     #---------------------------------------------------------------------------
     # Set weights for the variables to update the basic/non-basic partition
@@ -92,28 +92,28 @@ def check_canonicalizer(canonicalizer, A, J):
 
     Jnew = J + J
 
-    canonicalizer.updateWithPriorityWeights(Jnew, weigths)
-    canonicalizer.cleanResidualRoundoffErrors()
+    echelonizer.updateWithPriorityWeights(Jnew, weigths)
+    echelonizer.cleanResidualRoundoffErrors()
 
-    check_canonical_form(canonicalizer, A, Jnew)
+    check_canonical_form(echelonizer, A, Jnew)
 
-    check_canonical_ordering(canonicalizer, weigths)
+    check_canonical_ordering(echelonizer, weigths)
 
     #---------------------------------------------------------------------------
     # Check changing ordering of basic and non-basic variables work
     #---------------------------------------------------------------------------
-    nb = canonicalizer.numBasicVariables()
-    nn = canonicalizer.numNonBasicVariables()
+    nb = echelonizer.numBasicVariables()
+    nn = echelonizer.numNonBasicVariables()
 
     Kb = list(range(nb))
     Kn = list(range(nn))
 
-    check_new_ordering(canonicalizer, Kb, Kn)  # identical ordering
+    check_new_ordering(echelonizer, Kb, Kn)  # identical ordering
 
     Kb = list(reversed(range(nb)))
     Kn = list(reversed(range(nn)))
 
-    check_new_ordering(canonicalizer, Kb, Kn)  # reversed ordering
+    check_new_ordering(echelonizer, Kb, Kn)  # reversed ordering
 
 
 # Tested number of columns in W = [A; J]
@@ -135,7 +135,7 @@ testdata = product(tested_n,
                    tested_matrices_A,)
 
 @mark.parametrize("args", testdata)
-def test_canonicalizer(args):
+def testEchelonizerExtended(args):
 
     set_printoptions(linewidth=100000, precision=6, floatmode='fixed', threshold=100000)
 
@@ -153,12 +153,12 @@ def test_canonicalizer(args):
     #----------------------------------------------------------------------------------------------
     # WARNING!!
     #
-    # ExtendedCanonicalizer assumes that rows in J are not linearly dependent
+    # EchelonizerExtended assumes that rows in J are not linearly dependent
     # on rows in A. When testing, ensure this does not happen. This assumption
     # should be sensible in most application cases. However, when testing, it
     # may happen that W is produced so that this assumption is not respected.
     #----------------------------------------------------------------------------------------------
 
-    canonicalizer = ExtendedCanonicalizer(A)
-    canonicalizer.cleanResidualRoundoffErrors()
-    check_canonicalizer(canonicalizer, A, J)
+    echelonizer = EchelonizerExtended(A)
+    echelonizer.cleanResidualRoundoffErrors()
+    check_echelonizer(echelonizer, A, J)

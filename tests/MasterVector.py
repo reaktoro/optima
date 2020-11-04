@@ -21,24 +21,18 @@ from pytest import mark
 
 tested_nx  = [5, 10, 20, 50]  # The tested number of x variables
 tested_np  = [0, 5, 10]       # The tested number of p variables
-tested_ny  = [0, 5]           # The tested number of y variables
-tested_nz  = [0, 5]           # The tested number of z variables
+tested_nw  = [5, 8]           # The tested number of w variables
 
 @mark.parametrize("nx",  tested_nx)
 @mark.parametrize("np",  tested_np)
-@mark.parametrize("ny",  tested_ny)
-@mark.parametrize("nz",  tested_nz)
-def test_master_vector(nx, np, ny, nz):
+@mark.parametrize("nw",  tested_nw)
+def testMasterVector(nx, np, nw):
 
-    u = MasterVector(nx, np, ny, nz)
+    u = MasterVector(nx, np, nw)
 
     u.x = random.rand(nx)
     u.p = random.rand(np)
-    u.y = random.rand(ny)
-    u.z = random.rand(nz)
+    u.w = random.rand(nw)
 
-    assert all(u.data == concatenate([u.x, u.p, u.y, u.z]))
+    assert all(u.array() == concatenate([u.x, u.p, u.w]))
 
-    u.data = random.rand(len(u.data))
-
-    assert all(u.data == concatenate([u.x, u.p, u.y, u.z]))
