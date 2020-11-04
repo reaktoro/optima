@@ -21,19 +21,13 @@ from numpy.testing import assert_almost_equal
 from pytest import mark, raises
 from utils.matrices import *
 
-tested_nx  = [10]  # The tested number of x variables
-tested_np  = [0, 5]       # The tested number of p variables
-tested_ny  = [2, 5]       # The tested number of y variables
-tested_nz  = [0, 2]        # The tested number of z variables
-tested_nl  = [0, 1]        # The tested number of linearly dependent rows in Ax
-tested_nu  = [0, 1]        # The tested number of unstable variables
 
-# tested_nx  = [5, 10, 20, 50]  # The tested number of x variables
-# tested_np  = [0, 5, 10]       # The tested number of p variables
-# tested_ny  = [2, 5, 10]       # The tested number of y variables
-# tested_nz  = [0, 2, 5]        # The tested number of z variables
-# tested_nl  = [0, 1, 2]        # The tested number of linearly dependent rows in Ax
-# tested_nu  = [0, 1, 2]        # The tested number of unstable variables
+tested_nx  = [5, 10, 20]  # The tested number of x variables
+tested_np  = [0, 5, 10]   # The tested number of p variables
+tested_ny  = [2, 5, 10]   # The tested number of y variables
+tested_nz  = [0, 2, 5]    # The tested number of z variables
+tested_nl  = [0, 1, 2]    # The tested number of linearly dependent rows in Ax
+tested_nu  = [0, 1, 2]    # The tested number of unstable variables
 
 @mark.parametrize("nx", tested_nx)
 @mark.parametrize("np", tested_np)
@@ -52,17 +46,6 @@ def testCanonicalMatrix(nx, np, ny, nz, nl, nu):
 
     # Ensure nl < ny
     if ny <= nl: return
-
-    # # H = createMatrixViewHxxHxp(nx, np)
-    # H = createMatrixViewH(nx, np)
-    # V = createMatrixViewV(nx, np)
-    # W = createMatrixViewW(nx, np, ny, nz, nl)
-
-    # Wbar = createMatrixViewWbar(W)
-    # js, ju = createStableUnstableIndices(nu, Wbar)
-
-    # ju = Wbar.jn[:nu]  # the first nu` non-basic variables are considered unstable
-    # js = array(set(arange(nx)) - set(ju))
 
     M = createMasterMatrix(basedims, nl, nu)
 
@@ -100,10 +83,6 @@ def testCanonicalMatrix(nx, np, ny, nz, nl, nu):
     js = Mbar.js
     ju = Mbar.ju
 
-    print(f"js = \n{js}")
-    print(f"Mbar.Hss = \n{Mbar.Hss}")
-    print(f"M.H.Hxx[:, js][js, :] = \n{M.H.Hxx[:, js][js, :]}")
-    print(f"M.H.Hxx = \n{M.H.Hxx}")
     assert all(Mbar.Hss == M.H.Hxx[:, js][js, :])
     assert all(Mbar.Hsp == M.H.Hxp[js, :])
 

@@ -21,19 +21,13 @@ from numpy.testing import assert_almost_equal
 from pytest import approx, mark
 from utils.matrices import createMasterMatrix
 
+
 tested_nx  = [15, 20]  # The tested number of x variables
 tested_np  = [0, 5]    # The tested number of p variables
 tested_ny  = [5, 10]   # The tested number of y variables
 tested_nz  = [0, 5]    # The tested number of z variables
 tested_nl  = [0, 2]    # The tested number of linearly dependent rows in Ax
 tested_nu  = [0, 2]    # The tested number of unstable variables
-
-# tested_nx  = [10]  # The tested number of x variables
-# tested_np  = [2]    # The tested number of p variables
-# tested_ny  = [5]   # The tested number of y variables
-# tested_nz  = [2]    # The tested number of z variables
-# tested_nl  = [2]    # The tested number of linearly dependent rows in Ax
-# tested_nu  = [0]    # The tested number of unstable variables
 
 # Tested cases for the linear solver methods
 tested_methods = [
@@ -49,7 +43,7 @@ tested_methods = [
 @mark.parametrize("nl"    , tested_nl)
 @mark.parametrize("nu"    , tested_nu)
 @mark.parametrize("method", tested_methods)
-def test_linear_solver(nx, np, ny, nz, nl, nu, method):
+def testLinearSolver(nx, np, ny, nz, nl, nu, method):
 
     basedims = BaseDims(nx, np, ny, nz)
 
