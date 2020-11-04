@@ -21,19 +21,17 @@
 #include <memory>
 
 // Optima includes
-#include <Optima/Index.hpp>
-#include <Optima/Matrix.hpp>
+#include <Optima/CanonicalVector.hpp>
+#include <Optima/CanonicalMatrix.hpp>
 
 namespace Optima {
-
-// Forward declarations
-class CanonicalVector;
-class MasterMatrix;
 
 /// The arguments in method @ref ResidualVector::update.
 struct ResidualVectorUpdateArgs
 {
-    MasterMatrix const& M;
+    CanonicalMatrixView Mc;
+    MatrixConstRef Wx;
+    MatrixConstRef Wp;
     VectorConstRef x;
     VectorConstRef p;
     VectorConstRef y;
@@ -69,7 +67,7 @@ public:
     auto update(ResidualVectorUpdateArgs args) -> void;
 
     /// Return the residual vector as a canonical vector.
-    auto canonicalVector() const -> CanonicalVector;
+    auto canonicalVector() const -> CanonicalVectorView;
 };
 
 } // namespace Optima

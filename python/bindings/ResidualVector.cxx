@@ -21,15 +21,15 @@
 namespace py = pybind11;
 
 // Optima includes
-#include <Optima/MasterMatrix.hpp>
-#include <Optima/MasterVector.hpp>
 #include <Optima/ResidualVector.hpp>
 using namespace Optima;
 
 void exportResidualVector(py::module& m)
 {
     auto update = [](ResidualVector& self,
-        MasterMatrix const& M,
+        CanonicalMatrixView Mc,
+        MatrixConstRef Wx,
+        MatrixConstRef Wp,
         VectorConstRef x,
         VectorConstRef p,
         VectorConstRef y,
@@ -39,13 +39,15 @@ void exportResidualVector(py::module& m)
         VectorConstRef b,
         VectorConstRef h)
     {
-        self.update({M, x, p, y, z, g, v, b, h});
+        self.update({Mc, Wx, Wp, x, p, y, z, g, v, b, h});
     };
 
     py::class_<ResidualVector>(m, "ResidualVector")
         .def(py::init<Index, Index, Index, Index>())
         .def(py::init<const ResidualVector&>())
         .def("update", update)
-        .def("canonicalVector", &ResidualVector::canonicalVector)
+        .def("canonicalVector", &ResidualVector::canonicalVector,
+            py::keep_alive<1, 0>(), // keep this object (0) alive while returned object (1) exists
+            py::keep_alive<0, 1>()) // keep returned object (1) alive while this object (0) exists
         ;
 }

@@ -19,34 +19,23 @@ from optima import *
 from numpy import *
 from numpy.testing import assert_almost_equal
 from pytest import approx, mark
+from utils.matrices import *
 
-tested_nx  = [5, 10, 20, 50]  # The tested number of x variables
-tested_np  = [0, 5, 10]       # The tested number of p variables
-tested_ny  = [2, 5, 10]       # The tested number of y variables
-tested_nz  = [0, 2, 5]        # The tested number of z variables
-tested_nl  = [0, 1, 2]        # The tested number of linearly dependent rows in Ax
 
-# The tested indices of unstable basic variables in x
-tested_junit = [
-    [],
-    [1]
-]
+tested_nx  = [10, 15]  # The tested number of x variables
+tested_np  = [0, 5]    # The tested number of p variables
+tested_ny  = [5, 8]    # The tested number of y variables
+tested_nz  = [0, 2]    # The tested number of z variables
+tested_nl  = [0, 2]    # The tested number of linearly dependent rows in Ax
+tested_nu  = [0, 2]    # The tested number of unstable variables
 
-# The tested indices of unstable variables in x
-tested_ju = [
-    [],
-    [1],
-    [1, 2, 3]
-]
-
-@mark.parametrize("nx",  tested_nx)
-@mark.parametrize("np",  tested_np)
-@mark.parametrize("ny",  tested_ny)
-@mark.parametrize("nz",  tested_nz)
-@mark.parametrize("nl",  tested_nl)
-@mark.parametrize("junit", tested_junit)
-@mark.parametrize("ju",  tested_ju)
-def test_residual_vector(nx, np, ny, nz, nl, junit, ju, createMasterMatrix):
+@mark.parametrize("nx", tested_nx)
+@mark.parametrize("np", tested_np)
+@mark.parametrize("ny", tested_ny)
+@mark.parametrize("nz", tested_nz)
+@mark.parametrize("nl", tested_nl)
+@mark.parametrize("nu", tested_nu)
+def testResidualVector(nx, np, ny, nz, nl, nu):
 
     # Ensure nx is larger than np and (ny + nz)
     if nx < np or nx < ny + nz: return
@@ -54,7 +43,13 @@ def test_residual_vector(nx, np, ny, nz, nl, junit, ju, createMasterMatrix):
     # Ensure nl < ny
     if ny <= nl: return
 
-    M = createMasterMatrix(nx, np, ny, nz, nl, junit, ju)
+    M = createMasterMatrix(nx, np, ny, nz, nl, nu)
+
+    Mbar = createCanonicalMatrixView(nx, np, ny, nz, M)
+
+    Wx, Wp = M.W.Wx, M.W.Wp
+    Ax, Jx = vsplit(Wx, [ny])
+    Ap, Jp = vsplit(Wp, [ny])
 
     F = ResidualVector(nx, np, ny, nz)
 
@@ -67,18 +62,18 @@ def test_residual_vector(nx, np, ny, nz, nl, junit, ju, createMasterMatrix):
     b = random.rand(ny)
     h = random.rand(nz)
 
-    F.update(M, x, p, y, z, g, v, b, h)
-
-    Mbar = M.canonicalForm()
+    F.update(Mbar, Wx, Wp, x, p, y, z, g, v, b, h)
 
     dims = Mbar.dims
     nbs = dims.nbs
 
     js, ju  = Mbar.js, Mbar.ju
 
-    R = Mbar.R
+    As = Ax[:, js]
+    Au = Ax[:, ju]
+    Js = Jx[:, js]
 
-    As, Au, Ap, Js = Mbar.As, Mbar.Au, Mbar.Ap, Mbar.Js
+    Rbs = Mbar.Rbs
 
     ax = zeros(nx)
     ax[js] = -(g[js] + As.T @ y + Js.T @ z)
@@ -87,10 +82,10 @@ def test_residual_vector(nx, np, ny, nz, nl, junit, ju, createMasterMatrix):
     ay = -(As @ x[js] + Au @ x[ju] + Ap @ p - b)
     az = -h
     aw = concatenate([ay, az])
-    awbar = R @ aw
+    awbs = Rbs @ aw
 
     a = F.canonicalVector()
 
     assert_almost_equal(a.xs, ax[js])
     assert_almost_equal(a.p, ap)
-    assert_almost_equal(a.wbs, awbar[:nbs])
+    assert_almost_equal(a.wbs, awbs)

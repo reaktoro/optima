@@ -54,7 +54,7 @@ struct ResidualVector::Impl
 
     auto update(ResidualVectorUpdateArgs args) -> void
     {
-        const auto [M, x, p, y, z, g, v, b, h] = args;
+        const auto [Mc, Wx, Wp, x, p, y, z, g, v, b, h] = args;
 
         assert(x.size() == nx);
         assert(p.size() == np);
@@ -65,26 +65,31 @@ struct ResidualVector::Impl
         assert(b.size() == ny);
         assert(h.size() == nz);
 
-        const auto Mbar = M.canonicalForm();
-
-        dims = Mbar.dims;
+        dims = Mc.dims;
 
         const auto ns  = dims.ns;
         const auto nu  = dims.nu;
         const auto nbs = dims.nbs;
         const auto nns = dims.nns;
+        const auto ny  = dims.ny;
+        const auto nz  = dims.nz;
 
-        const auto js = Mbar.js;
-        const auto ju = Mbar.ju;
+        const auto js = Mc.js;
+        const auto ju = Mc.ju;
 
-        const auto As = Mbar.As;
-        const auto Au = Mbar.Au;
-        const auto Js = Mbar.Js;
-        const auto Jp = Mbar.Jp;
+        const auto Ax = Wx.topRows(ny);
+        const auto Ap = Wp.topRows(ny);
+        const auto Jx = Wx.bottomRows(nz);
+        const auto Jp = Wp.bottomRows(nz);
 
-        const auto Rbs   = Mbar.R.topRows(nbs);
-        const auto Sbsns = Mbar.Sbn.topLeftCorner(nbs, nns);
-        const auto Sbsp  = Mbar.Sbp.topRows(nbs);
+        const auto As = Ax(all, js);
+        const auto Au = Ax(all, ju);
+
+        const auto Js = Jx(all, js);
+
+        const auto Rbs   = Mc.Rbs;
+        const auto Sbsns = Mc.Sbsns;
+        const auto Sbsp  = Mc.Sbsp;
 
         const auto gs = g(js);
 
@@ -108,15 +113,17 @@ struct ResidualVector::Impl
         awstar.head(ny) = b - Au*xu;
         awstar.tail(nz) = Js*xs + Jp*p - h;
 
-        awbs = multiplyMatrixVectorWithoutResidualRoundOffError(Rbs, awstar);
+        awbs = multiplyMatrixViewVectorWithoutResidualRoundOffError(Rbs, awstar);
         awbs.noalias() -= xbs + Sbsns*xns + Sbsp*args.p;
     }
 
-    auto canonicalVector() const -> CanonicalVector
+    auto canonicalVector() const -> CanonicalVectorView
     {
         const auto ns = dims.ns;
+        const auto nu = dims.nu;
         const auto as = asu.head(ns);
-        return {as, ap, awbs};
+        const auto au = asu.tail(nu);
+        return {as, au, ap, awbs};
     }
 };
 
@@ -142,7 +149,7 @@ auto ResidualVector::update(ResidualVectorUpdateArgs args) -> void
     pimpl->update(args);
 }
 
-auto ResidualVector::canonicalVector() const -> CanonicalVector
+auto ResidualVector::canonicalVector() const -> CanonicalVectorView
 {
     return pimpl->canonicalVector();
 }
