@@ -29,7 +29,7 @@ namespace Optima {
 /// Used to describe a matrix \eq{\begin{bmatrix}A\\J\end{bmatrix}} in canonical form.
 /// The canonical form of a matrix \eq{A} is represented as:
 /// \eqq{C = RAQ = \begin{bmatrix}I & S\end{bmatrix},}
-/// where \eq{Q} is a permutation matrix, and \eq{R} is the *canonicalizer
+/// where \eq{Q} is a permutation matrix, and \eq{R} is the *echelonizer
 /// matrix* of \eq{A}. The matrices \eq{A} and \eq{J} have a behavior in which
 /// \eq{A} is always constant, whereas \eq{J} varies more often. This more
 /// advanced canonicalization class permits a more efficient update of the
@@ -39,28 +39,28 @@ namespace Optima {
 /// other hand, is related to the linear equality constraint whose coefficient
 /// matrix remains the same throughout the calculation.
 ///
-/// @warning ExtendedCanonicalizer assumes that rows in *J* are not linearly
+/// @warning EchelonizerExtended assumes that rows in *J* are not linearly
 /// dependent on rows in *A* and vice-versa. This assumption should be sensible
 /// in most application cases. However, when testing, it may happen that *W =
 /// [A; J]* is produced so that this assumption is not respected.
 ///----------------------------------------------------------------------------------------------
-class ExtendedCanonicalizer
+class EchelonizerExtended
 {
 public:
-    /// Construct a default ExtendedCanonicalizer instance.
-    ExtendedCanonicalizer();
+    /// Construct a default EchelonizerExtended instance.
+    EchelonizerExtended();
 
-    /// Construct a ExtendedCanonicalizer instance with given invariable matrix *A* in *W = [A; J]*.
-    ExtendedCanonicalizer(MatrixConstRef A);
+    /// Construct a EchelonizerExtended instance with given constant matrix *A* in *W = [A; J]*.
+    EchelonizerExtended(MatrixConstRef A);
 
-    /// Construct a copy of a ExtendedCanonicalizer instance.
-    ExtendedCanonicalizer(const ExtendedCanonicalizer& other);
+    /// Construct a copy of a EchelonizerExtended instance.
+    EchelonizerExtended(const EchelonizerExtended& other);
 
-    /// Destroy this ExtendedCanonicalizer instance.
-    virtual ~ExtendedCanonicalizer();
+    /// Destroy this EchelonizerExtended instance.
+    virtual ~EchelonizerExtended();
 
-    /// Assign a ExtendedCanonicalizer instance to this.
-    auto operator=(ExtendedCanonicalizer other) -> ExtendedCanonicalizer&;
+    /// Assign a EchelonizerExtended instance to this.
+    auto operator=(EchelonizerExtended other) -> EchelonizerExtended&;
 
     /// Return the number of variables.
     auto numVariables() const -> Index;
@@ -77,7 +77,7 @@ public:
     /// Return the matrix \eq{S} of the canonicalization.
     auto S() const -> MatrixConstRef;
 
-    /// Return the canonicalizer matrix \eq{R}.
+    /// Return the echelonizer matrix \eq{R}.
     auto R() const -> MatrixConstRef;
 
     /// Return the permutation matrix \eq{Q} of the canonicalization.

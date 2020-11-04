@@ -15,20 +15,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include "ExtendedCanonicalizer.hpp"
+#include "EchelonizerExtended.hpp"
 
 // Optima includes
-#include <Optima/Canonicalizer.hpp>
+#include <Optima/Echelonizer.hpp>
 
 namespace Optima {
 
-struct ExtendedCanonicalizer::Impl
+struct EchelonizerExtended::Impl
 {
-    /// The canonicalizer for matrix A
-    Canonicalizer canonicalizerA;
+    /// The echelonizer for matrix A
+    Echelonizer echelonizerA;
 
-    /// The canonicalizer for matrix J
-    Canonicalizer canonicalizerJ;
+    /// The echelonizer for matrix J
+    Echelonizer echelonizerJ;
 
     /// The matrix R in the canonicalization R*[A; J]*Q = [I S]
     Matrix R;
@@ -51,19 +51,19 @@ struct ExtendedCanonicalizer::Impl
     /// subtract sigma, so that residual round-off errors are eliminated.
     double sigma;
 
-    /// Construct a default ExtendedCanonicalizer::Impl object
+    /// Construct a default EchelonizerExtended::Impl object
     Impl()
     {
     }
 
-    /// Construct a ExtendedCanonicalizer::Impl object with given matrix A
+    /// Construct a EchelonizerExtended::Impl object with given matrix A
     Impl(MatrixConstRef A)
     {
-        // Initialize the canonicalizer for A (wait until J is provided to initialize canonicalizerJ)
-        canonicalizerA.compute(A);
-        R = canonicalizerA.R();
-        S = canonicalizerA.S();
-        Q = canonicalizerA.Q();
+        // Initialize the echelonizer for A (wait until J is provided to initialize echelonizerJ)
+        echelonizerA.compute(A);
+        R = echelonizerA.R();
+        S = echelonizerA.S();
+        Q = echelonizerA.Q();
 
         // Compute sigma for given matrix A
         sigma = A.size() ? A.cwiseAbs().maxCoeff() : 0.0;
@@ -73,25 +73,25 @@ struct ExtendedCanonicalizer::Impl
     /// Update the canonical form with given variable matrix J in W = [A; J] and priority weights for the variables.
     auto updateWithPriorityWeights(MatrixConstRef J, VectorConstRef weights) -> void
     {
-        canonicalizerA.updateWithPriorityWeights(weights);
+        echelonizerA.updateWithPriorityWeights(weights);
 
         if(J.size() == 0)
         {
-            R = canonicalizerA.R();
-            S = canonicalizerA.S();
-            Q = canonicalizerA.Q();
+            R = echelonizerA.R();
+            S = echelonizerA.S();
+            Q = echelonizerA.Q();
             return;
         }
 
-        const auto& RA = canonicalizerA.R();
-        const auto& SA = canonicalizerA.S();
-        const auto& QA = canonicalizerA.Q();
+        const auto& RA = echelonizerA.R();
+        const auto& SA = echelonizerA.S();
+        const auto& QA = echelonizerA.Q();
 
-        const auto n = canonicalizerA.numVariables();
-        const auto nbA = canonicalizerA.numBasicVariables();
-        const auto nnA = canonicalizerA.numNonBasicVariables();
+        const auto n = echelonizerA.numVariables();
+        const auto nbA = echelonizerA.numBasicVariables();
+        const auto nnA = echelonizerA.numNonBasicVariables();
 
-        const auto mA = canonicalizerA.numEquations();
+        const auto mA = echelonizerA.numEquations();
         const auto mJ = J.rows();
         const auto m = mA + mJ;
 
@@ -101,15 +101,15 @@ struct ExtendedCanonicalizer::Impl
         J2 -= J1 * SA;
 
         Vector w = weights(QA.tail(nnA));  // w has the weights only for non-basic variables wrt A
-        canonicalizerJ.compute(J2);
-        canonicalizerJ.updateWithPriorityWeights(w);
+        echelonizerJ.compute(J2);
+        echelonizerJ.updateWithPriorityWeights(w);
 
-        const auto nbJ = canonicalizerJ.numBasicVariables();
-        const auto nnJ = canonicalizerJ.numNonBasicVariables();
+        const auto nbJ = echelonizerJ.numBasicVariables();
+        const auto nnJ = echelonizerJ.numNonBasicVariables();
 
-        const auto RJ = canonicalizerJ.R();
-        const auto SJ = canonicalizerJ.S();
-        const auto QJ = canonicalizerJ.Q();
+        const auto RJ = echelonizerJ.R();
+        const auto SJ = echelonizerJ.S();
+        const auto QJ = echelonizerJ.Q();
 
         Q.resize(n);
         Q.head(nbA) = QA.head(nbA);
@@ -231,65 +231,65 @@ struct ExtendedCanonicalizer::Impl
     }
 };
 
-ExtendedCanonicalizer::ExtendedCanonicalizer()
+EchelonizerExtended::EchelonizerExtended()
 : pimpl(new Impl())
 {
 }
 
-ExtendedCanonicalizer::ExtendedCanonicalizer(MatrixConstRef A)
+EchelonizerExtended::EchelonizerExtended(MatrixConstRef A)
 : pimpl(new Impl(A))
 {
 }
 
-ExtendedCanonicalizer::ExtendedCanonicalizer(const ExtendedCanonicalizer& other)
+EchelonizerExtended::EchelonizerExtended(const EchelonizerExtended& other)
 : pimpl(new Impl(*other.pimpl))
 {}
 
-ExtendedCanonicalizer::~ExtendedCanonicalizer()
+EchelonizerExtended::~EchelonizerExtended()
 {}
 
-auto ExtendedCanonicalizer::operator=(ExtendedCanonicalizer other) -> ExtendedCanonicalizer&
+auto EchelonizerExtended::operator=(EchelonizerExtended other) -> EchelonizerExtended&
 {
     pimpl = std::move(other.pimpl);
     return *this;
 }
 
-auto ExtendedCanonicalizer::numVariables() const -> Index
+auto EchelonizerExtended::numVariables() const -> Index
 {
     return pimpl->Q.rows();
 }
 
-auto ExtendedCanonicalizer::numEquations() const -> Index
+auto EchelonizerExtended::numEquations() const -> Index
 {
-    return pimpl->canonicalizerA.numEquations() + pimpl->canonicalizerJ.numEquations();
+    return pimpl->echelonizerA.numEquations() + pimpl->echelonizerJ.numEquations();
 }
 
-auto ExtendedCanonicalizer::numBasicVariables() const -> Index
+auto EchelonizerExtended::numBasicVariables() const -> Index
 {
     return pimpl->S.rows();
 }
 
-auto ExtendedCanonicalizer::numNonBasicVariables() const -> Index
+auto EchelonizerExtended::numNonBasicVariables() const -> Index
 {
     return numVariables() - numBasicVariables();
 }
 
-auto ExtendedCanonicalizer::S() const -> MatrixConstRef
+auto EchelonizerExtended::S() const -> MatrixConstRef
 {
     return pimpl->S;
 }
 
-auto ExtendedCanonicalizer::R() const -> MatrixConstRef
+auto EchelonizerExtended::R() const -> MatrixConstRef
 {
     return pimpl->R;
 }
 
-auto ExtendedCanonicalizer::Q() const -> IndicesConstRef
+auto EchelonizerExtended::Q() const -> IndicesConstRef
 {
     return pimpl->Q;
 }
 
-auto ExtendedCanonicalizer::C() const -> Matrix
+auto EchelonizerExtended::C() const -> Matrix
 {
     const auto n = numVariables();
     const auto m = numEquations();
@@ -301,29 +301,29 @@ auto ExtendedCanonicalizer::C() const -> Matrix
     return res;
 }
 
-auto ExtendedCanonicalizer::indicesBasicVariables() const -> IndicesConstRef
+auto EchelonizerExtended::indicesBasicVariables() const -> IndicesConstRef
 {
     const auto nb = numBasicVariables();
     return pimpl->Q.head(nb);
 }
 
-auto ExtendedCanonicalizer::indicesNonBasicVariables() const -> IndicesConstRef
+auto EchelonizerExtended::indicesNonBasicVariables() const -> IndicesConstRef
 {
     const auto nn = numNonBasicVariables();
     return pimpl->Q.tail(nn);
 }
 
-auto ExtendedCanonicalizer::updateWithPriorityWeights(MatrixConstRef J, VectorConstRef weights) -> void
+auto EchelonizerExtended::updateWithPriorityWeights(MatrixConstRef J, VectorConstRef weights) -> void
 {
     pimpl->updateWithPriorityWeights(J, weights);
 }
 
-auto ExtendedCanonicalizer::updateOrdering(IndicesConstRef Kb, IndicesConstRef Kn) -> void
+auto EchelonizerExtended::updateOrdering(IndicesConstRef Kb, IndicesConstRef Kn) -> void
 {
     pimpl->updateOrdering(Kb, Kn);
 }
 
-auto ExtendedCanonicalizer::cleanResidualRoundoffErrors() -> void
+auto EchelonizerExtended::cleanResidualRoundoffErrors() -> void
 {
     pimpl->cleanResidualRoundoffErrors();
 }
