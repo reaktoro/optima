@@ -21,52 +21,57 @@ from numpy import *
 from utils.data import formula_matrix
 
 
-def createMatrixViewH(nx, np, diagHxx=False):
+def createMatrixViewH(basedims, diagHxx=False):
     """Create a MatrixViewH object with given parameters
 
     Args:
-        nx (int): The number of rows and columns in Hxx
-        np (int): The number of columns in Hxp
+        basedims (BaseDims): The dimensions in a base optimization problem
         diagHxx (bool, optional): The flag indicating Hxx is diagonal or not. Defaults to False.
 
     Returns:
         MatrixViewH: A MatrixViewH object for testing purposes.
     """
 
+    nx = basedims.nx
+    np = basedims.np
     Hxx = diag(random.rand(nx)) if diagHxx else random.rand(nx, nx)
     Hxp = random.rand(nx, np)
     return MatrixViewH(Hxx, Hxp, diagHxx)
 
 
-def createMatrixViewV(nx, np):
+def createMatrixViewV(basedims):
     """Create a MatrixViewV object with given parameters
 
     Args:
-        nx (int): The number of columns in Vpx
-        np (int): The number of rows/columns in Vpp
+        basedims (BaseDims): The dimensions in a base optimization problem
 
     Returns:
         MatrixViewV: A MatrixViewV object for testing purposes.
     """
 
+    nx = basedims.nx
+    np = basedims.np
     Vpx = random.rand(np, nx)
     Vpp = random.rand(np, np)
     return MatrixViewV(Vpx, Vpp)
 
 
-def createMatrixViewW(nx, np, ny, nz, nl=0):
+def createMatrixViewW(basedims, nl=0):
     """Create a MatrixViewW object with given parameters
 
     Args:
-        nx (int): The number of columns in Wx = [Ax; Jx]
-        np (int): The number of columns in Wp = [Ap; Jp]
-        ny (int): The number of rows in Ax and Ap
-        nz (int): The number of rows in Jx and Jp
+        basedims (BaseDims): The dimensions in a base optimization problem
         nl (int, optional): The number of zero rows at the bottom of Ax. Defaults to 0.
 
     Returns:
         MatrixViewW: A MatrixViewW object for testing purposes.
     """
+
+    nx = basedims.nx
+    np = basedims.np
+    ny = basedims.ny
+    nz = basedims.nz
+
     Ax = random.rand(ny, nx)
     Ap = random.rand(ny, np)
     Jx = random.rand(nz, nx)
@@ -80,16 +85,21 @@ def createMatrixViewW(nx, np, ny, nz, nl=0):
     return MatrixViewW(Wx, Wp)
 
 
-def createMatrixViewRWQ(ny, W):
+def createMatrixViewRWQ(basedims, W):
     """Create a MatrixViewRWQ object with given parameters
 
     Args:
-        ny (int): The number of rows in Ax and Ap
+        basedims (BaseDims): The dimensions in a base optimization problem
         W (array): The matrix W = [Wx Wp] = [Ax Ap; Jx Jp]
 
     Returns:
         MatrixViewRWQ: A MatrixViewRWQ object for testing purposes.
     """
+
+    nx = basedims.nx
+    np = basedims.np
+    ny = basedims.ny
+    nz = basedims.nz
 
     Ax, Jx = vsplit(W.Wx, [ny])
     Ap, Jp = vsplit(W.Wp, [ny])
@@ -107,11 +117,11 @@ def createMatrixViewRWQ(ny, W):
     return RWQ
 
 
-def createIndicesStableUnstableVariables(nx, nu, RWQ):
+def createIndicesStableUnstableVariables(basedims, nu, RWQ):
     """Return the indices of the stable and unstable variables
 
     Args:
-        nx (int): The number of variables in x
+        basedims (BaseDims): The dimensions in a base optimization problem
         nu (int): The number of unstable non-basic variables in x
         RWQ (MatrixViewRWQ): The echelon matrix RWQ of W
 
@@ -122,6 +132,7 @@ def createIndicesStableUnstableVariables(nx, nu, RWQ):
 
     jn = RWQ.jn  # the indices of the non-basic variables
 
+    nx = basedims.nx
     jx = range(nx)
     ju = jn[:nu]  # the indices of non-basic unstable variables
     js = array(list(set(jx) - set(ju)))
@@ -129,14 +140,11 @@ def createIndicesStableUnstableVariables(nx, nu, RWQ):
     return js, ju
 
 
-def createMasterMatrix(nx, np, ny, nz, nl=0, nu=0, diagHxx=False):
+def createMasterMatrix(basedims, nl=0, nu=0, diagHxx=False):
     """Create a MasterMatrix object with given parameters
 
     Args:
-        nx (int): The number of columns in Wx = [Ax; Jx]
-        np (int): The number of columns in Wp = [Ap; Jp]
-        ny (int): The number of rows in Ax and Ap
-        nz (int): The number of rows in Jx and Jp
+        basedims (BaseDims): The dimensions in a base optimization problem
         nl (int, optional): The number of zero rows at the bottom of Ax. Defaults to 0.
         nu (int, optional): The number of unstable non-basic variables in x. Defaults to 0.
         diagHxx (bool, optional): The flag indicating Hxx is diagonal or not. Defaults to False.
@@ -145,34 +153,31 @@ def createMasterMatrix(nx, np, ny, nz, nl=0, nu=0, diagHxx=False):
         MasterMatrix: A MasterMatrix object for testing purposes.
     """
 
-    H = createMatrixViewH(nx, np, diagHxx)
-    V = createMatrixViewV(nx, np)
-    W = createMatrixViewW(nx, np, ny, nz, nl)
+    H = createMatrixViewH(basedims, diagHxx)
+    V = createMatrixViewV(basedims)
+    W = createMatrixViewW(basedims, nl)
 
-    RWQ = createMatrixViewRWQ(ny, W)
+    RWQ = createMatrixViewRWQ(basedims, W)
 
-    js, ju = createIndicesStableUnstableVariables(nx, nu, RWQ)
+    js, ju = createIndicesStableUnstableVariables(basedims, nu, RWQ)
 
     M = MasterMatrix(H, V, W, RWQ, js, ju)
 
     return M
 
 
-def createCanonicalMatrixView(nx, np, ny, nz, M):
+def createCanonicalMatrixView(basedims, M):
     """Create a CanonicalMatrixView object with given parameters
 
     Args:
+        basedims (BaseDims): The dimensions in a base optimization problem
         M (MasterMatrix): The master matrix for which its canonical form is being computed.
-        nx (int): The number of columns in Wx = [Ax; Jx]
-        np (int): The number of columns in Wp = [Ap; Jp]
-        ny (int): The number of rows in Ax and Ap
-        nz (int): The number of rows in Jx and Jp
 
     Returns:
         CanonicalMatrixView: A CanonicalMatrixView object for testing purposes.
     """
 
-    Mc = CanonicalMatrix(nx, np, ny, nz)
+    Mc = CanonicalMatrix(basedims)
     Mc.update(M)
 
     return Mc.view()

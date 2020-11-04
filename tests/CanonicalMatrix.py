@@ -64,7 +64,7 @@ def testCanonicalMatrix(nx, np, ny, nz, nl, nu):
     # ju = Wbar.jn[:nu]  # the first nu` non-basic variables are considered unstable
     # js = array(set(arange(nx)) - set(ju))
 
-    M = createMasterMatrix(nx, np, ny, nz, nl, nu)
+    M = createMasterMatrix(basedims, nl, nu)
 
     H = M.H
     V = M.V

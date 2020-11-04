@@ -52,7 +52,9 @@ tested_methods = [
 def test_linear_solver(nx, np, ny, nz, nl, nu, method):
 
     basedims = BaseDims(nx, np, ny, nz)
+
     nw = basedims.nw
+    nt = basedims.nt
 
     # Ensure nx is larger than np and nw
     if nx < np or nx < nw: return
@@ -65,9 +67,7 @@ def test_linear_solver(nx, np, ny, nz, nl, nu, method):
 
     diagHxx = True if method == LinearSolverMethod.Rangespace else False
 
-    M = createMasterMatrix(nx, np, ny, nz, nl, nu, diagHxx)
-
-    t = nx + np + ny + nz
+    M = createMasterMatrix(basedims, nl, nu, diagHxx)
 
     uexp = MasterVector(nx, np, nw)
     uexp.x = linspace(1, nx, nx)
