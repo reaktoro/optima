@@ -25,65 +25,52 @@
 
 namespace Optima {
 
-/// The requirements in the evaluation of the objective function.
-struct ObjectiveRequirement
-{
-    bool f   = true; ///< The flag indicating if the objective function *f(x, p)* needs to be evaluated.
-    bool fx  = true; ///< The flag indicating if the gradient function *fx(x, p)* needs to be evaluated.
-    bool fxx = true; ///< The flag indicating if the Jacobian function *fxx(x, p)* needs to be evaluated.
-    bool fxp = true; ///< The flag indicating if the Jacobian function *fxp(x, p)* needs to be evaluated.
-};
-
 /// The result of the evaluation of an objective function.
 /// @see ObjectiveFunction
 struct ObjectiveResult
 {
-    double& f;                     ///< The evaluated objective function *f(x, p)*.
-    VectorRef fx;                  ///< The evaluated gradient of the objective function *f(x, p)* with respect to *x*.
-    MatrixRef fxx;                 ///< The evaluated Jacobian of the gradient function *fx(x, p)* with respect to *x*, i.e., the Hessian of *f(x, p)* with respect to *x*.
-    MatrixRef fxp;                 ///< The evaluated Jacobian of the gradient function *fx(x, p)* with respect to *p*.
-    ObjectiveRequirement requires; ///< The requirements in the evaluation of the objective function.
-    bool failed = false;           ///< The boolean flag that indicates if the objective function evaluation failed.
-
-    /// Construct an ObjectiveResult object.
-    ObjectiveResult(double& f, VectorRef fx, MatrixRef fxx, MatrixRef fxp) : f(f), fx(fx), fxx(fxx), fxp(fxp) {}
+    double& f;     ///< The evaluated objective function *f(x, p)*.
+    VectorRef fx;  ///< The evaluated gradient of *f(x, p)* with respect to *x*.
+    MatrixRef fxx; ///< The evaluated Jacobian *fx(x, p)* with respect to *x*.
+    MatrixRef fxp; ///< The evaluated Jacobian *fx(x, p)* with respect to *p*.
+    bool& diagfxx; ///< The flag indicating whether `fxx` is diagonal.
 };
 
 /// The result of the evaluation of an objective function in Python.
 /// @see ObjectiveFunction4py
 struct ObjectiveResult4py
 {
-    double f;                      ///< The evaluated objective function *f(x, p)*.
-    VectorRef fx;                  ///< The evaluated gradient of the objective function *f(x, p)* with respect to *x*.
-    MatrixRef4py fxx;              ///< The evaluated Jacobian of the gradient function *fx(x, p)* with respect to *x*, i.e., the Hessian of *f(x, p)* with respect to *x*.
-    MatrixRef4py fxp;              ///< The evaluated Jacobian of the gradient function *fx(x, p)* with respect to *p*.
-    ObjectiveRequirement requires; ///< The requirements in the evaluation of the objective function.
-    bool failed = false;           ///< The boolean flag that indicates if the objective function evaluation failed.
-
-    /// Construct an ObjectiveResult4py object with given ObjectiveResult object.
-    ObjectiveResult4py(ObjectiveResult& res) : fx(res.fx), fxx(res.fxx), fxp(res.fxp), requires(res.requires) {}
+    double f;         ///< The evaluated objective function *f(x, p)*.
+    VectorRef fx;     ///< The evaluated gradient of *f(x, p)* with respect to *x*.
+    MatrixRef4py fxx; ///< The evaluated Jacobian *fx(x, p)* with respect to *x*.
+    MatrixRef4py fxp; ///< The evaluated Jacobian *fx(x, p)* with respect to *p*.
+    bool diagfxx;     ///< The flag indicating whether `fxx` is diagonal.
 };
 
 /// The functional signature of an objective function.
-/// @param x The values of the primal variables \eq{x}.
-/// @param p The values of the parameter variables \eq{p}.
-/// @return An ObjectiveResult object with the evaluated result of the objective function.
-using ObjectiveFunction = std::function<void(VectorConstRef, VectorConstRef, ObjectiveResult&)>;
+/// @param x The values of the primal variables *x*.
+/// @param p The values of the parameter variables *p*.
+/// @param res The evaluated objective function and its first and second order derivatives.
+/// @return Return `true` if the evaluation succeeded, `false` otherwise.
+using ObjectiveFunction = std::function<bool(VectorConstRef x, VectorConstRef p, ObjectiveResult res)>;
 
 /// The functional signature of an objective function in Python.
-/// @param x The values of the primal variables \eq{x}.
-/// @param p The values of the parameter variables \eq{p}.
-/// @return An ObjectiveResult4py object with the evaluated result of the objective function.
-using ObjectiveFunction4py = std::function<void(VectorConstRef, VectorConstRef, ObjectiveResult4py*)>;
+/// @param x The values of the primal variables *x*.
+/// @param p The values of the parameter variables *p*.
+/// @param res The evaluated objective function and its first and second order derivatives.
+/// @return Return `true` if the evaluation succeeded, `false` otherwise.
+using ObjectiveFunction4py = std::function<bool(VectorConstRef, VectorConstRef, ObjectiveResult4py*)>;
 
 /// Convert an ObjectiveFunction4py function to an ObjectiveFunction function.
-inline auto convert(const ObjectiveFunction4py& obj4py)
+inline auto convert(const ObjectiveFunction4py& obj4py) -> ObjectiveFunction
 {
-    return [=](VectorConstRef x, VectorConstRef p, ObjectiveResult& res)
+    return [=](VectorConstRef x, VectorConstRef p, ObjectiveResult res)
     {
-        ObjectiveResult4py res4py(res);
-        obj4py(x, p, &res4py);
+        ObjectiveResult4py res4py{res.f, res.fx, res.fxx, res.fxp, false};
+        const auto status = obj4py(x, p, &res4py);
         res.f = res4py.f;
+        res.diagfxx = res4py.diagfxx;
+        return status;
     };
 }
 

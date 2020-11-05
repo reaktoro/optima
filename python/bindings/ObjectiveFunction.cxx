@@ -26,20 +26,13 @@ using namespace Optima;
 
 void exportObjectiveFunction(py::module& m)
 {
-    py::class_<ObjectiveRequirement>(m, "ObjectiveRequirement")
-        .def(py::init<>())
-        .def_readwrite("f", &ObjectiveRequirement::f, "The flag indicating if the objective function f(x, p) needs to be evaluated.")
-        .def_readwrite("fx", &ObjectiveRequirement::fx, "The flag indicating if the gradient function fx(x, p) needs to be evaluated.")
-        .def_readwrite("fxx", &ObjectiveRequirement::fxx, "The flag indicating if the Jacobian function fxx(x, p) needs to be evaluated.")
-        .def_readwrite("fxp", &ObjectiveRequirement::fxp, "The flag indicating if the Jacobian function fxp(x, p) needs to be evaluated.")
-        ;
-
+    // TODO: Instead of having an extra type ObjectiveResult4py because of double& and bool&,
+    // consider using only ObjectiveResult and def_property for f and diagxx members.
     py::class_<ObjectiveResult4py>(m, "ObjectiveResult")
         .def_readwrite("f", &ObjectiveResult4py::f, "The evaluated objective function f(x, p).")
-        .def_readwrite("fx", &ObjectiveResult4py::fx, "The evaluated gradient of the objective function f(x, p) with respect to x.")
-        .def_readwrite("fxx", &ObjectiveResult4py::fxx, "The evaluated Jacobian of the gradient function fx(x, p) with respect to x, i.e., the Hessian of f(x, p) with respect to x.")
-        .def_readwrite("fxp", &ObjectiveResult4py::fxp, "The evaluated Jacobian of the gradient function fx(x, p) with respect to p.")
-        .def_readwrite("requires", &ObjectiveResult4py::requires, "The requirements in the evaluation of the objective function.")
-        .def_readwrite("failed", &ObjectiveResult4py::failed, "The boolean flag that indicates if the objective function evaluation failed.")
+        .def_readwrite("fx", &ObjectiveResult4py::fx, "The evaluated gradient of f(x, p) with respect to x.")
+        .def_readwrite("fxx", &ObjectiveResult4py::fxx, "The evaluated Jacobian fx(x, p) with respect to x.")
+        .def_readwrite("fxp", &ObjectiveResult4py::fxp, "The evaluated Jacobian fx(x, p) with respect to p.")
+        .def_readwrite("diagfxx", &ObjectiveResult4py::diagfxx, "The flag indicating whether `fxx` is diagonal.")
         ;
 }

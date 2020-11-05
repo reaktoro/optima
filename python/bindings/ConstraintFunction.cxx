@@ -27,10 +27,8 @@ using namespace Optima;
 void exportConstraintFunction(py::module& m)
 {
     py::class_<ConstraintResult4py>(m, "ConstraintResult")
-        .def(py::init<ConstraintResult&>())
-        .def_readwrite("h", &ConstraintResult4py::h, "The evaluated equality constraint function h(x, p).")
-        .def_readwrite("hx", &ConstraintResult4py::hx, "The evaluated Jacobian of the equality constraint function h(x, p) with respect to x.")
-        .def_readwrite("hp", &ConstraintResult4py::hp, "The evaluated Jacobian of the equality constraint function h(x, p) with respect to p.")
-        .def_readwrite("failed", &ConstraintResult4py::failed, "The boolean flag that indicates if the constraint function evaluation failed.")
+        .def_readwrite("h" , &ConstraintResult4py::h, "The evaluated equality constraint function h(x, p).")
+        .def_readwrite("hx", &ConstraintResult4py::hx, "The evaluated Jacobian of h(x, p) with respect to x.")
+        .def_readwrite("hp", &ConstraintResult4py::hp, "The evaluated Jacobian of h(x, p) with respect to p.")
         ;
 }

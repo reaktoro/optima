@@ -25,37 +25,32 @@ namespace Optima {
 /// The result of the evaluation of a constraint function.
 struct ConstraintResult
 {
-    VectorRef h;         ///< The evaluated equality constraint function *h(x, p)*.
-    MatrixRef hx;        ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *x*.
-    MatrixRef hp;        ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *p*.
-    bool failed = false; ///< The boolean flag that indicates if the constraint function evaluation failed.
+    VectorRef h;  ///< The evaluated equality constraint function *h(x, p)*.
+    MatrixRef hx; ///< The evaluated Jacobian of *h(x, p)* with respect to *x*.
+    MatrixRef hp; ///< The evaluated Jacobian of *h(x, p)* with respect to *p*.
 };
 
 /// The result of the evaluation of a constraint function in Python.
 struct ConstraintResult4py
 {
-    VectorRef h;         ///< The evaluated equality constraint function *h(x, p)*.
-    MatrixRef4py hx;     ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *x*.
-    MatrixRef4py hp;     ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *p*.
-    bool failed = false; ///< The boolean flag that indicates if the constraint function evaluation failed.
-
-    /// Construct a ConstraintResult4py object with given ConstraintResult object.
-    ConstraintResult4py(ConstraintResult& res) : h(res.h), hx(res.hx), hp(res.hp) {}
+    VectorRef h;     ///< The evaluated equality constraint function *h(x, p)*.
+    MatrixRef4py hx; ///< The evaluated Jacobian of *h(x, p)* with respect to *x*.
+    MatrixRef4py hp; ///< The evaluated Jacobian of *h(x, p)* with respect to *p*.
 };
 
 /// The signature of a constraint function.
-using ConstraintFunction = std::function<void(VectorConstRef, VectorConstRef, ConstraintResult&)>;
+using ConstraintFunction = std::function<bool(VectorConstRef, VectorConstRef, ConstraintResult)>;
 
 /// The signature of a constraint function in Python.
-using ConstraintFunction4py = std::function<void(VectorConstRef, VectorConstRef, ConstraintResult4py*)>;
+using ConstraintFunction4py = std::function<bool(VectorConstRef, VectorConstRef, ConstraintResult4py*)>;
 
 /// Convert an ConstraintFunction4py function to a ConstraintFunction function.
-inline auto convert(const ConstraintFunction4py& obj4py)
+inline auto convert(const ConstraintFunction4py& obj4py) -> ConstraintFunction
 {
-    return [=](VectorConstRef x, VectorConstRef p, ConstraintResult& res)
+    return [=](VectorConstRef x, VectorConstRef p, ConstraintResult res)
     {
-        ConstraintResult4py res4py(res);
-        obj4py(x, p, &res4py);
+        ConstraintResult4py res4py({res.h, res.hx, res.hp});
+        return obj4py(x, p, &res4py);
     };
 }
 
