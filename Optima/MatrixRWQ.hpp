@@ -84,10 +84,10 @@ public:
     auto asMatrixViewRWQ() const -> MatrixViewRWQ;
 
     /// Convert this MatrixRWQ object into a MatrixViewW object.
-    explicit operator MatrixViewW() const;
+    operator MatrixViewW() const;
 
     /// Convert this MatrixRWQ object into a MatrixViewRWQ object.
-    explicit operator MatrixViewRWQ() const;
+    operator MatrixViewRWQ() const;
 };
 
 } // namespace Optima

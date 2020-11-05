@@ -46,8 +46,7 @@ void exportResidualVector(py::module& m)
         .def(py::init<const MasterDims&>())
         .def(py::init<const ResidualVector&>())
         .def("update", update)
-        .def("canonicalVector", &ResidualVector::canonicalVector,
-            py::keep_alive<1, 0>(), // keep this object (0) alive while returned object (1) exists
-            py::keep_alive<0, 1>()) // keep returned object (1) alive while this object (0) exists
+        .def("masterVector", &ResidualVector::masterVector, py::return_value_policy::reference_internal)
+        .def("canonicalVector", &ResidualVector::canonicalVector, py::return_value_policy::reference_internal)
         ;
 }

@@ -20,7 +20,8 @@
 namespace py = pybind11;
 
 void exportEigen(py::module& m);
-void exportBasicSolver(py::module& m);
+void exportConstants(py::module& m);
+// void exportBasicSolver(py::module& m);
 void exportCanonicalDims(py::module& m);
 void exportCanonicalMatrix(py::module& m);
 void exportCanonicalVector(py::module& m);
@@ -34,6 +35,7 @@ void exportLinearSolver(py::module& m);
 void exportLinearSolverOptions(py::module& m);
 void exportLU(py::module& m);
 void exportMasterDims(py::module& m);
+void exportMasterProblem(py::module& m);
 void exportMasterMatrix(py::module& m);
 void exportMasterMatrixOps(py::module& m);
 void exportMasterVector(py::module& m);
@@ -42,11 +44,12 @@ void exportObjectiveFunction(py::module& m);
 void exportOutputter(py::module& m);
 void exportOptions(py::module& m);
 void exportProblem(py::module& m);
+void exportResidualFunction(py::module& m);
 void exportResidualVector(py::module& m);
 void exportResult(py::module& m);
 void exportSaddlePointOptions(py::module& m);
 void exportSaddlePointSolver(py::module& m);
-void exportSolver(py::module& m);
+// void exportSolver(py::module& m);
 void exportStablePartition(py::module& m);
 void exportStability(py::module& m);
 void exportStability2(py::module& m);
@@ -59,7 +62,8 @@ void exportUtils(py::module& m);
 PYBIND11_MODULE(optima4py, m)
 {
     exportEigen(m);
-    exportBasicSolver(m);
+    exportConstants(m);
+    // exportBasicSolver(m);
     exportCanonicalDims(m);
     exportCanonicalMatrix(m);
     exportCanonicalVector(m);
@@ -73,6 +77,7 @@ PYBIND11_MODULE(optima4py, m)
     exportLinearSolverOptions(m);
     exportLU(m);
     exportMasterDims(m);
+    exportMasterProblem(m);
     exportMasterMatrix(m);
     exportMasterMatrixOps(m);
     exportMasterVector(m);
@@ -81,11 +86,12 @@ PYBIND11_MODULE(optima4py, m)
     exportOutputter(m);
     exportOptions(m);
     exportProblem(m);
+    exportResidualFunction(m);
     exportResidualVector(m);
     exportResult(m);
     exportSaddlePointOptions(m);
     exportSaddlePointSolver(m);
-    exportSolver(m);
+    // exportSolver(m);
     exportStablePartition(m);
     exportStability(m);
     exportStability2(m);

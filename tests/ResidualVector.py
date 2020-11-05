@@ -22,12 +22,12 @@ from pytest import approx, mark
 from utils.matrices import *
 
 
-tested_nx  = [10, 15]  # The tested number of x variables
-tested_np  = [0, 5]    # The tested number of p variables
-tested_ny  = [5, 8]    # The tested number of y variables
-tested_nz  = [0, 2]    # The tested number of z variables
-tested_nl  = [0, 2]    # The tested number of linearly dependent rows in Ax
-tested_nu  = [0, 2]    # The tested number of unstable variables
+tested_nx      = [15, 20]       # The tested number of x variables
+tested_np      = [0, 5]         # The tested number of p variables
+tested_ny      = [5, 8]         # The tested number of y variables
+tested_nz      = [0, 5]         # The tested number of z variables
+tested_nl      = [0, 2]         # The tested number of linearly dependent rows in Ax
+tested_nu      = [0, 2]         # The tested number of unstable variables
 
 @mark.parametrize("nx", tested_nx)
 @mark.parametrize("np", tested_np)
@@ -37,19 +37,21 @@ tested_nu  = [0, 2]    # The tested number of unstable variables
 @mark.parametrize("nu", tested_nu)
 def testResidualVector(nx, np, ny, nz, nl, nu):
 
-    # Ensure nx is larger than np and (ny + nz)
-    if nx < np or nx < ny + nz: return
+    params = MasterParams(nx, np, ny, nz, nl, nu)
 
-    # Ensure nl < ny
-    if ny <= nl: return
+    if params.invalid(): return
 
-    M = createMasterMatrix(dims, nl, nu)
+    M = createMasterMatrix(params)
 
-    Mbar = createCanonicalMatrixView(dims, M)
+    Mbar = CanonicalMatrix(M)
+
+    Mc = Mbar.view()
 
     Wx, Wp = M.W.Wx, M.W.Wp
     Ax, Jx = vsplit(Wx, [ny])
     Ap, Jp = vsplit(Wp, [ny])
+
+    dims = params.dims
 
     F = ResidualVector(dims)
 
@@ -64,16 +66,15 @@ def testResidualVector(nx, np, ny, nz, nl, nu):
 
     F.update(Mbar, Wx, Wp, x, p, y, z, g, v, b, h)
 
-    dims = Mbar.dims
-    nbs = dims.nbs
+    nbs = Mc.dims.nbs
 
-    js, ju  = Mbar.js, Mbar.ju
+    js, ju  = Mc.js, Mc.ju
 
     As = Ax[:, js]
     Au = Ax[:, ju]
     Js = Jx[:, js]
 
-    Rbs = Mbar.Rbs
+    Rbs = Mc.Rbs
 
     ax = zeros(nx)
     ax[js] = -(g[js] + As.T @ y + Js.T @ z)
@@ -83,6 +84,12 @@ def testResidualVector(nx, np, ny, nz, nl, nu):
     az = -h
     aw = concatenate([ay, az])
     awbs = Rbs @ aw
+
+    a = F.masterVector()
+
+    assert_almost_equal(a.x, ax)
+    assert_almost_equal(a.p, ap)
+    assert_almost_equal(a.w, aw)
 
     a = F.canonicalVector()
 

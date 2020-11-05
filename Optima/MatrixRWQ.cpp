@@ -72,10 +72,6 @@ struct MatrixRWQ::Impl
         Wx.bottomRows(nz) = Jx;
         Wp.bottomRows(nz) = Jp;
 
-        // weights = min(x - xlower, xupper - x);
-        // weights = weights.array().isInf().select(abs(x), weights); // replace inf distance with abs(x)
-        // weights.noalias() = abs(weights);
-        // weights = (weights.array() > 0.0).select(weights, -1.0); // set negative priority weights for variables on the bounds
         echelonizer.updateWithPriorityWeights(Jx, weights);
         echelonizer.cleanResidualRoundoffErrors();
 

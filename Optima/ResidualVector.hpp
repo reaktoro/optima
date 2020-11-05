@@ -21,9 +21,10 @@
 #include <memory>
 
 // Optima includes
-#include <Optima/MasterDims.hpp>
 #include <Optima/CanonicalVector.hpp>
 #include <Optima/CanonicalMatrix.hpp>
+#include <Optima/MasterDims.hpp>
+#include <Optima/MasterVector.hpp>
 
 namespace Optima {
 
@@ -66,6 +67,9 @@ public:
 
     /// Update the residual vector.
     auto update(ResidualVectorUpdateArgs args) -> void;
+
+    /// Return the residual vector as a master vector.
+    auto masterVector() const -> MasterVectorView;
 
     /// Return the residual vector as a canonical vector.
     auto canonicalVector() const -> CanonicalVectorView;

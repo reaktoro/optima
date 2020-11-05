@@ -67,6 +67,9 @@ struct MasterMatrix
     /// Construct a MasterMatrix object.
     MasterMatrix(MatrixViewH H, MatrixViewV V, MatrixRWQ const& RWQ, StablePartition const& jsu);
 
+    /// Construct a MasterMatrix object.
+    MasterMatrix(MatrixViewH H, MatrixViewV V, MatrixRWQ const& RWQ, IndicesConstRef js, IndicesConstRef ju);
+
     /// Convert this MasterMatrix object into a Matrix object.
     operator Matrix() const;
 };

@@ -28,15 +28,14 @@ namespace Optima {
 
 struct ResidualVector::Impl
 {
-    const Index nx = 0;   ///< The number of variables x.
-    const Index np = 0;   ///< The number of variables p.
-    const Index ny = 0;   ///< The number of variables y.
-    const Index nz = 0;   ///< The number of variables z.
-    const Index nw = 0;   ///< The number of variables w = (y, z).
+    const MasterDims dims; ///< The dimensions of the master variables.
 
     Index ns;  ///< The number of stable variables
     Index nu;  ///< The number of ustable variables
     Index nbs; ///< The number of stable basic variables
+
+    Vector ax;
+    Vector aw;
 
     Vector ap;
     Vector asu;
@@ -45,8 +44,12 @@ struct ResidualVector::Impl
     Vector xsu;
 
     Impl(const MasterDims& dims)
-    : nx(nx), np(np), ny(ny), nz(nz), nw(ny + nz)
+    : dims(dims)
     {
+        const auto [nx, np, ny, nz, nw, nt] = dims;
+
+        ax.resize(nx);
+        aw.resize(nw);
         ap.resize(np);
         asu.resize(nx);
         awbs.resize(nw);
@@ -57,6 +60,7 @@ struct ResidualVector::Impl
     auto update(ResidualVectorUpdateArgs args) -> void
     {
         const auto [Mc, Wx, Wp, x, p, y, z, g, v, b, h] = args;
+        const auto [nx, np, ny, nz, nw, nt] = dims;
 
         assert(x.size() == nx);
         assert(p.size() == np);
@@ -98,14 +102,23 @@ struct ResidualVector::Impl
         auto xs = xsu.head(ns);
         auto xu = xsu.tail(nu);
 
+        auto ay = aw.head(ny);
+        auto az = aw.tail(nz);
+
         const auto xbs = xs.head(nbs);
         const auto xns = xs.tail(nns);
 
         xs = x(js);
         xu = x(ju);
 
-        as.noalias() = -(gs + tr(As)*y + tr(Js)*z);
+        ax(js).noalias() = -(gs + tr(As)*y + tr(Js)*z);
+        ax(ju).fill(0.0);
+
+        as = ax(js);
         au.fill(0.0);
+
+        ay.noalias() = -(Ax*x + Ap*p - b);
+        az.noalias() = -h;
 
         ap = -v;
 
@@ -114,6 +127,11 @@ struct ResidualVector::Impl
 
         awbs = multiplyMatrixVectorWithoutResidualRoundOffError(Rbs, awstar);
         awbs.noalias() -= xbs + Sbsns*xns + Sbsp*args.p;
+    }
+
+    auto masterVector() const -> MasterVectorView
+    {
+        return {ax, ap, aw};
     }
 
     auto canonicalVector() const -> CanonicalVectorView
@@ -144,6 +162,11 @@ auto ResidualVector::operator=(ResidualVector other) -> ResidualVector&
 auto ResidualVector::update(ResidualVectorUpdateArgs args) -> void
 {
     pimpl->update(args);
+}
+
+auto ResidualVector::masterVector() const -> MasterVectorView
+{
+    return pimpl->masterVector();
 }
 
 auto ResidualVector::canonicalVector() const -> CanonicalVectorView
