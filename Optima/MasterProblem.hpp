@@ -22,6 +22,7 @@
 #include <Optima/MasterDims.hpp>
 #include <Optima/Matrix.hpp>
 #include <Optima/ObjectiveFunction.hpp>
+#include <Optima/TransformFunction.hpp>
 
 namespace Optima {
 
@@ -37,8 +38,7 @@ struct MasterProblem
     VectorConstRef const& b;      ///< The right-hand side vector b in the linear equality constraints.
     VectorConstRef const& xlower; ///< The lower bounds for variables *x*.
     VectorConstRef const& xupper; ///< The upper bounds for variables *x*.
-    VectorConstRef const& plower; ///< The lower bounds for variables *p*.
-    VectorConstRef const& pupper; ///< The upper bounds for variables *p*.
+    TransformFunction const& phi; ///< The custom variable transformation function.
 };
 
 } // namespace Optima

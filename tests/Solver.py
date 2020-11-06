@@ -239,7 +239,7 @@ def test_solver(np, ny, nz, nbu, nl, ifixed, ilower, iupper, method):
     options = Options()
     # options.output.active = True
     options.kkt.method = method
-    options.max_iterations = 10
+    options.maxiterations = 10
 
     dims = Dims()
     dims.x  = nx

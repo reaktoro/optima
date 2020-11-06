@@ -33,10 +33,10 @@ public:
     Analysis() = default;
 
     /// Initialize this Analysis object with given maximum number of iterations.
-    auto initialize(Index max_iterations) -> void
+    auto initialize(Index maxiterations) -> void
     {
-        L.clear(); L.reserve(max_iterations);
-        E.clear(); E.reserve(max_iterations);
+        L.clear(); L.reserve(maxiterations);
+        E.clear(); E.reserve(maxiterations);
     }
 
     /// Compute the convergence rate of the optimization calculation.

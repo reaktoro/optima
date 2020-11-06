@@ -36,7 +36,5 @@ void exportMasterProblem(py::module& m)
         .def_property_readonly("b"     , [](const MasterProblem& self) { return self.b;      })
         .def_property_readonly("xlower", [](const MasterProblem& self) { return self.xlower; })
         .def_property_readonly("xupper", [](const MasterProblem& self) { return self.xupper; })
-        .def_property_readonly("plower", [](const MasterProblem& self) { return self.plower; })
-        .def_property_readonly("pupper", [](const MasterProblem& self) { return self.pupper; })
         ;
 }

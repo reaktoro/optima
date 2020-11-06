@@ -256,7 +256,7 @@
 //             return result;
 //         }
 
-//         const auto maxiters = options.max_iterations;
+//         const auto maxiters = options.maxiterations;
 
 //         // Auxiliary references to some result variables
 //         auto& iterations = result.iterations;
@@ -419,7 +419,7 @@
 //         stepper.initialize({ b, xlower, xupper, plower, pupper, x, stability });
 
 //         // Initialize the convergence analysis data of the optimization calculation
-//         analysis.initialize(options.max_iterations);
+//         analysis.initialize(options.maxiterations);
 
 //         // Return true as initialize step was successful.
 //         return SUCCEEDED;

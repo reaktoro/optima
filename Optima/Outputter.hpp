@@ -26,26 +26,9 @@
 
 // Optima includes
 #include <Optima/Matrix.hpp>
+#include <Optima/OutputterOptions.hpp>
 
 namespace Optima {
-
-struct OutputterOptions
-{
-    bool active = false;
-
-    bool fixed = false;
-
-    bool scientific = false;
-
-    unsigned precision = 6;
-
-    unsigned width = 15;
-
-    std::string separator = "|";
-
-    /// Assign a boolean value to `active` member.
-    auto operator=(bool active) -> OutputterOptions&;
-};
 
 /// A utility class for printing the progress of iterative calculations
 class Outputter

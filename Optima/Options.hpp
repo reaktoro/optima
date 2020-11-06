@@ -22,7 +22,10 @@
 #include <vector>
 
 // Optima includes
-#include <Optima/Outputter.hpp>
+#include <Optima/ConvergenceOptions.hpp>
+#include <Optima/LinearSolverOptions.hpp>
+#include <Optima/NewtonStepOptions.hpp>
+#include <Optima/OutputterOptions.hpp>
 #include <Optima/SaddlePointOptions.hpp>
 
 namespace Optima {
@@ -120,11 +123,8 @@ public:
     /// The options for the output of the optimization calculations
     OutputOptions output;
 
-    /// The tolerance for the residual of the optimality conditions.
-    double tolerance = 1.0e-8;
-
     /// The maximum number of iterations in the optimization calculations.
-    unsigned max_iterations = 200;
+    unsigned maxiterations = 200;
 
     /// The options for the solution of the KKT equations.
     SaddlePointOptions kkt;
@@ -137,6 +137,12 @@ public:
 
     /// The options for the backtrack linear search operation.
     BacktrackSearchOptions backtrack;
+
+    /// The options used for Newton step calculations.
+    NewtonStepOptions newtonstep;
+
+    /// The options used for convergence analysis.
+    ConvergenceOptions convergence;
 };
 
 } // namespace Optima

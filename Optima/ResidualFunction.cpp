@@ -40,8 +40,6 @@ struct ResidualFunction::Impl
     Vector b;                 ///< The right-hand side vector b in the linear equality constraints.
     Vector xlower;            ///< The lower bounds for variables x.
     Vector xupper;            ///< The upper bounds for variables x.
-    Vector plower;            ///< The lower bounds for variables p.
-    Vector pupper;            ///< The upper bounds for variables p.
 
     MatrixRWQ RWQ; ///< The echelon form of matrix W = [Wx Wp] = [Ax Ap; Jx Jp].
 
@@ -60,6 +58,9 @@ struct ResidualFunction::Impl
     Matrix hp;  ///< The evaluated Jacobian of h(x, p) with respect to p.
 
     Vector wx;  ///< The priority weights for selection of basic variables in x.
+
+    Vector ex;    ///< The errors associated with variables x.
+    Vector ewbs;  ///< The errors associated with linear and nonlinear constraints in canonical form.
 
     Stability2 stability;     ///< The stability checker of variables in x.
     CanonicalMatrix jacobian; ///< The Jacobian matrix of the residual function in canonical form.
@@ -87,6 +88,9 @@ struct ResidualFunction::Impl
         hp.resize(nz, np);
 
         wx.resize(nx);
+
+        ex.resize(nx);
+        ewbs.resize(nw);
     }
 
     auto initialize(const MasterProblem& problem) -> void
@@ -97,8 +101,6 @@ struct ResidualFunction::Impl
         evalv  = problem.v;
         xlower = problem.xlower;
         xupper = problem.xupper;
-        plower = problem.plower;
-        pupper = problem.pupper;
         sanitycheck();
     }
 
@@ -121,6 +123,9 @@ struct ResidualFunction::Impl
         const auto status = updateFunctionEvaluationsSkipJacobian(u);
         if(status == FAILED)
             return status;
+        updateMatrixRWQ(u);
+        updateStabilityStatus(u);
+        updateJacobianMatrix(u); // needed in case the set of stable/unstable variables changed
         updateResidualVector(u);
         return status;
     }
@@ -214,8 +219,6 @@ struct ResidualFunction::Impl
         assert(evalv != nullptr);
         assert(xlower.size() == dims.nx);
         assert(xupper.size() == dims.nx);
-        assert(plower.size() == dims.np);
-        assert(pupper.size() == dims.np);
     }
 };
 

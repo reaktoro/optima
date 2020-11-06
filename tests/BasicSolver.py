@@ -293,7 +293,7 @@ def test_basic_solver(np, ny, nz, nbu, nl, ifixed, ilower, iupper, method):
     options = Options()
     options.output.active = True
     options.kkt.method = method
-    options.max_iterations = 10
+    options.maxiterations = 10
     options.linesearch.trigger_when_current_error_is_greater_than_initial_error_by_factor = 1.0
     options.linesearch.trigger_when_current_error_is_greater_than_previous_error_by_factor = 1.0
 

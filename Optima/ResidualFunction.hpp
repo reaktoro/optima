@@ -39,6 +39,32 @@ struct ResidualFunctionUpdateStatus
     operator bool() const { return f && h && v; }
 };
 
+/// Used to store the residual errors associated with the optimization calculation.
+struct ResidualFunctionState
+{
+    const double f;           ///< The evaluated value of f(x, p).
+    const VectorConstRef fx;  ///< The evaluated gradient of f(x, p) with respect to x.
+    const MatrixConstRef fxx; ///< The evaluated Jacobian of fx(x, p) with respect to x.
+    const MatrixConstRef fxp; ///< The evaluated Jacobian of fx(x, p) with respect to p.
+    const bool diagfxx;       ///< The flag indicating whether `fxx` is diagonal.
+
+    const VectorConstRef v;   ///< The evaluated value of v(x, p).
+    const MatrixConstRef vx;  ///< The evaluated Jacobian of v(x, p) with respect to x.
+    const MatrixConstRef vp;  ///< The evaluated Jacobian of v(x, p) with respect to p.
+
+    const VectorConstRef h;   ///< The evaluated value of h(x, p).
+    const MatrixConstRef hx;  ///< The evaluated Jacobian of h(x, p) with respect to x.
+    const MatrixConstRef hp;  ///< The evaluated Jacobian of h(x, p) with respect to p.
+
+    const MasterMatrix Jm;        /// The Jacobian matrix in master form.
+    const CanonicalMatrixView Jc; /// The Jacobian matrix in canonical form.
+
+    const MasterVectorView Fm;    /// The residual vector in master form.
+    const CanonicalVectorView Fc; /// The residual vector in canonical form.
+
+    const MasterProblem problem;  /// The underlying master optimization problem.
+};
+
 /// Used to represent the residual function *F(u)* in the Newton step problem.
 class ResidualFunction
 {
@@ -55,9 +81,9 @@ public:
     /// Assign a ResidualFunction object to this.
     auto operator=(ResidualFunction other) -> ResidualFunction&;
 
-    /// Initialize the residual function again when the master optimization problem changes.
-    /// @warning This method assumes matrices *Ax* and *Ap* remain the same!
-    /// @warning If this is not valid, create a new ResidualFunction object.
+    /// Initialize this ResidualFunction object.
+    /// @warning This method assumes matrices *Ax* and *Ap* remain the same since construction!
+    /// @warning If this is not intended behavior, create a new ResidualFunction object.
     auto initialize(const MasterProblem& problem) -> void;
 
     /// Update the residual function with given *u = (x, p, y, z)*.
@@ -77,6 +103,9 @@ public:
 
     /// Return the residual vector in master form.
     auto masterResidualVector() const -> MasterVectorView;
+
+    /// Return the current state details of the residual function.
+    auto state() const -> ResidualFunctionState;
 
 private:
     struct Impl;
