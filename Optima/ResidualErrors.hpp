@@ -26,6 +26,16 @@
 
 namespace Optima {
 
+/// The arguments for method @ref ResidualErrors::initialize.
+struct ResidualErrorsInitializeArgs
+{
+    /// The lower bounds for variables *x*.
+    const VectorConstRef xlower;
+
+    /// The upper bounds for variables *x*.
+    const VectorConstRef xupper;
+};
+
 /// Used to compute the residual errors in the optimization calculation.
 class ResidualErrors
 {
@@ -54,6 +64,9 @@ public:
 
     /// Assign a ResidualErrors instance to this.
     auto operator=(ResidualErrors other) -> ResidualErrors&;
+
+    /// Initialize this ResidualErrors object.
+    auto initialize(ResidualErrorsInitializeArgs args) -> void;
 
     /// Update the residual errors.
     auto update(MasterVectorView u, const ResidualFunction& F) -> void;

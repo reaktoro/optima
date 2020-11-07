@@ -232,9 +232,6 @@ def test_solver(np, ny, nz, nbu, nl, ifixed, ilower, iupper, method):
     z = zeros(nz)
     s = zeros(nx)
 
-    # Create the stability state of the variables
-    stability = Stability()
-
     # Create the options for the optimization calculation
     options = Options()
     # options.output.active = True

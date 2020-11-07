@@ -26,6 +26,9 @@ struct ResidualErrors::Impl
 {
     const MasterDims dims; ///< The dimensions of the master variables.
 
+    Vector xlower; ///< The lower bounds for variables *x*.
+    Vector xupper; ///< The upper bounds for variables *x*.
+
     Vector ex;     ///< The residual errors associated with the first-order optimality conditions.
     Vector ep;     ///< The residual errors associated with the external constraint equations.
     Vector ew;     ///< The residual errors associated with the linear and non-linear constraint equations.
@@ -42,8 +45,17 @@ struct ResidualErrors::Impl
         ew = zeros(dims.nw);
     }
 
+    auto initialize(ResidualErrorsInitializeArgs args) -> void
+    {
+        xlower = args.xlower;
+        xupper = args.xupper;
+        sanitycheck();
+    }
+
     auto update(MasterVectorView u, const ResidualFunction& F) -> void
     {
+        sanitycheck();
+
         const auto state = F.state();
 
         const auto Jc = state.Jc;
@@ -64,8 +76,8 @@ struct ResidualErrors::Impl
         const auto x = u.x;
         const auto gs = state.fx(js);
         const auto xbs = x(jbs);
-        const auto xbslower = state.problem.xlower(jbs);
-        const auto xbsupper = state.problem.xupper(jbs);
+        const auto xbslower = xlower(jbs);
+        const auto xbsupper = xupper(jbs);
 
         ex(js) = abs(rs)/(1 + abs(gs));
         ex(ju).fill(0.0);
@@ -73,16 +85,25 @@ struct ResidualErrors::Impl
         auto ewbs = ew.head(nbs);
         auto ewbl = ew.tail(nbl);
 
-        ewbs.noalias() = rwbs/((xbs.array() != 0.0).select(xbs, 1.0));
-        ewbl.fill(0.0);
-
+        ewbs.noalias() = abs(rwbs)/((xbs.array() != 0.0).select(abs(xbs), 1.0));
         ewbs.noalias() = (xbs.array() == xbslower.array()).select(0.0, ewbs);
         ewbs.noalias() = (xbs.array() == xbsupper.array()).select(0.0, ewbs);
+        ewbl.fill(0.0);
 
         errorf = norminf(ex(js));
         errorv = norminf(rp);
         errorw = norminf(ewbs);
         error = std::max({ errorf, errorv, errorw });
+    }
+
+    auto sanitycheck() const -> void
+    {
+        assert(dims.nx > 0);
+        assert(ex.size() == dims.nx);
+        assert(ep.size() == dims.np);
+        assert(ew.size() == dims.nw);
+        assert(xlower.size() == dims.nx);
+        assert(xupper.size() == dims.nx);
     }
 };
 
@@ -115,6 +136,11 @@ auto ResidualErrors::operator=(ResidualErrors other) -> ResidualErrors&
 {
     pimpl = std::move(other.pimpl);
     return *this;
+}
+
+auto ResidualErrors::initialize(ResidualErrorsInitializeArgs args) -> void
+{
+    pimpl->initialize(args);
 }
 
 auto ResidualErrors::update(MasterVectorView u, const ResidualFunction& F) -> void

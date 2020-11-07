@@ -24,28 +24,24 @@ namespace Optima {
 
 struct State::Impl
 {
-    /// The variables \eq{\bar{x} = (x, u, v)} of the basic optimization problem.
+    /// The variables x(bar) = (x, u, v) of the basic optimization problem.
     Vector xbar;
 
-    /// The Lagrange multipliers \eq{y=(y_{\mathrm{e}},y_{\mathrm{g}})} of the optimization problem.
-    Vector ybar;
+    /// The parameter variables p of the basic optimization problem.
+    Vector p;
 
-    /// The Lagrange multipliers \eq{z=(z_{\mathrm{e}},z_{\mathrm{g}})} of the optimization problem.
-    Vector zbar;
+    /// The Lagrange multipliers w = (y, z) = (ye, yg, ze, zg) of the optimization problem.
+    Vector wbar;
 
     /// The variables \eq{(s,y_{\mathrm{g}},z_{\mathrm{g}})} of the basic optimization problem.
     Vector sbar;
 
-    /// The parameter variables \eq{p} of the basic optimization problem.
-    Vector p;
-
     /// Construct a State::Impl object with given dimensions information.
     Impl(const Dims& dims)
     : xbar(zeros(dims.x + dims.bg + dims.hg)),
-      ybar(zeros(dims.be + dims.bg)),
-      zbar(zeros(dims.he + dims.hg)),
-      sbar(zeros(dims.x + dims.bg + dims.hg)),
-      p(zeros(dims.p))
+      p(zeros(dims.p)),
+      wbar(zeros(dims.be + dims.bg + dims.he + dims.hg)),
+      sbar(zeros(dims.x + dims.bg + dims.hg))
     {}
 };
 
@@ -54,12 +50,13 @@ State::State(const Dims& dims)
   dims(dims),
   x(pimpl->xbar.head(dims.x)),
   p(pimpl->p),
-  y(pimpl->ybar),
-  ye(pimpl->ybar.head(dims.be)),
-  yg(pimpl->ybar.tail(dims.bg)),
-  z(pimpl->zbar),
-  ze(pimpl->zbar.head(dims.he)),
-  zg(pimpl->zbar.tail(dims.hg)),
+  w(pimpl->wbar),
+  y(pimpl->wbar.head(dims.be + dims.bg)),
+  ye(y.head(dims.be)),
+  yg(y.tail(dims.bg)),
+  z(pimpl->wbar.tail(dims.he + dims.hg)),
+  ze(z.head(dims.he)),
+  zg(z.tail(dims.hg)),
   s(pimpl->sbar.head(dims.x)),
   xbar(pimpl->xbar),
   sbar(pimpl->sbar),
@@ -73,12 +70,13 @@ State::State(const State& other)
   dims(other.dims),
   x(pimpl->xbar.head(other.dims.x)),
   p(pimpl->p),
-  y(pimpl->ybar),
-  ye(pimpl->ybar.head(other.dims.be)),
-  yg(pimpl->ybar.tail(other.dims.bg)),
-  z(pimpl->zbar),
-  ze(pimpl->zbar.head(other.dims.he)),
-  zg(pimpl->zbar.tail(other.dims.hg)),
+  w(pimpl->wbar),
+  y(pimpl->wbar.head(dims.be + dims.bg)),
+  ye(y.head(dims.be)),
+  yg(y.tail(dims.bg)),
+  z(pimpl->wbar.tail(dims.he + dims.hg)),
+  ze(z.head(dims.he)),
+  zg(z.tail(dims.hg)),
   s(pimpl->sbar.head(other.dims.x)),
   xbar(pimpl->xbar),
   sbar(pimpl->sbar),

@@ -28,7 +28,6 @@
 
 namespace Optima {
 
-
 /// Used for solving master optimization problems.
 class MasterSolver
 {
@@ -39,7 +38,10 @@ private:
 
 public:
     /// Construct a MasterSolver object.
-    MasterSolver(MasterProblem problem);
+    /// @param dims The dimensions of the master variables
+    /// @param Ax The matrix *Ax* in *W = [Ax Ap; Jx Jp]*.
+    /// @param Ap The matrix *Ap* in *W = [Ax Ap; Jx Jp]*.
+    MasterSolver(const MasterDims& dims, MatrixConstRef Ax, MatrixConstRef Ap);
 
     /// Construct a copy of a MasterSolver object.
     MasterSolver(const MasterSolver& other);

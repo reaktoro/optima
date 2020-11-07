@@ -21,7 +21,6 @@
 #include <Optima/CanonicalMatrix.hpp>
 #include <Optima/Exception.hpp>
 #include <Optima/ResidualVector.hpp>
-#include <Optima/Result.hpp>
 #include <Optima/Stability2.hpp>
 #include <Optima/Timing.hpp>
 #include <Optima/Utils.hpp>
@@ -66,13 +65,11 @@ struct ResidualFunction::Impl
     CanonicalMatrix jacobian; ///< The Jacobian matrix of the residual function in canonical form.
     ResidualVector residual;  ///< The object that calculates the residual vector
 
-    Impl(const MasterProblem& problem)
-    : dims(problem.dims), Ax(problem.Ax), Ap(problem.Ap),
+    Impl(const MasterDims& dims, MatrixConstRef Ax, MatrixConstRef Ap)
+    : dims(dims), Ax(Ax), Ap(Ap),
       RWQ(dims, Ax, Ap), stability(dims.nx),
       jacobian(dims), residual(dims)
     {
-        initialize(problem);
-
         const auto [nx, np, ny, nz, nw, nt] = dims;
 
         fx.resize(nx);
@@ -107,12 +104,12 @@ struct ResidualFunction::Impl
     auto update(MasterVectorView u) -> ResidualFunctionUpdateStatus
     {
         sanitycheck();
-        const auto status = updateFunctionEvaluations(u);
+        const auto status = updateFunctionEvals(u);
         if(status == FAILED)
             return status;
-        updateMatrixRWQ(u);
-        updateStabilityStatus(u);
-        updateJacobianMatrix(u);
+        updateEchelonFormMatrixW(u);
+        updateIndicesStableVariables(u);
+        updateCanonicalFormJacobianMatrix(u);
         updateResidualVector(u);
         return status;
     }
@@ -120,17 +117,17 @@ struct ResidualFunction::Impl
     auto updateSkipJacobian(MasterVectorView u) -> ResidualFunctionUpdateStatus
     {
         sanitycheck();
-        const auto status = updateFunctionEvaluationsSkipJacobian(u);
+        const auto status = updateFunctionEvalsSkippingJacobianEvals(u);
         if(status == FAILED)
             return status;
-        updateMatrixRWQ(u);
-        updateStabilityStatus(u);
-        updateJacobianMatrix(u); // needed in case the set of stable/unstable variables changed
+        updateEchelonFormMatrixW(u);
+        updateIndicesStableVariables(u);
+        updateCanonicalFormJacobianMatrix(u);
         updateResidualVector(u);
         return status;
     }
 
-    auto updateFunctionEvaluations(MasterVectorView u) -> ResidualFunctionUpdateStatus
+    auto updateFunctionEvals(MasterVectorView u) -> ResidualFunctionUpdateStatus
     {
         const auto x = u.x;
         const auto p = u.p;
@@ -141,7 +138,7 @@ struct ResidualFunction::Impl
         return status;
     }
 
-    auto updateFunctionEvaluationsSkipJacobian(MasterVectorView u) -> ResidualFunctionUpdateStatus
+    auto updateFunctionEvalsSkippingJacobianEvals(MasterVectorView u) -> ResidualFunctionUpdateStatus
     {
         const auto x = u.x;
         const auto p = u.p;
@@ -153,7 +150,7 @@ struct ResidualFunction::Impl
         return status;
     }
 
-    auto updateMatrixRWQ(MasterVectorView u) -> void
+    auto updateEchelonFormMatrixW(MasterVectorView u) -> void
     {
         const auto x = u.x;
         wx = min(x - xlower, xupper - x);
@@ -163,12 +160,12 @@ struct ResidualFunction::Impl
         RWQ.update(hx, hp, wx);
     }
 
-    auto updateStabilityStatus(MasterVectorView u) -> void
+    auto updateIndicesStableVariables(MasterVectorView u) -> void
     {
         stability.update({RWQ, fx, u.x, xlower, xupper});
     }
 
-    auto updateJacobianMatrix(MasterVectorView u) -> void
+    auto updateCanonicalFormJacobianMatrix(MasterVectorView u) -> void
     {
         jacobian.update(masterJacobianMatrix());
     }
@@ -211,6 +208,15 @@ struct ResidualFunction::Impl
         return residual.masterVector();
     }
 
+    auto state() const -> ResidualFunctionState
+    {
+        const auto Jm = masterJacobianMatrix();
+        const auto Jc = canonicalJacobianMatrix();
+        const auto Fm = masterResidualVector();
+        const auto Fc = canonicalResidualVector();
+        return {f, fx, fxx, fxp, diagfxx, v, vx, vp, h, hx, hp, Jm, Jc, Fm, Fc};
+    }
+
     auto sanitycheck() const -> void
     {
         assert(b.size() == dims.ny);
@@ -222,8 +228,8 @@ struct ResidualFunction::Impl
     }
 };
 
-ResidualFunction::ResidualFunction(const MasterProblem& problem)
-: pimpl(new Impl(problem))
+ResidualFunction::ResidualFunction(const MasterDims& dims, MatrixConstRef Ax, MatrixConstRef Ap)
+: pimpl(new Impl(dims, Ax, Ap))
 {}
 
 ResidualFunction::ResidualFunction(const ResidualFunction& other)
@@ -272,6 +278,11 @@ auto ResidualFunction::masterJacobianMatrix() const -> MasterMatrix
 auto ResidualFunction::masterResidualVector() const -> MasterVectorView
 {
     return pimpl->masterResidualVector();
+}
+
+auto ResidualFunction::state() const -> ResidualFunctionState
+{
+    return pimpl->state();
 }
 
 } // namespace Optima

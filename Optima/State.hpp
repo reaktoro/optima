@@ -58,6 +58,9 @@ public:
     /// The parameter variables \eq{p} of the optimization problem.
     VectorRef p;
 
+    /// The Lagrange multipliers \eq{w=(y,z)=(y_{\mathrm{e}},y_{\mathrm{g}},z_{\mathrm{e}},z_{\mathrm{g}})} of the optimization problem.
+    VectorRef w;
+
     /// The Lagrange multipliers \eq{y=(y_{\mathrm{e}},y_{\mathrm{g}})} of the optimization problem.
     VectorRef y;
 

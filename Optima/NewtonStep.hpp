@@ -61,7 +61,7 @@ public:
     /// Assign a NewtonStep object to this.
     auto operator=(NewtonStep other) -> NewtonStep&;
 
-    /// Initialize this NewtonStep object when the master optimization problem changes.
+    /// Initialize this NewtonStep object.
     auto initialize(NewtonStepInitializeArgs args) -> void;
 
     /// Apply Newton step to compute the next state of master variables.

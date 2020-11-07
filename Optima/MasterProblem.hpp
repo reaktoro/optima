@@ -29,12 +29,9 @@ namespace Optima {
 /// Used to represent a master optimization problem.
 struct MasterProblem
 {
-    MasterDims const& dims;       ///< The dimensions of the master variables.
     ObjectiveFunction const& f;   ///< The objective function *f(x, p)*.
     ConstraintFunction const& h;  ///< The nonlinear equality constraint function *h(x, p)*.
     ConstraintFunction const& v;  ///< The external nonlinear constraint function *v(x, p)*.
-    MatrixConstRef const& Ax;     ///< The coefficient matrix *Ax* of the linear equality constraints.
-    MatrixConstRef const& Ap;     ///< The coefficient matrix *Ap* of the linear equality constraints.
     VectorConstRef const& b;      ///< The right-hand side vector b in the linear equality constraints.
     VectorConstRef const& xlower; ///< The lower bounds for variables *x*.
     VectorConstRef const& xupper; ///< The upper bounds for variables *x*.

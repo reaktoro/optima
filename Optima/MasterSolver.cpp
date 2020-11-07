@@ -48,8 +48,8 @@ struct MasterSolver::Impl
     Result result;
     Options options;
 
-    Impl(MasterProblem problem)
-    : dims(problem.dims), F(problem), E(dims), uo(dims.nx, dims.np, dims.nw),
+    Impl(const MasterDims& dims, MatrixConstRef Ax, MatrixConstRef Ap)
+    : dims(dims), F(dims, Ax, Ap), E(dims), uo(dims.nx, dims.np, dims.nw),
       newtonstep(dims),
       transformstep(dims),
       errorcontrol(dims),
@@ -70,6 +70,7 @@ struct MasterSolver::Impl
     {
         result = {};
         F.initialize(problem);
+        E.initialize({ problem.xlower, problem.xupper });
         newtonstep.initialize({ problem.xlower, problem.xupper, options.newtonstep });
         transformstep.initialize({ problem.xlower, problem.xupper, problem.phi });
         convergence.initialize({ options.convergence });
@@ -89,6 +90,7 @@ struct MasterSolver::Impl
     auto step(MasterVectorRef u) -> void
     {
         result.iterations += 1;
+        F.update(u);
         newtonstep.apply(F, uo, u);
         transformstep.execute(uo, u, F, E);
         errorcontrol.execute(uo, u, F, E);
@@ -100,8 +102,8 @@ struct MasterSolver::Impl
     }
 };
 
-MasterSolver::MasterSolver(MasterProblem problem)
-: pimpl(new Impl(problem))
+MasterSolver::MasterSolver(const MasterDims& dims, MatrixConstRef Ax, MatrixConstRef Ap)
+: pimpl(new Impl(dims, Ax, Ap))
 {}
 
 MasterSolver::MasterSolver(const MasterSolver& other)

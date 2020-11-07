@@ -61,8 +61,6 @@ struct ResidualFunctionState
 
     const MasterVectorView Fm;    /// The residual vector in master form.
     const CanonicalVectorView Fc; /// The residual vector in canonical form.
-
-    const MasterProblem problem;  /// The underlying master optimization problem.
 };
 
 /// Used to represent the residual function *F(u)* in the Newton step problem.
@@ -70,7 +68,10 @@ class ResidualFunction
 {
 public:
     /// Construct a ResidualFunction object.
-    ResidualFunction(const MasterProblem& problem);
+    /// @param dims The dimensions of the master variables
+    /// @param Ax The matrix *Ax* in *W = [Ax Ap; Jx Jp]*.
+    /// @param Ap The matrix *Ap* in *W = [Ax Ap; Jx Jp]*.
+    ResidualFunction(const MasterDims& dims, MatrixConstRef Ax, MatrixConstRef Ap);
 
     /// Construct a copy of a ResidualFunction object.
     ResidualFunction(const ResidualFunction& other);
@@ -82,14 +83,12 @@ public:
     auto operator=(ResidualFunction other) -> ResidualFunction&;
 
     /// Initialize this ResidualFunction object.
-    /// @warning This method assumes matrices *Ax* and *Ap* remain the same since construction!
-    /// @warning If this is not intended behavior, create a new ResidualFunction object.
     auto initialize(const MasterProblem& problem) -> void;
 
     /// Update the residual function with given *u = (x, p, y, z)*.
     auto update(MasterVectorView u) -> ResidualFunctionUpdateStatus;
 
-    /// Update the residual function with given *u = (x, p, y, z)* but no Jacobian updates.
+    /// Update the residual function with given *u = (x, p, y, z)* skipping Jacobian evaluations.
     auto updateSkipJacobian(MasterVectorView u) -> ResidualFunctionUpdateStatus;
 
     /// Return the Jacobian matrix in canonical form.
