@@ -153,3 +153,36 @@ def testEchelonizer(args):
     echelonizer = Echelonizer(A)
     echelonizer.cleanResidualRoundoffErrors()
     check_echelonizer(echelonizer, A)
+
+    #==============================================================
+    # Check if Echelonizer::compute performs memoization correctly
+    #==============================================================
+    echelonizer = Echelonizer(A)
+
+    weigths = random.rand(n)
+    echelonizer.updateWithPriorityWeights(weigths)
+
+    R = copy(echelonizer.R())
+    Q = copy(echelonizer.Q())
+    C = copy(echelonizer.C())
+
+    echelonizer.compute(A)  # use same A, then ensure R, Q, C remain identical
+
+    Rnew = copy(echelonizer.R())
+    Qnew = copy(echelonizer.Q())
+    Cnew = copy(echelonizer.C())
+
+    assert all(R == Rnew)
+    assert all(Q == Qnew)
+    assert all(C == Cnew)
+
+    A = random.rand(m, n)  # change A, then ensure R, Q, C have changed accordingly
+    echelonizer.compute(A)
+
+    Rnew = copy(echelonizer.R())
+    Qnew = copy(echelonizer.Q())
+    Cnew = copy(echelonizer.C())
+
+    assert not all(R == Rnew)
+    assert not all(Q == Qnew)
+    assert not all(C == Cnew)

@@ -27,10 +27,19 @@
 
 namespace Optima {
 
+/// Return true if matrices A and B are identical.
+auto identical(const MatrixConstRef& A, const MatrixConstRef& B)
+{
+    return A.rows() == B.rows() && A.cols() == B.cols() && A == B;
+}
+
 struct Echelonizer::Impl
 {
     /// The full-pivoting LU decomposition of A so that P*A*Q = L*U;
     Eigen::FullPivLU<Matrix> lu;
+
+    /// The matrix A being echelonized.
+    Matrix A;
 
     /// The current echelonizer matrix R such that RAQ = C = [I S].
     Matrix R;
@@ -96,8 +105,14 @@ struct Echelonizer::Impl
     }
 
     /// Compute the canonical matrix of the given matrix.
-    auto compute(MatrixConstRef A) -> void
+    auto compute(MatrixConstRef Anew) -> void
     {
+        // Avoid echelonization if Anew is A
+        if(identical(Anew, A))
+            return;
+
+        A = Anew;
+
         // The number of rows and columns of A
         const auto m = A.rows();
         const auto n = A.cols();
