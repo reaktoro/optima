@@ -15,110 +15,52 @@
 # # You should have received a copy of the GNU General Public License
 # # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# from optima import *
-# from numpy import *
-# from numpy.linalg import norm
-# from pytest import approx, mark
 
-# from utils.matrices import assemble_matrix_Ax, matrix_non_singular, pascal_matrix
+# from testing.optima import *
+# from testing.utils.matrices import *
+
 
 # # The number of x variables
-# nx = 8
+# nx = 15
 
 # # Tested number of parameter variables p
-# # tested_np = [0, 5]
-# tested_np = [0]
+# tested_np = [0, 5]
 
 # # Tested number of Lagrange multipliers y (i.e., number of rows in A = [Ax Ap])
-# # tested_ny = [4, 8]
-# tested_ny = [4]
+# tested_ny = [4, 8]
 
 # # Tested number of Lagrange multipliers z (i.e., number of rows in J = [Jx Jp])
-# # tested_nz = [0, 5]
-# tested_nz = [0]
+# tested_nz = [0, 5]
 
 # # Tested number of unstable/fixed basic variables
-# # tested_nbu = [0, 1]
-# tested_nbu = [0]
+# tested_nbu = [0, 1]
 
 # # Tested number of linearly dependent rows in Ax
-# # tested_nl = [0, 1]
-# tested_nl = [0]
+# tested_nl = [0, 1]
 
 # # Tested cases for the indices of fixed variables
 # tested_ifixed = [
-#     # [],
-#     # [0, 1, 2]
-#     [1]
+#     [],
+#     [0, 1, 2]
 # ]
 
 # # Tested cases for the indices of variables with lower bounds
 # tested_ilower = [
-#     # [],
-#     # [3, 4, 5]
+#     [],
 #     [3, 4, 5]
 # ]
 
 # # Tested cases for the indices of variables with upper bounds
 # tested_iupper = [
 #     [],
-#     # [6, 7, 8]
+#     [6, 7, 8]
 # ]
-
-
-
-
-
-
-
-# # # The number of x variables
-# # nx = 7
-
-# # # Tested number of parameter variables p
-# # # tested_np = [0, 5]
-# # tested_np = [0]
-
-# # # Tested number of Lagrange multipliers y (i.e., number of rows in A = [Ax Ap])
-# # # tested_ny = [4, 8]
-# # tested_ny = [4]
-
-# # # Tested number of Lagrange multipliers z (i.e., number of rows in J = [Jx Jp])
-# # # tested_nz = [0, 5]
-# # tested_nz = [0]
-
-# # # Tested number of unstable/fixed basic variables
-# # # tested_nbu = [0, 1]
-# # tested_nbu = [0]
-
-# # # Tested number of linearly dependent rows in Ax
-# # # tested_nl = [0, 1]
-# # tested_nl = [0]
-
-# # # Tested cases for the indices of fixed variables
-# # tested_ifixed = [
-# #     # [],
-# #     # [0, 1, 2]
-# #     [0]
-# # ]
-
-# # # Tested cases for the indices of variables with lower bounds
-# # tested_ilower = [
-# #     # [],
-# #     # [3, 4, 5]
-# #     [2, 3]
-# # ]
-
-# # # Tested cases for the indices of variables with upper bounds
-# # tested_iupper = [
-# #     [],
-# #     # [6, 7, 8]
-# # ]
 
 # # Tested cases for the saddle point methods
 # tested_methods = [
 #     SaddlePointMethod.Fullspace,
-#     # SaddlePointMethod.Nullspace,
-#     # SaddlePointMethod.Rangespace,
+#     SaddlePointMethod.Nullspace,
+#     SaddlePointMethod.Rangespace,
 # ]
 
 
@@ -145,16 +87,17 @@
 #     return fn
 
 
-# @mark.parametrize("np"    , tested_np)
-# @mark.parametrize("ny"    , tested_ny)
-# @mark.parametrize("nz"    , tested_nz)
-# @mark.parametrize("nbu"   , tested_nbu)
-# @mark.parametrize("nl"    , tested_nl)
-# @mark.parametrize("ifixed", tested_ifixed)
-# @mark.parametrize("ilower", tested_ilower)
-# @mark.parametrize("iupper", tested_iupper)
-# @mark.parametrize("method", tested_methods)
-# def test_basic_solver(np, ny, nz, nbu, nl, ifixed, ilower, iupper, method):
+
+# @pytest.mark.parametrize("np"    , tested_np)
+# @pytest.mark.parametrize("ny"    , tested_ny)
+# @pytest.mark.parametrize("nz"    , tested_nz)
+# @pytest.mark.parametrize("nbu"   , tested_nbu)
+# @pytest.mark.parametrize("nl"    , tested_nl)
+# @pytest.mark.parametrize("ifixed", tested_ifixed)
+# @pytest.mark.parametrize("ilower", tested_ilower)
+# @pytest.mark.parametrize("iupper", tested_iupper)
+# @pytest.mark.parametrize("method", tested_methods)
+# def testSolver(np, ny, nz, nbu, nl, ifixed, ilower, iupper, method):
 
 #     # Due to a current limitation in the algorithm, if number of parameter
 #     # variables is non-zero and number of linearly dependent or number of basic
@@ -272,7 +215,7 @@
 #     # Compute vector b in Ax*x + Ap*p = b
 #     b = Ax @ x + Ap @ p
 
-#     # Keep references to current x, p, y, z as they are the expected solution
+#     # Keep references to current x, p, y, z, s as they are the expected solution
 #     x_expected = x
 #     p_expected = p
 #     y_expected = y
@@ -286,22 +229,39 @@
 #     z = zeros(nz)
 #     s = zeros(nx)
 
-#     # Create the stability state of the variables
-#     stability = Stability()
-
 #     # Create the options for the optimization calculation
 #     options = Options()
-#     options.output.active = True
+#     # options.output.active = True
 #     options.kkt.method = method
 #     options.maxiterations = 10
-#     options.linesearch.trigger_when_current_error_is_greater_than_initial_error_by_factor = 1.0
-#     options.linesearch.trigger_when_current_error_is_greater_than_previous_error_by_factor = 1.0
+
+#     dims = Dims()
+#     dims.x  = nx
+#     dims.p  = np
+#     dims.be = ny
+#     dims.bg = 0
+#     dims.he = 0
+#     dims.hg = 0
+
+#     problem = Problem(dims)
+#     problem.Aex = Ax
+#     problem.Aep = Ap
+#     problem.be  = b
+#     problem.xlower = xlower
+#     problem.xupper = xupper
+#     problem.plower = plower
+#     problem.pupper = pupper
+#     problem.f = obj
+#     problem.he = h
+#     problem.v = v
 
 #     # Solve the optimization problem
-#     solver = BasicSolver(nx, np, ny, nz, Ax, Ap)
+#     solver = Solver(problem)
 #     solver.setOptions(options)
 
-#     res = solver.solve(obj, h, v, b, xlower, xupper, plower, pupper, x, p, y, z, s, stability)
+#     state = State(dims)
+
+#     res = solver.solve(state, problem)
 
 #     if not res.succeeded:
 
@@ -310,17 +270,19 @@
 #         print()
 #         # print(f"H = \n{H}\n")
 #         # print(f"A = \n{A}\n")
-#         print(f"x(actual)   = {x}")
+#         print(f"x(actual)   = {state.x}")
 #         print(f"x(expected) = {x_expected}")
-#         print(f"x(diff) = {abs(x - x_expected)}")
-#         print(f"p(actual)   = {p}")
+#         print(f"x(diff) = {abs(state.x - x_expected)}")
+#         print(f"p(actual)   = {state.p}")
 #         print(f"p(expected) = {p_expected}")
-#         print(f"p(diff) = {abs(p - p_expected)}")
-#         print(f"y(actual)   = {y}")
+#         print(f"p(diff) = {abs(state.p - p_expected)}")
+#         print(f"y(actual)   = {state.y}")
 #         print(f"y(expected) = {y_expected}")
-#         print(f"y(diff) = {abs(y - y_expected)}")
-#         print(f"z(actual)   = {z}")
+#         print(f"y(diff) = {abs(state.y - y_expected)}")
+#         print(f"z(actual)   = {state.z}")
 #         print(f"z(expected) = {z_expected}")
-#         print(f"z(diff) = {abs(z - z_expected)}")
+#         print(f"z(diff) = {abs(state.z - z_expected)}")
+#         print(f"s(expected) = {s_expected}")
+#         print(f"s(diff) = {abs(state.s - s_expected)}")
 
 #     assert res.succeeded
