@@ -17,24 +17,18 @@
 
 // pybind11 includes
 #include <pybind11/pybind11.h>
-#include <pybind11/functional.h>
 #include <pybind11/eigen.h>
 namespace py = pybind11;
 
 // Optima includes
-#include <Optima/ConstraintFunction.hpp>
-#include <Optima/ConstraintResult.hpp>
+#include <Optima/NewtonStep.hpp>
 using namespace Optima;
 
-void exportConstraintFunction(py::module& m)
+void exportNewtonStep(py::module& m)
 {
-    py::class_<ConstraintOptions::Eval>(m, "ConstraintOptionsEval")
-        .def_readwrite("ddx", &ConstraintOptions::Eval::ddx, "True if evaluating the Jacobian matrix of c(x, p) with respect to x is needed")
-        .def_readwrite("ddp", &ConstraintOptions::Eval::ddp, "True if evaluating the Jacobian matrix of c(x, p) with respect to p is needed")
-        ;
-
-    py::class_<ConstraintOptions>(m, "ConstraintOptions")
-        .def_readonly("eval", &ConstraintOptions::eval, "The objective function components that need to be evaluated.")
-        .def_readonly("ibasicvars", &ConstraintOptions::ibasicvars, "The indices of the basic variables in x.")
+    py::class_<NewtonStep>(m, "NewtonStep")
+        .def(py::init<const MasterDims&>())
+        .def("initialize", &NewtonStep::initialize)
+        .def("apply", &NewtonStep::apply)
         ;
 }

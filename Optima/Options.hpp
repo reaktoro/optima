@@ -27,6 +27,7 @@
 #include <Optima/NewtonStepOptions.hpp>
 #include <Optima/OutputterOptions.hpp>
 #include <Optima/SaddlePointOptions.hpp>
+#include <Optima/TransformFunction.hpp>
 
 namespace Optima {
 
@@ -143,6 +144,9 @@ public:
 
     /// The options used for convergence analysis.
     ConvergenceOptions convergence;
+
+    /// The custom variable transformation function.
+    TransformFunction phi;
 };
 
 } // namespace Optima

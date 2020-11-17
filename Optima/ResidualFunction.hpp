@@ -30,6 +30,10 @@
 
 namespace Optima {
 
+// Forward declarations
+class ObjectiveResult;
+class ConstraintResult;
+
 /// Used to determine whether the evaluation of objective and constraint functions succeeded or not.
 struct ResidualFunctionUpdateStatus
 {
@@ -39,28 +43,12 @@ struct ResidualFunctionUpdateStatus
     operator bool() const { return f && h && v; }
 };
 
-/// Used to store the residual errors associated with the optimization calculation.
-struct ResidualFunctionState
+/// The result of the residual function evaluation at *u = (x, p, y, z)*.
+struct ResidualFunctionResult
 {
-    const double f;           ///< The evaluated value of f(x, p).
-    const VectorConstRef fx;  ///< The evaluated gradient of f(x, p) with respect to x.
-    const MatrixConstRef fxx; ///< The evaluated Jacobian of fx(x, p) with respect to x.
-    const MatrixConstRef fxp; ///< The evaluated Jacobian of fx(x, p) with respect to p.
-    const bool diagfxx;       ///< The flag indicating whether `fxx` is diagonal.
-
-    const VectorConstRef v;   ///< The evaluated value of v(x, p).
-    const MatrixConstRef vx;  ///< The evaluated Jacobian of v(x, p) with respect to x.
-    const MatrixConstRef vp;  ///< The evaluated Jacobian of v(x, p) with respect to p.
-
-    const VectorConstRef h;   ///< The evaluated value of h(x, p).
-    const MatrixConstRef hx;  ///< The evaluated Jacobian of h(x, p) with respect to x.
-    const MatrixConstRef hp;  ///< The evaluated Jacobian of h(x, p) with respect to p.
-
-    const MasterMatrix Jm;        /// The Jacobian matrix in master form.
-    const CanonicalMatrixView Jc; /// The Jacobian matrix in canonical form.
-
-    const MasterVectorView Fm;    /// The residual vector in master form.
-    const CanonicalVectorView Fc; /// The residual vector in canonical form.
+    ObjectiveResult const& fres;   ///< The evaluated result of the objective function *f(x, p)*.
+    ConstraintResult const& hres;  ///< The evaluated result of the constraint function *h(x, p)*.
+    ConstraintResult const& vres;  ///< The evaluated result of the constraint function *v(x, p)*.
 };
 
 /// Used to represent the residual function *F(u)* in the Newton step problem.
@@ -68,10 +56,7 @@ class ResidualFunction
 {
 public:
     /// Construct a ResidualFunction object.
-    /// @param dims The dimensions of the master variables
-    /// @param Ax The matrix *Ax* in *W = [Ax Ap; Jx Jp]*.
-    /// @param Ap The matrix *Ap* in *W = [Ax Ap; Jx Jp]*.
-    ResidualFunction(const MasterDims& dims, MatrixConstRef Ax, MatrixConstRef Ap);
+    ResidualFunction(const MasterProblem& problem);
 
     /// Construct a copy of a ResidualFunction object.
     ResidualFunction(const ResidualFunction& other);
@@ -103,8 +88,11 @@ public:
     /// Return the residual vector in master form.
     auto masterResidualVector() const -> MasterVectorView;
 
-    /// Return the current state details of the residual function.
-    auto state() const -> ResidualFunctionState;
+    /// Return the result of the evaluation of the residual function.
+    auto result() const -> ResidualFunctionResult;
+
+    /// Return the underlying master optimization problem.
+    auto problem() const -> const MasterProblem&;
 
 private:
     struct Impl;

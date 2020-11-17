@@ -38,10 +38,7 @@ private:
 
 public:
     /// Construct a MasterSolver object.
-    /// @param dims The dimensions of the master variables
-    /// @param Ax The matrix *Ax* in *W = [Ax Ap; Jx Jp]*.
-    /// @param Ap The matrix *Ap* in *W = [Ax Ap; Jx Jp]*.
-    MasterSolver(const MasterDims& dims, MatrixConstRef Ax, MatrixConstRef Ap);
+    MasterSolver(const MasterProblem& problem);
 
     /// Construct a copy of a MasterSolver object.
     MasterSolver(const MasterSolver& other);

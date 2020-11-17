@@ -21,6 +21,8 @@
 namespace py = pybind11;
 
 // Optima includes
+#include <Optima/ConstraintResult.hpp>
+#include <Optima/ObjectiveResult.hpp>
 #include <Optima/ResidualFunction.hpp>
 using namespace Optima;
 
@@ -33,7 +35,14 @@ void exportResidualFunction(py::module& m)
         .def_readwrite("v", &ResidualFunctionUpdateStatus::v)
         ;
 
+    py::class_<ResidualFunctionResult>(m, "ResidualFunctionResult")
+        .def_property_readonly("fres", [](const ResidualFunctionResult& self) { return self.fres; })
+        .def_property_readonly("hres", [](const ResidualFunctionResult& self) { return self.hres; })
+        .def_property_readonly("vres", [](const ResidualFunctionResult& self) { return self.vres; })
+        ;
+
     py::class_<ResidualFunction>(m, "ResidualFunction")
+        .def(py::init<const MasterProblem&>())
         .def("initialize"              , &ResidualFunction::initialize)
         .def("update"                  , &ResidualFunction::update)
         .def("updateSkipJacobian"      , &ResidualFunction::updateSkipJacobian)
@@ -41,5 +50,7 @@ void exportResidualFunction(py::module& m)
         .def("canonicalResidualVector" , &ResidualFunction::canonicalResidualVector, py::return_value_policy::reference_internal)
         .def("masterJacobianMatrix"    , &ResidualFunction::masterJacobianMatrix, py::return_value_policy::reference_internal)
         .def("masterResidualVector"    , &ResidualFunction::masterResidualVector, py::return_value_policy::reference_internal)
+        .def("result"                  , &ResidualFunction::result, py::return_value_policy::reference_internal)
+        .def("problem"                 , &ResidualFunction::problem, py::return_value_policy::reference_internal)
         ;
 }

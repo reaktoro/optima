@@ -27,6 +27,9 @@ using namespace Optima;
 void exportMasterProblem(py::module& m)
 {
     py::class_<MasterProblem>(m, "MasterProblem")
+        .def_property_readonly("dims"  , [](const MasterProblem& self) { return self.dims;   })
+        .def_property_readonly("Ax"    , [](const MasterProblem& self) { return self.Ax;     })
+        .def_property_readonly("Ap"    , [](const MasterProblem& self) { return self.Ap;     })
         .def_property_readonly("f"     , [](const MasterProblem& self) { return self.f;      })
         .def_property_readonly("h"     , [](const MasterProblem& self) { return self.h;      })
         .def_property_readonly("v"     , [](const MasterProblem& self) { return self.v;      })

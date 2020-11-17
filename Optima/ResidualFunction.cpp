@@ -19,7 +19,9 @@
 
 // Optima includes
 #include <Optima/CanonicalMatrix.hpp>
+#include <Optima/ConstraintResult.hpp>
 #include <Optima/Exception.hpp>
+#include <Optima/ObjectiveResult.hpp>
 #include <Optima/ResidualVector.hpp>
 #include <Optima/Stability2.hpp>
 #include <Optima/Timing.hpp>
@@ -29,75 +31,57 @@ namespace Optima {
 
 struct ResidualFunction::Impl
 {
-    const MasterDims dims; ///< The dimensions of the master variables.
-    const Matrix Ax;       ///< The coefficient matrix Ax of the linear equality constraints.
-    const Matrix Ap;       ///< The coefficient matrix Ap of the linear equality constraints.
+    /// The dimensions of the master variables.
+    const MasterDims dims;
 
-    ObjectiveFunction evalf;  ///< The objective function f(x, p).
-    ConstraintFunction evalh; ///< The nonlinear equality constraint function h(x, p).
-    ConstraintFunction evalv; ///< The external nonlinear constraint function v(x, p).
-    Vector b;                 ///< The right-hand side vector b in the linear equality constraints.
-    Vector xlower;            ///< The lower bounds for variables x.
-    Vector xupper;            ///< The upper bounds for variables x.
+    /// The master optimization problem.
+    MasterProblem problem;
 
-    MatrixRWQ RWQ; ///< The echelon form of matrix W = [Wx Wp] = [Ax Ap; Jx Jp].
+    /// The result of the evaluation of f(x, p).
+    ObjectiveResult fres;
 
-    double f;     ///< The evaluated value of f(x, p).
-    Vector fx;    ///< The evaluated gradient of f(x, p) with respect to x.
-    Matrix fxx;   ///< The evaluated Jacobian of fx(x, p) with respect to x.
-    Matrix fxp;   ///< The evaluated Jacobian of fx(x, p) with respect to p.
-    bool diagfxx; ///< The flag indicating whether `fxx` is diagonal.
+    /// The result of the evaluation of h(x, p).
+    ConstraintResult hres;
 
-    Vector v;   ///< The evaluated value of v(x, p).
-    Matrix vx;  ///< The evaluated Jacobian of v(x, p) with respect to x.
-    Matrix vp;  ///< The evaluated Jacobian of v(x, p) with respect to p.
+    /// The result of the evaluation of v(x, p).
+    ConstraintResult vres;
 
-    Vector h;   ///< The evaluated value of h(x, p).
-    Matrix hx;  ///< The evaluated Jacobian of h(x, p) with respect to x.
-    Matrix hp;  ///< The evaluated Jacobian of h(x, p) with respect to p.
+    /// The current echelon form of matrix W = [Wx Wp] = [Ax Ap; Jx Jp].
+    MatrixRWQ RWQ;
 
-    Vector wx;  ///< The priority weights for selection of basic variables in x.
+    /// The priority weights for selection of basic variables in x.
+    Vector wx;
 
-    Vector ex;    ///< The errors associated with variables x.
-    Vector ewbs;  ///< The errors associated with linear and nonlinear constraints in canonical form.
+    /// The current stability status of the x variables.
+    Stability2 stability;
 
-    Stability2 stability;     ///< The stability checker of variables in x.
-    CanonicalMatrix jacobian; ///< The Jacobian matrix of the residual function in canonical form.
-    ResidualVector residual;  ///< The object that calculates the residual vector
+    /// The current state of the Jacobian matrix of the residual function in canonical form.
+    CanonicalMatrix jacobian;
 
-    Impl(const MasterDims& dims, MatrixConstRef Ax, MatrixConstRef Ap)
-    : dims(dims), Ax(Ax), Ap(Ap),
-      RWQ(dims, Ax, Ap), stability(dims.nx),
-      jacobian(dims), residual(dims)
+    /// The current state of the residual vector.
+    ResidualVector residual;
+
+    Impl(const MasterProblem& problem)
+    : dims(problem.dims), problem(problem),
+      fres(dims.nx, dims.np),
+      hres(dims.nz, dims.nx, dims.np),
+      vres(dims.np, dims.nx, dims.np),
+      RWQ(dims, problem.Ax, problem.Ap),
+      stability(dims.nx),
+      jacobian(dims),
+      residual(dims)
     {
-        const auto [nx, np, ny, nz, nw, nt] = dims;
-
-        fx.resize(nx);
-        fxx.resize(nx, nx);
-        fxp.resize(nx, np);
-
-        v.resize(np);
-        vx.resize(np, nx);
-        vp.resize(np, np);
-
-        h.resize(nz);
-        hx.resize(nz, nx);
-        hp.resize(nz, np);
-
-        wx.resize(nx);
-
-        ex.resize(nx);
-        ewbs.resize(nw);
+        wx.resize(dims.nx);
     }
 
-    auto initialize(const MasterProblem& problem) -> void
+    auto initialize(const MasterProblem& _problem) -> void
     {
-        b      = problem.b;
-        evalf  = problem.f;
-        evalh  = problem.h;
-        evalv  = problem.v;
-        xlower = problem.xlower;
-        xupper = problem.xupper;
+        problem.f      = _problem.f;
+        problem.h      = _problem.h;
+        problem.v      = _problem.v;
+        problem.b      = _problem.b;
+        problem.xlower = _problem.xlower;
+        problem.xupper = _problem.xupper;
         sanitycheck();
     }
 
@@ -131,10 +115,14 @@ struct ResidualFunction::Impl
     {
         const auto x = u.x;
         const auto p = u.p;
+        const auto ibasicvars = RWQ.asMatrixViewRWQ().jb;
         ResidualFunctionUpdateStatus status;
-        status.f = evalf(x, p, {f, fx, fxx, fxp, diagfxx}); if(status.f == FAILED) return status;
-        status.h = evalh(x, p, {h, hx, hp});                if(status.h == FAILED) return status;
-        status.v = evalv(x, p, {v, vx, vp});                if(status.v == FAILED) return status;
+        ObjectiveOptions fopts{{true, true}, ibasicvars};
+        ConstraintOptions hopts{{true, true}, ibasicvars};
+        ConstraintOptions vopts{{true, true}, ibasicvars};
+        status.f = problem.f(fres, x, p, fopts); if(status.f == FAILED) return status;
+        status.h = problem.h(hres, x, p, hopts); if(status.h == FAILED) return status;
+        status.v = problem.v(vres, x, p, vopts); if(status.v == FAILED) return status;
         return status;
     }
 
@@ -142,27 +130,38 @@ struct ResidualFunction::Impl
     {
         const auto x = u.x;
         const auto p = u.p;
-        Matrix O;
+        const auto ibasicvars = RWQ.asMatrixViewRWQ().jb;
         ResidualFunctionUpdateStatus status;
-        status.f = evalf(x, p, {f, fx, O, O, diagfxx}); if(status.f == FAILED) return status;
-        status.h = evalh(x, p, {h, O, O});              if(status.h == FAILED) return status;
-        status.v = evalv(x, p, {v, O, O});              if(status.v == FAILED) return status;
+        ObjectiveOptions fopts{{false, false}, ibasicvars};
+        ConstraintOptions hopts{{false, false}, ibasicvars};
+        ConstraintOptions vopts{{false, false}, ibasicvars};
+        status.f = problem.f(fres, x, p, fopts); if(status.f == FAILED) return status;
+        status.h = problem.h(hres, x, p, hopts); if(status.h == FAILED) return status;
+        status.v = problem.v(vres, x, p, vopts); if(status.v == FAILED) return status;
         return status;
     }
 
     auto updateEchelonFormMatrixW(MasterVectorView u) -> void
     {
-        const auto x = u.x;
+        const auto& xlower = problem.xlower;
+        const auto& xupper = problem.xupper;
+        const auto& x = u.x;
+        const auto& Jx = hres.ddx;
+        const auto& Jp = hres.ddp;
         wx = min(x - xlower, xupper - x);
         wx = wx.array().isInf().select(abs(x), wx); // replace wx[i]=inf by wx[i]=abs(x[i])
         assert(wx.minCoeff() >= 0.0);
         wx = (wx.array() > 0.0).select(wx, -1.0); // set negative priority weights for variables on the bounds
-        RWQ.update(hx, hp, wx);
+        RWQ.update(Jx, Jp, wx);
     }
 
     auto updateIndicesStableVariables(MasterVectorView u) -> void
     {
-        stability.update({RWQ, fx, u.x, xlower, xupper});
+        const auto& xlower = problem.xlower;
+        const auto& xupper = problem.xupper;
+        const auto& fx = fres.fx;
+        const auto& x = u.x;
+        stability.update({RWQ, fx, x, xlower, xupper});
     }
 
     auto updateCanonicalFormJacobianMatrix(MasterVectorView u) -> void
@@ -172,6 +171,11 @@ struct ResidualFunction::Impl
 
     auto updateResidualVector(MasterVectorView u) -> void
     {
+        const auto& dims = problem.dims;
+        const auto& fx = fres.fx;
+        const auto& h = hres.val;
+        const auto& v = vres.val;
+        const auto& b = problem.b;
         const auto W = RWQ.asMatrixViewW();
         const auto Wx = W.Wx;
         const auto Wp = W.Wp;
@@ -198,8 +202,13 @@ struct ResidualFunction::Impl
         const auto stabilitystatus = stability.status();
         const auto js = stabilitystatus.js;
         const auto ju = stabilitystatus.ju;
-        const auto H = MatrixViewH{fxx, fxp, diagfxx};
-        const auto V = MatrixViewV{vx, vp};
+        const auto Hxx = fres.fxx;
+        const auto Hxp = fres.fxp;
+        const auto diagHxx = fres.diagfxx;
+        const auto Vx = vres.ddx;
+        const auto Vp = vres.ddp;
+        const auto H = MatrixViewH{Hxx, Hxp, diagHxx};
+        const auto V = MatrixViewV{Vx, Vp};
         return {H, V, RWQ, js, ju};
     }
 
@@ -208,28 +217,25 @@ struct ResidualFunction::Impl
         return residual.masterVector();
     }
 
-    auto state() const -> ResidualFunctionState
+    auto result() const -> ResidualFunctionResult
     {
-        const auto Jm = masterJacobianMatrix();
-        const auto Jc = canonicalJacobianMatrix();
-        const auto Fm = masterResidualVector();
-        const auto Fc = canonicalResidualVector();
-        return {f, fx, fxx, fxp, diagfxx, v, vx, vp, h, hx, hp, Jm, Jc, Fm, Fc};
+        return { fres, hres, vres };
     }
 
     auto sanitycheck() const -> void
     {
-        assert(b.size() == dims.ny);
-        assert(evalf != nullptr);
-        assert(evalh != nullptr);
-        assert(evalv != nullptr);
-        assert(xlower.size() == dims.nx);
-        assert(xupper.size() == dims.nx);
+        const auto& dims = problem.dims;
+        assert(problem.b.size() == dims.ny);
+        assert(problem.f != nullptr);
+        assert(problem.h != nullptr);
+        assert(problem.v != nullptr);
+        assert(problem.xlower.size() == dims.nx);
+        assert(problem.xupper.size() == dims.nx);
     }
 };
 
-ResidualFunction::ResidualFunction(const MasterDims& dims, MatrixConstRef Ax, MatrixConstRef Ap)
-: pimpl(new Impl(dims, Ax, Ap))
+ResidualFunction::ResidualFunction(const MasterProblem& problem)
+: pimpl(new Impl(problem))
 {}
 
 ResidualFunction::ResidualFunction(const ResidualFunction& other)
@@ -280,9 +286,9 @@ auto ResidualFunction::masterResidualVector() const -> MasterVectorView
     return pimpl->masterResidualVector();
 }
 
-auto ResidualFunction::state() const -> ResidualFunctionState
+auto ResidualFunction::result() const -> ResidualFunctionResult
 {
-    return pimpl->state();
+    return pimpl->result();
 }
 
 } // namespace Optima

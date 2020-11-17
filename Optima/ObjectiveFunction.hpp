@@ -21,57 +21,37 @@
 #include <functional>
 
 // Optima includes
+#include <Optima/Index.hpp>
 #include <Optima/Matrix.hpp>
 
 namespace Optima {
 
-/// The result of the evaluation of an objective function.
-/// @see ObjectiveFunction
-struct ObjectiveResult
+// Forward declarations
+class ObjectiveResult;
+
+/// The options transmitted to the evaluation of an objective function.
+struct ObjectiveOptions
 {
-    double& f;     ///< The evaluated objective function *f(x, p)*.
-    VectorRef fx;  ///< The evaluated gradient of *f(x, p)* with respect to *x*.
-    MatrixRef fxx; ///< The evaluated Jacobian *fx(x, p)* with respect to *x*.
-    MatrixRef fxp; ///< The evaluated Jacobian *fx(x, p)* with respect to *p*.
-    bool& diagfxx; ///< The flag indicating whether `fxx` is diagonal.
-};
-
-/// The result of the evaluation of an objective function in Python.
-/// @see ObjectiveFunction4py
-struct ObjectiveResult4py
-{
-    double f;         ///< The evaluated objective function *f(x, p)*.
-    VectorRef fx;     ///< The evaluated gradient of *f(x, p)* with respect to *x*.
-    MatrixRef4py fxx; ///< The evaluated Jacobian *fx(x, p)* with respect to *x*.
-    MatrixRef4py fxp; ///< The evaluated Jacobian *fx(x, p)* with respect to *p*.
-    bool diagfxx;     ///< The flag indicating whether `fxx` is diagonal.
-};
-
-/// The functional signature of an objective function.
-/// @param x The values of the primal variables *x*.
-/// @param p The values of the parameter variables *p*.
-/// @param res The evaluated objective function and its first and second order derivatives.
-/// @return Return `true` if the evaluation succeeded, `false` otherwise.
-using ObjectiveFunction = std::function<bool(VectorConstRef x, VectorConstRef p, ObjectiveResult res)>;
-
-/// The functional signature of an objective function in Python.
-/// @param x The values of the primal variables *x*.
-/// @param p The values of the parameter variables *p*.
-/// @param res The evaluated objective function and its first and second order derivatives.
-/// @return Return `true` if the evaluation succeeded, `false` otherwise.
-using ObjectiveFunction4py = std::function<bool(VectorConstRef, VectorConstRef, ObjectiveResult4py*)>;
-
-/// Convert an ObjectiveFunction4py function to an ObjectiveFunction function.
-inline auto convert(const ObjectiveFunction4py& obj4py) -> ObjectiveFunction
-{
-    return [=](VectorConstRef x, VectorConstRef p, ObjectiveResult res)
+    /// Used to list the objective function components that need to be evaluated.
+    struct Eval
     {
-        ObjectiveResult4py res4py{res.f, res.fx, res.fxx, res.fxp, false};
-        const auto status = obj4py(x, p, &res4py);
-        res.f = res4py.f;
-        res.diagfxx = res4py.diagfxx;
-        return status;
+        bool fxx = true; ///< True if evaluating the Jacobian matrix *fxx* is needed.
+        bool fxp = true; ///< True if evaluating the Jacobian matrix *fxp* is needed.
     };
-}
+
+    /// The objective function components that need to be evaluated.
+    const Eval eval;
+
+    /// The indices of the basic variables in *x*.
+    IndicesConstRef ibasicvars;
+};
+
+/// The functional signature of an objective function *f(x, p)*.
+/// @param[out] res The evaluated result of the objective function and its derivatives.
+/// @param x The primal variables *x*.
+/// @param p The parameter variables *p*.
+/// @param opts The options transmitted to the evaluation of *f(x, p)*.
+/// @return Return `true` if the evaluation succeeded, `false` otherwise.
+using ObjectiveFunction = std::function<bool(ObjectiveResult& res, VectorConstRef x, VectorConstRef p, ObjectiveOptions opts)>;
 
 } // namespace Optima

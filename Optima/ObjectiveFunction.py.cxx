@@ -17,22 +17,24 @@
 
 // pybind11 includes
 #include <pybind11/pybind11.h>
+#include <pybind11/functional.h>
 #include <pybind11/eigen.h>
 namespace py = pybind11;
 
 // Optima includes
 #include <Optima/ObjectiveFunction.hpp>
+#include <Optima/ObjectiveResult.hpp>
 using namespace Optima;
 
 void exportObjectiveFunction(py::module& m)
 {
-    // TODO: Instead of having an extra type ObjectiveResult4py because of double& and bool&,
-    // consider using only ObjectiveResult and def_property for f and diagxx members.
-    py::class_<ObjectiveResult4py>(m, "ObjectiveResult")
-        .def_readwrite("f", &ObjectiveResult4py::f, "The evaluated objective function f(x, p).")
-        .def_readwrite("fx", &ObjectiveResult4py::fx, "The evaluated gradient of f(x, p) with respect to x.")
-        .def_readwrite("fxx", &ObjectiveResult4py::fxx, "The evaluated Jacobian fx(x, p) with respect to x.")
-        .def_readwrite("fxp", &ObjectiveResult4py::fxp, "The evaluated Jacobian fx(x, p) with respect to p.")
-        .def_readwrite("diagfxx", &ObjectiveResult4py::diagfxx, "The flag indicating whether `fxx` is diagonal.")
+    py::class_<ObjectiveOptions::Eval>(m, "ObjectiveOptionsEval")
+        .def_readwrite("fxx", &ObjectiveOptions::Eval::fxx, "True if evaluating the Jacobian matrix fxx is needed.")
+        .def_readwrite("fxp", &ObjectiveOptions::Eval::fxp, "True if evaluating the Jacobian matrix fxp is needed.")
+        ;
+
+    py::class_<ObjectiveOptions>(m, "ObjectiveOptions")
+        .def_readonly("eval", &ObjectiveOptions::eval, "The objective function components that need to be evaluated.")
+        .def_readonly("ibasicvars", &ObjectiveOptions::ibasicvars, "The indices of the basic variables in x.")
         ;
 }

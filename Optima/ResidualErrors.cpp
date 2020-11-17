@@ -19,6 +19,8 @@
 
 // Optima includes
 #include <Optima/Exception.hpp>
+#include <Optima/ConstraintResult.hpp>
+#include <Optima/ObjectiveResult.hpp>
 
 namespace Optima {
 
@@ -56,10 +58,10 @@ struct ResidualErrors::Impl
     {
         sanitycheck();
 
-        const auto state = F.state();
+        const auto Fres = F.result();
 
-        const auto Jc = state.Jc;
-        const auto Fc = state.Fc;
+        const auto Jc = F.canonicalJacobianMatrix();
+        const auto Fc = F.canonicalResidualVector();
 
         const auto nbs = Jc.dims.nbs;
         const auto nbl = Jc.dims.nl;
@@ -74,7 +76,7 @@ struct ResidualErrors::Impl
         const auto rwbs = Fc.wbs;
 
         const auto x = u.x;
-        const auto gs = state.fx(js);
+        const auto gs = Fres.fres.fx(js);
         const auto xbs = x(jbs);
         const auto xbslower = xlower(jbs);
         const auto xbsupper = xupper(jbs);

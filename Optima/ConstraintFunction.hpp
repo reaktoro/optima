@@ -17,41 +17,41 @@
 
 #pragma once
 
+// C++ includes
+#include <functional>
+
 // Optima includes
+#include <Optima/Index.hpp>
 #include <Optima/Matrix.hpp>
 
 namespace Optima {
 
-/// The result of the evaluation of a constraint function.
-struct ConstraintResult
+// Forward declarations
+class ConstraintResult;
+
+/// The options transmitted to the evaluation of a constraint function.
+struct ConstraintOptions
 {
-    VectorRef h;  ///< The evaluated equality constraint function *h(x, p)*.
-    MatrixRef hx; ///< The evaluated Jacobian of *h(x, p)* with respect to *x*.
-    MatrixRef hp; ///< The evaluated Jacobian of *h(x, p)* with respect to *p*.
-};
-
-/// The result of the evaluation of a constraint function in Python.
-struct ConstraintResult4py
-{
-    VectorRef h;     ///< The evaluated equality constraint function *h(x, p)*.
-    MatrixRef4py hx; ///< The evaluated Jacobian of *h(x, p)* with respect to *x*.
-    MatrixRef4py hp; ///< The evaluated Jacobian of *h(x, p)* with respect to *p*.
-};
-
-/// The signature of a constraint function.
-using ConstraintFunction = std::function<bool(VectorConstRef, VectorConstRef, ConstraintResult)>;
-
-/// The signature of a constraint function in Python.
-using ConstraintFunction4py = std::function<bool(VectorConstRef, VectorConstRef, ConstraintResult4py*)>;
-
-/// Convert an ConstraintFunction4py function to a ConstraintFunction function.
-inline auto convert(const ConstraintFunction4py& obj4py) -> ConstraintFunction
-{
-    return [=](VectorConstRef x, VectorConstRef p, ConstraintResult res)
+    /// Used to list the constraint function components that need to be evaluated.
+    struct Eval
     {
-        ConstraintResult4py res4py({res.h, res.hx, res.hp});
-        return obj4py(x, p, &res4py);
+        bool ddx = true; ///< True if evaluating the Jacobian matrix of *c(x, p)* with respect to *x* is needed.
+        bool ddp = true; ///< True if evaluating the Jacobian matrix of *c(x, p)* with respect to *p* is needed.
     };
-}
+
+    /// The constraint function components that need to be evaluated.
+    const Eval eval;
+
+    /// The indices of the basic variables in *x*.
+    IndicesConstRef ibasicvars;
+};
+
+/// The functional signature of a constraint function *c(x, p)*.
+/// @param[out] res The evaluated result of the constraint function and its derivatives.
+/// @param x The primal variables *x*.
+/// @param p The parameter variables *p*.
+/// @param opts The options transmitted to the evaluation of *c(x, p)*.
+/// @return Return `true` if the evaluation succeeded, `false` otherwise.
+using ConstraintFunction = std::function<bool(ConstraintResult& res, VectorConstRef x, VectorConstRef p, ConstraintOptions opts)>;
 
 } // namespace Optima

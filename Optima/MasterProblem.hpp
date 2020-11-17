@@ -22,20 +22,21 @@
 #include <Optima/MasterDims.hpp>
 #include <Optima/Matrix.hpp>
 #include <Optima/ObjectiveFunction.hpp>
-#include <Optima/TransformFunction.hpp>
 
 namespace Optima {
 
 /// Used to represent a master optimization problem.
 struct MasterProblem
 {
-    ObjectiveFunction const& f;   ///< The objective function *f(x, p)*.
-    ConstraintFunction const& h;  ///< The nonlinear equality constraint function *h(x, p)*.
-    ConstraintFunction const& v;  ///< The external nonlinear constraint function *v(x, p)*.
-    VectorConstRef const& b;      ///< The right-hand side vector b in the linear equality constraints.
-    VectorConstRef const& xlower; ///< The lower bounds for variables *x*.
-    VectorConstRef const& xupper; ///< The upper bounds for variables *x*.
-    TransformFunction const& phi; ///< The custom variable transformation function.
+    const MasterDims dims; ///< The dimensions of the master variables.
+    const Matrix Ax;       ///< The matrix *Ax* in *W = [Ax Ap; Jx Jp]*.
+    const Matrix Ap;       ///< The matrix *Ap* in *W = [Ax Ap; Jx Jp]*.
+    ObjectiveFunction f;   ///< The objective function *f(x, p)*.
+    ConstraintFunction h;  ///< The nonlinear equality constraint function *h(x, p)*.
+    ConstraintFunction v;  ///< The external nonlinear constraint function *v(x, p)*.
+    Vector b;              ///< The right-hand side vector b in the linear equality constraints.
+    Vector xlower;         ///< The lower bounds for variables *x*.
+    Vector xupper;         ///< The upper bounds for variables *x*.
 };
 
 } // namespace Optima
