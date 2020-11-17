@@ -12,6 +12,9 @@
 // C++ includes
 #include <complex>
 
+// Eigenx includes
+#include "src/FixedMatrix.h"
+
 namespace Eigen {
 
 // Generate all the convenience Eigen types MatrixXd, MatrixXf, VectorXd, etc.
@@ -23,6 +26,11 @@ typedef Matrix<Type, Size, Size, 0, Size, Size> Matrix##SizeSuffix##TypeSuffix; 
 typedef Matrix<Type, Size, 1, 0, Size, 1>       Vector##SizeSuffix##TypeSuffix;  \
 typedef Matrix<Type, 1, Size, 1, 1, Size>       RowVector##SizeSuffix##TypeSuffix;
 
+#define EIGEN_MAKE_DYNAMIC_FIXED_TYPEDEFS(Type, TypeSuffix)  \
+typedef FixedMatrix<Type, -1, -1,  0, -1, -1> FixedMatrixX##TypeSuffix;  \
+typedef FixedMatrix<Type, -1,  1,  0, -1,  1> FixedVectorX##TypeSuffix;  \
+typedef FixedMatrix<Type,  1, -1,  1,  1, -1> FixedRowVectorX##TypeSuffix;
+
 #define EIGEN_MAKE_FIXED_TYPEDEFS(Type, TypeSuffix, Size)         \
 typedef Matrix<Type, Size, -1, 0, Size, -1> Matrix##Size##X##TypeSuffix;  \
 typedef Matrix<Type, -1, Size, 0, -1, Size> Matrix##X##Size##TypeSuffix;
@@ -32,6 +40,7 @@ EIGEN_MAKE_TYPEDEFS(Type, TypeSuffix, 2, 2) \
 EIGEN_MAKE_TYPEDEFS(Type, TypeSuffix, 3, 3) \
 EIGEN_MAKE_TYPEDEFS(Type, TypeSuffix, 4, 4) \
 EIGEN_MAKE_TYPEDEFS(Type, TypeSuffix, -1, X) \
+EIGEN_MAKE_DYNAMIC_FIXED_TYPEDEFS(Type, TypeSuffix) \
 EIGEN_MAKE_FIXED_TYPEDEFS(Type, TypeSuffix, 2) \
 EIGEN_MAKE_FIXED_TYPEDEFS(Type, TypeSuffix, 3) \
 EIGEN_MAKE_FIXED_TYPEDEFS(Type, TypeSuffix, 4)

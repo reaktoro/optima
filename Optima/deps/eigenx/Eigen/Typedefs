@@ -134,3 +134,27 @@ using StridedVectorXcfConstRef = Eigen::StridedVectorXcfConstRef;
 using StridedVectorXcdConstRef = Eigen::StridedVectorXcdConstRef;
 
 using PermutationMatrix = Eigen::PermutationMatrix<-1, -1, int>;
+
+using FixedMatrix = Eigen::FixedMatrixXd;
+using FixedMatrixXi = Eigen::FixedMatrixXi;
+using FixedMatrixXl = Eigen::FixedMatrixXl;
+using FixedMatrixXf = Eigen::FixedMatrixXf;
+using FixedMatrixXd = Eigen::FixedMatrixXd;
+using FixedMatrixXcf = Eigen::FixedMatrixXcf;
+using FixedMatrixXcd = Eigen::FixedMatrixXcd;
+
+using FixedVector = Eigen::FixedVectorXd;
+using FixedVectorXi = Eigen::FixedVectorXi;
+using FixedVectorXl = Eigen::FixedVectorXl;
+using FixedVectorXf = Eigen::FixedVectorXf;
+using FixedVectorXd = Eigen::FixedVectorXd;
+using FixedVectorXcf = Eigen::FixedVectorXcf;
+using FixedVectorXcd = Eigen::FixedVectorXcd;
+
+using FixedRowVector = Eigen::FixedRowVectorXd;
+using FixedRowVectorXi = Eigen::FixedRowVectorXi;
+using FixedRowVectorXl = Eigen::FixedRowVectorXl;
+using FixedRowVectorXf = Eigen::FixedRowVectorXf;
+using FixedRowVectorXd = Eigen::FixedRowVectorXd;
+using FixedRowVectorXcf = Eigen::FixedRowVectorXcf;
+using FixedRowVectorXcd = Eigen::FixedRowVectorXcd;
