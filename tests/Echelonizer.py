@@ -15,14 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from optima import *
-from numpy import *
-from numpy.linalg import norm
-from numpy.testing import assert_array_almost_equal
-from pytest import approx, mark
-from itertools import product
 
-from utils.matrices import testing_matrices_A
+from testing.optima import *
+from testing.utils.matrices import *
 
 
 # Tested number of columns
@@ -32,21 +27,14 @@ tested_n = [15, 20]
 tested_m = range(5, 15, 3)
 
 # Tested cases for the structures of matrix A
-tested_matrices_A = testing_matrices_A
+tested_assembleA = testing_matrices_A
 
 # Tested cases for the indices of fixed variables
 tested_jfixed = [
-    arange(0),
-    array([0]),
-    array([0, 1, 2])
+    npy.arange(0),
+    npy.array([0]),
+    npy.array([0, 1, 2])
 ]
-
-# Combination of all tested cases
-testdata = product(
-    tested_n,
-    tested_m,
-    tested_matrices_A,
-    tested_jfixed)
 
 
 def check_canonical_form(echelonizer, A):
@@ -75,9 +63,9 @@ def check_canonical_ordering(echelonizer, weigths):
 
 
 def check_new_ordering(echelonizer, Kb, Kn):
-    R = array(echelonizer.R())  # create a copy of internal reference
-    S = array(echelonizer.S())  # create a copy of internal reference
-    Q = array(echelonizer.Q())  # create a copy of internal reference
+    R = npy.array(echelonizer.R())  # create a copy of internal reference
+    S = npy.array(echelonizer.S())  # create a copy of internal reference
+    Q = npy.array(echelonizer.Q())  # create a copy of internal reference
 
     echelonizer.updateOrdering(Kb, Kn)
 
@@ -143,12 +131,14 @@ def check_echelonizer(echelonizer, A):
     check_new_ordering(echelonizer, Kb, Kn)  # reversed ordering
 
 
-@mark.parametrize("args", testdata)
-def testEchelonizer(args):
 
-    n, m, assemble_A, jfixed = args
+@pytest.mark.parametrize("n"        , tested_n)
+@pytest.mark.parametrize("m"        , tested_m)
+@pytest.mark.parametrize("assembleA", tested_assembleA)
+@pytest.mark.parametrize("jfixed"   , tested_jfixed)
+def testEchelonizer(n, m, assembleA, jfixed):
 
-    A = assemble_A(m, n, jfixed)
+    A = assembleA(m, n, jfixed)
 
     echelonizer = Echelonizer(A)
     echelonizer.cleanResidualRoundoffErrors()
@@ -162,27 +152,27 @@ def testEchelonizer(args):
     weigths = random.rand(n)
     echelonizer.updateWithPriorityWeights(weigths)
 
-    R = copy(echelonizer.R())
-    Q = copy(echelonizer.Q())
-    C = copy(echelonizer.C())
+    R = npy.copy(echelonizer.R())
+    Q = npy.copy(echelonizer.Q())
+    C = npy.copy(echelonizer.C())
 
     echelonizer.compute(A)  # use same A, then ensure R, Q, C remain identical
 
-    Rnew = copy(echelonizer.R())
-    Qnew = copy(echelonizer.Q())
-    Cnew = copy(echelonizer.C())
+    Rnew = npy.copy(echelonizer.R())
+    Qnew = npy.copy(echelonizer.Q())
+    Cnew = npy.copy(echelonizer.C())
 
-    assert all(R == Rnew)
-    assert all(Q == Qnew)
-    assert all(C == Cnew)
+    assert npy.all(R == Rnew)
+    assert npy.all(Q == Qnew)
+    assert npy.all(C == Cnew)
 
     A = random.rand(m, n)  # change A, then ensure R, Q, C have changed accordingly
     echelonizer.compute(A)
 
-    Rnew = copy(echelonizer.R())
-    Qnew = copy(echelonizer.Q())
-    Cnew = copy(echelonizer.C())
+    Rnew = npy.copy(echelonizer.R())
+    Qnew = npy.copy(echelonizer.Q())
+    Cnew = npy.copy(echelonizer.C())
 
-    assert not all(R == Rnew)
-    assert not all(Q == Qnew)
-    assert not all(C == Cnew)
+    assert not npy.all(R == Rnew)
+    assert not npy.all(Q == Qnew)
+    assert not npy.all(C == Cnew)

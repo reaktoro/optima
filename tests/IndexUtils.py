@@ -15,37 +15,36 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from optima import *
-from numpy import *
-from pytest import approx
+
+from testing.optima import *
 
 
-def test_index_utils():
+def testIndexUtils():
     n = 10
 
-    # assert indices(5) == approx([0, 1, 2, 3, 4, 5])
+    assert_array_equal( indices(5), [0, 1, 2, 3, 4])
 
     assert contains(1, [1, 3, 6])
     assert contains(3, [1, 3, 6])
     assert contains(6, [1, 3, 6])
     assert not contains(7, [1, 3, 6])
 
-    inds = arange(n)
+    inds = npy.arange(n)
     moveIntersectionLeft(inds, [1, 3, 5, 7])
     assert set(inds[:4]) == set([1, 3, 5, 7])
     assert set(inds[4:]) == set([0, 2, 4, 6, 8, 9])
 
-    inds = arange(n)
+    inds = npy.arange(n)
     moveIntersectionRight(inds, [1, 3, 5, 7])
     assert set(inds[-4:]) == set([1, 3, 5, 7])
     assert set(inds[:-4]) == set([0, 2, 4, 6, 8, 9])
 
-    inds = arange(n)
+    inds = npy.arange(n)
     moveIntersectionLeftStable(inds, [1, 3, 5, 7])
     assert inds[:4] == approx([1, 3, 5, 7])
     assert inds[4:] == approx([0, 2, 4, 6, 8, 9])
 
-    inds = arange(n)
+    inds = npy.arange(n)
     moveIntersectionRightStable(inds, [1, 3, 5, 7])
     assert inds[-4:] == approx([1, 3, 5, 7])
     assert inds[:-4] == approx([0, 2, 4, 6, 8, 9])

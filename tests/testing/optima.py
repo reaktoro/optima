@@ -15,25 +15,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+from optima import *
 
-from testing.optima import *
-from testing.utils.matrices import *
+import numpy as npy
 
+from numpy import (
+    random,
+    linalg,
+)
 
-tested_nx  = [5, 10, 20, 50]  # The tested number of x variables
-tested_np  = [0, 5, 10]       # The tested number of p variables
-tested_nw  = [5, 8]           # The tested number of w variables
+from numpy.testing import (
+    assert_allclose,
+    assert_almost_equal,
+    assert_array_almost_equal,
+    assert_array_equal,
+)
 
-@pytest.mark.parametrize("nx", tested_nx)
-@pytest.mark.parametrize("np", tested_np)
-@pytest.mark.parametrize("nw", tested_nw)
-def testMasterVector(nx, np, nw):
+import pytest
 
-    u = MasterVector(nx, np, nw)
+from pytest import approx
 
-    u.x = random.rand(nx)
-    u.p = random.rand(np)
-    u.w = random.rand(nw)
-
-    assert all(u.array() == npy.concatenate([u.x, u.p, u.w]))
-
+import math

@@ -33,13 +33,20 @@ void exportResidualFunction(py::module& m)
         .def_readwrite("v", &ResidualFunctionUpdateStatus::v)
         ;
 
+    py::class_<ResidualFunctionResult>(m, "ResidualFunctionResult")
+        .def_property_readonly("fres", [](const ResidualFunctionResult& self) { return self.fres; })
+        .def_property_readonly("hres", [](const ResidualFunctionResult& self) { return self.hres; })
+        .def_property_readonly("vres", [](const ResidualFunctionResult& self) { return self.vres; })
+        ;
+
     py::class_<ResidualFunction>(m, "ResidualFunction")
-        .def("initialize"              , &ResidualFunction::initialize)
+        .def(py::init<const MasterProblem&>())
         .def("update"                  , &ResidualFunction::update)
         .def("updateSkipJacobian"      , &ResidualFunction::updateSkipJacobian)
         .def("canonicalJacobianMatrix" , &ResidualFunction::canonicalJacobianMatrix, py::return_value_policy::reference_internal)
         .def("canonicalResidualVector" , &ResidualFunction::canonicalResidualVector, py::return_value_policy::reference_internal)
         .def("masterJacobianMatrix"    , &ResidualFunction::masterJacobianMatrix, py::return_value_policy::reference_internal)
         .def("masterResidualVector"    , &ResidualFunction::masterResidualVector, py::return_value_policy::reference_internal)
+        .def("result"                  , &ResidualFunction::result, py::return_value_policy::reference_internal)
         ;
 }

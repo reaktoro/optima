@@ -15,12 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from optima import *
-from numpy import *
-from pytest import approx
+
+from testing.optima import *
+from testing.utils.matrices import *
 
 
-def test_utils():
+def testUtils():
 
     #---------------------------------------------------------------
     # Test method multiplyMatrixVectorWithoutResidualRoundOffError
@@ -28,7 +28,7 @@ def test_utils():
 
     # The R = inv(Ab) matrix when primary species are: H2O, H+, CaCO3, CO2, O2
 
-    R = array([
+    R = npy.array([
         [ 0.50,  0.00,  0.00,  0.00, -0.50],
         [ 0.00,  0.00,  0.00,  0.00,  1.00],
         [ 0.00,  0.00,  0.00,  1.00,  0.00],
@@ -40,7 +40,7 @@ def test_utils():
     nCO2   = 3.743
     nCaCO3 = 3.743
 
-    b = array([2*nH2O, nH2O + 2*nCO2 + 3*nCaCO3, nCO2 + nCaCO3, nCaCO3, 0.0])
+    b = npy.array([2*nH2O, nH2O + 2*nCO2 + 3*nCaCO3, nCO2 + nCaCO3, nCaCO3, 0.0])
 
     bprime = multiplyMatrixVectorWithoutResidualRoundOffError(R, b)
 

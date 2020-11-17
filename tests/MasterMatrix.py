@@ -15,11 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from optima import *
-from numpy import *
-from numpy.testing import assert_almost_equal
-from pytest import mark
-from utils.matrices import *
+
+from testing.optima import *
+from testing.utils.matrices import *
 
 
 tested_nx      = [15, 20]       # The tested number of x variables
@@ -30,13 +28,13 @@ tested_nl      = [0, 2]         # The tested number of linearly dependent rows i
 tested_nu      = [0, 2]         # The tested number of unstable variables
 tested_diagHxx = [False, True]  # The tested options for Hxx structure
 
-@mark.parametrize("nx"     , tested_nx)
-@mark.parametrize("np"     , tested_np)
-@mark.parametrize("ny"     , tested_ny)
-@mark.parametrize("nz"     , tested_nz)
-@mark.parametrize("nl"     , tested_nl)
-@mark.parametrize("nu"     , tested_nu)
-@mark.parametrize("diagHxx", tested_diagHxx)
+@pytest.mark.parametrize("nx"     , tested_nx)
+@pytest.mark.parametrize("np"     , tested_np)
+@pytest.mark.parametrize("ny"     , tested_ny)
+@pytest.mark.parametrize("nz"     , tested_nz)
+@pytest.mark.parametrize("nl"     , tested_nl)
+@pytest.mark.parametrize("nu"     , tested_nu)
+@pytest.mark.parametrize("diagHxx", tested_diagHxx)
 def testMasterMatrix(nx, np, ny, nz, nl, nu, diagHxx):
 
     params = MasterParams(nx, np, ny, nz, nl, nu, diagHxx)
@@ -51,10 +49,10 @@ def testMasterMatrix(nx, np, ny, nz, nl, nu, diagHxx):
     # Check method MasterMatrix::operator Matrix()
     #==========================================================================
 
-    Opw = zeros((np, nw))
-    Oww = zeros((nw, nw))
+    Opw = npy.zeros((np, nw))
+    Oww = npy.zeros((nw, nw))
 
-    Mmat = block([
+    Mmat = npy.block([
         [ M.H.Hxx, M.H.Hxp, M.W.Wx.T],
         [ M.V.Vpx, M.V.Vpp, Opw],
         [ M.W.Wx , M.W.Wp , Oww],
@@ -66,4 +64,4 @@ def testMasterMatrix(nx, np, ny, nz, nl, nu, diagHxx):
     Mmat[ju, :]  = 0.0
     Mmat[ju, ju] = 1.0
 
-    assert all(Mmat == M.array())
+    assert npy.all(Mmat == M.array())

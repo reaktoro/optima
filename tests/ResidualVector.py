@@ -15,11 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from optima import *
-from numpy import *
-from numpy.testing import assert_almost_equal
-from pytest import approx, mark
-from utils.matrices import *
+
+from testing.optima import *
+from testing.utils.matrices import *
 
 
 tested_nx      = [15, 20]       # The tested number of x variables
@@ -29,12 +27,12 @@ tested_nz      = [0, 5]         # The tested number of z variables
 tested_nl      = [0, 2]         # The tested number of linearly dependent rows in Ax
 tested_nu      = [0, 2]         # The tested number of unstable variables
 
-@mark.parametrize("nx", tested_nx)
-@mark.parametrize("np", tested_np)
-@mark.parametrize("ny", tested_ny)
-@mark.parametrize("nz", tested_nz)
-@mark.parametrize("nl", tested_nl)
-@mark.parametrize("nu", tested_nu)
+@pytest.mark.parametrize("nx", tested_nx)
+@pytest.mark.parametrize("np", tested_np)
+@pytest.mark.parametrize("ny", tested_ny)
+@pytest.mark.parametrize("nz", tested_nz)
+@pytest.mark.parametrize("nl", tested_nl)
+@pytest.mark.parametrize("nu", tested_nu)
 def testResidualVector(nx, np, ny, nz, nl, nu):
 
     params = MasterParams(nx, np, ny, nz, nl, nu)
@@ -48,8 +46,8 @@ def testResidualVector(nx, np, ny, nz, nl, nu):
     Mc = Mbar.view()
 
     Wx, Wp = M.W.Wx, M.W.Wp
-    Ax, Jx = vsplit(Wx, [ny])
-    Ap, Jp = vsplit(Wp, [ny])
+    Ax, Jx = npy.vsplit(Wx, [ny])
+    Ap, Jp = npy.vsplit(Wp, [ny])
 
     dims = params.dims
 
@@ -76,13 +74,13 @@ def testResidualVector(nx, np, ny, nz, nl, nu):
 
     Rbs = Mc.Rbs
 
-    ax = zeros(nx)
+    ax = npy.zeros(nx)
     ax[js] = -(g[js] + As.T @ y + Js.T @ z)
 
     ap = -v
     ay = -(As @ x[js] + Au @ x[ju] + Ap @ p - b)
     az = -h
-    aw = concatenate([ay, az])
+    aw = npy.concatenate([ay, az])
     awbs = Rbs @ aw
 
     a = F.masterVector()

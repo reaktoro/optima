@@ -15,11 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from optima import *
-from numpy import *
-from numpy.testing import assert_almost_equal
-from pytest import approx, mark
-from utils.matrices import *
+
+from testing.optima import *
+from testing.utils.matrices import *
 
 
 tested_nx      = [15, 20]       # The tested number of x variables
@@ -37,14 +35,14 @@ tested_methods = [
     LinearSolverMethod.Rangespace
 ]
 
-@mark.parametrize("nx"     , tested_nx)
-@mark.parametrize("np"     , tested_np)
-@mark.parametrize("ny"     , tested_ny)
-@mark.parametrize("nz"     , tested_nz)
-@mark.parametrize("nl"     , tested_nl)
-@mark.parametrize("nu"     , tested_nu)
-@mark.parametrize("diagHxx", tested_diagHxx)
-@mark.parametrize("method" , tested_methods)
+@pytest.mark.parametrize("nx"     , tested_nx)
+@pytest.mark.parametrize("np"     , tested_np)
+@pytest.mark.parametrize("ny"     , tested_ny)
+@pytest.mark.parametrize("nz"     , tested_nz)
+@pytest.mark.parametrize("nl"     , tested_nl)
+@pytest.mark.parametrize("nu"     , tested_nu)
+@pytest.mark.parametrize("diagHxx", tested_diagHxx)
+@pytest.mark.parametrize("method" , tested_methods)
 def testLinearSolver(nx, np, ny, nz, nl, nu, diagHxx, method):
 
     params = MasterParams(nx, np, ny, nz, nl, nu, diagHxx)
@@ -60,9 +58,9 @@ def testLinearSolver(nx, np, ny, nz, nl, nu, diagHxx, method):
     nw = params.dims.nw
 
     uexp = MasterVector(nx, np, nw)
-    uexp.x = linspace(1, nx, nx)
-    uexp.p = linspace(1, np, np)
-    uexp.w = linspace(1, nw, nw)
+    uexp.x = npy.linspace(1, nx, nx)
+    uexp.p = npy.linspace(1, np, np)
+    uexp.w = npy.linspace(1, nw, nw)
 
     a = M * uexp
 

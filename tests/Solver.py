@@ -15,13 +15,10 @@
 # # You should have received a copy of the GNU General Public License
 # # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# from optima import *
-# from numpy import *
-# from numpy.linalg import norm
-# from pytest import approx, mark
-# from itertools import product
 
-# from utils.matrices import assemble_matrix_Ax, matrix_non_singular, pascal_matrix
+# from testing.optima import *
+# from testing.utils.matrices import *
+
 
 # # The number of x variables
 # nx = 15
@@ -91,16 +88,16 @@
 
 
 
-# @mark.parametrize("np"    , tested_np)
-# @mark.parametrize("ny"    , tested_ny)
-# @mark.parametrize("nz"    , tested_nz)
-# @mark.parametrize("nbu"   , tested_nbu)
-# @mark.parametrize("nl"    , tested_nl)
-# @mark.parametrize("ifixed", tested_ifixed)
-# @mark.parametrize("ilower", tested_ilower)
-# @mark.parametrize("iupper", tested_iupper)
-# @mark.parametrize("method", tested_methods)
-# def test_solver(np, ny, nz, nbu, nl, ifixed, ilower, iupper, method):
+# @pytest.mark.parametrize("np"    , tested_np)
+# @pytest.mark.parametrize("ny"    , tested_ny)
+# @pytest.mark.parametrize("nz"    , tested_nz)
+# @pytest.mark.parametrize("nbu"   , tested_nbu)
+# @pytest.mark.parametrize("nl"    , tested_nl)
+# @pytest.mark.parametrize("ifixed", tested_ifixed)
+# @pytest.mark.parametrize("ilower", tested_ilower)
+# @pytest.mark.parametrize("iupper", tested_iupper)
+# @pytest.mark.parametrize("method", tested_methods)
+# def testSolver(np, ny, nz, nbu, nl, ifixed, ilower, iupper, method):
 
 #     # Due to a current limitation in the algorithm, if number of parameter
 #     # variables is non-zero and number of linearly dependent or number of basic

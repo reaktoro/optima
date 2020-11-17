@@ -15,11 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from optima import *
-from numpy import *
-from numpy.testing import assert_almost_equal
-from pytest import mark
-from utils.matrices import *
+
+from testing.optima import *
+from testing.utils.matrices import *
 
 
 tested_nx      = [15, 20]       # The tested number of x variables
@@ -31,14 +29,14 @@ tested_nlu     = [0, 2]         # The tested number of lower unstable variables
 tested_nuu     = [0, 2]         # The tested number of upper unstable variables
 tested_diagHxx = [False, True]  # The tested options for Hxx structure
 
-@mark.parametrize("nx"     , tested_nx)
-@mark.parametrize("np"     , tested_np)
-@mark.parametrize("ny"     , tested_ny)
-@mark.parametrize("nz"     , tested_nz)
-@mark.parametrize("nl"     , tested_nl)
-@mark.parametrize("nlu"    , tested_nlu)
-@mark.parametrize("nuu"    , tested_nuu)
-@mark.parametrize("diagHxx", tested_diagHxx)
+@pytest.mark.parametrize("nx"     , tested_nx)
+@pytest.mark.parametrize("np"     , tested_np)
+@pytest.mark.parametrize("ny"     , tested_ny)
+@pytest.mark.parametrize("nz"     , tested_nz)
+@pytest.mark.parametrize("nl"     , tested_nl)
+@pytest.mark.parametrize("nlu"    , tested_nlu)
+@pytest.mark.parametrize("nuu"    , tested_nuu)
+@pytest.mark.parametrize("diagHxx", tested_diagHxx)
 def testStability(nx, np, ny, nz, nl, nlu, nuu, diagHxx):
 
     nu = nlu + nuu
@@ -78,7 +76,7 @@ def testStability(nx, np, ny, nz, nl, nlu, nuu, diagHxx):
     #==========================================================================
     # Initialize expected s = g - tr(Wx)*λ considering the unstable variables
     #==========================================================================
-    g = zeros(nx)
+    g = npy.zeros(nx)
 
     g[jb] = random.rand(nb)
     lmbda = Rb.T @ g[jb]

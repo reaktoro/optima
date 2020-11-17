@@ -1,10 +1,10 @@
 # Include the Eigen include path for pybind11
 include_directories(${PROJECT_SOURCE_DIR}/Optima/deps/eigen3)
 
-# Collect all source files from the current directory for the Python module
+# Recursively collect all python binding files from the current directory
 file(GLOB_RECURSE CXX_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cxx)
 
-# Compile Optima cxx files into a Python module
+# Compile Optima *.cxx files into a Python module
 pybind11_add_module(optima4py ${CXX_FILES})
 
 # Add the root directory of the project to the include list

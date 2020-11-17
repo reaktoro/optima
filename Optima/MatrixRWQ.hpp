@@ -71,7 +71,7 @@ public:
     /// Assign a MatrixRWQ instance to this.
     auto operator=(MatrixRWQ other) -> MatrixRWQ& = delete;
 
-    /// Update the echelon form of matrix *W*.
+    /// Update the echelon form of matrix *W* where only *Jx* and *Jp* have changed.
     auto update(MatrixConstRef Jx, MatrixConstRef Jp, VectorConstRef weights) -> void;
 
     /// Return the dimensions of the master variables.

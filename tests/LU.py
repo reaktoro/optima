@@ -15,14 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from optima import *
-from numpy import *
-from numpy.linalg import norm
-from numpy.testing import assert_allclose
-from pytest import approx, mark
-from itertools import product
 
-from utils.matrices import matrix_non_singular
+from testing.optima import *
+from testing.utils.matrices import *
+
 
 # Tested number of variables in x
 tested_n = [20, 40, 60]
@@ -30,27 +26,23 @@ tested_n = [20, 40, 60]
 # Tested rank deficiency of matrix A
 tested_rank_deficiency = [0, 1, 5, 10, 15]
 
-# Combination of all tested cases
-testdata = product(tested_n,
-                   tested_rank_deficiency)
 
-@mark.parametrize("args", testdata)
-def test_lu(args):
-
-    n, rank_deficiency = args
+@pytest.mark.parametrize("n", tested_n)
+@pytest.mark.parametrize("rank_deficiency", tested_rank_deficiency)
+def testLU(n, rank_deficiency):
 
 
     def check(A, x_expected, rank_expected, linearly_dependent_rows):
         b = A @ x_expected
         lu = LU()
-        x = zeros(n)
+        x = npy.zeros(n)
         lu.decompose(A)
         lu.solve(b, x)
 
         assert_allclose(A @ x, b)
 
 
-    x = linspace(1, n, n)
+    x = npy.linspace(1, n, n)
 
     linearly_dependent_rows = list(range(1, n, math.ceil(n / rank_deficiency))) \
         if rank_deficiency != 0 else []

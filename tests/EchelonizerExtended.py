@@ -15,19 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from optima import *
-from numpy import *
-from numpy.linalg import norm, inv
-from numpy.testing import assert_array_almost_equal
-from pytest import approx, mark
-from itertools import product
 
-from utils.matrices import testing_matrices_A, pascal_matrix
+from testing.optima import *
+from testing.utils.matrices import *
 
 
 def check_canonical_form(echelonizer, A, J):
     # Auxiliary varibles
-    M = concatenate([A, J], 0)
+    M = npy.concatenate([A, J], 0)
     m, n = M.shape
     R = echelonizer.R()
     Q = echelonizer.Q()
@@ -52,9 +47,9 @@ def check_canonical_ordering(echelonizer, weigths):
 
 
 def check_new_ordering(echelonizer, Kb, Kn):
-    R = array(echelonizer.R())  # create a copy of internal reference
-    S = array(echelonizer.S())  # create a copy of internal reference
-    Q = array(echelonizer.Q())  # create a copy of internal reference
+    R = npy.array(echelonizer.R())  # create a copy of internal reference
+    S = npy.array(echelonizer.S())  # create a copy of internal reference
+    Q = npy.array(echelonizer.Q())  # create a copy of internal reference
 
     echelonizer.updateOrdering(Kb, Kn)
 
@@ -78,7 +73,7 @@ def check_echelonizer(echelonizer, A, J):
     #---------------------------------------------------------------------------
     # Check the computed canonical form with certain weights
     #---------------------------------------------------------------------------
-    weigths = linspace(1, n, n)
+    weigths = npy.linspace(1, n, n)
 
     echelonizer.updateWithPriorityWeights(J, weigths)
     echelonizer.cleanResidualRoundoffErrors()
@@ -88,7 +83,7 @@ def check_echelonizer(echelonizer, A, J):
     #---------------------------------------------------------------------------
     # Set weights for the variables to update the basic/non-basic partition
     #---------------------------------------------------------------------------
-    weigths = linspace(n, 1, n)
+    weigths = npy.linspace(n, 1, n)
 
     Jnew = J + J
 
@@ -117,38 +112,31 @@ def check_echelonizer(echelonizer, A, J):
 
 
 # Tested number of columns in W = [A; J]
-tested_n = [15, 20, 30, 50]
+tested_nx = [15, 20, 30, 50]
 
 # Tested number of rows in A
-tested_mu = range(5, 15, 3)
+tested_ny = range(5, 15, 3)
 
 # Tested number of rows in J
-tested_ml = range(0, 5)
+tested_nz = range(0, 5)
 
 # Tested cases for the matrix W = [A; J]
-tested_matrices_A = testing_matrices_A
-
-# Combination of all tested cases
-testdata = product(tested_n,
-                   tested_mu,
-                   tested_ml,
-                   tested_matrices_A,)
-
-@mark.parametrize("args", testdata)
-def testEchelonizerExtended(args):
-
-    set_printoptions(linewidth=100000, precision=6, floatmode='fixed', threshold=100000)
+tested_assembleA = testing_matrices_A
 
 
-    n, mu, ml, assemble_A = args
+@pytest.mark.parametrize("nx"       , tested_nx)
+@pytest.mark.parametrize("ny"       , tested_ny)
+@pytest.mark.parametrize("nz"       , tested_nz)
+@pytest.mark.parametrize("assembleA", tested_assembleA)
+def testEchelonizerExtended(nx, ny, nz, assembleA):
 
-    m = mu + ml
+    nw = ny + nz
 
     # Skip tests in which there are more rows than columns
-    if m > n: return
+    if nw > nx: return
 
-    A = assemble_A(mu, n)
-    J = pascal_matrix(ml, n)
+    A = assembleA(ny, nx)
+    J = pascal_matrix(nz, nx)
 
     #----------------------------------------------------------------------------------------------
     # WARNING!!

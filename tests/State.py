@@ -15,10 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from optima import *
-from numpy import *
-from pytest import approx, mark
-from itertools import product
+
+from testing.optima import *
+from testing.utils.matrices import *
 
 
 # The tested number of variables in x.
@@ -39,20 +38,13 @@ tested_dims_he = list(range(2))
 # The tested number of non-linear inequality constraint equations.
 tested_dims_hg = list(range(2))
 
-# Combination of all tested cases
-testdata = product(
-    tested_dims_x,
-    tested_dims_p,
-    tested_dims_be,
-    tested_dims_bg,
-    tested_dims_he,
-    tested_dims_hg
-)
-
-@mark.parametrize("args", testdata)
-def test_state(args):
-
-    nx, np, nbe, nbg, nhe, nhg = args
+@pytest.mark.parametrize("nx" , tested_dims_x)
+@pytest.mark.parametrize("np" , tested_dims_p)
+@pytest.mark.parametrize("nbe", tested_dims_be)
+@pytest.mark.parametrize("nbg", tested_dims_bg)
+@pytest.mark.parametrize("nhe", tested_dims_he)
+@pytest.mark.parametrize("nhg", tested_dims_hg)
+def testState(nx, np, nbe, nbg, nhe, nhg):
 
     nxbar = nx + nbg + nhg
     ny = nbe + nbg
@@ -82,24 +74,24 @@ def test_state(args):
     assert len(state.xbg) == nbg
     assert len(state.xhg) == nhg
 
-    assert allclose(state.x, zeros(nx))
-    assert allclose(state.p, zeros(np))
-    assert allclose(state.y, zeros(ny))
-    assert allclose(state.z, zeros(nz))
-    assert allclose(state.xbar, zeros(nxbar))
-    assert allclose(state.sbar, zeros(nxbar))
+    assert_array_equal(state.x, npy.zeros(nx))
+    assert_array_equal(state.p, npy.zeros(np))
+    assert_array_equal(state.y, npy.zeros(ny))
+    assert_array_equal(state.z, npy.zeros(nz))
+    assert_array_equal(state.xbar, npy.zeros(nxbar))
+    assert_array_equal(state.sbar, npy.zeros(nxbar))
 
-    state.xbar = linspace(1.0, nxbar, nxbar)
-    state.sbar = linspace(1.0, nxbar, nxbar) * 3
-    state.y    = linspace(1.0, ny, ny) * 5
-    state.z    = linspace(1.0, nz, nz) * 7
+    state.xbar = npy.linspace(1.0, nxbar, nxbar)
+    state.sbar = npy.linspace(1.0, nxbar, nxbar) * 3
+    state.y    = npy.linspace(1.0, ny, ny) * 5
+    state.z    = npy.linspace(1.0, nz, nz) * 7
 
-    assert allclose(state.x  , state.xbar[:nx])
-    assert allclose(state.ye , state.y[:nbe])
-    assert allclose(state.yg , state.y[nbe:][:nbg])
-    assert allclose(state.ze , state.y[nbe:][nbg:][:nhe])
-    assert allclose(state.zg , state.y[nbe:][nbg:][nhe:])
-    assert allclose(state.s  , state.sbar[:nx])
-    assert allclose(state.xbg, state.xbar[nx:][:nbg])
-    assert allclose(state.xhg, state.xbar[nx:][nbg:])
+    assert_array_equal(state.x  , state.xbar[:nx])
+    assert_array_equal(state.ye , state.w[:nbe])
+    assert_array_equal(state.yg , state.w[nbe:][:nbg])
+    assert_array_equal(state.ze , state.w[nbe:][nbg:][:nhe])
+    assert_array_equal(state.zg , state.w[nbe:][nbg:][nhe:])
+    assert_array_equal(state.s  , state.sbar[:nx])
+    assert_array_equal(state.xbg, state.xbar[nx:][:nbg])
+    assert_array_equal(state.xhg, state.xbar[nx:][nbg:])
 

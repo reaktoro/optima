@@ -15,10 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from optima import *
-from numpy import *
-from pytest import approx, mark
-from itertools import product
+
+from testing.optima import *
 
 
 # The tested number of variables in x.
@@ -39,20 +37,13 @@ tested_dims_he = list(range(2))
 # The tested number of non-linear inequality constraint equations.
 tested_dims_hg = list(range(2))
 
-# Combination of all tested cases
-testdata = product(
-    tested_dims_x,
-    tested_dims_p,
-    tested_dims_be,
-    tested_dims_bg,
-    tested_dims_he,
-    tested_dims_hg
-)
-
-@mark.parametrize("args", testdata)
-def test_problem(args):
-
-    nx, np, mbe, mbg, mhe, mhg = args
+@pytest.mark.parametrize("nx", tested_dims_x)
+@pytest.mark.parametrize("np", tested_dims_p)
+@pytest.mark.parametrize("mbe", tested_dims_be)
+@pytest.mark.parametrize("mbg", tested_dims_bg)
+@pytest.mark.parametrize("mhe", tested_dims_he)
+@pytest.mark.parametrize("mhg", tested_dims_hg)
+def testProblem(nx, np, mbe, mbg, mhe, mhg):
 
     n = nx + mbg + mhg
     m = mbe + mbg + mhe + mhg
@@ -67,11 +58,11 @@ def test_problem(args):
 
     problem = Problem(dims)
 
-    assert allclose(problem.Aex, zeros((mbe, nx)))
-    assert allclose(problem.Aep, zeros((mbe, np)))
-    assert allclose(problem.Agx, zeros((mbg, nx)))
-    assert allclose(problem.Agp, zeros((mbg, np)))
-    assert allclose(problem.be, zeros(mbe))
-    assert allclose(problem.bg, zeros(mbg))
-    assert allclose(problem.xlower, ones(nx) * -inf)
-    assert allclose(problem.xupper, ones(nx) *  inf)
+    assert_array_equal(problem.Aex, npy.zeros((mbe, nx)))
+    assert_array_equal(problem.Aep, npy.zeros((mbe, np)))
+    assert_array_equal(problem.Agx, npy.zeros((mbg, nx)))
+    assert_array_equal(problem.Agp, npy.zeros((mbg, np)))
+    assert_array_equal(problem.be, npy.zeros(mbe))
+    assert_array_equal(problem.bg, npy.zeros(mbg))
+    assert_array_equal(problem.xlower, npy.ones(nx) * -npy.inf)
+    assert_array_equal(problem.xupper, npy.ones(nx) *  npy.inf)

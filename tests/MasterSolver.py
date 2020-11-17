@@ -27,13 +27,6 @@ tested_nw  = [5, 8]           # The tested number of w variables
 @pytest.mark.parametrize("nx", tested_nx)
 @pytest.mark.parametrize("np", tested_np)
 @pytest.mark.parametrize("nw", tested_nw)
-def testMasterVector(nx, np, nw):
+def testMasterSolver(nx, np, nw):
 
-    u = MasterVector(nx, np, nw)
-
-    u.x = random.rand(nx)
-    u.p = random.rand(np)
-    u.w = random.rand(nw)
-
-    assert all(u.array() == npy.concatenate([u.x, u.p, u.w]))
-
+    pass

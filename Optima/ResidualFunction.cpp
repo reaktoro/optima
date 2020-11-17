@@ -267,4 +267,9 @@ auto ResidualFunction::masterResidualVector() const -> MasterVectorView
     return pimpl->masterResidualVector();
 }
 
+auto ResidualFunction::result() const -> ResidualFunctionResult
+{
+    return pimpl->result();
+}
+
 } // namespace Optima

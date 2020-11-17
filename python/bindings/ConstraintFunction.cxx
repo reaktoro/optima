@@ -17,6 +17,7 @@
 
 // pybind11 includes
 #include <pybind11/pybind11.h>
+#include <pybind11/functional.h>
 #include <pybind11/eigen.h>
 namespace py = pybind11;
 
@@ -26,9 +27,20 @@ using namespace Optima;
 
 void exportConstraintFunction(py::module& m)
 {
-    py::class_<ConstraintResult4py>(m, "ConstraintResult")
-        .def_readwrite("h" , &ConstraintResult4py::h, "The evaluated equality constraint function h(x, p).")
-        .def_readwrite("hx", &ConstraintResult4py::hx, "The evaluated Jacobian of h(x, p) with respect to x.")
-        .def_readwrite("hp", &ConstraintResult4py::hp, "The evaluated Jacobian of h(x, p) with respect to p.")
+    py::class_<ConstraintResult>(m, "ConstraintResult")
+        .def_readwrite("val", &ConstraintResult::val, "The evaluated vector value of c(x, p).")
+        .def_readwrite("ddx", &ConstraintResult::ddx, "The evaluated Jacobian matrix of c(x, p) with respect to x.")
+        .def_readwrite("ddp", &ConstraintResult::ddp, "The evaluated Jacobian matrix of c(x, p) with respect to p.")
+        .def_readwrite("ddx4basicvars", &ConstraintResult::ddx4basicvars, "True if `ddx` is non-zero only on columns corresponding to basic varibles in x")
+        ;
+
+    py::class_<ConstraintOptions::Eval>(m, "ConstraintOptionsEval")
+        .def_readwrite("ddx", &ConstraintOptions::Eval::ddx, "True if evaluating the Jacobian matrix of c(x, p) with respect to x is needed")
+        .def_readwrite("ddp", &ConstraintOptions::Eval::ddp, "True if evaluating the Jacobian matrix of c(x, p) with respect to p is needed")
+        ;
+
+    py::class_<ConstraintOptions>(m, "ConstraintOptions")
+        .def_readonly("eval", &ConstraintOptions::eval, "The objective function components that need to be evaluated.")
+        .def_readonly("ibasicvars", &ConstraintOptions::ibasicvars, "The indices of the basic variables in x.")
         ;
 }
