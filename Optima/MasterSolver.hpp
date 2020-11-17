@@ -53,7 +53,7 @@ public:
     auto setOptions(const Options& options) -> void;
 
     /// Solve the given master optimization problem.
-    auto solve(MasterProblem problem, MasterVectorRef u) -> Result;
+    auto solve(const MasterProblem& problem, MasterVectorRef u) -> Result;
 };
 
 } // namespace Optima

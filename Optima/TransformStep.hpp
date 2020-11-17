@@ -21,25 +21,12 @@
 #include <memory>
 
 // Optima includes
+#include <Optima/MasterProblem.hpp>
 #include <Optima/MasterVector.hpp>
 #include <Optima/ResidualErrors.hpp>
 #include <Optima/ResidualFunction.hpp>
-#include <Optima/TransformFunction.hpp>
 
 namespace Optima {
-
-/// The arguments for method @ref TransformStep::initialize.
-struct TransformStepInitializeArgs
-{
-    /// The lower bounds for variables *x*.
-    const VectorConstRef xlower;
-
-    /// The upper bounds for variables *x*.
-    const VectorConstRef xupper;
-
-    /// The custom function that performs variable transformation.
-    const TransformFunction phi;
-};
 
 /// Used to update the variables in an optimization problem using Newton steps.
 class TransformStep
@@ -62,11 +49,8 @@ public:
     /// Assign a TransformStep object to this.
     auto operator=(TransformStep other) -> TransformStep&;
 
-    /// Initialize this TransformStep object when the master optimization problem changes.
-    auto initialize(TransformStepInitializeArgs args) -> void;
-
     /// Execute the custom transformation on the just computed state of master variables.
-    auto execute(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> bool;
+    auto execute(const MasterProblem& problem, MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> bool;
 };
 
 } // namespace Optima

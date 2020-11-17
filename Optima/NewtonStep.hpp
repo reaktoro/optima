@@ -27,19 +27,6 @@
 
 namespace Optima {
 
-/// The arguments for method @ref NewtonStep::initialize.
-struct NewtonStepInitializeArgs
-{
-    /// The lower bounds for variables *x*.
-    const VectorConstRef xlower;
-
-    /// The upper bounds for variables *x*.
-    const VectorConstRef xupper;
-
-    /// The options for the Newton step calculation.
-    const NewtonStepOptions options;
-};
-
 /// Used to update the variables in an optimization problem using Newton steps.
 class NewtonStep
 {
@@ -61,11 +48,11 @@ public:
     /// Assign a NewtonStep object to this.
     auto operator=(NewtonStep other) -> NewtonStep&;
 
-    /// Initialize this NewtonStep object.
-    auto initialize(NewtonStepInitializeArgs args) -> void;
+    /// Set the options of this NewtonStep object.
+    auto setOptions(const NewtonStepOptions& options) -> void;
 
     /// Apply Newton step to compute the next state of master variables.
-    auto apply(const ResidualFunction& F, MasterVectorView uo, MasterVectorRef u) -> void;
+    auto apply(const MasterProblem& problem, const ResidualFunction& F, MasterVectorView uo, MasterVectorRef u) -> void;
 };
 
 } // namespace Optima

@@ -28,7 +28,7 @@ void exportNewtonStep(py::module& m)
 {
     py::class_<NewtonStep>(m, "NewtonStep")
         .def(py::init<const MasterDims&>())
-        .def("initialize", &NewtonStep::initialize)
+        .def("setOptions", &NewtonStep::setOptions)
         .def("apply", &NewtonStep::apply)
         ;
 }

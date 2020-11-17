@@ -26,64 +26,45 @@ struct TransformStep::Impl
 {
     const MasterDims dims; ///< The dimensions of the master variables.
     MasterVector ubkp;     ///< The backup master variables in case of failure.
-    Vector xlower;         ///< The lower bounds for variables *x*.
-    Vector xupper;         ///< The upper bounds for variables *x*.
-    TransformFunction phi; ///< The custom variable transformation function.
 
     Impl(const MasterDims& dims)
     : dims(dims), ubkp(dims.nx, dims.np, dims.nw)
     {
     }
 
-    auto initialize(TransformStepInitializeArgs args) -> void
+    auto execute(const MasterProblem& problem, MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> bool
     {
-        xlower = args.xlower;
-        xupper = args.xupper;
-        phi = args.phi;
-        sanitycheck();
-    }
-
-    auto execute(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> bool
-    {
-        sanitycheck();
-
-        if(phi == nullptr)
+        if(problem.phi == nullptr)
             return FAILED;
 
         ubkp = u;
 
-        const auto outcome = phi(uo.x, u.x);
+        const auto outcome = problem.phi(uo.x, u.x);
 
         if(outcome == FAILED) {
             u = ubkp;
-            F.update(u);
+            F.update(problem, u);
             E.update(u, F);
             return FAILED;
         }
 
-        u.x.noalias() = min(max(u.x, xlower), xupper);
+        u.x.noalias() = min(max(u.x, problem.xlower), problem.xupper);
 
         const auto errorcurr = E.error;
 
-        F.update(u);
+        F.update(problem, u);
         E.update(u, F);
 
         const auto errornext = E.error;
 
         if(errornext > errorcurr) {
             u = ubkp;
-            F.update(u);
+            F.update(problem, u);
             E.update(u, F);
             return FAILED;
         }
 
         return SUCCEEDED;
-    }
-
-    auto sanitycheck() const -> void
-    {
-        assert(xlower.size() == dims.nx);
-        assert(xupper.size() == dims.nx);
     }
 };
 
@@ -104,14 +85,9 @@ auto TransformStep::operator=(TransformStep other) -> TransformStep&
     return *this;
 }
 
-auto TransformStep::initialize(TransformStepInitializeArgs args) -> void
+auto TransformStep::execute(const MasterProblem& problem, MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> bool
 {
-    pimpl->initialize(args);
-}
-
-auto TransformStep::execute(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> bool
-{
-    return pimpl->execute(uo, u, F, E);
+    return pimpl->execute(problem, uo, u, F, E);
 }
 
 } // namespace Optima

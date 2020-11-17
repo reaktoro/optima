@@ -49,7 +49,7 @@ public:
     auto operator=(ErrorControl other) -> ErrorControl&;
 
     /// Execute the error control operation to potentially decrease error level.
-    auto execute(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void;
+    auto execute(const MasterProblem& problem, MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void;
 };
 
 } // namespace Optima

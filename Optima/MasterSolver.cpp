@@ -57,22 +57,25 @@ struct MasterSolver::Impl
     {
     }
 
-    auto solve(MasterProblem problem, MasterVectorRef u) -> Result
+    auto solve(const MasterProblem& problem, MasterVectorRef u) -> Result
     {
         initialize(problem, u);
         while(stepping())
-            step(u);
+            step(problem, u);
         finalize();
         return result;
     }
 
-    auto initialize(MasterProblem problem, MasterVectorRef u) -> bool
+    auto setOptions(const Options& options) -> bool
+    {
+        this->options = options;
+    }
+
+    auto initialize(const MasterProblem& problem, MasterVectorRef u) -> bool
     {
         result = {};
-        F.initialize(problem);
         E.initialize({ problem.xlower, problem.xupper });
-        newtonstep.initialize({ problem.xlower, problem.xupper, options.newtonstep });
-        transformstep.initialize({ problem.xlower, problem.xupper, options.phi });
+        newtonstep.setOptions(options.newtonstep);
         convergence.initialize({ options.convergence });
     }
 
@@ -87,13 +90,13 @@ struct MasterSolver::Impl
         return CONTINUE;
     }
 
-    auto step(MasterVectorRef u) -> void
+    auto step(const MasterProblem& problem, MasterVectorRef u) -> void
     {
         result.iterations += 1;
-        F.update(u);
-        newtonstep.apply(F, uo, u);
-        transformstep.execute(uo, u, F, E);
-        errorcontrol.execute(uo, u, F, E);
+        F.update(problem, u);
+        newtonstep.apply(problem, F, uo, u);
+        transformstep.execute(problem, uo, u, F, E);
+        errorcontrol.execute(problem, uo, u, F, E);
         convergence.update(E);
     }
 
@@ -121,10 +124,10 @@ auto MasterSolver::operator=(MasterSolver other) -> MasterSolver&
 
 auto MasterSolver::setOptions(const Options& options) -> void
 {
-    pimpl->options = options;
+    pimpl->setOptions(options);
 }
 
-auto MasterSolver::solve(MasterProblem problem, MasterVectorRef u) -> Result
+auto MasterSolver::solve(const MasterProblem& problem, MasterVectorRef u) -> Result
 {
     return pimpl->solve(problem, u);
 }

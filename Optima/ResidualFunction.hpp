@@ -67,14 +67,11 @@ public:
     /// Assign a ResidualFunction object to this.
     auto operator=(ResidualFunction other) -> ResidualFunction&;
 
-    /// Initialize this ResidualFunction object.
-    auto initialize(const MasterProblem& problem) -> void;
-
     /// Update the residual function with given *u = (x, p, y, z)*.
-    auto update(MasterVectorView u) -> ResidualFunctionUpdateStatus;
+    auto update(const MasterProblem& problem, MasterVectorView u) -> ResidualFunctionUpdateStatus;
 
     /// Update the residual function with given *u = (x, p, y, z)* skipping Jacobian evaluations.
-    auto updateSkipJacobian(MasterVectorView u) -> ResidualFunctionUpdateStatus;
+    auto updateSkipJacobian(const MasterProblem& problem, MasterVectorView u) -> ResidualFunctionUpdateStatus;
 
     /// Return the Jacobian matrix in canonical form.
     auto canonicalJacobianMatrix() const -> CanonicalMatrixView;
@@ -90,9 +87,6 @@ public:
 
     /// Return the result of the evaluation of the residual function.
     auto result() const -> ResidualFunctionResult;
-
-    /// Return the underlying master optimization problem.
-    auto problem() const -> const MasterProblem&;
 
 private:
     struct Impl;

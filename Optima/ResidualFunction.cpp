@@ -32,9 +32,6 @@ struct ResidualFunction::Impl
     /// The dimensions of the master variables.
     const MasterDims dims;
 
-    /// The master optimization problem.
-    MasterProblem problem;
-
     /// The result of the evaluation of f(x, p).
     ObjectiveResult fres;
 
@@ -60,7 +57,7 @@ struct ResidualFunction::Impl
     ResidualVector residual;
 
     Impl(const MasterProblem& problem)
-    : dims(problem.dims), problem(problem),
+    : dims(problem.dims),
       fres(dims.nx, dims.np),
       hres(dims.nz, dims.nx, dims.np),
       vres(dims.np, dims.nx, dims.np),
@@ -72,44 +69,33 @@ struct ResidualFunction::Impl
         wx.resize(dims.nx);
     }
 
-    auto initialize(const MasterProblem& _problem) -> void
+    auto update(const MasterProblem& problem, MasterVectorView u) -> ResidualFunctionUpdateStatus
     {
-        problem.f      = _problem.f;
-        problem.h      = _problem.h;
-        problem.v      = _problem.v;
-        problem.b      = _problem.b;
-        problem.xlower = _problem.xlower;
-        problem.xupper = _problem.xupper;
-        sanitycheck();
-    }
-
-    auto update(MasterVectorView u) -> ResidualFunctionUpdateStatus
-    {
-        sanitycheck();
-        const auto status = updateFunctionEvals(u);
+        sanitycheck(problem, u);
+        const auto status = updateFunctionEvals(problem, u);
         if(status == FAILED)
             return status;
-        updateEchelonFormMatrixW(u);
-        updateIndicesStableVariables(u);
+        updateEchelonFormMatrixW(problem, u);
+        updateIndicesStableVariables(problem, u);
         updateCanonicalFormJacobianMatrix(u);
-        updateResidualVector(u);
+        updateResidualVector(problem, u);
         return status;
     }
 
-    auto updateSkipJacobian(MasterVectorView u) -> ResidualFunctionUpdateStatus
+    auto updateSkipJacobian(const MasterProblem& problem, MasterVectorView u) -> ResidualFunctionUpdateStatus
     {
-        sanitycheck();
-        const auto status = updateFunctionEvalsSkippingJacobianEvals(u);
+        sanitycheck(problem, u);
+        const auto status = updateFunctionEvalsSkippingJacobianEvals(problem, u);
         if(status == FAILED)
             return status;
-        updateEchelonFormMatrixW(u);
-        updateIndicesStableVariables(u);
+        updateEchelonFormMatrixW(problem, u);
+        updateIndicesStableVariables(problem, u);
         updateCanonicalFormJacobianMatrix(u);
-        updateResidualVector(u);
+        updateResidualVector(problem, u);
         return status;
     }
 
-    auto updateFunctionEvals(MasterVectorView u) -> ResidualFunctionUpdateStatus
+    auto updateFunctionEvals(const MasterProblem& problem, MasterVectorView u) -> ResidualFunctionUpdateStatus
     {
         const auto x = u.x;
         const auto p = u.p;
@@ -124,7 +110,7 @@ struct ResidualFunction::Impl
         return status;
     }
 
-    auto updateFunctionEvalsSkippingJacobianEvals(MasterVectorView u) -> ResidualFunctionUpdateStatus
+    auto updateFunctionEvalsSkippingJacobianEvals(const MasterProblem& problem, MasterVectorView u) -> ResidualFunctionUpdateStatus
     {
         const auto x = u.x;
         const auto p = u.p;
@@ -139,7 +125,7 @@ struct ResidualFunction::Impl
         return status;
     }
 
-    auto updateEchelonFormMatrixW(MasterVectorView u) -> void
+    auto updateEchelonFormMatrixW(const MasterProblem& problem, MasterVectorView u) -> void
     {
         const auto& xlower = problem.xlower;
         const auto& xupper = problem.xupper;
@@ -153,7 +139,7 @@ struct ResidualFunction::Impl
         RWQ.update(Jx, Jp, wx);
     }
 
-    auto updateIndicesStableVariables(MasterVectorView u) -> void
+    auto updateIndicesStableVariables(const MasterProblem& problem, MasterVectorView u) -> void
     {
         const auto& xlower = problem.xlower;
         const auto& xupper = problem.xupper;
@@ -167,7 +153,7 @@ struct ResidualFunction::Impl
         jacobian.update(masterJacobianMatrix());
     }
 
-    auto updateResidualVector(MasterVectorView u) -> void
+    auto updateResidualVector(const MasterProblem& problem, MasterVectorView u) -> void
     {
         const auto& dims = problem.dims;
         const auto& fx = fres.fx;
@@ -220,15 +206,17 @@ struct ResidualFunction::Impl
         return { fres, hres, vres };
     }
 
-    auto sanitycheck() const -> void
+    auto sanitycheck(const MasterProblem& problem, MasterVectorView u) const -> void
     {
-        const auto& dims = problem.dims;
         assert(problem.b.size() == dims.ny);
         assert(problem.f != nullptr);
         assert(problem.h != nullptr);
         assert(problem.v != nullptr);
         assert(problem.xlower.size() == dims.nx);
         assert(problem.xupper.size() == dims.nx);
+        assert(u.x.size() == dims.nx);
+        assert(u.p.size() == dims.np);
+        assert(u.w.size() == dims.nw);
     }
 };
 
@@ -249,19 +237,14 @@ auto ResidualFunction::operator=(ResidualFunction other) -> ResidualFunction&
     return *this;
 }
 
-auto ResidualFunction::initialize(const MasterProblem& problem) -> void
+auto ResidualFunction::update(const MasterProblem& problem, MasterVectorView u) -> ResidualFunctionUpdateStatus
 {
-    pimpl->initialize(problem);
+    return pimpl->update(problem, u);
 }
 
-auto ResidualFunction::update(MasterVectorView u) -> ResidualFunctionUpdateStatus
+auto ResidualFunction::updateSkipJacobian(const MasterProblem& problem, MasterVectorView u) -> ResidualFunctionUpdateStatus
 {
-    return pimpl->update(u);
-}
-
-auto ResidualFunction::updateSkipJacobian(MasterVectorView u) -> ResidualFunctionUpdateStatus
-{
-    return pimpl->updateSkipJacobian(u);
+    return pimpl->updateSkipJacobian(problem, u);
 }
 
 auto ResidualFunction::canonicalJacobianMatrix() const -> CanonicalMatrixView
@@ -282,11 +265,6 @@ auto ResidualFunction::masterJacobianMatrix() const -> MasterMatrix
 auto ResidualFunction::masterResidualVector() const -> MasterVectorView
 {
     return pimpl->masterResidualVector();
-}
-
-auto ResidualFunction::result() const -> ResidualFunctionResult
-{
-    return pimpl->result();
 }
 
 } // namespace Optima
