@@ -38,28 +38,36 @@ struct MatrixRWQ::Impl
     /// The echelonizer of matrix Wx = [Ax; Jx]
     EchelonizerExtended echelonizer;
 
-    Impl(const MasterDims& dims, MatrixConstRef Ax, MatrixConstRef Ap)
-    : dims(dims), echelonizer(Ax)
+    Impl(const MasterDims& dims)
+    : dims(dims)
     {
-        const auto [nx, np, ny, nz, nw, nt] = dims;
+        S.resize(dims.nw, dims.nx + dims.np);
+        W.resize(dims.nw, dims.nx + dims.np);
+    }
 
-        assert( ny == Ax.rows() );
-        assert( ny == Ap.rows() );
+    auto initialize(MatrixConstRef Ax, MatrixConstRef Ap) -> void
+    {
+        // TODO: Implement a sort of memoization here to avoid echelonization of same Ax.
+        // If same as last time, instead of creating a new echelonizer, we call echelonizer.initialize(Ax)
+        // where EchelonizerExtended::initialize should figure out if same. Careful with echelon form that has
+        // been contaminated with round off errors (because there has been many basic swaps already).
+        echelonizer = EchelonizerExtended(Ax);
 
-        S.resize(nw, nx + np);
-        W.resize(nw, nx + np);
+        W.topLeftCorner(dims.ny, dims.nx) = Ax;
+        W.topRightCorner(dims.ny, dims.np) = Ap;
+    }
 
-        auto Wx = W.leftCols(nx);
-        auto Wp = W.rightCols(np);
-
-        Wx.topRows(ny) = Ax;
-        Wp.topRows(ny) = Ap;
+    auto update(MatrixConstRef Ax, MatrixConstRef Ap, MatrixConstRef Jx, MatrixConstRef Jp, VectorConstRef weights) -> void
+    {
+        initialize(Ax, Ap);
+        update(Jx, Jp, weights);
     }
 
     auto update(MatrixConstRef Jx, MatrixConstRef Jp, VectorConstRef weights) -> void
     {
         const auto [nx, np, ny, nz, nw, nt] = dims;
 
+        assert( nw == echelonizer.R().rows() );
         assert( nz == Jx.rows() );
         assert( nz == Jp.rows() );
         assert( nx == Jx.cols() );
@@ -121,8 +129,8 @@ struct MatrixRWQ::Impl
     }
 };
 
-MatrixRWQ::MatrixRWQ(const MasterDims& dims, MatrixConstRef Ax, MatrixConstRef Ap)
-: pimpl(new Impl(dims, Ax, Ap))
+MatrixRWQ::MatrixRWQ(const MasterDims& dims)
+: pimpl(new Impl(dims))
 {}
 
 MatrixRWQ::MatrixRWQ(const MatrixRWQ& other)
@@ -131,6 +139,16 @@ MatrixRWQ::MatrixRWQ(const MatrixRWQ& other)
 
 MatrixRWQ::~MatrixRWQ()
 {}
+
+auto MatrixRWQ::initialize(MatrixConstRef Ax, MatrixConstRef Ap) -> void
+{
+    pimpl->initialize(Ax, Ap);
+}
+
+auto MatrixRWQ::update(MatrixConstRef Ax, MatrixConstRef Ap, MatrixConstRef Jx, MatrixConstRef Jp, VectorConstRef weights) -> void
+{
+    pimpl->update(Ax, Ap, Jx, Jp, weights);
+}
 
 auto MatrixRWQ::update(MatrixConstRef Jx, MatrixConstRef Jp, VectorConstRef weights) -> void
 {

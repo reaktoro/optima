@@ -48,8 +48,8 @@ struct MasterSolver::Impl
     Result result;
     Options options;
 
-    Impl(const MasterProblem& problem)
-    : dims(problem.dims), F(problem), E(dims), uo(dims.nx, dims.np, dims.nw),
+    Impl(const MasterDims& dims)
+    : dims(dims), F(dims), E(dims), uo(dims.nx, dims.np, dims.nw),
       newtonstep(dims),
       transformstep(dims),
       errorcontrol(dims),
@@ -61,22 +61,27 @@ struct MasterSolver::Impl
     {
         initialize(problem, u);
         while(stepping())
-            step(problem, u);
+            step(u);
         finalize();
         return result;
     }
 
-    auto setOptions(const Options& options) -> bool
+    auto setOptions(const Options& opts) -> bool
     {
-        this->options = options;
+        options = opts;
+        newtonstep.setOptions(opts.newtonstep);
+        convergence.setOptions(opts.convergence);
     }
 
     auto initialize(const MasterProblem& problem, MasterVectorRef u) -> bool
     {
         result = {};
-        E.initialize({ problem.xlower, problem.xupper });
-        newtonstep.setOptions(options.newtonstep);
-        convergence.initialize({ options.convergence });
+        F.initialize(problem);
+        E.initialize(problem);
+        transformstep.initialize(problem);
+        newtonstep.initialize(problem);
+        errorcontrol.initialize(problem);
+        convergence.initialize(problem);
     }
 
     auto stepping() -> bool
@@ -90,13 +95,13 @@ struct MasterSolver::Impl
         return CONTINUE;
     }
 
-    auto step(const MasterProblem& problem, MasterVectorRef u) -> void
+    auto step(MasterVectorRef u) -> void
     {
         result.iterations += 1;
-        F.update(problem, u);
-        newtonstep.apply(problem, F, uo, u);
-        transformstep.execute(problem, uo, u, F, E);
-        errorcontrol.execute(problem, uo, u, F, E);
+        F.update(u);
+        newtonstep.apply(F, uo, u);
+        transformstep.execute(uo, u, F, E);
+        errorcontrol.execute(uo, u, F, E);
         convergence.update(E);
     }
 
@@ -105,8 +110,8 @@ struct MasterSolver::Impl
     }
 };
 
-MasterSolver::MasterSolver(const MasterProblem& problem)
-: pimpl(new Impl(problem))
+MasterSolver::MasterSolver(const MasterDims& dims)
+: pimpl(new Impl(dims))
 {}
 
 MasterSolver::MasterSolver(const MasterSolver& other)

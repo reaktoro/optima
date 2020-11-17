@@ -34,9 +34,8 @@ struct Convergence::Impl
     {
     }
 
-    auto initialize(ConvergenceInitializeArgs args) -> void
+    auto initialize(const MasterProblem& problem) -> void
     {
-        options = args.options;
     }
 
     auto update(const ResidualErrors& E) -> void
@@ -80,9 +79,14 @@ auto Convergence::operator=(Convergence other) -> Convergence&
     return *this;
 }
 
-auto Convergence::initialize(ConvergenceInitializeArgs args) -> void
+auto Convergence::setOptions(const ConvergenceOptions& options) -> void
 {
-    pimpl->initialize(args);
+    pimpl->options = options;
+}
+
+auto Convergence::initialize(const MasterProblem& problem) -> void
+{
+    pimpl->initialize(problem);
 }
 
 auto Convergence::update(const ResidualErrors& E) -> void

@@ -51,8 +51,11 @@ public:
     /// Set the options of this NewtonStep object.
     auto setOptions(const NewtonStepOptions& options) -> void;
 
+    /// Initialize this NewtonStep object once at the start of the optimization calculation.
+    auto initialize(const MasterProblem& problem) -> void;
+
     /// Apply Newton step to compute the next state of master variables.
-    auto apply(const MasterProblem& problem, const ResidualFunction& F, MasterVectorView uo, MasterVectorRef u) -> void;
+    auto apply(const ResidualFunction& F, MasterVectorView uo, MasterVectorRef u) -> void;
 };
 
 } // namespace Optima

@@ -45,11 +45,10 @@ struct ResidualErrors::Impl
         ew = zeros(dims.nw);
     }
 
-    auto initialize(ResidualErrorsInitializeArgs args) -> void
+    auto initialize(const MasterProblem& problem) -> void
     {
-        xlower = args.xlower;
-        xupper = args.xupper;
-        sanitycheck();
+        xlower = problem.xlower;
+        xupper = problem.xupper;
     }
 
     auto update(MasterVectorView u, const ResidualFunction& F) -> void
@@ -138,9 +137,9 @@ auto ResidualErrors::operator=(ResidualErrors other) -> ResidualErrors&
     return *this;
 }
 
-auto ResidualErrors::initialize(ResidualErrorsInitializeArgs args) -> void
+auto ResidualErrors::initialize(const MasterProblem& problem) -> void
 {
-    pimpl->initialize(args);
+    return pimpl->initialize(problem);
 }
 
 auto ResidualErrors::update(MasterVectorView u, const ResidualFunction& F) -> void

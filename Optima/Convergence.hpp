@@ -26,13 +26,6 @@
 
 namespace Optima {
 
-/// The arguments for method @ref Convergence::initialize.
-struct ConvergenceInitializeArgs
-{
-    /// The options for convergence analysis.
-    ConvergenceOptions options;
-};
-
 /// Used to perform convergence analysis during an optimization calculation.
 class Convergence
 {
@@ -54,8 +47,11 @@ public:
     /// Assign a Convergence object to this.
     auto operator=(Convergence other) -> Convergence&;
 
-    /// Initialize this Convergence object.
-    auto initialize(ConvergenceInitializeArgs args) -> void;
+    /// Set the options of this convergence checker.
+    auto setOptions(const ConvergenceOptions& options) -> void;
+
+    /// Initialize this convergence checker once at the start of the optimization calculation.
+    auto initialize(const MasterProblem& problem) -> void;
 
     /// Update the convergence analysis with new accepted error status.
     auto update(const ResidualErrors& E) -> void;

@@ -56,20 +56,24 @@ private:
     std::unique_ptr<Impl> pimpl;
 
 public:
-    /// Construct a MatrixRWQ instance.
+    /// Construct a MatrixRWQ object.
     /// @param dims The dimensions of the master variables
-    /// @param Ax The matrix *Ax* in *W = [Ax Ap; Jx Jp]*.
-    /// @param Ap The matrix *Ap* in *W = [Ax Ap; Jx Jp]*.
-    MatrixRWQ(const MasterDims& dims, MatrixConstRef Ax, MatrixConstRef Ap);
+    MatrixRWQ(const MasterDims& dims);
 
-    /// Construct a copy of a MatrixRWQ instance.
+    /// Construct a copy of a MatrixRWQ object.
     MatrixRWQ(const MatrixRWQ& other);
 
-    /// Destroy this MatrixRWQ instance.
+    /// Destroy this MatrixRWQ object.
     virtual ~MatrixRWQ();
 
-    /// Assign a MatrixRWQ instance to this.
+    /// Assign a MatrixRWQ object to this.
     auto operator=(MatrixRWQ other) -> MatrixRWQ& = delete;
+
+    /// Initialize only once the *Ax* and *Ap* matrices in case these seldom change.
+    auto initialize(MatrixConstRef Ax, MatrixConstRef Ap) -> void;
+
+    /// Update the echelon form of matrix *W*.
+    auto update(MatrixConstRef Ax, MatrixConstRef Ap, MatrixConstRef Jx, MatrixConstRef Jp, VectorConstRef weights) -> void;
 
     /// Update the echelon form of matrix *W* where only *Jx* and *Jp* have changed.
     auto update(MatrixConstRef Jx, MatrixConstRef Jp, VectorConstRef weights) -> void;

@@ -27,7 +27,7 @@ using namespace Optima;
 void exportMasterSolver(py::module& m)
 {
     py::class_<MasterSolver>(m, "MasterSolver")
-        .def(py::init<const MasterProblem&>())
+        .def(py::init<const MasterDims&>())
         .def("setOptions", &MasterSolver::setOptions)
         .def("solve", &MasterSolver::solve)
         ;

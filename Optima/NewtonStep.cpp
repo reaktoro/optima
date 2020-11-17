@@ -25,9 +25,11 @@ namespace Optima {
 
 struct NewtonStep::Impl
 {
-    MasterDims dims;           ///< The dimensions of the master variables.
+    const MasterDims dims;     ///< The dimensions of the master variables.
     LinearSolver linearsolver; ///< The linear solver for the master matrix equations.
     MasterVector du;           ///< The Newton step for master variables u = (x, p, w).
+    Vector xlower;             ///< The lower bounds for variables *x*.
+    Vector xupper;             ///< The upper bounds for variables *x*.
 
     Impl(const MasterDims& dims)
     : dims(dims), linearsolver(dims), du(dims.nx, dims.np, dims.nw)
@@ -39,8 +41,15 @@ struct NewtonStep::Impl
         linearsolver.setOptions(options.linearsolver);
     }
 
-    auto apply(const MasterProblem& problem, const ResidualFunction& F, MasterVectorView uo, MasterVectorRef u) -> void
+    auto initialize(const MasterProblem& problem) -> void
     {
+        xlower = problem.xlower;
+        xupper = problem.xupper;
+    }
+
+    auto apply(const ResidualFunction& F, MasterVectorView uo, MasterVectorRef u) -> void
+    {
+        sanitycheck();
         const auto Mc = F.canonicalJacobianMatrix();
         const auto ac = F.canonicalResidualVector();
         linearsolver.decompose(Mc);
@@ -48,7 +57,13 @@ struct NewtonStep::Impl
         u.x .noalias() = uo.x + du.x;
         u.p .noalias() = uo.p + du.p;
         u.w .noalias() = uo.w + du.w;
-        u.x.noalias() = min(max(u.x, problem.xlower), problem.xupper);
+        u.x.noalias() = min(max(u.x, xlower), xupper);
+    }
+
+    auto sanitycheck() const -> void
+    {
+        assert(xlower.size() == dims.nx);
+        assert(xupper.size() == dims.nx);
     }
 };
 
@@ -74,9 +89,14 @@ auto NewtonStep::setOptions(const NewtonStepOptions& options) -> void
     pimpl->setOptions(options);
 }
 
-auto NewtonStep::apply(const MasterProblem& problem, const ResidualFunction& F, MasterVectorView uo, MasterVectorRef u) -> void
+auto NewtonStep::initialize(const MasterProblem& problem) -> void
 {
-    pimpl->apply(problem, F, uo, u);
+    pimpl->initialize(problem);
+}
+
+auto NewtonStep::apply(const ResidualFunction& F, MasterVectorView uo, MasterVectorRef u) -> void
+{
+    pimpl->apply(F, uo, u);
 }
 
 } // namespace Optima

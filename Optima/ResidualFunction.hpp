@@ -56,7 +56,7 @@ class ResidualFunction
 {
 public:
     /// Construct a ResidualFunction object.
-    ResidualFunction(const MasterProblem& problem);
+    ResidualFunction(const MasterDims& dims);
 
     /// Construct a copy of a ResidualFunction object.
     ResidualFunction(const ResidualFunction& other);
@@ -67,11 +67,14 @@ public:
     /// Assign a ResidualFunction object to this.
     auto operator=(ResidualFunction other) -> ResidualFunction&;
 
+    /// Initialize the residual function once before update computations.
+    auto initialize(const MasterProblem& problem) -> void;
+
     /// Update the residual function with given *u = (x, p, y, z)*.
-    auto update(const MasterProblem& problem, MasterVectorView u) -> ResidualFunctionUpdateStatus;
+    auto update(MasterVectorView u) -> ResidualFunctionUpdateStatus;
 
     /// Update the residual function with given *u = (x, p, y, z)* skipping Jacobian evaluations.
-    auto updateSkipJacobian(const MasterProblem& problem, MasterVectorView u) -> ResidualFunctionUpdateStatus;
+    auto updateSkipJacobian(MasterVectorView u) -> ResidualFunctionUpdateStatus;
 
     /// Return the Jacobian matrix in canonical form.
     auto canonicalJacobianMatrix() const -> CanonicalMatrixView;

@@ -40,7 +40,8 @@ void exportResidualFunction(py::module& m)
         ;
 
     py::class_<ResidualFunction>(m, "ResidualFunction")
-        .def(py::init<const MasterProblem&>())
+        .def(py::init<const MasterDims&>())
+        .def("initialize"              , &ResidualFunction::initialize)
         .def("update"                  , &ResidualFunction::update)
         .def("updateSkipJacobian"      , &ResidualFunction::updateSkipJacobian)
         .def("canonicalJacobianMatrix" , &ResidualFunction::canonicalJacobianMatrix, py::return_value_policy::reference_internal)

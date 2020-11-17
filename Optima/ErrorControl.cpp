@@ -38,6 +38,10 @@ struct ErrorControl::Impl
     {
     }
 
+    auto initialize(const MasterProblem& problem) -> void
+    {
+    }
+
     auto isBacktrackSearchNeeded(const ResidualErrors& E)
     {
         // return E.errorIsntFinite();
@@ -58,7 +62,7 @@ struct ErrorControl::Impl
 
     }
 
-    auto execute(const MasterProblem& problem, MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
+    auto execute(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
     {
         // if(E.errorIsInf()) {
         //     backtracksearch.start(F, E, uo, u);
@@ -87,9 +91,14 @@ auto ErrorControl::operator=(ErrorControl other) -> ErrorControl&
     return *this;
 }
 
-auto ErrorControl::execute(const MasterProblem& problem, MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
+auto ErrorControl::initialize(const MasterProblem& problem) -> void
 {
-    pimpl->execute(problem, uo, u, F, E);
+    pimpl->initialize(problem);
+}
+
+auto ErrorControl::execute(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
+{
+    pimpl->execute(uo, u, F, E);
 }
 
 } // namespace Optima

@@ -38,7 +38,7 @@ private:
 
 public:
     /// Construct a MasterSolver object.
-    MasterSolver(const MasterProblem& problem);
+    MasterSolver(const MasterDims& dims);
 
     /// Construct a copy of a MasterSolver object.
     MasterSolver(const MasterSolver& other);

@@ -17,6 +17,7 @@
 
 // pybind11 includes
 #include <pybind11/pybind11.h>
+#include <pybind11/functional.h>
 #include <pybind11/eigen.h>
 namespace py = pybind11;
 
@@ -27,15 +28,24 @@ using namespace Optima;
 void exportMasterProblem(py::module& m)
 {
     py::class_<MasterProblem>(m, "MasterProblem")
-        .def_property_readonly("dims"  , [](const MasterProblem& self) { return self.dims;   })
-        .def_property_readonly("Ax"    , [](const MasterProblem& self) { return self.Ax;     })
-        .def_property_readonly("Ap"    , [](const MasterProblem& self) { return self.Ap;     })
-        .def_property_readonly("f"     , [](const MasterProblem& self) { return self.f;      })
-        .def_property_readonly("h"     , [](const MasterProblem& self) { return self.h;      })
-        .def_property_readonly("v"     , [](const MasterProblem& self) { return self.v;      })
-        .def_property_readonly("b"     , [](const MasterProblem& self) { return self.b;      })
-        .def_property_readonly("xlower", [](const MasterProblem& self) { return self.xlower; })
-        .def_property_readonly("xupper", [](const MasterProblem& self) { return self.xupper; })
-        .def_property_readonly("phi"   , [](const MasterProblem& self) { return self.phi;    })
+        .def(py::init<>())
+        .def_readwrite("f"     , &MasterProblem::f)
+        .def_readwrite("h"     , &MasterProblem::h)
+        .def_readwrite("v"     , &MasterProblem::v)
+        .def_readwrite("Ax"    , &MasterProblem::Ax)
+        .def_readwrite("Ap"    , &MasterProblem::Ap)
+        .def_readwrite("b"     , &MasterProblem::b)
+        .def_readwrite("xlower", &MasterProblem::xlower)
+        .def_readwrite("xupper", &MasterProblem::xupper)
+        .def_readwrite("phi"   , &MasterProblem::phi)
+        // .def_property_readonly("Ax"    , [](const MasterProblem& self) { return self.Ax;     })
+        // .def_property_readonly("Ap"    , [](const MasterProblem& self) { return self.Ap;     })
+        // .def_property_readonly("f"     , [](const MasterProblem& self) { return self.f;      })
+        // .def_property_readonly("h"     , [](const MasterProblem& self) { return self.h;      })
+        // .def_property_readonly("v"     , [](const MasterProblem& self) { return self.v;      })
+        // .def_property_readonly("b"     , [](const MasterProblem& self) { return self.b;      })
+        // .def_property_readonly("xlower", [](const MasterProblem& self) { return self.xlower; })
+        // .def_property_readonly("xupper", [](const MasterProblem& self) { return self.xupper; })
+        // .def_property_readonly("phi"   , [](const MasterProblem& self) { return self.phi;    })
         ;
 }

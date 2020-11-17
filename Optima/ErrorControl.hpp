@@ -48,8 +48,11 @@ public:
     /// Assign a ErrorControl object to this.
     auto operator=(ErrorControl other) -> ErrorControl&;
 
+    /// Initialize this ErrorControl object once at the start of the optimization calculation.
+    auto initialize(const MasterProblem& problem) -> void;
+
     /// Execute the error control operation to potentially decrease error level.
-    auto execute(const MasterProblem& problem, MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void;
+    auto execute(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void;
 };
 
 } // namespace Optima

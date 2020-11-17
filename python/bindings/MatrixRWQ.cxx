@@ -45,20 +45,26 @@ void exportMatrixRWQ(py::module& m)
         .def_readonly("jn" , &MatrixViewRWQ::jn)
         ;
 
-    auto init = [](const MasterDims& dims, MatrixConstRef4py Ax, MatrixConstRef4py Ap)
+    auto initialize = [](MatrixRWQ& self, MatrixConstRef4py Ax, MatrixConstRef4py Ap)
     {
-        return MatrixRWQ(dims, Ax, Ap);
+        self.initialize(Ax, Ap);
     };
 
-    auto update = [](MatrixRWQ& self, MatrixConstRef4py Jx, MatrixConstRef4py Jp, VectorConstRef weights)
+    auto update1 = [](MatrixRWQ& self, MatrixConstRef4py Ax, MatrixConstRef4py Ap, MatrixConstRef4py Jx, MatrixConstRef4py Jp, VectorConstRef weights)
+    {
+        self.update(Ax, Ap, Jx, Jp, weights);
+    };
+
+    auto update2 = [](MatrixRWQ& self, MatrixConstRef4py Jx, MatrixConstRef4py Jp, VectorConstRef weights)
     {
         self.update(Jx, Jp, weights);
     };
 
     py::class_<MatrixRWQ>(m, "MatrixRWQ")
-        .def(py::init(init))
-        .def(py::init<const MatrixRWQ&>())
-        .def("update", update)
+        .def(py::init<const MasterDims&>())
+        .def("initialize", initialize)
+        .def("update1", update1)
+        .def("update2", update2)
         .def("dims", &MatrixRWQ::dims)
         .def("asMatrixViewW", &MatrixRWQ::asMatrixViewW, py::return_value_policy::reference_internal)
         .def("asMatrixViewRWQ", &MatrixRWQ::asMatrixViewRWQ, py::return_value_policy::reference_internal)

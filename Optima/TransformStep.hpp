@@ -49,8 +49,11 @@ public:
     /// Assign a TransformStep object to this.
     auto operator=(TransformStep other) -> TransformStep&;
 
+    /// Initialize this TransformStep object once at the start of the optimization calculation.
+    auto initialize(const MasterProblem& problem) -> void;
+
     /// Execute the custom transformation on the just computed state of master variables.
-    auto execute(const MasterProblem& problem, MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> bool;
+    auto execute(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> bool;
 };
 
 } // namespace Optima
