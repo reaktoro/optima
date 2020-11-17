@@ -26,8 +26,29 @@
 
 namespace Optima {
 
-// Forward declarations
-class ConstraintResult;
+/// The result of a constraint function evaluation.
+/// @see ConstraintFunction
+struct ConstraintResult
+{
+    /// The evaluated vector value of *c(x, p)*.
+    FixedVector val;
+
+    /// The evaluated Jacobian matrix of *c(x, p)* with respect to *x*.
+    FixedMatrix ddx;
+
+    /// The evaluated Jacobian matrix of *c(x, p)* with respect to *p*.
+    FixedMatrix ddp;
+
+    /// True if `ddx` is non-zero only on columns corresponding to basic varibles in *x*.
+    bool ddx4basicvars = false;
+
+    /// Construct a ConstraintResult object.
+    /// @param nc The number of constraint equations in *c(x, p)*.
+    /// @param nx The number of variables in *x*.
+    /// @param np The number of variables in *p*.
+    ConstraintResult(Index nc, Index nx, Index np)
+    : val(nc), ddx(nc, nx), ddp(nc, np) {}
+};
 
 /// The options transmitted to the evaluation of a constraint function.
 struct ConstraintOptions
@@ -52,6 +73,7 @@ struct ConstraintOptions
 /// @param p The parameter variables *p*.
 /// @param opts The options transmitted to the evaluation of *c(x, p)*.
 /// @return Return `true` if the evaluation succeeded, `false` otherwise.
+/// @see ObjectiveFunction
 using ConstraintFunction = std::function<bool(ConstraintResult& res, VectorConstRef x, VectorConstRef p, ConstraintOptions opts)>;
 
 } // namespace Optima

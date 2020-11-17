@@ -22,8 +22,6 @@
 namespace py = pybind11;
 
 // Optima includes
-#include <Optima/ConstraintResult.hpp>
-#include <Optima/ObjectiveResult.hpp>
 #include <Optima/Problem.hpp>
 using namespace Optima;
 

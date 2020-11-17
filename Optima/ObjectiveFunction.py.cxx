@@ -23,11 +23,19 @@ namespace py = pybind11;
 
 // Optima includes
 #include <Optima/ObjectiveFunction.hpp>
-#include <Optima/ObjectiveResult.hpp>
 using namespace Optima;
 
 void exportObjectiveFunction(py::module& m)
 {
+    py::class_<ObjectiveResult>(m, "ObjectiveResult")
+        .def_readwrite("f", &ObjectiveResult::f)
+        .def_readwrite("fx", &ObjectiveResult::fx)
+        .def_readwrite("fxx", &ObjectiveResult::fxx)
+        .def_readwrite("fxp", &ObjectiveResult::fxp)
+        .def_readwrite("diagfxx", &ObjectiveResult::diagfxx)
+        .def_readwrite("fxx4basicvars", &ObjectiveResult::fxx4basicvars)
+        ;
+
     py::class_<ObjectiveOptions::Eval>(m, "ObjectiveOptionsEval")
         .def_readwrite("fxx", &ObjectiveOptions::Eval::fxx, "True if evaluating the Jacobian matrix fxx is needed.")
         .def_readwrite("fxp", &ObjectiveOptions::Eval::fxp, "True if evaluating the Jacobian matrix fxp is needed.")

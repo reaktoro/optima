@@ -19,9 +19,7 @@
 
 // Optima includes
 #include <Optima/CanonicalMatrix.hpp>
-#include <Optima/ConstraintResult.hpp>
 #include <Optima/Exception.hpp>
-#include <Optima/ObjectiveResult.hpp>
 #include <Optima/ResidualVector.hpp>
 #include <Optima/Stability2.hpp>
 #include <Optima/Timing.hpp>

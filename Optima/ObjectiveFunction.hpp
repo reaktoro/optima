@@ -26,10 +26,37 @@
 
 namespace Optima {
 
-// Forward declarations
-class ObjectiveResult;
+/// The result of an objective function evaluation.
+/// @see ObjectiveFunction
+struct ObjectiveResult
+{
+    /// The evaluated objective function *f(x, p)*.
+    double f = 0.0;
+
+    /// The evaluated gradient vector of *f(x, p)* with respect to *x*.
+    FixedVector fx;
+
+    /// The evaluated Jacobian matrix of *fx(x, p)* with respect to *x*.
+    FixedMatrix fxx;
+
+    /// The evaluated Jacobian matrix of *fx(x, p)* with respect to *p*.
+    FixedMatrix fxp;
+
+    /// True if `fxx` is diagonal.
+    bool diagfxx = false;
+
+    /// True if `fxx` is non-zero only on columns corresponding to basic varibles in *x*.
+    bool fxx4basicvars = false;
+
+    /// Construct an ObjectiveResult object.
+    /// @param nx The number of variables in *x*.
+    /// @param np The number of variables in *p*.
+    ObjectiveResult(Index nx, Index np)
+    : fx(nx), fxx(nx, nx), fxp(nx, np) {}
+};
 
 /// The options transmitted to the evaluation of an objective function.
+/// @see ObjectiveFunction, ObjectiveResult
 struct ObjectiveOptions
 {
     /// Used to list the objective function components that need to be evaluated.
@@ -52,6 +79,7 @@ struct ObjectiveOptions
 /// @param p The parameter variables *p*.
 /// @param opts The options transmitted to the evaluation of *f(x, p)*.
 /// @return Return `true` if the evaluation succeeded, `false` otherwise.
+/// @see ObjectiveResult, ObjectiveOptions
 using ObjectiveFunction = std::function<bool(ObjectiveResult& res, VectorConstRef x, VectorConstRef p, ObjectiveOptions opts)>;
 
 } // namespace Optima

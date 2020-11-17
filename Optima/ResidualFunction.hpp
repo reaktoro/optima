@@ -31,8 +31,8 @@
 namespace Optima {
 
 // Forward declarations
-class ObjectiveResult;
-class ConstraintResult;
+struct ObjectiveResult;
+struct ConstraintResult;
 
 /// Used to determine whether the evaluation of objective and constraint functions succeeded or not.
 struct ResidualFunctionUpdateStatus
