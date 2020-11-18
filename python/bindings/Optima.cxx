@@ -21,8 +21,8 @@ namespace py = pybind11;
 
 void exportEigen(py::module& m);
 void exportConstants(py::module& m);
-// void exportBasicSolver(py::module& m);
 void exportCanonicalDims(py::module& m);
+void exportCanonicalizer(py::module& m);
 void exportCanonicalMatrix(py::module& m);
 void exportCanonicalVector(py::module& m);
 void exportConstraintFunction(py::module& m);
@@ -63,8 +63,8 @@ PYBIND11_MODULE(optima4py, m)
 {
     exportEigen(m);
     exportConstants(m);
-    // exportBasicSolver(m);
     exportCanonicalDims(m);
+    exportCanonicalizer(m);
     exportCanonicalMatrix(m);
     exportCanonicalVector(m);
     exportConstraintFunction(m);
