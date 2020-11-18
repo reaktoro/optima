@@ -27,13 +27,14 @@
 #include <Optima/MasterMatrix.hpp>
 #include <Optima/MasterProblem.hpp>
 #include <Optima/MasterVector.hpp>
+#include <Optima/Stability2.hpp>
 
 namespace Optima {
 
 // Forward declarations
 struct ObjectiveResult;
 struct ConstraintResult;
-struct StabilityStatus;
+// struct StabilityStatus;
 
 /// Used to determine whether the evaluation of objective and constraint functions succeeded or not.
 struct ResidualFunctionUpdateStatus
@@ -69,10 +70,10 @@ struct ResidualFunctionResult
     CanonicalVectorView const& Fc;
 
     /// The evaluated stability status of the x variables.
-    StabilityStatus const& stabilitystatus;
+    StabilityStatus stabilitystatus;
 
     /// True if all functions *f*, *h* and *v* were successfully evaluated.
-    bool const& succeeded;
+    bool succeeded;
 };
 
 /// Used to represent the residual function *F(u)* in the Newton step problem.

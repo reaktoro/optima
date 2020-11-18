@@ -49,6 +49,6 @@ void exportStability2(py::module& m)
     py::class_<Stability2>(m, "Stability2")
         .def(py::init<Index>())
         .def("update", update)
-        .def("status", &Stability2::status)
+        .def("status", &Stability2::status, py::return_value_policy::reference_internal)
         ;
 }

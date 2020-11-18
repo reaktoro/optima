@@ -75,7 +75,7 @@ def testResidualFunction(nx, np, ny, nz, nl, nu, b1, b2, b3, b4, b5, b6, b7):
     cp = random.rand(dims.np)
     cz = random.rand(dims.nz)
 
-    cx[ju] = +1.0e100
+    cx[ju] = +1.0e4
 
     def objectivefn_f(res, x, p, opts):
         res.f   = 0.5 * (x.T @ Hxx @ x) + x.T @ Hxp @ p + cx.T @ x
@@ -160,4 +160,11 @@ def testResidualFunction(nx, np, ny, nz, nl, nu, b1, b2, b3, b4, b5, b6, b7):
     assert set(M.js) == set(Jm.js)
     assert set(M.ju) == set(Jm.ju)
 
-    # Fv = ResidualVector()
+    jb  = Jm.RWQ.jb
+    jn  = Jm.RWQ.jn
+    Sbn = Jm.RWQ.Sbn
+
+    g = result.f.fx
+
+    assert result.stabilitystatus.s[jb] == approx(0.0)
+    assert result.stabilitystatus.s[jn] == approx(g[jn] - Sbn.T @ g[jb])
