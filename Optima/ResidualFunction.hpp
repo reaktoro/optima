@@ -61,7 +61,7 @@ struct ResidualFunctionResult
     MasterMatrix const& Jm;
 
     /// The evaluated Jacobian matrix in canonical form.
-    CanonicalMatrixView const& Jc;
+    CanonicalMatrix const& Jc;
 
     /// The evaluated residual vector in master form.
     MasterVectorView const& Fm;
@@ -102,7 +102,7 @@ public:
     auto updateSkipJacobian(MasterVectorView u) -> void;
 
     /// Return the Jacobian matrix in canonical form.
-    auto jacobianMatrixCanonicalForm() const -> CanonicalMatrixView;
+    auto jacobianMatrixCanonicalForm() const -> CanonicalMatrix;
 
     /// Return the Jacobian matrix in master form.
     auto jacobianMatrixMasterForm() const -> MasterMatrix;

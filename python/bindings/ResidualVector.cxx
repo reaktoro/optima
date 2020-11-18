@@ -27,7 +27,7 @@ using namespace Optima;
 void exportResidualVector(py::module& m)
 {
     auto update = [](ResidualVector& self,
-        CanonicalMatrixView Mc,
+        CanonicalMatrix Mc,
         MatrixConstRef Wx,
         MatrixConstRef Wp,
         VectorConstRef x,

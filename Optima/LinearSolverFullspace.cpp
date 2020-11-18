@@ -40,7 +40,7 @@ struct LinearSolverFullspace::Impl
     {
     }
 
-    auto decompose(CanonicalMatrixView J) -> void
+    auto decompose(CanonicalMatrix J) -> void
     {
         const auto dims = J.dims;
 
@@ -87,7 +87,7 @@ struct LinearSolverFullspace::Impl
         lu.decompose(M);
     }
 
-    auto solve(CanonicalMatrixView J, CanonicalVectorView a, CanonicalVectorRef u) -> void
+    auto solve(CanonicalMatrix J, CanonicalVectorView a, CanonicalVectorRef u) -> void
     {
         const auto dims = J.dims;
 
@@ -137,12 +137,12 @@ auto LinearSolverFullspace::operator=(LinearSolverFullspace other) -> LinearSolv
     return *this;
 }
 
-auto LinearSolverFullspace::decompose(CanonicalMatrixView M) -> void
+auto LinearSolverFullspace::decompose(CanonicalMatrix M) -> void
 {
     pimpl->decompose(M);
 }
 
-auto LinearSolverFullspace::solve(CanonicalMatrixView J, CanonicalVectorView a, CanonicalVectorRef u) -> void
+auto LinearSolverFullspace::solve(CanonicalMatrix J, CanonicalVectorView a, CanonicalVectorRef u) -> void
 {
     pimpl->solve(J, a, u);
 }

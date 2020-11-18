@@ -56,7 +56,7 @@ struct LinearSolverNullspace::Impl
         rw.resize(nt);
     }
 
-    auto decompose(CanonicalMatrixView J) -> void
+    auto decompose(CanonicalMatrix J) -> void
     {
         const auto dims = J.dims;
 
@@ -151,7 +151,7 @@ struct LinearSolverNullspace::Impl
         if(t) lu.decompose(M);
     }
 
-    auto solve(CanonicalMatrixView J, CanonicalVectorView a, CanonicalVectorRef u) -> void
+    auto solve(CanonicalMatrix J, CanonicalVectorView a, CanonicalVectorRef u) -> void
     {
         const auto dims = J.dims;
 
@@ -258,12 +258,12 @@ auto LinearSolverNullspace::operator=(LinearSolverNullspace other) -> LinearSolv
     return *this;
 }
 
-auto LinearSolverNullspace::decompose(CanonicalMatrixView M) -> void
+auto LinearSolverNullspace::decompose(CanonicalMatrix M) -> void
 {
     pimpl->decompose(M);
 }
 
-auto LinearSolverNullspace::solve(CanonicalMatrixView J, CanonicalVectorView a, CanonicalVectorRef u) -> void
+auto LinearSolverNullspace::solve(CanonicalMatrix J, CanonicalVectorView a, CanonicalVectorRef u) -> void
 {
     pimpl->solve(J, a, u);
 }

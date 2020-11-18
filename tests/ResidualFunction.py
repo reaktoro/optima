@@ -56,7 +56,7 @@ def testResidualFunction(nx, np, ny, nz, nl, nu, b1, b2, b3, b4, b5, b6, b7):
     if params.invalid(): return
 
     M = createMasterMatrix(params)
-    # Mbar = createCanonicalMatrixView(M)
+    # Mbar = createCanonicalMatrix(M)
 
     Hxx = M.H.Hxx
     Hxp = M.H.Hxp

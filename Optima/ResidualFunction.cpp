@@ -18,7 +18,7 @@
 #include "ResidualFunction.hpp"
 
 // Optima includes
-#include <Optima/CanonicalMatrix.hpp>
+#include <Optima/Canonicalizer.hpp>
 #include <Optima/Exception.hpp>
 #include <Optima/ResidualVector.hpp>
 #include <Optima/Timing.hpp>
@@ -49,8 +49,8 @@ struct ResidualFunction::Impl
     /// The current stability status of the x variables.
     Stability2 stability;
 
-    /// The current state of the Jacobian matrix of the residual function in canonical form.
-    CanonicalMatrix jacobian;
+    /// The canonicalizer of the Jacobian matrix of the residual function.
+    Canonicalizer canonicalizer;
 
     /// The current state of the residual vector.
     ResidualVector residual;
@@ -82,7 +82,7 @@ struct ResidualFunction::Impl
       hres(dims.nz, dims.nx, dims.np),
       vres(dims.np, dims.nx, dims.np),
       RWQ(dims), stability(dims.nx),
-      jacobian(dims), residual(dims)
+      canonicalizer(dims), residual(dims)
     {
         wx.resize(dims.nx);
     }
@@ -168,7 +168,7 @@ struct ResidualFunction::Impl
 
     auto updateCanonicalFormJacobianMatrix(MasterVectorView u) -> void
     {
-        jacobian.update(jacobianMatrixMasterForm());
+        canonicalizer.update(jacobianMatrixMasterForm());
     }
 
     auto updateResidualVector(MasterVectorView u) -> void
@@ -184,17 +184,8 @@ struct ResidualFunction::Impl
         const auto w = u.w;
         const auto y = w.head(dims.ny);
         const auto z = w.tail(dims.nz);
-        residual.update({jacobian, Wx, Wp, x, p, y, z, fx, v, b, h});
-    }
-
-    auto jacobianMatrixCanonicalForm() const -> CanonicalMatrixView
-    {
-        return jacobian;
-    }
-
-    auto residualVectorCanonicalForm() const -> CanonicalVectorView
-    {
-        return residual.canonicalVector();
+        const auto Jc = jacobianMatrixCanonicalForm();
+        residual.update({Jc, Wx, Wp, x, p, y, z, fx, v, b, h});
     }
 
     auto jacobianMatrixMasterForm() const -> MasterMatrix
@@ -212,9 +203,19 @@ struct ResidualFunction::Impl
         return {H, V, RWQ, js, ju};
     }
 
+    auto jacobianMatrixCanonicalForm() const -> CanonicalMatrix
+    {
+        return canonicalizer.canonicalMatrix();
+    }
+
     auto residualVectorMasterForm() const -> MasterVectorView
     {
         return residual.masterVector();
+    }
+
+    auto residualVectorCanonicalForm() const -> CanonicalVectorView
+    {
+        return residual.canonicalVector();
     }
 
     auto result() const -> ResidualFunctionResult
@@ -276,7 +277,7 @@ auto ResidualFunction::jacobianMatrixMasterForm() const -> MasterMatrix
     return pimpl->jacobianMatrixMasterForm();
 }
 
-auto ResidualFunction::jacobianMatrixCanonicalForm() const -> CanonicalMatrixView
+auto ResidualFunction::jacobianMatrixCanonicalForm() const -> CanonicalMatrix
 {
     return pimpl->jacobianMatrixCanonicalForm();
 }

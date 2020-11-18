@@ -31,7 +31,7 @@ namespace Optima {
 /// The arguments in method @ref ResidualVector::update.
 struct ResidualVectorUpdateArgs
 {
-    CanonicalMatrixView Mc;
+    CanonicalMatrix Mc;
     MatrixConstRef Wx;
     MatrixConstRef Wp;
     VectorConstRef x;

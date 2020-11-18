@@ -52,7 +52,7 @@ public:
     auto options() const -> const LinearSolverOptions&;
 
     /// Decompose the canonical form of a master matrix.
-    auto decompose(CanonicalMatrixView Mc) -> void;
+    auto decompose(CanonicalMatrix Mc) -> void;
 
     /// Solve the linear problem.
     /// Using this method presumes method @ref decompose has already been
@@ -61,7 +61,7 @@ public:
     /// @param Mc The canonical form of the master matrix in the linear problem.
     /// @param a The right-hand side master vector in the linear problem.
     /// @param[out] u The solution master vector in the linear problem.
-    auto solve(CanonicalMatrixView Mc, MasterVectorView a, MasterVectorRef u) -> void;
+    auto solve(CanonicalMatrix Mc, MasterVectorView a, MasterVectorRef u) -> void;
 
     /// Solve the linear problem.
     /// Using this method presumes method @ref decompose has already been
@@ -70,7 +70,7 @@ public:
     /// @param Mc The canonical form of the master matrix in the linear problem.
     /// @param ac The right-hand side vector in the linear problem already in its canonical form.
     /// @param[out] u The solution master vector in the linear problem.
-    auto solve(CanonicalMatrixView Mc, CanonicalVectorView ac, MasterVectorRef u) -> void;
+    auto solve(CanonicalMatrix Mc, CanonicalVectorView ac, MasterVectorRef u) -> void;
 
 private:
     struct Impl;

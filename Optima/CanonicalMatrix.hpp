@@ -28,7 +28,7 @@
 namespace Optima {
 
 /// Used to represent the canonical form of a master matrix.
-struct CanonicalMatrixView
+struct CanonicalMatrix
 {
     CanonicalDims dims;   ///< The dimension details of the canonical master matrix.
     MatrixConstRef Hss;   ///< The matrix Hss in the canonical master matrix.
@@ -42,40 +42,6 @@ struct CanonicalMatrixView
     IndicesConstRef jn;   ///< The indices of the non-basic variables ordered as jn = (jns, jnu).
     IndicesConstRef js;   ///< The indices of the stable variables ordered as js = (jbs, jns).
     IndicesConstRef ju;   ///< The indices of the unstable variables ordered as ju = (jbu, jnu).
-};
-
-/// Used to assemble the canonical form of a master matrix.
-class CanonicalMatrix
-{
-public:
-    /// Construct a CanonicalMatrix instance.
-    CanonicalMatrix(const MasterDims& dims);
-
-    /// Construct a CanonicalMatrix instance.
-    CanonicalMatrix(const MasterMatrix& M);
-
-    /// Construct a copy of a CanonicalMatrix instance.
-    CanonicalMatrix(const CanonicalMatrix& other);
-
-    /// Destroy this CanonicalMatrix instance.
-    virtual ~CanonicalMatrix();
-
-    /// Assign a CanonicalMatrix instance to this.
-    auto operator=(CanonicalMatrix other) -> CanonicalMatrix&;
-
-    /// Assemble the canonical form of the master matrix.
-    auto update(const MasterMatrix& M) -> void;
-
-    /// Return an immutable view to the canonical form of a master matrix.
-    auto view() const -> CanonicalMatrixView;
-
-    /// Convert this CanonicalMatrix object into a CanonicalMatrixView object.
-    operator CanonicalMatrixView() const;
-
-private:
-    struct Impl;
-
-    std::unique_ptr<Impl> pimpl;
 };
 
 } // namespace Optima

@@ -31,7 +31,7 @@ void exportLinearSolver(py::module& m)
         .def("setOptions", &LinearSolver::setOptions)
         .def("options", &LinearSolver::options)
         .def("decompose", &LinearSolver::decompose)
-        .def("solve", py::overload_cast<CanonicalMatrixView, MasterVectorView, MasterVectorRef>(&LinearSolver::solve))
-        .def("solve", py::overload_cast<CanonicalMatrixView, CanonicalVectorView, MasterVectorRef>(&LinearSolver::solve))
+        .def("solve", py::overload_cast<CanonicalMatrix, MasterVectorView, MasterVectorRef>(&LinearSolver::solve))
+        .def("solve", py::overload_cast<CanonicalMatrix, CanonicalVectorView, MasterVectorRef>(&LinearSolver::solve))
         ;
 }

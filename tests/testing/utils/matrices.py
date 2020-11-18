@@ -178,15 +178,15 @@ def createMasterMatrix(params):
     return M
 
 
-def createCanonicalMatrixView(dims, M):
-    """Create a CanonicalMatrixView object with given parameters
+def createCanonicalMatrix(dims, M):
+    """Create a CanonicalMatrix object with given parameters
 
     Args:
         dims (MasterDims): The dimensions in a master matrix.
         M (MasterMatrix): The master matrix for which its canonical form is being computed.
 
     Returns:
-        CanonicalMatrixView: A CanonicalMatrixView object for testing purposes.
+        CanonicalMatrix: A CanonicalMatrix object for testing purposes.
     """
 
     Mc = CanonicalMatrix(M)

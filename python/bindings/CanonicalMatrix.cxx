@@ -26,31 +26,19 @@ using namespace Optima;
 
 void exportCanonicalMatrix(py::module& m)
 {
-    py::class_<CanonicalMatrixView>(m, "CanonicalMatrixView")
-        .def(py::init<CanonicalMatrix const&>())
-        .def_readonly("dims" , &CanonicalMatrixView::dims)
-        .def_readonly("Hss"  , &CanonicalMatrixView::Hss)
-        .def_readonly("Hsp"  , &CanonicalMatrixView::Hsp)
-        .def_readonly("Vps"  , &CanonicalMatrixView::Vps)
-        .def_readonly("Vpp"  , &CanonicalMatrixView::Vpp)
-        .def_readonly("Sbsns", &CanonicalMatrixView::Sbsns)
-        .def_readonly("Sbsp" , &CanonicalMatrixView::Sbsp)
-        .def_readonly("Rbs"  , &CanonicalMatrixView::Rbs)
-        .def_readonly("jb"   , &CanonicalMatrixView::jb)
-        .def_readonly("jn"   , &CanonicalMatrixView::jn)
-        .def_readonly("js"   , &CanonicalMatrixView::js)
-        .def_readonly("ju"   , &CanonicalMatrixView::ju)
-        ;
-
     py::class_<CanonicalMatrix>(m, "CanonicalMatrix")
-        .def(py::init<const MasterDims&>())
-        .def(py::init<const MasterMatrix&>())
-        .def(py::init<const CanonicalMatrix&>())
-        .def("update", &CanonicalMatrix::update)
-        .def("view", &CanonicalMatrix::view,
-            py::keep_alive<1, 0>(), // keep this object (0) alive while returned object (1) exists
-            py::keep_alive<0, 1>()) // keep returned object (1) alive while this object (0) exists
+        .def(py::init<CanonicalMatrix const&>())
+        .def_readonly("dims" , &CanonicalMatrix::dims)
+        .def_readonly("Hss"  , &CanonicalMatrix::Hss)
+        .def_readonly("Hsp"  , &CanonicalMatrix::Hsp)
+        .def_readonly("Vps"  , &CanonicalMatrix::Vps)
+        .def_readonly("Vpp"  , &CanonicalMatrix::Vpp)
+        .def_readonly("Sbsns", &CanonicalMatrix::Sbsns)
+        .def_readonly("Sbsp" , &CanonicalMatrix::Sbsp)
+        .def_readonly("Rbs"  , &CanonicalMatrix::Rbs)
+        .def_readonly("jb"   , &CanonicalMatrix::jb)
+        .def_readonly("jn"   , &CanonicalMatrix::jn)
+        .def_readonly("js"   , &CanonicalMatrix::js)
+        .def_readonly("ju"   , &CanonicalMatrix::ju)
         ;
-
-    py::implicitly_convertible<CanonicalMatrix, CanonicalMatrixView>();
 }

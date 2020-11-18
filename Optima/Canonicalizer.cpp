@@ -263,7 +263,7 @@ struct Canonicalizer::Impl
         Wp = W.Wp;
     }
 
-    auto canonicalMatrix() const -> CanonicalMatrixView
+    auto canonicalMatrix() const -> CanonicalMatrix
     {
         const auto [nx, np, ny, nz, nw, nt] = dims;
 
@@ -310,7 +310,7 @@ auto Canonicalizer::update(const MasterMatrix& M) -> void
     pimpl->update(M);
 }
 
-auto Canonicalizer::canonicalMatrix() const -> CanonicalMatrixView
+auto Canonicalizer::canonicalMatrix() const -> CanonicalMatrix
 {
     return pimpl->canonicalMatrix();
 }

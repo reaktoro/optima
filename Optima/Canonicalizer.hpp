@@ -51,7 +51,7 @@ public:
     auto update(const MasterMatrix& M) -> void;
 
     /// Return an immutable view to the canonical form of a master matrix.
-    auto canonicalMatrix() const -> CanonicalMatrixView;
+    auto canonicalMatrix() const -> CanonicalMatrix;
 
 private:
     struct Impl;
