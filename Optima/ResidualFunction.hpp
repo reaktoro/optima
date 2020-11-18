@@ -37,9 +37,9 @@ struct ConstraintResult;
 /// Used to determine whether the evaluation of objective and constraint functions succeeded or not.
 struct ResidualFunctionUpdateStatus
 {
-    bool f = FAILED; ///< The flag indicating whether *f(x, p)* succeeded.
-    bool h = FAILED; ///< The flag indicating whether *h(x, p)* succeeded.
-    bool v = FAILED; ///< The flag indicating whether *v(x, p)* succeeded.
+    bool f = true; ///< The flag indicating whether *f(x, p)* succeeded.
+    bool h = true; ///< The flag indicating whether *h(x, p)* succeeded.
+    bool v = true; ///< The flag indicating whether *v(x, p)* succeeded.
     operator bool() const { return f && h && v; }
 };
 

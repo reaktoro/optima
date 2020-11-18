@@ -33,10 +33,11 @@ void exportConstraintFunction(py::module& m)
     auto set_ddp = [](ConstraintResult& s, MatrixConstRef4py ddp) { s.ddp = ddp; };
 
     py::class_<ConstraintResult>(m, "ConstraintResult")
-        .def_readwrite("val", &ConstraintResult::val, "The evaluated vector value of c(x, p).")
-        .def_property("ddx", get_ddx, set_ddx, "The evaluated Jacobian matrix of c(x, p) with respect to x.")
-        .def_property("ddp", get_ddp, set_ddp, "The evaluated Jacobian matrix of c(x, p) with respect to p.")
-        .def_readwrite("ddx4basicvars", &ConstraintResult::ddx4basicvars, "True if `ddx` is non-zero only on columns corresponding to basic varibles in x")
+        .def_readwrite("val", &ConstraintResult::val)
+        .def_property("ddx", get_ddx, set_ddx)
+        .def_property("ddp", get_ddp, set_ddp)
+        .def_readwrite("ddx4basicvars", &ConstraintResult::ddx4basicvars)
+        .def_readwrite("succeeded", &ConstraintResult::succeeded)
         ;
 
     py::class_<ConstraintOptions::Eval>(m, "ConstraintOptionsEval")
@@ -48,4 +49,11 @@ void exportConstraintFunction(py::module& m)
         .def_readonly("eval", &ConstraintOptions::eval, "The objective function components that need to be evaluated.")
         .def_readonly("ibasicvars", &ConstraintOptions::ibasicvars, "The indices of the basic variables in x.")
         ;
+
+    py::class_<ConstraintFunction>(m, "ConstraintFunction")
+        .def(py::init<const ConstraintFunction::Signature4py&>())
+        .def("__call__", &ConstraintFunction::operator())
+        ;
+
+    py::implicitly_convertible<ConstraintFunction::Signature4py, ConstraintFunction>();
 }

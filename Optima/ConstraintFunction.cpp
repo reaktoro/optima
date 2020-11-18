@@ -15,41 +15,40 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include "ObjectiveFunction.hpp"
+#include "ConstraintFunction.hpp"
 
 // Optima includes
 #include <Optima/Exception.hpp>
 
 namespace Optima {
 
-ObjectiveFunction::ObjectiveFunction()
+ConstraintFunction::ConstraintFunction()
 {
-    fn = [](ObjectiveResult& res, VectorConstRef x, VectorConstRef p, ObjectiveOptions opts)
+    fn = [](ConstraintResult& res, VectorConstRef x, VectorConstRef p, ConstraintOptions opts)
     {
-        error(true, "Cannot evaluate a non-initialized ObjectiveFunction object");
+        error(true, "Cannot evaluate a non-initialized ConstraintFunction object.");
     };
 }
 
-ObjectiveFunction::ObjectiveFunction(const Signature& func)
+ConstraintFunction::ConstraintFunction(const Signature& func)
 {
-    error(func == nullptr, "ObjectiveFunction cannot be constructed with a non-initialized function.");
+    error(func == nullptr, "ConstraintFunction cannot be constructed with a non-initialized function.");
     fn = func;
 }
 
-ObjectiveFunction::ObjectiveFunction(const Signature4py& func)
+ConstraintFunction::ConstraintFunction(const Signature4py& func)
 {
-    error(func == nullptr, "ObjectiveFunction cannot be constructed with a non-initialized function.");
-    fn = [=](ObjectiveResult& res, VectorConstRef x, VectorConstRef p, ObjectiveOptions opts)
+    error(func == nullptr, "ConstraintFunction cannot be constructed with a non-initialized function.");
+    fn = [=](ConstraintResult& res, VectorConstRef x, VectorConstRef p, ConstraintOptions opts)
     {
         func(&res, x, p, opts);
     };
 }
 
-auto ObjectiveFunction::operator()(ObjectiveResult& res, VectorConstRef x, VectorConstRef p, ObjectiveOptions opts) const -> void
+auto ConstraintFunction::operator()(ConstraintResult& res, VectorConstRef x, VectorConstRef p, ConstraintOptions opts) const -> void
 {
     // Ensure default status for some ObjectiveResult members before evaluation
-    res.diagfxx = false;
-    res.fxx4basicvars = false;
+    res.ddx4basicvars = false;
     res.succeeded = true;
     fn(res, x, p, opts);
 }

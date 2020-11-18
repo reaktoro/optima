@@ -48,8 +48,8 @@ struct ObjectiveResult
     /// True if `fxx` is non-zero only on columns corresponding to basic varibles in *x*.
     bool fxx4basicvars = false;
 
-    /// True if the objective function evaluation failed.
-    bool failed = false;
+    /// True if the objective function evaluation succeeded.
+    bool succeeded = true;
 
     /// Construct an ObjectiveResult object.
     /// @param nx The number of variables in *x*.
@@ -76,16 +76,8 @@ struct ObjectiveOptions
     IndicesConstRef ibasicvars;
 };
 
-/// The functional signature of an objective function *f(x, p)*.
-/// @param[out] res The evaluated result of the objective function and its derivatives.
-/// @param x The primal variables *x*.
-/// @param p The parameter variables *p*.
-/// @param opts The options transmitted to the evaluation of *f(x, p)*.
-/// @return Return `true` if the evaluation succeeded, `false` otherwise.
-/// @see ObjectiveResult, ObjectiveOptions
-// using ObjectiveFunction = std::function<bool(ObjectiveResult& res, VectorConstRef x, VectorConstRef p, ObjectiveOptions opts)>;
-
 /// Used to represent an objective function *f(x, p)*.
+/// @see ConstraintFunction
 class ObjectiveFunction
 {
 public:
@@ -94,14 +86,14 @@ public:
     /// @param x The primal variables *x*.
     /// @param p The parameter variables *p*.
     /// @param opts The options transmitted to the evaluation of *f(x, p)*.
-    using Signature = std::function<bool(ObjectiveResult& res, VectorConstRef x, VectorConstRef p, ObjectiveOptions opts)>;
+    using Signature = std::function<void(ObjectiveResult& res, VectorConstRef x, VectorConstRef p, ObjectiveOptions opts)>;
 
     /// The functional signature of an objective function *f(x, p)* incoming from Python.
     /// @param[out] res The evaluated result of the objective function and its derivatives.
     /// @param x The primal variables *x*.
     /// @param p The parameter variables *p*.
     /// @param opts The options transmitted to the evaluation of *f(x, p)*.
-    using Signature4py = std::function<bool(ObjectiveResult* res, VectorConstRef x, VectorConstRef p, ObjectiveOptions opts)>;
+    using Signature4py = std::function<void(ObjectiveResult* res, VectorConstRef x, VectorConstRef p, ObjectiveOptions opts)>;
 
     /// Construct a default ObjectiveFunction object.
     ObjectiveFunction();
@@ -117,7 +109,7 @@ public:
     // : ObjectiveFunction(fn) {}
 
     /// Evaluate the objective function.
-    auto operator()(ObjectiveResult& res, VectorConstRef x, VectorConstRef p, ObjectiveOptions opts) const -> bool;
+    auto operator()(ObjectiveResult& res, VectorConstRef x, VectorConstRef p, ObjectiveOptions opts) const -> void;
 
 private:
     /// The objective function with main functional signature.

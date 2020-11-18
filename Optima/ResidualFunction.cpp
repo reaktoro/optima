@@ -127,14 +127,13 @@ struct ResidualFunction::Impl
         const auto x = u.x;
         const auto p = u.p;
         const auto ibasicvars = RWQ.asMatrixViewRWQ().jb;
-        ResidualFunctionUpdateStatus status;
         ObjectiveOptions fopts{{true, true}, ibasicvars};
         ConstraintOptions hopts{{true, true}, ibasicvars};
         ConstraintOptions vopts{{true, true}, ibasicvars};
-        status.f = f(fres, x, p, fopts); if(status.f == FAILED) return status;
-        status.h = h(hres, x, p, hopts); if(status.h == FAILED) return status;
-        status.v = v(vres, x, p, vopts); if(status.v == FAILED) return status;
-        return status;
+        f(fres, x, p, fopts);
+        h(hres, x, p, hopts);
+        v(vres, x, p, vopts);
+        return { fres.succeeded, hres.succeeded, vres.succeeded };
     }
 
     auto updateFunctionEvalsSkippingJacobianEvals(MasterVectorView u) -> ResidualFunctionUpdateStatus
@@ -142,14 +141,13 @@ struct ResidualFunction::Impl
         const auto x = u.x;
         const auto p = u.p;
         const auto ibasicvars = RWQ.asMatrixViewRWQ().jb;
-        ResidualFunctionUpdateStatus status;
         ObjectiveOptions fopts{{false, false}, ibasicvars};
         ConstraintOptions hopts{{false, false}, ibasicvars};
         ConstraintOptions vopts{{false, false}, ibasicvars};
-        status.f = f(fres, x, p, fopts); if(status.f == FAILED) return status;
-        status.h = h(hres, x, p, hopts); if(status.h == FAILED) return status;
-        status.v = v(vres, x, p, vopts); if(status.v == FAILED) return status;
-        return status;
+        f(fres, x, p, fopts);
+        h(hres, x, p, hopts);
+        v(vres, x, p, vopts);
+        return { fres.succeeded, hres.succeeded, vres.succeeded };
     }
 
     auto updateEchelonFormMatrixW(MasterVectorView u) -> void
@@ -229,8 +227,6 @@ struct ResidualFunction::Impl
 
     auto sanitycheck(MasterVectorView u) const -> void
     {
-        assert(h != nullptr);
-        assert(v != nullptr);
         assert(b.size() == dims.ny);
         assert(xlower.size() == dims.nx);
         assert(xupper.size() == dims.nx);

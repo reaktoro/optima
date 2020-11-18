@@ -39,7 +39,7 @@ void exportObjectiveFunction(py::module& m)
         .def_property("fxp", get_fxp, set_fxp)
         .def_readwrite("diagfxx", &ObjectiveResult::diagfxx)
         .def_readwrite("fxx4basicvars", &ObjectiveResult::fxx4basicvars)
-        .def_readwrite("failed", &ObjectiveResult::failed)
+        .def_readwrite("succeeded", &ObjectiveResult::succeeded)
         ;
 
     py::class_<ObjectiveOptions::Eval>(m, "ObjectiveOptionsEval")

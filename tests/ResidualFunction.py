@@ -89,19 +89,16 @@ def testResidualFunction(nx, np, ny, nz, nl, nu):
         res.fx  = Hxx @ x + Hxp @ p + cx
         res.fxx = Hxx
         res.fxp = Hxp
-        return True
 
     def constraintfn_h(res, x, p, opts):
         res.val = Jx @ x + Jp @ p + cz
         res.ddx = Jx
         res.ddp = Jp
-        return True
 
     def constraintfn_v(res, x, p, opts):
         res.val = Vpx @ x + Vpp @ p + cp
         res.ddx = Vpx
         res.ddp = Vpp
-        return True
 
     problem = MasterProblem()
     problem.f = objectivefn_f
