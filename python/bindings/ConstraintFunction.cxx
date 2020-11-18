@@ -27,10 +27,15 @@ using namespace Optima;
 
 void exportConstraintFunction(py::module& m)
 {
+    auto get_ddx = [](const ConstraintResult& s) { return s.ddx; };
+    auto get_ddp = [](const ConstraintResult& s) { return s.ddp; };
+    auto set_ddx = [](ConstraintResult& s, MatrixConstRef4py ddx) { s.ddx = ddx; };
+    auto set_ddp = [](ConstraintResult& s, MatrixConstRef4py ddp) { s.ddp = ddp; };
+
     py::class_<ConstraintResult>(m, "ConstraintResult")
         .def_readwrite("val", &ConstraintResult::val, "The evaluated vector value of c(x, p).")
-        .def_readwrite("ddx", &ConstraintResult::ddx, "The evaluated Jacobian matrix of c(x, p) with respect to x.")
-        .def_readwrite("ddp", &ConstraintResult::ddp, "The evaluated Jacobian matrix of c(x, p) with respect to p.")
+        .def_property("ddx", get_ddx, set_ddx, "The evaluated Jacobian matrix of c(x, p) with respect to x.")
+        .def_property("ddp", get_ddp, set_ddp, "The evaluated Jacobian matrix of c(x, p) with respect to p.")
         .def_readwrite("ddx4basicvars", &ConstraintResult::ddx4basicvars, "True if `ddx` is non-zero only on columns corresponding to basic varibles in x")
         ;
 

@@ -55,7 +55,7 @@ struct ResidualErrors::Impl
     {
         sanitycheck();
 
-        const auto Fres = F.result();
+        const auto res = F.result();
 
         const auto Jc = F.canonicalJacobianMatrix();
         const auto Fc = F.canonicalResidualVector();
@@ -73,7 +73,7 @@ struct ResidualErrors::Impl
         const auto rwbs = Fc.wbs;
 
         const auto x = u.x;
-        const auto gs = Fres.fres.fx(js);
+        const auto gs = res.f.fx(js);
         const auto xbs = x(jbs);
         const auto xbslower = xlower(jbs);
         const auto xbsupper = xupper(jbs);

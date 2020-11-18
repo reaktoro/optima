@@ -132,7 +132,8 @@ def createMatrixRWQ(params):
 
     weights = npy.ones(nx)
 
-    RWQ = MatrixRWQ(dims, Ax, Ap)
+    RWQ = MatrixRWQ(dims)
+    RWQ.initialize(Ax, Ap)
     RWQ.update(Jx, Jp, weights)
 
     return RWQ
@@ -191,6 +192,64 @@ def createCanonicalMatrixView(dims, M):
     Mc = CanonicalMatrix(M)
 
     return Mc.view()
+
+
+def createMasterProblem(M):
+    """Create a MasterProblem object with given master matrix
+
+    Args:
+        M (MasterMatrix): The master matrix for which a master problem is created.
+
+    Returns:
+        MasterProblem: A MasterProblem object for testing purposes.
+    """
+
+    dims = M.dims
+
+    Hxx = M.H.Hxx
+    Hxp = M.H.Hxp
+    Vpx = M.V.Vpx
+    Vpp = M.V.Vpp
+    Ax  = M.W.Ax
+    Ap  = M.W.Ap
+    Jx  = M.W.Jx
+    Jp  = M.W.Jp
+    cx = random.rand(dims.nx)
+    cp = random.rand(dims.np)
+    cz = random.rand(dims.nz)
+
+
+    def objectivefn_f(res, x, p, opts):
+        res.f   = 0.5 * (x.T @ Hxx @ x) + x.T @ Hxp @ p + cx.T @ x
+        res.fx  = Hxx @ x + Hxp @ p + cx
+        res.fxx = Hxx
+        res.fxp = Hxp
+
+
+    def constraintfn_h(res, x, p, opts):
+        res.val = Jx @ x + Jp @ p + cz
+        res.ddx = Jx
+        res.ddp = Jp
+
+
+    def constraintfn_v(res, x, p, opts):
+        res.val = Vpx @ x + Vpp @ p + cp
+        res.ddx = Vpx
+        res.ddp = Vpp
+
+
+    problem = MasterProblem(dims)
+    problem.f = objectivefn_f()
+    problem.h = constraintfn_h()
+    problem.v = constraintfn_v()
+    problem.Ax = Ax
+    problem.Ap = Ax
+    problem.b = random.rand(dims.ny)
+    problem.xlower = -abs(random.rand(dims.nx))
+    problem.xupper =  abs(random.rand(dims.nx))
+    problem.phi = None
+
+    return problem
 
 
 def pascal_matrix(m, n):

@@ -229,7 +229,6 @@ struct ResidualFunction::Impl
 
     auto sanitycheck(MasterVectorView u) const -> void
     {
-        assert(f != nullptr);
         assert(h != nullptr);
         assert(v != nullptr);
         assert(b.size() == dims.ny);

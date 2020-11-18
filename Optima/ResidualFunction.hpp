@@ -46,9 +46,9 @@ struct ResidualFunctionUpdateStatus
 /// The result of the residual function evaluation at *u = (x, p, y, z)*.
 struct ResidualFunctionResult
 {
-    ObjectiveResult const& fres;   ///< The evaluated result of the objective function *f(x, p)*.
-    ConstraintResult const& hres;  ///< The evaluated result of the constraint function *h(x, p)*.
-    ConstraintResult const& vres;  ///< The evaluated result of the constraint function *v(x, p)*.
+    ObjectiveResult const& f;   ///< The evaluated result of the objective function *f(x, p)*.
+    ConstraintResult const& h;  ///< The evaluated result of the constraint function *h(x, p)*.
+    ConstraintResult const& v;  ///< The evaluated result of the constraint function *v(x, p)*.
 };
 
 /// Used to represent the residual function *F(u)* in the Newton step problem.

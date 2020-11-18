@@ -27,13 +27,19 @@ using namespace Optima;
 
 void exportObjectiveFunction(py::module& m)
 {
+    auto get_fxx = [](const ObjectiveResult& s) { return s.fxx; };
+    auto get_fxp = [](const ObjectiveResult& s) { return s.fxp; };
+    auto set_fxx = [](ObjectiveResult& s, MatrixConstRef4py fxx) { s.fxx = fxx; };
+    auto set_fxp = [](ObjectiveResult& s, MatrixConstRef4py fxp) { s.fxp = fxp; };
+
     py::class_<ObjectiveResult>(m, "ObjectiveResult")
         .def_readwrite("f", &ObjectiveResult::f)
         .def_readwrite("fx", &ObjectiveResult::fx)
-        .def_readwrite("fxx", &ObjectiveResult::fxx)
-        .def_readwrite("fxp", &ObjectiveResult::fxp)
+        .def_property("fxx", get_fxx, set_fxx)
+        .def_property("fxp", get_fxp, set_fxp)
         .def_readwrite("diagfxx", &ObjectiveResult::diagfxx)
         .def_readwrite("fxx4basicvars", &ObjectiveResult::fxx4basicvars)
+        .def_readwrite("failed", &ObjectiveResult::failed)
         ;
 
     py::class_<ObjectiveOptions::Eval>(m, "ObjectiveOptionsEval")
@@ -45,4 +51,11 @@ void exportObjectiveFunction(py::module& m)
         .def_readonly("eval", &ObjectiveOptions::eval, "The objective function components that need to be evaluated.")
         .def_readonly("ibasicvars", &ObjectiveOptions::ibasicvars, "The indices of the basic variables in x.")
         ;
+
+    py::class_<ObjectiveFunction>(m, "ObjectiveFunction")
+        .def(py::init<const ObjectiveFunction::Signature4py&>())
+        .def("__call__", &ObjectiveFunction::operator())
+        ;
+
+    py::implicitly_convertible<ObjectiveFunction::Signature4py, ObjectiveFunction>();
 }

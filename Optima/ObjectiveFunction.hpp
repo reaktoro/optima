@@ -48,6 +48,9 @@ struct ObjectiveResult
     /// True if `fxx` is non-zero only on columns corresponding to basic varibles in *x*.
     bool fxx4basicvars = false;
 
+    /// True if the objective function evaluation failed.
+    bool failed = false;
+
     /// Construct an ObjectiveResult object.
     /// @param nx The number of variables in *x*.
     /// @param np The number of variables in *p*.
@@ -80,6 +83,45 @@ struct ObjectiveOptions
 /// @param opts The options transmitted to the evaluation of *f(x, p)*.
 /// @return Return `true` if the evaluation succeeded, `false` otherwise.
 /// @see ObjectiveResult, ObjectiveOptions
-using ObjectiveFunction = std::function<bool(ObjectiveResult& res, VectorConstRef x, VectorConstRef p, ObjectiveOptions opts)>;
+// using ObjectiveFunction = std::function<bool(ObjectiveResult& res, VectorConstRef x, VectorConstRef p, ObjectiveOptions opts)>;
+
+/// Used to represent an objective function *f(x, p)*.
+class ObjectiveFunction
+{
+public:
+    /// The main functional signature of an objective function *f(x, p)*.
+    /// @param[out] res The evaluated result of the objective function and its derivatives.
+    /// @param x The primal variables *x*.
+    /// @param p The parameter variables *p*.
+    /// @param opts The options transmitted to the evaluation of *f(x, p)*.
+    using Signature = std::function<bool(ObjectiveResult& res, VectorConstRef x, VectorConstRef p, ObjectiveOptions opts)>;
+
+    /// The functional signature of an objective function *f(x, p)* incoming from Python.
+    /// @param[out] res The evaluated result of the objective function and its derivatives.
+    /// @param x The primal variables *x*.
+    /// @param p The parameter variables *p*.
+    /// @param opts The options transmitted to the evaluation of *f(x, p)*.
+    using Signature4py = std::function<bool(ObjectiveResult* res, VectorConstRef x, VectorConstRef p, ObjectiveOptions opts)>;
+
+    /// Construct a default ObjectiveFunction object.
+    ObjectiveFunction();
+
+    /// Construct an ObjectiveFunction object with given function.
+    ObjectiveFunction(const Signature& fn);
+
+    /// Construct an ObjectiveFunction object with given function.
+    ObjectiveFunction(const Signature4py& fn);
+
+    // template<typename Func, EnableIf<!isStdFunction<Func>>...>
+    // ObjectiveFunction(const Func& fn)
+    // : ObjectiveFunction(fn) {}
+
+    /// Evaluate the objective function.
+    auto operator()(ObjectiveResult& res, VectorConstRef x, VectorConstRef p, ObjectiveOptions opts) const -> bool;
+
+private:
+    /// The objective function with main functional signature.
+    Signature fn;
+};
 
 } // namespace Optima

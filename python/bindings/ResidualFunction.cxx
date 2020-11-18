@@ -34,9 +34,9 @@ void exportResidualFunction(py::module& m)
         ;
 
     py::class_<ResidualFunctionResult>(m, "ResidualFunctionResult")
-        .def_property_readonly("fres", [](const ResidualFunctionResult& self) { return self.fres; })
-        .def_property_readonly("hres", [](const ResidualFunctionResult& self) { return self.hres; })
-        .def_property_readonly("vres", [](const ResidualFunctionResult& self) { return self.vres; })
+        .def_property_readonly("f", [](const ResidualFunctionResult& self) { return self.f; })
+        .def_property_readonly("h", [](const ResidualFunctionResult& self) { return self.h; })
+        .def_property_readonly("v", [](const ResidualFunctionResult& self) { return self.v; })
         ;
 
     py::class_<ResidualFunction>(m, "ResidualFunction")

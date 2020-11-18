@@ -25,27 +25,35 @@ namespace py = pybind11;
 #include <Optima/MasterProblem.hpp>
 using namespace Optima;
 
+// /// The functional signature of an objective function *f(x, p)* for Python.
+// using ObjectiveFunction4py = std::function<bool(ObjectiveResult* res, VectorConstRef x, VectorConstRef p, ObjectiveOptions opts)>;
+
+// inline auto convert(const ObjectiveFunction4py& f4py) -> ObjectiveFunction
+// {
+//     return [=](ObjectiveResult& res, VectorConstRef x, VectorConstRef p, ObjectiveOptions opts)
+//     {
+//         return f4py(&res, x, p, opts);
+//     };
+// }
+
 void exportMasterProblem(py::module& m)
 {
+    auto get_Ax = [](const MasterProblem& s) { return s.Ax; };
+    auto get_Ap = [](const MasterProblem& s) { return s.Ap; };
+    auto set_Ax = [](MasterProblem& s, MatrixConstRef4py Ax) { s.Ax = Ax; };
+    auto set_Ap = [](MasterProblem& s, MatrixConstRef4py Ap) { s.Ap = Ap; };
+
     py::class_<MasterProblem>(m, "MasterProblem")
         .def(py::init<>())
+        // .def_property("f"     , [](const MasterProblem& s) { return s.f; }, [](MasterProblem& s, const ObjectiveFunction4py& f4py) { s.f = convert(f4py); })
         .def_readwrite("f"     , &MasterProblem::f)
         .def_readwrite("h"     , &MasterProblem::h)
         .def_readwrite("v"     , &MasterProblem::v)
-        .def_readwrite("Ax"    , &MasterProblem::Ax)
-        .def_readwrite("Ap"    , &MasterProblem::Ap)
+        .def_property("Ax"     , get_Ax, set_Ax)
+        .def_property("Ap"     , get_Ap, set_Ap)
         .def_readwrite("b"     , &MasterProblem::b)
         .def_readwrite("xlower", &MasterProblem::xlower)
         .def_readwrite("xupper", &MasterProblem::xupper)
         .def_readwrite("phi"   , &MasterProblem::phi)
-        // .def_property_readonly("Ax"    , [](const MasterProblem& self) { return self.Ax;     })
-        // .def_property_readonly("Ap"    , [](const MasterProblem& self) { return self.Ap;     })
-        // .def_property_readonly("f"     , [](const MasterProblem& self) { return self.f;      })
-        // .def_property_readonly("h"     , [](const MasterProblem& self) { return self.h;      })
-        // .def_property_readonly("v"     , [](const MasterProblem& self) { return self.v;      })
-        // .def_property_readonly("b"     , [](const MasterProblem& self) { return self.b;      })
-        // .def_property_readonly("xlower", [](const MasterProblem& self) { return self.xlower; })
-        // .def_property_readonly("xupper", [](const MasterProblem& self) { return self.xupper; })
-        // .def_property_readonly("phi"   , [](const MasterProblem& self) { return self.phi;    })
         ;
 }
