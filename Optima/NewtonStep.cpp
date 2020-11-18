@@ -50,8 +50,8 @@ struct NewtonStep::Impl
     auto apply(const ResidualFunction& F, MasterVectorView uo, MasterVectorRef u) -> void
     {
         sanitycheck();
-        const auto Mc = F.canonicalJacobianMatrix();
-        const auto ac = F.canonicalResidualVector();
+        const auto Mc = F.jacobianMatrixCanonicalForm();
+        const auto ac = F.residualVectorCanonicalForm();
         linearsolver.decompose(Mc);
         linearsolver.solve(Mc, ac, du);
         u.x .noalias() = uo.x + du.x;

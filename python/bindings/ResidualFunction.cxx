@@ -22,6 +22,7 @@ namespace py = pybind11;
 
 // Optima includes
 #include <Optima/ResidualFunction.hpp>
+#include <Optima/Stability2.hpp>
 using namespace Optima;
 
 void exportResidualFunction(py::module& m)
@@ -34,20 +35,26 @@ void exportResidualFunction(py::module& m)
         ;
 
     py::class_<ResidualFunctionResult>(m, "ResidualFunctionResult")
-        .def_property_readonly("f", [](const ResidualFunctionResult& self) { return self.f; })
-        .def_property_readonly("h", [](const ResidualFunctionResult& self) { return self.h; })
-        .def_property_readonly("v", [](const ResidualFunctionResult& self) { return self.v; })
+        .def_property_readonly("f",               [](const ResidualFunctionResult& self) { return self.f;               })
+        .def_property_readonly("h",               [](const ResidualFunctionResult& self) { return self.h;               })
+        .def_property_readonly("v",               [](const ResidualFunctionResult& self) { return self.v;               })
+        .def_property_readonly("Jm",              [](const ResidualFunctionResult& self) { return self.Jm;              })
+        .def_property_readonly("Jc",              [](const ResidualFunctionResult& self) { return self.Jc;              })
+        .def_property_readonly("Fm",              [](const ResidualFunctionResult& self) { return self.Fm;              })
+        .def_property_readonly("Fc",              [](const ResidualFunctionResult& self) { return self.Fc;              })
+        .def_property_readonly("stabilitystatus", [](const ResidualFunctionResult& self) { return self.stabilitystatus; })
+        .def_property_readonly("succeeded",       [](const ResidualFunctionResult& self) { return self.succeeded;       })
         ;
 
     py::class_<ResidualFunction>(m, "ResidualFunction")
         .def(py::init<const MasterDims&>())
-        .def("initialize"              , &ResidualFunction::initialize)
-        .def("update"                  , &ResidualFunction::update)
-        .def("updateSkipJacobian"      , &ResidualFunction::updateSkipJacobian)
-        .def("canonicalJacobianMatrix" , &ResidualFunction::canonicalJacobianMatrix, py::return_value_policy::reference_internal)
-        .def("canonicalResidualVector" , &ResidualFunction::canonicalResidualVector, py::return_value_policy::reference_internal)
-        .def("masterJacobianMatrix"    , &ResidualFunction::masterJacobianMatrix, py::return_value_policy::reference_internal)
-        .def("masterResidualVector"    , &ResidualFunction::masterResidualVector, py::return_value_policy::reference_internal)
-        .def("result"                  , &ResidualFunction::result, py::return_value_policy::reference_internal)
+        .def("initialize"                  , &ResidualFunction::initialize)
+        .def("update"                      , &ResidualFunction::update)
+        .def("updateSkipJacobian"          , &ResidualFunction::updateSkipJacobian)
+        .def("jacobianMatrixMasterForm"    , &ResidualFunction::jacobianMatrixMasterForm, py::return_value_policy::reference_internal)
+        .def("jacobianMatrixCanonicalForm" , &ResidualFunction::jacobianMatrixCanonicalForm, py::return_value_policy::reference_internal)
+        .def("residualVectorMasterForm"    , &ResidualFunction::residualVectorMasterForm, py::return_value_policy::reference_internal)
+        .def("residualVectorCanonicalForm" , &ResidualFunction::residualVectorCanonicalForm, py::return_value_policy::reference_internal)
+        .def("result"                      , &ResidualFunction::result, py::return_value_policy::reference_internal)
         ;
 }

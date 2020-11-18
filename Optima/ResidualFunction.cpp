@@ -74,6 +74,9 @@ struct ResidualFunction::Impl
     /// The upper bounds for variables *x*.
     Vector xupper;
 
+    /// True if the last update call succeeded.
+    bool succeeded = false;
+
     Impl(const MasterDims& dims)
     : dims(dims),
       fres(dims.nx, dims.np),
@@ -96,58 +99,53 @@ struct ResidualFunction::Impl
         xupper = problem.xupper;
     }
 
-    auto update(MasterVectorView u) -> ResidualFunctionUpdateStatus
+    auto update(MasterVectorView u) -> void
     {
         sanitycheck(u);
         const auto status = updateFunctionEvals(u);
         if(status == FAILED)
-            return status;
+            return;
         updateEchelonFormMatrixW(u);
         updateIndicesStableVariables(u);
         updateCanonicalFormJacobianMatrix(u);
         updateResidualVector(u);
-        return status;
     }
 
-    auto updateSkipJacobian(MasterVectorView u) -> ResidualFunctionUpdateStatus
+    auto updateSkipJacobian(MasterVectorView u) -> void
     {
         sanitycheck(u);
         const auto status = updateFunctionEvalsSkippingJacobianEvals(u);
         if(status == FAILED)
-            return status;
+            return;
         updateEchelonFormMatrixW(u);
         updateIndicesStableVariables(u);
         updateCanonicalFormJacobianMatrix(u);
         updateResidualVector(u);
-        return status;
     }
 
-    auto updateFunctionEvals(MasterVectorView u) -> ResidualFunctionUpdateStatus
+    template<bool evaljac>
+    auto updateFunctionEvalsAux(MasterVectorView u) -> bool
     {
         const auto x = u.x;
         const auto p = u.p;
         const auto ibasicvars = RWQ.asMatrixViewRWQ().jb;
-        ObjectiveOptions fopts{{true, true}, ibasicvars};
-        ConstraintOptions hopts{{true, true}, ibasicvars};
-        ConstraintOptions vopts{{true, true}, ibasicvars};
+        ObjectiveOptions  fopts{{evaljac, evaljac}, ibasicvars};
+        ConstraintOptions hopts{{evaljac, evaljac}, ibasicvars};
+        ConstraintOptions vopts{{evaljac, evaljac}, ibasicvars};
         f(fres, x, p, fopts);
         h(hres, x, p, hopts);
         v(vres, x, p, vopts);
-        return { fres.succeeded, hres.succeeded, vres.succeeded };
+        return succeeded = fres.succeeded && hres.succeeded && vres.succeeded;
     }
 
-    auto updateFunctionEvalsSkippingJacobianEvals(MasterVectorView u) -> ResidualFunctionUpdateStatus
+    auto updateFunctionEvals(MasterVectorView u) -> bool
     {
-        const auto x = u.x;
-        const auto p = u.p;
-        const auto ibasicvars = RWQ.asMatrixViewRWQ().jb;
-        ObjectiveOptions fopts{{false, false}, ibasicvars};
-        ConstraintOptions hopts{{false, false}, ibasicvars};
-        ConstraintOptions vopts{{false, false}, ibasicvars};
-        f(fres, x, p, fopts);
-        h(hres, x, p, hopts);
-        v(vres, x, p, vopts);
-        return { fres.succeeded, hres.succeeded, vres.succeeded };
+        return updateFunctionEvalsAux<true>(u);
+    }
+
+    auto updateFunctionEvalsSkippingJacobianEvals(MasterVectorView u) -> bool
+    {
+        return updateFunctionEvalsAux<false>(u);
     }
 
     auto updateEchelonFormMatrixW(MasterVectorView u) -> void
@@ -171,7 +169,7 @@ struct ResidualFunction::Impl
 
     auto updateCanonicalFormJacobianMatrix(MasterVectorView u) -> void
     {
-        jacobian.update(masterJacobianMatrix());
+        jacobian.update(jacobianMatrixMasterForm());
     }
 
     auto updateResidualVector(MasterVectorView u) -> void
@@ -190,17 +188,17 @@ struct ResidualFunction::Impl
         residual.update({jacobian, Wx, Wp, x, p, y, z, fx, v, b, h});
     }
 
-    auto canonicalJacobianMatrix() const -> CanonicalMatrixView
+    auto jacobianMatrixCanonicalForm() const -> CanonicalMatrixView
     {
         return jacobian;
     }
 
-    auto canonicalResidualVector() const -> CanonicalVectorView
+    auto residualVectorCanonicalForm() const -> CanonicalVectorView
     {
         return residual.canonicalVector();
     }
 
-    auto masterJacobianMatrix() const -> MasterMatrix
+    auto jacobianMatrixMasterForm() const -> MasterMatrix
     {
         const auto stabilitystatus = stability.status();
         const auto js = stabilitystatus.js;
@@ -215,14 +213,20 @@ struct ResidualFunction::Impl
         return {H, V, RWQ, js, ju};
     }
 
-    auto masterResidualVector() const -> MasterVectorView
+    auto residualVectorMasterForm() const -> MasterVectorView
     {
         return residual.masterVector();
     }
 
     auto result() const -> ResidualFunctionResult
     {
-        return { fres, hres, vres };
+        const auto Jm = jacobianMatrixMasterForm();
+        const auto Jc = jacobianMatrixCanonicalForm();
+        const auto Fm = residualVectorMasterForm();
+        const auto Fc = residualVectorCanonicalForm();
+        const auto stabilitystatus = stability.status();
+
+        return { fres, hres, vres, Jm, Jc, Fm, Fc, stabilitystatus, succeeded };
     }
 
     auto sanitycheck(MasterVectorView u) const -> void
@@ -258,34 +262,34 @@ auto ResidualFunction::initialize(const MasterProblem& problem) -> void
     return pimpl->initialize(problem);
 }
 
-auto ResidualFunction::update(MasterVectorView u) -> ResidualFunctionUpdateStatus
+auto ResidualFunction::update(MasterVectorView u) -> void
 {
-    return pimpl->update(u);
+    pimpl->update(u);
 }
 
-auto ResidualFunction::updateSkipJacobian(MasterVectorView u) -> ResidualFunctionUpdateStatus
+auto ResidualFunction::updateSkipJacobian(MasterVectorView u) -> void
 {
-    return pimpl->updateSkipJacobian(u);
+    pimpl->updateSkipJacobian(u);
 }
 
-auto ResidualFunction::canonicalJacobianMatrix() const -> CanonicalMatrixView
+auto ResidualFunction::jacobianMatrixMasterForm() const -> MasterMatrix
 {
-    return pimpl->canonicalJacobianMatrix();
+    return pimpl->jacobianMatrixMasterForm();
 }
 
-auto ResidualFunction::canonicalResidualVector() const -> CanonicalVectorView
+auto ResidualFunction::jacobianMatrixCanonicalForm() const -> CanonicalMatrixView
 {
-    return pimpl->canonicalResidualVector();
+    return pimpl->jacobianMatrixCanonicalForm();
 }
 
-auto ResidualFunction::masterJacobianMatrix() const -> MasterMatrix
+auto ResidualFunction::residualVectorMasterForm() const -> MasterVectorView
 {
-    return pimpl->masterJacobianMatrix();
+    return pimpl->residualVectorMasterForm();
 }
 
-auto ResidualFunction::masterResidualVector() const -> MasterVectorView
+auto ResidualFunction::residualVectorCanonicalForm() const -> CanonicalVectorView
 {
-    return pimpl->masterResidualVector();
+    return pimpl->residualVectorCanonicalForm();
 }
 
 auto ResidualFunction::result() const -> ResidualFunctionResult

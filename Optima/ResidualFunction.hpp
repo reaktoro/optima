@@ -33,6 +33,7 @@ namespace Optima {
 // Forward declarations
 struct ObjectiveResult;
 struct ConstraintResult;
+struct StabilityStatus;
 
 /// Used to determine whether the evaluation of objective and constraint functions succeeded or not.
 struct ResidualFunctionUpdateStatus
@@ -46,9 +47,32 @@ struct ResidualFunctionUpdateStatus
 /// The result of the residual function evaluation at *u = (x, p, y, z)*.
 struct ResidualFunctionResult
 {
-    ObjectiveResult const& f;   ///< The evaluated result of the objective function *f(x, p)*.
-    ConstraintResult const& h;  ///< The evaluated result of the constraint function *h(x, p)*.
-    ConstraintResult const& v;  ///< The evaluated result of the constraint function *v(x, p)*.
+    /// The evaluated result of the objective function *f(x, p)*.
+    ObjectiveResult const& f;
+
+    /// The evaluated result of the constraint function *h(x, p)*.
+    ConstraintResult const& h;
+
+    /// The evaluated result of the constraint function *v(x, p)*.
+    ConstraintResult const& v;
+
+    /// The evaluated Jacobian matrix in master form.
+    MasterMatrix const& Jm;
+
+    /// The evaluated Jacobian matrix in canonical form.
+    CanonicalMatrixView const& Jc;
+
+    /// The evaluated residual vector in master form.
+    MasterVectorView const& Fm;
+
+    /// The evaluated residual vector in canonical form.
+    CanonicalVectorView const& Fc;
+
+    /// The evaluated stability status of the x variables.
+    StabilityStatus const& stabilitystatus;
+
+    /// True if all functions *f*, *h* and *v* were successfully evaluated.
+    bool const& succeeded;
 };
 
 /// Used to represent the residual function *F(u)* in the Newton step problem.
@@ -71,22 +95,22 @@ public:
     auto initialize(const MasterProblem& problem) -> void;
 
     /// Update the residual function with given *u = (x, p, y, z)*.
-    auto update(MasterVectorView u) -> ResidualFunctionUpdateStatus;
+    auto update(MasterVectorView u) -> void;
 
     /// Update the residual function with given *u = (x, p, y, z)* skipping Jacobian evaluations.
-    auto updateSkipJacobian(MasterVectorView u) -> ResidualFunctionUpdateStatus;
+    auto updateSkipJacobian(MasterVectorView u) -> void;
 
     /// Return the Jacobian matrix in canonical form.
-    auto canonicalJacobianMatrix() const -> CanonicalMatrixView;
-
-    /// Return the residual vector in canonical form.
-    auto canonicalResidualVector() const -> CanonicalVectorView;
+    auto jacobianMatrixCanonicalForm() const -> CanonicalMatrixView;
 
     /// Return the Jacobian matrix in master form.
-    auto masterJacobianMatrix() const -> MasterMatrix;
+    auto jacobianMatrixMasterForm() const -> MasterMatrix;
+
+    /// Return the residual vector in canonical form.
+    auto residualVectorCanonicalForm() const -> CanonicalVectorView;
 
     /// Return the residual vector in master form.
-    auto masterResidualVector() const -> MasterVectorView;
+    auto residualVectorMasterForm() const -> MasterVectorView;
 
     /// Return the result of the evaluation of the residual function.
     auto result() const -> ResidualFunctionResult;
