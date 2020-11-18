@@ -213,7 +213,7 @@ struct ResidualFunction::Impl
         return residual.masterVector();
     }
 
-    auto residualVectorCanonicalForm() const -> CanonicalVectorView
+    auto residualVectorCanonicalForm() const -> CanonicalVectorConstRef
     {
         return residual.canonicalVector();
     }
@@ -287,7 +287,7 @@ auto ResidualFunction::residualVectorMasterForm() const -> MasterVectorConstRef
     return pimpl->residualVectorMasterForm();
 }
 
-auto ResidualFunction::residualVectorCanonicalForm() const -> CanonicalVectorView
+auto ResidualFunction::residualVectorCanonicalForm() const -> CanonicalVectorConstRef
 {
     return pimpl->residualVectorCanonicalForm();
 }

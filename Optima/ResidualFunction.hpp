@@ -67,7 +67,7 @@ struct ResidualFunctionResult
     MasterVectorConstRef const& Fm;
 
     /// The evaluated residual vector in canonical form.
-    CanonicalVectorView const& Fc;
+    CanonicalVectorConstRef const& Fc;
 
     /// The evaluated stability status of the x variables.
     StabilityStatus stabilitystatus;
@@ -108,7 +108,7 @@ public:
     auto jacobianMatrixMasterForm() const -> MasterMatrix;
 
     /// Return the residual vector in canonical form.
-    auto residualVectorCanonicalForm() const -> CanonicalVectorView;
+    auto residualVectorCanonicalForm() const -> CanonicalVectorConstRef;
 
     /// Return the residual vector in master form.
     auto residualVectorMasterForm() const -> MasterVectorConstRef;

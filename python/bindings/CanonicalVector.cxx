@@ -31,7 +31,7 @@ void exportCanonicalVector(py::module& m)
         .def(py::init<VectorConstRef, Index, Index, Index, Index>())
         .def(py::init<const CanonicalVector&>())
         .def(py::init<const CanonicalVectorRef&>())
-        .def(py::init<const CanonicalVectorView&>())
+        .def(py::init<const CanonicalVectorConstRef&>())
         .def_readwrite("xs" , &CanonicalVector::xs)
         .def_readwrite("xu" , &CanonicalVector::xu)
         .def_readwrite("p"  , &CanonicalVector::p)
@@ -52,19 +52,19 @@ void exportCanonicalVector(py::module& m)
         .def("array", [](const CanonicalVectorRef& self) { return Vector(self); })
         ;
 
-    py::class_<CanonicalVectorView>(m, "CanonicalVectorView")
+    py::class_<CanonicalVectorConstRef>(m, "CanonicalVectorConstRef")
         .def(py::init<VectorConstRef, Index, Index, Index, Index>())
         .def(py::init<const CanonicalVector&>())
         .def(py::init<const CanonicalVectorRef&>())
-        .def_readonly("xs" , &CanonicalVectorView::xs)
-        .def_readonly("xu" , &CanonicalVectorView::xu)
-        .def_readonly("p"  , &CanonicalVectorView::p)
-        .def_readonly("wbs", &CanonicalVectorView::wbs)
-        .def("size", &CanonicalVectorView::size)
-        .def("array", [](const CanonicalVectorView& self) { return Vector(self); })
+        .def_readonly("xs" , &CanonicalVectorConstRef::xs)
+        .def_readonly("xu" , &CanonicalVectorConstRef::xu)
+        .def_readonly("p"  , &CanonicalVectorConstRef::p)
+        .def_readonly("wbs", &CanonicalVectorConstRef::wbs)
+        .def("size", &CanonicalVectorConstRef::size)
+        .def("array", [](const CanonicalVectorConstRef& self) { return Vector(self); })
         ;
 
     py::implicitly_convertible<CanonicalVector, CanonicalVectorRef>();
-    py::implicitly_convertible<CanonicalVector, CanonicalVectorView>();
-    py::implicitly_convertible<CanonicalVectorRef, CanonicalVectorView>();
+    py::implicitly_convertible<CanonicalVector, CanonicalVectorConstRef>();
+    py::implicitly_convertible<CanonicalVectorRef, CanonicalVectorConstRef>();
 }

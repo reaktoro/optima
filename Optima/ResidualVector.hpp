@@ -72,7 +72,7 @@ public:
     auto masterVector() const -> MasterVectorConstRef;
 
     /// Return the residual vector as a canonical vector.
-    auto canonicalVector() const -> CanonicalVectorView;
+    auto canonicalVector() const -> CanonicalVectorConstRef;
 };
 
 } // namespace Optima

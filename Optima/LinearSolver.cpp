@@ -57,7 +57,7 @@ struct LinearSolver::Impl
         aw   = zeros(nw);
     }
 
-    auto solveCanonical(CanonicalMatrix Mc, CanonicalVectorView ac, CanonicalVectorRef uc) -> void
+    auto solveCanonical(CanonicalMatrix Mc, CanonicalVectorConstRef ac, CanonicalVectorRef uc) -> void
     {
         switch(options.method)
         {
@@ -105,7 +105,7 @@ struct LinearSolver::Impl
         u.x(ju) = au;
     }
 
-    auto solve(CanonicalMatrix Mc, CanonicalVectorView a, MasterVectorRef u) -> void
+    auto solve(CanonicalMatrix Mc, CanonicalVectorConstRef a, MasterVectorRef u) -> void
     {
         const auto dims = Mc.dims;
         const auto Rbs  = Mc.Rbs;
@@ -175,7 +175,7 @@ auto LinearSolver::solve(CanonicalMatrix Mc, MasterVectorConstRef a, MasterVecto
     pimpl->solve(Mc, a, u);
 }
 
-auto LinearSolver::solve(CanonicalMatrix Mc, CanonicalVectorView ac, MasterVectorRef u) -> void
+auto LinearSolver::solve(CanonicalMatrix Mc, CanonicalVectorConstRef ac, MasterVectorRef u) -> void
 {
     pimpl->solve(Mc, ac, u);
 }

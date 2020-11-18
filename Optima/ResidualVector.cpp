@@ -134,7 +134,7 @@ struct ResidualVector::Impl
         return {ax, ap, aw};
     }
 
-    auto canonicalVector() const -> CanonicalVectorView
+    auto canonicalVector() const -> CanonicalVectorConstRef
     {
         const auto as = asu.head(ns);
         const auto au = asu.tail(nu);
@@ -169,7 +169,7 @@ auto ResidualVector::masterVector() const -> MasterVectorConstRef
     return pimpl->masterVector();
 }
 
-auto ResidualVector::canonicalVector() const -> CanonicalVectorView
+auto ResidualVector::canonicalVector() const -> CanonicalVectorConstRef
 {
     return pimpl->canonicalVector();
 }
