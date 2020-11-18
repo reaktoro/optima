@@ -47,7 +47,7 @@ auto operator*(const MasterMatrix& M, const MasterVectorConstRef& u) -> MasterVe
 }
 
 /// Return the product of a master matrix transpose and a master vector.
-auto operator*(const MasterMatrixViewTr& trM, const MasterVectorConstRef& u) -> MasterVector
+auto operator*(const MasterMatrixTrExpr& trM, const MasterVectorConstRef& u) -> MasterVector
 {
     using Eigen::all;
     const auto [dims, H, V, W, RWQ, js, ju] = trM.M;

@@ -27,9 +27,9 @@ using namespace Optima;
 
 void exportMasterMatrixOps(py::module& m)
 {
-    py::class_<MasterMatrixViewTr>(m, "MasterMatrixViewTr")
-        .def_property_readonly("M", [](const MasterMatrixViewTr& self) { return self.M; })
-        .def("__mul__", [](const MasterMatrixViewTr& l, const MasterVectorConstRef& r) { return l * r; })
+    py::class_<MasterMatrixTrExpr>(m, "MasterMatrixTrExpr")
+        .def_property_readonly("M", [](const MasterMatrixTrExpr& self) { return self.M; })
+        .def("__mul__", [](const MasterMatrixTrExpr& l, const MasterVectorConstRef& r) { return l * r; })
         ;
 
     m.def("tr", [](const MasterMatrix& M) { return tr(M); });

@@ -23,19 +23,19 @@
 
 namespace Optima {
 
-/// Used to represent the transpose view of a master matrix.
-struct MasterMatrixViewTr
+/// Used to represent the transpose expression of a master matrix.
+struct MasterMatrixTrExpr
 {
     const MasterMatrix& M; ///< The underlying master matrix in the transpose expression.
 };
 
 /// Return a transpose representation of a master matrix.
-inline auto tr(const MasterMatrix& M) -> MasterMatrixViewTr { return { M }; }
+inline auto tr(const MasterMatrix& M) -> MasterMatrixTrExpr { return { M }; }
 
 /// Return the product of a master matrix and a master vector.
 auto operator*(const MasterMatrix& M, const MasterVectorConstRef& u) -> MasterVector;
 
 /// Return the product of a master matrix transpose and a master vector.
-auto operator*(const MasterMatrixViewTr& trM, const MasterVectorConstRef& u) -> MasterVector;
+auto operator*(const MasterMatrixTrExpr& trM, const MasterVectorConstRef& u) -> MasterVector;
 
 } // namespace Optima
