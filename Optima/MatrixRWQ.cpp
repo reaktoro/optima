@@ -67,7 +67,7 @@ struct MatrixRWQ::Impl
     {
         const auto [nx, np, ny, nz, nw, nt] = dims;
 
-        assert( nw == echelonizer.R().rows() );
+        assert( echelonizer.R().rows() );
         assert( nz == Jx.rows() );
         assert( nz == Jp.rows() );
         assert( nx == Jx.cols() );
