@@ -37,7 +37,7 @@ public:
     {
         if(this->rows() != other.rows() || this->cols() != other.cols())
             throw std::runtime_error("\033[1;31m***ERROR*** Cannot implicitly resize a matrix/vector with fixed dimensions.\033[0m");
-        Ref(*this) = other;
+        Base::operator=(other);
         return *this;
     }
 };
