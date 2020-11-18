@@ -31,7 +31,7 @@ struct MasterVectorBase
     Vec p; ///< The vector *p* in *u = (x, p, w)*.
     Vec w; ///< The vector *w* in *u = (x, p, w)*.
 
-    /// Construct a MasterVectorBase object.
+    /// Construct a MasterVectorBase object. // TODO: This constructor must accept instead MasterDims!
     MasterVectorBase(Index nx, Index np, Index nw)
     : MasterVectorBase(zeros(nx + np + nw), nx, np, nw) {}
 

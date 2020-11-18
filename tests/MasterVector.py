@@ -37,3 +37,7 @@ def testMasterVector(nx, np, nw):
 
     assert all(u.array() == npy.concatenate([u.x, u.p, u.w]))
 
+    assert u.x.flags["WRITEABLE"] == True  # ensure u.x[indices] = xsubvec is working - need to use def_property for x, and not def_readwrite!
+    assert u.p.flags["WRITEABLE"] == True  # ensure u.p[indices] = psubvec is working - need to use def_property for p, and not def_readwrite!
+    assert u.w.flags["WRITEABLE"] == True  # ensure u.w[indices] = wsubvec is working - need to use def_property for w, and not def_readwrite!
+
