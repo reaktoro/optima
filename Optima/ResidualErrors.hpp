@@ -59,7 +59,7 @@ public:
     auto initialize(const MasterProblem& problem) -> void;
 
     /// Update the residual errors.
-    auto update(MasterVectorView u, const ResidualFunction& F) -> void;
+    auto update(MasterVectorConstRef u, const ResidualFunction& F) -> void;
 };
 
 } // namespace Optima

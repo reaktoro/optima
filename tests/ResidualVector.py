@@ -41,9 +41,9 @@ def testResidualVector(nx, np, ny, nz, nl, nu):
 
     M = createMasterMatrix(params)
 
-    Mbar = CanonicalMatrix(M)
+    canonicalizer = Canonicalizer(M)
 
-    Mc = Mbar.view()
+    Mc = canonicalizer.canonicalMatrix()
 
     Wx, Wp = M.W.Wx, M.W.Wp
     Ax, Jx = npy.vsplit(Wx, [ny])
@@ -62,7 +62,7 @@ def testResidualVector(nx, np, ny, nz, nl, nu):
     b = random.rand(ny)
     h = random.rand(nz)
 
-    F.update(Mbar, Wx, Wp, x, p, y, z, g, v, b, h)
+    F.update(Mc, Wx, Wp, x, p, y, z, g, v, b, h)
 
     nbs = Mc.dims.nbs
 

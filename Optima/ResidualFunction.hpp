@@ -64,7 +64,7 @@ struct ResidualFunctionResult
     CanonicalMatrix const& Jc;
 
     /// The evaluated residual vector in master form.
-    MasterVectorView const& Fm;
+    MasterVectorConstRef const& Fm;
 
     /// The evaluated residual vector in canonical form.
     CanonicalVectorView const& Fc;
@@ -96,10 +96,10 @@ public:
     auto initialize(const MasterProblem& problem) -> void;
 
     /// Update the residual function with given *u = (x, p, y, z)*.
-    auto update(MasterVectorView u) -> void;
+    auto update(MasterVectorConstRef u) -> void;
 
     /// Update the residual function with given *u = (x, p, y, z)* skipping Jacobian evaluations.
-    auto updateSkipJacobian(MasterVectorView u) -> void;
+    auto updateSkipJacobian(MasterVectorConstRef u) -> void;
 
     /// Return the Jacobian matrix in canonical form.
     auto jacobianMatrixCanonicalForm() const -> CanonicalMatrix;
@@ -111,7 +111,7 @@ public:
     auto residualVectorCanonicalForm() const -> CanonicalVectorView;
 
     /// Return the residual vector in master form.
-    auto residualVectorMasterForm() const -> MasterVectorView;
+    auto residualVectorMasterForm() const -> MasterVectorConstRef;
 
     /// Return the result of the evaluation of the residual function.
     auto result() const -> ResidualFunctionResult;

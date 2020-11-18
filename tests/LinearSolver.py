@@ -64,9 +64,9 @@ def testLinearSolver(nx, np, ny, nz, nl, nu, diagHxx, method):
 
     a = M * uexp
 
-    Mbar = CanonicalMatrix(M)
+    canonicalizer = Canonicalizer(M)
 
-    Mc = Mbar.view()
+    Mc = canonicalizer.canonicalMatrix()
 
     options = LinearSolverOptions()
     options.method = method
@@ -76,7 +76,7 @@ def testLinearSolver(nx, np, ny, nz, nl, nu, diagHxx, method):
 
     u = MasterVector(nx, np, nw)
 
-    linearsolver.decompose(Mbar)
-    linearsolver.solve(Mbar, a, u)
+    linearsolver.decompose(Mc)
+    linearsolver.solve(Mc, a, u)
 
     assert_almost_equal( (M * u).array(), a.array() )

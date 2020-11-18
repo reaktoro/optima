@@ -28,7 +28,7 @@ struct LineSearch::Impl
     {
     }
 
-    auto start(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ErrorStatus& E) -> void
+    auto start(MasterVectorConstRef uo, MasterVectorRef u, ResidualFunction& F, ErrorStatus& E) -> void
     {
 
     }
@@ -51,7 +51,7 @@ auto LineSearch::operator=(LineSearch other) -> LineSearch&
     return *this;
 }
 
-auto LineSearch::start(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ErrorStatus& E) -> void
+auto LineSearch::start(MasterVectorConstRef uo, MasterVectorRef u, ResidualFunction& F, ErrorStatus& E) -> void
 {
 
 }

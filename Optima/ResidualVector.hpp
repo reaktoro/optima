@@ -69,7 +69,7 @@ public:
     auto update(ResidualVectorUpdateArgs args) -> void;
 
     /// Return the residual vector as a master vector.
-    auto masterVector() const -> MasterVectorView;
+    auto masterVector() const -> MasterVectorConstRef;
 
     /// Return the residual vector as a canonical vector.
     auto canonicalVector() const -> CanonicalVectorView;

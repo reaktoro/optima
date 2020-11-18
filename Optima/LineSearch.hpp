@@ -49,7 +49,7 @@ public:
     auto operator=(LineSearch other) -> LineSearch&;
 
     /// Start the backtrack search until the error is no longer infinity.
-    auto start(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ErrorStatus& E) -> void;
+    auto start(MasterVectorConstRef uo, MasterVectorRef u, ResidualFunction& F, ErrorStatus& E) -> void;
 };
 
 } // namespace Optima

@@ -129,7 +129,7 @@ struct ResidualVector::Impl
         awbs.noalias() -= xbs + Sbsns*xns + Sbsp*args.p;
     }
 
-    auto masterVector() const -> MasterVectorView
+    auto masterVector() const -> MasterVectorConstRef
     {
         return {ax, ap, aw};
     }
@@ -164,7 +164,7 @@ auto ResidualVector::update(ResidualVectorUpdateArgs args) -> void
     pimpl->update(args);
 }
 
-auto ResidualVector::masterVector() const -> MasterVectorView
+auto ResidualVector::masterVector() const -> MasterVectorConstRef
 {
     return pimpl->masterVector();
 }

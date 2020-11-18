@@ -31,7 +31,7 @@ void exportMasterVector(py::module& m)
         .def(py::init<VectorConstRef, Index, Index, Index>())
         .def(py::init<const MasterVector&>())
         .def(py::init<const MasterVectorRef&>())
-        .def(py::init<const MasterVectorView&>())
+        .def(py::init<const MasterVectorConstRef&>())
         .def_property("x", [](MasterVector& s) -> VectorRef { return s.x; }, [](MasterVector& s, VectorConstRef x) { s.x = x; })
         .def_property("p", [](MasterVector& s) -> VectorRef { return s.p; }, [](MasterVector& s, VectorConstRef p) { s.p = p; })
         .def_property("w", [](MasterVector& s) -> VectorRef { return s.w; }, [](MasterVector& s, VectorConstRef w) { s.w = w; })
@@ -50,18 +50,18 @@ void exportMasterVector(py::module& m)
         .def("array", [](const MasterVectorRef& self) { return Vector(self); })
         ;
 
-    py::class_<MasterVectorView>(m, "MasterVectorView")
+    py::class_<MasterVectorConstRef>(m, "MasterVectorConstRef")
         .def(py::init<VectorConstRef, Index, Index, Index>())
         .def(py::init<const MasterVector&>())
         .def(py::init<const MasterVectorRef&>())
-        .def_readonly("x", &MasterVectorView::x)
-        .def_readonly("p", &MasterVectorView::p)
-        .def_readonly("w", &MasterVectorView::w)
-        .def("size", &MasterVectorView::size)
-        .def("array", [](const MasterVectorView& self) { return Vector(self); })
+        .def_readonly("x", &MasterVectorConstRef::x)
+        .def_readonly("p", &MasterVectorConstRef::p)
+        .def_readonly("w", &MasterVectorConstRef::w)
+        .def("size", &MasterVectorConstRef::size)
+        .def("array", [](const MasterVectorConstRef& self) { return Vector(self); })
         ;
 
     py::implicitly_convertible<MasterVector, MasterVectorRef>();
-    py::implicitly_convertible<MasterVector, MasterVectorView>();
-    py::implicitly_convertible<MasterVectorRef, MasterVectorView>();
+    py::implicitly_convertible<MasterVector, MasterVectorConstRef>();
+    py::implicitly_convertible<MasterVectorRef, MasterVectorConstRef>();
 }

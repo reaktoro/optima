@@ -61,7 +61,7 @@ public:
     /// @param Mc The canonical form of the master matrix in the linear problem.
     /// @param a The right-hand side master vector in the linear problem.
     /// @param[out] u The solution master vector in the linear problem.
-    auto solve(CanonicalMatrix Mc, MasterVectorView a, MasterVectorRef u) -> void;
+    auto solve(CanonicalMatrix Mc, MasterVectorConstRef a, MasterVectorRef u) -> void;
 
     /// Solve the linear problem.
     /// Using this method presumes method @ref decompose has already been

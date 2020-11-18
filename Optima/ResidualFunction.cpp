@@ -98,7 +98,7 @@ struct ResidualFunction::Impl
         xupper = problem.xupper;
     }
 
-    auto update(MasterVectorView u) -> void
+    auto update(MasterVectorConstRef u) -> void
     {
         sanitycheck(u);
         const auto status = updateFunctionEvals(u);
@@ -110,7 +110,7 @@ struct ResidualFunction::Impl
         updateResidualVector(u);
     }
 
-    auto updateSkipJacobian(MasterVectorView u) -> void
+    auto updateSkipJacobian(MasterVectorConstRef u) -> void
     {
         sanitycheck(u);
         const auto status = updateFunctionEvalsSkippingJacobianEvals(u);
@@ -123,7 +123,7 @@ struct ResidualFunction::Impl
     }
 
     template<bool evaljac>
-    auto updateFunctionEvalsAux(MasterVectorView u) -> bool
+    auto updateFunctionEvalsAux(MasterVectorConstRef u) -> bool
     {
         const auto x = u.x;
         const auto p = u.p;
@@ -137,17 +137,17 @@ struct ResidualFunction::Impl
         return succeeded = fres.succeeded && hres.succeeded && vres.succeeded;
     }
 
-    auto updateFunctionEvals(MasterVectorView u) -> bool
+    auto updateFunctionEvals(MasterVectorConstRef u) -> bool
     {
         return updateFunctionEvalsAux<true>(u);
     }
 
-    auto updateFunctionEvalsSkippingJacobianEvals(MasterVectorView u) -> bool
+    auto updateFunctionEvalsSkippingJacobianEvals(MasterVectorConstRef u) -> bool
     {
         return updateFunctionEvalsAux<false>(u);
     }
 
-    auto updateEchelonFormMatrixW(MasterVectorView u) -> void
+    auto updateEchelonFormMatrixW(MasterVectorConstRef u) -> void
     {
         const auto& x = u.x;
         const auto& Jx = hres.ddx;
@@ -159,19 +159,19 @@ struct ResidualFunction::Impl
         RWQ.update(Jx, Jp, wx);
     }
 
-    auto updateIndicesStableVariables(MasterVectorView u) -> void
+    auto updateIndicesStableVariables(MasterVectorConstRef u) -> void
     {
         const auto& fx = fres.fx;
         const auto& x = u.x;
         stability.update({RWQ, fx, x, xlower, xupper});
     }
 
-    auto updateCanonicalFormJacobianMatrix(MasterVectorView u) -> void
+    auto updateCanonicalFormJacobianMatrix(MasterVectorConstRef u) -> void
     {
         canonicalizer.update(jacobianMatrixMasterForm());
     }
 
-    auto updateResidualVector(MasterVectorView u) -> void
+    auto updateResidualVector(MasterVectorConstRef u) -> void
     {
         const auto& fx = fres.fx;
         const auto& h = hres.val;
@@ -208,7 +208,7 @@ struct ResidualFunction::Impl
         return canonicalizer.canonicalMatrix();
     }
 
-    auto residualVectorMasterForm() const -> MasterVectorView
+    auto residualVectorMasterForm() const -> MasterVectorConstRef
     {
         return residual.masterVector();
     }
@@ -229,7 +229,7 @@ struct ResidualFunction::Impl
         return { fres, hres, vres, Jm, Jc, Fm, Fc, stabilitystatus, succeeded };
     }
 
-    auto sanitycheck(MasterVectorView u) const -> void
+    auto sanitycheck(MasterVectorConstRef u) const -> void
     {
         assert(b.size() == dims.ny);
         assert(xlower.size() == dims.nx);
@@ -262,12 +262,12 @@ auto ResidualFunction::initialize(const MasterProblem& problem) -> void
     return pimpl->initialize(problem);
 }
 
-auto ResidualFunction::update(MasterVectorView u) -> void
+auto ResidualFunction::update(MasterVectorConstRef u) -> void
 {
     pimpl->update(u);
 }
 
-auto ResidualFunction::updateSkipJacobian(MasterVectorView u) -> void
+auto ResidualFunction::updateSkipJacobian(MasterVectorConstRef u) -> void
 {
     pimpl->updateSkipJacobian(u);
 }
@@ -282,7 +282,7 @@ auto ResidualFunction::jacobianMatrixCanonicalForm() const -> CanonicalMatrix
     return pimpl->jacobianMatrixCanonicalForm();
 }
 
-auto ResidualFunction::residualVectorMasterForm() const -> MasterVectorView
+auto ResidualFunction::residualVectorMasterForm() const -> MasterVectorConstRef
 {
     return pimpl->residualVectorMasterForm();
 }

@@ -47,7 +47,7 @@ struct NewtonStep::Impl
         xupper = problem.xupper;
     }
 
-    auto apply(const ResidualFunction& F, MasterVectorView uo, MasterVectorRef u) -> void
+    auto apply(const ResidualFunction& F, MasterVectorConstRef uo, MasterVectorRef u) -> void
     {
         sanitycheck();
         const auto Mc = F.jacobianMatrixCanonicalForm();
@@ -94,7 +94,7 @@ auto NewtonStep::initialize(const MasterProblem& problem) -> void
     pimpl->initialize(problem);
 }
 
-auto NewtonStep::apply(const ResidualFunction& F, MasterVectorView uo, MasterVectorRef u) -> void
+auto NewtonStep::apply(const ResidualFunction& F, MasterVectorConstRef uo, MasterVectorRef u) -> void
 {
     pimpl->apply(F, uo, u);
 }

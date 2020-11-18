@@ -178,20 +178,19 @@ def createMasterMatrix(params):
     return M
 
 
-def createCanonicalMatrix(dims, M):
+def createCanonicalMatrix(M):
     """Create a CanonicalMatrix object with given parameters
 
     Args:
-        dims (MasterDims): The dimensions in a master matrix.
         M (MasterMatrix): The master matrix for which its canonical form is being computed.
 
     Returns:
         CanonicalMatrix: A CanonicalMatrix object for testing purposes.
     """
 
-    Mc = CanonicalMatrix(M)
+    canonicalizer = Canonicalizer(M)
 
-    return Mc.view()
+    return canonicalizer.canonicalMatrix()
 
 
 def createMasterProblem(M):

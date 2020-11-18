@@ -65,8 +65,8 @@ struct MasterVectorBase
     operator Vector() const { Vector res(size()); res << x, p, w; return res; }
 };
 
-using MasterVector     = MasterVectorBase<Vector>;
-using MasterVectorRef  = MasterVectorBase<VectorRef>;
-using MasterVectorView = MasterVectorBase<VectorConstRef>;
+using MasterVector         = MasterVectorBase<Vector>;
+using MasterVectorRef      = MasterVectorBase<VectorRef>;
+using MasterVectorConstRef = MasterVectorBase<VectorConstRef>;
 
 } // namespace Optima

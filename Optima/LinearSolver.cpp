@@ -77,7 +77,7 @@ struct LinearSolver::Impl
         }
     }
 
-    auto solve(CanonicalMatrix Mc, MasterVectorView a, MasterVectorRef u) -> void
+    auto solve(CanonicalMatrix Mc, MasterVectorConstRef a, MasterVectorRef u) -> void
     {
         const auto dims = Mc.dims;
         const auto Rbs  = Mc.Rbs;
@@ -170,7 +170,7 @@ auto LinearSolver::decompose(CanonicalMatrix Mc) -> void
     pimpl->decompose(Mc);
 }
 
-auto LinearSolver::solve(CanonicalMatrix Mc, MasterVectorView a, MasterVectorRef u) -> void
+auto LinearSolver::solve(CanonicalMatrix Mc, MasterVectorConstRef a, MasterVectorRef u) -> void
 {
     pimpl->solve(Mc, a, u);
 }

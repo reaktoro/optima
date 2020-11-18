@@ -29,7 +29,7 @@ void exportMasterMatrixOps(py::module& m)
 {
     py::class_<MasterMatrixViewTr>(m, "MasterMatrixViewTr")
         .def_property_readonly("M", [](const MasterMatrixViewTr& self) { return self.M; })
-        .def("__mul__", [](const MasterMatrixViewTr& l, const MasterVectorView& r) { return l * r; })
+        .def("__mul__", [](const MasterMatrixViewTr& l, const MasterVectorConstRef& r) { return l * r; })
         ;
 
     m.def("tr", [](const MasterMatrix& M) { return tr(M); });

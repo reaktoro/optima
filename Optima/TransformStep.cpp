@@ -42,7 +42,7 @@ struct TransformStep::Impl
         phi = problem.phi;
     }
 
-    auto execute(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> bool
+    auto execute(MasterVectorConstRef uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> bool
     {
         if(phi == nullptr)
             return FAILED;
@@ -100,7 +100,7 @@ auto TransformStep::initialize(const MasterProblem& problem) -> void
     return pimpl->initialize(problem);
 }
 
-auto TransformStep::execute(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> bool
+auto TransformStep::execute(MasterVectorConstRef uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> bool
 {
     return pimpl->execute(uo, u, F, E);
 }

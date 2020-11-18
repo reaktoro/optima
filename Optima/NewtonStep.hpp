@@ -55,7 +55,7 @@ public:
     auto initialize(const MasterProblem& problem) -> void;
 
     /// Apply Newton step to compute the next state of master variables.
-    auto apply(const ResidualFunction& F, MasterVectorView uo, MasterVectorRef u) -> void;
+    auto apply(const ResidualFunction& F, MasterVectorConstRef uo, MasterVectorRef u) -> void;
 };
 
 } // namespace Optima

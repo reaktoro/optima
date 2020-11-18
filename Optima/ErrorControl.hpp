@@ -52,7 +52,7 @@ public:
     auto initialize(const MasterProblem& problem) -> void;
 
     /// Execute the error control operation to potentially decrease error level.
-    auto execute(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void;
+    auto execute(MasterVectorConstRef uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void;
 };
 
 } // namespace Optima
