@@ -272,26 +272,6 @@ auto ResidualFunction::updateSkipJacobian(MasterVectorConstRef u) -> void
     pimpl->updateSkipJacobian(u);
 }
 
-auto ResidualFunction::jacobianMatrixMasterForm() const -> MasterMatrix
-{
-    return pimpl->jacobianMatrixMasterForm();
-}
-
-auto ResidualFunction::jacobianMatrixCanonicalForm() const -> CanonicalMatrix
-{
-    return pimpl->jacobianMatrixCanonicalForm();
-}
-
-auto ResidualFunction::residualVectorMasterForm() const -> MasterVectorConstRef
-{
-    return pimpl->residualVectorMasterForm();
-}
-
-auto ResidualFunction::residualVectorCanonicalForm() const -> CanonicalVectorConstRef
-{
-    return pimpl->residualVectorCanonicalForm();
-}
-
 auto ResidualFunction::result() const -> ResidualFunctionResult
 {
     return pimpl->result();

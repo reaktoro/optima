@@ -51,10 +51,6 @@ void exportResidualFunction(py::module& m)
         .def("initialize"                  , &ResidualFunction::initialize)
         .def("update"                      , &ResidualFunction::update)
         .def("updateSkipJacobian"          , &ResidualFunction::updateSkipJacobian)
-        .def("jacobianMatrixMasterForm"    , &ResidualFunction::jacobianMatrixMasterForm, py::return_value_policy::reference_internal)
-        .def("jacobianMatrixCanonicalForm" , &ResidualFunction::jacobianMatrixCanonicalForm, py::return_value_policy::reference_internal)
-        .def("residualVectorMasterForm"    , &ResidualFunction::residualVectorMasterForm, py::return_value_policy::reference_internal)
-        .def("residualVectorCanonicalForm" , &ResidualFunction::residualVectorCanonicalForm, py::return_value_policy::reference_internal)
         .def("result"                      , &ResidualFunction::result, py::return_value_policy::reference_internal)
         ;
 }

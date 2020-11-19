@@ -57,8 +57,8 @@ struct ResidualErrors::Impl
 
         const auto res = F.result();
 
-        const auto Jc = F.jacobianMatrixCanonicalForm();
-        const auto Fc = F.residualVectorCanonicalForm();
+        const auto Jc = res.Jc;
+        const auto Fc = res.Fc;
 
         const auto nbs = Jc.dims.nbs;
         const auto nbl = Jc.dims.nl;

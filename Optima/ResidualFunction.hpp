@@ -58,16 +58,16 @@ struct ResidualFunctionResult
     ConstraintResult const& v;
 
     /// The evaluated Jacobian matrix in master form.
-    MasterMatrix const& Jm;
+    MasterMatrix Jm;
 
     /// The evaluated Jacobian matrix in canonical form.
-    CanonicalMatrix const& Jc;
+    CanonicalMatrix Jc;
 
     /// The evaluated residual vector in master form.
-    MasterVectorConstRef const& Fm;
+    MasterVectorConstRef Fm;
 
     /// The evaluated residual vector in canonical form.
-    CanonicalVectorConstRef const& Fc;
+    CanonicalVectorConstRef Fc;
 
     /// The evaluated stability status of the x variables.
     StabilityStatus stabilitystatus;
@@ -100,18 +100,6 @@ public:
 
     /// Update the residual function with given *u = (x, p, y, z)* skipping Jacobian evaluations.
     auto updateSkipJacobian(MasterVectorConstRef u) -> void;
-
-    /// Return the Jacobian matrix in canonical form.
-    auto jacobianMatrixCanonicalForm() const -> CanonicalMatrix;
-
-    /// Return the Jacobian matrix in master form.
-    auto jacobianMatrixMasterForm() const -> MasterMatrix;
-
-    /// Return the residual vector in canonical form.
-    auto residualVectorCanonicalForm() const -> CanonicalVectorConstRef;
-
-    /// Return the residual vector in master form.
-    auto residualVectorMasterForm() const -> MasterVectorConstRef;
 
     /// Return the result of the evaluation of the residual function.
     auto result() const -> ResidualFunctionResult;
