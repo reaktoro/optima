@@ -31,7 +31,7 @@ struct TransformStep::Impl
     TransformFunction phi; ///< The custom variable transformation function.
 
     Impl(const MasterDims& dims)
-    : dims(dims), ubkp(dims.nx, dims.np, dims.nw)
+    : dims(dims), ubkp(dims)
     {
     }
 

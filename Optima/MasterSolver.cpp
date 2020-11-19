@@ -49,7 +49,7 @@ struct MasterSolver::Impl
     Options options;
 
     Impl(const MasterDims& dims)
-    : dims(dims), F(dims), E(dims), uo(dims.nx, dims.np, dims.nw),
+    : dims(dims), F(dims), E(dims), uo(dims),
       newtonstep(dims),
       transformstep(dims),
       errorcontrol(dims),

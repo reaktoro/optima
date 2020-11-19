@@ -18,7 +18,7 @@
 #pragma once
 
 // Optima includes
-#include <Optima/Index.hpp>
+#include <Optima/MasterDims.hpp>
 #include <Optima/Matrix.hpp>
 
 namespace Optima {
@@ -31,7 +31,11 @@ struct MasterVectorBase
     Vec p; ///< The vector *p* in *u = (x, p, w)*.
     Vec w; ///< The vector *w* in *u = (x, p, w)*.
 
-    /// Construct a MasterVectorBase object. // TODO: This constructor must accept instead MasterDims!
+    /// Construct a MasterVectorBase object.
+    MasterVectorBase(const MasterDims& dims)
+    : MasterVectorBase(dims.nx, dims.np, dims.nw) {}
+
+    /// Construct a MasterVectorBase object.
     MasterVectorBase(Index nx, Index np, Index nw)
     : MasterVectorBase(zeros(nx + np + nw), nx, np, nw) {}
 

@@ -27,6 +27,7 @@ using namespace Optima;
 void exportMasterVector(py::module& m)
 {
     py::class_<MasterVector>(m, "MasterVector")
+        .def(py::init<const MasterDims&>())
         .def(py::init<Index, Index, Index>())
         .def(py::init<VectorConstRef, Index, Index, Index>())
         .def(py::init<const MasterVector&>())

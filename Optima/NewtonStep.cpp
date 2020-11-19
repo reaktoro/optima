@@ -32,7 +32,7 @@ struct NewtonStep::Impl
     Vector xupper;             ///< The upper bounds for variables *x*.
 
     Impl(const MasterDims& dims)
-    : dims(dims), linearsolver(dims), du(dims.nx, dims.np, dims.nw)
+    : dims(dims), linearsolver(dims), du(dims)
     {
     }
 
