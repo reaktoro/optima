@@ -76,6 +76,7 @@ struct MasterSolver::Impl
     auto initialize(const MasterProblem& problem, MasterVectorRef u) -> bool
     {
         result = {};
+        uo = u;
         F.initialize(problem);
         E.initialize(problem);
         transformstep.initialize(problem);
@@ -99,14 +100,17 @@ struct MasterSolver::Impl
     {
         result.iterations += 1;
         F.update(u);
+        E.update(u, F); // TODO: This call may not be needed since it may be executed below
         newtonstep.apply(F, uo, u);
         transformstep.execute(uo, u, F, E);
         errorcontrol.execute(uo, u, F, E);
         convergence.update(E);
+        uo = u;
     }
 
     auto finalize() -> void
     {
+        result.succeeded = convergence.converged();
     }
 };
 

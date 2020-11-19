@@ -49,15 +49,16 @@ def testLinearSolver(nx, np, ny, nz, nl, nu, diagHxx, method):
 
     if params.invalid(): return
 
-    # Rangespace method onlf for diagonal Hxx matrices
+    dims = params.dims
+
     if method == LinearSolverMethod.Rangespace and not diagHxx:
-        return
+        return  # Rangespace method onlf applicable to diagonal Hxx matrices
 
     M = createMasterMatrix(params)
 
     nw = params.dims.nw
 
-    uexp = MasterVector(nx, np, nw)
+    uexp = MasterVector(dims)
     uexp.x = npy.linspace(1, nx, nx)
     uexp.p = npy.linspace(1, np, np)
     uexp.w = npy.linspace(1, nw, nw)
@@ -74,7 +75,7 @@ def testLinearSolver(nx, np, ny, nz, nl, nu, diagHxx, method):
     linearsolver = LinearSolver(params.dims)
     linearsolver.setOptions(options)
 
-    u = MasterVector(nx, np, nw)
+    u = MasterVector(dims)
 
     linearsolver.decompose(Mc)
     linearsolver.solve(Mc, a, u)

@@ -37,6 +37,7 @@ void exportLinearSolverOptions(py::module& m);
 void exportLU(py::module& m);
 void exportMasterDims(py::module& m);
 void exportMasterProblem(py::module& m);
+void exportMasterSolver(py::module& m);
 void exportMasterMatrix(py::module& m);
 void exportMasterMatrixOps(py::module& m);
 void exportMasterVector(py::module& m);
@@ -83,6 +84,7 @@ PYBIND11_MODULE(optima4py, m)
     exportLU(m);
     exportMasterDims(m);
     exportMasterProblem(m);
+    exportMasterSolver(m);
     exportMasterMatrix(m);
     exportMasterMatrixOps(m);
     exportMasterVector(m);
