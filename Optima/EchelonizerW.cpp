@@ -47,14 +47,24 @@ struct EchelonizerW::Impl
 
     auto initialize(MatrixConstRef Ax, MatrixConstRef Ap) -> void
     {
+        const auto [nx, np, ny, nz, nw, nt] = dims;
+
+        using std::max;
+
+        assert(nx > 0);
+        assert(Ax.rows() == ny || ny == 0);
+        assert(Ax.cols() == nx || ny == 0);
+        assert(Ap.rows() == ny || ny == 0 || np == 0);
+        assert(Ap.cols() == np || ny == 0 || np == 0);
+
         // TODO: Implement a sort of memoization here to avoid echelonization of same Ax.
         // If same as last time, instead of creating a new echelonizer, we call echelonizer.initialize(Ax)
         // where EchelonizerExtended::initialize should figure out if same. Careful with echelon form that has
         // been contaminated with round off errors (because there has been many basic swaps already).
         echelonizer = EchelonizerExtended(Ax);
 
-        W.topLeftCorner(dims.ny, dims.nx) = Ax;
-        W.topRightCorner(dims.ny, dims.np) = Ap;
+        if(Ax.size()) W. topLeftCorner(ny, nx) = Ax;
+        if(Ap.size()) W.topRightCorner(ny, np) = Ap;
     }
 
     auto update(MatrixConstRef Ax, MatrixConstRef Ap, MatrixConstRef Jx, MatrixConstRef Jp, VectorConstRef weights) -> void
@@ -68,17 +78,19 @@ struct EchelonizerW::Impl
         const auto [nx, np, ny, nz, nw, nt] = dims;
 
         assert( echelonizer.R().rows() );
-        assert( nz == Jx.rows() );
-        assert( nz == Jp.rows() );
-        assert( nx == Jx.cols() );
-        assert( np == Jp.cols() );
+
+        assert(Jx.rows() == nz || nz == 0);
+        assert(Jx.cols() == nx || nz == 0);
+        assert(Jp.rows() == nz || nz == 0 || np == 0);
+        assert(Jp.cols() == np || nz == 0 || np == 0);
+
         assert( nx == weights.rows() );
 
         auto Wx = W.leftCols(nx);
         auto Wp = W.rightCols(np);
 
-        Wx.bottomRows(nz) = Jx;
-        Wp.bottomRows(nz) = Jp;
+        if(Jx.size()) Wx.bottomRows(nz) = Jx;
+        if(Jp.size()) Wp.bottomRows(nz) = Jp;
 
         echelonizer.updateWithPriorityWeights(Jx, weights);
         echelonizer.cleanResidualRoundoffErrors();
