@@ -25,8 +25,7 @@ tested_np = [0, 1]  # The tested number of p variables
 tested_ny = [2]     # The tested number of y variables
 tested_nz = [0, 1]  # The tested number of z variables
 tested_nl = [0, 1]  # The tested number of linearly dependent rows in Ax
-# tested_nu = [0, 2]  # The tested number of unstable variables
-tested_nu = [2]  # The tested number of unstable variables
+tested_nu = [0, 2]  # The tested number of unstable variables
 
 tested_b1 = [True, False]  # The tested value of ObjectiveResult::diagfxx for f(x, p)
 tested_b2 = [True, False]  # The tested value of ObjectiveResult::fxx4basicvars for f(x, p)
@@ -112,7 +111,7 @@ def testResidualFunction(nx, np, ny, nz, nl, nu, b1, b2, b3, b4, b5, b6, b7):
 
     dims = params.dims
 
-    u = MasterVector(dims.nx, dims.np, dims.nw)
+    u = MasterVector(dims)
     x = u.x = (problem.xlower + problem.xupper) * 0.5
     p = u.p = random.rand(dims.np)
     w = u.w = random.rand(dims.nw)

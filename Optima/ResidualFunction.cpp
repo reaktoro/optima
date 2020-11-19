@@ -179,32 +179,27 @@ struct ResidualFunction::Impl
         const auto& fx = fres.fx;
         const auto& h = hres.val;
         const auto& v = vres.val;
-        const auto W = echelonizerW.W();
-        const auto Wx = W.Wx;
-        const auto Wp = W.Wp;
-        const auto x = u.x;
-        const auto p = u.p;
-        const auto w = u.w;
-        const auto y = w.head(dims.ny);
-        const auto z = w.tail(dims.nz);
-        const auto Jc = jacobianMatrixCanonicalForm();
+        const auto& W = echelonizerW.W();
+        const auto& Wx = W.Wx;
+        const auto& Wp = W.Wp;
+        const auto& x = u.x;
+        const auto& p = u.p;
+        const auto& w = u.w;
+        const auto& y = w.head(dims.ny);
+        const auto& z = w.tail(dims.nz);
+        const auto& Jc = jacobianMatrixCanonicalForm();
         residual.update({Jc, Wx, Wp, x, p, y, z, fx, v, b, h});
     }
 
     auto jacobianMatrixMasterForm() const -> MasterMatrix
     {
-        const auto stabilitystatus = stability.status();
-        const auto js = stabilitystatus.js;
-        const auto ju = stabilitystatus.ju;
-        const auto Hxx = fres.fxx;
-        const auto Hxp = fres.fxp;
-        const auto diagHxx = fres.diagfxx;
-        const auto Vx = vres.ddx;
-        const auto Vp = vres.ddp;
-        const auto H = MatrixViewH{Hxx, Hxp, diagHxx};
-        const auto V = MatrixViewV{Vx, Vp};
-        const auto W = echelonizerW.W();
-        const auto RWQ = echelonizerW.RWQ();
+        const auto& stabilitystatus = stability.status();
+        const auto& js = stabilitystatus.js;
+        const auto& ju = stabilitystatus.ju;
+        const auto& H = MatrixViewH{fres.fxx, fres.fxp, fres.diagfxx};
+        const auto& V = MatrixViewV{vres.ddx, vres.ddp};
+        const auto& W = echelonizerW.W();
+        const auto& RWQ = echelonizerW.RWQ();
         return {dims, H, V, W, RWQ, js, ju};
     }
 
