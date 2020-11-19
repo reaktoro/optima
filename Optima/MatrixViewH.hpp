@@ -15,25 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-// pybind11 includes
-#include <pybind11/pybind11.h>
-#include <pybind11/eigen.h>
-namespace py = pybind11;
-
-// pybindx includes
-#include "pybindx.hpp"
+#pragma once
 
 // Optima includes
-#include <Optima/Canonicalizer.hpp>
-using namespace Optima;
+#include <Optima/Matrix.hpp>
 
-void exportCanonicalizer(py::module& m)
+namespace Optima {
+
+/// Used to represent matrix *H = [Hxx Hpx]* in a master matrix.
+struct MatrixViewH
 {
-    py::class_<Canonicalizer>(m, "Canonicalizer")
-        .def(py::init<const MasterDims&>())
-        .def(py::init<const MasterMatrix&>())
-        .def(py::init<const Canonicalizer&>())
-        .def("update", &Canonicalizer::update)
-        .def("canonicalMatrix", &Canonicalizer::canonicalMatrix, PYBINDX_MUTUAL_EXISTENCE)
-        ;
-}
+    MatrixConstRef Hxx;   ///< The matrix *Hxx* in *H = [Hxx Hxp]*.
+    MatrixConstRef Hxp;   ///< The matrix *Hxp* in *H = [Hxx Hxp]*.
+    const bool isHxxDiag; ///< The flag that indicates wether *Hxx* is diagonal.
+};
+
+} // namespace Optima

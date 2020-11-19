@@ -15,25 +15,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-// pybind11 includes
-#include <pybind11/pybind11.h>
-#include <pybind11/eigen.h>
-namespace py = pybind11;
-
-// pybindx includes
-#include "pybindx.hpp"
+#pragma once
 
 // Optima includes
-#include <Optima/Canonicalizer.hpp>
-using namespace Optima;
+#include <Optima/Matrix.hpp>
 
-void exportCanonicalizer(py::module& m)
+namespace Optima {
+
+/// Used to represent a view to matrix *W = [Wx Wp] = [Ax Ap; Jx Jp]*.
+struct MatrixViewW
 {
-    py::class_<Canonicalizer>(m, "Canonicalizer")
-        .def(py::init<const MasterDims&>())
-        .def(py::init<const MasterMatrix&>())
-        .def(py::init<const Canonicalizer&>())
-        .def("update", &Canonicalizer::update)
-        .def("canonicalMatrix", &Canonicalizer::canonicalMatrix, PYBINDX_MUTUAL_EXISTENCE)
-        ;
-}
+    MatrixConstRef Wx;  ///< The view to sub-matrix *Wx* in *W = [Wx Wp] = [Ax Ap; Jx Jp]*
+    MatrixConstRef Wp;  ///< The view to sub-matrix *Wp* in *W = [Wx Wp] = [Ax Ap; Jx Jp]*
+    MatrixConstRef Ax;  ///< The view to sub-matrix *Ax* in *W = [Wx Wp] = [Ax Ap; Jx Jp]*
+    MatrixConstRef Ap;  ///< The view to sub-matrix *Ap* in *W = [Wx Wp] = [Ax Ap; Jx Jp]*
+    MatrixConstRef Jx;  ///< The view to sub-matrix *Jx* in *W = [Wx Wp] = [Ax Ap; Jx Jp]*
+    MatrixConstRef Jp;  ///< The view to sub-matrix *Jp* in *W = [Wx Wp] = [Ax Ap; Jx Jp]*
+};
+
+} // namespace Optima

@@ -19,14 +19,6 @@
 
 namespace Optima {
 
-MasterMatrix::MasterMatrix(MatrixViewH H, MatrixViewV V, MatrixRWQ const& RWQ, StablePartition const& jsu)
-: MasterMatrix(H, V, RWQ, jsu.stable(), jsu.unstable())
-{}
-
-MasterMatrix::MasterMatrix(MatrixViewH H, MatrixViewV V, MatrixRWQ const& RWQ, IndicesConstRef js, IndicesConstRef ju)
-: dims(RWQ.dims()), H(H), V(V), W(RWQ), RWQ(RWQ), js(js), ju(ju)
-{}
-
 MasterMatrix::operator Matrix() const
 {
     using Eigen::all;

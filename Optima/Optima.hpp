@@ -40,7 +40,6 @@
 #include <Optima/MasterMatrixOps.hpp>
 #include <Optima/MasterVector.hpp>
 #include <Optima/Matrix.hpp>
-#include <Optima/MatrixRWQ.hpp>
 #include <Optima/ObjectiveFunction.hpp>
 #include <Optima/Optima.hpp>
 #include <Optima/Options.hpp>

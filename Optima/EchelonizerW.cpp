@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include "MatrixRWQ.hpp"
+#include "EchelonizerW.hpp"
 
 // Optima includes
 #include <Optima/Exception.hpp>
@@ -24,7 +24,7 @@
 
 namespace Optima {
 
-struct MatrixRWQ::Impl
+struct EchelonizerW::Impl
 {
     /// The number of columns in Ax and Jx
     const MasterDims dims;
@@ -129,55 +129,45 @@ struct MatrixRWQ::Impl
     }
 };
 
-MatrixRWQ::MatrixRWQ(const MasterDims& dims)
+EchelonizerW::EchelonizerW(const MasterDims& dims)
 : pimpl(new Impl(dims))
 {}
 
-MatrixRWQ::MatrixRWQ(const MatrixRWQ& other)
+EchelonizerW::EchelonizerW(const EchelonizerW& other)
 : pimpl(new Impl(*other.pimpl))
 {}
 
-MatrixRWQ::~MatrixRWQ()
+EchelonizerW::~EchelonizerW()
 {}
 
-auto MatrixRWQ::initialize(MatrixConstRef Ax, MatrixConstRef Ap) -> void
+auto EchelonizerW::initialize(MatrixConstRef Ax, MatrixConstRef Ap) -> void
 {
     pimpl->initialize(Ax, Ap);
 }
 
-auto MatrixRWQ::update(MatrixConstRef Ax, MatrixConstRef Ap, MatrixConstRef Jx, MatrixConstRef Jp, VectorConstRef weights) -> void
+auto EchelonizerW::update(MatrixConstRef Ax, MatrixConstRef Ap, MatrixConstRef Jx, MatrixConstRef Jp, VectorConstRef weights) -> void
 {
     pimpl->update(Ax, Ap, Jx, Jp, weights);
 }
 
-auto MatrixRWQ::update(MatrixConstRef Jx, MatrixConstRef Jp, VectorConstRef weights) -> void
+auto EchelonizerW::update(MatrixConstRef Jx, MatrixConstRef Jp, VectorConstRef weights) -> void
 {
     pimpl->update(Jx, Jp, weights);
 }
 
-auto MatrixRWQ::dims() const -> MasterDims
+auto EchelonizerW::dims() const -> MasterDims
 {
     return pimpl->dims;
 }
 
-auto MatrixRWQ::asMatrixViewW() const -> MatrixViewW
+auto EchelonizerW::W() const -> MatrixViewW
 {
     return pimpl->asMatrixViewW();
 }
 
-auto MatrixRWQ::asMatrixViewRWQ() const -> MatrixViewRWQ
+auto EchelonizerW::RWQ() const -> MatrixViewRWQ
 {
     return pimpl->asMatrixViewRWQ();
-}
-
-MatrixRWQ::operator MatrixViewW() const
-{
-    return asMatrixViewW();
-}
-
-MatrixRWQ::operator MatrixViewRWQ() const
-{
-    return asMatrixViewRWQ();
 }
 
 } // namespace Optima

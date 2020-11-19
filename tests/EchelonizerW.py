@@ -37,16 +37,23 @@ def testMatrixRWQ(nx, np, ny, nz, nl):
 
     if params.invalid(): return
 
-    RWQ = createMatrixRWQ(params)
+    dims = params.dims
 
-    W    = RWQ.asMatrixViewW()
-    Wbar = RWQ.asMatrixViewRWQ()
+    W = createMatrixViewW(params)
 
-    R   = Wbar.R
-    Sbn = Wbar.Sbn
-    Sbp = Wbar.Sbp
-    jb  = Wbar.jb
-    jn  = Wbar.jn
+    weights = npy.ones(dims.nx)
+
+    echelonizerW = EchelonizerW(dims)
+    echelonizerW.initialize(W.Ax, W.Ap)
+    echelonizerW.update(W.Jx, W.Jp, weights)
+
+    RWQ = echelonizerW.RWQ()
+
+    R   = RWQ.R
+    Sbn = RWQ.Sbn
+    Sbp = RWQ.Sbp
+    jb  = RWQ.jb
+    jn  = RWQ.jn
 
     nb = len(jb)
 

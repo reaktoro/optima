@@ -82,9 +82,9 @@ auto StablePartition::setStable(IndicesConstRef js) -> void
     pimpl->setStable(js);
 }
 
-auto StablePartition::setUnstable(IndicesConstRef js) -> void
+auto StablePartition::setUnstable(IndicesConstRef ju) -> void
 {
-    pimpl->setUnstable(js);
+    pimpl->setUnstable(ju);
 }
 
 auto StablePartition::stable() const -> IndicesConstRef

@@ -22,18 +22,27 @@ namespace py = pybind11;
 
 // pybindx includes
 #include "pybindx.hpp"
+namespace pyx = pybindx;
 
 // Optima includes
-#include <Optima/Canonicalizer.hpp>
+#include <Optima/MatrixViewW.hpp>
 using namespace Optima;
 
-void exportCanonicalizer(py::module& m)
+void exportMatrixViewW(py::module& m)
 {
-    py::class_<Canonicalizer>(m, "Canonicalizer")
-        .def(py::init<const MasterDims&>())
-        .def(py::init<const MasterMatrix&>())
-        .def(py::init<const Canonicalizer&>())
-        .def("update", &Canonicalizer::update)
-        .def("canonicalMatrix", &Canonicalizer::canonicalMatrix, PYBINDX_MUTUAL_EXISTENCE)
+    py::class_<MatrixViewW>(m, "MatrixViewW")
+        .def(py::init<MatrixConstRef4py, MatrixConstRef4py, MatrixConstRef4py, MatrixConstRef4py, MatrixConstRef4py, MatrixConstRef4py>(),
+            pyx::keep_argument_alive<0>(),
+            pyx::keep_argument_alive<1>(),
+            pyx::keep_argument_alive<2>(),
+            pyx::keep_argument_alive<3>(),
+            pyx::keep_argument_alive<4>(),
+            pyx::keep_argument_alive<5>())
+        .def_readonly("Wx" , &MatrixViewW::Wx)
+        .def_readonly("Wp" , &MatrixViewW::Wp)
+        .def_readonly("Ax" , &MatrixViewW::Ax)
+        .def_readonly("Ap" , &MatrixViewW::Ap)
+        .def_readonly("Jx" , &MatrixViewW::Jx)
+        .def_readonly("Jp" , &MatrixViewW::Jp)
         ;
 }

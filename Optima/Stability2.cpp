@@ -22,7 +22,6 @@
 
 // Optima includes
 #include <Optima/IndexUtils.hpp>
-#include <Optima/MatrixRWQ.hpp>
 
 namespace Optima {
 

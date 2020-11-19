@@ -43,11 +43,11 @@ public:
     /// Assign a StablePartition instance to this.
     auto operator=(StablePartition other) -> StablePartition&;
 
-    /// Set the stability status of the variables with given indices of stable variables in *x*.
+    /// Set the indices of the stable variables in *x*.
     auto setStable(IndicesConstRef js) -> void;
 
-    /// Set the stability status of the variables with given indices of unstable variables in *x*.
-    auto setUnstable(IndicesConstRef js) -> void;
+    /// Set the indices of the unstable variables in *x*.
+    auto setUnstable(IndicesConstRef ju) -> void;
 
     /// Return the indices of the stable variables in *x*.
     auto stable() const -> IndicesConstRef;

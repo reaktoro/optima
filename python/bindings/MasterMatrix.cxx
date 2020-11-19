@@ -21,44 +21,27 @@
 #include <pybind11/operators.h>
 namespace py = pybind11;
 
+// pybindx includes
+#include "pybindx.hpp"
+namespace pyx = pybindx;
+
 // Optima includes
 #include <Optima/MasterMatrix.hpp>
 #include <Optima/MasterMatrixOps.hpp>
 #include <Optima/MasterVector.hpp>
 using namespace Optima;
 
-/// Used to indicate that the k-th argument in a method should be kept alive in Python.
-/// Note: pybind11's numbering convention for `py::keep_alive` starts with `2`
-/// for arguments. Index `1` denotes the `this` pointer and `0` the returned object.
-/// Here, however, `0` denotes the first argument in C++, which is not the `this` pointer.
-template<size_t k>
-using keep_argument_alive = py::keep_alive<1, k + 2>;
-
 void exportMasterMatrix(py::module& m)
 {
-    py::class_<MatrixViewH>(m, "MatrixViewH")
-        .def(py::init<MatrixConstRef4py, MatrixConstRef4py, bool>(),
-            keep_argument_alive<0>(),
-            keep_argument_alive<1>())
-        .def_readonly("Hxx"      , &MatrixViewH::Hxx)
-        .def_readonly("Hxp"      , &MatrixViewH::Hxp)
-        .def_readonly("isHxxDiag", &MatrixViewH::isHxxDiag)
-        ;
-
-    py::class_<MatrixViewV>(m, "MatrixViewV")
-        .def(py::init<MatrixConstRef4py, MatrixConstRef4py>(),
-            keep_argument_alive<0>(),
-            keep_argument_alive<1>())
-        .def_readonly("Vpx", &MatrixViewV::Vpx)
-        .def_readonly("Vpp", &MatrixViewV::Vpp)
-        ;
-
     py::class_<MasterMatrix>(m, "MasterMatrix")
-        .def(py::init<MatrixViewH, MatrixViewV, MatrixRWQ const&, StablePartition const&>(),
-            keep_argument_alive<0>(),
-            keep_argument_alive<1>(),
-            keep_argument_alive<2>(),
-            keep_argument_alive<3>())
+        .def(py::init<MasterDims, MatrixViewH, MatrixViewV, MatrixViewW, MatrixViewRWQ, IndicesConstRef, IndicesConstRef>(),
+            pyx::keep_argument_alive<0>(),
+            pyx::keep_argument_alive<1>(),
+            pyx::keep_argument_alive<2>(),
+            pyx::keep_argument_alive<3>(),
+            pyx::keep_argument_alive<4>(),
+            pyx::keep_argument_alive<5>(),
+            pyx::keep_argument_alive<6>())
         .def_readonly("dims", &MasterMatrix::dims)
         .def_readonly("H"   , &MasterMatrix::H)
         .def_readonly("V"   , &MasterMatrix::V)

@@ -19,16 +19,14 @@
 
 // Optima includes
 #include <Optima/Index.hpp>
+#include <Optima/MatrixViewRWQ.hpp>
 
 namespace Optima {
-
-// Forward declarations
-class MatrixViewRWQ;
 
 /// The arguments in method @ref Stability::update.
 struct StabilityUpdateArgs
 {
-    MatrixViewRWQ const& RWQ; ///< The echelon form RWQ = [Ibb Sbn Sbp] of matrix W.
+    MatrixViewRWQ RWQ;        ///< The echelon form RWQ = [Ibb Sbn Sbp] of matrix W.
     VectorConstRef g;         ///< The gradient of the objective function with respect to x.
     VectorConstRef x;         ///< The values of the primal variables x.
     VectorConstRef xlower;    ///< The lower bounds of the primal variables x.

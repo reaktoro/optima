@@ -22,18 +22,19 @@ namespace py = pybind11;
 
 // pybindx includes
 #include "pybindx.hpp"
+namespace pyx = pybindx;
 
 // Optima includes
-#include <Optima/Canonicalizer.hpp>
+#include <Optima/MatrixViewV.hpp>
 using namespace Optima;
 
-void exportCanonicalizer(py::module& m)
+void exportMatrixViewV(py::module& m)
 {
-    py::class_<Canonicalizer>(m, "Canonicalizer")
-        .def(py::init<const MasterDims&>())
-        .def(py::init<const MasterMatrix&>())
-        .def(py::init<const Canonicalizer&>())
-        .def("update", &Canonicalizer::update)
-        .def("canonicalMatrix", &Canonicalizer::canonicalMatrix, PYBINDX_MUTUAL_EXISTENCE)
+    py::class_<MatrixViewV>(m, "MatrixViewV")
+        .def(py::init<MatrixConstRef4py, MatrixConstRef4py>(),
+            pyx::keep_argument_alive<0>(),
+            pyx::keep_argument_alive<1>())
+        .def_readonly("Vpx", &MatrixViewV::Vpx)
+        .def_readonly("Vpp", &MatrixViewV::Vpp)
         ;
 }

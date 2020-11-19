@@ -102,14 +102,14 @@ def createMatrixViewV(params):
     return MatrixViewV(Vpx, Vpp)
 
 
-def createMatrixRWQ(params):
-    """Create a MatrixRWQ object with given parameters
+def createMatrixViewW(params):
+    """Create a MatrixViewW object with given parameters
 
     Args:
         params (MasterParams): The parameters for tests involving master variables.
 
     Returns:
-        MatrixRWQ: A MatrixRWQ object for testing purposes.
+        MatrixViewW: A MatrixViewW object for testing purposes.
     """
 
     nx = params.nx
@@ -130,13 +130,29 @@ def createMatrixRWQ(params):
     Wx = npy.block([[Ax], [Jx]])
     Wp = npy.block([[Ap], [Jp]])
 
-    weights = npy.ones(nx)
+    return MatrixViewW(Wx, Wp, Ax, Ap, Jx, Jp)
 
-    RWQ = MatrixRWQ(dims)
-    RWQ.initialize(Ax, Ap)
-    RWQ.update(Jx, Jp, weights)
 
-    return RWQ
+def createMatrixViewRWQ(params, W):
+    """Create a MatrixViewRWQ object with given parameters
+
+    Args:
+        params (MasterParams): The parameters for tests involving master variables.
+        W (MatrixViewW): The MatrixViewW object representing matrix W = [Ax Ap; Jx Jp].
+
+    Returns:
+        MatrixViewRWQ: A MatrixViewRWQ object for testing purposes.
+    """
+
+    dims = params.dims
+
+    weights = npy.ones(dims.nx)
+
+    echelonizerW = EchelonizerW(dims)
+    echelonizerW.initialize(W.Ax, W.Ap)
+    echelonizerW.update(W.Jx, W.Jp, weights)
+
+    return echelonizerW.RWQ()
 
 
 def createStablePartition(params, RWQ):
@@ -151,7 +167,6 @@ def createStablePartition(params, RWQ):
     """
     nx = params.nx
     nu = params.nu
-    RWQ = RWQ.asMatrixViewRWQ()
     jsu = StablePartition(nx)
     jsu.setUnstable(RWQ.jn[:nu])  # The first nu non-basic variables are unstable
 
@@ -168,14 +183,16 @@ def createMasterMatrix(params):
         MasterMatrix: A MasterMatrix object for testing purposes.
     """
 
+    dims = params.dims
     H = createMatrixViewH(params)
     V = createMatrixViewV(params)
-    RWQ = createMatrixRWQ(params)
+    W = createMatrixViewW(params)
+    RWQ = createMatrixViewRWQ(params, W)
     jsu = createStablePartition(params, RWQ)
+    js = jsu.stable()
+    ju = jsu.unstable()
 
-    M = MasterMatrix(H, V, RWQ, jsu)
-
-    return M
+    return MasterMatrix(dims, H, V, W, RWQ, js, ju)
 
 
 def createCanonicalMatrix(M):

@@ -19,29 +19,15 @@
 
 // Optima includes
 #include <Optima/MasterDims.hpp>
-#include <Optima/Matrix.hpp>
-#include <Optima/MatrixRWQ.hpp>
-#include <Optima/StablePartition.hpp>
+#include <Optima/MatrixViewH.hpp>
+#include <Optima/MatrixViewV.hpp>
+#include <Optima/MatrixViewW.hpp>
+#include <Optima/MatrixViewRWQ.hpp>
 
 namespace Optima {
 
-/// Used to represent matrix *H = [Hxx Hpx]* in a master matrix.
-struct MatrixViewH
-{
-    MatrixConstRef Hxx;   ///< The matrix *Hxx* in *H = [Hxx Hxp]*.
-    MatrixConstRef Hxp;   ///< The matrix *Hxp* in *H = [Hxx Hxp]*.
-    const bool isHxxDiag; ///< The flag that indicates wether *Hxx* is diagonal.
-};
-
-/// Used to represent matrix *V = [Vpx Vpp]* in a master matrix.
-struct MatrixViewV
-{
-    MatrixConstRef Vpx; ///< The matrix *Vpx* in *V = [Vpx Vpp]*.
-    MatrixConstRef Vpp; ///< The matrix *Vpp* in *V = [Vpx Vpp]*.
-};
-
 /// Used to represent a master matrix.
-struct MasterMatrix
+struct MasterMatrix // TODO: MasterMatrix should be named MasterMatrixView, to be clear it does not own data.
 {
     /// The dimension details of the master matrix.
     const MasterDims dims;
@@ -63,12 +49,6 @@ struct MasterMatrix
 
     /// The indices of the unstable variables in *x*.
     const IndicesConstRef ju;
-
-    /// Construct a MasterMatrix object.
-    MasterMatrix(MatrixViewH H, MatrixViewV V, MatrixRWQ const& RWQ, StablePartition const& jsu);
-
-    /// Construct a MasterMatrix object.
-    MasterMatrix(MatrixViewH H, MatrixViewV V, MatrixRWQ const& RWQ, IndicesConstRef js, IndicesConstRef ju);
 
     /// Convert this MasterMatrix object into a Matrix object.
     operator Matrix() const;

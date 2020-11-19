@@ -45,7 +45,7 @@ def testStability(nx, np, ny, nz, nl, nlu, nuu, diagHxx):
 
     if params.invalid(): return
 
-    RWQ = createMatrixRWQ(params)
+    RWQ = createMatrixViewRWQ(params)
 
     W    = RWQ.asMatrixViewW()
     Wbar = RWQ.asMatrixViewRWQ()

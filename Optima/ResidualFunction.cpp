@@ -19,6 +19,7 @@
 
 // Optima includes
 #include <Optima/Canonicalizer.hpp>
+#include <Optima/EchelonizerW.hpp>
 #include <Optima/Exception.hpp>
 #include <Optima/ResidualVector.hpp>
 #include <Optima/Timing.hpp>
@@ -40,8 +41,8 @@ struct ResidualFunction::Impl
     /// The result of the evaluation of v(x, p).
     ConstraintResult vres;
 
-    /// The current echelon form of matrix W = [Wx Wp] = [Ax Ap; Jx Jp].
-    MatrixRWQ RWQ;
+    /// The echelonizer of matrix W = [Wx Wp] = [Ax Ap; Jx Jp].
+    EchelonizerW echelonizerW;
 
     /// The priority weights for selection of basic variables in x.
     Vector wx;
@@ -81,7 +82,7 @@ struct ResidualFunction::Impl
       fres(dims.nx, dims.np),
       hres(dims.nz, dims.nx, dims.np),
       vres(dims.np, dims.nx, dims.np),
-      RWQ(dims), stability(dims.nx),
+      echelonizerW(dims), stability(dims.nx),
       canonicalizer(dims), residual(dims)
     {
         wx.resize(dims.nx);
@@ -89,7 +90,7 @@ struct ResidualFunction::Impl
 
     auto initialize(const MasterProblem& problem) -> void
     {
-        RWQ.initialize(problem.Ax, problem.Ap);
+        echelonizerW.initialize(problem.Ax, problem.Ap);
         f      = problem.f;
         h      = problem.h;
         v      = problem.v;
@@ -127,7 +128,8 @@ struct ResidualFunction::Impl
     {
         const auto x = u.x;
         const auto p = u.p;
-        const auto ibasicvars = RWQ.asMatrixViewRWQ().jb;
+        const auto RWQ = echelonizerW.RWQ();
+        const auto ibasicvars = RWQ.jb;
         ObjectiveOptions  fopts{{evaljac, evaljac}, ibasicvars};
         ConstraintOptions hopts{{evaljac, evaljac}, ibasicvars};
         ConstraintOptions vopts{{evaljac, evaljac}, ibasicvars};
@@ -156,13 +158,14 @@ struct ResidualFunction::Impl
         wx = wx.array().isInf().select(abs(x), wx); // replace wx[i]=inf by wx[i]=abs(x[i])
         assert(wx.minCoeff() >= 0.0);
         wx = (wx.array() > 0.0).select(wx, -1.0); // set negative priority weights for variables on the bounds
-        RWQ.update(Jx, Jp, wx);
+        echelonizerW.update(Jx, Jp, wx);
     }
 
     auto updateIndicesStableVariables(MasterVectorConstRef u) -> void
     {
         const auto& fx = fres.fx;
         const auto& x = u.x;
+        const auto RWQ = echelonizerW.RWQ();
         stability.update({RWQ, fx, x, xlower, xupper});
     }
 
@@ -176,7 +179,7 @@ struct ResidualFunction::Impl
         const auto& fx = fres.fx;
         const auto& h = hres.val;
         const auto& v = vres.val;
-        const auto W = RWQ.asMatrixViewW();
+        const auto W = echelonizerW.W();
         const auto Wx = W.Wx;
         const auto Wp = W.Wp;
         const auto x = u.x;
@@ -200,7 +203,9 @@ struct ResidualFunction::Impl
         const auto Vp = vres.ddp;
         const auto H = MatrixViewH{Hxx, Hxp, diagHxx};
         const auto V = MatrixViewV{Vx, Vp};
-        return {H, V, RWQ, js, ju};
+        const auto W = echelonizerW.W();
+        const auto RWQ = echelonizerW.RWQ();
+        return {dims, H, V, W, RWQ, js, ju};
     }
 
     auto jacobianMatrixCanonicalForm() const -> CanonicalMatrix

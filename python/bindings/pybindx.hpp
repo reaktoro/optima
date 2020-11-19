@@ -17,23 +17,21 @@
 
 // pybind11 includes
 #include <pybind11/pybind11.h>
-#include <pybind11/eigen.h>
+
+namespace pybindx {
+
 namespace py = pybind11;
 
-// pybindx includes
-#include "pybindx.hpp"
+/// Used to indicate that the returned object of a method and the parent/this
+/// object must both be kept alive while the other is alive.
+#define PYBINDX_MUTUAL_EXISTENCE \
+    py::keep_alive<1, 0>(), py::keep_alive<0, 1>()
 
-// Optima includes
-#include <Optima/Canonicalizer.hpp>
-using namespace Optima;
+/// Used to indicate that the k-th argument in a method should be kept alive in Python.
+/// Note: pybind11's numbering convention for `py::keep_alive` starts with `2`
+/// for arguments. Index `1` denotes the `this` pointer and `0` the returned object.
+/// Here, however, `0` denotes the first argument in C++, which is not the `this` pointer.
+template<size_t k>
+using keep_argument_alive = py::keep_alive<1, k + 2>;
 
-void exportCanonicalizer(py::module& m)
-{
-    py::class_<Canonicalizer>(m, "Canonicalizer")
-        .def(py::init<const MasterDims&>())
-        .def(py::init<const MasterMatrix&>())
-        .def(py::init<const Canonicalizer&>())
-        .def("update", &Canonicalizer::update)
-        .def("canonicalMatrix", &Canonicalizer::canonicalMatrix, PYBINDX_MUTUAL_EXISTENCE)
-        ;
-}
+} // namespace pybindx

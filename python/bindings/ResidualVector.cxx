@@ -20,6 +20,9 @@
 #include <pybind11/eigen.h>
 namespace py = pybind11;
 
+// pybindx includes
+#include "pybindx.hpp"
+
 // Optima includes
 #include <Optima/ResidualVector.hpp>
 using namespace Optima;
@@ -46,7 +49,7 @@ void exportResidualVector(py::module& m)
         .def(py::init<const MasterDims&>())
         .def(py::init<const ResidualVector&>())
         .def("update", update)
-        .def("masterVector", &ResidualVector::masterVector, py::return_value_policy::reference_internal)
-        .def("canonicalVector", &ResidualVector::canonicalVector, py::return_value_policy::reference_internal)
+        .def("masterVector", &ResidualVector::masterVector, PYBINDX_MUTUAL_EXISTENCE)
+        .def("canonicalVector", &ResidualVector::canonicalVector, PYBINDX_MUTUAL_EXISTENCE)
         ;
 }

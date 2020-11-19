@@ -20,6 +20,9 @@
 #include <pybind11/eigen.h>
 namespace py = pybind11;
 
+// pybindx includes
+#include "pybindx.hpp"
+
 // Optima includes
 #include <Optima/MasterMatrix.hpp>
 #include <Optima/Stability2.hpp>
@@ -49,6 +52,6 @@ void exportStability2(py::module& m)
     py::class_<Stability2>(m, "Stability2")
         .def(py::init<Index>())
         .def("update", update)
-        .def("status", &Stability2::status, py::return_value_policy::reference_internal)
+        .def("status", &Stability2::status, PYBINDX_MUTUAL_EXISTENCE)
         ;
 }

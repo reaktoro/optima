@@ -34,7 +34,6 @@ namespace Optima {
 // Forward declarations
 struct ObjectiveResult;
 struct ConstraintResult;
-// struct StabilityStatus;
 
 /// Used to determine whether the evaluation of objective and constraint functions succeeded or not.
 struct ResidualFunctionUpdateStatus

@@ -24,16 +24,33 @@ namespace py = pybind11;
 #include "pybindx.hpp"
 
 // Optima includes
-#include <Optima/Canonicalizer.hpp>
+#include <Optima/EchelonizerW.hpp>
 using namespace Optima;
 
-void exportCanonicalizer(py::module& m)
+void exportEchelonizerW(py::module& m)
 {
-    py::class_<Canonicalizer>(m, "Canonicalizer")
+    auto initialize = [](EchelonizerW& self, MatrixConstRef4py Ax, MatrixConstRef4py Ap)
+    {
+        self.initialize(Ax, Ap);
+    };
+
+    auto update1 = [](EchelonizerW& self, MatrixConstRef4py Ax, MatrixConstRef4py Ap, MatrixConstRef4py Jx, MatrixConstRef4py Jp, VectorConstRef weights)
+    {
+        self.update(Ax, Ap, Jx, Jp, weights);
+    };
+
+    auto update2 = [](EchelonizerW& self, MatrixConstRef4py Jx, MatrixConstRef4py Jp, VectorConstRef weights)
+    {
+        self.update(Jx, Jp, weights);
+    };
+
+    py::class_<EchelonizerW>(m, "EchelonizerW")
         .def(py::init<const MasterDims&>())
-        .def(py::init<const MasterMatrix&>())
-        .def(py::init<const Canonicalizer&>())
-        .def("update", &Canonicalizer::update)
-        .def("canonicalMatrix", &Canonicalizer::canonicalMatrix, PYBINDX_MUTUAL_EXISTENCE)
+        .def("initialize", initialize)
+        .def("update", update1)
+        .def("update", update2)
+        .def("dims", &EchelonizerW::dims)
+        .def("W", &EchelonizerW::W, PYBINDX_MUTUAL_EXISTENCE)
+        .def("RWQ", &EchelonizerW::RWQ, PYBINDX_MUTUAL_EXISTENCE)
         ;
 }
