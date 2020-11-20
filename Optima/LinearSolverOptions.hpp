@@ -57,7 +57,7 @@ enum class LinearSolverMethod
 struct LinearSolverOptions
 {
     /// The method for solving the linear problems.
-    LinearSolverMethod method = LinearSolverMethod::Rangespace;
+    LinearSolverMethod method = LinearSolverMethod::Nullspace;
 };
 
 } // namespace Optima
