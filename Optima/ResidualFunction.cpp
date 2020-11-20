@@ -133,6 +133,9 @@ struct ResidualFunction::Impl
         ObjectiveOptions  fopts{{evaljac, evaljac}, ibasicvars};
         ConstraintOptions hopts{{evaljac, evaljac}, ibasicvars};
         ConstraintOptions vopts{{evaljac, evaljac}, ibasicvars};
+        fres.f = 0.0; fres.fx.fill(0.0); fres.fxx.fill(0.0); fres.fxp.fill(0.0); // TODO: Improve this by enabling fres.reset()
+        hres.val.fill(0.0); hres.ddx.fill(0.0); hres.ddp.fill(0.0); // TODO: Improve this by enabling hres.reset()
+        vres.val.fill(0.0); vres.ddx.fill(0.0); vres.ddp.fill(0.0); // TODO: Improve this by enabling vres.reset()
         f(fres, x, p, fopts);
         h(hres, x, p, hopts);
         v(vres, x, p, vopts);
