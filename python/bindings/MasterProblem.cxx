@@ -27,7 +27,7 @@ using namespace Optima;
 
 void exportMasterProblem(py::module& m)
 {
-    auto get_Ax = [](const MasterProblem& s) { return s.Ax; }; // TODO: Create macros in pybindx.hpp to create these get/set methods.
+    auto get_Ax = [](const MasterProblem& s) { return s.Ax; };
     auto get_Ap = [](const MasterProblem& s) { return s.Ap; };
     auto set_Ax = [](MasterProblem& s, MatrixView4py Ax) { s.Ax = Ax; };
     auto set_Ap = [](MasterProblem& s, MatrixView4py Ap) { s.Ap = Ap; };

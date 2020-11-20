@@ -34,6 +34,6 @@ void exportCanonicalizer(py::module& m)
         .def(py::init<const MasterMatrix&>())
         .def(py::init<const Canonicalizer&>())
         .def("update", &Canonicalizer::update)
-        .def("canonicalMatrix", &Canonicalizer::canonicalMatrix, PYBINDX_MUTUAL_EXISTENCE)
+        .def("canonicalMatrix", &Canonicalizer::canonicalMatrix, PYBINDX_ENSURE_MUTUAL_EXISTENCE)
         ;
 }

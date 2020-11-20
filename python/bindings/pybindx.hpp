@@ -24,7 +24,7 @@ namespace py = pybind11;
 
 /// Used to indicate that the returned object of a method and the parent/this
 /// object must both be kept alive while the other is alive.
-#define PYBINDX_MUTUAL_EXISTENCE \
+#define PYBINDX_ENSURE_MUTUAL_EXISTENCE \
     py::keep_alive<1, 0>(), py::keep_alive<0, 1>()
 
 /// Used to indicate that the k-th argument in a method should be kept alive in Python.

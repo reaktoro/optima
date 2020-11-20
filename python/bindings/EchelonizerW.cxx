@@ -50,7 +50,7 @@ void exportEchelonizerW(py::module& m)
         .def("update", update1)
         .def("update", update2)
         .def("dims", &EchelonizerW::dims)
-        .def("W", &EchelonizerW::W, PYBINDX_MUTUAL_EXISTENCE)
-        .def("RWQ", &EchelonizerW::RWQ, PYBINDX_MUTUAL_EXISTENCE)
+        .def("W", &EchelonizerW::W, PYBINDX_ENSURE_MUTUAL_EXISTENCE)
+        .def("RWQ", &EchelonizerW::RWQ, PYBINDX_ENSURE_MUTUAL_EXISTENCE)
         ;
 }
