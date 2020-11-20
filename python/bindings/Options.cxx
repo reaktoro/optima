@@ -61,9 +61,10 @@ void exportOptions(py::module& m)
         .def(py::init<>())
         .def_readwrite("output", &Options::output)
         .def_readwrite("maxiterations", &Options::maxiterations)
-        .def_readwrite("kkt", &Options::kkt)
         .def_readwrite("linesearch", &Options::linesearch)
         .def_readwrite("steepestdescent", &Options::steepestdescent)
         .def_readwrite("backtrack", &Options::backtrack)
+        .def_readwrite("newtonstep", &Options::newtonstep)
+        .def_readwrite("convergence", &Options::convergence)
         ;
 }

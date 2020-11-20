@@ -706,7 +706,7 @@ auto Stepper::operator=(Stepper other) -> Stepper&
 auto Stepper::setOptions(const Options& options) -> void
 {
     pimpl->options = options;
-    pimpl->spsolver.setOptions(options.kkt);
+    // pimpl->spsolver.setOptions(options.kkt);
 }
 
 auto Stepper::initialize(StepperInitializeArgs args) -> void

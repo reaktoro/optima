@@ -45,6 +45,8 @@ void exportMatrixViewH(py::module& m);
 void exportMatrixViewRWQ(py::module& m);
 void exportMatrixViewV(py::module& m);
 void exportMatrixViewW(py::module& m);
+void exportNewtonStep(py::module& m);
+void exportNewtonStepOptions(py::module& m);
 void exportObjectiveFunction(py::module& m);
 void exportOutputter(py::module& m);
 void exportOptions(py::module& m);
@@ -92,6 +94,8 @@ PYBIND11_MODULE(optima4py, m)
     exportMatrixViewRWQ(m);
     exportMatrixViewV(m);
     exportMatrixViewW(m);
+    exportNewtonStep(m);
+    exportNewtonStepOptions(m);
     exportObjectiveFunction(m);
     exportOutputter(m);
     exportOptions(m);

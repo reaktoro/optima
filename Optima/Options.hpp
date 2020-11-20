@@ -127,9 +127,6 @@ public:
     /// The maximum number of iterations in the optimization calculations.
     unsigned maxiterations = 200;
 
-    /// The options for the solution of the KKT equations.
-    SaddlePointOptions kkt;
-
     /// The options for the linear search minimization operation.
     LineSearchOptions linesearch;
 
@@ -144,9 +141,6 @@ public:
 
     /// The options used for convergence analysis.
     ConvergenceOptions convergence;
-
-    /// The custom variable transformation function.
-    TransformFunction phi;
 };
 
 } // namespace Optima
