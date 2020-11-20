@@ -27,13 +27,16 @@ using namespace Optima;
 
 void exportConstraintFunction(py::module& m)
 {
-    auto get_ddx = [](const ConstraintResult& s) { return s.ddx; };
-    auto get_ddp = [](const ConstraintResult& s) { return s.ddp; };
+    auto get_val = [](ConstraintResult& s) -> VectorRef { return s.val; };
+    auto get_ddx = [](ConstraintResult& s) -> MatrixRef { return s.ddx; };
+    auto get_ddp = [](ConstraintResult& s) -> MatrixRef { return s.ddp; };
+
+    auto set_val = [](ConstraintResult& s, VectorView val) { s.val = val; };
     auto set_ddx = [](ConstraintResult& s, MatrixView4py ddx) { s.ddx = ddx; };
     auto set_ddp = [](ConstraintResult& s, MatrixView4py ddp) { s.ddp = ddp; };
 
     py::class_<ConstraintResult>(m, "ConstraintResult")
-        .def_readwrite("val", &ConstraintResult::val)
+        .def_property("val", get_val, set_val)
         .def_property("ddx", get_ddx, set_ddx)
         .def_property("ddp", get_ddp, set_ddp)
         .def_readwrite("ddx4basicvars", &ConstraintResult::ddx4basicvars)

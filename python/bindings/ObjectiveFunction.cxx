@@ -27,14 +27,17 @@ using namespace Optima;
 
 void exportObjectiveFunction(py::module& m)
 {
-    auto get_fxx = [](const ObjectiveResult& s) { return s.fxx; };
-    auto get_fxp = [](const ObjectiveResult& s) { return s.fxp; };
+    auto get_fx  = [](ObjectiveResult& s) -> VectorRef { return s.fx; };
+    auto get_fxx = [](ObjectiveResult& s) -> MatrixRef { return s.fxx; };
+    auto get_fxp = [](ObjectiveResult& s) -> MatrixRef { return s.fxp; };
+
+    auto set_fx  = [](ObjectiveResult& s, VectorView fx) { s.fx = fx; };
     auto set_fxx = [](ObjectiveResult& s, MatrixView4py fxx) { s.fxx = fxx; };
     auto set_fxp = [](ObjectiveResult& s, MatrixView4py fxp) { s.fxp = fxp; };
 
     py::class_<ObjectiveResult>(m, "ObjectiveResult")
         .def_readwrite("f", &ObjectiveResult::f)
-        .def_readwrite("fx", &ObjectiveResult::fx)
+        .def_property("fx", get_fx, set_fx)
         .def_property("fxx", get_fxx, set_fxx)
         .def_property("fxp", get_fxp, set_fxp)
         .def_readwrite("diagfxx", &ObjectiveResult::diagfxx)
