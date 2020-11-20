@@ -27,29 +27,29 @@ using namespace Optima;
 
 void exportStabilityChecker(py::module& m)
 {
-    auto init = [](Index nx, Index np, Index ny, Index nz, MatrixConstRef4py Ax, MatrixConstRef4py Ap) -> StabilityChecker
+    auto init = [](Index nx, Index np, Index ny, Index nz, MatrixView4py Ax, MatrixView4py Ap) -> StabilityChecker
     {
         return StabilityChecker({ nx, np, ny, nz, Ax, Ap });
     };
 
     auto initialize = [](StabilityChecker& self,
-        VectorConstRef b,
-        VectorConstRef xlower,
-        VectorConstRef xupper,
-        VectorConstRef plower,
-        VectorConstRef pupper)
+        VectorView b,
+        VectorView xlower,
+        VectorView xupper,
+        VectorView plower,
+        VectorView pupper)
     {
         self.initialize({ b, xlower, xupper, plower, pupper });
     };
 
     auto update = [](StabilityChecker& self,
-        VectorConstRef x,
-        VectorConstRef y,
-        VectorConstRef z,
-        VectorConstRef fx,
-        MatrixConstRef4py hx,
-        VectorConstRef xlower,
-        VectorConstRef xupper)
+        VectorView x,
+        VectorView y,
+        VectorView z,
+        VectorView fx,
+        MatrixView4py hx,
+        VectorView xlower,
+        VectorView xupper)
     {
         self.update({ x, y, z, fx, hx, xlower, xupper });
     };

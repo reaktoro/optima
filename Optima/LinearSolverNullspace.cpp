@@ -30,16 +30,16 @@ namespace Optima {
 
 struct LinearSolverNullspace::Impl
 {
-    Vector ax;        ///< The workspace for the right-hand side vectors ax
-    Vector ap;        ///< The workspace for the right-hand side vectors ap
-    Vector aw;        ///< The workspace for the right-hand side vectors aw
-    Matrix Hxx;       ///< The workspace for the auxiliary matrices Hss.
-    Matrix Hxp;       ///< The workspace for the auxiliary matrices Hsp.
-    Matrix Vpx;       ///< The workspace for the auxiliary matrices Vps.
-    Matrix Vpp;       ///< The workspace for the auxiliary matrices Vpp.
-    Matrix Mw;        ///< The workspace for the matrix M in the decompose and solve methods.
-    Vector rw;        ///< The workspace for the vector r in the decompose and solve methods.
-    LU lu;            ///< The LU decomposition solver.
+    Vector ax;  ///< The workspace for the right-hand side vectors ax
+    Vector ap;  ///< The workspace for the right-hand side vectors ap
+    Vector aw;  ///< The workspace for the right-hand side vectors aw
+    Matrix Hxx; ///< The workspace for the auxiliary matrices Hss.
+    Matrix Hxp; ///< The workspace for the auxiliary matrices Hsp.
+    Matrix Vpx; ///< The workspace for the auxiliary matrices Vps.
+    Matrix Vpp; ///< The workspace for the auxiliary matrices Vpp.
+    Matrix Mw;  ///< The workspace for the matrix M in the decompose and solve methods.
+    Vector rw;  ///< The workspace for the vector r in the decompose and solve methods.
+    LU lu;      ///< The LU decomposition solver.
 
     Impl(const MasterDims& dims)
     {
@@ -151,7 +151,7 @@ struct LinearSolverNullspace::Impl
         if(t) lu.decompose(M);
     }
 
-    auto solve(CanonicalMatrix J, CanonicalVectorConstRef a, CanonicalVectorRef u) -> void
+    auto solve(CanonicalMatrix J, CanonicalVectorView a, CanonicalVectorRef u) -> void
     {
         const auto dims = J.dims;
 
@@ -263,7 +263,7 @@ auto LinearSolverNullspace::decompose(CanonicalMatrix M) -> void
     pimpl->decompose(M);
 }
 
-auto LinearSolverNullspace::solve(CanonicalMatrix J, CanonicalVectorConstRef a, CanonicalVectorRef u) -> void
+auto LinearSolverNullspace::solve(CanonicalMatrix J, CanonicalVectorView a, CanonicalVectorRef u) -> void
 {
     pimpl->solve(J, a, u);
 }

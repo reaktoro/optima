@@ -29,10 +29,10 @@ namespace Optima {
 /// Used to represent the echelon form of a matrix *A*.
 struct EchelonMatrix
 {
-    MatrixConstRef R;   ///< The echelonizer matrix of *A* so that *RAQ = [I S]* with *Q = (jb, jn)*.
-    MatrixConstRef S;   ///< The matrix *S* in the echelon form of *A*.
-    IndicesConstRef jb; ///< The indices of the basic variables in the echelon form of *A*.
-    IndicesConstRef jn; ///< The indices of the non-basic variables in the echelon form of *A*.
+    MatrixView R;   ///< The echelonizer matrix of *A* so that *RAQ = [I S]* with *Q = (jb, jn)*.
+    MatrixView S;   ///< The matrix *S* in the echelon form of *A*.
+    IndicesView jb; ///< The indices of the basic variables in the echelon form of *A*.
+    IndicesView jn; ///< The indices of the non-basic variables in the echelon form of *A*.
 };
 
 /// Used to describe a matrix \eq{A} in canonical form.
@@ -46,7 +46,7 @@ public:
     Echelonizer();
 
     /// Construct a Echelonizer instance with given matrix.
-    Echelonizer(MatrixConstRef A);
+    Echelonizer(MatrixView A);
 
     /// Construct a copy of a Echelonizer instance.
     Echelonizer(const Echelonizer& other);
@@ -70,29 +70,29 @@ public:
     auto numNonBasicVariables() const -> Index;
 
     /// Return the matrix \eq{S} of the canonicalization.
-    auto S() const -> MatrixConstRef;
+    auto S() const -> MatrixView;
 
     /// Return the echelonizer matrix \eq{R}.
-    auto R() const -> MatrixConstRef;
+    auto R() const -> MatrixView;
 
     /// Return the permutation matrix \eq{Q} of the canonicalization.
     /// This method returns the indices (ordering) of the variables after canonicalization.
-    auto Q() const -> IndicesConstRef;
+    auto Q() const -> IndicesView;
 
     /// Return the canonicalized matrix \eq{C = RAQ = [I\quad S]}`.
     auto C() const -> Matrix;
 
     /// Return the indices of the original equations associated with canonical equations.
-    auto indicesEquations() const -> IndicesConstRef;
+    auto indicesEquations() const -> IndicesView;
 
     /// Return the indices of the basic variables.
-    auto indicesBasicVariables() const -> IndicesConstRef;
+    auto indicesBasicVariables() const -> IndicesView;
 
     /// Return the indices of the non-basic variables.
-    auto indicesNonBasicVariables() const -> IndicesConstRef;
+    auto indicesNonBasicVariables() const -> IndicesView;
 
     /// Compute the canonical matrix of the given matrix.
-    auto compute(MatrixConstRef A) -> void;
+    auto compute(MatrixView A) -> void;
 
     /// Update the canonical form with the swap of a basic variable by a non-basic variable.
     /// @param ibasic The index of the basic variable between 0 and \eq{n_\mathrm{b}}`.
@@ -111,10 +111,10 @@ public:
     /// variables. This happens when all variables with non-zero coefficient in
     /// a row of matrix \eq{A} have non-positive weights.
     /// @param weights The priority weights of the variables.
-    auto updateWithPriorityWeights(VectorConstRef weights) -> void;
+    auto updateWithPriorityWeights(VectorView weights) -> void;
 
     /// Update the ordering of the basic and non-basic variables.
-    auto updateOrdering(IndicesConstRef Kb, IndicesConstRef Kn) -> void;
+    auto updateOrdering(IndicesView Kb, IndicesView Kn) -> void;
 
     /// Reset to the canonical matrix form computed initially.
     /// This method exists so that after several variable swapping operations

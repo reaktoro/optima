@@ -13,7 +13,7 @@ int main()
     Problem problem(dims);
     problem.Ae = Matrix{{ {1.0, -1.0} }};
     problem.be = Vector{{ 0.0 }};
-    problem.f = [](VectorConstRef x, ObjectiveResult& res)
+    problem.f = [](VectorView x, ObjectiveResult& res)
     {
         res.f = (x[0] - 1)*(x[0] - 1) + (x[1] - 1)*(x[1] - 1);
         res.g = 2.0 * (x - 1);

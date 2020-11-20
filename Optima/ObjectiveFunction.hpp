@@ -73,7 +73,7 @@ struct ObjectiveOptions
     const Eval eval;
 
     /// The indices of the basic variables in *x*.
-    IndicesConstRef ibasicvars;
+    IndicesView ibasicvars;
 };
 
 /// Used to represent an objective function *f(x, p)*.
@@ -86,14 +86,14 @@ public:
     /// @param x The primal variables *x*.
     /// @param p The parameter variables *p*.
     /// @param opts The options transmitted to the evaluation of *f(x, p)*.
-    using Signature = std::function<void(ObjectiveResult& res, VectorConstRef x, VectorConstRef p, ObjectiveOptions opts)>;
+    using Signature = std::function<void(ObjectiveResult& res, VectorView x, VectorView p, ObjectiveOptions opts)>;
 
     /// The functional signature of an objective function *f(x, p)* incoming from Python.
     /// @param[out] res The evaluated result of the objective function and its derivatives.
     /// @param x The primal variables *x*.
     /// @param p The parameter variables *p*.
     /// @param opts The options transmitted to the evaluation of *f(x, p)*.
-    using Signature4py = std::function<void(ObjectiveResult* res, VectorConstRef x, VectorConstRef p, ObjectiveOptions opts)>;
+    using Signature4py = std::function<void(ObjectiveResult* res, VectorView x, VectorView p, ObjectiveOptions opts)>;
 
     /// Construct a default ObjectiveFunction object.
     ObjectiveFunction();
@@ -109,7 +109,7 @@ public:
     // : ObjectiveFunction(fn) {}
 
     /// Evaluate the objective function.
-    auto operator()(ObjectiveResult& res, VectorConstRef x, VectorConstRef p, ObjectiveOptions opts) const -> void;
+    auto operator()(ObjectiveResult& res, VectorView x, VectorView p, ObjectiveOptions opts) const -> void;
 
 private:
     /// The objective function with main functional signature.

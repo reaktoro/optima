@@ -25,8 +25,8 @@ namespace Optima {
 /// Used to represent matrix *H = [Hxx Hpx]* in a master matrix.
 struct MatrixViewH
 {
-    MatrixConstRef Hxx;   ///< The matrix *Hxx* in *H = [Hxx Hxp]*.
-    MatrixConstRef Hxp;   ///< The matrix *Hxp* in *H = [Hxx Hxp]*.
+    MatrixView Hxx;       ///< The matrix *Hxx* in *H = [Hxx Hxp]*.
+    MatrixView Hxp;       ///< The matrix *Hxp* in *H = [Hxx Hxp]*.
     const bool isHxxDiag; ///< The flag that indicates wether *Hxx* is diagonal.
 };
 

@@ -32,6 +32,6 @@ using Indices = Eigen::VectorXl;
 using IndicesRef = Eigen::VectorXlRef;
 
 /// Define a type that represents a constant reference to a vector of indices.
-using IndicesConstRef = Eigen::VectorXlConstRef;
+using IndicesView = Eigen::VectorXlView;
 
 } // namespace Optima

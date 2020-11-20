@@ -41,10 +41,10 @@ void exportStability2(py::module& m)
 
     auto update = [](Stability2& self,
         MatrixViewRWQ RWQ,
-        VectorConstRef g,
-        VectorConstRef x,
-        VectorConstRef xlower,
-        VectorConstRef xupper)
+        VectorView g,
+        VectorView x,
+        VectorView xlower,
+        VectorView xupper)
     {
         self.update({RWQ, g, x, xlower, xupper});
     };

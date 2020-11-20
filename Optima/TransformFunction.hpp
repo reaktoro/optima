@@ -29,6 +29,6 @@ namespace Optima {
 /// @param x0 The previous state of variables *x*.
 /// @param x The current state of variables *x* after a Newton step.
 /// @return Return `true` in case the transformation was possible.
-using TransformFunction = std::function<bool(VectorConstRef xo, VectorRef x)>;
+using TransformFunction = std::function<bool(VectorView xo, VectorRef x)>;
 
 } // namespace Optima

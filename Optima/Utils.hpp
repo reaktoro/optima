@@ -160,7 +160,7 @@ auto rationalize(double* data, unsigned size, unsigned maxden) -> void;
 auto cleanResidualRoundoffErrors(MatrixRef mat) -> void;
 
 /// Multiply a matrix and a vector and clean residual round-off errors.
-auto multiplyMatrixVectorWithoutResidualRoundOffError(MatrixConstRef A, VectorConstRef x) -> Vector;
+auto multiplyMatrixVectorWithoutResidualRoundOffError(MatrixView A, VectorView x) -> Vector;
 
 /// Used to describe the structure of a matrix.
 enum class MatrixStructure
@@ -171,19 +171,19 @@ enum class MatrixStructure
 };
 
 /// Return the structure type of the given matrix.
-auto matrixStructure(MatrixConstRef mat) -> MatrixStructure;
+auto matrixStructure(MatrixView mat) -> MatrixStructure;
 
 /// Return `true` if given matrix is a zero matrix, represented by an empty matrix.
-auto isZeroMatrix(MatrixConstRef mat) -> bool;
+auto isZeroMatrix(MatrixView mat) -> bool;
 
 /// Return `true` if given matrix is a diagonal matrix, represented by a matrix with single column.
-auto isDiagonalMatrix(MatrixConstRef mat) -> bool;
+auto isDiagonalMatrix(MatrixView mat) -> bool;
 
 /// Return `true` if given matrix is a dense matrix, represented by a matrix with more than one rows and columns.
-auto isDenseMatrix(MatrixConstRef mat) -> bool;
+auto isDenseMatrix(MatrixView mat) -> bool;
 
 /// Assign a matrix with another that may be square or a single column representing a diagonal matrix.
-auto operator<<=(MatrixRef mat, MatrixConstRef other) -> MatrixRef;
+auto operator<<=(MatrixRef mat, MatrixView other) -> MatrixRef;
 
 /// Resize a matrix if its current dimension is inferior to a given one.
 /// If both given number of rows and columns are less than the current values,

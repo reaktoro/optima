@@ -28,7 +28,7 @@ struct BacktrackSearch::Impl
     {
     }
 
-    auto start(MasterVectorConstRef uo, MasterVectorRef u, ResidualFunction& F, ErrorStatus& E) -> void
+    auto start(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ErrorStatus& E) -> void
     {
 
     }
@@ -51,7 +51,7 @@ auto BacktrackSearch::operator=(BacktrackSearch other) -> BacktrackSearch&
     return *this;
 }
 
-auto BacktrackSearch::start(MasterVectorConstRef uo, MasterVectorRef u, ResidualFunction& F, ErrorStatus& E) -> void
+auto BacktrackSearch::start(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ErrorStatus& E) -> void
 {
 
 }

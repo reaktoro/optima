@@ -26,11 +26,11 @@ namespace Optima {
 /// The arguments in method @ref Stability::update.
 struct StabilityUpdateArgs
 {
-    MatrixViewRWQ RWQ;        ///< The echelon form RWQ = [Ibb Sbn Sbp] of matrix W.
-    VectorConstRef g;         ///< The gradient of the objective function with respect to x.
-    VectorConstRef x;         ///< The values of the primal variables x.
-    VectorConstRef xlower;    ///< The lower bounds of the primal variables x.
-    VectorConstRef xupper;    ///< The upper bounds of the primal variables x.
+    MatrixViewRWQ RWQ; ///< The echelon form RWQ = [Ibb Sbn Sbp] of matrix W.
+    VectorView g;      ///< The gradient of the objective function with respect to x.
+    VectorView x;      ///< The values of the primal variables x.
+    VectorView xlower; ///< The lower bounds of the primal variables x.
+    VectorView xupper; ///< The upper bounds of the primal variables x.
 };
 
 /// The stability status of the x variables.
@@ -41,12 +41,12 @@ struct StabilityUpdateArgs
 /// @see Stability::status
 struct StabilityStatus
 {
-    IndicesConstRef js;    ///< The indices of the stable variables in x.
-    IndicesConstRef ju;    ///< The indices of the unstable variables in x.
-    IndicesConstRef jlu;   ///< The indices of the lower unstable variables in x.
-    IndicesConstRef juu;   ///< The indices of the upper unstable variables in x.
-    VectorConstRef s;      ///< The stability \eq{s=g-W_{\mathrm{x}}^{T}\lambda} of the x variables.
-    VectorConstRef lmbda;  ///< The canonical Lagrange multipliers \eq{lambda}. Note: `lambda` is a reserved word in python.
+    IndicesView js;   ///< The indices of the stable variables in x.
+    IndicesView ju;   ///< The indices of the unstable variables in x.
+    IndicesView jlu;  ///< The indices of the lower unstable variables in x.
+    IndicesView juu;  ///< The indices of the upper unstable variables in x.
+    VectorView s;     ///< The stability \eq{s=g-W_{\mathrm{x}}^{T}\lambda} of the x variables.
+    VectorView lmbda; ///< The canonical Lagrange multipliers \eq{lambda}. Note: `lambda` is a reserved word in python.
 };
 
 /// Used to determine the stability of the primal \eq{x} variables.

@@ -45,11 +45,11 @@ struct LU
     auto empty() const -> bool;
 
     /// Compute the LU decomposition of the given matrix.
-    auto decompose(MatrixConstRef A) -> void;
+    auto decompose(MatrixView A) -> void;
 
     /// Solve the linear system `A*x = b` using the LU decomposition obtained with @ref decompose.
     /// @note Ensure method @ref decompose has been called before this method.
-    auto solve(VectorConstRef b, VectorRef x) -> void;
+    auto solve(VectorView b, VectorRef x) -> void;
 
     /// Solve the linear system `A*x = b` using the LU decomposition obtained with @ref decompose.
     /// @param[in,out] x As input, matrix `b`. As output, matrix `x`.
@@ -61,7 +61,7 @@ struct LU
     auto rank() const -> Index;
 
     /// Return the matrix containing the lower and upper triangular factors.
-    auto matrixLU() const -> MatrixConstRef;
+    auto matrixLU() const -> MatrixView;
 
     /// Return the permutation matrix factor *P* of the LU decomposition *PAQ = LU*.
     auto P() const -> PermutationMatrix;

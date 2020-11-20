@@ -26,12 +26,12 @@ using namespace Optima;
 
 void exportEchelonizer(py::module& m)
 {
-    auto init = [](MatrixConstRef4py A) -> Echelonizer
+    auto init = [](MatrixView4py A) -> Echelonizer
     {
         return Echelonizer(A);
     };
 
-    auto compute = [](Echelonizer& self, MatrixConstRef4py A)
+    auto compute = [](Echelonizer& self, MatrixView4py A)
     {
         return self.compute(A);
     };

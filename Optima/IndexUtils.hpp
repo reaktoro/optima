@@ -33,7 +33,7 @@ inline auto indices(Index length) -> decltype(linspace<Index>(length))
 }
 
 /// Return `true` if a given index `i` is contained in vector `indices`.
-inline auto contains(Index i, IndicesConstRef indices) -> bool
+inline auto contains(Index i, IndicesView indices) -> bool
 {
     const auto size = indices.size();
     const auto begin = indices.data();
@@ -66,7 +66,7 @@ inline auto stableMoveLeftIf(IndicesRef base, const std::function<bool(Index)>& 
 /// @param p The indices in base vector to be moved to *group1*.
 /// @return The number of indices in *group1*
 /// @see moveIntersectionRight
-inline auto moveIntersectionLeft(IndicesRef base, IndicesConstRef p) -> Index
+inline auto moveIntersectionLeft(IndicesRef base, IndicesView p) -> Index
 {
     return moveLeftIf(base, [=](Index i) { return contains(i, p); });
 }
@@ -96,7 +96,7 @@ inline auto stableMoveRightIf(IndicesRef base, const std::function<bool(Index)>&
 /// @param p The indices in base vector to be moved to *group2*.
 /// @return The number of indices in *group1*
 /// @see moveIntersectionLeft
-inline auto moveIntersectionRight(IndicesRef base, IndicesConstRef p) -> Index
+inline auto moveIntersectionRight(IndicesRef base, IndicesView p) -> Index
 {
     return moveRightIf(base, [=](Index i) { return contains(i, p); });
 }
@@ -106,7 +106,7 @@ inline auto moveIntersectionRight(IndicesRef base, IndicesConstRef p) -> Index
 /// @param p The indices in base vector to be moved to the left.
 /// @return The number of indices in *group1*
 /// @see moveIntersectionRight
-inline auto moveIntersectionLeftStable(IndicesRef base, IndicesConstRef p) -> Index
+inline auto moveIntersectionLeftStable(IndicesRef base, IndicesView p) -> Index
 {
     // The lambda function that returns true if variable i is in p
     auto in_group1 = [=](Index i) { return contains(i, p); };
@@ -120,7 +120,7 @@ inline auto moveIntersectionLeftStable(IndicesRef base, IndicesConstRef p) -> In
 /// @param p The indices in base vector to be moved to the right.
 /// @return The number of indices in *group1*
 /// @see moveIntersectionLeft
-inline auto moveIntersectionRightStable(IndicesRef base, IndicesConstRef p) -> Index
+inline auto moveIntersectionRightStable(IndicesRef base, IndicesView p) -> Index
 {
     // The lambda function that returns true if variable i is not in p
     auto in_group1 = [=](Index i) { return !contains(i, p); };
@@ -130,7 +130,7 @@ inline auto moveIntersectionRightStable(IndicesRef base, IndicesConstRef p) -> I
 }
 
 /// Return the indices in `indices1` that are not in `indices2`.
-inline auto difference(IndicesConstRef indices1, IndicesConstRef indices2) -> Indices
+inline auto difference(IndicesView indices1, IndicesView indices2) -> Indices
 {
     Indices tmp(indices1);
     const auto idx = moveIntersectionRight(tmp, indices2);
@@ -138,7 +138,7 @@ inline auto difference(IndicesConstRef indices1, IndicesConstRef indices2) -> In
 }
 
 /// Return the indices in `indices1` that are in `indices2`.
-inline auto intersect(IndicesConstRef indices1, IndicesConstRef indices2) -> Indices
+inline auto intersect(IndicesView indices1, IndicesView indices2) -> Indices
 {
     Indices tmp(indices1);
     const auto idx = moveIntersectionRight(tmp, indices2);
@@ -146,7 +146,7 @@ inline auto intersect(IndicesConstRef indices1, IndicesConstRef indices2) -> Ind
 }
 
 /// Return the indices in `indices1` that are in `indices2`.
-inline auto isIntersectionEmpty(IndicesConstRef indices1, IndicesConstRef indices2) -> bool
+inline auto isIntersectionEmpty(IndicesView indices1, IndicesView indices2) -> bool
 {
     for(Index i : indices1)
         if(contains(i, indices2))

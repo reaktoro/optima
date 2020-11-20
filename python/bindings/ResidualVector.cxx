@@ -31,16 +31,16 @@ void exportResidualVector(py::module& m)
 {
     auto update = [](ResidualVector& self,
         CanonicalMatrix Mc,
-        MatrixConstRef Wx,
-        MatrixConstRef Wp,
-        VectorConstRef x,
-        VectorConstRef p,
-        VectorConstRef y,
-        VectorConstRef z,
-        VectorConstRef g,
-        VectorConstRef v,
-        VectorConstRef b,
-        VectorConstRef h)
+        MatrixView Wx,
+        MatrixView Wp,
+        VectorView x,
+        VectorView p,
+        VectorView y,
+        VectorView z,
+        VectorView g,
+        VectorView v,
+        VectorView b,
+        VectorView h)
     {
         self.update({Mc, Wx, Wp, x, p, y, z, g, v, b, h});
     };

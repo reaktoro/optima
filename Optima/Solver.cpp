@@ -114,7 +114,7 @@
 //         assert(problem.dims.p == 0 || problem.v);
 
 //         // Create the objective function for the master optimization problem
-//         auto f = [&](VectorConstRef xrs, VectorConstRef p, ObjectiveResult res)
+//         auto f = [&](VectorView xrs, VectorView p, ObjectiveResult res)
 //         {
 //             // Views to sub-vectors in xrs = (x, r, s)
 //             const auto x = xrs.head(nx);
@@ -165,7 +165,7 @@
 //         };
 
 //         // Create the non-linear equality constraint for the master optimization problem
-//         auto h = [&](VectorConstRef xrs, VectorConstRef p, ConstraintResult res)
+//         auto h = [&](VectorView xrs, VectorView p, ConstraintResult res)
 //         {
 //             // Views to sub-vectors in xrs = (x, r, s)
 //             const auto x = xrs.head(nx);
@@ -208,7 +208,7 @@
 //         };
 
 //         // Create the external non-linear constraint for the master optimization problem
-//         auto v = [&](VectorConstRef xrs, VectorConstRef p, ConstraintResult res)
+//         auto v = [&](VectorView xrs, VectorView p, ConstraintResult res)
 //         {
 //             // Views to sub-vectors in xrs = (x, r, s)
 //             const auto x = xrs.head(nx);

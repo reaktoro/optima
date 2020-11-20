@@ -45,7 +45,7 @@ struct EchelonizerW::Impl
         W.resize(dims.nw, dims.nx + dims.np);
     }
 
-    auto initialize(MatrixConstRef Ax, MatrixConstRef Ap) -> void
+    auto initialize(MatrixView Ax, MatrixView Ap) -> void
     {
         const auto [nx, np, ny, nz, nw, nt] = dims;
 
@@ -67,13 +67,13 @@ struct EchelonizerW::Impl
         if(Ap.size()) W.topRightCorner(ny, np) = Ap;
     }
 
-    auto update(MatrixConstRef Ax, MatrixConstRef Ap, MatrixConstRef Jx, MatrixConstRef Jp, VectorConstRef weights) -> void
+    auto update(MatrixView Ax, MatrixView Ap, MatrixView Jx, MatrixView Jp, VectorView weights) -> void
     {
         initialize(Ax, Ap);
         update(Jx, Jp, weights);
     }
 
-    auto update(MatrixConstRef Jx, MatrixConstRef Jp, VectorConstRef weights) -> void
+    auto update(MatrixView Jx, MatrixView Jp, VectorView weights) -> void
     {
         const auto [nx, np, ny, nz, nw, nt] = dims;
 
@@ -152,17 +152,17 @@ EchelonizerW::EchelonizerW(const EchelonizerW& other)
 EchelonizerW::~EchelonizerW()
 {}
 
-auto EchelonizerW::initialize(MatrixConstRef Ax, MatrixConstRef Ap) -> void
+auto EchelonizerW::initialize(MatrixView Ax, MatrixView Ap) -> void
 {
     pimpl->initialize(Ax, Ap);
 }
 
-auto EchelonizerW::update(MatrixConstRef Ax, MatrixConstRef Ap, MatrixConstRef Jx, MatrixConstRef Jp, VectorConstRef weights) -> void
+auto EchelonizerW::update(MatrixView Ax, MatrixView Ap, MatrixView Jx, MatrixView Jp, VectorView weights) -> void
 {
     pimpl->update(Ax, Ap, Jx, Jp, weights);
 }
 
-auto EchelonizerW::update(MatrixConstRef Jx, MatrixConstRef Jp, VectorConstRef weights) -> void
+auto EchelonizerW::update(MatrixView Jx, MatrixView Jp, VectorView weights) -> void
 {
     pimpl->update(Jx, Jp, weights);
 }

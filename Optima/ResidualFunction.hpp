@@ -63,10 +63,10 @@ struct ResidualFunctionResult
     CanonicalMatrix Jc;
 
     /// The evaluated residual vector in master form.
-    MasterVectorConstRef Fm;
+    MasterVectorView Fm;
 
     /// The evaluated residual vector in canonical form.
-    CanonicalVectorConstRef Fc;
+    CanonicalVectorView Fc;
 
     /// The evaluated stability status of the x variables.
     StabilityStatus stabilitystatus;
@@ -95,10 +95,10 @@ public:
     auto initialize(const MasterProblem& problem) -> void;
 
     /// Update the residual function with given *u = (x, p, y, z)*.
-    auto update(MasterVectorConstRef u) -> void;
+    auto update(MasterVectorView u) -> void;
 
     /// Update the residual function with given *u = (x, p, y, z)* skipping Jacobian evaluations.
-    auto updateSkipJacobian(MasterVectorConstRef u) -> void;
+    auto updateSkipJacobian(MasterVectorView u) -> void;
 
     /// Return the result of the evaluation of the residual function.
     auto result() const -> ResidualFunctionResult;

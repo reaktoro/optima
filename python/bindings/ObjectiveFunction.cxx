@@ -29,8 +29,8 @@ void exportObjectiveFunction(py::module& m)
 {
     auto get_fxx = [](const ObjectiveResult& s) { return s.fxx; };
     auto get_fxp = [](const ObjectiveResult& s) { return s.fxp; };
-    auto set_fxx = [](ObjectiveResult& s, MatrixConstRef4py fxx) { s.fxx = fxx; };
-    auto set_fxp = [](ObjectiveResult& s, MatrixConstRef4py fxp) { s.fxp = fxp; };
+    auto set_fxx = [](ObjectiveResult& s, MatrixView4py fxx) { s.fxx = fxx; };
+    auto set_fxp = [](ObjectiveResult& s, MatrixView4py fxp) { s.fxp = fxp; };
 
     py::class_<ObjectiveResult>(m, "ObjectiveResult")
         .def_readwrite("f", &ObjectiveResult::f)

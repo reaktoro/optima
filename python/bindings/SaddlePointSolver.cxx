@@ -28,22 +28,22 @@ using namespace Optima;
 
 void exportSaddlePointSolver(py::module& m)
 {
-    auto init = [](Index nx, Index np, Index ny, Index nz, MatrixConstRef4py Ax, MatrixConstRef4py Ap) -> SaddlePointSolver
+    auto init = [](Index nx, Index np, Index ny, Index nz, MatrixView4py Ax, MatrixView4py Ap) -> SaddlePointSolver
     {
         return SaddlePointSolver({ nx, np, ny, nz, Ax, Ap });
     };
 
-    auto canonicalize = [](SaddlePointSolver& self, MatrixConstRef4py Hxx, MatrixConstRef4py Hxp, MatrixConstRef4py Hpx, MatrixConstRef4py Hpp, MatrixConstRef4py Jx, MatrixConstRef4py Jp, IndicesConstRef ju, VectorConstRef wx)
+    auto canonicalize = [](SaddlePointSolver& self, MatrixView4py Hxx, MatrixView4py Hxp, MatrixView4py Hpx, MatrixView4py Hpp, MatrixView4py Jx, MatrixView4py Jp, IndicesView ju, VectorView wx)
     {
         return self.canonicalize({ Hxx, Hxp, Hpx, Hpp, Jx, Jp, ju, wx });
     };
 
-    auto rhs1 = [](SaddlePointSolver& self, VectorConstRef ax, VectorConstRef ap, VectorConstRef ay, VectorConstRef az)
+    auto rhs1 = [](SaddlePointSolver& self, VectorView ax, VectorView ap, VectorView ay, VectorView az)
     {
         return self.rhs({ ax, ap, ay, az });
     };
 
-    auto rhs2 = [](SaddlePointSolver& self, VectorConstRef fx, VectorConstRef x, VectorConstRef p, VectorConstRef y, VectorConstRef z, VectorConstRef v, VectorConstRef h, VectorConstRef b)
+    auto rhs2 = [](SaddlePointSolver& self, VectorView fx, VectorView x, VectorView p, VectorView y, VectorView z, VectorView v, VectorView h, VectorView b)
     {
         return self.rhs({ fx, x, p, y, z, v, h, b });
     };
@@ -58,12 +58,12 @@ void exportSaddlePointSolver(py::module& m)
         self.solve({ sx, sp, sy, sz });
     };
 
-    auto multiply = [](SaddlePointSolver& self, VectorConstRef rx, VectorConstRef rp, VectorConstRef ry, VectorConstRef rz, VectorRef ax, VectorRef ap, VectorRef ay, VectorRef az)
+    auto multiply = [](SaddlePointSolver& self, VectorView rx, VectorView rp, VectorView ry, VectorView rz, VectorRef ax, VectorRef ap, VectorRef ay, VectorRef az)
     {
         self.multiply({ rx, rp, ry, rz, ax, ap, ay, az });
     };
 
-    auto transposeMultiply = [](SaddlePointSolver& self, VectorConstRef rx, VectorConstRef rp, VectorConstRef ry, VectorConstRef rz, VectorRef ax, VectorRef ap, VectorRef ay, VectorRef az)
+    auto transposeMultiply = [](SaddlePointSolver& self, VectorView rx, VectorView rp, VectorView ry, VectorView rz, VectorRef ax, VectorRef ap, VectorRef ay, VectorRef az)
     {
         self.transposeMultiply({ rx, rp, ry, rz, ax, ap, ay, az });
     };

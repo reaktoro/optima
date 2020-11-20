@@ -51,7 +51,7 @@ public:
     EchelonizerExtended();
 
     /// Construct a EchelonizerExtended instance with given constant matrix *A* in *W = [A; J]*.
-    EchelonizerExtended(MatrixConstRef A);
+    EchelonizerExtended(MatrixView A);
 
     /// Construct a copy of a EchelonizerExtended instance.
     EchelonizerExtended(const EchelonizerExtended& other);
@@ -75,29 +75,29 @@ public:
     auto numNonBasicVariables() const -> Index;
 
     /// Return the matrix \eq{S} of the canonicalization.
-    auto S() const -> MatrixConstRef;
+    auto S() const -> MatrixView;
 
     /// Return the echelonizer matrix \eq{R}.
-    auto R() const -> MatrixConstRef;
+    auto R() const -> MatrixView;
 
     /// Return the permutation matrix \eq{Q} of the canonicalization.
     /// This method returns the indices (ordering) of the variables after canonicalization.
-    auto Q() const -> IndicesConstRef;
+    auto Q() const -> IndicesView;
 
     /// Return the canonicalized matrix \eq{C = R[A; J]Q = [I\quad S]}`.
     auto C() const -> Matrix;
 
     /// Return the indices of the basic variables.
-    auto indicesBasicVariables() const -> IndicesConstRef;
+    auto indicesBasicVariables() const -> IndicesView;
 
     /// Return the indices of the non-basic variables.
-    auto indicesNonBasicVariables() const -> IndicesConstRef;
+    auto indicesNonBasicVariables() const -> IndicesView;
 
     /// Update the canonical form with given lower matrix block *J* and priority weights for the variables.
-    auto updateWithPriorityWeights(MatrixConstRef J, VectorConstRef weights) -> void;
+    auto updateWithPriorityWeights(MatrixView J, VectorView weights) -> void;
 
     /// Update the ordering of the basic and non-basic variables.
-    auto updateOrdering(IndicesConstRef Kb, IndicesConstRef Kn) -> void;
+    auto updateOrdering(IndicesView Kb, IndicesView Kn) -> void;
 
     /// Perform a cleanup procedure to remove residual round-off errors from the canonical form.
     auto cleanResidualRoundoffErrors() -> void;

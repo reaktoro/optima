@@ -35,7 +35,7 @@ void exportUtils(py::module& m)
     auto largestStep1 = static_cast<double(*)(const Vector&, const Vector&)>(&largestStep);
     auto largestStep2 = static_cast<double(*)(const Vector&, const Vector&, const Vector&, const Vector&)>(&largestStep);
 
-    auto multiplyMatrixVectorWithoutResidualRoundOffError = [](MatrixConstRef4py A, VectorConstRef x)
+    auto multiplyMatrixVectorWithoutResidualRoundOffError = [](MatrixView4py A, VectorView x)
     {
         return Optima::multiplyMatrixVectorWithoutResidualRoundOffError(A, x);
     };

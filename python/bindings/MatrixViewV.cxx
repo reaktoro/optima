@@ -31,7 +31,7 @@ using namespace Optima;
 void exportMatrixViewV(py::module& m)
 {
     py::class_<MatrixViewV>(m, "MatrixViewV")
-        .def(py::init<MatrixConstRef4py, MatrixConstRef4py>(),
+        .def(py::init<MatrixView4py, MatrixView4py>(),
             pyx::keep_argument_alive<0>(),
             pyx::keep_argument_alive<1>())
         .def_readonly("Vpx", &MatrixViewV::Vpx)

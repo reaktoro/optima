@@ -90,42 +90,42 @@ auto Stability::numStrictlyUnstableVariables() const -> Index
     return data.nslu + data.nsuu;
 }
 
-auto Stability::indicesVariables() const -> IndicesConstRef
+auto Stability::indicesVariables() const -> IndicesView
 {
     return data.iordering;
 }
 
-auto Stability::indicesStableVariables() const -> IndicesConstRef
+auto Stability::indicesStableVariables() const -> IndicesView
 {
     return data.iordering.head(data.ns);
 }
 
-auto Stability::indicesUnstableVariables() const -> IndicesConstRef
+auto Stability::indicesUnstableVariables() const -> IndicesView
 {
     return data.iordering.tail(data.nlu + data.nuu + data.nslu + data.nsuu);
 }
 
-auto Stability::indicesLowerUnstableVariables() const -> IndicesConstRef
+auto Stability::indicesLowerUnstableVariables() const -> IndicesView
 {
     return data.iordering.segment(data.ns, data.nlu);
 }
 
-auto Stability::indicesUpperUnstableVariables() const -> IndicesConstRef
+auto Stability::indicesUpperUnstableVariables() const -> IndicesView
 {
     return data.iordering.segment(data.ns + data.nlu, data.nuu);
 }
 
-auto Stability::indicesStrictlyLowerUnstableVariables() const -> IndicesConstRef
+auto Stability::indicesStrictlyLowerUnstableVariables() const -> IndicesView
 {
     return data.iordering.segment(data.ns + data.nlu + data.nuu, data.nslu);
 }
 
-auto Stability::indicesStrictlyUpperUnstableVariables() const -> IndicesConstRef
+auto Stability::indicesStrictlyUpperUnstableVariables() const -> IndicesView
 {
     return data.iordering.tail(data.nsuu);
 }
 
-auto Stability::indicesStrictlyUnstableVariables() const -> IndicesConstRef
+auto Stability::indicesStrictlyUnstableVariables() const -> IndicesView
 {
     return data.iordering.tail(data.nslu + data.nsuu);
 }

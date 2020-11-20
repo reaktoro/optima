@@ -57,7 +57,7 @@ struct EchelonizerExtended::Impl
     }
 
     /// Construct a EchelonizerExtended::Impl object with given matrix A
-    Impl(MatrixConstRef A)
+    Impl(MatrixView A)
     {
         // Initialize the echelonizer for A (wait until J is provided to initialize echelonizerJ)
         echelonizerA.compute(A);
@@ -71,7 +71,7 @@ struct EchelonizerExtended::Impl
     }
 
     /// Update the canonical form with given variable matrix J in W = [A; J] and priority weights for the variables.
-    auto updateWithPriorityWeights(MatrixConstRef J, VectorConstRef weights) -> void
+    auto updateWithPriorityWeights(MatrixView J, VectorView weights) -> void
     {
         echelonizerA.updateWithPriorityWeights(weights);
 
@@ -188,7 +188,7 @@ struct EchelonizerExtended::Impl
     }
 
     /// Update the ordering of the basic and non-basic variables,
-    auto updateOrdering(IndicesConstRef Kb, IndicesConstRef Kn) -> void
+    auto updateOrdering(IndicesView Kb, IndicesView Kn) -> void
     {
         const auto n  = Q.rows();
         const auto nb = S.rows();
@@ -236,7 +236,7 @@ EchelonizerExtended::EchelonizerExtended()
 {
 }
 
-EchelonizerExtended::EchelonizerExtended(MatrixConstRef A)
+EchelonizerExtended::EchelonizerExtended(MatrixView A)
 : pimpl(new Impl(A))
 {
 }
@@ -274,17 +274,17 @@ auto EchelonizerExtended::numNonBasicVariables() const -> Index
     return numVariables() - numBasicVariables();
 }
 
-auto EchelonizerExtended::S() const -> MatrixConstRef
+auto EchelonizerExtended::S() const -> MatrixView
 {
     return pimpl->S;
 }
 
-auto EchelonizerExtended::R() const -> MatrixConstRef
+auto EchelonizerExtended::R() const -> MatrixView
 {
     return pimpl->R;
 }
 
-auto EchelonizerExtended::Q() const -> IndicesConstRef
+auto EchelonizerExtended::Q() const -> IndicesView
 {
     return pimpl->Q;
 }
@@ -301,24 +301,24 @@ auto EchelonizerExtended::C() const -> Matrix
     return res;
 }
 
-auto EchelonizerExtended::indicesBasicVariables() const -> IndicesConstRef
+auto EchelonizerExtended::indicesBasicVariables() const -> IndicesView
 {
     const auto nb = numBasicVariables();
     return pimpl->Q.head(nb);
 }
 
-auto EchelonizerExtended::indicesNonBasicVariables() const -> IndicesConstRef
+auto EchelonizerExtended::indicesNonBasicVariables() const -> IndicesView
 {
     const auto nn = numNonBasicVariables();
     return pimpl->Q.tail(nn);
 }
 
-auto EchelonizerExtended::updateWithPriorityWeights(MatrixConstRef J, VectorConstRef weights) -> void
+auto EchelonizerExtended::updateWithPriorityWeights(MatrixView J, VectorView weights) -> void
 {
     pimpl->updateWithPriorityWeights(J, weights);
 }
 
-auto EchelonizerExtended::updateOrdering(IndicesConstRef Kb, IndicesConstRef Kn) -> void
+auto EchelonizerExtended::updateOrdering(IndicesView Kb, IndicesView Kn) -> void
 {
     pimpl->updateOrdering(Kb, Kn);
 }

@@ -25,12 +25,12 @@ namespace Optima {
 /// Used to represent a view to matrix *W = [Wx Wp] = [Ax Ap; Jx Jp]*.
 struct MatrixViewW
 {
-    MatrixConstRef Wx;  ///< The view to sub-matrix *Wx* in *W = [Wx Wp] = [Ax Ap; Jx Jp]*
-    MatrixConstRef Wp;  ///< The view to sub-matrix *Wp* in *W = [Wx Wp] = [Ax Ap; Jx Jp]*
-    MatrixConstRef Ax;  ///< The view to sub-matrix *Ax* in *W = [Wx Wp] = [Ax Ap; Jx Jp]*
-    MatrixConstRef Ap;  ///< The view to sub-matrix *Ap* in *W = [Wx Wp] = [Ax Ap; Jx Jp]*
-    MatrixConstRef Jx;  ///< The view to sub-matrix *Jx* in *W = [Wx Wp] = [Ax Ap; Jx Jp]*
-    MatrixConstRef Jp;  ///< The view to sub-matrix *Jp* in *W = [Wx Wp] = [Ax Ap; Jx Jp]*
+    MatrixView Wx;  ///< The view to sub-matrix *Wx* in *W = [Wx Wp] = [Ax Ap; Jx Jp]*
+    MatrixView Wp;  ///< The view to sub-matrix *Wp* in *W = [Wx Wp] = [Ax Ap; Jx Jp]*
+    MatrixView Ax;  ///< The view to sub-matrix *Ax* in *W = [Wx Wp] = [Ax Ap; Jx Jp]*
+    MatrixView Ap;  ///< The view to sub-matrix *Ap* in *W = [Wx Wp] = [Ax Ap; Jx Jp]*
+    MatrixView Jx;  ///< The view to sub-matrix *Jx* in *W = [Wx Wp] = [Ax Ap; Jx Jp]*
+    MatrixView Jp;  ///< The view to sub-matrix *Jp* in *W = [Wx Wp] = [Ax Ap; Jx Jp]*
 };
 
 } // namespace Optima

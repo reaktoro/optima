@@ -31,7 +31,7 @@ using namespace Optima;
 void exportMatrixViewRWQ(py::module& m)
 {
     py::class_<MatrixViewRWQ>(m, "MatrixViewRWQ")
-        .def(py::init<MatrixConstRef4py, MatrixConstRef4py, MatrixConstRef4py, IndicesConstRef, IndicesConstRef>(),
+        .def(py::init<MatrixView4py, MatrixView4py, MatrixView4py, IndicesView, IndicesView>(),
             pyx::keep_argument_alive<0>(),
             pyx::keep_argument_alive<1>(),
             pyx::keep_argument_alive<2>(),

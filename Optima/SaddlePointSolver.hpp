@@ -33,44 +33,44 @@ class SaddlePointOptions;
 /// The arguments for constructor of class SaddlePointSolver.
 struct SaddlePointSolverInitArgs
 {
-    Index nx = 0;        ///< The dimension of vector *x* of the saddle point problem.
-    Index np = 0;        ///< The dimension of vector *p* of the saddle point problem.
-    Index ny = 0;        ///< The dimension of vector *y* of the saddle point problem.
-    Index nz = 0;        ///< The dimension of vector *z* of the saddle point problem.
-    MatrixConstRef Ax;   ///< The matrix block *Ax* of the saddle point problem.
-    MatrixConstRef Ap;   ///< The matrix block *Ap* of the saddle point problem.
+    Index nx = 0;    ///< The dimension of vector *x* of the saddle point problem.
+    Index np = 0;    ///< The dimension of vector *p* of the saddle point problem.
+    Index ny = 0;    ///< The dimension of vector *y* of the saddle point problem.
+    Index nz = 0;    ///< The dimension of vector *z* of the saddle point problem.
+    MatrixView Ax;   ///< The matrix block *Ax* of the saddle point problem.
+    MatrixView Ap;   ///< The matrix block *Ap* of the saddle point problem.
 };
 
 /// The arguments for method SaddlePointSolver::canonicalize.
 struct SaddlePointSolverCanonicalize1Args
 {
-    MatrixConstRef  Hxx; ///< The matrix block *Hxx* of the saddle point problem.
-    MatrixConstRef  Hxp; ///< The matrix block *Hxp* of the saddle point problem.
-    MatrixConstRef  Vpx; ///< The matrix block *Vpx* of the saddle point problem.
-    MatrixConstRef  Vpp; ///< The matrix block *Vpp* of the saddle point problem.
-    MatrixConstRef  Jx;  ///< The matrix block *Jx* of the saddle point matrix.
-    MatrixConstRef  Jp;  ///< The matrix block *Jp* of the saddle point matrix.
-    IndicesConstRef ju;  ///< The indices of the unstable variables *xu* in *x = (xs, xu)*.
-    VectorConstRef  wx;  ///< The priority weights for variables in *x* to become basic variables.
+    MatrixView  Hxx; ///< The matrix block *Hxx* of the saddle point problem.
+    MatrixView  Hxp; ///< The matrix block *Hxp* of the saddle point problem.
+    MatrixView  Vpx; ///< The matrix block *Vpx* of the saddle point problem.
+    MatrixView  Vpp; ///< The matrix block *Vpp* of the saddle point problem.
+    MatrixView  Jx;  ///< The matrix block *Jx* of the saddle point matrix.
+    MatrixView  Jp;  ///< The matrix block *Jp* of the saddle point matrix.
+    IndicesView ju;  ///< The indices of the unstable variables *xu* in *x = (xs, xu)*.
+    VectorView  wx;  ///< The priority weights for variables in *x* to become basic variables.
 };
 
 /// The arguments for method SaddlePointSolver::canonicalize.
 struct SaddlePointSolverCanonicalize2Args
 {
-    MatrixConstRef Jx;  ///< The matrix block *Jx* of the saddle point matrix.
-    VectorConstRef wx;  ///< The priority weights for variables in *x* to become basic variables.
+    MatrixView Jx;  ///< The matrix block *Jx* of the saddle point matrix.
+    VectorView wx;  ///< The priority weights for variables in *x* to become basic variables.
 };
 
 /// The arguments for method SaddlePointSolver::decompose.
 struct SaddlePointSolverDecomposeArgs
 {
-    MatrixConstRef  Hxx; ///< The matrix block *Hxx* of the saddle point problem.
-    MatrixConstRef  Hxp; ///< The matrix block *Hxp* of the saddle point problem.
-    MatrixConstRef  Vpx; ///< The matrix block *Vpx* of the saddle point problem.
-    MatrixConstRef  Vpp; ///< The matrix block *Vpp* of the saddle point problem.
-    MatrixConstRef  Jx;  ///< The matrix block *Jx* of the saddle point matrix.
-    MatrixConstRef  Jp;  ///< The matrix block *Jp* of the saddle point matrix.
-    IndicesConstRef ju;  ///< The indices of the unstable variables *xu* in *x = (xs, xu)*.
+    MatrixView  Hxx; ///< The matrix block *Hxx* of the saddle point problem.
+    MatrixView  Hxp; ///< The matrix block *Hxp* of the saddle point problem.
+    MatrixView  Vpx; ///< The matrix block *Vpx* of the saddle point problem.
+    MatrixView  Vpp; ///< The matrix block *Vpp* of the saddle point problem.
+    MatrixView  Jx;  ///< The matrix block *Jx* of the saddle point matrix.
+    MatrixView  Jp;  ///< The matrix block *Jp* of the saddle point matrix.
+    IndicesView ju;  ///< The indices of the unstable variables *xu* in *x = (xs, xu)*.
 };
 
 /// The arguments for method SaddlePointSolver::rhs.
@@ -78,10 +78,10 @@ struct SaddlePointSolverDecomposeArgs
 /// @eqc{\begin{bmatrix}H_{\mathrm{ss}} & 0 & H_{\mathrm{sp}} & J_{\mathrm{s}}^{T} & A_{\mathrm{s}}^{T}\\0 & I_{\mathrm{uu}} & 0 & 0 & 0\\V_{\mathrm{ps}} & 0 & V_{\mathrm{pp}} & 0 & 0\\J_{\mathrm{s}} & 0 & J_{\mathrm{p}} & 0 & 0\\A_{\mathrm{s}} & A_{\mathrm{u}} & A_{\mathrm{p}} & 0 & 0\end{bmatrix}\begin{bmatrix}x_{\mathrm{s}}\\x_{\mathrm{u}}\\p\\z\\y\end{bmatrix}=\begin{bmatrix}a_{\mathrm{s}}\\a_{\mathrm{u}}\\a_{\mathrm{p}}\\a_{\mathrm{z}}\\a_{\mathrm{y}}\end{bmatrix}}
 struct SaddlePointSolverRhs1Args
 {
-    VectorConstRef ax;   ///< The right-hand side vector *ax* of the saddle point problem.
-    VectorConstRef ap;   ///< The right-hand side vector *ap* of the saddle point problem.
-    VectorConstRef ay;   ///< The right-hand side vector *ay* of the saddle point problem.
-    VectorConstRef az;   ///< The right-hand side vector *az* of the saddle point problem.
+    VectorView ax;   ///< The right-hand side vector *ax* of the saddle point problem.
+    VectorView ap;   ///< The right-hand side vector *ap* of the saddle point problem.
+    VectorView ay;   ///< The right-hand side vector *ay* of the saddle point problem.
+    VectorView az;   ///< The right-hand side vector *az* of the saddle point problem.
 };
 
 /// The arguments for method SaddlePointSolver::rhs.
@@ -89,14 +89,14 @@ struct SaddlePointSolverRhs1Args
 /// @eqc{\begin{bmatrix}H_{\mathrm{ss}} & 0 & H_{\mathrm{sp}} & J_{\mathrm{s}}^{T} & A_{\mathrm{s}}^{T}\\[1mm]0 & I_{\mathrm{uu}} & 0 & 0 & 0\\[1mm]V_{\mathrm{ps}} & 0 & V_{\mathrm{pp}} & 0 & 0\\[1mm]J_{\mathrm{s}} & 0 & J_{\mathrm{p}} & 0 & 0\\[1mm]A_{\mathrm{s}} & A_{\mathrm{u}} & A_{\mathrm{p}} & 0 & 0\end{bmatrix}\begin{bmatrix}\Delta x_{\mathrm{s}}\\[1mm]\Delta x_{\mathrm{u}}\\[1mm]\Delta p\\[1mm]\Delta z\\[1mm]\Delta y\end{bmatrix}=-\begin{bmatrix}g_{\mathrm{s}}+A_{\mathrm{s}}^{T}\bar{y}+J_{\mathrm{s}}^{T}\bar{z}\\[1mm]0\\[1mm]v\\[1mm]h\\[1mm]A_{\mathrm{s}}\bar{x}_{\mathrm{s}}+A_{\mathrm{u}}\bar{x}_{\mathrm{u}}+A_{\mathrm{p}}\bar{p}-b\end{bmatrix}}
 struct SaddlePointSolverRhs2Args
 {
-    VectorConstRef fx;   ///< The right-hand side vector *fx* of the saddle point problem.
-    VectorConstRef x;    ///< The right-hand side vector *x* of the saddle point problem.
-    VectorConstRef p;    ///< The right-hand side vector *p* of the saddle point problem.
-    VectorConstRef y;    ///< The right-hand side vector *y* of the saddle point problem.
-    VectorConstRef z;    ///< The right-hand side vector *z* of the saddle point problem.
-    VectorConstRef v;    ///< The right-hand side vector *v* of the saddle point problem.
-    VectorConstRef h;    ///< The right-hand side vector *h* of the saddle point problem.
-    VectorConstRef b;    ///< The right-hand side vector *b* of the saddle point problem.
+    VectorView fx;   ///< The right-hand side vector *fx* of the saddle point problem.
+    VectorView x;    ///< The right-hand side vector *x* of the saddle point problem.
+    VectorView p;    ///< The right-hand side vector *p* of the saddle point problem.
+    VectorView y;    ///< The right-hand side vector *y* of the saddle point problem.
+    VectorView z;    ///< The right-hand side vector *z* of the saddle point problem.
+    VectorView v;    ///< The right-hand side vector *v* of the saddle point problem.
+    VectorView h;    ///< The right-hand side vector *h* of the saddle point problem.
+    VectorView b;    ///< The right-hand side vector *b* of the saddle point problem.
 };
 
 /// The arguments for method SaddlePointSolver::solve.
@@ -111,10 +111,10 @@ struct SaddlePointSolverSolve1Args
 /// The arguments for method SaddlePointSolver::solve.
 struct SaddlePointSolverSolve2Args
 {
-    VectorConstRef ax;    ///< The right-hand side vector *ax* of the saddle point problem.
-    VectorConstRef ap;    ///< The right-hand side vector *ap* of the saddle point problem.
-    VectorConstRef ay;    ///< The right-hand side vector *ay* of the saddle point problem.
-    VectorConstRef az;    ///< The right-hand side vector *az* of the saddle point problem.
+    VectorView ax;    ///< The right-hand side vector *ax* of the saddle point problem.
+    VectorView ap;    ///< The right-hand side vector *ap* of the saddle point problem.
+    VectorView ay;    ///< The right-hand side vector *ay* of the saddle point problem.
+    VectorView az;    ///< The right-hand side vector *az* of the saddle point problem.
     VectorRef sx;         ///< The solution vector *sx* of the saddle point problem.
     VectorRef sp;         ///< The solution vector *sp* of the saddle point problem.
     VectorRef sy;         ///< The solution vector *sy* of the saddle point problem.
@@ -124,9 +124,9 @@ struct SaddlePointSolverSolve2Args
 /// The arguments for method SaddlePointSolver::solve.
 struct SaddlePointSolverSolve3Args
 {
-    VectorConstRef asu;   ///< The right-hand side vector *(as, au)* of the canonical saddle point problem.
-    VectorConstRef ap;    ///< The right-hand side vector *ap* of the canonical saddle point problem.
-    VectorConstRef awbs;  ///< The right-hand side vector *awbs* of the canonical saddle point problem.
+    VectorView asu;   ///< The right-hand side vector *(as, au)* of the canonical saddle point problem.
+    VectorView ap;    ///< The right-hand side vector *ap* of the canonical saddle point problem.
+    VectorView awbs;  ///< The right-hand side vector *awbs* of the canonical saddle point problem.
     VectorRef sx;         ///< The solution vector *sx* of the canonical saddle point problem.
     VectorRef sp;         ///< The solution vector *sp* of the canonical saddle point problem.
     VectorRef sy;         ///< The solution vector *sy* of the canonical saddle point problem.
@@ -138,10 +138,10 @@ struct SaddlePointSolverSolve3Args
 /// @eqc{\begin{bmatrix}H_{\mathrm{ss}} & 0 & H_{\mathrm{sp}} & J_{\mathrm{s}}^{T} & A_{\mathrm{s}}^{T}\\0 & I_{\mathrm{uu}} & 0 & 0 & 0\\V_{\mathrm{ps}} & 0 & V_{\mathrm{pp}} & 0 & 0\\J_{\mathrm{s}} & 0 & J_{\mathrm{p}} & 0 & 0\\A_{\mathrm{s}} & 0 & A_{\mathrm{p}} & 0 & 0\end{bmatrix}\begin{bmatrix}r_{\mathrm{s}}\\r_{\mathrm{u}}\\r_{\mathrm{p}}\\r_{\mathrm{z}}\\r_{\mathrm{y}}\end{bmatrix}=\begin{bmatrix}a_{\mathrm{s}}\\a_{\mathrm{u}}\\a_{\mathrm{p}}\\a_{\mathrm{z}}\\a_{\mathrm{y}}\end{bmatrix}}
 struct SaddlePointSolverMultiplyArgs
 {
-    VectorConstRef rx;    ///< The multplied vector *rx = (rs, ru)*.
-    VectorConstRef rp;    ///< The multplied vector *rp*.
-    VectorConstRef ry;    ///< The multplied vector *ry*.
-    VectorConstRef rz;    ///< The multplied vector *rz*.
+    VectorView rx;    ///< The multplied vector *rx = (rs, ru)*.
+    VectorView rp;    ///< The multplied vector *rp*.
+    VectorView ry;    ///< The multplied vector *ry*.
+    VectorView rz;    ///< The multplied vector *rz*.
     VectorRef ax;         ///< The computed right-hand size vector *ax = (as, au)*.
     VectorRef ap;         ///< The computed right-hand size vector *ap*.
     VectorRef ay;         ///< The computed right-hand size vector *ay*.
@@ -153,10 +153,10 @@ struct SaddlePointSolverMultiplyArgs
 /// @eqc{\begin{bmatrix}H_{\mathrm{ss}}^{T} & 0 & V_{\mathrm{ps}}^{T} & J_{\mathrm{s}}^{T} & A_{\mathrm{s}}^{T}\\[1mm]0 & I_{\mathrm{uu}} & 0 & 0 & 0\\[1mm]H_{\mathrm{sp}}^{T} & 0 & V_{\mathrm{pp}}^{T} & J_{\mathrm{p}}^{T} & A_{\mathrm{p}}^{T}\\[1mm]J_{\mathrm{s}} & 0 & 0 & 0 & 0\\[1mm]A_{\mathrm{s}} & 0 & 0 & 0 & 0\end{bmatrix}\begin{bmatrix}r_{\mathrm{s}}\\[1mm]r_{\mathrm{u}}\\[1mm]r_{\mathrm{p}}\\[1mm]r_{\mathrm{z}}\\[1mm]r_{\mathrm{y}}\end{bmatrix}=\begin{bmatrix}a_{\mathrm{s}}\\[1mm]a_{\mathrm{u}}\\[1mm]a_{\mathrm{p}}\\[1mm]a_{\mathrm{z}}\\[1mm]a_{\mathrm{y}}\end{bmatrix}}
 struct SaddlePointSolverTransposeMultiplyArgs
 {
-    VectorConstRef rx;    ///< The multplied vector *rx = (rs, ru)*.
-    VectorConstRef rp;    ///< The multplied vector *rp*.
-    VectorConstRef ry;    ///< The multplied vector *ry*.
-    VectorConstRef rz;    ///< The multplied vector *rz*.
+    VectorView rx;    ///< The multplied vector *rx = (rs, ru)*.
+    VectorView rp;    ///< The multplied vector *rp*.
+    VectorView ry;    ///< The multplied vector *ry*.
+    VectorView rz;    ///< The multplied vector *rz*.
     VectorRef ax;         ///< The computed right-hand size vector *ax = (as, au)*.
     VectorRef ap;         ///< The computed right-hand size vector *ap*.
     VectorRef ay;         ///< The computed right-hand size vector *ay*.
@@ -167,30 +167,30 @@ struct SaddlePointSolverTransposeMultiplyArgs
 struct SaddlePointSolverState
 {
     SaddlePointDims dims;  ///< The dimension variables of the canonical saddle point problem.
-    IndicesConstRef js;    ///< The indices of the stable variables in *x* as *xs = (xbs, xns)*.
-    IndicesConstRef jbs;   ///< The indices of the stable basic variables in *x*.
-    IndicesConstRef jns;   ///< The indices of the stable non-basic variables in *x*.
-    IndicesConstRef ju;    ///< The indices of the unstable variables in *x* as *xu = (xbu, xnu)*.
-    IndicesConstRef jbu;   ///< The indices of the unstable basic variables in *x*.
-    IndicesConstRef jnu;   ///< The indices of the unstable non-basic variables in *x*.
-    MatrixConstRef  R;     ///< The echelonizer matrix *R* of *Ax*.
-    MatrixConstRef  Hss;   ///< The matrix block *Hss* of the canonical saddle point problem.
-    MatrixConstRef  Hsp;   ///< The matrix block *Hsp* of the canonical saddle point problem.
-    MatrixConstRef  Vps;   ///< The matrix block *Vps* of the canonical saddle point problem.
-    MatrixConstRef  Vpp;   ///< The matrix block *Vpp* of the canonical saddle point problem.
-    MatrixConstRef  As;    ///< The matrix block *As* of the canonical saddle point problem.
-    MatrixConstRef  Au;    ///< The matrix block *Js* of the canonical saddle point problem.
-    MatrixConstRef  Ap;    ///< The matrix block *Jp* of the canonical saddle point problem.
-    MatrixConstRef  Js;    ///< The matrix block *Js* of the canonical saddle point problem.
-    MatrixConstRef  Jp;    ///< The matrix block *Jp* of the canonical saddle point problem.
-    MatrixConstRef  Sbsns; ///< The matrix block *Sbsns* of the canonical saddle point problem.
-    MatrixConstRef  Sbsp;  ///< The matrix block *Sbsp* of the canonical saddle point problem.
-    VectorConstRef  as;    ///< The assembled right-hand side vector *as* of the canonical saddle point problem.
-    VectorConstRef  au;    ///< The assembled right-hand side vector *au* of the canonical saddle point problem.
-    VectorConstRef  ap;    ///< The assembled right-hand side vector *ap* of the canonical saddle point problem.
-    VectorConstRef  ay;    ///< The assembled right-hand side vector *ay* of the canonical saddle point problem.
-    VectorConstRef  az;    ///< The assembled right-hand side vector *az* of the canonical saddle point problem.
-    VectorConstRef  aw;    ///< The assembled right-hand side vector *aw* of the canonical saddle point problem.
+    IndicesView js;    ///< The indices of the stable variables in *x* as *xs = (xbs, xns)*.
+    IndicesView jbs;   ///< The indices of the stable basic variables in *x*.
+    IndicesView jns;   ///< The indices of the stable non-basic variables in *x*.
+    IndicesView ju;    ///< The indices of the unstable variables in *x* as *xu = (xbu, xnu)*.
+    IndicesView jbu;   ///< The indices of the unstable basic variables in *x*.
+    IndicesView jnu;   ///< The indices of the unstable non-basic variables in *x*.
+    MatrixView  R;     ///< The echelonizer matrix *R* of *Ax*.
+    MatrixView  Hss;   ///< The matrix block *Hss* of the canonical saddle point problem.
+    MatrixView  Hsp;   ///< The matrix block *Hsp* of the canonical saddle point problem.
+    MatrixView  Vps;   ///< The matrix block *Vps* of the canonical saddle point problem.
+    MatrixView  Vpp;   ///< The matrix block *Vpp* of the canonical saddle point problem.
+    MatrixView  As;    ///< The matrix block *As* of the canonical saddle point problem.
+    MatrixView  Au;    ///< The matrix block *Js* of the canonical saddle point problem.
+    MatrixView  Ap;    ///< The matrix block *Jp* of the canonical saddle point problem.
+    MatrixView  Js;    ///< The matrix block *Js* of the canonical saddle point problem.
+    MatrixView  Jp;    ///< The matrix block *Jp* of the canonical saddle point problem.
+    MatrixView  Sbsns; ///< The matrix block *Sbsns* of the canonical saddle point problem.
+    MatrixView  Sbsp;  ///< The matrix block *Sbsp* of the canonical saddle point problem.
+    VectorView  as;    ///< The assembled right-hand side vector *as* of the canonical saddle point problem.
+    VectorView  au;    ///< The assembled right-hand side vector *au* of the canonical saddle point problem.
+    VectorView  ap;    ///< The assembled right-hand side vector *ap* of the canonical saddle point problem.
+    VectorView  ay;    ///< The assembled right-hand side vector *ay* of the canonical saddle point problem.
+    VectorView  az;    ///< The assembled right-hand side vector *az* of the canonical saddle point problem.
+    VectorView  aw;    ///< The assembled right-hand side vector *aw* of the canonical saddle point problem.
 };
 
 /// Used to solve saddle point problems.

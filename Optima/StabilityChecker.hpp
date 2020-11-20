@@ -33,42 +33,42 @@ struct StabilityCheckerInitArgs
     Index np;               ///< The number of parameter variables *p*.
     Index ny;               ///< The number of Lagrange multipliers *y*.
     Index nz;               ///< The number of Lagrange multipliers *z*.
-    MatrixConstRef Ax;      ///< The coefficient matrix *Ax* of the linear equality constraints.
-    MatrixConstRef Ap;      ///< The coefficient matrix *Ap* of the linear equality constraints.
+    MatrixView Ax;      ///< The coefficient matrix *Ax* of the linear equality constraints.
+    MatrixView Ap;      ///< The coefficient matrix *Ap* of the linear equality constraints.
 };
 
 /// The arguments for method StabilityChecker::initialize.
 struct StabilityCheckerInitializeArgs
 {
-    VectorConstRef b;       ///< The right-hand side vector *b* of the linear equality constraints *Ax = b*.
-    VectorConstRef xlower;  ///< The lower bounds of the primal variables *x*.
-    VectorConstRef xupper;  ///< The upper bounds of the primal variables *x*.
-    VectorConstRef plower;  ///< The lower bounds of the parameter variables *p*.
-    VectorConstRef pupper;  ///< The upper bounds of the parameter variables *p*.
+    VectorView b;       ///< The right-hand side vector *b* of the linear equality constraints *Ax = b*.
+    VectorView xlower;  ///< The lower bounds of the primal variables *x*.
+    VectorView xupper;  ///< The upper bounds of the primal variables *x*.
+    VectorView plower;  ///< The lower bounds of the parameter variables *p*.
+    VectorView pupper;  ///< The upper bounds of the parameter variables *p*.
 };
 
 /// The arguments for method StabilityChecker::update.
 struct StabilityCheckerUpdateArgs
 {
-    VectorConstRef x;       ///< The current state of the primal variables *x*.
-    VectorConstRef y;       ///< The current state of the Lagrange multipliers *y*.
-    VectorConstRef z;       ///< The current state of the Lagrange multipliers *z*.
-    VectorConstRef fx;      ///< The evaluated gradient of the objective function *f(x, p)* with respect to *x*.
-    MatrixConstRef hx;      ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *x*.
-    VectorConstRef xlower;  ///< The lower bounds of the primal variables *x*.
-    VectorConstRef xupper;  ///< The upper bounds of the primal variables *x*.
+    VectorView x;       ///< The current state of the primal variables *x*.
+    VectorView y;       ///< The current state of the Lagrange multipliers *y*.
+    VectorView z;       ///< The current state of the Lagrange multipliers *z*.
+    VectorView fx;      ///< The evaluated gradient of the objective function *f(x, p)* with respect to *x*.
+    MatrixView hx;      ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *x*.
+    VectorView xlower;  ///< The lower bounds of the primal variables *x*.
+    VectorView xupper;  ///< The upper bounds of the primal variables *x*.
 };
 
 /// The arguments for method StabilityChecker::update.
 struct StabilityCheckerUpdate2Args
 {
-    IndicesConstRef jb;
-    IndicesConstRef jn;
-    MatrixConstRef Sbn;
-    VectorConstRef x;       ///< The current state of the primal variables *x*.
-    VectorConstRef fx;      ///< The evaluated gradient of the objective function *f(x, p)* with respect to *x*.
-    VectorConstRef xlower;  ///< The lower bounds of the primal variables *x*.
-    VectorConstRef xupper;  ///< The upper bounds of the primal variables *x*.
+    IndicesView jb;
+    IndicesView jn;
+    MatrixView Sbn;
+    VectorView x;       ///< The current state of the primal variables *x*.
+    VectorView fx;      ///< The evaluated gradient of the objective function *f(x, p)* with respect to *x*.
+    VectorView xlower;  ///< The lower bounds of the primal variables *x*.
+    VectorView xupper;  ///< The upper bounds of the primal variables *x*.
 };
 
 /// Used for checking the stability of the variables with respect to bounds.

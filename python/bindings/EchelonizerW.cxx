@@ -29,17 +29,17 @@ using namespace Optima;
 
 void exportEchelonizerW(py::module& m)
 {
-    auto initialize = [](EchelonizerW& self, MatrixConstRef4py Ax, MatrixConstRef4py Ap)
+    auto initialize = [](EchelonizerW& self, MatrixView4py Ax, MatrixView4py Ap)
     {
         self.initialize(Ax, Ap);
     };
 
-    auto update1 = [](EchelonizerW& self, MatrixConstRef4py Ax, MatrixConstRef4py Ap, MatrixConstRef4py Jx, MatrixConstRef4py Jp, VectorConstRef weights)
+    auto update1 = [](EchelonizerW& self, MatrixView4py Ax, MatrixView4py Ap, MatrixView4py Jx, MatrixView4py Jp, VectorView weights)
     {
         self.update(Ax, Ap, Jx, Jp, weights);
     };
 
-    auto update2 = [](EchelonizerW& self, MatrixConstRef4py Jx, MatrixConstRef4py Jp, VectorConstRef weights)
+    auto update2 = [](EchelonizerW& self, MatrixView4py Jx, MatrixView4py Jp, VectorView weights)
     {
         self.update(Jx, Jp, weights);
     };

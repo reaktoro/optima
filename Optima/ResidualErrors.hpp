@@ -35,9 +35,10 @@ private:
     std::unique_ptr<Impl> pimpl;
 
 public:
-    VectorConstRef ex; ///< The residual errors associated with the first-order optimality conditions.
-    VectorConstRef ep; ///< The residual errors associated with the external constraint equations.
-    VectorConstRef ew; ///< The residual errors associated with the linear and non-linear constraint equations.
+    VectorView ex; ///< The residual errors associated with the first-order optimality conditions.
+    VectorView ep; ///< The residual errors associated with the external constraint equations.
+    VectorView ew; ///< The residual errors associated with the linear and non-linear constraint equations.
+
     const double& errorf; ///< The maximum residual error associated with the first-order optimality conditions.
     const double& errorv; ///< The maximum residual error associated with the external constraint equations.
     const double& errorw; ///< The maximum residual error associated with the linear and non-linear constraint equations.
@@ -59,7 +60,7 @@ public:
     auto initialize(const MasterProblem& problem) -> void;
 
     /// Update the residual errors.
-    auto update(MasterVectorConstRef u, const ResidualFunction& F) -> void;
+    auto update(MasterVectorView u, const ResidualFunction& F) -> void;
 };
 
 } // namespace Optima

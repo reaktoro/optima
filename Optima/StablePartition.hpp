@@ -44,16 +44,16 @@ public:
     auto operator=(StablePartition other) -> StablePartition&;
 
     /// Set the indices of the stable variables in *x*.
-    auto setStable(IndicesConstRef js) -> void;
+    auto setStable(IndicesView js) -> void;
 
     /// Set the indices of the unstable variables in *x*.
-    auto setUnstable(IndicesConstRef ju) -> void;
+    auto setUnstable(IndicesView ju) -> void;
 
     /// Return the indices of the stable variables in *x*.
-    auto stable() const -> IndicesConstRef;
+    auto stable() const -> IndicesView;
 
     /// Return the indices of the unstable variables in *x*.
-    auto unstable() const -> IndicesConstRef;
+    auto unstable() const -> IndicesView;
 
 private:
     struct Impl;

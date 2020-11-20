@@ -51,7 +51,7 @@ struct ResidualErrors::Impl
         xupper = problem.xupper;
     }
 
-    auto update(MasterVectorConstRef u, const ResidualFunction& F) -> void
+    auto update(MasterVectorView u, const ResidualFunction& F) -> void
     {
         sanitycheck();
 
@@ -142,7 +142,7 @@ auto ResidualErrors::initialize(const MasterProblem& problem) -> void
     return pimpl->initialize(problem);
 }
 
-auto ResidualErrors::update(MasterVectorConstRef u, const ResidualFunction& F) -> void
+auto ResidualErrors::update(MasterVectorView u, const ResidualFunction& F) -> void
 {
     pimpl->update(u, F);
 }

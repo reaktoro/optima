@@ -25,27 +25,15 @@ namespace py = pybind11;
 #include <Optima/MasterProblem.hpp>
 using namespace Optima;
 
-// /// The functional signature of an objective function *f(x, p)* for Python.
-// using ObjectiveFunction4py = std::function<bool(ObjectiveResult* res, VectorConstRef x, VectorConstRef p, ObjectiveOptions opts)>;
-
-// inline auto convert(const ObjectiveFunction4py& f4py) -> ObjectiveFunction
-// {
-//     return [=](ObjectiveResult& res, VectorConstRef x, VectorConstRef p, ObjectiveOptions opts)
-//     {
-//         return f4py(&res, x, p, opts);
-//     };
-// }
-
 void exportMasterProblem(py::module& m)
 {
-    auto get_Ax = [](const MasterProblem& s) { return s.Ax; };
+    auto get_Ax = [](const MasterProblem& s) { return s.Ax; }; // TODO: Create macros in pybindx.hpp to create these get/set methods.
     auto get_Ap = [](const MasterProblem& s) { return s.Ap; };
-    auto set_Ax = [](MasterProblem& s, MatrixConstRef4py Ax) { s.Ax = Ax; };
-    auto set_Ap = [](MasterProblem& s, MatrixConstRef4py Ap) { s.Ap = Ap; };
+    auto set_Ax = [](MasterProblem& s, MatrixView4py Ax) { s.Ax = Ax; };
+    auto set_Ap = [](MasterProblem& s, MatrixView4py Ap) { s.Ap = Ap; };
 
     py::class_<MasterProblem>(m, "MasterProblem")
         .def(py::init<>())
-        // .def_property("f"     , [](const MasterProblem& s) { return s.f; }, [](MasterProblem& s, const ObjectiveFunction4py& f4py) { s.f = convert(f4py); })
         .def_readwrite("f"     , &MasterProblem::f)
         .def_readwrite("h"     , &MasterProblem::h)
         .def_readwrite("v"     , &MasterProblem::v)

@@ -54,7 +54,7 @@ struct LU::Impl
     {}
 
     /// Construct an Impl object with given matrix.
-    Impl(MatrixConstRef A)
+    Impl(MatrixView A)
     {
         decompose(A);
     }
@@ -66,7 +66,7 @@ struct LU::Impl
     }
 
     /// Compute the LU decomposition of the given matrix.
-    auto decompose(MatrixConstRef A) -> void
+    auto decompose(MatrixView A) -> void
     {
         const auto m = A.rows();
         const auto n = A.cols();
@@ -75,7 +75,7 @@ struct LU::Impl
     }
 
     /// Solve the linear system `Ax = b` using the LU decomposition obtained with @ref decompose.
-    auto solve(VectorConstRef b, VectorRef x) -> void
+    auto solve(VectorView b, VectorRef x) -> void
     {
         x = b;
         solve(x);
@@ -163,12 +163,12 @@ auto LU::empty() const -> bool
     return pimpl->empty();
 }
 
-auto LU::decompose(MatrixConstRef A) -> void
+auto LU::decompose(MatrixView A) -> void
 {
     pimpl->decompose(A);
 }
 
-auto LU::solve(VectorConstRef b, VectorRef x) -> void
+auto LU::solve(VectorView b, VectorRef x) -> void
 {
     x = b;
     pimpl->solve(x);
@@ -184,7 +184,7 @@ auto LU::rank() const -> Index
     return pimpl->rank;
 }
 
-auto LU::matrixLU() const -> MatrixConstRef
+auto LU::matrixLU() const -> MatrixView
 {
     return pimpl->lu.matrixLU();
 }

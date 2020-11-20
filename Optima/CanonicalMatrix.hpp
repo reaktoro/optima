@@ -30,18 +30,18 @@ namespace Optima {
 /// Used to represent the canonical form of a master matrix.
 struct CanonicalMatrix
 {
-    CanonicalDims dims;   ///< The dimension details of the canonical master matrix.
-    MatrixConstRef Hss;   ///< The matrix Hss in the canonical master matrix.
-    MatrixConstRef Hsp;   ///< The matrix Hsp in the canonical master matrix.
-    MatrixConstRef Vps;   ///< The matrix Vps in the canonical master matrix.
-    MatrixConstRef Vpp;   ///< The matrix Vpp in the canonical master matrix.
-    MatrixConstRef Sbsns; ///< The matrix Sbsns in the canonical master matrix.
-    MatrixConstRef Sbsp;  ///< The matrix Sbsp in the canonical master matrix.
-    MatrixConstRef Rbs;   ///< The matrix Rbs in the echelonizer matrix R = [Rbs; 0].
-    IndicesConstRef jb;   ///< The indices of the basic variables ordered as jb = (jbs).
-    IndicesConstRef jn;   ///< The indices of the non-basic variables ordered as jn = (jns, jnu).
-    IndicesConstRef js;   ///< The indices of the stable variables ordered as js = (jbs, jns).
-    IndicesConstRef ju;   ///< The indices of the unstable variables ordered as ju = (jbu, jnu).
+    CanonicalDims dims; ///< The dimension details of the canonical master matrix.
+    MatrixView Hss;     ///< The matrix Hss in the canonical master matrix.
+    MatrixView Hsp;     ///< The matrix Hsp in the canonical master matrix.
+    MatrixView Vps;     ///< The matrix Vps in the canonical master matrix.
+    MatrixView Vpp;     ///< The matrix Vpp in the canonical master matrix.
+    MatrixView Sbsns;   ///< The matrix Sbsns in the canonical master matrix.
+    MatrixView Sbsp;    ///< The matrix Sbsp in the canonical master matrix.
+    MatrixView Rbs;     ///< The matrix Rbs in the echelonizer matrix R = [Rbs; 0].
+    IndicesView jb;     ///< The indices of the basic variables ordered as jb = (jbs).
+    IndicesView jn;     ///< The indices of the non-basic variables ordered as jn = (jns, jnu).
+    IndicesView js;     ///< The indices of the stable variables ordered as js = (jbs, jns).
+    IndicesView ju;     ///< The indices of the unstable variables ordered as ju = (jbu, jnu).
 };
 
 } // namespace Optima

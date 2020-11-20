@@ -30,7 +30,7 @@
 
 // void exportBasicSolver(py::module& m)
 // {
-//     auto init = [](Index nx, Index np, Index ny, Index nz, MatrixConstRef4py Ax, MatrixConstRef4py Ap) -> BasicSolver
+//     auto init = [](Index nx, Index np, Index ny, Index nz, MatrixView4py Ax, MatrixView4py Ap) -> BasicSolver
 //     {
 //         return BasicSolver({ nx, np, ny, nz, Ax, Ap });
 //     };
@@ -39,11 +39,11 @@
 //         ObjectiveFunction4py const& obj4py,
 //         ConstraintFunction4py const& h4py,
 //         ConstraintFunction4py const& v4py,
-//         VectorConstRef b,
-//         VectorConstRef xlower,
-//         VectorConstRef xupper,
-//         VectorConstRef plower,
-//         VectorConstRef pupper,
+//         VectorView b,
+//         VectorView xlower,
+//         VectorView xupper,
+//         VectorView plower,
+//         VectorView pupper,
 //         VectorRef x,
 //         VectorRef p,
 //         VectorRef y,
@@ -59,10 +59,10 @@
 
 //     Matrix tmp_xw, tmp_pw, tmp_yw, tmp_zw, tmp_sw;
 //     auto sensitivities = [=](BasicSolver& self,
-//         MatrixConstRef4py fxw,
-//         MatrixConstRef4py hw,
-//         MatrixConstRef4py bw,
-//         MatrixConstRef4py vw,
+//         MatrixView4py fxw,
+//         MatrixView4py hw,
+//         MatrixView4py bw,
+//         MatrixView4py vw,
 //         Stability const& stability,
 //         MatrixRef4py xw,
 //         MatrixRef4py pw,

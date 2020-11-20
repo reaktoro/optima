@@ -53,7 +53,7 @@ public:
     /// @param M The canonical matrix in the canonical linear problem.
     /// @param a The right-hand side canonical vector in the canonical linear problem.
     /// @param[out] u The solution  vector in the canonical linear problem.
-    auto solve(CanonicalMatrix M, CanonicalVectorConstRef a, CanonicalVectorRef u) -> void;
+    auto solve(CanonicalMatrix M, CanonicalVectorView a, CanonicalVectorRef u) -> void;
 
 private:
     struct Impl;

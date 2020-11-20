@@ -61,13 +61,13 @@ using MatrixXdRef = Eigen::MatrixXdRef;
 using MatrixXcfRef = Eigen::MatrixXcfRef;
 using MatrixXcdRef = Eigen::MatrixXcdRef;
 
-using MatrixConstRef = Eigen::MatrixXdConstRef;
-using MatrixXiConstRef = Eigen::MatrixXiConstRef;
-using MatrixXlConstRef = Eigen::MatrixXlConstRef;
-using MatrixXfConstRef = Eigen::MatrixXfConstRef;
-using MatrixXdConstRef = Eigen::MatrixXdConstRef;
-using MatrixXcfConstRef = Eigen::MatrixXcfConstRef;
-using MatrixXcdConstRef = Eigen::MatrixXcdConstRef;
+using MatrixView = Eigen::MatrixXdView;
+using MatrixXiView = Eigen::MatrixXiView;
+using MatrixXlView = Eigen::MatrixXlView;
+using MatrixXfView = Eigen::MatrixXfView;
+using MatrixXdView = Eigen::MatrixXdView;
+using MatrixXcfView = Eigen::MatrixXcfView;
+using MatrixXcdView = Eigen::MatrixXcdView;
 
 using Vector = Eigen::VectorXd;
 using VectorXi = Eigen::VectorXi;
@@ -85,13 +85,13 @@ using VectorXdRef = Eigen::VectorXdRef;
 using VectorXcfRef = Eigen::VectorXcfRef;
 using VectorXcdRef = Eigen::VectorXcdRef;
 
-using VectorConstRef = Eigen::VectorXdConstRef;
-using VectorXiConstRef = Eigen::VectorXiConstRef;
-using VectorXlConstRef = Eigen::VectorXlConstRef;
-using VectorXfConstRef = Eigen::VectorXfConstRef;
-using VectorXdConstRef = Eigen::VectorXdConstRef;
-using VectorXcfConstRef = Eigen::VectorXcfConstRef;
-using VectorXcdConstRef = Eigen::VectorXcdConstRef;
+using VectorView = Eigen::VectorXdView;
+using VectorXiView = Eigen::VectorXiView;
+using VectorXlView = Eigen::VectorXlView;
+using VectorXfView = Eigen::VectorXfView;
+using VectorXdView = Eigen::VectorXdView;
+using VectorXcfView = Eigen::VectorXcfView;
+using VectorXcdView = Eigen::VectorXcdView;
 
 using RowVector = Eigen::RowVectorXd;
 using RowVectorXi = Eigen::RowVectorXi;
@@ -109,13 +109,13 @@ using RowVectorXdRef = Eigen::RowVectorXdRef;
 using RowVectorXcfRef = Eigen::RowVectorXcfRef;
 using RowVectorXcdRef = Eigen::RowVectorXcdRef;
 
-using RowVectorConstRef = Eigen::RowVectorXdConstRef;
-using RowVectorXiConstRef = Eigen::RowVectorXiConstRef;
-using RowVectorXlConstRef = Eigen::RowVectorXlConstRef;
-using RowVectorXfConstRef = Eigen::RowVectorXfConstRef;
-using RowVectorXdConstRef = Eigen::RowVectorXdConstRef;
-using RowVectorXcfConstRef = Eigen::RowVectorXcfConstRef;
-using RowVectorXcdConstRef = Eigen::RowVectorXcdConstRef;
+using RowVectorView = Eigen::RowVectorXdView;
+using RowVectorXiView = Eigen::RowVectorXiView;
+using RowVectorXlView = Eigen::RowVectorXlView;
+using RowVectorXfView = Eigen::RowVectorXfView;
+using RowVectorXdView = Eigen::RowVectorXdView;
+using RowVectorXcfView = Eigen::RowVectorXcfView;
+using RowVectorXcdView = Eigen::RowVectorXcdView;
 
 using StridedVectorRef = Eigen::StridedVectorXdRef;
 using StridedVectorXiRef = Eigen::StridedVectorXiRef;
@@ -125,13 +125,13 @@ using StridedVectorXdRef = Eigen::StridedVectorXdRef;
 using StridedVectorXcfRef = Eigen::StridedVectorXcfRef;
 using StridedVectorXcdRef = Eigen::StridedVectorXcdRef;
 
-using StridedVectorConstRef = Eigen::StridedVectorXdConstRef;
-using StridedVectorXiConstRef = Eigen::StridedVectorXiConstRef;
-using StridedVectorXlConstRef = Eigen::StridedVectorXlConstRef;
-using StridedVectorXfConstRef = Eigen::StridedVectorXfConstRef;
-using StridedVectorXdConstRef = Eigen::StridedVectorXdConstRef;
-using StridedVectorXcfConstRef = Eigen::StridedVectorXcfConstRef;
-using StridedVectorXcdConstRef = Eigen::StridedVectorXcdConstRef;
+using StridedVectorView = Eigen::StridedVectorXdView;
+using StridedVectorXiView = Eigen::StridedVectorXiView;
+using StridedVectorXlView = Eigen::StridedVectorXlView;
+using StridedVectorXfView = Eigen::StridedVectorXfView;
+using StridedVectorXdView = Eigen::StridedVectorXdView;
+using StridedVectorXcfView = Eigen::StridedVectorXcfView;
+using StridedVectorXcdView = Eigen::StridedVectorXcdView;
 
 using PermutationMatrix = Eigen::PermutationMatrix<-1, -1, int>;
 

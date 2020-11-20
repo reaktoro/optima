@@ -26,11 +26,11 @@ namespace Optima {
 /// Used to represent the echelon form *RWQ = [Ibb Sbn Sbp]* of matrix *W*.
 struct MatrixViewRWQ
 {
-    MatrixConstRef R;   ///< The echelonizer matrix of W so that *RWQ = [Ibb Sbn Sbp]* with *Q = (jb, jn)*.
-    MatrixConstRef Sbn; ///< The matrix *Sbn* in the echelon form of *W*.
-    MatrixConstRef Sbp; ///< The matrix *Sbp* in the echelon form of *W*.
-    IndicesConstRef jb; ///< The indices of the basic variables in the echelon form of *W*.
-    IndicesConstRef jn; ///< The indices of the non-basic variables in the echelon form of *W*.
+    MatrixView R;   ///< The echelonizer matrix of W so that *RWQ = [Ibb Sbn Sbp]* with *Q = (jb, jn)*.
+    MatrixView Sbn; ///< The matrix *Sbn* in the echelon form of *W*.
+    MatrixView Sbp; ///< The matrix *Sbp* in the echelon form of *W*.
+    IndicesView jb; ///< The indices of the basic variables in the echelon form of *W*.
+    IndicesView jn; ///< The indices of the non-basic variables in the echelon form of *W*.
 };
 
 } // namespace Optima

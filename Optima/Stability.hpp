@@ -82,28 +82,28 @@ public:
     auto numStrictlyUnstableVariables() const -> Index;
 
     /// Return the indices of the variables ordered as *stable, lower unstable, upper unstable, strictly lower unstable, strictly upper unstable*.
-    auto indicesVariables() const -> IndicesConstRef;
+    auto indicesVariables() const -> IndicesView;
 
     /// Return the indices of the *stable variables*.
-    auto indicesStableVariables() const -> IndicesConstRef;
+    auto indicesStableVariables() const -> IndicesView;
 
     /// Return the indices of the *unstable variables*.
-    auto indicesUnstableVariables() const -> IndicesConstRef;
+    auto indicesUnstableVariables() const -> IndicesView;
 
     /// Return the indices of the *lower unstable variables*.
-    auto indicesLowerUnstableVariables() const -> IndicesConstRef;
+    auto indicesLowerUnstableVariables() const -> IndicesView;
 
     /// Return the indices of the *upper unstable variables*.
-    auto indicesUpperUnstableVariables() const -> IndicesConstRef;
+    auto indicesUpperUnstableVariables() const -> IndicesView;
 
     /// Return the indices of the *strictly lower unstable variables*.
-    auto indicesStrictlyLowerUnstableVariables() const -> IndicesConstRef;
+    auto indicesStrictlyLowerUnstableVariables() const -> IndicesView;
 
     /// Return the indices of the *strictly upper unstable variables*.
-    auto indicesStrictlyUpperUnstableVariables() const -> IndicesConstRef;
+    auto indicesStrictlyUpperUnstableVariables() const -> IndicesView;
 
     /// Return the indices of the *strictly lower and upper unstable variables*.
-    auto indicesStrictlyUnstableVariables() const -> IndicesConstRef;
+    auto indicesStrictlyUnstableVariables() const -> IndicesView;
 
 private:
     /// The underlying basic data with indices of stable and unstable variables.

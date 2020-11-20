@@ -36,12 +36,12 @@ class Result;
 /// The data needed in the constructor of class BasicSolver.
 struct BasicSolverInitArgs
 {
-    Index nx;           ///< The number of primal variables *x*.
-    Index np;           ///< The number of parameter variables *p*.
-    Index ny;           ///< The number of Lagrange multipliers *y* (i.e. number of rows in *A = [Ax Ap]*).
-    Index nz;           ///< The number of Lagrange multipliers *z* (i.e. number of equations in *h(x, p) = 0*).
-    MatrixConstRef Ax;  ///< The coefficient matrix *Ax* of the linear equality constraints.
-    MatrixConstRef Ap;  ///< The coefficient matrix *Ap* of the linear equality constraints.
+    Index nx;       ///< The number of primal variables *x*.
+    Index np;       ///< The number of parameter variables *p*.
+    Index ny;       ///< The number of Lagrange multipliers *y* (i.e. number of rows in *A = [Ax Ap]*).
+    Index nz;       ///< The number of Lagrange multipliers *z* (i.e. number of equations in *h(x, p) = 0*).
+    MatrixView Ax;  ///< The coefficient matrix *Ax* of the linear equality constraints.
+    MatrixView Ap;  ///< The coefficient matrix *Ap* of the linear equality constraints.
 };
 
 /// The data needed in method BasicSolver::solve.
@@ -50,11 +50,11 @@ struct BasicSolverSolveArgs
     ObjectiveFunction const& obj;  ///< The objective function *f(x)* of the basic optimization problem.
     ConstraintFunction const& h;   ///< The nonlinear equality constraint function *h(x, p)*.
     ConstraintFunction const& v;   ///< The nonlinear constraint function *v(x, p)*.
-    VectorConstRef b;              ///< The right-hand side vector *b* of the linear equality constraints <em>Ax*x + Ap*p = b</em>.
-    VectorConstRef xlower;         ///< The lower bounds of the primal variables *x*.
-    VectorConstRef xupper;         ///< The upper bounds of the primal variables *x*.
-    VectorConstRef plower;         ///< The lower bounds of the parameter variables *p*.
-    VectorConstRef pupper;         ///< The upper bounds of the parameter variables *p*.
+    VectorView b;                  ///< The right-hand side vector *b* of the linear equality constraints <em>Ax*x + Ap*p = b</em>.
+    VectorView xlower;             ///< The lower bounds of the primal variables *x*.
+    VectorView xupper;             ///< The upper bounds of the primal variables *x*.
+    VectorView plower;             ///< The lower bounds of the parameter variables *p*.
+    VectorView pupper;             ///< The upper bounds of the parameter variables *p*.
     VectorRef x;                   ///< The output primal variables *x* of the basic optimization problem.
     VectorRef p;                   ///< The output parameter variables *p* of the basic optimization problem.
     VectorRef y;                   ///< The output Lagrange multipliers *y* with respect to constraints <em>Ax*x + Ap*p = b</em>.
@@ -66,10 +66,10 @@ struct BasicSolverSolveArgs
 /// The arguments for method BasicSolver::sensitivities.
 struct BasicSolverSensitivitiesArgs
 {
-    MatrixConstRef fxw;         ///< The derivatives *∂fx/∂w*.
-    MatrixConstRef hw;          ///< The derivatives *∂h/∂w*.
-    MatrixConstRef bw;          ///< The derivatives *∂b/∂w*.
-    MatrixConstRef vw;          ///< The derivatives *∂v/∂w*.
+    MatrixView fxw;             ///< The derivatives *∂fx/∂w*.
+    MatrixView hw;              ///< The derivatives *∂h/∂w*.
+    MatrixView bw;              ///< The derivatives *∂b/∂w*.
+    MatrixView vw;              ///< The derivatives *∂v/∂w*.
     Stability const& stability; ///< The stability state of the primal variables *x*.
     MatrixRef xw;               ///< The output sensitivity derivatives *∂x/∂w*.
     MatrixRef pw;               ///< The output sensitivity derivatives *∂p/∂w*.

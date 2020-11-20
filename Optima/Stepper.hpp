@@ -37,18 +37,18 @@ struct StepperInitArgs
     Index np;                   ///< The number of parameter variables *p*.
     Index ny;                   ///< The number of Lagrange multipliers *y*.
     Index nz;                   ///< The number of Lagrange multipliers *z*.
-    MatrixConstRef Ax;          ///< The coefficient matrix *Ax* of the linear equality constraints.
-    MatrixConstRef Ap;          ///< The coefficient matrix *Ap* of the linear equality constraints.
+    MatrixView Ax;          ///< The coefficient matrix *Ax* of the linear equality constraints.
+    MatrixView Ap;          ///< The coefficient matrix *Ap* of the linear equality constraints.
 };
 
 /// The arguments for method Stepper::initialize.
 struct StepperInitializeArgs
 {
-    VectorConstRef b;           ///< The right-hand side vector *b* of the linear equality constraints *Ax*x + Ap*p = b*.
-    VectorConstRef xlower;      ///< The lower bounds of the primal variables *x*.
-    VectorConstRef xupper;      ///< The upper bounds of the primal variables *x*.
-    VectorConstRef plower;      ///< The lower bounds of the parameter variables *p*.
-    VectorConstRef pupper;      ///< The upper bounds of the parameter variables *p*.
+    VectorView b;           ///< The right-hand side vector *b* of the linear equality constraints *Ax*x + Ap*p = b*.
+    VectorView xlower;      ///< The lower bounds of the primal variables *x*.
+    VectorView xupper;      ///< The upper bounds of the primal variables *x*.
+    VectorView plower;      ///< The lower bounds of the parameter variables *p*.
+    VectorView pupper;      ///< The upper bounds of the parameter variables *p*.
     VectorRef x;                ///< The output state of the primal variables modified if there are strictly unstable variables.
     Stability& stability;       ///< The output stability state of the primal variables *x* after *strictly lower unstable* and *strictly upper unstable* are determined.
 };
@@ -56,55 +56,55 @@ struct StepperInitializeArgs
 /// The arguments for method Stepper::canonicalize.
 struct StepperCanonicalizeArgs
 {
-    VectorConstRef x;           ///< The current state of the primal variables *x*.
-    VectorConstRef p;           ///< The current state of the parameter variables *p*.
-    VectorConstRef y;           ///< The current state of the Lagrange multipliers *y*.
-    VectorConstRef z;           ///< The current state of the Lagrange multipliers *z*.
-    VectorConstRef fx;          ///< The evaluated gradient of the objective function *f(x, p)* with respect to *x*.
-    MatrixConstRef fxx;         ///< The evaluated Jacobian of the gradient function *fx(x, p)* with respect to *x*, i.e., the Hessian of *f(x)*.
-    MatrixConstRef fxp;         ///< The evaluated Jacobian of the gradient function *fx(x, p)* with respect to *p*.
-    MatrixConstRef vx;          ///< The evaluated Jacobian of the external constraint function *v(x, p)* with respect to *x*.
-    MatrixConstRef vp;          ///< The evaluated Jacobian of the external constraint function *v(x, p)* with respect to *p*.
-    MatrixConstRef hx;          ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *x*.
-    MatrixConstRef hp;          ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *p*.
-    VectorConstRef xlower;      ///< The lower bounds of the primal variables *x*.
-    VectorConstRef xupper;      ///< The upper bounds of the primal variables *x*.
-    VectorConstRef plower;      ///< The lower bounds of the parameter variables *p*.
-    VectorConstRef pupper;      ///< The upper bounds of the parameter variables *p*.
+    VectorView x;           ///< The current state of the primal variables *x*.
+    VectorView p;           ///< The current state of the parameter variables *p*.
+    VectorView y;           ///< The current state of the Lagrange multipliers *y*.
+    VectorView z;           ///< The current state of the Lagrange multipliers *z*.
+    VectorView fx;          ///< The evaluated gradient of the objective function *f(x, p)* with respect to *x*.
+    MatrixView fxx;         ///< The evaluated Jacobian of the gradient function *fx(x, p)* with respect to *x*, i.e., the Hessian of *f(x)*.
+    MatrixView fxp;         ///< The evaluated Jacobian of the gradient function *fx(x, p)* with respect to *p*.
+    MatrixView vx;          ///< The evaluated Jacobian of the external constraint function *v(x, p)* with respect to *x*.
+    MatrixView vp;          ///< The evaluated Jacobian of the external constraint function *v(x, p)* with respect to *p*.
+    MatrixView hx;          ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *x*.
+    MatrixView hp;          ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *p*.
+    VectorView xlower;      ///< The lower bounds of the primal variables *x*.
+    VectorView xupper;      ///< The upper bounds of the primal variables *x*.
+    VectorView plower;      ///< The lower bounds of the parameter variables *p*.
+    VectorView pupper;      ///< The upper bounds of the parameter variables *p*.
     Stability& stability;       ///< The output stability state of the primal variables *x*.
 };
 
 /// The arguments for method Stepper::canonicalize.
 struct StepperCanonicalize2Args
 {
-    VectorConstRef x;           ///< The current state of the primal variables *x*.
-    MatrixConstRef hx;          ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *x*.
+    VectorView x;           ///< The current state of the primal variables *x*.
+    MatrixView hx;          ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *x*.
 };
 
 /// The arguments for method Stepper::decompose.
 struct StepperDecomposeArgs
 {
-    MatrixConstRef fxx;         ///< The evaluated Jacobian of the gradient function *fx(x, p)* with respect to *x*, i.e., the Hessian of *f(x)*.
-    MatrixConstRef fxp;         ///< The evaluated Jacobian of the gradient function *fx(x, p)* with respect to *p*.
-    MatrixConstRef vx;          ///< The evaluated Jacobian of the external constraint function *v(x, p)* with respect to *x*.
-    MatrixConstRef vp;          ///< The evaluated Jacobian of the external constraint function *v(x, p)* with respect to *p*.
-    MatrixConstRef hx;          ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *x*.
-    MatrixConstRef hp;          ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *p*.
-    IndicesConstRef ju;         ///< The indices of the unstable variables *xu* in *x = (xs, xu)*.
+    MatrixView fxx;         ///< The evaluated Jacobian of the gradient function *fx(x, p)* with respect to *x*, i.e., the Hessian of *f(x)*.
+    MatrixView fxp;         ///< The evaluated Jacobian of the gradient function *fx(x, p)* with respect to *p*.
+    MatrixView vx;          ///< The evaluated Jacobian of the external constraint function *v(x, p)* with respect to *x*.
+    MatrixView vp;          ///< The evaluated Jacobian of the external constraint function *v(x, p)* with respect to *p*.
+    MatrixView hx;          ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *x*.
+    MatrixView hp;          ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *p*.
+    IndicesView ju;         ///< The indices of the unstable variables *xu* in *x = (xs, xu)*.
 };
 
 /// The arguments for method Stepper::residuals.
 struct StepperResidualsArgs
 {
-    VectorConstRef x;           ///< The current state of the primal variables *x*.
-    VectorConstRef p;           ///< The current state of the parameter variables *p*.
-    VectorConstRef y;           ///< The current state of the Lagrange multipliers *y*.
-    VectorConstRef z;           ///< The current state of the Lagrange multipliers *z*.
-    VectorConstRef b;           ///< The right-hand side vector *b* of the linear equality constraints *Ax*x + Ap*p = b*.
-    VectorConstRef h;           ///< The evaluated equality constraint function *h(x, p)*.
-    VectorConstRef v;           ///< The evaluated external constraint function *v(x, p)*.
-    VectorConstRef fx;          ///< The evaluated gradient of the objective function *f(x, p) with respect to *x*.
-    MatrixConstRef hx;          ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *x*.
+    VectorView x;           ///< The current state of the primal variables *x*.
+    VectorView p;           ///< The current state of the parameter variables *p*.
+    VectorView y;           ///< The current state of the Lagrange multipliers *y*.
+    VectorView z;           ///< The current state of the Lagrange multipliers *z*.
+    VectorView b;           ///< The right-hand side vector *b* of the linear equality constraints *Ax*x + Ap*p = b*.
+    VectorView h;           ///< The evaluated equality constraint function *h(x, p)*.
+    VectorView v;           ///< The evaluated external constraint function *v(x, p)*.
+    VectorView fx;          ///< The evaluated gradient of the objective function *f(x, p) with respect to *x*.
+    MatrixView hx;          ///< The evaluated Jacobian of the equality constraint function *h(x, p)* with respect to *x*.
     VectorRef rx;               ///< The output residuals of the first-order optimality conditions.
     VectorRef rp;               ///< The output residuals of the external constraint functions *v(x, p)*.
     VectorRef rw;               ///< The output residuals of the linear and nonlinear feasibility conditions in canonical form.
@@ -117,14 +117,14 @@ struct StepperResidualsArgs
 /// The arguments for method Stepper::solve.
 struct StepperSolveArgs
 {
-    VectorConstRef x;           ///< The current state of the primal variables *x*.
-    VectorConstRef p;           ///< The current state of the parameter variables *p*.
-    VectorConstRef y;           ///< The current state of the Lagrange multipliers *y*.
-    VectorConstRef z;           ///< The current state of the Lagrange multipliers *z*.
-    VectorConstRef fx;          ///< The evaluated gradient of the objective function *f(x, p)* with respect to *x*.
-    VectorConstRef b;           ///< The right-hand side vector *b* of the linear equality constraints *Ax*x + Ap*p = b*.
-    VectorConstRef h;           ///< The evaluated equality constraint function *h(x, p)*.
-    VectorConstRef v;           ///< The evaluated external constraint function *v(x, p)*.
+    VectorView x;           ///< The current state of the primal variables *x*.
+    VectorView p;           ///< The current state of the parameter variables *p*.
+    VectorView y;           ///< The current state of the Lagrange multipliers *y*.
+    VectorView z;           ///< The current state of the Lagrange multipliers *z*.
+    VectorView fx;          ///< The evaluated gradient of the objective function *f(x, p)* with respect to *x*.
+    VectorView b;           ///< The right-hand side vector *b* of the linear equality constraints *Ax*x + Ap*p = b*.
+    VectorView h;           ///< The evaluated equality constraint function *h(x, p)*.
+    VectorView v;           ///< The evaluated external constraint function *v(x, p)*.
     Stability const& stability; ///< The stability state of the primal variables *x*.
     VectorRef dx;               ///< The output step for the primal variables *x*.
     VectorRef dp;               ///< The output step for the parameter variables *p*.
@@ -135,10 +135,10 @@ struct StepperSolveArgs
 /// The arguments for method Stepper::sensitivities.
 struct StepperSensitivitiesArgs
 {
-    MatrixConstRef fxw;         ///< The derivatives *∂fx/∂w*.
-    MatrixConstRef hw;          ///< The derivatives *∂h/∂w*.
-    MatrixConstRef bw;          ///< The derivatives *∂b/∂w*.
-    MatrixConstRef vw;          ///< The derivatives *∂v/∂w*.
+    MatrixView fxw;         ///< The derivatives *∂fx/∂w*.
+    MatrixView hw;          ///< The derivatives *∂h/∂w*.
+    MatrixView bw;          ///< The derivatives *∂b/∂w*.
+    MatrixView vw;          ///< The derivatives *∂v/∂w*.
     Stability const& stability; ///< The stability state of the primal variables *x*.
     MatrixRef xw;               ///< The output sensitivity derivatives *∂x/∂w*.
     MatrixRef pw;               ///< The output sensitivity derivatives *∂p/∂w*.
@@ -150,14 +150,14 @@ struct StepperSensitivitiesArgs
 /// The arguments for method Stepper::steepestDescent.
 struct StepperSteepestDescentLagrangeArgs
 {
-    VectorConstRef x;           ///< The current state of the primal variables *x*.
-    VectorConstRef p;           ///< The current state of the parameter variables *p*.
-    VectorConstRef y;           ///< The current state of the Lagrange multipliers *y*.
-    VectorConstRef z;           ///< The current state of the Lagrange multipliers *z*.
-    VectorConstRef fx;          ///< The evaluated gradient of the objective function *f(x, p)* with respect to *x*.
-    VectorConstRef b;           ///< The right-hand side vector *b* of the linear equality constraints *Ax*x + Ap*p = b*.
-    VectorConstRef h;           ///< The evaluated equality constraint function *h(x, p)*.
-    VectorConstRef v;           ///< The evaluated external constraint function *v(x, p)*.
+    VectorView x;           ///< The current state of the primal variables *x*.
+    VectorView p;           ///< The current state of the parameter variables *p*.
+    VectorView y;           ///< The current state of the Lagrange multipliers *y*.
+    VectorView z;           ///< The current state of the Lagrange multipliers *z*.
+    VectorView fx;          ///< The evaluated gradient of the objective function *f(x, p)* with respect to *x*.
+    VectorView b;           ///< The right-hand side vector *b* of the linear equality constraints *Ax*x + Ap*p = b*.
+    VectorView h;           ///< The evaluated equality constraint function *h(x, p)*.
+    VectorView v;           ///< The evaluated external constraint function *v(x, p)*.
     VectorRef dx;               ///< The output steepest descent direction for the primal variables *x*.
     VectorRef dp;               ///< The output steepest descent direction for the parameter variables *p*.
     VectorRef dy;               ///< The output steepest descent direction for the Lagrange multipliers *y*.
@@ -167,14 +167,14 @@ struct StepperSteepestDescentLagrangeArgs
 /// The arguments for method Stepper::steepestDescentError.
 struct StepperSteepestDescentErrorArgs
 {
-    VectorConstRef x;           ///< The current state of the primal variables *x*.
-    VectorConstRef p;           ///< The current state of the parameter variables *p*.
-    VectorConstRef y;           ///< The current state of the Lagrange multipliers *y*.
-    VectorConstRef z;           ///< The current state of the Lagrange multipliers *z*.
-    VectorConstRef fx;          ///< The evaluated gradient of the objective function *f(x, p)* with respect to *x*.
-    VectorConstRef b;           ///< The right-hand side vector *b* of the linear equality constraints *Ax*x + Ap*p = b*.
-    VectorConstRef h;           ///< The evaluated equality constraint function *h(x, p)*.
-    VectorConstRef v;           ///< The evaluated external constraint function *v(x, p)*.
+    VectorView x;           ///< The current state of the primal variables *x*.
+    VectorView p;           ///< The current state of the parameter variables *p*.
+    VectorView y;           ///< The current state of the Lagrange multipliers *y*.
+    VectorView z;           ///< The current state of the Lagrange multipliers *z*.
+    VectorView fx;          ///< The evaluated gradient of the objective function *f(x, p)* with respect to *x*.
+    VectorView b;           ///< The right-hand side vector *b* of the linear equality constraints *Ax*x + Ap*p = b*.
+    VectorView h;           ///< The evaluated equality constraint function *h(x, p)*.
+    VectorView v;           ///< The evaluated external constraint function *v(x, p)*.
     VectorRef dx;               ///< The output steepest descent direction for the primal variables *x*.
     VectorRef dp;               ///< The output steepest descent direction for the parameter variables *x*.
     VectorRef dy;               ///< The output steepest descent direction for the Lagrange multipliers *y*.

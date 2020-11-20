@@ -53,7 +53,7 @@ public:
     auto initialize(const MasterProblem& problem) -> void;
 
     /// Execute the custom transformation on the just computed state of master variables.
-    auto execute(MasterVectorConstRef uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> bool;
+    auto execute(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> bool;
 };
 
 } // namespace Optima

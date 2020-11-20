@@ -557,7 +557,7 @@ auto cleanResidualRoundoffErrors(MatrixRef mat) -> void
                 mat(i, j) = 0.0;
 }
 
-auto multiplyMatrixVectorWithoutResidualRoundOffError(MatrixConstRef A, VectorConstRef x) -> Vector
+auto multiplyMatrixVectorWithoutResidualRoundOffError(MatrixView A, VectorView x) -> Vector
 {
     // In this method, we use b' = |A|*|x| as a reference to determine which
     // small entries in b should be regarded as residual round-off error. The
@@ -577,29 +577,29 @@ auto multiplyMatrixVectorWithoutResidualRoundOffError(MatrixConstRef A, VectorCo
     return b;
 }
 
-auto matrixStructure(MatrixConstRef mat) -> MatrixStructure
+auto matrixStructure(MatrixView mat) -> MatrixStructure
 {
     if(isDenseMatrix(mat)) return MatrixStructure::Dense;
     if(isDiagonalMatrix(mat)) return MatrixStructure::Diagonal;
     return MatrixStructure::Zero;
 }
 
-auto isZeroMatrix(MatrixConstRef mat) -> bool
+auto isZeroMatrix(MatrixView mat) -> bool
 {
     return mat.size() == 0;
 }
 
-auto isDiagonalMatrix(MatrixConstRef mat) -> bool
+auto isDiagonalMatrix(MatrixView mat) -> bool
 {
     return mat.size() > 1 && mat.cols() == 1;
 }
 
-auto isDenseMatrix(MatrixConstRef mat) -> bool
+auto isDenseMatrix(MatrixView mat) -> bool
 {
     return mat.size() > 0 && mat.rows() == mat.cols();
 }
 
-auto operator<<=(MatrixRef mat, MatrixConstRef other) -> MatrixRef
+auto operator<<=(MatrixRef mat, MatrixView other) -> MatrixRef
 {
     switch(matrixStructure(other)) {
     case MatrixStructure::Dense: mat = other; break;

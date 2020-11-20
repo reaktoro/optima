@@ -27,17 +27,17 @@ using namespace Optima;
 
 void exportStepper(py::module& m)
 {
-    auto init = [](Index nx, Index np, Index ny, Index nz, MatrixConstRef4py Ax, MatrixConstRef4py Ap) -> Stepper
+    auto init = [](Index nx, Index np, Index ny, Index nz, MatrixView4py Ax, MatrixView4py Ap) -> Stepper
     {
         return Stepper({ nx, np, ny, nz, Ax, Ap });
     };
 
     auto initialize = [](Stepper& self,
-        VectorConstRef b,
-        VectorConstRef xlower,
-        VectorConstRef xupper,
-        VectorConstRef plower,
-        VectorConstRef pupper,
+        VectorView b,
+        VectorView xlower,
+        VectorView xupper,
+        VectorView plower,
+        VectorView pupper,
         VectorRef x,
         Stability& stability)
     {
@@ -45,36 +45,36 @@ void exportStepper(py::module& m)
     };
 
     auto canonicalize = [](Stepper& self,
-        VectorConstRef x,
-        VectorConstRef p,
-        VectorConstRef y,
-        VectorConstRef z,
-        VectorConstRef fx,
-        MatrixConstRef4py fxx,
-        MatrixConstRef4py fxp,
-        MatrixConstRef4py vx,
-        MatrixConstRef4py vp,
-        MatrixConstRef4py hx,
-        MatrixConstRef4py hp,
-        VectorConstRef xlower,
-        VectorConstRef xupper,
-        VectorConstRef plower,
-        VectorConstRef pupper,
+        VectorView x,
+        VectorView p,
+        VectorView y,
+        VectorView z,
+        VectorView fx,
+        MatrixView4py fxx,
+        MatrixView4py fxp,
+        MatrixView4py vx,
+        MatrixView4py vp,
+        MatrixView4py hx,
+        MatrixView4py hp,
+        VectorView xlower,
+        VectorView xupper,
+        VectorView plower,
+        VectorView pupper,
         Stability& stability)
     {
         self.canonicalize({ x, p, y, z, fx, fxx, fxp, vx, vp, hx, hp, xlower, xupper, plower, pupper, stability });
     };
 
     auto residuals = [](Stepper& self,
-        VectorConstRef x,
-        VectorConstRef p,
-        VectorConstRef y,
-        VectorConstRef z,
-        VectorConstRef b,
-        VectorConstRef h,
-        VectorConstRef v,
-        VectorConstRef fx,
-        MatrixConstRef4py hx,
+        VectorView x,
+        VectorView p,
+        VectorView y,
+        VectorView z,
+        VectorView b,
+        VectorView h,
+        VectorView v,
+        VectorView fx,
+        MatrixView4py hx,
         VectorRef rx,
         VectorRef rp,
         VectorRef rw,
@@ -92,14 +92,14 @@ void exportStepper(py::module& m)
     };
 
     auto solve = [](Stepper& self,
-        VectorConstRef x,
-        VectorConstRef p,
-        VectorConstRef y,
-        VectorConstRef z,
-        VectorConstRef fx,
-        VectorConstRef b,
-        VectorConstRef h,
-        VectorConstRef v,
+        VectorView x,
+        VectorView p,
+        VectorView y,
+        VectorView z,
+        VectorView fx,
+        VectorView b,
+        VectorView h,
+        VectorView v,
         Stability const& stability,
         VectorRef dx,
         VectorRef dp,
@@ -111,10 +111,10 @@ void exportStepper(py::module& m)
 
     Matrix tmp_xw, tmp_pw, tmp_yw, tmp_zw, tmp_sw;
     auto sensitivities = [=](Stepper& self,
-        MatrixConstRef4py fxw,
-        MatrixConstRef4py hw,
-        MatrixConstRef4py bw,
-        MatrixConstRef4py vw,
+        MatrixView4py fxw,
+        MatrixView4py hw,
+        MatrixView4py bw,
+        MatrixView4py vw,
         Stability const& stability,
         MatrixRef4py xw,
         MatrixRef4py pw,

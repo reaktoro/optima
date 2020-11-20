@@ -34,7 +34,7 @@ using namespace Optima;
 void exportMasterMatrix(py::module& m)
 {
     py::class_<MasterMatrix>(m, "MasterMatrix")
-        .def(py::init<MasterDims, MatrixViewH, MatrixViewV, MatrixViewW, MatrixViewRWQ, IndicesConstRef, IndicesConstRef>(),
+        .def(py::init<MasterDims, MatrixViewH, MatrixViewV, MatrixViewW, MatrixViewRWQ, IndicesView, IndicesView>(),
             pyx::keep_argument_alive<0>(),
             pyx::keep_argument_alive<1>(),
             pyx::keep_argument_alive<2>(),
@@ -49,7 +49,7 @@ void exportMasterMatrix(py::module& m)
         .def_readonly("RWQ" , &MasterMatrix::RWQ)
         .def_readonly("js"  , &MasterMatrix::js)
         .def_readonly("ju"  , &MasterMatrix::ju)
-        .def("__mul__", [](const MasterMatrix& l, const MasterVectorConstRef& r) { return l * r; })
+        .def("__mul__", [](const MasterMatrix& l, const MasterVectorView& r) { return l * r; })
         .def("array", [](const MasterMatrix& self) { return Matrix(self); })
         ;
 }

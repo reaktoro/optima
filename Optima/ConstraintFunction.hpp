@@ -67,7 +67,7 @@ struct ConstraintOptions
     const Eval eval;
 
     /// The indices of the basic variables in *x*.
-    IndicesConstRef ibasicvars;
+    IndicesView ibasicvars;
 };
 
 /// Used to represent a constraint function *c(x, p)*.
@@ -79,14 +79,14 @@ public:
     /// @param x The primal variables *x*.
     /// @param p The parameter variables *p*.
     /// @param opts The options transmitted to the evaluation of *c(x, p)*.
-    using Signature = std::function<void(ConstraintResult& res, VectorConstRef x, VectorConstRef p, ConstraintOptions opts)>;
+    using Signature = std::function<void(ConstraintResult& res, VectorView x, VectorView p, ConstraintOptions opts)>;
 
     /// The functional signature of a constraint function *c(x, p)* incoming from Python.
     /// @param[out] res The evaluated result of the constraint function and its derivatives.
     /// @param x The primal variables *x*.
     /// @param p The parameter variables *p*.
     /// @param opts The options transmitted to the evaluation of *c(x, p)*.
-    using Signature4py = std::function<void(ConstraintResult* res, VectorConstRef x, VectorConstRef p, ConstraintOptions opts)>;
+    using Signature4py = std::function<void(ConstraintResult* res, VectorView x, VectorView p, ConstraintOptions opts)>;
 
     /// Construct a default ConstraintFunction object.
     ConstraintFunction();
@@ -102,7 +102,7 @@ public:
     // : ConstraintFunction(fn) {}
 
     /// Evaluate the constraint function.
-    auto operator()(ConstraintResult& res, VectorConstRef x, VectorConstRef p, ConstraintOptions opts) const -> void;
+    auto operator()(ConstraintResult& res, VectorView x, VectorView p, ConstraintOptions opts) const -> void;
 
 private:
     /// The constraint function with main functional signature.

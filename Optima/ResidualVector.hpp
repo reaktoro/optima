@@ -32,16 +32,16 @@ namespace Optima {
 struct ResidualVectorUpdateArgs
 {
     CanonicalMatrix Mc;
-    MatrixConstRef Wx;
-    MatrixConstRef Wp;
-    VectorConstRef x;
-    VectorConstRef p;
-    VectorConstRef y;
-    VectorConstRef z;
-    VectorConstRef g;
-    VectorConstRef v;
-    VectorConstRef b;
-    VectorConstRef h;
+    MatrixView Wx;
+    MatrixView Wp;
+    VectorView x;
+    VectorView p;
+    VectorView y;
+    VectorView z;
+    VectorView g;
+    VectorView v;
+    VectorView b;
+    VectorView h;
 };
 
 /// Used to represent the residual vector in the optimization problem.
@@ -69,10 +69,10 @@ public:
     auto update(ResidualVectorUpdateArgs args) -> void;
 
     /// Return the residual vector as a master vector.
-    auto masterVector() const -> MasterVectorConstRef;
+    auto masterVector() const -> MasterVectorView;
 
     /// Return the residual vector as a canonical vector.
-    auto canonicalVector() const -> CanonicalVectorConstRef;
+    auto canonicalVector() const -> CanonicalVectorView;
 };
 
 } // namespace Optima

@@ -52,17 +52,17 @@ struct ErrorControl::Impl
         // return E.errorHasIncreasedSignificantly();
     }
 
-    auto executeBacktrackSearch(MasterVectorConstRef uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
+    auto executeBacktrackSearch(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
     {
 
     }
 
-    auto executeLineSearch(MasterVectorConstRef uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
+    auto executeLineSearch(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
     {
 
     }
 
-    auto execute(MasterVectorConstRef uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
+    auto execute(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
     {
         // if(E.errorIsInf()) {
         //     backtracksearch.start(F, E, uo, u);
@@ -96,7 +96,7 @@ auto ErrorControl::initialize(const MasterProblem& problem) -> void
     pimpl->initialize(problem);
 }
 
-auto ErrorControl::execute(MasterVectorConstRef uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
+auto ErrorControl::execute(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
 {
     pimpl->execute(uo, u, F, E);
 }

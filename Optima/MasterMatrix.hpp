@@ -27,7 +27,7 @@
 namespace Optima {
 
 /// Used to represent a master matrix.
-struct MasterMatrix // TODO: MasterMatrix should be named MasterMatrixView, to be clear it does not own data.
+struct MasterMatrix
 {
     /// The dimension details of the master matrix.
     const MasterDims dims;
@@ -45,10 +45,10 @@ struct MasterMatrix // TODO: MasterMatrix should be named MasterMatrixView, to b
     const MatrixViewRWQ RWQ;
 
     /// The indices of the stable variables in *x*.
-    const IndicesConstRef js;
+    const IndicesView js;
 
     /// The indices of the unstable variables in *x*.
-    const IndicesConstRef ju;
+    const IndicesView ju;
 
     /// Convert this MasterMatrix object into a Matrix object.
     operator Matrix() const;

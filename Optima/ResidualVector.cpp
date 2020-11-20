@@ -129,12 +129,12 @@ struct ResidualVector::Impl
         awbs.noalias() -= xbs + Sbsns*xns + Sbsp*args.p;
     }
 
-    auto masterVector() const -> MasterVectorConstRef
+    auto masterVector() const -> MasterVectorView
     {
         return {ax, ap, aw};
     }
 
-    auto canonicalVector() const -> CanonicalVectorConstRef
+    auto canonicalVector() const -> CanonicalVectorView
     {
         const auto as = asu.head(ns);
         const auto au = asu.tail(nu);
@@ -164,12 +164,12 @@ auto ResidualVector::update(ResidualVectorUpdateArgs args) -> void
     pimpl->update(args);
 }
 
-auto ResidualVector::masterVector() const -> MasterVectorConstRef
+auto ResidualVector::masterVector() const -> MasterVectorView
 {
     return pimpl->masterVector();
 }
 
-auto ResidualVector::canonicalVector() const -> CanonicalVectorConstRef
+auto ResidualVector::canonicalVector() const -> CanonicalVectorView
 {
     return pimpl->canonicalVector();
 }

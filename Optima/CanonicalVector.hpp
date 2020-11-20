@@ -66,8 +66,8 @@ struct CanonicalVectorBase
     operator Vector() const { Vector res(size()); res << xs, xu, p, wbs; return res; }
 };
 
-using CanonicalVector         = CanonicalVectorBase<Vector>;
-using CanonicalVectorRef      = CanonicalVectorBase<VectorRef>;
-using CanonicalVectorConstRef = CanonicalVectorBase<VectorConstRef>;
+using CanonicalVector     = CanonicalVectorBase<Vector>;
+using CanonicalVectorRef  = CanonicalVectorBase<VectorRef>;
+using CanonicalVectorView = CanonicalVectorBase<VectorView>;
 
 } // namespace Optima

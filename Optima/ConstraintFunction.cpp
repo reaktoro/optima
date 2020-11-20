@@ -24,7 +24,7 @@ namespace Optima {
 
 ConstraintFunction::ConstraintFunction()
 {
-    fn = [](ConstraintResult& res, VectorConstRef x, VectorConstRef p, ConstraintOptions opts)
+    fn = [](ConstraintResult& res, VectorView x, VectorView p, ConstraintOptions opts)
     {
         error(true, "Cannot evaluate a non-initialized ConstraintFunction object.");
     };
@@ -39,13 +39,13 @@ ConstraintFunction::ConstraintFunction(const Signature& func)
 ConstraintFunction::ConstraintFunction(const Signature4py& func)
 {
     error(func == nullptr, "ConstraintFunction cannot be constructed with a non-initialized function.");
-    fn = [=](ConstraintResult& res, VectorConstRef x, VectorConstRef p, ConstraintOptions opts)
+    fn = [=](ConstraintResult& res, VectorView x, VectorView p, ConstraintOptions opts)
     {
         func(&res, x, p, opts);
     };
 }
 
-auto ConstraintFunction::operator()(ConstraintResult& res, VectorConstRef x, VectorConstRef p, ConstraintOptions opts) const -> void
+auto ConstraintFunction::operator()(ConstraintResult& res, VectorView x, VectorView p, ConstraintOptions opts) const -> void
 {
     // Ensure default status for some ObjectiveResult members before evaluation
     res.ddx4basicvars = false;

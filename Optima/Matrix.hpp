@@ -34,6 +34,6 @@ using MatrixRef4py = Eigen::Ref<Eigen::MatrixXd, 0, Eigen::Stride<Eigen::Dynamic
 
 /// An Eigen constant reference matrix type to be used with numpy arrays.
 /// See this discussion [here](https://pybind11.readthedocs.io/en/stable/advanced/cast/eigen.html#storage-orders).
-using MatrixConstRef4py = Eigen::Ref<const Eigen::MatrixXd, 0, Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic>>;
+using MatrixView4py = Eigen::Ref<const Eigen::MatrixXd, 0, Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic>>;
 
 } // namespace Optima

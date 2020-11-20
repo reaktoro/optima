@@ -50,20 +50,20 @@ struct SaddlePointDims
 struct CanonicalSaddlePointMatrix
 {
     SaddlePointDims dims; ///< The dimension details of the canonical saddle point problem.
-    MatrixConstRef Hss;   ///< The Hessian matrix block *Hss* in the canonical saddle point problem.
-    MatrixConstRef Hsp;   ///< The Hessian matrix block *Hsp* in the canonical saddle point problem.
-    MatrixConstRef Vps;   ///< The matrix block *Vps* in the canonical saddle point problem.
-    MatrixConstRef Vpp;   ///< The matrix block *Vpp* in the canonical saddle point problem.
-    MatrixConstRef Sbsns; ///< The matrix block *Sbsns* in the canonical saddle point problem.
-    MatrixConstRef Sbsp;  ///< The matrix block *Sbsp* in the canonical saddle point problem.
+    MatrixView Hss;   ///< The Hessian matrix block *Hss* in the canonical saddle point problem.
+    MatrixView Hsp;   ///< The Hessian matrix block *Hsp* in the canonical saddle point problem.
+    MatrixView Vps;   ///< The matrix block *Vps* in the canonical saddle point problem.
+    MatrixView Vpp;   ///< The matrix block *Vpp* in the canonical saddle point problem.
+    MatrixView Sbsns; ///< The matrix block *Sbsns* in the canonical saddle point problem.
+    MatrixView Sbsp;  ///< The matrix block *Sbsp* in the canonical saddle point problem.
 };
 
 /// The representation of a canonical saddle point problem.
 struct CanonicalSaddlePointProblem : CanonicalSaddlePointMatrix
 {
-    VectorConstRef as;   ///< The right-hand side vector *as* for the *xs* variables.
-    VectorConstRef ap;   ///< The right-hand side vector *ap* for the *p* variables.
-    VectorConstRef awbs; ///< The right-hand side vector *awbs*.
+    VectorView as;   ///< The right-hand side vector *as* for the *xs* variables.
+    VectorView ap;   ///< The right-hand side vector *ap* for the *p* variables.
+    VectorView awbs; ///< The right-hand side vector *awbs*.
     VectorRef xs;        ///< The solution vector *xs* in the canonical saddle point problem.
     VectorRef p;         ///< The solution vector *p* in the canonical saddle point problem.
     VectorRef wbs;       ///< The solution vector *wbs* in the canonical saddle point problem.

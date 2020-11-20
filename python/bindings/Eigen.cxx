@@ -29,7 +29,7 @@ void exportEigen(py::module& m)
 {
     auto eigen = m.def_submodule("eigen");
 
-    eigen.def("convert", [](MatrixConstRef4py M) -> Matrix { return M; });
+    eigen.def("convert", [](MatrixView4py M) -> Matrix { return M; });
     eigen.def("ones", [](int n) -> Vector { return Eigen::ones(n); });
     eigen.def("ones", [](int m, int n) -> Matrix { return Eigen::ones(m, n); });
     eigen.def("zeros", [](int n) -> Vector { return Eigen::zeros(n); });
@@ -38,8 +38,8 @@ void exportEigen(py::module& m)
     eigen.def("random", [](int m, int n) -> Matrix { return Eigen::random(m, n); });
     eigen.def("randomSPD", [](int n) -> Matrix { Matrix A = Eigen::random(n, n); return tr(A) * A; }, "Return a random symmetric positive definite matrix.");
     eigen.def("eye", [](int n) -> Matrix { return Eigen::identity(n, n); });
-    eigen.def("diag", [](VectorConstRef x) -> Matrix { return x.asDiagonal(); });
+    eigen.def("diag", [](VectorView x) -> Matrix { return x.asDiagonal(); });
     eigen.def("vector", [](int n=0) -> Vector { return Vector(n); }, py::arg("n")=0);
     eigen.def("matrix", [](int m=0, int n=0) -> Matrix { return Matrix(m, n); }, py::arg("m")=0, py::arg("n")=0);
-    eigen.def("solve", [](MatrixConstRef4py A, VectorConstRef b) -> Vector { return A.fullPivLu().solve(b); });
+    eigen.def("solve", [](MatrixView4py A, VectorView b) -> Vector { return A.fullPivLu().solve(b); });
 }

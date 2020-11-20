@@ -25,8 +25,8 @@ namespace Optima {
 /// Used to represent matrix *V = [Vpx Vpp]* in a master matrix.
 struct MatrixViewV
 {
-    MatrixConstRef Vpx; ///< The matrix *Vpx* in *V = [Vpx Vpp]*.
-    MatrixConstRef Vpp; ///< The matrix *Vpp* in *V = [Vpx Vpp]*.
+    MatrixView Vpx; ///< The matrix *Vpx* in *V = [Vpx Vpp]*.
+    MatrixView Vpp; ///< The matrix *Vpp* in *V = [Vpx Vpp]*.
 };
 
 } // namespace Optima

@@ -33,9 +33,9 @@ struct MasterMatrixTrExpr
 inline auto tr(const MasterMatrix& M) -> MasterMatrixTrExpr { return { M }; }
 
 /// Return the product of a master matrix and a master vector.
-auto operator*(const MasterMatrix& M, const MasterVectorConstRef& u) -> MasterVector;
+auto operator*(const MasterMatrix& M, const MasterVectorView& u) -> MasterVector;
 
 /// Return the product of a master matrix transpose and a master vector.
-auto operator*(const MasterMatrixTrExpr& trM, const MasterVectorConstRef& u) -> MasterVector;
+auto operator*(const MasterMatrixTrExpr& trM, const MasterVectorView& u) -> MasterVector;
 
 } // namespace Optima

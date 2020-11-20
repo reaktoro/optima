@@ -27,18 +27,18 @@ using namespace Optima;
 
 void exportProblem(py::module& m)
 {
-    auto set_Aex = [](Problem& self, MatrixConstRef4py  Aex) { self.Aex = Aex; };
-    auto set_Aep = [](Problem& self, MatrixConstRef4py  Aep) { self.Aep = Aep; };
-    auto set_Agx = [](Problem& self, MatrixConstRef4py  Agx) { self.Agx = Agx; };
-    auto set_Agp = [](Problem& self, MatrixConstRef4py  Agp) { self.Agp = Agp; };
+    auto set_Aex = [](Problem& self, MatrixView4py  Aex) { self.Aex = Aex; };
+    auto set_Aep = [](Problem& self, MatrixView4py  Aep) { self.Aep = Aep; };
+    auto set_Agx = [](Problem& self, MatrixView4py  Agx) { self.Agx = Agx; };
+    auto set_Agp = [](Problem& self, MatrixView4py  Agp) { self.Agp = Agp; };
     auto set_he  = [](Problem& self, ConstraintFunction  he) { self.he  = he;  };
     auto set_hg  = [](Problem& self, ConstraintFunction  hg) { self.hg  = hg;  };
     auto set_v   = [](Problem& self, ConstraintFunction   v) { self.v   = v;   };
     auto set_f   = [](Problem& self, ObjectiveFunction    f) { self.f   = f;   };
-    auto set_fxw = [](Problem& self, MatrixConstRef4py  fxw) { self.fxw = fxw; };
-    auto set_bw  = [](Problem& self, MatrixConstRef4py   bw) { self.bw  = bw;  };
-    auto set_hw  = [](Problem& self, MatrixConstRef4py   hw) { self.hw  = hw;  };
-    auto set_vw  = [](Problem& self, MatrixConstRef4py   vw) { self.vw  = vw;  };
+    auto set_fxw = [](Problem& self, MatrixView4py  fxw) { self.fxw = fxw; };
+    auto set_bw  = [](Problem& self, MatrixView4py   bw) { self.bw  = bw;  };
+    auto set_hw  = [](Problem& self, MatrixView4py   hw) { self.hw  = hw;  };
+    auto set_vw  = [](Problem& self, MatrixView4py   vw) { self.vw  = vw;  };
 
     auto get_Aex = [](Problem& self) { return self.Aex; };
     auto get_Aep = [](Problem& self) { return self.Aep; };

@@ -28,7 +28,7 @@
 namespace Optima {
 
 /// Return true if matrices A and B are identical.
-auto identical(const MatrixConstRef& A, const MatrixConstRef& B)
+auto identical(const MatrixView& A, const MatrixView& B)
 {
     return A.rows() == B.rows() && A.cols() == B.cols() && A == B;
 }
@@ -105,7 +105,7 @@ struct Echelonizer::Impl
     }
 
     /// Compute the canonical matrix of the given matrix.
-    auto compute(MatrixConstRef Anew) -> void
+    auto compute(MatrixView Anew) -> void
     {
         // Avoid echelonization if Anew is A
         if(identical(Anew, A))
@@ -219,7 +219,7 @@ struct Echelonizer::Impl
     }
 
     /// Update the existing canonical form with given priority weights for the columns.
-    auto updateWithPriorityWeights(VectorConstRef w) -> void
+    auto updateWithPriorityWeights(VectorView w) -> void
     {
         // Assert there are as many weights as there are variables
         assert(w.rows() == lu.cols() &&
@@ -300,7 +300,7 @@ struct Echelonizer::Impl
     }
 
     /// Update the ordering of the basic and non-basic variables,
-    auto updateOrdering(IndicesConstRef Kb, IndicesConstRef Kn) -> void
+    auto updateOrdering(IndicesView Kb, IndicesView Kn) -> void
     {
         const auto n  = Q.rows();
         const auto nb = S.rows();
@@ -347,7 +347,7 @@ Echelonizer::Echelonizer()
 : pimpl(new Impl())
 {}
 
-Echelonizer::Echelonizer(MatrixConstRef A)
+Echelonizer::Echelonizer(MatrixView A)
 : pimpl(new Impl())
 {
     compute(A);
@@ -386,17 +386,17 @@ auto Echelonizer::numNonBasicVariables() const -> Index
     return numVariables() - numBasicVariables();
 }
 
-auto Echelonizer::S() const -> MatrixConstRef
+auto Echelonizer::S() const -> MatrixView
 {
     return pimpl->S;
 }
 
-auto Echelonizer::R() const -> MatrixConstRef
+auto Echelonizer::R() const -> MatrixView
 {
     return pimpl->R;
 }
 
-auto Echelonizer::Q() const -> IndicesConstRef
+auto Echelonizer::Q() const -> IndicesView
 {
     return pimpl->Q;
 }
@@ -411,22 +411,22 @@ auto Echelonizer::C() const -> Matrix
     return res;
 }
 
-auto Echelonizer::indicesEquations() const -> IndicesConstRef
+auto Echelonizer::indicesEquations() const -> IndicesView
 {
     return pimpl->Ptr;
 }
 
-auto Echelonizer::indicesBasicVariables() const -> IndicesConstRef
+auto Echelonizer::indicesBasicVariables() const -> IndicesView
 {
     return Q().head(numBasicVariables());
 }
 
-auto Echelonizer::indicesNonBasicVariables() const -> IndicesConstRef
+auto Echelonizer::indicesNonBasicVariables() const -> IndicesView
 {
     return Q().tail(numNonBasicVariables());
 }
 
-auto Echelonizer::compute(MatrixConstRef A) -> void
+auto Echelonizer::compute(MatrixView A) -> void
 {
     pimpl->compute(A);
 }
@@ -436,12 +436,12 @@ auto Echelonizer::updateWithSwapBasicVariable(Index ibasic, Index inonbasic) -> 
     pimpl->updateWithSwapBasicVariable(ibasic, inonbasic);
 }
 
-auto Echelonizer::updateWithPriorityWeights(VectorConstRef weights) -> void
+auto Echelonizer::updateWithPriorityWeights(VectorView weights) -> void
 {
     pimpl->updateWithPriorityWeights(weights);
 }
 
-auto Echelonizer::updateOrdering(IndicesConstRef Kb, IndicesConstRef Kn) -> void
+auto Echelonizer::updateOrdering(IndicesView Kb, IndicesView Kn) -> void
 {
     pimpl->updateOrdering(Kb, Kn);
 }

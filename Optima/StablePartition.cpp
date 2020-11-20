@@ -36,24 +36,24 @@ struct StablePartition::Impl
     : jsu(indices(nx)), ns(nx)
     {}
 
-    auto setStable(IndicesConstRef js) -> void
+    auto setStable(IndicesView js) -> void
     {
         ns = moveIntersectionLeft(jsu, js);
         assert(ns == js.size() && "There are repeated or out-of-bound indices in js");
     }
 
-    auto setUnstable(IndicesConstRef ju) -> void
+    auto setUnstable(IndicesView ju) -> void
     {
         ns = moveIntersectionRight(jsu, ju);
         assert(ns == jsu.size() - ju.size() && "There are repeated or out-of-bound indices in ju");
     }
 
-    auto stable() const -> IndicesConstRef
+    auto stable() const -> IndicesView
     {
         return jsu.head(ns);
     }
 
-    auto unstable() const -> IndicesConstRef
+    auto unstable() const -> IndicesView
     {
         const auto nu = jsu.size() - ns;
         return jsu.tail(nu);
@@ -77,22 +77,22 @@ auto StablePartition::operator=(StablePartition other) -> StablePartition&
     return *this;
 }
 
-auto StablePartition::setStable(IndicesConstRef js) -> void
+auto StablePartition::setStable(IndicesView js) -> void
 {
     pimpl->setStable(js);
 }
 
-auto StablePartition::setUnstable(IndicesConstRef ju) -> void
+auto StablePartition::setUnstable(IndicesView ju) -> void
 {
     pimpl->setUnstable(ju);
 }
 
-auto StablePartition::stable() const -> IndicesConstRef
+auto StablePartition::stable() const -> IndicesView
 {
     return pimpl->stable();
 }
 
-auto StablePartition::unstable() const -> IndicesConstRef
+auto StablePartition::unstable() const -> IndicesView
 {
     return pimpl->unstable();
 }

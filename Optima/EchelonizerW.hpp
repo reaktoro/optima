@@ -50,13 +50,13 @@ public:
     auto operator=(EchelonizerW other) -> EchelonizerW& = delete;
 
     /// Initialize only once the *Ax* and *Ap* matrices in case these seldom change.
-    auto initialize(MatrixConstRef Ax, MatrixConstRef Ap) -> void;
+    auto initialize(MatrixView Ax, MatrixView Ap) -> void;
 
     /// Update the echelon form of matrix *W*.
-    auto update(MatrixConstRef Ax, MatrixConstRef Ap, MatrixConstRef Jx, MatrixConstRef Jp, VectorConstRef weights) -> void;
+    auto update(MatrixView Ax, MatrixView Ap, MatrixView Jx, MatrixView Jp, VectorView weights) -> void;
 
     /// Update the echelon form of matrix *W* where only *Jx* and *Jp* have changed.
-    auto update(MatrixConstRef Jx, MatrixConstRef Jp, VectorConstRef weights) -> void;
+    auto update(MatrixView Jx, MatrixView Jp, VectorView weights) -> void;
 
     /// Return the dimensions of the master variables.
     auto dims() const -> MasterDims;

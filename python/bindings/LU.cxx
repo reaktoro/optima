@@ -26,12 +26,12 @@ using namespace Optima;
 
 void exportLU(py::module& m)
 {
-    auto decompose = [](LU& self, MatrixConstRef4py A)
+    auto decompose = [](LU& self, MatrixView4py A)
     {
         return self.decompose(A);
     };
 
-    auto solve1 = [=](LU& self, VectorConstRef b, VectorRef x) mutable
+    auto solve1 = [=](LU& self, VectorView b, VectorRef x) mutable
     {
         self.solve(b, x);
     };
