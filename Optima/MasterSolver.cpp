@@ -25,6 +25,7 @@
 #include <Optima/MasterVector.hpp>
 #include <Optima/NewtonStep.hpp>
 #include <Optima/Options.hpp>
+#include <Optima/Outputter.hpp>
 #include <Optima/ResidualErrors.hpp>
 #include <Optima/ResidualFunction.hpp>
 #include <Optima/Result.hpp>
@@ -45,6 +46,7 @@ struct MasterSolver::Impl
     TransformStep transformstep;
     ErrorControl errorcontrol;
     Convergence convergence;
+    Outputter outputter; ///< The object used to output the current state of the computation.
     Result result;
     Options options;
 
@@ -56,6 +58,54 @@ struct MasterSolver::Impl
       convergence()
     {
     }
+
+    auto outputHeaderTop() -> void
+    {
+        if(!options.output.active) return;
+
+        outputter.addEntry("Iteration");
+        outputter.addEntry("f");
+        outputter.addEntry("Error");
+        outputter.addEntry("Optimality");
+        outputter.addEntry("Feasibility");
+        outputter.addEntries(options.output.xprefix, dims.nx, options.output.xnames);
+        outputter.addEntries(options.output.pprefix, dims.np, options.output.pnames);
+        outputter.addEntries(options.output.yprefix, dims.ny, options.output.ynames);
+        outputter.addEntries(options.output.zprefix, dims.nz, options.output.znames);
+        outputter.addEntries(options.output.sprefix, dims.nx, options.output.xnames);
+        outputter.addEntries("ex", dims.nx, options.output.xnames);
+        outputter.addEntries("ep", dims.np, options.output.pnames);
+        outputter.addEntries("ey", dims.ny, options.output.ynames);
+        outputter.addEntries("ez", dims.nz, options.output.znames);
+        outputter.outputHeader();
+    };
+
+    auto outputHeaderBottom() -> void
+    {
+        if(!options.output.active) return;
+        outputter.outputHeader();
+    };
+
+    auto outputCurrentState() -> void
+    {
+        if(!options.output.active) return;
+        const auto& Fres = F.result();
+        outputter.addValue(result.iterations);
+        outputter.addValue(Fres.f.f);
+        outputter.addValue(E.error);
+        outputter.addValue(E.errorf);
+        outputter.addValue(E.errorw);
+        outputter.addValues(uo.x);
+        outputter.addValues(uo.p);
+        outputter.addValues(uo.w.head(dims.ny));
+        outputter.addValues(uo.w.tail(dims.nz));
+        outputter.addValues(Fres.stabilitystatus.s);
+        outputter.addValues(E.ex);
+        outputter.addValues(E.ep);
+        outputter.addValues(E.ew.head(dims.ny));
+        outputter.addValues(E.ew.tail(dims.nz));
+        outputter.outputState();
+    };
 
     auto solve(const MasterProblem& problem, MasterVectorRef u) -> Result
     {
@@ -71,6 +121,7 @@ struct MasterSolver::Impl
         options = opts;
         newtonstep.setOptions(opts.newtonstep);
         convergence.setOptions(opts.convergence);
+        outputter.setOptions(opts.output);
     }
 
     auto initialize(const MasterProblem& problem, MasterVectorRef u) -> bool
@@ -85,6 +136,8 @@ struct MasterSolver::Impl
         newtonstep.initialize(problem);
         errorcontrol.initialize(problem);
         convergence.initialize(problem);
+        outputter.clear();
+        outputHeaderTop();
     }
 
     auto stepping() -> bool
@@ -100,19 +153,22 @@ struct MasterSolver::Impl
 
     auto step(MasterVectorRef u) -> void
     {
-        result.iterations += 1;
         F.update(u);
         E.update(u, F); // TODO: This call may not be needed since it may be executed below
+        outputCurrentState();
         newtonstep.apply(F, uo, u);
         transformstep.execute(uo, u, F, E);
         errorcontrol.execute(uo, u, F, E);
         convergence.update(E);
         uo = u;
+        result.iterations += 1;
     }
 
     auto finalize() -> void
     {
         result.succeeded = convergence.converged();
+        outputCurrentState();
+        outputHeaderBottom();
     }
 };
 
