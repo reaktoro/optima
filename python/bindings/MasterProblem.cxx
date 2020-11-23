@@ -42,6 +42,8 @@ void exportMasterProblem(py::module& m)
         .def_readwrite("b"     , &MasterProblem::b)
         .def_readwrite("xlower", &MasterProblem::xlower)
         .def_readwrite("xupper", &MasterProblem::xupper)
+        .def_readwrite("plower", &MasterProblem::plower)
+        .def_readwrite("pupper", &MasterProblem::pupper)
         .def_readwrite("phi"   , &MasterProblem::phi)
         ;
 }

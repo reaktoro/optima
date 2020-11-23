@@ -76,6 +76,8 @@ struct MasterSolver::Impl
     auto initialize(const MasterProblem& problem, MasterVectorRef u) -> bool
     {
         result = {};
+        u.x.noalias() = min(max(u.x, problem.xlower), problem.xupper);
+        u.p.noalias() = min(max(u.p, problem.plower), problem.pupper);
         uo = u;
         F.initialize(problem);
         E.initialize(problem);

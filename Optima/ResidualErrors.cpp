@@ -28,6 +28,8 @@ struct ResidualErrors::Impl
 
     Vector xlower; ///< The lower bounds for variables *x*.
     Vector xupper; ///< The upper bounds for variables *x*.
+    Vector plower; ///< The lower bounds for variables *p*.
+    Vector pupper; ///< The upper bounds for variables *p*.
 
     Vector ex;     ///< The residual errors associated with the first-order optimality conditions.
     Vector ep;     ///< The residual errors associated with the external constraint equations.
@@ -49,6 +51,8 @@ struct ResidualErrors::Impl
     {
         xlower = problem.xlower;
         xupper = problem.xupper;
+        plower = problem.plower;
+        pupper = problem.pupper;
     }
 
     auto update(MasterVectorView u, const ResidualFunction& F) -> void
@@ -103,6 +107,8 @@ struct ResidualErrors::Impl
         assert(ew.size() == dims.nw);
         assert(xlower.size() == dims.nx);
         assert(xupper.size() == dims.nx);
+        assert(plower.size() == dims.np);
+        assert(pupper.size() == dims.np);
     }
 };
 

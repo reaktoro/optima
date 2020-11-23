@@ -37,6 +37,8 @@ struct MasterProblem
     Vector b;              ///< The right-hand side vector b in the linear equality constraints.
     Vector xlower;         ///< The lower bounds for variables *x*.
     Vector xupper;         ///< The upper bounds for variables *x*.
+    Vector plower;         ///< The lower bounds for variables *p*.
+    Vector pupper;         ///< The upper bounds for variables *p*.
     TransformFunction phi; ///< The custom variable transformation function.
 };
 

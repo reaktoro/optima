@@ -30,6 +30,8 @@ struct NewtonStep::Impl
     MasterVector du;           ///< The Newton step for master variables u = (x, p, w).
     Vector xlower;             ///< The lower bounds for variables *x*.
     Vector xupper;             ///< The upper bounds for variables *x*.
+    Vector plower;             ///< The lower bounds for variables *p*.
+    Vector pupper;             ///< The upper bounds for variables *p*.
 
     Impl(const MasterDims& dims)
     : dims(dims), linearsolver(dims), du(dims)
@@ -45,6 +47,8 @@ struct NewtonStep::Impl
     {
         xlower = problem.xlower;
         xupper = problem.xupper;
+        plower = problem.plower;
+        pupper = problem.pupper;
     }
 
     auto apply(const ResidualFunction& F, MasterVectorView uo, MasterVectorRef u) -> void
@@ -59,12 +63,15 @@ struct NewtonStep::Impl
         u.p.noalias() = uo.p + du.p;
         u.w.noalias() = uo.w + du.w;
         u.x.noalias() = min(max(u.x, xlower), xupper);
+        u.p.noalias() = min(max(u.p, plower), pupper);
     }
 
     auto sanitycheck() const -> void
     {
         assert(xlower.size() == dims.nx);
         assert(xupper.size() == dims.nx);
+        assert(plower.size() == dims.np);
+        assert(pupper.size() == dims.np);
     }
 };
 
