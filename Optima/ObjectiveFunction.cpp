@@ -24,7 +24,7 @@ namespace Optima {
 
 ObjectiveFunction::ObjectiveFunction()
 {
-    fn = [](ObjectiveResult& res, VectorView x, VectorView p, ObjectiveOptions opts)
+    fn = [](ObjectiveResultRef res, VectorView x, VectorView p, ObjectiveOptions opts)
     {
         error(true, "Cannot evaluate a non-initialized ObjectiveFunction object");
     };
@@ -39,15 +39,19 @@ ObjectiveFunction::ObjectiveFunction(const Signature& func)
 ObjectiveFunction::ObjectiveFunction(const Signature4py& func)
 {
     error(func == nullptr, "ObjectiveFunction cannot be constructed with a non-initialized function.");
-    fn = [=](ObjectiveResult& res, VectorView x, VectorView p, ObjectiveOptions opts)
+    fn = [=](ObjectiveResultRef res, VectorView x, VectorView p, ObjectiveOptions opts)
     {
         func(&res, x, p, opts);
     };
 }
 
-auto ObjectiveFunction::operator()(ObjectiveResult& res, VectorView x, VectorView p, ObjectiveOptions opts) const -> void
+auto ObjectiveFunction::operator()(ObjectiveResultRef res, VectorView x, VectorView p, ObjectiveOptions opts) const -> void
 {
-    // Ensure default status for some ObjectiveResult members before evaluation
+    // Ensure clear state before evaluation
+    res.f = 0.0;
+    res.fx.fill(0.0);
+    res.fxx.fill(0.0);
+    res.fxp.fill(0.0);
     res.diagfxx = false;
     res.fxx4basicvars = false;
     res.succeeded = true;

@@ -25,7 +25,7 @@ namespace py = pybind11;
 #include <Optima/ConstraintFunction.hpp>
 using namespace Optima;
 
-void exportConstraintFunction(py::module& m)
+void exportConstraintResult(py::module& m)
 {
     auto get_val = [](ConstraintResult& s) -> VectorRef { return s.val; };
     auto get_ddx = [](ConstraintResult& s) -> MatrixRef { return s.ddx; };
@@ -42,6 +42,37 @@ void exportConstraintFunction(py::module& m)
         .def_readwrite("ddx4basicvars", &ConstraintResult::ddx4basicvars)
         .def_readwrite("succeeded", &ConstraintResult::succeeded)
         ;
+}
+
+void exportConstraintResultRef(py::module& m)
+{
+    auto get_val           = [](ConstraintResultRef& s) -> VectorRef { return s.val; };
+    auto get_ddx           = [](ConstraintResultRef& s) -> MatrixRef { return s.ddx; };
+    auto get_ddp           = [](ConstraintResultRef& s) -> MatrixRef { return s.ddp; };
+    auto get_ddx4basicvars = [](ConstraintResultRef& s) -> bool& { return s.ddx4basicvars; };
+    auto get_succeeded     = [](ConstraintResultRef& s) -> bool& { return s.succeeded; };
+
+    auto set_val           = [](ConstraintResultRef& s, VectorView val) { s.val = val; };
+    auto set_ddx           = [](ConstraintResultRef& s, MatrixView4py ddx) { s.ddx = ddx; };
+    auto set_ddp           = [](ConstraintResultRef& s, MatrixView4py ddp) { s.ddp = ddp; };
+    auto set_ddx4basicvars = [](ConstraintResultRef& s, bool ddx4basicvars) { s.ddx4basicvars = ddx4basicvars; };
+    auto set_succeeded     = [](ConstraintResultRef& s, bool succeeded) { s.succeeded = succeeded; };
+
+    py::class_<ConstraintResultRef>(m, "ConstraintResultRef")
+        .def_property("val", get_val, set_val)
+        .def_property("ddx", get_ddx, set_ddx)
+        .def_property("ddp", get_ddp, set_ddp)
+        .def_property("ddx4basicvars", get_ddx4basicvars, set_ddx4basicvars)
+        .def_property("succeeded", get_succeeded, set_succeeded)
+        ;
+
+    py::implicitly_convertible<ConstraintResult, ConstraintResultRef>();
+}
+
+void exportConstraintFunction(py::module& m)
+{
+    exportConstraintResult(m);
+    exportConstraintResultRef(m);
 
     py::class_<ConstraintOptions::Eval>(m, "ConstraintOptionsEval")
         .def_readwrite("ddx", &ConstraintOptions::Eval::ddx, "True if evaluating the Jacobian matrix of c(x, p) with respect to x is needed")

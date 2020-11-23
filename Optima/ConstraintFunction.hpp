@@ -28,30 +28,43 @@ namespace Optima {
 
 /// The result of a constraint function evaluation.
 /// @see ConstraintFunction
-struct ConstraintResult
+template<typename Bool, typename Vec, typename Mat>
+struct ConstraintResultBase
 {
     /// The evaluated vector value of *c(x, p)*.
-    FixedVector val;
+    Vec val;
 
     /// The evaluated Jacobian matrix of *c(x, p)* with respect to *x*.
-    FixedMatrix ddx;
+    Mat ddx;
 
     /// The evaluated Jacobian matrix of *c(x, p)* with respect to *p*.
-    FixedMatrix ddp;
+    Mat ddp;
 
     /// True if `ddx` is non-zero only on columns corresponding to basic varibles in *x*.
-    bool ddx4basicvars = false;
+    Bool ddx4basicvars;
 
     /// True if the constraint function evaluation succeeded.
-    bool succeeded = true;
+    Bool succeeded;
 
-    /// Construct a ConstraintResult object.
+    /// Construct a ConstraintResultBase object.
     /// @param nc The number of constraint equations in *c(x, p)*.
     /// @param nx The number of variables in *x*.
     /// @param np The number of variables in *p*.
-    ConstraintResult(Index nc, Index nx, Index np)
-    : val(nc), ddx(nc, nx), ddp(nc, np) {}
+    ConstraintResultBase(Index nc, Index nx, Index np)
+    : val(nc), ddx(nc, nx), ddp(nc, np), ddx4basicvars(false), succeeded(true) {}
+
+    /// Construct an ConstraintResultBase object.
+    template<typename B, typename V, typename M>
+    ConstraintResultBase(ConstraintResultBase<B, V, M>& other)
+    : val(other.val), ddx(other.ddx), ddp(other.ddp),
+      ddx4basicvars(other.ddx4basicvars), succeeded(other.succeeded) {}
 };
+
+/// The result of a constraint function evaluation.
+using ConstraintResult = ConstraintResultBase<bool, Vector, Matrix>;
+
+/// The result of a constraint function evaluation.
+using ConstraintResultRef = ConstraintResultBase<bool&, VectorRef, MatrixRef>;
 
 /// The options transmitted to the evaluation of a constraint function.
 struct ConstraintOptions
@@ -79,14 +92,14 @@ public:
     /// @param x The primal variables *x*.
     /// @param p The parameter variables *p*.
     /// @param opts The options transmitted to the evaluation of *c(x, p)*.
-    using Signature = std::function<void(ConstraintResult& res, VectorView x, VectorView p, ConstraintOptions opts)>;
+    using Signature = std::function<void(ConstraintResultRef res, VectorView x, VectorView p, ConstraintOptions opts)>;
 
     /// The functional signature of a constraint function *c(x, p)* incoming from Python.
     /// @param[out] res The evaluated result of the constraint function and its derivatives.
     /// @param x The primal variables *x*.
     /// @param p The parameter variables *p*.
     /// @param opts The options transmitted to the evaluation of *c(x, p)*.
-    using Signature4py = std::function<void(ConstraintResult* res, VectorView x, VectorView p, ConstraintOptions opts)>;
+    using Signature4py = std::function<void(ConstraintResultRef* res, VectorView x, VectorView p, ConstraintOptions opts)>;
 
     /// Construct a default ConstraintFunction object.
     ConstraintFunction();
@@ -102,7 +115,7 @@ public:
     // : ConstraintFunction(fn) {}
 
     /// Evaluate the constraint function.
-    auto operator()(ConstraintResult& res, VectorView x, VectorView p, ConstraintOptions opts) const -> void;
+    auto operator()(ConstraintResultRef res, VectorView x, VectorView p, ConstraintOptions opts) const -> void;
 
 private:
     /// The constraint function with main functional signature.

@@ -28,35 +28,50 @@ namespace Optima {
 
 /// The result of an objective function evaluation.
 /// @see ObjectiveFunction
-struct ObjectiveResult
+template<typename Real, typename Bool, typename Vec, typename Mat>
+struct ObjectiveResultBase
 {
     /// The evaluated objective function *f(x, p)*.
-    double f = 0.0;
+    Real f;
 
     /// The evaluated gradient vector of *f(x, p)* with respect to *x*.
-    FixedVector fx;
+    Vec fx;
 
     /// The evaluated Jacobian matrix of *fx(x, p)* with respect to *x*.
-    FixedMatrix fxx;
+    Mat fxx;
 
     /// The evaluated Jacobian matrix of *fx(x, p)* with respect to *p*.
-    FixedMatrix fxp;
+    Mat fxp;
 
     /// True if `fxx` is diagonal.
-    bool diagfxx = false;
+    Bool diagfxx;
 
     /// True if `fxx` is non-zero only on columns corresponding to basic varibles in *x*.
-    bool fxx4basicvars = false;
+    Bool fxx4basicvars;
 
     /// True if the objective function evaluation succeeded.
-    bool succeeded = true;
+    Bool succeeded;
 
     /// Construct an ObjectiveResult object.
     /// @param nx The number of variables in *x*.
     /// @param np The number of variables in *p*.
-    ObjectiveResult(Index nx, Index np)
-    : fx(nx), fxx(nx, nx), fxp(nx, np) {}
+    ObjectiveResultBase(Index nx, Index np)
+    : f(0.0), fx(nx), fxx(nx, nx), fxp(nx, np),
+      diagfxx(false), fxx4basicvars(false), succeeded(true) {}
+
+    /// Construct an ObjectiveResult object.
+    template<typename R, typename B, typename V, typename M>
+    ObjectiveResultBase(ObjectiveResultBase<R, B, V, M>& other)
+    : f(other.f), fx(other.fx), fxx(other.fxx), fxp(other.fxp),
+      diagfxx(other.diagfxx), fxx4basicvars(other.fxx4basicvars),
+      succeeded(other.succeeded) {}
 };
+
+/// The result of an objective function evaluation.
+using ObjectiveResult = ObjectiveResultBase<double, bool, Vector, Matrix>;
+
+/// The result of an objective function evaluation.
+using ObjectiveResultRef = ObjectiveResultBase<double&, bool&, VectorRef, MatrixRef>;
 
 /// The options transmitted to the evaluation of an objective function.
 /// @see ObjectiveFunction, ObjectiveResult
@@ -86,14 +101,14 @@ public:
     /// @param x The primal variables *x*.
     /// @param p The parameter variables *p*.
     /// @param opts The options transmitted to the evaluation of *f(x, p)*.
-    using Signature = std::function<void(ObjectiveResult& res, VectorView x, VectorView p, ObjectiveOptions opts)>;
+    using Signature = std::function<void(ObjectiveResultRef res, VectorView x, VectorView p, ObjectiveOptions opts)>;
 
     /// The functional signature of an objective function *f(x, p)* incoming from Python.
     /// @param[out] res The evaluated result of the objective function and its derivatives.
     /// @param x The primal variables *x*.
     /// @param p The parameter variables *p*.
     /// @param opts The options transmitted to the evaluation of *f(x, p)*.
-    using Signature4py = std::function<void(ObjectiveResult* res, VectorView x, VectorView p, ObjectiveOptions opts)>;
+    using Signature4py = std::function<void(ObjectiveResultRef* res, VectorView x, VectorView p, ObjectiveOptions opts)>;
 
     /// Construct a default ObjectiveFunction object.
     ObjectiveFunction();
@@ -109,7 +124,7 @@ public:
     // : ObjectiveFunction(fn) {}
 
     /// Evaluate the objective function.
-    auto operator()(ObjectiveResult& res, VectorView x, VectorView p, ObjectiveOptions opts) const -> void;
+    auto operator()(ObjectiveResultRef res, VectorView x, VectorView p, ObjectiveOptions opts) const -> void;
 
 private:
     /// The objective function with main functional signature.

@@ -25,7 +25,7 @@ namespace py = pybind11;
 #include <Optima/ObjectiveFunction.hpp>
 using namespace Optima;
 
-void exportObjectiveFunction(py::module& m)
+void exportObjectiveResult(py::module& m)
 {
     auto get_fx  = [](ObjectiveResult& s) -> VectorRef { return s.fx; };
     auto get_fxx = [](ObjectiveResult& s) -> MatrixRef { return s.fxx; };
@@ -44,6 +44,43 @@ void exportObjectiveFunction(py::module& m)
         .def_readwrite("fxx4basicvars", &ObjectiveResult::fxx4basicvars)
         .def_readwrite("succeeded", &ObjectiveResult::succeeded)
         ;
+}
+
+void exportObjectiveResultRef(py::module& m)
+{
+    auto get_f             = [](ObjectiveResultRef& s) -> double& { return s.f; };
+    auto get_fx            = [](ObjectiveResultRef& s) -> VectorRef { return s.fx; };
+    auto get_fxx           = [](ObjectiveResultRef& s) -> MatrixRef { return s.fxx; };
+    auto get_fxp           = [](ObjectiveResultRef& s) -> MatrixRef { return s.fxp; };
+    auto get_diagfxx       = [](ObjectiveResultRef& s) -> bool& { return s.diagfxx; };
+    auto get_fxx4basicvars = [](ObjectiveResultRef& s) -> bool& { return s.fxx4basicvars; };
+    auto get_succeeded     = [](ObjectiveResultRef& s) -> bool& { return s.succeeded; };
+
+    auto set_f             = [](ObjectiveResultRef& s, double f) { s.f = f; };
+    auto set_fx            = [](ObjectiveResultRef& s, VectorView fx) { s.fx = fx; };
+    auto set_fxx           = [](ObjectiveResultRef& s, MatrixView4py fxx) { s.fxx = fxx; };
+    auto set_fxp           = [](ObjectiveResultRef& s, MatrixView4py fxp) { s.fxp = fxp; };
+    auto set_diagfxx       = [](ObjectiveResultRef& s, bool diagfxx) { s.diagfxx = diagfxx; };
+    auto set_fxx4basicvars = [](ObjectiveResultRef& s, bool fxx4basicvars) { s.fxx4basicvars = fxx4basicvars; };
+    auto set_succeeded     = [](ObjectiveResultRef& s, bool succeeded) { s.succeeded = succeeded; };
+
+    py::class_<ObjectiveResultRef>(m, "ObjectiveResultRef")
+        .def_property("f", get_f, set_f)
+        .def_property("fx", get_fx, set_fx)
+        .def_property("fxx", get_fxx, set_fxx)
+        .def_property("fxp", get_fxp, set_fxp)
+        .def_property("diagfxx", get_diagfxx, set_diagfxx)
+        .def_property("fxx4basicvars", get_fxx4basicvars, set_fxx4basicvars)
+        .def_property("succeeded", get_succeeded, set_succeeded)
+        ;
+
+    py::implicitly_convertible<ObjectiveResult, ObjectiveResultRef>();
+}
+
+void exportObjectiveFunction(py::module& m)
+{
+    exportObjectiveResult(m);
+    exportObjectiveResultRef(m);
 
     py::class_<ObjectiveOptions::Eval>(m, "ObjectiveOptionsEval")
         .def_readwrite("fxx", &ObjectiveOptions::Eval::fxx, "True if evaluating the Jacobian matrix fxx is needed.")

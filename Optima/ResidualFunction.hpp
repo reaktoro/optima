@@ -24,16 +24,14 @@
 #include <Optima/CanonicalMatrix.hpp>
 #include <Optima/CanonicalVector.hpp>
 #include <Optima/Constants.hpp>
+#include <Optima/ConstraintFunction.hpp>
 #include <Optima/MasterMatrix.hpp>
 #include <Optima/MasterProblem.hpp>
 #include <Optima/MasterVector.hpp>
+#include <Optima/ObjectiveFunction.hpp>
 #include <Optima/Stability2.hpp>
 
 namespace Optima {
-
-// Forward declarations
-struct ObjectiveResult;
-struct ConstraintResult;
 
 /// Used to determine whether the evaluation of objective and constraint functions succeeded or not.
 struct ResidualFunctionUpdateStatus
