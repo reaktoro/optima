@@ -60,6 +60,8 @@ def testResidualFunction(nx, np, ny, nz, nl, nu, b1, b2, b3, b4, b5, b6, b7):
     Hxp = M.H.Hxp
     Vpx = M.V.Vpx
     Vpp = M.V.Vpp
+    Wx  = M.W.Wx
+    Wp  = M.W.Wp
     Ax  = M.W.Ax
     Ap  = M.W.Ap
     Jx  = M.W.Jx
@@ -164,5 +166,5 @@ def testResidualFunction(nx, np, ny, nz, nl, nu, b1, b2, b3, b4, b5, b6, b7):
 
     g = result.f.fx
 
-    assert result.stabilitystatus.s[jb] == approx(0.0)
-    assert result.stabilitystatus.s[jn] == approx(g[jn] - Sbn.T @ g[jb])
+    assert result.stabilitystatus.s == approx(g + Wx.T @ w)
+

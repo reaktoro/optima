@@ -36,17 +36,18 @@ void exportStability2(py::module& m)
         .def_readonly("jlu"  , &StabilityStatus::jlu)
         .def_readonly("juu"  , &StabilityStatus::juu)
         .def_readonly("s"    , &StabilityStatus::s)
-        .def_readonly("lmbda", &StabilityStatus::lmbda)
         ;
 
     auto update = [](Stability2& self,
-        MatrixViewRWQ RWQ,
+        MatrixView Wx,
         VectorView g,
         VectorView x,
+        VectorView w,
         VectorView xlower,
-        VectorView xupper)
+        VectorView xupper,
+        IndicesView jb)
     {
-        self.update({RWQ, g, x, xlower, xupper});
+        self.update({Wx, g, x, w, xlower, xupper, jb});
     };
 
     py::class_<Stability2>(m, "Stability2")

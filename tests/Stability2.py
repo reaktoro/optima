@@ -45,14 +45,12 @@ def testStability(nx, np, ny, nz, nl, nlu, nuu, diagHxx):
 
     if params.invalid(): return
 
-    RWQ = createMatrixViewRWQ(params)
+    W = createMatrixViewW(params)
+    RWQ = createMatrixViewRWQ(params, W)
 
-    W    = RWQ.asMatrixViewW()
-    Wbar = RWQ.asMatrixViewRWQ()
-
-    jb = Wbar.jb
-    jn = Wbar.jn
-    R  = Wbar.R
+    jb = RWQ.jb
+    jn = RWQ.jn
+    R  = RWQ.R
 
     nb = len(jb)
     nn = len(jn)
@@ -70,40 +68,33 @@ def testStability(nx, np, ny, nz, nl, nlu, nuu, diagHxx):
     xlower[jlu] = x[jlu]  # attach the lower unstable variables to their lower bound
     xupper[juu] = x[juu]  # attach the upper unstable variables to their upper bound
 
-    Rb = R[:nb, :]
-    Wn = W.Wx[:, jn]
+    Wx = W.Wx
+    nw = params.dims.nw
 
     #==========================================================================
-    # Initialize expected s = g - tr(Wx)*λ considering the unstable variables
+    # Initialize expected s = g + tr(Wx)*w considering the unstable variables
     #==========================================================================
-    g = npy.zeros(nx)
-
-    g[jb] = random.rand(nb)
-    lmbda = Rb.T @ g[jb]
-
     s = random.rand(nx)
-
     s[jlu] =  1.0  # ensure s[i] > 0 for lower unstable variables
     s[juu] = -1.0  # ensure s[i] < 0 for upper unstable variables
-    s[jb] = 0.0    # ensure s[i] = 0 for basic variables
 
-    g[jn] = s[jn] + Wn.T @ lmbda
+    w = random.rand(nw)
+    g = s - Wx.T @ w
 
     #==========================================================================
     # Initialize Stability object to compute λ, s, js, ju = (jlu, juu)
     #==========================================================================
 
     stability = Stability2(nx)
-    stability.update(RWQ, g, x, xlower, xupper)
+    stability.update(Wx, g, x, w, xlower, xupper, jb)
 
     status = stability.status()
 
     #==========================================================================
     # Check both λ = tr(R)*gb and stabilities s = g - tr(Wx)*λ
     #==========================================================================
-
-    assert_almost_equal(status.lmbda, lmbda)
-    assert_almost_equal(status.s, s)
+    npy.set_printoptions(linewidth=1000)
+    assert_array_almost_equal(status.s, s)
 
     #==========================================================================
     # Check the indices of stable, lower unstable and upper unstable

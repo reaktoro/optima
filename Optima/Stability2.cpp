@@ -33,36 +33,38 @@ auto Stability2::update(StabilityUpdateArgs args) -> void
 {
     const auto nx = jsu.size();
 
-    assert(nx == args.g.size());
-    assert(nx == args.x.size());
-    assert(nx == args.xlower.size());
-    assert(nx == args.xupper.size());
+    const auto [Wx, g, x, w, xlower, xupper, jb] = args;
 
-    const auto [R, Sbn, Sbp, jb, jn] = args.RWQ;
+    assert(nx == g.size());
+    assert(nx == x.size());
+    assert(nx == xlower.size());
+    assert(nx == xupper.size());
 
-    assert(nx == jb.size() + jn.size());
-
-    const auto gb = args.g(jb);
-    const auto gn = args.g(jn);
-
-    const auto nb = jb.size();
-    const auto Rb = R.topRows(nb);
-
-    lambda = tr(Rb) * gb;
-
-    s(jn) = gn - tr(Sbn) * gb;
-    s(jb).fill(0.0);
+    s.noalias() = g + tr(Wx)*w;
 
     auto is_lower_unstable = [&](Index i) { return args.x[i] == args.xlower[i] && s[i] > 0.0; };
     auto is_upper_unstable = [&](Index i) { return args.x[i] == args.xupper[i] && s[i] < 0.0; };
 
-    // Organize jsu = (js, jlu, juu) = (stable, lower unstable, upper unstable).
-    const auto pos1 = moveRightIf(jsu, is_upper_unstable);
-    const auto pos2 = moveRightIf(jsu.head(pos1), is_lower_unstable);
+    // Note: In the code below, all basic variables are by default considered
+    // stable. It remains to identify which non-basic variables are unstable!
 
-    ns  = pos2;
-    nuu = nx - pos1;
+    const auto nb = moveIntersectionLeft(jsu, jb);
+
+    assert(nb == jb.size());
+
+    const auto nn = nx - nb; // the number of non-basic variables
+
+    auto jnsu = jsu.tail(nn); // the non-basic variables organized as jnsu = (jns, jnu) = (stable, unstable)
+
+    // Organize jsu = (js, jlu, juu) = (stable, lower unstable, upper unstable).
+    const auto pos1 = moveRightIf(jnsu, is_upper_unstable);
+    const auto pos2 = moveRightIf(jnsu.head(pos1), is_lower_unstable);
+
+    ns  = nb + pos2;
+    nuu = nn - pos1;
     nlu = pos1 - pos2;
+
+    assert(ns + nuu + nlu == nx);
 }
 
 auto Stability2::status() const -> StabilityStatus
@@ -71,7 +73,7 @@ auto Stability2::status() const -> StabilityStatus
     const auto ju = jsu.tail(nlu + nuu);
     const auto jlu = ju.head(nlu);
     const auto juu = ju.tail(nuu);
-    return {js, ju, jlu, juu, s, lambda};
+    return {js, ju, jlu, juu, s};
 }
 
 } // namespace Optima

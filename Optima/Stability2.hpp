@@ -20,17 +20,20 @@
 // Optima includes
 #include <Optima/Index.hpp>
 #include <Optima/MatrixViewRWQ.hpp>
+#include <Optima/MatrixViewW.hpp>
 
 namespace Optima {
 
 /// The arguments in method @ref Stability::update.
 struct StabilityUpdateArgs
 {
-    MatrixViewRWQ RWQ; ///< The echelon form RWQ = [Ibb Sbn Sbp] of matrix W.
+    MatrixView Wx;     ///< The matrix *Wx = [Ax; Jx]* in *W = [Ax Ap; Jx Jp]*.
     VectorView g;      ///< The gradient of the objective function with respect to x.
-    VectorView x;      ///< The values of the primal variables x.
+    VectorView x;      ///< The values of the variables x.
+    VectorView w;      ///< The values of the variables w.
     VectorView xlower; ///< The lower bounds of the primal variables x.
     VectorView xupper; ///< The upper bounds of the primal variables x.
+    IndicesView jb;    ///< The indices of the basic variables.
 };
 
 /// The stability status of the x variables.
@@ -46,7 +49,6 @@ struct StabilityStatus
     IndicesView jlu;  ///< The indices of the lower unstable variables in x.
     IndicesView juu;  ///< The indices of the upper unstable variables in x.
     VectorView s;     ///< The stability \eq{s=g-W_{\mathrm{x}}^{T}\lambda} of the x variables.
-    VectorView lmbda; ///< The canonical Lagrange multipliers \eq{lambda}. Note: `lambda` is a reserved word in python.
 };
 
 /// Used to determine the stability of the primal \eq{x} variables.
@@ -57,8 +59,7 @@ private:
     Index ns;      ///< The number of stable stable variables in js.
     Index nlu;     ///< The number of lower unstable stable variables in jlu.
     Index nuu;     ///< The number of upper unstable stable variables in juu.
-    Vector s;      ///< The stability \eq{s=g-W_{\mathrm{x}}^{T}\lambda} of the x variables.
-    Vector lambda; ///< The canonical Lagrange multipliers \eq{lambda}.
+    Vector s;      ///< The stability \eq{s=g+W_{\mathrm{x}}^{T}w} of the *x* variables.
 
 public:
     /// Construct a default Stability2 object.

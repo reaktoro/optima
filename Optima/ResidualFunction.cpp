@@ -165,8 +165,10 @@ struct ResidualFunction::Impl
     {
         const auto& fx = fres.fx;
         const auto& x = u.x;
-        const auto RWQ = echelonizerW.RWQ();
-        stability.update({RWQ, fx, x, xlower, xupper});
+        const auto& w = u.w;
+        const auto& Wx = echelonizerW.W().Wx;
+        const auto& jb = echelonizerW.RWQ().jb;
+        stability.update({Wx, fx, x, w, xlower, xupper, jb});
     }
 
     auto updateCanonicalFormJacobianMatrix(MasterVectorView u) -> void
