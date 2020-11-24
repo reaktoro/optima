@@ -81,3 +81,7 @@ def testLinearSolver(nx, np, ny, nz, nl, nu, diagHxx, method):
     linearsolver.solve(Mc, a, u)
 
     assert_almost_equal( (M * u).array(), a.array() )
+
+    ju = M.ju  # the indices of the unstable variables in x
+
+    assert all(u.x[ju] == a.x[ju])  # ensure ux[ju] == ax[ju]

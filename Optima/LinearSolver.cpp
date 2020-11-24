@@ -101,8 +101,6 @@ struct LinearSolver::Impl
         const auto ap = a.p;
 
         solve(Mc, {as, au, ap, awbs}, u);
-
-        u.x(ju) = au;
     }
 
     auto solve(CanonicalMatrix Mc, CanonicalVectorView a, MasterVectorRef u) -> void
@@ -132,7 +130,7 @@ struct LinearSolver::Impl
         w.noalias() = tr(Rbs) * wbs;
 
         u.x(js) = xs;
-        u.x(ju) = xu;
+        u.x(ju) = au;
         u.p = p;
         u.w = w;
     }
