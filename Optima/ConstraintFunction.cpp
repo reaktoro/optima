@@ -56,4 +56,11 @@ auto ConstraintFunction::operator()(ConstraintResultRef res, VectorView x, Vecto
     fn(res, x, p, opts);
 }
 
+auto ConstraintFunction::operator=(const Signature& func) -> ConstraintFunction&
+{
+    error(func == nullptr, "ConstraintFunction cannot be constructed with a non-initialized function.");
+    fn = func;
+    return *this;
+}
+
 } // namespace Optima

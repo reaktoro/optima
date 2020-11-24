@@ -58,4 +58,11 @@ auto ObjectiveFunction::operator()(ObjectiveResultRef res, VectorView x, VectorV
     fn(res, x, p, opts);
 }
 
+auto ObjectiveFunction::operator=(const Signature& func) -> ObjectiveFunction&
+{
+    error(func == nullptr, "ObjectiveFunction cannot be constructed with a non-initialized function.");
+    fn = func;
+    return *this;
+}
+
 } // namespace Optima

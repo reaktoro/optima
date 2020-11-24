@@ -46,18 +46,22 @@ struct ConstraintResultBase
     /// True if the constraint function evaluation succeeded.
     Bool succeeded;
 
-    /// Construct a ConstraintResultBase object.
+    /// Construct a ConstraintResultBase object with given dimensions.
     /// @param nc The number of constraint equations in *c(x, p)*.
     /// @param nx The number of variables in *x*.
     /// @param np The number of variables in *p*.
     ConstraintResultBase(Index nc, Index nx, Index np)
     : val(nc), ddx(nc, nx), ddp(nc, np), ddx4basicvars(false), succeeded(true) {}
 
-    /// Construct an ConstraintResultBase object.
+    /// Construct an ConstraintResultBase object from another.
     template<typename B, typename V, typename M>
     ConstraintResultBase(ConstraintResultBase<B, V, M>& other)
     : val(other.val), ddx(other.ddx), ddp(other.ddp),
       ddx4basicvars(other.ddx4basicvars), succeeded(other.succeeded) {}
+
+    /// Construct an ConstraintResultBase object with given data.
+    ConstraintResultBase(Vec val, Mat ddx, Mat ddp, Bool ddx4basicvars, Bool succeeded)
+    : val(val), ddx(ddx), ddp(ddp), ddx4basicvars(ddx4basicvars), succeeded(succeeded) {}
 };
 
 /// The result of a constraint function evaluation.
@@ -116,6 +120,9 @@ public:
 
     /// Evaluate the constraint function.
     auto operator()(ConstraintResultRef res, VectorView x, VectorView p, ConstraintOptions opts) const -> void;
+
+    /// Assign another constraint function to this.
+    auto operator=(const Signature& fn) -> ConstraintFunction&;
 
 private:
     /// The constraint function with main functional signature.

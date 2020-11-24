@@ -52,19 +52,24 @@ struct ObjectiveResultBase
     /// True if the objective function evaluation succeeded.
     Bool succeeded;
 
-    /// Construct an ObjectiveResult object.
+    /// Construct an ObjectiveResultBase object with given dimensions.
     /// @param nx The number of variables in *x*.
     /// @param np The number of variables in *p*.
     ObjectiveResultBase(Index nx, Index np)
     : f(0.0), fx(nx), fxx(nx, nx), fxp(nx, np),
       diagfxx(false), fxx4basicvars(false), succeeded(true) {}
 
-    /// Construct an ObjectiveResult object.
+    /// Construct an ObjectiveResultBase object from another.
     template<typename R, typename B, typename V, typename M>
     ObjectiveResultBase(ObjectiveResultBase<R, B, V, M>& other)
     : f(other.f), fx(other.fx), fxx(other.fxx), fxp(other.fxp),
       diagfxx(other.diagfxx), fxx4basicvars(other.fxx4basicvars),
       succeeded(other.succeeded) {}
+
+    /// Construct an ObjectiveResultBase object with given data.
+    ObjectiveResultBase(Real f, Vec fx, Mat fxx, Mat fxp, Bool diagfxx, Bool fxx4basicvars, Bool succeeded)
+    : f(f), fx(fx), fxx(fxx), fxp(fxp), diagfxx(diagfxx),
+      fxx4basicvars(fxx4basicvars), succeeded(succeeded) {}
 };
 
 /// The result of an objective function evaluation.
@@ -125,6 +130,9 @@ public:
 
     /// Evaluate the objective function.
     auto operator()(ObjectiveResultRef res, VectorView x, VectorView p, ObjectiveOptions opts) const -> void;
+
+    /// Assign another objective function to this.
+    auto operator=(const Signature& fn) -> ObjectiveFunction&;
 
 private:
     /// The objective function with main functional signature.
