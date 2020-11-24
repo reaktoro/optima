@@ -80,6 +80,8 @@ def createMatrixViewH(params):
     diagHxx = params.diagHxx
 
     Hxx = npy.diag(random.rand(nx)) if diagHxx else random.rand(nx, nx)
+    Hxx = Hxx.T @ Hxx  # create positive definite Hxx matrix
+
     Hxp = random.rand(nx, np)
 
     return MatrixViewH(Hxx, Hxp, diagHxx)
