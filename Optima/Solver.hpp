@@ -51,7 +51,7 @@ public:
     auto setOptions(const Options& options) -> void;
 
     /// Solve the optimization problem.
-    auto solve(State& state, const Problem& problem) -> Result;
+    auto solve(const Problem& problem, State& state) -> Result;
 
 private:
     struct Impl;
