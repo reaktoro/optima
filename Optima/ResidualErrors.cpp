@@ -89,9 +89,20 @@ struct ResidualErrors::Impl
         auto ewbl = ew.tail(nbl);
 
         ewbs.noalias() = abs(rwbs)/((xbs.array() != 0.0).select(abs(xbs), 1.0));
+        ewbl.fill(0.0);
+
+        // Note: If a basic variable is attached to its lower/upper bound, this
+        // means the last iteration tried to further decrease/increase the
+        // variable. Ensure errors associated with such basic variables
+        // attached to their bounds are zeroed out below.
+
+        // Ensure basic variables on the bounds have zero optimality error
+        ex(jbs) = (xbs.array() == xbslower.array()).select(0.0, ex(jbs));
+        ex(jbs) = (xbs.array() == xbsupper.array()).select(0.0, ex(jbs));
+
+        // Ensure basic variables on the bounds have zero feasibility error
         ewbs.noalias() = (xbs.array() == xbslower.array()).select(0.0, ewbs);
         ewbs.noalias() = (xbs.array() == xbsupper.array()).select(0.0, ewbs);
-        ewbl.fill(0.0);
 
         errorf = norminf(ex(js));
         errorv = norminf(rp);
