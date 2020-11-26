@@ -93,10 +93,25 @@ struct Solver::Impl
     /// Solve the optimization problem.
     auto solve(const Problem& problem, State& state) -> Result
     {
-        // assert(problem.f);
-        // assert(problem.dims.he == 0 || problem.he);
-        // assert(problem.dims.hg == 0 || problem.hg);
-        // assert(problem.dims.p == 0 || problem.v);
+        error(!problem.f.initialized(),
+            "Cannot solve the optimization problem. "
+            "You have not initialized the objective function. "
+            "Ensure Problem::f is properly initialized.");
+
+        error(dims.he > 0 && !problem.he.initialized(),
+            "Cannot solve the optimization problem. "
+            "You have not initialized the constraint function he(x, p). "
+            "Ensure Problem::he is properly initialized.");
+
+        error(dims.hg > 0 && !problem.hg.initialized(),
+            "Cannot solve the optimization problem. "
+            "You have not initialized the constraint function hg(x, p). "
+            "Ensure Problem::hg is properly initialized.");
+
+        error(dims.p > 0 && !problem.v.initialized(),
+            "Cannot solve the optimization problem. "
+            "You have not initialized the complementary constraint function v(x, p). "
+            "Ensure Problem::v is properly initialized.");
 
         // Create the objective function for the master optimization problem
         mproblem.f = [&](ObjectiveResultRef res, VectorView xrs, VectorView p, ObjectiveOptions opts)
