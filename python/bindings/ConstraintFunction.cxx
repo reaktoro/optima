@@ -87,6 +87,7 @@ void exportConstraintFunction(py::module& m)
     py::class_<ConstraintFunction>(m, "ConstraintFunction")
         .def(py::init<const ConstraintFunction::Signature4py&>())
         .def("__call__", &ConstraintFunction::operator())
+        .def("initialized", &ConstraintFunction::initialized)
         ;
 
     py::implicitly_convertible<ConstraintFunction::Signature4py, ConstraintFunction>();

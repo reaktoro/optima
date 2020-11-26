@@ -26,7 +26,7 @@ ConstraintFunction::ConstraintFunction()
 {
     fn = [](ConstraintResultRef res, VectorView x, VectorView p, ConstraintOptions opts)
     {
-        error(true, "Cannot evaluate a non-initialized ConstraintFunction object.");
+        // initialized with a "do nothing function"!
     };
 }
 
@@ -61,6 +61,11 @@ auto ConstraintFunction::operator=(const Signature& func) -> ConstraintFunction&
     error(func == nullptr, "ConstraintFunction cannot be constructed with a non-initialized function.");
     fn = func;
     return *this;
+}
+
+auto ConstraintFunction::initialized() const -> bool
+{
+    return fn != nullptr;
 }
 
 } // namespace Optima

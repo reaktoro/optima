@@ -95,6 +95,7 @@ void exportObjectiveFunction(py::module& m)
     py::class_<ObjectiveFunction>(m, "ObjectiveFunction")
         .def(py::init<const ObjectiveFunction::Signature4py&>())
         .def("__call__", &ObjectiveFunction::operator())
+        .def("initialized", &ObjectiveFunction::initialized)
         ;
 
     py::implicitly_convertible<ObjectiveFunction::Signature4py, ObjectiveFunction>();

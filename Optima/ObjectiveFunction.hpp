@@ -134,6 +134,9 @@ public:
     /// Assign another objective function to this.
     auto operator=(const Signature& fn) -> ObjectiveFunction&;
 
+    /// Return `true` if this ObjectiveFunction object has been initialized.
+    auto initialized() const -> bool;
+
 private:
     /// The objective function with main functional signature.
     Signature fn;

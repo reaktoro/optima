@@ -124,6 +124,9 @@ public:
     /// Assign another constraint function to this.
     auto operator=(const Signature& fn) -> ConstraintFunction&;
 
+    /// Return `true` if this ConstraintFunction object has been initialized.
+    auto initialized() const -> bool;
+
 private:
     /// The constraint function with main functional signature.
     Signature fn;

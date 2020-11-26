@@ -26,7 +26,7 @@ ObjectiveFunction::ObjectiveFunction()
 {
     fn = [](ObjectiveResultRef res, VectorView x, VectorView p, ObjectiveOptions opts)
     {
-        error(true, "Cannot evaluate a non-initialized ObjectiveFunction object");
+        // initialized with a "do nothing function"!
     };
 }
 
@@ -63,6 +63,11 @@ auto ObjectiveFunction::operator=(const Signature& func) -> ObjectiveFunction&
     error(func == nullptr, "ObjectiveFunction cannot be constructed with a non-initialized function.");
     fn = func;
     return *this;
+}
+
+auto ObjectiveFunction::initialized() const -> bool
+{
+    return fn != nullptr;
 }
 
 } // namespace Optima
