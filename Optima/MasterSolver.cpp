@@ -91,7 +91,7 @@ struct MasterSolver::Impl
     {
         if(!options.output.active) return;
         const auto& Fres = F.result();
-        const auto& jb = Fres.Jc.jb;
+        const auto& jb = Fres.Jm.RWQ.jb;
         const auto& xnames = options.output.xnames;
         outputter.addValue(result.iterations);
         outputter.addValue(Fres.f.f);
