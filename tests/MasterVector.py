@@ -70,6 +70,12 @@ def testMasterVector(nx, np, nw):
 
     assert u.dot(v) == approx(sum(u.array() * v.array()))
 
+    assert u.norm() == approx(linalg.norm(u.array()))
+    assert v.norm() == approx(linalg.norm(v.array()))
+
+    assert u.squaredNorm() == approx(u.norm() * u.norm())
+    assert v.squaredNorm() == approx(v.norm() * v.norm())
+
     u.x[:nx] = 0.0  # ensure u.x[:nx] is a view to actual content, and not a copy
     u.p[:np] = 0.0  # ensure u.p[:np] is a view to actual content, and not a copy
     u.w[:nw] = 0.0  # ensure u.w[:nw] is a view to actual content, and not a copy

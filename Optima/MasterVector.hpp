@@ -112,6 +112,18 @@ struct MasterVectorBase
         return x.dot(v.x) + p.dot(v.p) + w.dot(v.w);
     }
 
+    /// Return the Euclidean norm of this MasterVectorBase object.
+    auto norm() const -> double
+    {
+        return std::sqrt(squaredNorm());
+    }
+
+    /// Return the squared Euclidean norm of this MasterVectorBase object.
+    auto squaredNorm() const -> double
+    {
+        return x.squaredNorm() + p.squaredNorm() + w.squaredNorm();
+    }
+
     /// Return the size of this MasterVectorBase object.
     auto size() const { return x.size() + p.size() + w.size(); }
 
