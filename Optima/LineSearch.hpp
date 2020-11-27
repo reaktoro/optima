@@ -21,13 +21,14 @@
 #include <memory>
 
 // Optima includes
-#include <Optima/ErrorStatus.hpp>
+#include <Optima/LineSearchOptions.hpp>
 #include <Optima/MasterVector.hpp>
+#include <Optima/ResidualErrors.hpp>
 #include <Optima/ResidualFunction.hpp>
 
 namespace Optima {
 
-/// Used to perform a reflective line search along the tortuous path when variables become attached to their bounds.
+/// Used to perform a line search minimization operation.
 class LineSearch
 {
 private:
@@ -48,8 +49,11 @@ public:
     /// Assign a LineSearch object to this.
     auto operator=(LineSearch other) -> LineSearch&;
 
+    /// Set the options of this LineSearch object.
+    auto setOptions(const LineSearchOptions& options) -> void;
+
     /// Start the backtrack search until the error is no longer infinity.
-    auto start(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ErrorStatus& E) -> void;
+    auto start(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void;
 };
 
 } // namespace Optima

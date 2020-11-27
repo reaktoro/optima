@@ -21,8 +21,8 @@
 #include <memory>
 
 // Optima includes
-#include <Optima/ErrorStatus.hpp>
 #include <Optima/MasterVector.hpp>
+#include <Optima/ResidualErrors.hpp>
 #include <Optima/ResidualFunction.hpp>
 
 namespace Optima {
@@ -49,7 +49,7 @@ public:
     auto operator=(BacktrackSearch other) -> BacktrackSearch&;
 
     /// Start the backtrack search until the error is no longer infinity.
-    auto start(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ErrorStatus& E) -> void;
+    auto start(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void;
 };
 
 } // namespace Optima

@@ -19,18 +19,45 @@
 
 // Optima includes
 #include <Optima/Exception.hpp>
+#include <Optima/Utils.hpp>
 
 namespace Optima {
 
 struct LineSearch::Impl
 {
+    /// The trial state of u = (x, p, y, z) during the line search minimization.
+    MasterVector utrial;
+
+    /// The options for the line search minimization.
+    LineSearchOptions options;
+
     Impl(const MasterDims& dims)
+    : utrial(dims)
     {
     }
 
-    auto start(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ErrorStatus& E) -> void
+    auto setOptions(const LineSearchOptions opts) -> void
     {
+        options = opts;
+    }
 
+    auto start(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
+    {
+        auto phi = [&](auto alpha)
+        {
+            utrial = uo*(1 - alpha) + alpha*u;
+            F.update(utrial);
+            E.update(utrial, F);
+            return E.error;
+        };
+
+        const auto tol = options.tolerance;
+        const auto maxiters = options.maxiterations;
+
+        // Minimize phi(alpha) along the path from uo to u for alpha in [0, 1].
+        const auto alphamin = minimizeBrent(phi, 0.0, 1.0, tol, maxiters);
+
+        u = uo*(1 - alphamin) + alphamin*u; // using uo + alpha*(u - uo) is sensitive to round-off errors!
     }
 };
 
@@ -51,9 +78,14 @@ auto LineSearch::operator=(LineSearch other) -> LineSearch&
     return *this;
 }
 
-auto LineSearch::start(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ErrorStatus& E) -> void
+auto LineSearch::setOptions(const LineSearchOptions& options) -> void
 {
+    pimpl->setOptions(options);
+}
 
+auto LineSearch::start(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
+{
+    pimpl->start(uo, u, F, E);
 }
 
 } // namespace Optima

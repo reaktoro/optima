@@ -15,45 +15,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include "BacktrackSearch.hpp"
-
-// Optima includes
-#include <Optima/Exception.hpp>
+#pragma once
 
 namespace Optima {
 
-struct BacktrackSearch::Impl
+/// The options for the line search minimization operation.
+struct LineSearchOptions
 {
-    Impl(const MasterDims& dims)
-    {
-    }
+    /// The tolerance in the minimization calculation during the line search operation.
+    double tolerance = 1.0e-5;
 
-    auto start(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
-    {
+    /// The maximum number of iterations during the minimization calculation in the line search operation.
+    double maxiterations = 20;
 
-    }
+    /// The parameter that triggers line-search when current error is greater than initial error by a given factor (`Enew > factor*E0`).
+    double trigger_when_current_error_is_greater_than_initial_error_by_factor = 1.0;
+
+    /// The parameter that triggers line-search when current error is greater than previous error by a given factor (`Enew > factor*Eold`).
+    double trigger_when_current_error_is_greater_than_previous_error_by_factor = 2.0;
 };
-
-BacktrackSearch::BacktrackSearch(const MasterDims& dims)
-: pimpl(new Impl(dims))
-{}
-
-BacktrackSearch::BacktrackSearch(const BacktrackSearch& other)
-: pimpl(new Impl(*other.pimpl))
-{}
-
-BacktrackSearch::~BacktrackSearch()
-{}
-
-auto BacktrackSearch::operator=(BacktrackSearch other) -> BacktrackSearch&
-{
-    pimpl = std::move(other.pimpl);
-    return *this;
-}
-
-auto BacktrackSearch::start(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
-{
-
-}
 
 } // namespace Optima

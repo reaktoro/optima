@@ -44,7 +44,7 @@ struct ErrorControl::Impl
 
     auto isBacktrackSearchNeeded(const ResidualErrors& E)
     {
-        // return E.errorIsntFinite();
+        return !std::isfinite(E.error);
     }
 
     auto isLineSearchNeeded(const ResidualErrors& E)
@@ -62,14 +62,23 @@ struct ErrorControl::Impl
 
     }
 
+    auto isDescentDirection(MasterVectorView uo, MasterVectorView u, const ResidualFunction& F) -> bool
+    {
+        const auto Fm = F.result().Fm;
+        const auto slope = Fm.dot(u - uo);
+        return slope < 0.0;
+    }
+
     auto execute(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
     {
-        // if(E.errorIsInf()) {
-        //     backtracksearch.start(F, E, uo, u);
+        // error(!isDescentDirection(uo, u, F), "Currently, Optima cannot handle Newton steps that are not descent directions.");
+
+        // if(isBacktrackSearchNeeded(E)) {
+        //     backtracksearch.start(uo, u, F, E);
         // }
 
-        // if(E.errorHasIncreasedSignificantly()) {
-        //     linesearch.start(F, E, uo, u);
+        // if(isLineSearchNeeded(E)) {
+        //     linesearch.start(uo, u, F, E);
         // }
     }
 };
