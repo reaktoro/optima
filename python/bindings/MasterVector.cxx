@@ -18,6 +18,7 @@
 // pybind11 includes
 #include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
+#include <pybind11/operators.h>
 namespace py = pybind11;
 
 // Optima includes
@@ -26,6 +27,11 @@ using namespace Optima;
 
 void exportMasterVector(py::module& m)
 {
+    auto __add__      = [](const MasterVector& l, const MasterVector& r) -> MasterVector { return l + r; };
+    auto __sub__      = [](const MasterVector& l, const MasterVector& r) -> MasterVector { return l - r; };
+    auto __mul__      = [](const MasterVector& l, double r) -> MasterVector { return l * r; };
+    auto __truediv__  = [](const MasterVector& l, double r) -> MasterVector { return l / r; };
+
     py::class_<MasterVector>(m, "MasterVector")
         .def(py::init<const MasterDims&>())
         .def(py::init<Index, Index, Index>())
@@ -38,6 +44,16 @@ void exportMasterVector(py::module& m)
         .def_property("w", [](MasterVector& s) -> VectorRef { return s.w; }, [](MasterVector& s, VectorView w) { s.w = w; })
         .def("size", &MasterVector::size)
         .def("array", [](const MasterVector& self) { return Vector(self); })
+        .def(py::self += py::self)
+        .def(py::self -= py::self)
+        .def(py::self *= double())
+        .def(py::self /= double())
+        .def("__add__", __add__)
+        .def("__sub__", __sub__)
+        .def("__mul__", __mul__)
+        .def("__rmul__", __mul__)
+        .def("__truediv__", __truediv__)
+        .def(double() * py::self)
         ;
 
     py::class_<MasterVectorRef>(m, "MasterVectorRef")

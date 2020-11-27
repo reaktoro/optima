@@ -23,6 +23,13 @@
 
 namespace Optima {
 
+template<typename Vec>
+struct MasterVectorBase;
+
+using MasterVector     = MasterVectorBase<Vector>;
+using MasterVectorRef  = MasterVectorBase<VectorRef>;
+using MasterVectorView = MasterVectorBase<VectorView>;
+
 /// Used as a base template type for master vector types.
 template<typename Vec>
 struct MasterVectorBase
@@ -62,6 +69,42 @@ struct MasterVectorBase
     MasterVectorBase(MasterVectorBase<V>& other)
     : x(other.x), p(other.p), w(other.w) {}
 
+    /// Assign a MasterVectorBase object to this.
+    template<typename V>
+    auto operator=(const MasterVectorBase<V>& other) -> MasterVectorBase&
+    {
+        x.noalias() = other.x;
+        p.noalias() = other.p;
+        w.noalias() = other.w;
+        return *this;
+    }
+
+    /// Add a MasterVectorBase object to this.
+    template<typename V>
+    auto operator+=(const MasterVectorBase<V>& other) -> MasterVectorBase&
+    {
+        x += other.x; p += other.p; w += other.w; return *this;
+    }
+
+    /// Subtract a MasterVectorBase object from this.
+    template<typename V>
+    auto operator-=(const MasterVectorBase<V>& other) -> MasterVectorBase&
+    {
+        x -= other.x; p -= other.p; w -= other.w; return *this;
+    }
+
+    /// Multiply this MasterVectorBase object by a scalar.
+    auto operator*=(double s) -> MasterVectorBase&
+    {
+        x *= s; p *= s; w *= s; return *this;
+    }
+
+    /// Divide this MasterVectorBase object by a scalar.
+    auto operator/=(double s) -> MasterVectorBase&
+    {
+        x /= s; p /= s; w /= s; return *this;
+    }
+
     /// Return the size of this MasterVectorBase object.
     auto size() const { return x.size() + p.size() + w.size(); }
 
@@ -69,8 +112,34 @@ struct MasterVectorBase
     operator Vector() const { Vector res(size()); res << x, p, w; return res; }
 };
 
-using MasterVector     = MasterVectorBase<Vector>;
-using MasterVectorRef  = MasterVectorBase<VectorRef>;
-using MasterVectorView = MasterVectorBase<VectorView>;
+template<typename L, typename R>
+auto operator+(const MasterVectorBase<L>& l, const MasterVectorBase<R>& r)
+{
+    return MasterVectorBase{l.x + r.x, l.p + r.p, l.w + r.w};
+}
+
+template<typename L, typename R>
+auto operator-(const MasterVectorBase<L>& l, const MasterVectorBase<R>& r)
+{
+    return MasterVectorBase{l.x - r.x, l.p - r.p, l.w - r.w};
+}
+
+template<typename V>
+auto operator*(double l, const MasterVectorBase<V>& r)
+{
+    return MasterVectorBase{l * r.x, l * r.p, l * r.w};
+}
+
+template<typename V>
+auto operator*(const MasterVectorBase<V>& l, double r)
+{
+    return r * l;
+}
+
+template<typename V>
+auto operator/(const MasterVectorBase<V>& l, double r)
+{
+    return (1.0/r) * l;
+}
 
 } // namespace Optima

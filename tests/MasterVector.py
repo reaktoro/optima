@@ -30,12 +30,43 @@ tested_nw  = [5, 8]           # The tested number of w variables
 def testMasterVector(nx, np, nw):
 
     u = MasterVector(nx, np, nw)
-
     u.x = random.rand(nx)
     u.p = random.rand(np)
     u.w = random.rand(nw)
 
+    v = MasterVector(nx, np, nw)
+    v.x = random.rand(nx)
+    v.p = random.rand(np)
+    v.w = random.rand(nw)
+
     assert all(u.array() == npy.concatenate([u.x, u.p, u.w]))
+
+    t = MasterVector(u); t += v
+    assert t.array() == approx(u.array() + v.array())
+
+    t = MasterVector(u); t -= v
+    assert t.array() == approx(u.array() - v.array())
+
+    t = MasterVector(u); t *= 1.234
+    assert t.array() == approx(u.array() * 1.234)
+
+    t = MasterVector(u); t /= 1.234
+    assert t.array() == approx(u.array() / 1.234)
+
+    t = u + v
+    assert t.array() == approx(u.array() + v.array())
+
+    t = u - v
+    assert t.array() == approx(u.array() - v.array())
+
+    t = u * 1.234
+    assert t.array() == approx(u.array() * 1.234)
+
+    t = 2.345 * u
+    assert t.array() == approx(u.array() * 2.345)
+
+    t = u / 1.234
+    assert t.array() == approx(u.array() / 1.234)
 
     u.x[:nx] = 0.0  # ensure u.x[:nx] is a view to actual content, and not a copy
     u.p[:np] = 0.0  # ensure u.p[:np] is a view to actual content, and not a copy
