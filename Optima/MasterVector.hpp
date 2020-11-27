@@ -105,6 +105,13 @@ struct MasterVectorBase
         x /= s; p /= s; w /= s; return *this;
     }
 
+    /// Return the dot product of this MasterVectorBase object with another.
+    template<typename V>
+    auto dot(const MasterVectorBase<V>& v) const -> double
+    {
+        return x.dot(v.x) + p.dot(v.p) + w.dot(v.w);
+    }
+
     /// Return the size of this MasterVectorBase object.
     auto size() const { return x.size() + p.size() + w.size(); }
 

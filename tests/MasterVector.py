@@ -68,6 +68,8 @@ def testMasterVector(nx, np, nw):
     t = u / 1.234
     assert t.array() == approx(u.array() / 1.234)
 
+    assert u.dot(v) == approx(sum(u.array() * v.array()))
+
     u.x[:nx] = 0.0  # ensure u.x[:nx] is a view to actual content, and not a copy
     u.p[:np] = 0.0  # ensure u.p[:np] is a view to actual content, and not a copy
     u.w[:nw] = 0.0  # ensure u.w[:nw] is a view to actual content, and not a copy
