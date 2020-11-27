@@ -77,6 +77,7 @@ struct MasterSolver::Impl
         outputter.addEntries("ep", dims.np, options.output.pnames);
         outputter.addEntries("ey", dims.ny, options.output.ynames);
         outputter.addEntries("ez", dims.nz, options.output.znames);
+        outputter.addEntry("Basic Variables");
         outputter.outputHeader();
     };
 
@@ -90,6 +91,8 @@ struct MasterSolver::Impl
     {
         if(!options.output.active) return;
         const auto& Fres = F.result();
+        const auto& jb = Fres.Jc.jb;
+        const auto& xnames = options.output.xnames;
         outputter.addValue(result.iterations);
         outputter.addValue(Fres.f.f);
         outputter.addValue(E.error);
@@ -104,6 +107,10 @@ struct MasterSolver::Impl
         outputter.addValues(E.ep);
         outputter.addValues(E.ew.head(dims.ny));
         outputter.addValues(E.ew.tail(dims.nz));
+        std::stringstream ss;
+        if(xnames.empty()) for(auto i : jb) ss << i << " ";
+        else for(auto i : jb) ss << xnames[i] << " ";
+        outputter.addValue(ss.str());
         outputter.outputState();
     };
 
@@ -126,6 +133,7 @@ struct MasterSolver::Impl
 
     auto initialize(const MasterProblem& problem, MasterVectorRef u) -> bool
     {
+        sanitycheck(problem, u);
         result = {};
         u.x.noalias() = min(max(u.x, problem.xlower), problem.xupper);
         u.p.noalias() = min(max(u.p, problem.plower), problem.pupper);
@@ -169,6 +177,20 @@ struct MasterSolver::Impl
         result.succeeded = convergence.converged();
         outputCurrentState();
         outputHeaderBottom();
+    }
+
+    auto sanitycheck(const MasterProblem& problem, MasterVectorRef u) -> void
+    {
+        assert(problem.f.initialized());
+        assert(dims.nz == 0 || problem.h.initialized());
+        assert(dims.np == 0 || problem.v.initialized());
+        assert(dims.nx == problem.xlower.size());
+        assert(dims.nx == problem.xupper.size());
+        assert(dims.np == problem.plower.size());
+        assert(dims.np == problem.pupper.size());
+        assert(dims.nx == u.x.size());
+        assert(dims.np == u.p.size());
+        assert(dims.nw == u.w.size());
     }
 };
 
