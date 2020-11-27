@@ -154,10 +154,10 @@ struct ResidualFunction::Impl
         const auto& x = u.x;
         const auto& Jx = hres.ddx;
         const auto& Jp = hres.ddp;
-        wx = min(x - xlower, xupper - x);
-        wx = wx.array().isInf().select(abs(x), wx); // replace wx[i]=inf by wx[i]=abs(x[i])
-        assert(wx.minCoeff() >= 0.0);
-        wx = (wx.array() > 0.0).select(wx, -1.0); // set negative priority weights for variables on the bounds
+
+        wx.noalias() = abs(x);
+        wx.noalias() = (x.array() != xlower.array()).select(wx, -1.0); // Enforce weak priority for variables on the bounds.
+        wx.noalias() = (x.array() != xupper.array()).select(wx, -1.0); // Enforce weak priority for variables on the bounds.
         echelonizerW.update(Jx, Jp, wx);
     }
 
