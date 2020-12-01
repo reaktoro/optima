@@ -23,6 +23,7 @@
 
 // Optima includes
 #include <Optima/ConvergenceOptions.hpp>
+#include <Optima/LineSearchOptions.hpp>
 #include <Optima/LinearSolverOptions.hpp>
 #include <Optima/NewtonStepOptions.hpp>
 #include <Optima/OutputterOptions.hpp>
@@ -79,22 +80,6 @@ struct OutputOptions : OutputterOptions
 
     /// Assign a boolean value to `active` member.
     auto operator=(bool active) -> OutputOptions&;
-};
-
-/// The options for the linear search minimization operation.
-struct LineSearchOptions
-{
-    /// The tolerance in the minimization calculation during the line search operation.
-    double tolerance = 1.0e-5;
-
-    /// The maximum number of iterations during the minimization calculation in the line search operation.
-    double maxiters = 20;
-
-    /// The parameter that triggers line-search when current error is greater than initial error by a given factor (`Enew > factor*E0`).
-    double trigger_when_current_error_is_greater_than_initial_error_by_factor = 1.0;
-
-    /// The parameter that triggers line-search when current error is greater than previous error by a given factor (`Enew > factor*Eold`).
-    double trigger_when_current_error_is_greater_than_previous_error_by_factor = 2.0;
 };
 
 /// The options for the backtrack linear search operation.

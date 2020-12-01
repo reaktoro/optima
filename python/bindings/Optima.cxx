@@ -32,6 +32,7 @@ void exportEchelonizerExtended(py::module& m);
 void exportEchelonizerW(py::module& m);
 void exportIndex(py::module& m);
 void exportIndexUtils(py::module& m);
+void exportLineSearchOptions(py::module& m);
 void exportLinearSolver(py::module& m);
 void exportLinearSolverOptions(py::module& m);
 void exportLU(py::module& m);
@@ -81,6 +82,7 @@ PYBIND11_MODULE(optima4py, m)
     exportEchelonizerW(m);
     exportIndex(m);
     exportIndexUtils(m);
+    exportLineSearchOptions(m);
     exportLinearSolver(m);
     exportLinearSolverOptions(m);
     exportLU(m);
