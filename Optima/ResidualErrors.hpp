@@ -39,10 +39,10 @@ public:
     VectorView ep; ///< The residual errors associated with the external constraint equations.
     VectorView ew; ///< The residual errors associated with the linear and non-linear constraint equations.
 
-    const double& errorf; ///< The maximum residual error associated with the first-order optimality conditions.
-    const double& errorv; ///< The maximum residual error associated with the external constraint equations.
-    const double& errorw; ///< The maximum residual error associated with the linear and non-linear constraint equations.
-    const double& error;  ///< The maximum error among all others.
+    const double& errorx; ///< The error norm `max(|ex|)`.
+    const double& errorp; ///< The error norm `max(|ep|)`.
+    const double& errorw; ///< The error norm `max(|ew|)`.
+    const double& error;  ///< The error norm `sqrt(||ex||^2 + ||ep||^2 + ||ew||^2)`.
 
     /// Construct a ResidualErrors instance.
     ResidualErrors(const MasterDims& dims);

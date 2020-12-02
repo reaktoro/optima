@@ -34,10 +34,10 @@ struct ResidualErrors::Impl
     Vector ex;     ///< The residual errors associated with the first-order optimality conditions.
     Vector ep;     ///< The residual errors associated with the external constraint equations.
     Vector ew;     ///< The residual errors associated with the linear and non-linear constraint equations.
-    double errorf; ///< The maximum residual error associated with the first-order optimality conditions.
-    double errorv; ///< The maximum residual error associated with the external constraint equations.
+    double errorx; ///< The maximum residual error associated with the first-order optimality conditions.
+    double errorp; ///< The maximum residual error associated with the external constraint equations.
     double errorw; ///< The maximum residual error associated with the linear and non-linear constraint equations.
-    double error;  ///< The maximum error among all others.
+    double error;  ///< The error norm sqrt(||ex||^2 + ||ep||^2 + ||ew||^2).
 
     Impl(const MasterDims& dims)
     : dims(dims)
@@ -82,13 +82,15 @@ struct ResidualErrors::Impl
         const auto xbslower = xlower(jbs);
         const auto xbsupper = xupper(jbs);
 
-        ex(js) = abs(rs)/(1 + abs(gs));
+        ex(js) = abs(rs);
         ex(ju).fill(0.0);
+
+        ep = rp;
 
         auto ewbs = ew.head(nbs);
         auto ewbl = ew.tail(nbl);
 
-        ewbs.noalias() = abs(rwbs)/((xbs.array() != 0.0).select(abs(xbs), 1.0));
+        ewbs.noalias() = abs(rwbs);
         ewbl.fill(0.0);
 
         // Note: If a basic variable is attached to its lower/upper bound, this
@@ -104,10 +106,10 @@ struct ResidualErrors::Impl
         ewbs.noalias() = (xbs.array() == xbslower.array()).select(0.0, ewbs);
         ewbs.noalias() = (xbs.array() == xbsupper.array()).select(0.0, ewbs);
 
-        errorf = norminf(ex(js));
-        errorv = norminf(rp);
+        errorx = norminf(ex(js));
+        errorp = norminf(rp);
         errorw = norminf(ewbs);
-        error = std::max({ errorf, errorv, errorw });
+        error = std::sqrt(ex.squaredNorm() + rp.squaredNorm() + ewbs.squaredNorm());
     }
 
     auto sanitycheck() const -> void
@@ -128,8 +130,8 @@ ResidualErrors::ResidualErrors(const MasterDims& dims)
   ex(pimpl->ex),
   ep(pimpl->ep),
   ew(pimpl->ew),
-  errorf(pimpl->errorf),
-  errorv(pimpl->errorv),
+  errorx(pimpl->errorx),
+  errorp(pimpl->errorp),
   errorw(pimpl->errorw),
   error(pimpl->error)
 {}
@@ -139,8 +141,8 @@ ResidualErrors::ResidualErrors(const ResidualErrors& other)
   ex(pimpl->ex),
   ep(pimpl->ep),
   ew(pimpl->ew),
-  errorf(pimpl->errorf),
-  errorv(pimpl->errorv),
+  errorx(pimpl->errorx),
+  errorp(pimpl->errorp),
   errorw(pimpl->errorw),
   error(pimpl->error)
 {}
