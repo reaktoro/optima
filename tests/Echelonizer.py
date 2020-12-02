@@ -21,10 +21,10 @@ from testing.utils.matrices import *
 
 
 # Tested number of columns
-tested_n = [15, 20]
+tested_n = [10, 15, 20, 30]
 
 # Tested number of rows
-tested_m = range(5, 15, 3)
+tested_m = [5, 10, 15, 20]
 
 # Tested cases for the structures of matrix A
 tested_assembleA = testing_matrices_A
@@ -153,26 +153,27 @@ def testEchelonizer(n, m, assembleA, jfixed):
     echelonizer.updateWithPriorityWeights(weigths)
 
     R = npy.copy(echelonizer.R())
+    S = npy.copy(echelonizer.S())
     Q = npy.copy(echelonizer.Q())
     C = npy.copy(echelonizer.C())
 
-    echelonizer.compute(A)  # use same A, then ensure R, Q, C remain identical
+    echelonizer.compute(A)  # use same A, then ensure R, S, Q, C remain identical
 
     Rnew = npy.copy(echelonizer.R())
+    Snew = npy.copy(echelonizer.S())
     Qnew = npy.copy(echelonizer.Q())
     Cnew = npy.copy(echelonizer.C())
 
-    assert npy.all(R == Rnew)
-    assert npy.all(Q == Qnew)
-    assert npy.all(C == Cnew)
+    assert npy.array_equal(R, Rnew)
+    assert npy.array_equal(S, Snew)
+    assert npy.array_equal(Q, Qnew)
+    assert npy.array_equal(C, Cnew)
 
     A = random.rand(m, n)  # change A, then ensure R, Q, C have changed accordingly
     echelonizer.compute(A)
 
     Rnew = npy.copy(echelonizer.R())
+    Snew = npy.copy(echelonizer.S())
     Qnew = npy.copy(echelonizer.Q())
-    Cnew = npy.copy(echelonizer.C())
 
-    assert not npy.all(R == Rnew)
-    assert not npy.all(Q == Qnew)
-    assert not npy.all(C == Cnew)
+    assert not npy.array_equal(R, Rnew)

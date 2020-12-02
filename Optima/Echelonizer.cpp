@@ -41,6 +41,9 @@ struct Echelonizer::Impl
     /// The matrix A being echelonized.
     Matrix A;
 
+    /// The rank of matrix A.
+    Index rankA;
+
     /// The current echelonizer matrix R such that RAQ = C = [I S].
     Matrix R;
 
@@ -117,24 +120,24 @@ struct Echelonizer::Impl
         const auto m = A.rows();
         const auto n = A.cols();
 
-        // Check if number of columns is greater/equal than number of rows
-        assert(n >= m && "Could not canonicalize the given matrix. "
-            "The given matrix has more rows than columns.");
-
         /// Initialize the current ordering of the variables
         inv_ordering = indices(n);
 
         // Compute the full-pivoting LU of A so that P*A*Q = L*U
         lu.compute(A);
 
-        // Get the rank of matrix A
-        const auto r = numBasicVariables();
+        // Update the rank of matrix A
+        rankA = numBasicVariables();
+
+        // The number of basic and non-basic columns of A.
+        const auto nb = rankA;
+        const auto nn = n - rankA;
 
         // Get the LU factors of matrix A
-        const auto L   = lu.matrixLU().leftCols(m).triangularView<Eigen::UnitLower>();
+        const auto Lbb = lu.matrixLU().topLeftCorner(nb, nb).triangularView<Eigen::UnitLower>();
         const auto U   = lu.matrixLU().rightCols(n).triangularView<Eigen::Upper>();
-        const auto Ubb = lu.matrixLU().topLeftCorner(r, r).triangularView<Eigen::Upper>();
-        const auto Ubn = lu.matrixLU().topRightCorner(r, n - r);
+        const auto Ubb = lu.matrixLU().topLeftCorner(nb, nb).triangularView<Eigen::Upper>();
+        const auto Ubn = lu.matrixLU().topRightCorner(nb, nn);
 
         // Set the permutation matrices P and Q
         P = lu.permutationP().indices().cast<Index>();
@@ -149,17 +152,17 @@ struct Echelonizer::Impl
         // Calculate the regularizer matrix R
         R = P.asPermutation();
         // R.bottomRows(m - r).fill(0.0); // TODO: Decide on these temporary commented lines to ensure rows/cols in R corresponding to linearly dependent rows in A are zero.
-        R = L.solve(R);
-        R.topRows(r) = Ubb.solve(R.topRows(r));
-        // R.bottomRows(m - r).fill(0.0);
+        R.topRows(nb) = Lbb.solve(R.topRows(nb)); // [L] = 6x5, [R] = 6x6, [Lbb] = 5x5
+        R.topRows(nb) = Ubb.solve(R.topRows(nb));
+        R.bottomRows(m - nb).fill(0.0);
 
         // Calculate matrix S
         S = Ubn;
         S = Ubb.solve(S);
 
         // Initialize the permutation matrices Kb and Kn
-        Kb.setIdentity(r);
-        Kn.setIdentity(n - r);
+        Kb.setIdentity(nb);
+        Kn.setIdentity(nn);
 
         // Initialize the threshold value
         threshold = std::abs(lu.maxPivot()) * lu.threshold() * std::max(A.rows(), A.cols());
@@ -177,16 +180,17 @@ struct Echelonizer::Impl
     /// Swap a basic variable by a non-basic variable.
     auto updateWithSwapBasicVariable(Index ib, Index in) -> void
     {
-        // Get the rank of matrix A
-        const Index r = numBasicVariables();
+        // The number of basic and non-basic columns of A.
+        const auto nb = rankA;
+        const auto nn = A.cols() - rankA;
 
         // Check if ib < rank(A)
-        assert(ib < r &&
+        assert(ib < nb &&
             "Could not swap basic and non-basic variables. "
                 "Expecting an index of basic variable below `r`, where `r = rank(A)`.");
 
         // Check if in < n - rank(A)
-        assert(in < lu.cols() - r &&
+        assert(in < nn &&
             "Could not swap basic and non-basic variables. "
                 "Expecting an index of non-basic variable below `n - r`, where `r = rank(A)`.");
 
@@ -199,17 +203,17 @@ struct Echelonizer::Impl
         M = S.col(in);
 
         // Auxiliary variables
-        const Index m = S.rows();
-        const double aux = 1.0/S(ib, in);
+        const auto m = S.rows();
+        const auto aux = 1.0/S(ib, in);
 
         // Update the echelonizer matrix R (only its `r` upper rows, where `r = rank(A)`)
         R.row(ib) *= aux;
-        for(Index i = 0; i < m; ++i)
+        for(auto i = 0; i < m; ++i)
             if(i != ib) R.row(i) -= S(i, in) * R.row(ib);
 
         // Update matrix S
         S.row(ib) *= aux;
-        for(Index i = 0; i < m; ++i)
+        for(auto i = 0; i < m; ++i)
             if(i != ib) S.row(i) -= S(i, in) * S.row(ib);
         S.col(in) = -M*aux;
         S(ib, in) = aux;
@@ -226,13 +230,9 @@ struct Echelonizer::Impl
             "Could not update the canonical form."
                 "Mismatch number of variables and given priority weights.");
 
-        // The rank and number of columns of matrix A
-        const Index r = numBasicVariables();
-        const Index n = lu.cols();
-
-        // The number of basic and non-basic variables
-        const Index nb = r;
-        const Index nn = n - r;
+        // The number of basic and non-basic columns of A.
+        const auto nb = rankA;
+        const auto nn = A.cols() - rankA;
 
         // The upper part of R corresponding to linearly independent rows of A
         auto Rb = R.topRows(nb);
@@ -378,7 +378,7 @@ auto Echelonizer::numEquations() const -> Index
 
 auto Echelonizer::numBasicVariables() const -> Index
 {
-    return pimpl->numBasicVariables();
+    return pimpl->rankA;
 }
 
 auto Echelonizer::numNonBasicVariables() const -> Index
