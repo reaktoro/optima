@@ -62,7 +62,7 @@ State::State(const Dims& dims)
   sbar(pimpl->sbar),
   xbg(pimpl->xbar.segment(dims.x, dims.bg)),
   xhg(pimpl->xbar.tail(dims.hg)),
-  stability({indices(dims.x), dims.x})
+  stability(dims.x)
 {}
 
 State::State(const State& other)

@@ -20,114 +20,60 @@
 // C++ includes
 #include <cassert>
 
+// Optima includes
+#include <Optima/IndexUtils.hpp>
+
 namespace Optima {
 
-/// Check if the data of a Stability object is consistent.
-auto checkStabilityConsistency(const Stability::Data& data)
-{
-    const auto& [iordering, ns, nlu, nuu, nslu, nsuu] = data;
-    const auto size = iordering.size();
-    assert(ns <= size);
-    assert(nlu <= size);
-    assert(nuu <= size);
-    assert(nslu <= size);
-    assert(nsuu <= size);
-    assert(size == ns + nlu + nuu + nslu + nsuu);
-}
-
-Stability::Stability()
+Stability::Stability(Index nx)
+: jsu(indices(nx)), ns(nx), nlu(0), nuu(0), s(zeros(nx))
 {}
 
-Stability::Stability(const Data& data)
-: data(data)
+auto Stability::update(StabilityUpdateArgs args) -> void
 {
-    checkStabilityConsistency(data);
+    const auto nx = jsu.size();
+
+    const auto [Wx, g, x, w, xlower, xupper, jb] = args;
+
+    assert(nx == g.size());
+    assert(nx == x.size());
+    assert(nx == xlower.size());
+    assert(nx == xupper.size());
+
+    s.noalias() = g + tr(Wx)*w;
+
+    auto is_lower_unstable = [&](Index i) { return args.x[i] == args.xlower[i] && s[i] > 0.0; };
+    auto is_upper_unstable = [&](Index i) { return args.x[i] == args.xupper[i] && s[i] < 0.0; };
+
+    // Note: In the code below, all basic variables are by default considered
+    // stable. It remains to identify which non-basic variables are unstable!
+
+    const auto nb = moveIntersectionLeft(jsu, jb);
+
+    assert(nb == jb.size());
+
+    const auto nn = nx - nb; // the number of non-basic variables
+
+    auto jnsu = jsu.tail(nn); // the non-basic variables organized as jnsu = (jns, jnu) = (stable, unstable)
+
+    // Organize jsu = (js, jlu, juu) = (stable, lower unstable, upper unstable).
+    const auto pos1 = moveRightIf(jnsu, is_upper_unstable);
+    const auto pos2 = moveRightIf(jnsu.head(pos1), is_lower_unstable);
+
+    ns  = nb + pos2;
+    nuu = nn - pos1;
+    nlu = pos1 - pos2;
+
+    assert(ns + nuu + nlu == nx);
 }
 
-auto Stability::update(const Data& data_) -> void
+auto Stability::status() const -> StabilityStatus
 {
-    data = data_;
-    checkStabilityConsistency(data);
-}
-
-auto Stability::numVariables() const -> Index
-{
-    return data.iordering.size();
-}
-
-auto Stability::numStableVariables() const -> Index
-{
-    return data.ns;
-}
-
-auto Stability::numUnstableVariables() const -> Index
-{
-    return data.iordering.size() - data.ns;
-}
-
-auto Stability::numLowerUnstableVariables() const -> Index
-{
-    return data.nlu;
-}
-
-auto Stability::numUpperUnstableVariables() const -> Index
-{
-    return data.nuu;
-}
-
-auto Stability::numStrictlyLowerUnstableVariables() const -> Index
-{
-    return data.nslu;
-}
-
-auto Stability::numStrictlyUpperUnstableVariables() const -> Index
-{
-    return data.nsuu;
-}
-
-auto Stability::numStrictlyUnstableVariables() const -> Index
-{
-    return data.nslu + data.nsuu;
-}
-
-auto Stability::indicesVariables() const -> IndicesView
-{
-    return data.iordering;
-}
-
-auto Stability::indicesStableVariables() const -> IndicesView
-{
-    return data.iordering.head(data.ns);
-}
-
-auto Stability::indicesUnstableVariables() const -> IndicesView
-{
-    return data.iordering.tail(data.nlu + data.nuu + data.nslu + data.nsuu);
-}
-
-auto Stability::indicesLowerUnstableVariables() const -> IndicesView
-{
-    return data.iordering.segment(data.ns, data.nlu);
-}
-
-auto Stability::indicesUpperUnstableVariables() const -> IndicesView
-{
-    return data.iordering.segment(data.ns + data.nlu, data.nuu);
-}
-
-auto Stability::indicesStrictlyLowerUnstableVariables() const -> IndicesView
-{
-    return data.iordering.segment(data.ns + data.nlu + data.nuu, data.nslu);
-}
-
-auto Stability::indicesStrictlyUpperUnstableVariables() const -> IndicesView
-{
-    return data.iordering.tail(data.nsuu);
-}
-
-auto Stability::indicesStrictlyUnstableVariables() const -> IndicesView
-{
-    return data.iordering.tail(data.nslu + data.nsuu);
+    const auto js = jsu.head(ns);
+    const auto ju = jsu.tail(nlu + nuu);
+    const auto jlu = ju.head(nlu);
+    const auto juu = ju.tail(nuu);
+    return {js, ju, jlu, juu, s};
 }
 
 } // namespace Optima

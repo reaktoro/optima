@@ -19,95 +19,57 @@
 
 // Optima includes
 #include <Optima/Index.hpp>
+#include <Optima/MatrixViewRWQ.hpp>
+#include <Optima/MatrixViewW.hpp>
 
 namespace Optima {
 
-/// The state of the optimization variables.
+/// The arguments in method @ref Stability::update.
+struct StabilityUpdateArgs
+{
+    MatrixView Wx;     ///< The matrix *Wx = [Ax; Jx]* in *W = [Ax Ap; Jx Jp]*.
+    VectorView g;      ///< The gradient of the objective function with respect to x.
+    VectorView x;      ///< The values of the variables x.
+    VectorView w;      ///< The values of the variables w.
+    VectorView xlower; ///< The lower bounds of the primal variables x.
+    VectorView xupper; ///< The upper bounds of the primal variables x.
+    IndicesView jb;    ///< The indices of the basic variables.
+};
+
+/// The stability status of the x variables.
+/// This class computes the stability of each varible in \eq{x} using
+/// \eqc{s = g - W_{\mathrm{x}}^{T}\lambda,}
+/// where \eq{lambda} is defined as:
+/// \eqc{\lambda = R^{T}g_{\mathrm{b}}.}
+/// @see Stability::status
+struct StabilityStatus
+{
+    IndicesView js;   ///< The indices of the stable variables in x.
+    IndicesView ju;   ///< The indices of the unstable variables in x.
+    IndicesView jlu;  ///< The indices of the lower unstable variables in x.
+    IndicesView juu;  ///< The indices of the upper unstable variables in x.
+    VectorView s;     ///< The stability \eq{s=g-W_{\mathrm{x}}^{T}\lambda} of the x variables.
+};
+
+/// Used to determine the stability of the primal \eq{x} variables.
 class Stability
 {
-public:
-    /// The underlying basic data in a Stability object.
-    struct Data
-    {
-        /// The ordering of the primal variables *x* as *stable*, *lower unstable*, *upper unstable*, *strictly lower unstable*, *strictly upper unstable*.
-        Indices iordering;
-
-        /// The number of *stable variables* in *x*.
-        Index ns = 0;
-
-        /// The number of *lower unstable variables* in *x*.
-        Index nlu = 0;
-
-        /// The number of *upper unstable variables* in *x*.
-        Index nuu = 0;
-
-        /// The number of *strictly lower unstable variables* in *x*.
-        Index nslu = 0;
-
-        /// The number of *strictly upper unstable variables* in *x*.
-        Index nsuu = 0;
-    };
-
-    /// Construct a default Stability object.
-    Stability();
-
-    /// Construct a Stability object with given data.
-    Stability(const Data& data);
-
-    /// Update the indices of stable and unstable variables with given data.
-    auto update(const Data& data) -> void;
-
-    /// Return the number of variables.
-    auto numVariables() const -> Index;
-
-    /// Return the number of *stable variables*.
-    auto numStableVariables() const -> Index;
-
-    /// Return the number of *unstable variables*.
-    auto numUnstableVariables() const -> Index;
-
-    /// Return the number of *lower unstable variables*.
-    auto numLowerUnstableVariables() const -> Index;
-
-    /// Return the number of *upper unstable variables*.
-    auto numUpperUnstableVariables() const -> Index;
-
-    /// Return the number of *strictly lower unstable variables*.
-    auto numStrictlyLowerUnstableVariables() const -> Index;
-
-    /// Return the number of *strictly upper unstable variables*.
-    auto numStrictlyUpperUnstableVariables() const -> Index;
-
-    /// Return the number of *strictly lower and upper unstable variables*.
-    auto numStrictlyUnstableVariables() const -> Index;
-
-    /// Return the indices of the variables ordered as *stable, lower unstable, upper unstable, strictly lower unstable, strictly upper unstable*.
-    auto indicesVariables() const -> IndicesView;
-
-    /// Return the indices of the *stable variables*.
-    auto indicesStableVariables() const -> IndicesView;
-
-    /// Return the indices of the *unstable variables*.
-    auto indicesUnstableVariables() const -> IndicesView;
-
-    /// Return the indices of the *lower unstable variables*.
-    auto indicesLowerUnstableVariables() const -> IndicesView;
-
-    /// Return the indices of the *upper unstable variables*.
-    auto indicesUpperUnstableVariables() const -> IndicesView;
-
-    /// Return the indices of the *strictly lower unstable variables*.
-    auto indicesStrictlyLowerUnstableVariables() const -> IndicesView;
-
-    /// Return the indices of the *strictly upper unstable variables*.
-    auto indicesStrictlyUpperUnstableVariables() const -> IndicesView;
-
-    /// Return the indices of the *strictly lower and upper unstable variables*.
-    auto indicesStrictlyUnstableVariables() const -> IndicesView;
-
 private:
-    /// The underlying basic data with indices of stable and unstable variables.
-    Data data;
+    Indices jsu;   ///< The indices of the x variables ordered as jsu = (js, ju) = (js, jlu, juu).
+    Index ns;      ///< The number of stable stable variables in js.
+    Index nlu;     ///< The number of lower unstable stable variables in jlu.
+    Index nuu;     ///< The number of upper unstable stable variables in juu.
+    Vector s;      ///< The stability \eq{s=g+W_{\mathrm{x}}^{T}w} of the *x* variables.
+
+public:
+    /// Construct a default Stability object.
+    Stability(Index nx);
+
+    /// Update the stability status of the variables in x relative to a canonical form of matrix W.
+    auto update(StabilityUpdateArgs args) -> void;
+
+    /// Return the current stability status of the x variables.
+    auto status() const -> StabilityStatus;
 };
 
 } // namespace Optima

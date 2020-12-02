@@ -29,7 +29,7 @@
 #include <Optima/MasterProblem.hpp>
 #include <Optima/MasterVector.hpp>
 #include <Optima/ObjectiveFunction.hpp>
-#include <Optima/Stability2.hpp>
+#include <Optima/Stability.hpp>
 
 namespace Optima {
 

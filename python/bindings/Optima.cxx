@@ -55,15 +55,10 @@ void exportProblem(py::module& m);
 void exportResidualFunction(py::module& m);
 void exportResidualVector(py::module& m);
 void exportResult(py::module& m);
-void exportSaddlePointOptions(py::module& m);
-void exportSaddlePointSolver(py::module& m);
 void exportSolver(py::module& m);
 void exportStablePartition(py::module& m);
 void exportStability(py::module& m);
-void exportStability2(py::module& m);
-void exportStabilityChecker(py::module& m);
 void exportState(py::module& m);
-void exportStepper(py::module& m);
 void exportTiming(py::module& m);
 void exportUtils(py::module& m);
 
@@ -105,15 +100,10 @@ PYBIND11_MODULE(optima4py, m)
     exportResidualFunction(m);
     exportResidualVector(m);
     exportResult(m);
-    exportSaddlePointOptions(m);
-    exportSaddlePointSolver(m);
     exportSolver(m);
     exportStablePartition(m);
     exportStability(m);
-    exportStability2(m);
-    exportStabilityChecker(m);
     exportState(m);
-    exportStepper(m);
     exportTiming(m);
     exportUtils(m);
 }

@@ -22,7 +22,7 @@ namespace py = pybind11;
 
 // Optima includes
 #include <Optima/ResidualFunction.hpp>
-#include <Optima/Stability2.hpp>
+#include <Optima/Stability.hpp>
 using namespace Optima;
 
 void exportResidualFunction(py::module& m)

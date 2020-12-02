@@ -48,7 +48,7 @@ struct ResidualFunction::Impl
     Vector wx;
 
     /// The current stability status of the x variables.
-    Stability2 stability;
+    Stability stability;
 
     /// The canonicalizer of the Jacobian matrix of the residual function.
     Canonicalizer canonicalizer;

@@ -302,30 +302,6 @@ def matrix_with_linearly_independent_rows_only(m, n, ifixed=[]):
     return q[:m, :] @ q[:, :n]
 
 
-# def assemble_matrix_Ax(m, n, nbu, nl, ju):
-#     """Return a matrix Ax for testing purposes.
-
-#     Arguments:
-#         m {int} -- The number of rows in matrix A
-#         n {int} -- The number of columns in matrix A
-#         nbu {int} -- The number of basic unstable variables
-#         nl {int} -- The number of linearly dependent rows in A
-#         ju {int list} -- The indices of the unstable variables
-
-#     Returns:
-#         [array] -- The matrix A with asked structure and features.
-#     """
-#     q,r = linalg.qr(pascal_matrix(n, n))
-#     Ax = q[:m, :] @ q
-#     if len(ju) != 0:
-#         js = list(set(range(n)) - set(ju))  # indices of stable variables
-#         for k in range(nbu):
-#             Ax[int(m / (2*(k + 1))), js] = 0.0  # all zeros, except columns corresponding to unstable/fixed variables
-#     for k in range(nl):
-#         Ax[m - k - 1, :] = Ax[k, :]  # create linear dependency: last rows become first rows
-#     return Ax
-
-
 def matrix_with_one_linearly_dependent_row(m, n, ifixed=[]):
     """Return a matrix with one linearly dependent row.
 

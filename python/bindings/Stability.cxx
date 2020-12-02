@@ -20,41 +20,39 @@
 #include <pybind11/eigen.h>
 namespace py = pybind11;
 
+// pybindx includes
+#include "pybindx.hpp"
+
 // Optima includes
+#include <Optima/MasterMatrix.hpp>
 #include <Optima/Stability.hpp>
 using namespace Optima;
 
 void exportStability(py::module& m)
 {
-    py::class_<Stability::Data>(m, "StabilityData")
-        .def(py::init<>())
-        .def_readwrite("iordering", &Stability::Data::iordering)
-        .def_readwrite("ns", &Stability::Data::ns)
-        .def_readwrite("nlu", &Stability::Data::nlu)
-        .def_readwrite("nuu", &Stability::Data::nuu)
-        .def_readwrite("nslu", &Stability::Data::nslu)
-        .def_readwrite("nsuu", &Stability::Data::nsuu)
+    py::class_<StabilityStatus>(m, "StabilityStatus")
+        .def_readonly("js"   , &StabilityStatus::js)
+        .def_readonly("ju"   , &StabilityStatus::ju)
+        .def_readonly("jlu"  , &StabilityStatus::jlu)
+        .def_readonly("juu"  , &StabilityStatus::juu)
+        .def_readonly("s"    , &StabilityStatus::s)
         ;
 
+    auto update = [](Stability& self,
+        MatrixView Wx,
+        VectorView g,
+        VectorView x,
+        VectorView w,
+        VectorView xlower,
+        VectorView xupper,
+        IndicesView jb)
+    {
+        self.update({Wx, g, x, w, xlower, xupper, jb});
+    };
+
     py::class_<Stability>(m, "Stability")
-        .def(py::init<>())
-        .def(py::init<const Stability::Data&>())
-        .def("update", &Stability::update)
-        .def("numVariables", &Stability::numVariables)
-        .def("numStableVariables", &Stability::numStableVariables)
-        .def("numUnstableVariables", &Stability::numUnstableVariables)
-        .def("numLowerUnstableVariables", &Stability::numLowerUnstableVariables)
-        .def("numUpperUnstableVariables", &Stability::numUpperUnstableVariables)
-        .def("numStrictlyLowerUnstableVariables", &Stability::numStrictlyLowerUnstableVariables)
-        .def("numStrictlyUpperUnstableVariables", &Stability::numStrictlyUpperUnstableVariables)
-        .def("numStrictlyUnstableVariables", &Stability::numStrictlyUnstableVariables)
-        .def("indicesVariables", &Stability::indicesVariables, py::return_value_policy::reference_internal)
-        .def("indicesStableVariables", &Stability::indicesStableVariables, py::return_value_policy::reference_internal)
-        .def("indicesUnstableVariables", &Stability::indicesUnstableVariables, py::return_value_policy::reference_internal)
-        .def("indicesLowerUnstableVariables", &Stability::indicesLowerUnstableVariables, py::return_value_policy::reference_internal)
-        .def("indicesUpperUnstableVariables", &Stability::indicesUpperUnstableVariables, py::return_value_policy::reference_internal)
-        .def("indicesStrictlyLowerUnstableVariables", &Stability::indicesStrictlyLowerUnstableVariables, py::return_value_policy::reference_internal)
-        .def("indicesStrictlyUpperUnstableVariables", &Stability::indicesStrictlyUpperUnstableVariables, py::return_value_policy::reference_internal)
-        .def("indicesStrictlyUnstableVariables", &Stability::indicesStrictlyUnstableVariables, py::return_value_policy::reference_internal)
+        .def(py::init<Index>())
+        .def("update", update)
+        .def("status", &Stability::status, PYBINDX_ENSURE_MUTUAL_EXISTENCE)
         ;
 }

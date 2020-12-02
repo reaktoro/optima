@@ -27,7 +27,6 @@
 #include <Optima/LinearSolverOptions.hpp>
 #include <Optima/NewtonStepOptions.hpp>
 #include <Optima/OutputterOptions.hpp>
-#include <Optima/SaddlePointOptions.hpp>
 #include <Optima/TransformFunction.hpp>
 
 namespace Optima {
@@ -77,9 +76,6 @@ struct OutputOptions : OutputterOptions
     /// The names of the Lagrange multipliers `z`.
     /// Numbers will be used if not properly set (e.g., `z[0]`, `z[1]`)
     std::vector<std::string> znames;
-
-    /// Assign a boolean value to `active` member.
-    auto operator=(bool active) -> OutputOptions&;
 };
 
 /// The options for the backtrack linear search operation.
