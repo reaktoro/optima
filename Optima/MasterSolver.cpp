@@ -66,8 +66,9 @@ struct MasterSolver::Impl
         outputter.addEntry("Iteration");
         outputter.addEntry("f");
         outputter.addEntry("Error");
-        outputter.addEntry("Optimality");
-        outputter.addEntry("Feasibility");
+        outputter.addEntry("||ex||max");
+        outputter.addEntry("||ep||max");
+        outputter.addEntry("||ew||max");
         outputter.addEntries(options.output.xprefix, dims.nx, options.output.xnames);
         outputter.addEntries(options.output.pprefix, dims.np, options.output.pnames);
         outputter.addEntries(options.output.yprefix, dims.ny, options.output.ynames);
@@ -96,7 +97,8 @@ struct MasterSolver::Impl
         outputter.addValue(result.iterations);
         outputter.addValue(Fres.f.f);
         outputter.addValue(E.error);
-        outputter.addValue(E.errorf);
+        outputter.addValue(E.errorx);
+        outputter.addValue(E.errorp);
         outputter.addValue(E.errorw);
         outputter.addValues(uo.x);
         outputter.addValues(uo.p);
@@ -117,7 +119,7 @@ struct MasterSolver::Impl
     auto solve(const MasterProblem& problem, MasterVectorRef u) -> Result
     {
         initialize(problem, u);
-        while(stepping())
+        while(stepping(u))
             step(u);
         finalize();
         return result;
@@ -148,10 +150,20 @@ struct MasterSolver::Impl
         outputHeaderTop();
     }
 
-    auto stepping() -> bool
+    auto stepping(MasterVectorRef u) -> bool
     {
         if(result.iterations > options.maxiterations)
             return STOP;
+
+        // At the beginning of each new iteration, evaluate the residual
+        // function and the error. Stop if the error is already low enough.
+        // Note that this always produce a final state with update residual
+        // function and its derivatives should they be needed for calculation
+        // of the sensitity derivatives of the solution.
+
+        F.update(u);
+        E.update(u, F);
+        convergence.update(E);
 
         if(convergence.converged())
             return STOP;
@@ -161,13 +173,10 @@ struct MasterSolver::Impl
 
     auto step(MasterVectorRef u) -> void
     {
-        F.update(u);
-        E.update(u, F); // TODO: This call may not be needed since it may be executed below
         outputCurrentState();
         newtonstep.apply(F, uo, u);
         transformstep.execute(uo, u, F, E);
         errorcontrol.execute(uo, u, F, E);
-        convergence.update(E);
         uo = u;
         result.iterations += 1;
     }
