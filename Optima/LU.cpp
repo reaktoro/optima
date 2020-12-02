@@ -99,6 +99,8 @@ struct LU::Impl
         x = Uv.solve(x);
         Q.applyThisOnTheLeft(x);
         Q.applyThisOnTheLeft(is_li);
+
+        // TODO; In LU, x should have +inf or -inf to indicate extremely large steps and their directions. Then a line search would be used to find a reasonable step length/
     }
 
     /// Assemble the U matrix with given y, where y is the solution of L*y = P*b.
@@ -128,7 +130,7 @@ struct LU::Impl
             // to discard this linear equation. Otherwise, we discard it, to
             // avoid extremely large values when we divide a larger number by
             // the diagonal pivot (very small).
-            if(D[n - i] <= eps * max(abs(y[n - i]), norminf(U.row(n - i).tail(n - i))))
+            if(D[n - i] <= eps * abs(y[n - i]))
             {
                 U.row(n - i).tail(n - i).fill(0.0); // avoid going to the lower triangular part
                 U.col(n - i).head(n - i).fill(0.0);
