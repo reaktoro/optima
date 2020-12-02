@@ -19,6 +19,7 @@
 
 // Optima includes
 #include <Optima/Echelonizer.hpp>
+#include <Optima/Exception.hpp>
 
 namespace Optima {
 
@@ -83,6 +84,8 @@ struct EchelonizerExtended::Impl
             return;
         }
 
+        // FIXME: Investigate why EchelonizerExtended is not accurate when nz > 5 and fix it.
+
         const auto& RA = echelonizerA.R();
         const auto& SA = echelonizerA.S();
         const auto& QA = echelonizerA.Q();
@@ -106,6 +109,12 @@ struct EchelonizerExtended::Impl
 
         const auto nbJ = echelonizerJ.numBasicVariables();
         const auto nnJ = echelonizerJ.numNonBasicVariables();
+
+        // TODO: When testing with nx = 30, ny = 20, nz = 5, and two linearly dependent rows,
+        // EchelonizerExtended does not produce accurate C = [I S] matrix when performing R*[A; J]*Q.
+        // While there are ~1e-14 errors on the very left part of I, which is a reasonable approximation for zeros,
+        // for the right side part of I, the last 5 columns, we see ~1e-6, which is not acceptable.
+        warning(nbA + nbJ != std::min(m, n), "EchelonizerExtended guarantees accuracy at the moment only when A and J have no linearly dependent rows.");
 
         const auto RJ = echelonizerJ.R();
         const auto SJ = echelonizerJ.S();
