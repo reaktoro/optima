@@ -10,6 +10,9 @@ include(CCache)
 # Set the name of the project
 project(Optima VERSION 0.1 LANGUAGES CXX)
 
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 17)
+
 # Check if a conda environment is active
 include(CondaAware)
 
@@ -55,7 +58,6 @@ add_subdirectory(Optima)
 
 # Build the python wrappers
 if(OPTIMA_BUILD_PYTHON)
-    set(PYBIND11_CPP_STANDARD -std=c++17)  # Ensure pybind11 uses C++17 standard
     find_package(pybind11 REQUIRED)
     add_subdirectory(python)
 endif()
