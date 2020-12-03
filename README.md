@@ -54,7 +54,7 @@ The previous commands have the following dependencies:
 
 For more options on how to customize the installation process, check the installation summary printed at the end of the command.
 
-## Testing
+# Testing
 
 Optima relies on its Python package `optima` and on `pytest` for testing purposes. Thus, ensure the Python bindings of Optima have been built before you proceed to the step below!
 
@@ -73,7 +73,7 @@ cd optima
 pytest .
 ~~~
 
-## Contact
+# Contact
 
 Use the following channels of communication for contact:
 
@@ -83,7 +83,7 @@ Use the following channels of communication for contact:
 [Gitter]: https://gitter.im/reaktoro/optima
 [GitHub Issues]: https://github.com/reaktoro/optima/issues/new
 
-## License
+# License
 
 Copyright © 2020 Allan Leal
 
