@@ -4,7 +4,7 @@
 
 Optima is a general-purpose C++/Python library for solving linear and non-linear constrained optimization problems.
 
-> Optima is still under development and its API can change at any time. At the moment, Optima is mainly used in [Reaktoro](https://reaktoro.org) for minimization computations related to chemical equilibrium calculations. A documentation webpage for Optima is still missing to demonstrate all its use case, which shall be implemented in the coming months.
+> Optima is still under development and its API can change at any time. At the moment, Optima is mainly used in [Reaktoro](https://reaktoro.org) for minimization computations related to chemical equilibrium calculations. A documentation webpage for Optima is still missing to demonstrate all its use cases, which shall be implemented in the coming months.
 
 # Installing
 
@@ -22,7 +22,7 @@ The above commands will:
 3. **build** the C++ library and the Python package in the directory `optima/build`; and
 4. **install** the C++ header files, C++ library and Python package in `optima/build/install`.
 
-> **Parallel build.** The above build operation is performed in parallel. For repeated build operations, it is recommented to have `ccache` installed for  blazing fast rebuilds.
+> **Parallel build.** The above build operation is performed in parallel. For repeated build operations, it is recommended to have `ccache` installed for blazing-fast rebuilds.
 
 The previous commands have the following dependencies:
 
@@ -75,7 +75,7 @@ pytest .
 
 ## Contact
 
-Use the following channels of communication for a contact:
+Use the following channels of communication for contact:
 
 * **Use [Gitter]** for questions, discussing a feature request, feedback, etc.
 * **Use [GitHub Issues]** for reporting bugs and other issues.
