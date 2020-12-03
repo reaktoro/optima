@@ -35,9 +35,6 @@ struct OutputterOptions
     unsigned width = 15;
 
     std::string separator = "|";
-
-    /// Assign a boolean value to `active` member.
-    auto operator=(bool active) -> OutputterOptions&;
 };
 
 } // namespace

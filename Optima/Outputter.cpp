@@ -37,12 +37,6 @@ auto barstr(unsigned width, const std::string& str) -> std::string
 
 } // namespace
 
-auto OutputterOptions::operator=(bool act) -> OutputterOptions&
-{
-    active = act;
-    return *this;
-}
-
 Outputter::Outputter()
 {}
 
