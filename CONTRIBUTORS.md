@@ -8,5 +8,5 @@
 
 In chronological order:
 
-* [Your name] <[email or website]>
-  * [Brief summary of your changes]
+* Diego Volpatto (dtvolpatto@gmail.com)
+  * Improvements in testing and developing environments 

@@ -1,5 +1,10 @@
 name: optima
 
+{% set python_version = os.environ.get("PY_VER", "3.7") %}
+
+channels:
+  - https://conda.anaconda.org/conda-forge/
+
 dependencies:
   # C++ compilers
   - gxx_linux-64=7.3.0  # [linux]
@@ -10,7 +15,7 @@ dependencies:
   - catch2
 
   # Python
-  - python
+  - python={{ python_version }}
   - numpy
   - pip
   - pip:
@@ -19,8 +24,19 @@ dependencies:
     - mkdocs-macros-plugin
     - pytest-regressions
 
+  # Tests
+  - pytest
+  - pytest-xdist
+
   # Applications
   - cmake>=3.13
   - ninja
   - ccache  # [unix]
   - clcache  # [win]
+
+environment:
+
+  PYTHONPATH:
+    - {{ root }}/build/lib/python{{ python_version }}/site-packages              # [unix]
+    - {{ root }}/build/lib64/python{{ python_version }}/site-packages            # [unix]
+    - {{ root }}\build\lib\python{{ python_version }}\site-packages              # [win]
