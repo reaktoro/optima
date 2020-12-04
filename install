@@ -30,6 +30,11 @@ else()
     set(INSTALL_PATH ${PREFIX})  # Set INSTALL_PATH to the given PREFIX cmake argument
 endif()
 
+# Set the number of parallel jobs to empty for maximum number of jobs, if not defined
+if(NOT DEFINED JOBS)
+    set(JOBS "")
+endif()
+
 # Set the PYTHON variable to ON by default to ensure Python bindings are built
 if(NOT DEFINED PYTHON)
     set(PYTHON ON)
@@ -44,7 +49,7 @@ execute_process(COMMAND
 
 # Build and install the library
 execute_process(COMMAND
-    ${CMAKE_COMMAND} --build ${BUILD_PATH} --parallel --target install)
+    ${CMAKE_COMMAND} --build ${BUILD_PATH} --config ${BUILD_TYPE} --parallel ${JOBS} --target install)
 
 # Print a summary of the installation
 message("${BoldCyan}")
