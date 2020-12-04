@@ -18,6 +18,7 @@
 #include "Utils.hpp"
 
 // C++ includes
+#include <cmath>
 #include <limits>
 
 namespace Optima {
@@ -485,7 +486,7 @@ auto farey(double x, unsigned n) -> std::tuple<long, long>
 {
     long a = 0, b = 1;
     long c = 1, d = 1;
-    while(b <= n and d <= n)
+    while(b <= n && d <= n)
     {
         double mediant = double(a+c)/(b+d);
         if(x == mediant) {
