@@ -1,0 +1,42 @@
+name: windows
+
+on:
+  push:
+    branches:
+      - master
+
+  pull_request:
+
+  schedule:
+    - cron: "0 5 * * 1"  # runs at 05:00 UTC on Mondays
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+    env:
+      configuration: Release
+    strategy:
+      fail-fast: true
+      max-parallel: 4
+
+    steps:
+      - uses: actions/checkout@v1
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          auto-activate-base: true
+          activate-environment: ''
+      - name: Install
+        shell: powershell
+        run: |
+          conda install -c conda-forge conda-devenv
+          conda info -a
+          conda devenv
+          conda activate optima
+          cmake -P install
+      - name: Tests
+        shell: powershell
+        run: |
+          conda activate optima
+          pytest . -n auto
