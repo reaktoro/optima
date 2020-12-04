@@ -17,6 +17,9 @@
 
 #pragma once
 
+// C++ includes
+#include <string>
+
 // Optima includes
 #include <Optima/Index.hpp>
 
