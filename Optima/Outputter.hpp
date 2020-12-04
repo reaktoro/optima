@@ -34,8 +34,6 @@ namespace Optima {
 class Outputter
 {
 public:
-    struct Options;
-
     Outputter();
 
     void clear();

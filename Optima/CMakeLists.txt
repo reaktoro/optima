@@ -10,9 +10,6 @@ add_library(Optima ${HPP_FILES} ${CPP_FILES})
 # Add an alias Optima::Optima to the target library Optima
 add_library(Optima::Optima ALIAS Optima)
 
-# Ensure Optima is compiled with c++17 features and propagate this to dependent codes
-target_compile_features(Optima PUBLIC cxx_std_17)
-
 # Set some target properties
 set_target_properties(Optima PROPERTIES
     POSITION_INDEPENDENT_CODE ON
