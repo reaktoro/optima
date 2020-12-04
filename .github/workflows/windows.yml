@@ -36,10 +36,11 @@ jobs:
           conda activate optima
           clcache -s
           clcache -z
-          cmake -P install
+          cmake -S . -B build
+          cmake --build build --config Release --target install
           clcache -s
       - name: Tests
         shell: powershell
         run: |
           conda activate optima
-          pytest . -n auto
+          pytest . -n 2
