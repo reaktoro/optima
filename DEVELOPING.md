@@ -1,8 +1,8 @@
 # Developing
 
-To contribute developing `Optima`, we have a structured developing mode in order to
+To contribute to developing `Optima`, we have a structured developing mode to
 have almost the same environment for everyone. Below we describe the workflow to develop
-`Optima`. All the instructions below should be executed inside the Project root directory.
+`Optima`. All the instructions below should be executed inside the project root directory.
 
 ## Guidelines for developing mode installation
 
@@ -15,7 +15,7 @@ Please follow the instructions therein to install it locally. We recommend you t
 ### 2. Extending `conda` with `conda-devenv`
 
 We use [conda-devenv](https://github.com/ESSS/conda-devenv) to extend `conda` capabilities
-and define environments variables in developing mode. With `miniconda3` properly installed and running,
+and define environment variables in developing mode. With `miniconda3` properly installed and running,
 just execute in your console:
 
 ```console
@@ -47,7 +47,7 @@ should display in your console the message:
 #     $ conda deactivate
 ```
 
-### 4. Building `Optima`
+### 4. Building and installing Optima
 
 Activate `optima` conda environment with:
 
@@ -68,7 +68,7 @@ to execute the following in your console without errors:
 $ python -c 'import optima'
 ```
 
-### 5. Testing
+### 5. Testing Optima
 
 At last, but importantly, you have to run the tests. Every contribution to the code should be tested. The `master`
 branch should be always passing all the tests. With `Optima` and its Python bindings properly installed inside `optima`
