@@ -11,7 +11,7 @@ pybind11_add_module(optima4py ${CXX_FILES})
 target_include_directories(optima4py PRIVATE ${PROJECT_SOURCE_DIR})
 
 # Link optima4py against Optima C++ library
-target_link_libraries(optima4py LINK_PRIVATE Optima::Optima)
+target_link_libraries(optima4py PRIVATE Optima::Optima)
 
 # This is needed to avoid compilation issues when using clang-9 and c++17
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL Clang AND ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 10.0.0)
