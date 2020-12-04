@@ -34,7 +34,10 @@ jobs:
           conda info -a
           conda devenv
           conda activate optima
+          clcache -s
+          clcache -z
           cmake -P install
+          clcache -s
       - name: Tests
         shell: powershell
         run: |
