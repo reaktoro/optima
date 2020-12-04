@@ -3,7 +3,7 @@ name: optima
 {% set python_version = os.environ.get("PY_VER", "3.7") %}
 
 channels:
-  - https://conda.anaconda.org/conda-forge/
+  - conda-forge
 
 dependencies:
   # C++ compilers
