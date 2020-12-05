@@ -1,6 +1,3 @@
-# Include the Reaktoro/python directory
-include_directories(${PROJECT_SOURCE_DIR}/python)
-
 # Include the Eigen include path for pybind11
 include_directories(${PROJECT_SOURCE_DIR}/Optima/deps/eigen3)
 
@@ -8,7 +5,7 @@ include_directories(${PROJECT_SOURCE_DIR}/Optima/deps/eigen3)
 file(GLOB_RECURSE CXX_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cxx)
 
 # Compile Optima *.cxx files into a Python module
-pybind11_add_module(optima4py ${CXX_FILES} NO_EXTRAS)
+pybind11_add_module(optima4py ${CXX_FILES})
 
 # Add the root directory of the project to the include list
 target_include_directories(optima4py PRIVATE ${PROJECT_SOURCE_DIR})
