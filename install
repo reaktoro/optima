@@ -29,7 +29,7 @@ if(NOT DEFINED INSTALL_PATH)
 endif()
 
 # Compute the native install path for target OS (Linux, macOS, Windows).
-file(TO_NATIVE_PATH INSTALL_PATH NATIVE_INSTALL_PATH)
+file(TO_NATIVE_PATH ${INSTALL_PATH} NATIVE_INSTALL_PATH)
 
 # Set the number of parallel jobs to empty for maximum number of jobs, if not defined
 if(NOT DEFINED JOBS)
