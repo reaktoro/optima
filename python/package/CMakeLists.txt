@@ -1,5 +1,5 @@
 # Copy the optima directory to the binary directory
-# file(COPY . DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY . DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 # The name of the compiled python module file as defined by pybind11 used in setup.py.in
 set(OPTIMA_PYTHON_MODULE_FILENAME optima4py${PYTHON_MODULE_EXTENSION})
@@ -9,21 +9,21 @@ set(OPTIMA_PYTHON_PACKAGE_PATH ${CMAKE_CURRENT_BINARY_DIR}/optima)
 
 # Configure the setup.py file
 set(SETUP_PY_IN ${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in)
-set(SETUP_PY ${OPTIMA_PYTHON_PACKAGE_PATH}/setup.py) # ensure setup.py is inside the package dir
+set(SETUP_PY ${CMAKE_CURRENT_BINARY_DIR}/setup.py) # ensure setup.py is inside the package dir
 configure_file(${SETUP_PY_IN} ${SETUP_PY})
 
 # Create a custom target to build the python package during build stage
-add_custom_target(optima-setuptools ALL
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/optima ${OPTIMA_PYTHON_PACKAGE_PATH}
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:optima4py> ${OPTIMA_PYTHON_PACKAGE_PATH}
-    COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} --quiet install --force --prefix=${CMAKE_BINARY_DIR}
-    WORKING_DIRECTORY ${OPTIMA_PYTHON_PACKAGE_PATH})
-
 #add_custom_target(optima-setuptools ALL
-#    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:optima4py>
-#        ${CMAKE_CURRENT_BINARY_DIR}/$<TARGET_FILE_NAME:optima4py>
-#    COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} --quiet install --prefix=${CMAKE_BINARY_DIR}
-#    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+#    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/optima ${OPTIMA_PYTHON_PACKAGE_PATH}
+#    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:optima4py> ${OPTIMA_PYTHON_PACKAGE_PATH}
+#    COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} --quiet install --force --prefix=${CMAKE_BINARY_DIR}
+#    WORKING_DIRECTORY ${OPTIMA_PYTHON_PACKAGE_PATH})
+
+add_custom_target(optima-setuptools ALL
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:optima4py>
+        ${CMAKE_CURRENT_BINARY_DIR}/$<TARGET_FILE_NAME:optima4py>
+    COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} --quiet install --force --prefix=${CMAKE_BINARY_DIR}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 # Set dependencies of the python package target
 add_dependencies(optima-setuptools optima4py)
@@ -31,6 +31,7 @@ add_dependencies(optima-setuptools optima4py)
 # Set the path where the python package is installed to CMAKE_INSTALL_PREFIX if not given
 if(NOT DEFINED OPTIMA_PYTHON_INSTALL_PREFIX)
     set(OPTIMA_PYTHON_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
+    # set(OPTIMA_PYTHON_INSTALL_PREFIX ${CONDA_PREFIX})  # installation should be in ${CONDA_PREFIX}/Lib/site-packages
 endif()
 
 # If the path is already in Windows format (with backslashes), it can't be
@@ -45,5 +46,5 @@ install(CODE
 
     execute_process(
         COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} install --prefix=\${OPTIMA_PYTHON_INSTALL_PREFIX_NATIVE}
-        WORKING_DIRECTORY ${OPTIMA_PYTHON_PACKAGE_PATH})
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 ")

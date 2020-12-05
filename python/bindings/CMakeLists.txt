@@ -1,3 +1,6 @@
+# Include the Reaktoro/python directory
+include_directories(${PROJECT_SOURCE_DIR}/python)
+
 # Include the Eigen include path for pybind11
 include_directories(${PROJECT_SOURCE_DIR}/Optima/deps/eigen3)
 
