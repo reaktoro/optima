@@ -612,8 +612,8 @@ auto operator<<=(MatrixRef mat, MatrixView other) -> MatrixRef
 
 auto ensureMinimumDimension(Matrix& mat, Index rows, Index cols) -> void
 {
-    const auto m = std::max(Index(mat.rows()), rows); // MSVC error C2672 if mat.rows/cols() not wrapper by Index
-    const auto n = std::max(Index(mat.cols()), cols);
+    const auto m = std::max(mat.rows(), rows);
+    const auto n = std::max(mat.cols(), cols);
     mat.resize(m, n);
 }
 
