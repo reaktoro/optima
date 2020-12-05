@@ -19,9 +19,6 @@ include(CondaAware)
 # Include the cmake variables with values for installation directories
 include(GNUInstallDirs)
 
-# Checking CMAKE_INSTALL_PREFIX
-message(STATUS "CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
-
 # Define which Optima targets to build
 option(OPTIMA_BUILD_DEMOS  "Build demos." ON)
 option(OPTIMA_BUILD_PYTHON "Build the python wrappers." ON)
@@ -62,8 +59,6 @@ add_subdirectory(Optima)
 # Build the python wrappers
 if(OPTIMA_BUILD_PYTHON)
     find_package(pybind11 REQUIRED)
-    find_package (Python COMPONENTS Interpreter Development)
-    message(STATUS "Python library directory: ${Python_SITEARCH}")
     add_subdirectory(python)
 endif()
 
