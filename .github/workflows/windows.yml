@@ -34,8 +34,7 @@ jobs:
           conda info -a
           conda devenv
           conda activate optima
-          cmake -S . -B build
-          cmake --build build --config Release --target install
+          cmake -P install
       - name: Tests
         shell: powershell
         run: |
