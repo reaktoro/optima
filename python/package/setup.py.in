@@ -8,5 +8,6 @@ setup(name='optima',
       url='github.com/reaktoro/optima',
       license='GNU LGPL v2.1',
       packages=find_packages('optima'),
+      package_dir={'optima': ''},
       package_data={'optima': ['@OPTIMA_PYTHON_MODULE_FILENAME@']}
       )
