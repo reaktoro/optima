@@ -13,7 +13,7 @@ configure_file(${SETUP_PY_IN} ${SETUP_PY})
 add_custom_target(optima-setuptools ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/optima ${OPTIMA_PYTHON_PACKAGE_PATH}
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:optima4py> ${OPTIMA_PYTHON_PACKAGE_PATH}
-    COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} --quiet install --force --prefix=${CMAKE_BINARY_DIR}
+    COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} install
     WORKING_DIRECTORY ${OPTIMA_PYTHON_PACKAGE_PATH})
 
 # Set dependencies of the python package target
@@ -34,6 +34,6 @@ install(CODE
     file(TO_NATIVE_PATH \"${OPTIMA_PYTHON_INSTALL_PREFIX}\" OPTIMA_PYTHON_INSTALL_PREFIX_NATIVE)
 
     execute_process(
-        COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} install --prefix=\${OPTIMA_PYTHON_INSTALL_PREFIX_NATIVE}
+        COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} install
         WORKING_DIRECTORY ${OPTIMA_PYTHON_PACKAGE_PATH})
 ")
