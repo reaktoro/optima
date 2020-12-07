@@ -1,4 +1,4 @@
-from distutils.core import setup
+from setuptools import setup, find_packages
 
 setup(name='optima',
       version='${PROJECT_VERSION}',
@@ -7,7 +7,6 @@ setup(name='optima',
       author_email='allan.leal@erdw.ethz.ch',
       url='github.com/reaktoro/optima',
       license='GNU LGPL v2.1',
-      package_dir={'optima': ''},
-      packages=['optima'],
+      packages=find_packages('optima'),
       package_data={'optima': ['@OPTIMA_PYTHON_MODULE_FILENAME@']}
       )
