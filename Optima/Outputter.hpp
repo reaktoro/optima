@@ -42,9 +42,9 @@ public:
 
     void addEntry(const std::string& name);
 
-    void addEntries(const std::string& prefix, unsigned size);
+    void addEntries(const std::string& prefix, std::size_t size);
 
-    void addEntries(const std::string& prefix, unsigned size, const std::vector<std::string>& names);
+    void addEntries(const std::string& prefix, std::size_t size, const std::vector<std::string>& names);
 
     template<typename Iter>
     void addEntries(const Iter& begin, const Iter& end);
@@ -119,7 +119,7 @@ void Outputter::addValues(const Iter& begin, const Iter& end)
 template<typename Vec>
 void Outputter::addValues(const Vec& vec)
 {
-    for(unsigned i = 0; i < vec.size(); ++i)
+    for(auto i = 0; i < vec.size(); ++i)
         addValue(vec[i]);
 }
 
