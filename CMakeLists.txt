@@ -13,6 +13,9 @@ project(Optima VERSION 0.1 LANGUAGES CXX)
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
 
+# Enable parallel build if MSVC is used
+add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/MP>)
+
 # Check if a conda environment is active
 include(CondaAware)
 
