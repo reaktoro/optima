@@ -73,12 +73,10 @@ endif()
 # Build the project documentation
 if(OPTIMA_BUILD_DOCS)
     add_subdirectory(docs)
-endif()
+    endif()
 
-# Add target "tests" for manual execution of tests, as `make tests`
-add_custom_target(tests
-    COMMAND pytest
-    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/tests")
+# Create target tests for testing
+add_subdirectory(tests)
 
 # Install the cmake config files that permit users to use find_package(Optima)
 include(OptimaInstallCMakeConfigFiles)
