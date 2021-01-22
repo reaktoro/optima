@@ -45,4 +45,7 @@ jobs:
         run: cmake --build .build --config ${{ env.configuration }} --target install
       - name: Tests
         shell: bash -l {0}
-        run: cmake --build .build --config ${{ env.configuration }} --target tests
+        run: |
+          export PYTHONPATH=$PWD/.build/python/package/build/lib
+          pytest -n auto -x
+        # run: cmake --build .build --config ${{ env.configuration }} --target tests
