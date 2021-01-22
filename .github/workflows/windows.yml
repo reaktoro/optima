@@ -28,28 +28,29 @@ jobs:
           auto-activate-base: true
           activate-environment: ''
       - name: Configure
-        shell: cmd /C CALL {0}
+        shell: powershell
         run: |
-          conda install -c conda-forge conda-devenv
-          conda info -a
+          conda config --set always_yes yes --set changeps1 no
+          conda config --add channels conda-forge
+          conda install conda-devenv
           conda devenv
+          conda activate optima
+          cmake -S . -B .build
+      - name: Build
+        shell: powershell
+        run: |
           conda activate optima
           clcache -s
           clcache -z
-          cmake -S . -B .build
-      - name: Build
-        shell: cmd /C CALL {0}
-        run: |
-          conda activate optima
           cmake --build .build --config ${{ env.configuration }}
           clcache -s
       - name: Install
-        shell: cmd /C CALL {0}
+        shell: powershell
         run: |
           conda activate optima
           cmake --build .build --config ${{ env.configuration }} --target install
       - name: Tests
-        shell: cmd /C CALL {0}
+        shell: powershell
         run: |
           conda activate optima
           cmake --build .build --config ${{ env.configuration }} --target tests
