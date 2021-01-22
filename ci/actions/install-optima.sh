@@ -1,5 +1,5 @@
 export PATH=$HOME/miniconda/bin/:$PATH
-source activate optima
+conda activate optima
 
 echo "=== Configuring Optima..."
 cmake -S . -B build -G Ninja

@@ -22,14 +22,26 @@ jobs:
 
     steps:
       - uses: actions/checkout@v1
-
-      - name: Conda
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+      - name: Configure
+        shell: bash -l {0}
         run: |
-          export ENV_OS=${{ env.os }}
-          bash ci/actions/configure-conda.sh
-
+          conda config --set always_yes yes --set changeps1 no
+          conda config --add channels conda-forge
+          conda install conda-devenv
+          conda update -q conda
+          conda info -a
+          conda devenv
+          conda activate optima
+          cmake -S . -B .build
+      - name: Build
+        shell: bash -l {0}
+        run: cmake --build .build --config ${{ env.configuration }}
       - name: Install
-        run: bash ci/actions/install-optima.sh
-
-      - name: Test
-        run: bash ci/actions/test-optima.sh
+        shell: bash -l {0}
+        run: cmake --build .build --config ${{ env.configuration }} --target install
+      - name: Tests
+        shell: bash -l {0}
+        run: cmake --build .build --config ${{ env.configuration }} --target tests
