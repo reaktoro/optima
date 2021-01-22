@@ -21,25 +21,20 @@ jobs:
       max-parallel: 4
 
     steps:
-      - uses: actions/checkout@v1
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          auto-update-conda: true
-          auto-activate-base: true
-          activate-environment: ''
-      - name: Build, Install & Test
-        shell: cmd
-        run: |
-          conda config --set always_yes yes --set changeps1 no
-          conda config --add channels conda-forge
-          conda install conda-devenv
-          conda update -q conda
-          conda info -a
-          conda devenv
-          conda activate optima
-          conda list
-          clcache -s
-          clcache -z
-          cmake -DTESTS=ON -P install
-          clcache -s
+    - uses: actions/checkout@v1
 
+    - name: Conda
+      shell: cmd
+      run: call ci\actions\configure-conda.bat
+
+    - name: Install
+      shell: cmd
+      run: |
+        set CONFIGURATION=${{ env.configuration }}
+        call ci\actions\install-optima.bat
+
+    - name: Test
+      shell: cmd
+      run: |
+        set CONFIGURATION=${{ env.configuration }}
+        call ci\actions\test-optima.bat
