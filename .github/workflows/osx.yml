@@ -14,8 +14,11 @@ jobs:
   build:
 
     runs-on: macOS-latest
+
     env:
       os: MacOSX-x86_64
+      configuration: Release
+
     strategy:
       fail-fast: true
       max-parallel: 4
@@ -36,7 +39,7 @@ jobs:
           cmake -S . -B .build
       - name: Build
         shell: bash -l {0}
-        run: cmake --build .build --config ${{ env.configuration }}
+        run: cmake --build .build --config ${{ env.configuration }} --parallel
       - name: Install
         shell: bash -l {0}
         run: cmake --build .build --config ${{ env.configuration }} --target install
