@@ -39,7 +39,7 @@ jobs:
           cmake -S . -B .build
       - name: Build
         shell: bash -l {0}
-        run: cmake --build .build --config ${{ env.configuration }} --parallel
+        run: cmake --build .build --config ${{ env.configuration }} --parallel 3
       - name: Install
         shell: bash -l {0}
         run: cmake --build .build --config ${{ env.configuration }} --target install
