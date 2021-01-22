@@ -41,6 +41,11 @@ if(NOT DEFINED PYTHON)
     set(PYTHON ON)
 endif()
 
+# Define PARALLEL variable containing the cmake option for parallel builds.
+if(NOT DEFINED PARALLEL AND NOT WIN32)
+    set(PARALLEL "--parallel ${JOBS}")  # in Windows, using MSVC compilers, --parallel cancels the /MP compilation option and ends up with not parallel build at all!
+endif()
+
 # Configure the building and installation of the project
 execute_process(COMMAND
     ${CMAKE_COMMAND} -S ${CMAKE_CURRENT_LIST_DIR} -B ${BUILD_PATH}
@@ -50,7 +55,7 @@ execute_process(COMMAND
 
 # Build and install the library
 execute_process(COMMAND
-    ${CMAKE_COMMAND} --build ${BUILD_PATH} --config ${BUILD_TYPE} --parallel ${JOBS} --target install)
+    ${CMAKE_COMMAND} --build ${BUILD_PATH} --config ${BUILD_TYPE} ${PARALLEL} --target install)
 
 # Print a summary of the installation
 message("${BoldCyan}")
