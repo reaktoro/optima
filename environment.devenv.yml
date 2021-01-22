@@ -35,12 +35,6 @@ dependencies:
   - clcache  # [win]
 
 environment:
-
-  PYTHONPATH:
-    - {{ root }}/build/lib/python{{ python_version }}/site-packages              # [unix]
-    - {{ root }}/build/lib64/python{{ python_version }}/site-packages            # [unix]
-    - {{ root }}\build\lib\python{{ python_version }}\site-packages              # [win]
-
   CC: clcache                               # [win]
   CXX: clcache                              # [win]
   CLCACHE_BASEDIR: {{ root }}               # [win]

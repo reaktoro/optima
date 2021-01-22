@@ -43,7 +43,7 @@ endif()
 
 # Define PARALLEL variable containing the cmake option for parallel builds.
 if(NOT DEFINED PARALLEL AND NOT WIN32)
-    set(PARALLEL "--parallel ${JOBS}")  # in Windows, using MSVC compilers, --parallel cancels the /MP compilation option and ends up with not parallel build at all!
+    set(PARALLEL --parallel ${JOBS})  # in Windows, using MSVC compilers, --parallel cancels the /MP compilation option and ends up with not parallel build at all!
 endif()
 
 # Configure the building and installation of the project
@@ -56,6 +56,11 @@ execute_process(COMMAND
 # Build and install the library
 execute_process(COMMAND
     ${CMAKE_COMMAND} --build ${BUILD_PATH} --config ${BUILD_TYPE} ${PARALLEL} --target install)
+
+# Run the tests if EXECUTE_TESTS option is provided
+if(TESTS)
+    execute_process(COMMAND ${CMAKE_COMMAND} --build ${BUILD_PATH} --config ${BUILD_TYPE} --target tests)
+endif()
 
 # Print a summary of the installation
 message("${BoldCyan}")
