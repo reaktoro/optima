@@ -37,5 +37,9 @@ jobs:
           conda info -a
           conda devenv
           conda activate optima
+          conda list
+          clcache -s
+          clcache -z
           cmake -DTESTS=ON -P install
+          clcache -s
 

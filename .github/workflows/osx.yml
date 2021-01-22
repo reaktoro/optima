@@ -35,4 +35,5 @@ jobs:
           conda info -a
           conda devenv
           source activate optima
+          conda list
           cmake -DTESTS=ON -P install
