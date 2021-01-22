@@ -40,4 +40,4 @@ jobs:
         shell: bash -l {0}
         run: |
           source activate optima
-          pytest . -n auto
+          conda --build build --target tests

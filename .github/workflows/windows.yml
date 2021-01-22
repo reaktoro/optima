@@ -28,7 +28,7 @@ jobs:
           auto-activate-base: true
           activate-environment: ''
       - name: Install
-        shell: powershell
+        shell: cmd
         run: |
           conda install -c conda-forge conda-devenv
           conda info -a
@@ -39,7 +39,7 @@ jobs:
           cmake -P install
           clcache -s
       - name: Tests
-        shell: powershell
+        shell: cmd
         run: |
           conda activate optima
-          pytest . -n auto
+          cmake --build build --target tests --config Release

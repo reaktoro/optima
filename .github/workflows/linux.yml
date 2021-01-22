@@ -40,4 +40,4 @@ jobs:
         shell: bash -l {0}
         run: |
           source activate optima
-          pytest . -n 2
+          cmake --build build --target tests
