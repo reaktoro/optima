@@ -57,7 +57,7 @@ execute_process(COMMAND
 execute_process(COMMAND
     ${CMAKE_COMMAND} --build ${BUILD_PATH} --config ${BUILD_TYPE} ${PARALLEL} --target install)
 
-# Run the tests if EXECUTE_TESTS option is provided
+# Run the tests if TESTS option is TRUE
 if(TESTS)
     execute_process(COMMAND ${CMAKE_COMMAND} --build ${BUILD_PATH} --config ${BUILD_TYPE} --target tests)
 endif()

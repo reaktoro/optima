@@ -27,19 +27,15 @@ jobs:
           auto-update-conda: true
           auto-activate-base: true
           activate-environment: ''
-      - name: Install
+      - name: Build, Install & Test
         shell: cmd
         run: |
-          conda install -c conda-forge conda-devenv
+          conda config --set always_yes yes --set changeps1 no
+          conda config --add channels conda-forge
+          conda install conda-devenv
+          conda update -q conda
           conda info -a
           conda devenv
           conda activate optima
-          clcache -s
-          clcache -z
-          cmake -P install
-          clcache -s
-      - name: Tests
-        shell: cmd
-        run: |
-          conda activate optima
-          cmake --build build --target tests --config Release
+          cmake -DTESTS=ON -P install
+
