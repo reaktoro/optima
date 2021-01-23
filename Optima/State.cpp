@@ -17,75 +17,40 @@
 
 #include "State.hpp"
 
-// Optima includes
-#include <Optima/IndexUtils.hpp>
-
 namespace Optima {
 
-struct State::Impl
-{
-    /// The variables x(bar) = (x, u, v) of the basic optimization problem.
-    Vector xbar;
-
-    /// The parameter variables p of the basic optimization problem.
-    Vector p;
-
-    /// The Lagrange multipliers w = (y, z) = (ye, yg, ze, zg) of the optimization problem.
-    Vector wbar;
-
-    /// The variables \eq{(s,y_{\mathrm{g}},z_{\mathrm{g}})} of the basic optimization problem.
-    Vector sbar;
-
-    /// Construct a State::Impl object with given dimensions information.
-    Impl(const Dims& dims)
-    : xbar(zeros(dims.x + dims.bg + dims.hg)),
-      p(zeros(dims.p)),
-      wbar(zeros(dims.be + dims.bg + dims.he + dims.hg)),
-      sbar(zeros(dims.x + dims.bg + dims.hg))
-    {}
-};
+State::State()
+{}
 
 State::State(const Dims& dims)
-: pimpl(new Impl(dims)),
-  dims(dims),
-  x(pimpl->xbar.head(dims.x)),
-  p(pimpl->p),
-  w(pimpl->wbar),
-  y(pimpl->wbar.head(dims.be + dims.bg)),
-  ye(y.head(dims.be)),
-  yg(y.tail(dims.bg)),
-  z(pimpl->wbar.tail(dims.he + dims.hg)),
-  ze(z.head(dims.he)),
-  zg(z.tail(dims.hg)),
-  s(pimpl->sbar.head(dims.x)),
-  xbar(pimpl->xbar),
-  sbar(pimpl->sbar),
-  xbg(pimpl->xbar.segment(dims.x, dims.bg)),
-  xhg(pimpl->xbar.tail(dims.hg)),
+: dims(dims),
+  x(zeros(dims.x)),
+  p(zeros(dims.p)),
+  ye(zeros(dims.be)),
+  yg(zeros(dims.bg)),
+  ze(zeros(dims.he)),
+  zg(zeros(dims.hg)),
+  s(zeros(dims.x)),
+  xbg(zeros(dims.bg)),
+  xhg(zeros(dims.hg)),
   stability(dims.x)
 {}
 
-State::State(const State& other)
-: pimpl(new Impl(*other.pimpl)),
-  dims(other.dims),
-  x(pimpl->xbar.head(other.dims.x)),
-  p(pimpl->p),
-  w(pimpl->wbar),
-  y(pimpl->wbar.head(dims.be + dims.bg)),
-  ye(y.head(dims.be)),
-  yg(y.tail(dims.bg)),
-  z(pimpl->wbar.tail(dims.he + dims.hg)),
-  ze(z.head(dims.he)),
-  zg(z.tail(dims.hg)),
-  s(pimpl->sbar.head(other.dims.x)),
-  xbar(pimpl->xbar),
-  sbar(pimpl->sbar),
-  xbg(pimpl->xbar.segment(other.dims.x, other.dims.bg)),
-  xhg(pimpl->xbar.tail(other.dims.hg)),
-  stability(other.stability)
-{}
+auto State::operator=(const State& other) -> State&
+{
+    const_cast<Dims&>(dims) = other.dims;
+    x.__assign(other.x);
+    p.__assign(other.p);
+    ye.__assign(other.ye);
+    yg.__assign(other.yg);
+    ze.__assign(other.ze);
+    zg.__assign(other.zg);
+    s.__assign(other.s);
+    xbg.__assign(other.xbg);
+    xhg.__assign(other.xhg);
+    stability = other.stability;
 
-State::~State()
-{}
+    return *this;
+}
 
 } // namespace Optima

@@ -62,36 +62,48 @@ def testState(nx, np, nbe, nbg, nhe, nhg):
 
     assert len(state.x) == nx
     assert len(state.p) == np
-    assert len(state.y) == ny
     assert len(state.ye) == nbe
     assert len(state.yg) == nbg
-    assert len(state.z) == nz
     assert len(state.ze) == nhe
     assert len(state.zg) == nhg
     assert len(state.s) == nx
-    assert len(state.xbar) == nxbar
-    assert len(state.sbar) == nxbar
     assert len(state.xbg) == nbg
     assert len(state.xhg) == nhg
 
     assert_array_equal(state.x, npy.zeros(nx))
     assert_array_equal(state.p, npy.zeros(np))
-    assert_array_equal(state.y, npy.zeros(ny))
-    assert_array_equal(state.z, npy.zeros(nz))
-    assert_array_equal(state.xbar, npy.zeros(nxbar))
-    assert_array_equal(state.sbar, npy.zeros(nxbar))
+    assert_array_equal(state.ye, npy.zeros(nbe))
+    assert_array_equal(state.yg, npy.zeros(nbg))
+    assert_array_equal(state.ze, npy.zeros(nhe))
+    assert_array_equal(state.zg, npy.zeros(nhg))
+    assert_array_equal(state.s, npy.zeros(nx))
 
-    state.xbar = npy.linspace(1.0, nxbar, nxbar)
-    state.sbar = npy.linspace(1.0, nxbar, nxbar) * 3
-    state.y    = npy.linspace(1.0, ny, ny) * 5
-    state.z    = npy.linspace(1.0, nz, nz) * 7
+    x    = npy.random.rand(nx)
+    p    = npy.random.rand(np)
+    ye   = npy.random.rand(nbe)
+    yg   = npy.random.rand(nbg)
+    ze   = npy.random.rand(nhe)
+    zg   = npy.random.rand(nhg)
+    s    = npy.random.rand(nx)
+    xbg  = npy.random.rand(nbg)
+    xhg  = npy.random.rand(nhg)
 
-    assert_array_equal(state.x  , state.xbar[:nx])
-    assert_array_equal(state.ye , state.w[:nbe])
-    assert_array_equal(state.yg , state.w[nbe:][:nbg])
-    assert_array_equal(state.ze , state.w[nbe:][nbg:][:nhe])
-    assert_array_equal(state.zg , state.w[nbe:][nbg:][nhe:])
-    assert_array_equal(state.s  , state.sbar[:nx])
-    assert_array_equal(state.xbg, state.xbar[nx:][:nbg])
-    assert_array_equal(state.xhg, state.xbar[nx:][nbg:])
+    state.x = x
+    state.p = p
+    state.ye = ye
+    state.yg = yg
+    state.ze = ze
+    state.zg = zg
+    state.s = s
+    state.xbg = xbg
+    state.xhg = xhg
 
+    assert_array_equal(state.x, x)
+    assert_array_equal(state.p, p)
+    assert_array_equal(state.ye, ye)
+    assert_array_equal(state.yg, yg)
+    assert_array_equal(state.ze, ze)
+    assert_array_equal(state.zg, zg)
+    assert_array_equal(state.s, s)
+    assert_array_equal(state.xbg, xbg)
+    assert_array_equal(state.xhg, xhg)
