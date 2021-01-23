@@ -27,12 +27,22 @@ public:
     void conservativeResize(Index rows, NoChange_t) = delete;
     void conservativeResize(NoChange_t, Index cols) = delete;
     void conservativeResize(Index size) = delete;
-    template<typename OtherDerived>
-    void resizeLike(const EigenBase<OtherDerived>& _other) = delete;
-    template<typename OtherDerived>
-    void conservativeResizeLike(const DenseBase<OtherDerived>& other) = delete;
-    template<typename OtherDerived>
+    template<typename OtherDerived> void resizeLike(const EigenBase<OtherDerived>& other) = delete;
+    template<typename OtherDerived> void conservativeResizeLike(const DenseBase<OtherDerived>& other) = delete;
 
+    void __resize(Index rows, Index cols) { Base::resize(rows, cols); }
+    void __resize(Index size) { Base::resize(size); }
+    void __resize(NoChange_t, Index cols) { Base::resize(NoChange, cols); }
+    void __resize(Index rows, NoChange_t) { Base::resize(rows, NoChange); }
+    void __conservativeResize(Index rows, Index cols) { Base::conservativeResize(rows, cols); }
+    void __conservativeResize(Index rows, NoChange_t) { Base::conservativeResize(rows, NoChange); }
+    void __conservativeResize(NoChange_t, Index cols) { Base::conservativeResize(NoChange, cols); }
+    void __conservativeResize(Index size) { Base::conservativeResize(size); }
+    template<typename OtherDerived> void __resizeLike(const EigenBase<OtherDerived>& other) { Base::resizeLike(other); }
+    template<typename OtherDerived> void __conservativeResizeLike(const DenseBase<OtherDerived>& other) { Base::conservativeResizeLike(other); }
+    template<typename OtherDerived> void __assign(const MatrixBase<OtherDerived>& other) { Base::operator=(other); }
+
+    template<typename OtherDerived>
     FixedMatrix& operator=(const MatrixBase<OtherDerived>& other)
     {
         if(this->rows() != other.rows() || this->cols() != other.cols())
