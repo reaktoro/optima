@@ -45,11 +45,10 @@ void exportEchelonizerW(py::module& m)
     };
 
     py::class_<EchelonizerW>(m, "EchelonizerW")
-        .def(py::init<const MasterDims&>())
+        .def(py::init<>())
         .def("initialize", initialize)
         .def("update", update1)
         .def("update", update2)
-        .def("dims", &EchelonizerW::dims)
         .def("W", &EchelonizerW::W, PYBINDX_ENSURE_MUTUAL_EXISTENCE)
         .def("RWQ", &EchelonizerW::RWQ, PYBINDX_ENSURE_MUTUAL_EXISTENCE)
         ;

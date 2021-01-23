@@ -26,34 +26,32 @@ namespace Optima {
 
 struct EchelonizerW::Impl
 {
-    /// The number of columns in Ax and Jx
-    const MasterDims dims;
+    /// The matrices Ax, Ap, W = [Ax Ap; Jx Jp], S = [Sbn Sbp]
+    Matrix Ax, Ap, W, S;
 
-    /// The matrix W = [Ax Ap; Jx Jp]
-    Matrix W;
-
-    /// The workspace matrix for S = [Sbn Sbp]
-    Matrix S;
+    Index nx = 0; /// The number of columns in Ax, Jx
+    Index np = 0; /// The number of columns in Ap, Jp
+    Index ny = 0; /// The number of rows in Ax, Ap
+    Index nz = 0; /// The number of rows in Jx, Jp
 
     /// The echelonizer of matrix Wx = [Ax; Jx]
     EchelonizerExtended echelonizer;
 
-    Impl(const MasterDims& dims)
-    : dims(dims)
+    Impl()
+    {}
+
+    auto initialize(MatrixView Ax_, MatrixView Ap_) -> void
     {
-        S.resize(dims.nw, dims.nx + dims.np);
-        W.resize(dims.nw, dims.nx + dims.np);
-    }
+        Ax = Ax_;
+        Ap = Ap_;
 
-    auto initialize(MatrixView Ax, MatrixView Ap) -> void
-    {
-        const auto [nx, np, ny, nz, nw, nt] = dims;
+        nx = Ax.cols();
+        np = Ap.cols();
+        ny = std::max(Ax.rows(), Ap.rows());
+        nz = 0;
 
-        using std::max;
-
-        assert(nx > 0);
-        assert(Ax.rows() == ny || ny == 0);
-        assert(Ax.cols() == nx || ny == 0);
+        assert(Ax.rows() == ny || ny == 0 || nx == 0);
+        assert(Ax.cols() == nx || ny == 0 || nx == 0);
         assert(Ap.rows() == ny || ny == 0 || np == 0);
         assert(Ap.cols() == np || ny == 0 || np == 0);
 
@@ -62,9 +60,6 @@ struct EchelonizerW::Impl
         // where EchelonizerExtended::initialize should figure out if same. Careful with echelon form that has
         // been contaminated with round off errors (because there has been many basic swaps already).
         echelonizer = EchelonizerExtended(Ax);
-
-        if(Ax.size()) W. topLeftCorner(ny, nx) = Ax;
-        if(Ap.size()) W.topRightCorner(ny, np) = Ap;
     }
 
     auto update(MatrixView Ax, MatrixView Ap, MatrixView Jx, MatrixView Jp, VectorView weights) -> void
@@ -75,20 +70,26 @@ struct EchelonizerW::Impl
 
     auto update(MatrixView Jx, MatrixView Jp, VectorView weights) -> void
     {
-        const auto [nx, np, ny, nz, nw, nt] = dims;
+        nx = std::max(Ax.cols(), Jx.cols());
+        np = std::max(Ap.cols(), Jp.cols());
+        ny = std::max(Ax.rows(), Ap.rows());
+        nz = std::max(Jx.rows(), Jp.rows());
 
         assert( echelonizer.R().rows() );
 
-        assert(Jx.rows() == nz || nz == 0);
-        assert(Jx.cols() == nx || nz == 0);
+        assert(Jx.rows() == nz || nz == 0 || nx == 0);
+        assert(Jx.cols() == nx || nz == 0 || nx == 0);
         assert(Jp.rows() == nz || nz == 0 || np == 0);
         assert(Jp.cols() == np || nz == 0 || np == 0);
 
         assert( nx == weights.rows() );
 
+        W.resize(ny + nz, nx + np);
         auto Wx = W.leftCols(nx);
         auto Wp = W.rightCols(np);
 
+        if(Ax.size()) Wx.topRows(ny) = Ax;
+        if(Ap.size()) Wp.topRows(ny) = Ap;
         if(Jx.size()) Wx.bottomRows(nz) = Jx;
         if(Jp.size()) Wp.bottomRows(nz) = Jp;
 
@@ -100,6 +101,7 @@ struct EchelonizerW::Impl
 
         const auto Rb = echelonizer.R().topRows(nb);
 
+        S.resize(ny + nz, nx + np);
         auto Sbn = S.topLeftCorner(nb, nn);
         auto Sbp = S.topRightCorner(nb, np);
 
@@ -111,8 +113,6 @@ struct EchelonizerW::Impl
 
     auto asMatrixViewW() const -> MatrixViewW
     {
-        const auto [nx, np, ny, nz, nw, nt] = dims;
-
         const auto Wx = W.leftCols(nx);
         const auto Wp = W.rightCols(np);
         const auto Ax = Wx.topRows(ny);
@@ -125,8 +125,6 @@ struct EchelonizerW::Impl
 
     auto asMatrixViewRWQ() const -> MatrixViewRWQ
     {
-        const auto [nx, np, ny, nz, nw, nt] = dims;
-
         const auto nb = echelonizer.numBasicVariables();
         const auto nn = echelonizer.numNonBasicVariables();
 
@@ -141,8 +139,8 @@ struct EchelonizerW::Impl
     }
 };
 
-EchelonizerW::EchelonizerW(const MasterDims& dims)
-: pimpl(new Impl(dims))
+EchelonizerW::EchelonizerW()
+: pimpl(new Impl())
 {}
 
 EchelonizerW::EchelonizerW(const EchelonizerW& other)
@@ -165,11 +163,6 @@ auto EchelonizerW::update(MatrixView Ax, MatrixView Ap, MatrixView Jx, MatrixVie
 auto EchelonizerW::update(MatrixView Jx, MatrixView Jp, VectorView weights) -> void
 {
     pimpl->update(Jx, Jp, weights);
-}
-
-auto EchelonizerW::dims() const -> MasterDims
-{
-    return pimpl->dims;
 }
 
 auto EchelonizerW::W() const -> MatrixViewW
