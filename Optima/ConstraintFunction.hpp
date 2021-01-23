@@ -46,6 +46,10 @@ struct ConstraintResultBase
     /// True if the constraint function evaluation succeeded.
     Bool succeeded;
 
+    /// Construct a default ConstraintResultBase object.
+    ConstraintResultBase()
+    : ConstraintResultBase(0, 0, 0) {}
+
     /// Construct a ConstraintResultBase object with given dimensions.
     /// @param nc The number of constraint equations in *c(x, p)*.
     /// @param nx The number of variables in *x*.
@@ -62,6 +66,17 @@ struct ConstraintResultBase
     /// Construct an ConstraintResultBase object with given data.
     ConstraintResultBase(Vec val, Mat ddx, Mat ddp, Bool ddx4basicvars, Bool succeeded)
     : val(val), ddx(ddx), ddp(ddp), ddx4basicvars(ddx4basicvars), succeeded(succeeded) {}
+
+    /// Resize this ConstraintResultBase object with given dimensions.
+    /// @param nc The number of constraint equations in *c(x, p)*.
+    /// @param nx The number of variables in *x*.
+    /// @param np The number of variables in *p*.
+    auto resize(Index nc, Index nx, Index np) -> void
+    {
+        val.resize(nc);
+        ddx.resize(nc, nx);
+        ddp.resize(nc, np);
+    }
 };
 
 /// The result of a constraint function evaluation.

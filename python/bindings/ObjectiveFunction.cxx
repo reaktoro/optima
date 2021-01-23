@@ -43,6 +43,7 @@ void exportObjectiveResult(py::module& m)
         .def_readwrite("diagfxx", &ObjectiveResult::diagfxx)
         .def_readwrite("fxx4basicvars", &ObjectiveResult::fxx4basicvars)
         .def_readwrite("succeeded", &ObjectiveResult::succeeded)
+        .def("resize", &ObjectiveResult::resize)
         ;
 }
 
