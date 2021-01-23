@@ -36,8 +36,8 @@ struct Dims;
 class Solver
 {
 public:
-    /// Construct a Solver instance with given optimization problem dimensions.
-    Solver(const Dims& dims);
+    /// Construct a default Solver instance.
+    Solver();
 
     /// Construct a copy of a Solver instance.
     Solver(const Solver& other);
