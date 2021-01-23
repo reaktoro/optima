@@ -32,9 +32,25 @@ struct MasterDims
     const Index nw; ///< The number of variables *w = (y, z)*.
     const Index nt; ///< The total number of variables in *(x, p, y, z)*.
 
+    /// Construct a default MasterDims object.
+    MasterDims()
+    : MasterDims(0, 0, 0, 0) {}
+
     /// Construct a MasterDims object with given dimensions.
     MasterDims(Index nx, Index np, Index ny, Index nz)
     : nx(nx), np(np), ny(ny), nz(nz), nw(ny + nz), nt(nx + np + nw) {}
+
+    /// Assign another MasterDims object to this.
+    auto operator=(const MasterDims& other) -> MasterDims&
+    {
+        const_cast<Index&>(nx) = other.nx;
+        const_cast<Index&>(np) = other.np;
+        const_cast<Index&>(ny) = other.ny;
+        const_cast<Index&>(nz) = other.nz;
+        const_cast<Index&>(nw) = other.nw;
+        const_cast<Index&>(nt) = other.nt;
+        return *this;
+    }
 };
 
 } // namespace Optima
