@@ -152,7 +152,7 @@ def testMasterSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
         LinearSolverMethod.Rangespace if diagHxx else \
         LinearSolverMethod.Nullspace
 
-    solver = Solver(dims)
+    solver = Solver()
     solver.setOptions(options)
 
     state = State(dims)

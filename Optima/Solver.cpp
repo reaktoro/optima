@@ -30,9 +30,9 @@
 #include <Optima/Utils.hpp>
 
 namespace Optima {
-namespace detail {
+namespace {
 
-auto initMasterSolver(const Dims& dims) -> MasterSolver
+auto toMasterDims(const Dims& dims) -> MasterDims
 {
     const auto [nx, np, nbe, nbg, nhe, nhg] = dims;
 
@@ -42,46 +42,28 @@ auto initMasterSolver(const Dims& dims) -> MasterSolver
     const auto ny   = nbe + nbg;
     const auto nz   = nhe + nhg;
 
-    return MasterSolver(MasterDims{nxrs, np, ny, nz});
+    return MasterDims(nxrs, np, ny, nz);
 }
 
-} // namespace detail
+} // namespace
 
 struct Solver::Impl
 {
-    const Dims dims;           ///< The dimensions of variables and constraints in the optimization problem.
-    MasterSolver msolver;      ///< The master optimization solver.
-    MasterProblem mproblem;    ///< The master optimization problem.
-    Index nx   = 0;            ///< The number of variables x in xrs = (x, r, s) = (x, xbg, xhg) = xbar.
-    Index nr   = 0;            ///< The number of variables r in xrs = (x, r, s) = (x, xbg, xhg) = xbar.
-    Index ns   = 0;            ///< The number of variables s in xrs = (x, r, s) = (x, xbg, xhg) = xbar.
-    Index nxrs = 0;            ///< The number of variables in xrs = (x, xbg, xhg).
-    Index np   = 0;            ///< The number of parameter variables p.
-    Index ny   = 0;            ///< The number of Lagrange multipliers y (i.e., the dimension of vector b = (be, bg)).
-    Index nz   = 0;            ///< The number of Lagrange multipliers z (i.e., the dimension of vector h = (he, hg)).
-    Vector xrslower;           ///< The lower bounds of vector xrs = (x, xbg, xhg) in the master optimization problem.
-    Vector xrsupper;           ///< The upper bounds of vector xrs = (x, xbg, xhg) in the master optimization problem.
-    Indices iordering;         ///< The ordering of the variables xrs = (x, xbg, xhg) as (*stable*, *lower unstable*, *upper unstable*).
+    MasterSolver msolver;   ///< The master optimization solver.
+    MasterProblem mproblem; ///< The master optimization problem.
+    Index nx   = 0;         ///< The number of variables x in xrs = (x, r, s) = (x, xbg, xhg) = xbar.
+    Index nr   = 0;         ///< The number of variables r in xrs = (x, r, s) = (x, xbg, xhg) = xbar.
+    Index ns   = 0;         ///< The number of variables s in xrs = (x, r, s) = (x, xbg, xhg) = xbar.
+    Index nxrs = 0;         ///< The number of variables in xrs = (x, xbg, xhg).
+    Index np   = 0;         ///< The number of parameter variables p.
+    Index ny   = 0;         ///< The number of Lagrange multipliers y (i.e., the dimension of vector b = (be, bg)).
+    Index nz   = 0;         ///< The number of Lagrange multipliers z (i.e., the dimension of vector h = (he, hg)).
+    Vector xrslower;        ///< The lower bounds of vector xrs = (x, xbg, xhg) in the master optimization problem.
+    Vector xrsupper;        ///< The upper bounds of vector xrs = (x, xbg, xhg) in the master optimization problem.
 
-    /// Construct a Solver instance with given optimization problem.
-    Impl(const Dims& dims)
-    : dims(dims), msolver(detail::initMasterSolver(dims))
+    /// Construct a Solver default instance.
+    Impl()
     {
-        // Initialize dimension variables
-        nx   = dims.x;
-        nr   = dims.bg;
-        ns   = dims.hg;
-        nxrs = nx + nr + ns;
-        np   = dims.p;
-        ny   = dims.be + dims.bg;
-        nz   = dims.he + dims.hg;
-
-        // Initialize vectors
-        xrslower.resize(nxrs);
-        xrsupper.resize(nxrs);
-
-        // Initialize the ordering of the variables.
-        iordering = indices(nxrs);
     }
 
     /// Set the options for the optimization calculation.
@@ -93,6 +75,18 @@ struct Solver::Impl
     /// Solve the optimization problem.
     auto solve(const Problem& problem, State& state) -> Result
     {
+        // Auxiliary references
+        const auto& dims = problem.dims;
+
+        // Initialize dimension variables
+        nx   = dims.x;
+        nr   = dims.bg;
+        ns   = dims.hg;
+        nxrs = nx + nr + ns;
+        np   = dims.p;
+        ny   = dims.be + dims.bg;
+        nz   = dims.he + dims.hg;
+
         error(!problem.f.initialized(),
             "Cannot solve the optimization problem. "
             "You have not initialized the objective function. "
@@ -112,6 +106,9 @@ struct Solver::Impl
             "Cannot solve the optimization problem. "
             "You have not initialized the complementary constraint function v(x, p). "
             "Ensure Problem::v is properly initialized.");
+
+        // Initialize the dimensions of the master optimization problem
+        mproblem.dims = toMasterDims(dims);
 
         // Create the objective function for the master optimization problem
         mproblem.f = [&](ObjectiveResultRef res, VectorView xrs, VectorView p, ObjectiveOptions opts)
@@ -235,10 +232,12 @@ struct Solver::Impl
         };
 
         // Initialize vector with lower bounds for bar(x) = (x, xbg, xhg)
+        xrslower.resize(nxrs);
         xrslower.head(nx) = problem.xlower;
         xrslower.tail(nr + ns).fill(-infinity());
 
         // Initialize vector with upper bounds for bar(x) = (x, xbg, xhg)
+        xrsupper.resize(nxrs);
         xrsupper.head(nx) = problem.xupper;
         xrslower.tail(nr + ns).fill(0.0);
 
@@ -273,8 +272,8 @@ struct Solver::Impl
     }
 };
 
-Solver::Solver(const Dims& dims)
-: pimpl(new Impl(dims))
+Solver::Solver()
+: pimpl(new Impl())
 {}
 
 Solver::Solver(const Solver& other)
