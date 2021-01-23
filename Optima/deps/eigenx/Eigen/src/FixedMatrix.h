@@ -45,6 +45,8 @@ public:
     template<typename OtherDerived>
     FixedMatrix& operator=(const MatrixBase<OtherDerived>& other)
     {
+        if(this->size() == 0 && other.size() == 0) // avoid runtime error below when dimensions differ, even though one of them is zero
+            return *this;
         if(this->rows() != other.rows() || this->cols() != other.cols())
             throw std::runtime_error("\033[1;31m***ERROR*** Cannot implicitly resize a matrix/vector with fixed dimensions.\033[0m");
         Base::operator=(other);
