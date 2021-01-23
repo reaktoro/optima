@@ -123,9 +123,9 @@ struct ResidualFunction::Impl
         const auto p = u.p;
         const auto RWQ = echelonizerW.RWQ();
         const auto ibasicvars = RWQ.jb;
-        ObjectiveOptions  fopts{{evaljac, evaljac}, ibasicvars};
-        ConstraintOptions hopts{{evaljac, evaljac}, ibasicvars};
-        ConstraintOptions vopts{{evaljac, evaljac}, ibasicvars};
+        ObjectiveOptions  fopts{{evaljac, evaljac && dims.np}, ibasicvars};
+        ConstraintOptions hopts{{evaljac, evaljac && dims.np}, ibasicvars};
+        ConstraintOptions vopts{{evaljac, evaljac && dims.np}, ibasicvars};
         f(fres, x, p, fopts);
         h(hres, x, p, hopts);
         v(vres, x, p, vopts);
