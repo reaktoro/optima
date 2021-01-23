@@ -42,7 +42,7 @@ int main(int argc, char **argv)
     Options options;
     options.output.active = true;
 
-    Solver solver(problem);
+    Solver solver(dims);
     solver.setOptions(options);
 
     solver.solve(problem, state);
