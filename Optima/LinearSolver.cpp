@@ -27,8 +27,6 @@ namespace Optima {
 
 struct LinearSolver::Impl
 {
-    const MasterDims dims; ///< The dimensions of the master variables.
-
     LinearSolverOptions options; ///< The options for the linear solver.
 
     LinearSolverRangespace rangespace; ///< The linear solver based on a rangespace algorithm.
@@ -44,18 +42,8 @@ struct LinearSolver::Impl
     Vector ax; ///< The auxiliary solution vector ax.
     Vector aw; ///< The auxiliary solution vector aw.
 
-    Impl(const MasterDims& dims)
-    : dims(dims), rangespace(dims), nullspace(dims), fullspace(dims)
-    {
-        const auto [nx, np, ny, nz, nw, nt] = dims;
-
-        x    = zeros(nx);
-        p    = zeros(np);
-        w    = zeros(nw);
-        wbar = zeros(nw);
-        ax   = zeros(nx);
-        aw   = zeros(nw);
-    }
+    Impl()
+    {}
 
     auto solveCanonical(CanonicalMatrix Mc, CanonicalVectorView ac, CanonicalVectorRef uc) -> void
     {
@@ -89,12 +77,14 @@ struct LinearSolver::Impl
         const auto nbs = dims.nbs;
         const auto nns = dims.nns;
 
+        ax.resize(dims.nx);
         auto as = ax.head(ns);
         auto au = ax.tail(nu);
 
         as.noalias() = a.x(js);
         au.noalias() = a.x(ju);
 
+        aw.resize(dims.nw);
         auto awbs = aw.head(nbs);
         awbs = Rbs * a.w;
 
@@ -115,9 +105,12 @@ struct LinearSolver::Impl
         const auto nbs = dims.nbs;
         const auto nl  = dims.nl;
 
+        p.resize(dims.np);
+        x.resize(dims.nx);
         auto xs = x.head(ns);
         auto xu = x.tail(nu);
 
+        wbar.resize(dims.nw);
         auto wbs = wbar.head(nbs);
 
         const auto as = a.xs;
@@ -136,8 +129,8 @@ struct LinearSolver::Impl
     }
 };
 
-LinearSolver::LinearSolver(const MasterDims& dims)
-: pimpl(new Impl(dims))
+LinearSolver::LinearSolver()
+: pimpl(new Impl())
 {}
 
 LinearSolver::LinearSolver(const LinearSolver& other)

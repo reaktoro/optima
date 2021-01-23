@@ -32,7 +32,7 @@ class LinearSolverFullspace
 {
 public:
     /// Construct a LinearSolverFullspace instance.
-    LinearSolverFullspace(const MasterDims& dims);
+    LinearSolverFullspace();
 
     /// Construct a copy of a LinearSolverFullspace instance.
     LinearSolverFullspace(const LinearSolverFullspace& other);

@@ -72,7 +72,7 @@ def testLinearSolver(nx, np, ny, nz, nl, nu, diagHxx, method):
     options = LinearSolverOptions()
     options.method = method
 
-    linearsolver = LinearSolver(params.dims)
+    linearsolver = LinearSolver()
     linearsolver.setOptions(options)
 
     u = MasterVector(dims)

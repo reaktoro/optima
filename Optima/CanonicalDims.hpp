@@ -30,6 +30,7 @@ struct CanonicalDims
     const Index ny;  ///< The number of variables y.
     const Index nz;  ///< The number of variables z.
     const Index nw;  ///< The number of variables w = (y, z).
+    const Index nt;  ///< The number of variables (x, p, w).
     const Index ns;  ///< The number of stable variables in x.
     const Index nu;  ///< The number of unstable variables in x.
     const Index nb;  ///< The number of basic variables in x.

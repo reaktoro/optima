@@ -31,10 +31,8 @@ struct LineSearch::Impl
     /// The options for the line search minimization.
     LineSearchOptions options;
 
-    Impl(const MasterDims& dims)
-    : utrial(dims)
-    {
-    }
+    Impl()
+    {}
 
     auto setOptions(const LineSearchOptions opts) -> void
     {
@@ -48,7 +46,7 @@ struct LineSearch::Impl
             utrial = uo*(1 - alpha) + alpha*u;
             F.update(utrial);
             E.update(utrial, F);
-            return E.error;
+            return E.error();
         };
 
         const auto tol = options.tolerance;
@@ -61,8 +59,8 @@ struct LineSearch::Impl
     }
 };
 
-LineSearch::LineSearch(const MasterDims& dims)
-: pimpl(new Impl(dims))
+LineSearch::LineSearch()
+: pimpl(new Impl())
 {}
 
 LineSearch::LineSearch(const LineSearch& other)

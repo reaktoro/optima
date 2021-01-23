@@ -34,7 +34,7 @@ class LinearSolver
 {
 public:
     /// Construct a LinearSolver instance.
-    LinearSolver(const MasterDims& dims);
+    LinearSolver();
 
     /// Construct a copy of a LinearSolver instance.
     LinearSolver(const LinearSolver& other);

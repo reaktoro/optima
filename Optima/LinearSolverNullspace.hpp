@@ -32,7 +32,7 @@ class LinearSolverNullspace
 {
 public:
     /// Construct a LinearSolverNullspace instance.
-    LinearSolverNullspace(const MasterDims& dims);
+    LinearSolverNullspace();
 
     /// Construct a copy of a LinearSolverNullspace instance.
     LinearSolverNullspace(const LinearSolverNullspace& other);

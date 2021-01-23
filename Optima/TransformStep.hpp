@@ -38,7 +38,7 @@ private:
 
 public:
     /// Construct a TransformStep object.
-    TransformStep(const MasterDims& dims);
+    TransformStep();
 
     /// Construct a copy of a TransformStep object.
     TransformStep(const TransformStep& other);

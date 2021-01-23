@@ -24,7 +24,7 @@ namespace Optima {
 
 struct BacktrackSearch::Impl
 {
-    Impl(const MasterDims& dims)
+    Impl()
     {
     }
 
@@ -34,8 +34,8 @@ struct BacktrackSearch::Impl
     }
 };
 
-BacktrackSearch::BacktrackSearch(const MasterDims& dims)
-: pimpl(new Impl(dims))
+BacktrackSearch::BacktrackSearch()
+: pimpl(new Impl())
 {}
 
 BacktrackSearch::BacktrackSearch(const BacktrackSearch& other)

@@ -34,7 +34,6 @@ struct LinearSolverRangespace::Impl
     Vector ap;        ///< The workspace for the right-hand side vector ap
     Vector aw;        ///< The workspace for the right-hand side vector aw
     Vector Hd;        ///< The workspace for the diagonal entries in the Hss matrix.
-    Matrix Bw;        ///< The workspace for the Bnb = inv(Hnn)*tr(Sbn) matrix.
     Matrix Tw;        ///< The workspace for the Tbb = Sbn*inv(Hnn)*tr(Sbn) matrix.
     Matrix Mw;        ///< The workspace for the M matrix in decompose and solve methods.
     Vector rw;        ///< The workspace for the r vector in solve method.
@@ -44,31 +43,18 @@ struct LinearSolverRangespace::Impl
     Matrix barSbsns;  ///< The workspace for matrix bar(Sbsns)
     LU lu;            ///< The LU decomposition solver.
 
-    Impl(const MasterDims& dims)
-    {
-        const auto [nx, np, ny, nz, nw, nt] = dims;
-
-        ax.resize(nx);
-        ap.resize(np);
-        aw.resize(nw);
-        Hd.resize(nx);
-        Bw.resize(nx, nw);
-        Tw.resize(nw, nw);
-        Mw.resize(nt, nt);
-        rw.resize(nt);
-        sw.resize(nt);
-        barHsp.resize(nx, np);
-        barVps.resize(np, nx);
-        barSbsns.resize(nw, nx);
-    }
+    Impl()
+    {}
 
     auto decompose(CanonicalMatrix J) -> void
     {
         const auto dims = J.dims;
 
+        const auto nx  = dims.nx;
         const auto ns  = dims.ns;
         const auto np  = dims.np;
         const auto nw  = dims.nw;
+        const auto nt  = dims.nt;
         const auto nbs = dims.nbs;
         const auto nns = dims.nns;
         const auto nbe = dims.nbe;
@@ -105,6 +91,7 @@ struct LinearSolverRangespace::Impl
         const auto Ibebe = identity(nbe, nbe);
         const auto Ibibi = identity(nbi, nbi);
 
+        Hd.resize(nx);
         auto Hs = Hd.head(ns);
 
         Hs = J.Hss.diagonal();
@@ -118,6 +105,10 @@ struct LinearSolverRangespace::Impl
 
         const auto invHbebe = diag(inv(Hbebe));
         const auto invHnene = diag(inv(Hnene));
+
+        barHsp.resize(nx, np);
+        barVps.resize(np, nx);
+        barSbsns.resize(nw, nx);
 
         auto barHbep  = barHsp.topRows(nbe);
         auto barHnep  = barHsp.bottomRows(nne);
@@ -134,6 +125,7 @@ struct LinearSolverRangespace::Impl
         barSbene = Sbene * invHnene;
         barSbine = Sbine * invHnene;
 
+        Tw.resize(nw, nw);
         auto Tbsbs = Tw.topLeftCorner(nbs, nbs);
 
         Tbsbs.noalias() = Sbsne * tr(barSbsne);
@@ -145,6 +137,7 @@ struct LinearSolverRangespace::Impl
 
         const auto t = np + nbi + nbe + nni;
 
+        Mw.resize(nt, nt);
         auto M = Mw.topLeftCorner(t, t);
 
         //======================================================================
@@ -208,9 +201,11 @@ struct LinearSolverRangespace::Impl
     {
         const auto dims = J.dims;
 
+        const auto nx  = dims.nx;
         const auto ns  = dims.ns;
         const auto np  = dims.np;
         const auto nw  = dims.nw;
+        const auto nt  = dims.nt;
         const auto nbs = dims.nbs;
         const auto nns = dims.nns;
         const auto nbe = dims.nbe;
@@ -261,6 +256,7 @@ struct LinearSolverRangespace::Impl
         const auto Tbebi = Tbsbs.topRightCorner(nbe, nbi);
         const auto Tbebe = Tbsbs.topLeftCorner(nbe, nbe);
 
+        ax.resize(nx);
         auto as  = ax.head(ns);
         auto abs = as.head(nbs);
         auto ans = as.tail(nns);
@@ -269,6 +265,7 @@ struct LinearSolverRangespace::Impl
         auto abi = abs.tail(nbi);
         auto ani = ans.tail(nni);
 
+        aw.resize(nw);
         auto awbs = aw.head(nbs);
         auto awbe = awbs.head(nbe);
         auto awbi = awbs.tail(nbi);
@@ -286,6 +283,9 @@ struct LinearSolverRangespace::Impl
         ani.noalias()  = ani - tr(Sbini)*abi;
 
         const auto t = np + nbi + nbe + nni;
+
+        rw.resize(nt);
+        sw.resize(nt);
 
         auto r = rw.head(t);
         auto s = sw.head(t);
@@ -313,8 +313,8 @@ struct LinearSolverRangespace::Impl
     }
 };
 
-LinearSolverRangespace::LinearSolverRangespace(const MasterDims& dims)
-: pimpl(new Impl(dims))
+LinearSolverRangespace::LinearSolverRangespace()
+: pimpl(new Impl())
 {}
 
 LinearSolverRangespace::LinearSolverRangespace(const LinearSolverRangespace& other)

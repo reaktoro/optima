@@ -29,6 +29,7 @@ namespace Optima {
 /// Used to represent a master optimization problem.
 struct MasterProblem
 {
+    MasterDims dims;       ///< The dimensions of the master variables.
     ObjectiveFunction f;   ///< The objective function *f(x, p)*.
     ConstraintFunction h;  ///< The nonlinear equality constraint function *h(x, p)*.
     ConstraintFunction v;  ///< The external nonlinear constraint function *v(x, p)*.

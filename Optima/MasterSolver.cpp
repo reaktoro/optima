@@ -38,7 +38,7 @@ const auto STOP     = false;
 
 struct MasterSolver::Impl
 {
-    const MasterDims dims;
+    MasterDims dims;
     ResidualFunction F;
     ResidualErrors E;
     MasterVector uo;
@@ -50,14 +50,8 @@ struct MasterSolver::Impl
     Result result;
     Options options;
 
-    Impl(const MasterDims& dims)
-    : dims(dims), F(dims), E(dims), uo(dims),
-      newtonstep(dims),
-      transformstep(dims),
-      errorcontrol(dims),
-      convergence()
-    {
-    }
+    Impl()
+    {}
 
     auto outputHeaderTop() -> void
     {
@@ -96,19 +90,19 @@ struct MasterSolver::Impl
         const auto& xnames = options.output.xnames;
         outputter.addValue(result.iterations);
         outputter.addValue(Fres.f.f);
-        outputter.addValue(E.error);
-        outputter.addValue(E.errorx);
-        outputter.addValue(E.errorp);
-        outputter.addValue(E.errorw);
+        outputter.addValue(E.error());
+        outputter.addValue(E.errorx());
+        outputter.addValue(E.errorp());
+        outputter.addValue(E.errorw());
         outputter.addValues(uo.x);
         outputter.addValues(uo.p);
         outputter.addValues(uo.w.head(dims.ny));
         outputter.addValues(uo.w.tail(dims.nz));
         outputter.addValues(Fres.stabilitystatus.s);
-        outputter.addValues(E.ex);
-        outputter.addValues(E.ep);
-        outputter.addValues(E.ew.head(dims.ny));
-        outputter.addValues(E.ew.tail(dims.nz));
+        outputter.addValues(E.ex());
+        outputter.addValues(E.ep());
+        outputter.addValues(E.ew().head(dims.ny));
+        outputter.addValues(E.ew().tail(dims.nz));
         std::stringstream ss;
         if(xnames.empty()) for(auto i : jb) ss << i << " ";
         else for(auto i : jb) ss << xnames[i] << " ";
@@ -136,6 +130,7 @@ struct MasterSolver::Impl
     auto initialize(const MasterProblem& problem, MasterVectorRef u) -> void
     {
         sanitycheck(problem, u);
+        dims = problem.dims;
         result = {};
         u.x.noalias() = min(max(u.x, problem.xlower), problem.xupper);
         u.p.noalias() = min(max(u.p, problem.plower), problem.pupper);
@@ -191,20 +186,20 @@ struct MasterSolver::Impl
     auto sanitycheck(const MasterProblem& problem, MasterVectorRef u) -> void
     {
         assert(problem.f.initialized());
-        assert(dims.nz == 0 || problem.h.initialized());
-        assert(dims.np == 0 || problem.v.initialized());
-        assert(dims.nx == problem.xlower.size());
-        assert(dims.nx == problem.xupper.size());
-        assert(dims.np == problem.plower.size());
-        assert(dims.np == problem.pupper.size());
-        assert(dims.nx == u.x.size());
-        assert(dims.np == u.p.size());
-        assert(dims.nw == u.w.size());
+        assert(problem.dims.nz == 0 || problem.h.initialized());
+        assert(problem.dims.np == 0 || problem.v.initialized());
+        assert(problem.dims.nx == problem.xlower.size());
+        assert(problem.dims.nx == problem.xupper.size());
+        assert(problem.dims.np == problem.plower.size());
+        assert(problem.dims.np == problem.pupper.size());
+        assert(problem.dims.nx == u.x.size());
+        assert(problem.dims.np == u.p.size());
+        assert(problem.dims.nw == u.w.size());
     }
 };
 
-MasterSolver::MasterSolver(const MasterDims& dims)
-: pimpl(new Impl(dims))
+MasterSolver::MasterSolver()
+: pimpl(new Impl())
 {}
 
 MasterSolver::MasterSolver(const MasterSolver& other)

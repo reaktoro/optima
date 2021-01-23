@@ -34,6 +34,7 @@ void exportMasterProblem(py::module& m)
 
     py::class_<MasterProblem>(m, "MasterProblem")
         .def(py::init<>())
+        .def_readwrite("dims"  , &MasterProblem::dims)
         .def_readwrite("f"     , &MasterProblem::f)
         .def_readwrite("h"     , &MasterProblem::h)
         .def_readwrite("v"     , &MasterProblem::v)

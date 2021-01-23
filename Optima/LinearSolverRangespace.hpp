@@ -32,7 +32,7 @@ class LinearSolverRangespace
 {
 public:
     /// Construct a LinearSolverRangespace instance.
-    LinearSolverRangespace(const MasterDims& dims);
+    LinearSolverRangespace();
 
     /// Construct a copy of a LinearSolverRangespace instance.
     LinearSolverRangespace(const LinearSolverRangespace& other);

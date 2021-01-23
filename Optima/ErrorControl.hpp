@@ -37,7 +37,7 @@ private:
 
 public:
     /// Construct a ErrorControl object.
-    ErrorControl(const MasterDims& dims);
+    ErrorControl();
 
     /// Construct a copy of a ErrorControl object.
     ErrorControl(const ErrorControl& other);

@@ -43,7 +43,7 @@ struct Convergence::Impl
 
     auto update(const ResidualErrors& E) -> void
     {
-        history.push_back(E.error);
+        history.push_back(E.error());
     }
 
     auto converged() const -> bool

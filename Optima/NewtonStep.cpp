@@ -25,7 +25,7 @@ namespace Optima {
 
 struct NewtonStep::Impl
 {
-    const MasterDims dims;     ///< The dimensions of the master variables.
+    MasterDims dims;           ///< The dimensions of the master variables.
     LinearSolver linearsolver; ///< The linear solver for the master matrix equations.
     MasterVector du;           ///< The Newton step for master variables u = (x, p, w).
     Vector xlower;             ///< The lower bounds for variables *x*.
@@ -33,10 +33,8 @@ struct NewtonStep::Impl
     Vector plower;             ///< The lower bounds for variables *p*.
     Vector pupper;             ///< The upper bounds for variables *p*.
 
-    Impl(const MasterDims& dims)
-    : dims(dims), linearsolver(dims), du(dims)
-    {
-    }
+    Impl()
+    {}
 
     auto setOptions(const NewtonStepOptions options) -> void
     {
@@ -45,10 +43,12 @@ struct NewtonStep::Impl
 
     auto initialize(const MasterProblem& problem) -> void
     {
+        dims = problem.dims;
         xlower = problem.xlower;
         xupper = problem.xupper;
         plower = problem.plower;
         pupper = problem.pupper;
+        du.resize(dims);
     }
 
     auto apply(const ResidualFunction& F, MasterVectorView uo, MasterVectorRef u) -> void
@@ -75,8 +75,8 @@ struct NewtonStep::Impl
     }
 };
 
-NewtonStep::NewtonStep(const MasterDims& dims)
-: pimpl(new Impl(dims))
+NewtonStep::NewtonStep()
+: pimpl(new Impl())
 {}
 
 NewtonStep::NewtonStep(const NewtonStep& other)
