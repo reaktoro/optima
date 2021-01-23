@@ -51,6 +51,7 @@ void exportStability(py::module& m)
     };
 
     py::class_<Stability>(m, "Stability")
+        .def(py::init<>())
         .def(py::init<Index>())
         .def("update", update)
         .def("status", &Stability::status, PYBINDX_ENSURE_MUTUAL_EXISTENCE)

@@ -25,18 +25,20 @@
 
 namespace Optima {
 
+Stability::Stability()
+{}
+
 Stability::Stability(Index nx)
 : jsu(indices(nx)), ns(nx), nlu(0), nuu(0), s(zeros(nx))
 {}
 
 auto Stability::update(StabilityUpdateArgs args) -> void
 {
-    const auto nx = jsu.size();
-
     const auto [Wx, g, x, w, xlower, xupper, jb] = args;
 
+    const auto nx = x.size();
+
     assert(nx == g.size());
-    assert(nx == x.size());
     assert(nx == xlower.size());
     assert(nx == xupper.size());
 
@@ -47,6 +49,8 @@ auto Stability::update(StabilityUpdateArgs args) -> void
 
     // Note: In the code below, all basic variables are by default considered
     // stable. It remains to identify which non-basic variables are unstable!
+
+    jsu.noalias() = indices(nx);
 
     const auto nb = moveIntersectionLeft(jsu, jb);
 

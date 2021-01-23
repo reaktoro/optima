@@ -56,14 +56,17 @@ class Stability
 {
 private:
     Indices jsu;   ///< The indices of the x variables ordered as jsu = (js, ju) = (js, jlu, juu).
-    Index ns;      ///< The number of stable stable variables in js.
-    Index nlu;     ///< The number of lower unstable stable variables in jlu.
-    Index nuu;     ///< The number of upper unstable stable variables in juu.
+    Index ns = 0;  ///< The number of stable stable variables in js.
+    Index nlu = 0; ///< The number of lower unstable stable variables in jlu.
+    Index nuu = 0; ///< The number of upper unstable stable variables in juu.
     Vector s;      ///< The stability \eq{s=g+W_{\mathrm{x}}^{T}w} of the *x* variables.
 
 public:
     /// Construct a default Stability object.
-    Stability(Index nx);
+    Stability();
+
+    /// Construct a Stability object with given dimension.
+    explicit Stability(Index nx);
 
     /// Update the stability status of the variables in x relative to a canonical form of matrix W.
     auto update(StabilityUpdateArgs args) -> void;
