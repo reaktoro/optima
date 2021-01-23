@@ -150,7 +150,7 @@ def createMatrixViewRWQ(params, W):
 
     weights = npy.ones(dims.nx)
 
-    echelonizerW = EchelonizerW(dims)
+    echelonizerW = EchelonizerW()
     echelonizerW.initialize(W.Ax, W.Ap)
     echelonizerW.update(W.Jx, W.Jp, weights)
 

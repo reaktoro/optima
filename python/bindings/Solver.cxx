@@ -31,7 +31,7 @@ using namespace Optima;
 void exportSolver(py::module& m)
 {
     py::class_<Solver>(m, "Solver")
-        .def(py::init<const Dims&>())
+        .def(py::init<>())
         .def("setOptions", &Solver::setOptions)
         .def("solve", &Solver::solve)
         ;
