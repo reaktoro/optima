@@ -23,7 +23,6 @@
 // Optima includes
 #include <Optima/CanonicalVector.hpp>
 #include <Optima/CanonicalMatrix.hpp>
-#include <Optima/MasterDims.hpp>
 #include <Optima/MasterVector.hpp>
 
 namespace Optima {
