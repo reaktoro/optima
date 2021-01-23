@@ -101,6 +101,7 @@ def testResidualFunction(nx, np, ny, nz, nl, nu, b1, b2, b3, b4, b5, b6, b7):
         res.succeeded = b7
 
     problem = MasterProblem()
+    problem.dims = dims
     problem.f = objectivefn_f
     problem.h = constraintfn_h
     problem.v = constraintfn_v
@@ -120,7 +121,7 @@ def testResidualFunction(nx, np, ny, nz, nl, nu, b1, b2, b3, b4, b5, b6, b7):
 
     u.x[ju] = problem.xlower[ju]  # ensure the unstable variables are attached to lower bounds
 
-    F = ResidualFunction(dims)
+    F = ResidualFunction()
     F.initialize(problem)
 
     status = F.update(u)
