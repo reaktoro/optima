@@ -73,10 +73,13 @@ endif()
 # Build the project documentation
 if(OPTIMA_BUILD_DOCS)
     add_subdirectory(docs)
-    endif()
+endif()
 
-# Create target tests for testing
+# Process sub-directory tests
 add_subdirectory(tests)
+
+# Process sub-directory scripts
+add_subdirectory(scripts)
 
 # Install the cmake config files that permit users to use find_package(Optima)
 include(OptimaInstallCMakeConfigFiles)
