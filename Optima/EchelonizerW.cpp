@@ -26,13 +26,11 @@ namespace Optima {
 
 struct EchelonizerW::Impl
 {
-    /// The matrices Ax, Ap, W = [Ax Ap; Jx Jp], S = [Sbn Sbp]
-    Matrix Ax, Ap, W, S;
+    /// The dimensions of the master variables.
+    MasterDims dims;
 
-    Index nx = 0; /// The number of columns in Ax, Jx
-    Index np = 0; /// The number of columns in Ap, Jp
-    Index ny = 0; /// The number of rows in Ax, Ap
-    Index nz = 0; /// The number of rows in Jx, Jp
+    /// The matrices Ax, Ap, W = [Ax Ap; Jx Jp], S = [Sbn Sbp]
+    Matrix W, S;
 
     /// The echelonizer of matrix Wx = [Ax; Jx]
     EchelonizerExtended echelonizer;
@@ -40,15 +38,11 @@ struct EchelonizerW::Impl
     Impl()
     {}
 
-    auto initialize(MatrixView Ax_, MatrixView Ap_) -> void
+    auto initialize(const MasterDims& dimens, MatrixView Ax, MatrixView Ap) -> void
     {
-        Ax = Ax_;
-        Ap = Ap_;
+        dims = dimens;
 
-        nx = Ax.cols();
-        np = Ap.cols();
-        ny = std::max(Ax.rows(), Ap.rows());
-        nz = 0;
+        const auto [nx, np, ny, nz, nw, nt] = dims;
 
         assert(Ax.rows() == ny || ny == 0 || nx == 0);
         assert(Ax.cols() == nx || ny == 0 || nx == 0);
@@ -60,20 +54,20 @@ struct EchelonizerW::Impl
         // where EchelonizerExtended::initialize should figure out if same. Careful with echelon form that has
         // been contaminated with round off errors (because there has been many basic swaps already).
         echelonizer = EchelonizerExtended(Ax);
-    }
 
-    auto update(MatrixView Ax, MatrixView Ap, MatrixView Jx, MatrixView Jp, VectorView weights) -> void
-    {
-        initialize(Ax, Ap);
-        update(Jx, Jp, weights);
+        W.resize(nw, nx + np);
+        S.resize(nw, nx + np);
+
+        auto Wx = W.leftCols(nx);
+        auto Wp = W.rightCols(np);
+
+        if(Ax.size()) Wx.topRows(ny) = Ax;
+        if(Ap.size()) Wp.topRows(ny) = Ap;
     }
 
     auto update(MatrixView Jx, MatrixView Jp, VectorView weights) -> void
     {
-        nx = std::max(Ax.cols(), Jx.cols());
-        np = std::max(Ap.cols(), Jp.cols());
-        ny = std::max(Ax.rows(), Ap.rows());
-        nz = std::max(Jx.rows(), Jp.rows());
+        const auto [nx, np, ny, nz, nw, nt] = dims;
 
         assert( echelonizer.R().rows() );
 
@@ -84,12 +78,9 @@ struct EchelonizerW::Impl
 
         assert( nx == weights.rows() );
 
-        W.resize(ny + nz, nx + np);
         auto Wx = W.leftCols(nx);
         auto Wp = W.rightCols(np);
 
-        if(Ax.size()) Wx.topRows(ny) = Ax;
-        if(Ap.size()) Wp.topRows(ny) = Ap;
         if(Jx.size()) Wx.bottomRows(nz) = Jx;
         if(Jp.size()) Wp.bottomRows(nz) = Jp;
 
@@ -101,7 +92,6 @@ struct EchelonizerW::Impl
 
         const auto Rb = echelonizer.R().topRows(nb);
 
-        S.resize(ny + nz, nx + np);
         auto Sbn = S.topLeftCorner(nb, nn);
         auto Sbp = S.topRightCorner(nb, np);
 
@@ -113,6 +103,10 @@ struct EchelonizerW::Impl
 
     auto asMatrixViewW() const -> MatrixViewW
     {
+        assert(W.size());
+
+        const auto [nx, np, ny, nz, nw, nt] = dims;
+
         const auto Wx = W.leftCols(nx);
         const auto Wp = W.rightCols(np);
         const auto Ax = Wx.topRows(ny);
@@ -125,6 +119,10 @@ struct EchelonizerW::Impl
 
     auto asMatrixViewRWQ() const -> MatrixViewRWQ
     {
+        assert(S.size());
+
+        const auto [nx, np, ny, nz, nw, nt] = dims;
+
         const auto nb = echelonizer.numBasicVariables();
         const auto nn = echelonizer.numNonBasicVariables();
 
@@ -150,14 +148,9 @@ EchelonizerW::EchelonizerW(const EchelonizerW& other)
 EchelonizerW::~EchelonizerW()
 {}
 
-auto EchelonizerW::initialize(MatrixView Ax, MatrixView Ap) -> void
+auto EchelonizerW::initialize(const MasterDims& dims, MatrixView Ax, MatrixView Ap) -> void
 {
-    pimpl->initialize(Ax, Ap);
-}
-
-auto EchelonizerW::update(MatrixView Ax, MatrixView Ap, MatrixView Jx, MatrixView Jp, VectorView weights) -> void
-{
-    pimpl->update(Ax, Ap, Jx, Jp, weights);
+    pimpl->initialize(dims, Ax, Ap);
 }
 
 auto EchelonizerW::update(MatrixView Jx, MatrixView Jp, VectorView weights) -> void
