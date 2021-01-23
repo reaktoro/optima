@@ -32,9 +32,9 @@
 namespace Optima {
 namespace detail {
 
-auto initMasterSolver(const Problem& problem) -> MasterSolver
+auto initMasterSolver(const Dims& dims) -> MasterSolver
 {
-    const auto [nx, np, nbe, nbg, nhe, nhg] = problem.dims;
+    const auto [nx, np, nbe, nbg, nhe, nhg] = dims;
 
     const auto nr   = nbg;
     const auto ns   = nhg;
@@ -64,8 +64,8 @@ struct Solver::Impl
     Indices iordering;         ///< The ordering of the variables xrs = (x, xbg, xhg) as (*stable*, *lower unstable*, *upper unstable*).
 
     /// Construct a Solver instance with given optimization problem.
-    Impl(const Problem& problem)
-    : dims(problem.dims), msolver(detail::initMasterSolver(problem))
+    Impl(const Dims& dims)
+    : dims(dims), msolver(detail::initMasterSolver(dims))
     {
         // Initialize dimension variables
         nx   = dims.x;
@@ -273,8 +273,8 @@ struct Solver::Impl
     }
 };
 
-Solver::Solver(const Problem& problem)
-: pimpl(new Impl(problem))
+Solver::Solver(const Dims& dims)
+: pimpl(new Impl(dims))
 {}
 
 Solver::Solver(const Solver& other)

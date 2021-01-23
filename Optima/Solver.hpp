@@ -30,13 +30,14 @@ class Options;
 class Problem;
 class Result;
 class State;
+struct Dims;
 
 /// The solver for optimization problems.
 class Solver
 {
 public:
-    /// Construct a Solver instance with given optimization problem.
-    Solver(const Problem& problem);
+    /// Construct a Solver instance with given optimization problem dimensions.
+    Solver(const Dims& dims);
 
     /// Construct a copy of a Solver instance.
     Solver(const Solver& other);
