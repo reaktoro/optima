@@ -22,8 +22,8 @@
 
 // Optima includes
 #include <Optima/MasterDims.hpp>
-#include <Optima/MatrixViewW.hpp>
 #include <Optima/MatrixViewRWQ.hpp>
+#include <Optima/MatrixViewW.hpp>
 
 namespace Optima {
 
@@ -49,16 +49,10 @@ public:
     auto operator=(EchelonizerW other) -> EchelonizerW& = delete;
 
     /// Initialize only once the *Ax* and *Ap* matrices in case these seldom change.
-    auto initialize(MatrixView Ax, MatrixView Ap) -> void;
-
-    /// Update the echelon form of matrix *W*.
-    auto update(MatrixView Ax, MatrixView Ap, MatrixView Jx, MatrixView Jp, VectorView weights) -> void;
+    auto initialize(const MasterDims& dims, MatrixView Ax, MatrixView Ap) -> void;
 
     /// Update the echelon form of matrix *W* where only *Jx* and *Jp* have changed.
     auto update(MatrixView Jx, MatrixView Jp, VectorView weights) -> void;
-
-    /// Return the dimensions of the master variables.
-    auto dims() const -> MasterDims;
 
     /// Return an immutable view to the assembled matrix *W*.
     auto W() const -> MatrixViewW;

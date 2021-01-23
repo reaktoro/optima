@@ -44,7 +44,7 @@ def testMatrixRWQ(nx, np, ny, nz, nl):
     weights = npy.ones(dims.nx)
 
     echelonizerW = EchelonizerW()
-    echelonizerW.initialize(W.Ax, W.Ap)
+    echelonizerW.initialize(dims, W.Ax, W.Ap)
     echelonizerW.update(W.Jx, W.Jp, weights)
 
     RWQ = echelonizerW.RWQ()

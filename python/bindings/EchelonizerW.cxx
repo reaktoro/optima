@@ -29,17 +29,12 @@ using namespace Optima;
 
 void exportEchelonizerW(py::module& m)
 {
-    auto initialize = [](EchelonizerW& self, MatrixView4py Ax, MatrixView4py Ap)
+    auto initialize = [](EchelonizerW& self, const MasterDims& dims, MatrixView4py Ax, MatrixView4py Ap)
     {
-        self.initialize(Ax, Ap);
+        self.initialize(dims, Ax, Ap);
     };
 
-    auto update1 = [](EchelonizerW& self, MatrixView4py Ax, MatrixView4py Ap, MatrixView4py Jx, MatrixView4py Jp, VectorView weights)
-    {
-        self.update(Ax, Ap, Jx, Jp, weights);
-    };
-
-    auto update2 = [](EchelonizerW& self, MatrixView4py Jx, MatrixView4py Jp, VectorView weights)
+    auto update = [](EchelonizerW& self, MatrixView4py Jx, MatrixView4py Jp, VectorView weights)
     {
         self.update(Jx, Jp, weights);
     };
@@ -47,8 +42,7 @@ void exportEchelonizerW(py::module& m)
     py::class_<EchelonizerW>(m, "EchelonizerW")
         .def(py::init<>())
         .def("initialize", initialize)
-        .def("update", update1)
-        .def("update", update2)
+        .def("update", update)
         .def("W", &EchelonizerW::W, PYBINDX_ENSURE_MUTUAL_EXISTENCE)
         .def("RWQ", &EchelonizerW::RWQ, PYBINDX_ENSURE_MUTUAL_EXISTENCE)
         ;
