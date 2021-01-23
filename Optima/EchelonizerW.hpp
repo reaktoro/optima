@@ -36,9 +36,8 @@ private:
     std::unique_ptr<Impl> pimpl;
 
 public:
-    /// Construct a EchelonizerW object.
-    /// @param dims The dimensions of the master variables
-    EchelonizerW(const MasterDims& dims);
+    /// Construct a default EchelonizerW object.
+    EchelonizerW();
 
     /// Construct a copy of a EchelonizerW object.
     EchelonizerW(const EchelonizerW& other);
