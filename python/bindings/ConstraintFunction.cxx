@@ -41,6 +41,7 @@ void exportConstraintResult(py::module& m)
         .def_property("ddp", get_ddp, set_ddp)
         .def_readwrite("ddx4basicvars", &ConstraintResult::ddx4basicvars)
         .def_readwrite("succeeded", &ConstraintResult::succeeded)
+        .def("resize", &ConstraintResult::resize)
         ;
 }
 

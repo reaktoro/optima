@@ -52,6 +52,10 @@ struct ObjectiveResultBase
     /// True if the objective function evaluation succeeded.
     Bool succeeded;
 
+    /// Construct a default ObjectiveResultBase object.
+    ObjectiveResultBase()
+    : ObjectiveResultBase(0, 0) {}
+
     /// Construct an ObjectiveResultBase object with given dimensions.
     /// @param nx The number of variables in *x*.
     /// @param np The number of variables in *p*.
@@ -70,6 +74,16 @@ struct ObjectiveResultBase
     ObjectiveResultBase(Real f, Vec fx, Mat fxx, Mat fxp, Bool diagfxx, Bool fxx4basicvars, Bool succeeded)
     : f(f), fx(fx), fxx(fxx), fxp(fxp), diagfxx(diagfxx),
       fxx4basicvars(fxx4basicvars), succeeded(succeeded) {}
+
+    /// Resize this ObjectiveResultBase object with given dimensions.
+    /// @param nx The number of variables in *x*.
+    /// @param np The number of variables in *p*.
+    auto resize(Index nx, Index np) -> void
+    {
+        fx.resize(nx);
+        fxx.resize(nx, nx);
+        fxp.resize(nx, np);
+    }
 };
 
 /// The result of an objective function evaluation.
