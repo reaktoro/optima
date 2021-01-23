@@ -39,15 +39,16 @@ jobs:
           cmake -S . -B .build
       - name: Build
         shell: bash -l {0}
-        run: cmake --build .build --config ${{ env.configuration }} --parallel
+        run: |
+          source activate optima
+          cmake --build .build --config ${{ env.configuration }} --parallel
       - name: Install
         shell: bash -l {0}
-        run: cmake --build .build --config ${{ env.configuration }} --target install
+        run: |
+          source activate optima
+          cmake --build .build --config ${{ env.configuration }} --target install
       - name: Tests
         shell: bash -l {0}
-        # run: |
-        #   export PYTHONPATH=$PWD/.build/python/package/build/lib
-        #   pytest -n auto -x
         run: |
           source activate optima
           cmake --build .build --config ${{ env.configuration }} --target tests
