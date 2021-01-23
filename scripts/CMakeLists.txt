@@ -5,6 +5,6 @@ if(UNIX)
 endif()
 
 if(WIN32)
-    file(COPY envs4debug DESTINATION ${CMAKE_BINARY_DIR})
-    file(COPY envs4release DESTINATION ${CMAKE_BINARY_DIR})
+    file(COPY envs4debug.bat DESTINATION ${CMAKE_BINARY_DIR})
+    file(COPY envs4release.bat DESTINATION ${CMAKE_BINARY_DIR})
 endif()
