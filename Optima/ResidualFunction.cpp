@@ -21,6 +21,7 @@
 #include <Optima/Canonicalizer.hpp>
 #include <Optima/EchelonizerW.hpp>
 #include <Optima/Exception.hpp>
+#include <Optima/IndexUtils.hpp>
 #include <Optima/ResidualVector.hpp>
 #include <Optima/Timing.hpp>
 #include <Optima/Utils.hpp>
@@ -30,7 +31,7 @@ namespace Optima {
 struct ResidualFunction::Impl
 {
     /// The dimensions of the master variables.
-    const MasterDims dims;
+    MasterDims dims;
 
     /// The result of the evaluation of f(x, p).
     ObjectiveResult fres;
@@ -77,24 +78,20 @@ struct ResidualFunction::Impl
     /// True if the last update call succeeded.
     bool succeeded = false;
 
-    Impl(const MasterDims& dims)
-    : dims(dims),
-      fres(dims.nx, dims.np),
-      hres(dims.nz, dims.nx, dims.np),
-      vres(dims.np, dims.nx, dims.np),
-      echelonizerW(dims), stability(dims.nx),
-      canonicalizer(dims), residual(dims)
-    {
-        wx.resize(dims.nx);
-    }
+    Impl()
+    {}
 
     auto initialize(const MasterProblem& problem) -> void
     {
-        echelonizerW.initialize(problem.Ax, problem.Ap);
-        f      = problem.f;
-        h      = problem.h;
-        v      = problem.v;
-        b      = problem.b;
+        dims = problem.dims;
+        fres.resize(dims.nx, dims.np);
+        hres.resize(dims.nz, dims.nx, dims.np);
+        vres.resize(dims.np, dims.nx, dims.np);
+        echelonizerW.initialize(dims, problem.Ax, problem.Ap);
+        f = problem.f;
+        h = problem.h;
+        v = problem.v;
+        b = problem.b;
         xlower = problem.xlower;
         xupper = problem.xupper;
     }
@@ -238,8 +235,8 @@ struct ResidualFunction::Impl
     }
 };
 
-ResidualFunction::ResidualFunction(const MasterDims& dims)
-: pimpl(new Impl(dims))
+ResidualFunction::ResidualFunction()
+: pimpl(new Impl())
 {}
 
 ResidualFunction::ResidualFunction(const ResidualFunction& other)

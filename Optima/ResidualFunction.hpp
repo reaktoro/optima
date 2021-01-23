@@ -77,8 +77,8 @@ struct ResidualFunctionResult
 class ResidualFunction
 {
 public:
-    /// Construct a ResidualFunction object.
-    ResidualFunction(const MasterDims& dims);
+    /// Construct a default ResidualFunction object.
+    ResidualFunction();
 
     /// Construct a copy of a ResidualFunction object.
     ResidualFunction(const ResidualFunction& other);

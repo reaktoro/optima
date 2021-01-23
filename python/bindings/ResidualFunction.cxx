@@ -47,7 +47,7 @@ void exportResidualFunction(py::module& m)
         ;
 
     py::class_<ResidualFunction>(m, "ResidualFunction")
-        .def(py::init<const MasterDims&>())
+        .def(py::init<>())
         .def("initialize"                  , &ResidualFunction::initialize)
         .def("update"                      , &ResidualFunction::update)
         .def("updateSkipJacobian"          , &ResidualFunction::updateSkipJacobian)
