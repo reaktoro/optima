@@ -46,7 +46,7 @@ void exportResidualVector(py::module& m)
     };
 
     py::class_<ResidualVector>(m, "ResidualVector")
-        .def(py::init<const MasterDims&>())
+        .def(py::init<>())
         .def(py::init<const ResidualVector&>())
         .def("update", update)
         .def("masterVector", &ResidualVector::masterVector, PYBINDX_ENSURE_MUTUAL_EXISTENCE)
