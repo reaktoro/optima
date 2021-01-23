@@ -37,11 +37,21 @@ jobs:
           conda devenv
           source activate optima
           cmake -S . -B .build
+      - name: Cache
+        id: cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.ccache
+          key: ${{ runner.os }}-ccache-${{ hashFiles('hashFile.txt') }}  # https://github.community/t/caching-for-c-builds/124529/2
+          restore-keys: ${{ runner.os }}-ccache-
       - name: Build
         shell: bash -l {0}
         run: |
           source activate optima
+          ccache -s
+          ccache -z
           cmake --build .build --config ${{ env.configuration }} --parallel
+          ccache -s
       - name: Install
         shell: bash -l {0}
         run: |
