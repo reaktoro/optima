@@ -27,52 +27,52 @@ using namespace Optima;
 
 void exportProblem(py::module& m)
 {
-    auto set_Aex = [](Problem& self, MatrixView4py  Aex) { self.Aex = Aex; };
-    auto set_Aep = [](Problem& self, MatrixView4py  Aep) { self.Aep = Aep; };
-    auto set_Agx = [](Problem& self, MatrixView4py  Agx) { self.Agx = Agx; };
-    auto set_Agp = [](Problem& self, MatrixView4py  Agp) { self.Agp = Agp; };
-    auto set_he  = [](Problem& self, ConstraintFunction  he) { self.he  = he;  };
-    auto set_hg  = [](Problem& self, ConstraintFunction  hg) { self.hg  = hg;  };
-    auto set_v   = [](Problem& self, ConstraintFunction   v) { self.v   = v;   };
-    auto set_f   = [](Problem& self, ObjectiveFunction    f) { self.f   = f;   };
-    auto set_fxw = [](Problem& self, MatrixView4py  fxw) { self.fxw = fxw; };
-    auto set_bw  = [](Problem& self, MatrixView4py   bw) { self.bw  = bw;  };
-    auto set_hw  = [](Problem& self, MatrixView4py   hw) { self.hw  = hw;  };
-    auto set_vw  = [](Problem& self, MatrixView4py   vw) { self.vw  = vw;  };
+    auto set_f     = [](Problem& self, ObjectiveFunction f) { self.f = f; };
+    auto set_he    = [](Problem& self, ConstraintFunction he) { self.he = he; };
+    auto set_hg    = [](Problem& self, ConstraintFunction hg) { self.hg = hg; };
+    auto set_v     = [](Problem& self, ConstraintFunction v) { self.v = v; };
+    auto set_Aex   = [](Problem& self, MatrixView4py Aex) { self.Aex = Aex; };
+    auto set_Aep   = [](Problem& self, MatrixView4py Aep) { self.Aep = Aep; };
+    auto set_Agx   = [](Problem& self, MatrixView4py Agx) { self.Agx = Agx; };
+    auto set_Agp   = [](Problem& self, MatrixView4py Agp) { self.Agp = Agp; };
+    auto set_dfxdc = [](Problem& self, MatrixView4py dfxdc) { self.dfxdc = dfxdc; };
+    auto set_dbdc  = [](Problem& self, MatrixView4py dbdc) { self.dbdc = dbdc; };
+    auto set_dhdc  = [](Problem& self, MatrixView4py dhdc) { self.dhdc = dhdc; };
+    auto set_dvdc  = [](Problem& self, MatrixView4py dvdc) { self.dvdc = dvdc; };
 
-    auto get_Aex = [](Problem& self) { return self.Aex; };
-    auto get_Aep = [](Problem& self) { return self.Aep; };
-    auto get_Agx = [](Problem& self) { return self.Agx; };
-    auto get_Agp = [](Problem& self) { return self.Agp; };
-    auto get_he  = [](Problem& self) { return self.he;  };
-    auto get_hg  = [](Problem& self) { return self.hg;  };
-    auto get_v   = [](Problem& self) { return self.v;   };
-    auto get_f   = [](Problem& self) { return self.f;   };
-    auto get_fxw = [](Problem& self) { return self.fxw; };
-    auto get_bw  = [](Problem& self) { return self.bw;  };
-    auto get_hw  = [](Problem& self) { return self.hw;  };
-    auto get_vw  = [](Problem& self) { return self.vw;  };
+    auto get_f     = [](Problem& self) { return self.f; };
+    auto get_he    = [](Problem& self) { return self.he; };
+    auto get_hg    = [](Problem& self) { return self.hg; };
+    auto get_v     = [](Problem& self) { return self.v; };
+    auto get_Aex   = [](Problem& self) { return self.Aex; };
+    auto get_Aep   = [](Problem& self) { return self.Aep; };
+    auto get_Agx   = [](Problem& self) { return self.Agx; };
+    auto get_Agp   = [](Problem& self) { return self.Agp; };
+    auto get_dfxdc = [](Problem& self) { return self.dfxdc; };
+    auto get_dbdc  = [](Problem& self) { return self.dbdc; };
+    auto get_dhdc  = [](Problem& self) { return self.dhdc; };
+    auto get_dvdc  = [](Problem& self) { return self.dvdc; };
 
     py::class_<Problem>(m, "Problem")
         .def(py::init<const Dims&>())
         .def_readonly("dims", &Problem::dims)
+        .def_property("f", get_f, set_f)
+        .def_property("he", get_he, set_he)
+        .def_property("hg", get_hg, set_hg)
+        .def_property("v", get_v, set_v)
         .def_property("Aex", get_Aex, set_Aex)
         .def_property("Aep", get_Aep, set_Aep)
         .def_property("Agx", get_Agx, set_Agx)
         .def_property("Agp", get_Agp, set_Agp)
         .def_readwrite("be", &Problem::be)
         .def_readwrite("bg", &Problem::bg)
-        .def_property("he", get_he, set_he)
-        .def_property("hg", get_hg, set_hg)
-        .def_property("v", get_v, set_v)
-        .def_property("f", get_f, set_f)
         .def_readwrite("xlower", &Problem::xlower)
         .def_readwrite("xupper", &Problem::xupper)
         .def_readwrite("plower", &Problem::plower)
         .def_readwrite("pupper", &Problem::pupper)
-        .def_property("fxw", get_fxw, set_fxw)
-        .def_property("bw", get_bw, set_bw)
-        .def_property("hw", get_hw, set_hw)
-        .def_property("vw", get_vw, set_vw)
+        .def_property("dfxdc", get_dfxdc, set_dfxdc)
+        .def_property("dbdc", get_dbdc, set_dbdc)
+        .def_property("dhdc", get_dhdc, set_dhdc)
+        .def_property("dvdc", get_dvdc, set_dvdc)
         ;
 }

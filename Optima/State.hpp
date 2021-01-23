@@ -45,7 +45,7 @@ public:
     State();
 
     /// Construct a State object with given dimensions.
-    State(const Dims& dims);
+    explicit State(const Dims& dims);
 
     /// Assign a State instance to this.
     auto operator=(const State& other) -> State&;
