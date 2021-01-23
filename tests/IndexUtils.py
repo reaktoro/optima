@@ -29,22 +29,22 @@ def testIndexUtils():
     assert contains(6, [1, 3, 6])
     assert not contains(7, [1, 3, 6])
 
-    inds = npy.arange(n)
+    inds = indices(n)
     moveIntersectionLeft(inds, [1, 3, 5, 7])
     assert set(inds[:4]) == set([1, 3, 5, 7])
     assert set(inds[4:]) == set([0, 2, 4, 6, 8, 9])
 
-    inds = npy.arange(n)
+    inds = indices(n)
     moveIntersectionRight(inds, [1, 3, 5, 7])
     assert set(inds[-4:]) == set([1, 3, 5, 7])
     assert set(inds[:-4]) == set([0, 2, 4, 6, 8, 9])
 
-    inds = npy.arange(n)
+    inds = indices(n)
     moveIntersectionLeftStable(inds, [1, 3, 5, 7])
     assert inds[:4] == approx([1, 3, 5, 7])
     assert inds[4:] == approx([0, 2, 4, 6, 8, 9])
 
-    inds = npy.arange(n)
+    inds = indices(n)
     moveIntersectionRightStable(inds, [1, 3, 5, 7])
     assert inds[-4:] == approx([1, 3, 5, 7])
     assert inds[:-4] == approx([0, 2, 4, 6, 8, 9])

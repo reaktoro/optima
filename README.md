@@ -40,9 +40,9 @@ The previous commands have the following dependencies:
 >cmake -DBUILD_PATH=path/to/build -P optima/install
 >~~~
 
-> **Customizing install path.** Use the `-DPREFIX=path` argument to specify a different installation directory (use a global path, not relative):
+> **Customizing install path.** Use the `-DINSTALL_PATH=path` argument to specify a different installation directory (use a global path, not relative):
 >~~~shell
->cmake -DPREFIX=/usr/local -P optima/install
+>cmake -DINSTALL_PATH=/usr/local -P optima/install
 >~~~
 
 > **Customizing build type.** By default, Optima is compiled in `Release` mode. Use the `-DBUILD_TYPE=mode` argument to set one of the following modes `Debug`, `Release`, `MinSizeRel`, `RelWithDebInfo`:

@@ -21,6 +21,10 @@
 #     include(CCache)
 #     project(HelloWorld)
 
+if(CMAKE_GENERATOR MATCHES "Visual Studio .*")
+    return()  # ccache makes no sense with MSVC
+endif()
+
 find_program(CCACHE_PROGRAM ccache)
 
 if(NOT CCACHE_IGNORE AND CCACHE_PROGRAM)

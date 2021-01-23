@@ -13,21 +13,27 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 # Include this CMake module to output colored text messages
 include(ColoredText)
 
-# Set the build type to Release by default, if not provided
+# Set the build type to Release by default, if not defined
 if(NOT DEFINED BUILD_TYPE)
     set(BUILD_TYPE Release)
 endif()
 
 # Set the build path variable BUILD_PATH
 if(NOT DEFINED BUILD_PATH)
-    set(BUILD_PATH ${CMAKE_CURRENT_LIST_DIR}/build)  # Set BUILD_PATH to rootdir/build if not provided.
+    set(BUILD_PATH ${CMAKE_CURRENT_LIST_DIR}/build)  # Set BUILD_PATH to rootdir/build if not defined.
 endif()
 
 # Set the install path variable INSTALL_PATH
-if(NOT DEFINED PREFIX)
-    set(INSTALL_PATH ${BUILD_PATH}/install)  # Set INSTALL_PATH to rootdir/build/install if not provided via PREFIX
-else()
-    set(INSTALL_PATH ${PREFIX})  # Set INSTALL_PATH to the given PREFIX cmake argument
+if(NOT DEFINED INSTALL_PATH)
+    set(INSTALL_PATH ${BUILD_PATH}/install)  # Set INSTALL_PATH to rootdir/build/install if not defined
+endif()
+
+# Compute the native install path for target OS (Linux, macOS, Windows).
+file(TO_NATIVE_PATH ${INSTALL_PATH} NATIVE_INSTALL_PATH)
+
+# Set the number of parallel jobs to empty for maximum number of jobs, if not defined
+if(NOT DEFINED JOBS)
+    set(JOBS "")
 endif()
 
 # Set the PYTHON variable to ON by default to ensure Python bindings are built
@@ -35,16 +41,26 @@ if(NOT DEFINED PYTHON)
     set(PYTHON ON)
 endif()
 
+# Define PARALLEL variable containing the cmake option for parallel builds.
+if(NOT DEFINED PARALLEL AND NOT WIN32)
+    set(PARALLEL --parallel ${JOBS})  # in Windows, using MSVC compilers, --parallel cancels the /MP compilation option and ends up with not parallel build at all!
+endif()
+
 # Configure the building and installation of the project
 execute_process(COMMAND
     ${CMAKE_COMMAND} -S ${CMAKE_CURRENT_LIST_DIR} -B ${BUILD_PATH}
         -DOPTIMA_BUILD_PYTHON=${PYTHON}
         -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
-        -DCMAKE_INSTALL_PREFIX=${INSTALL_PATH})
+        -DCMAKE_INSTALL_PREFIX=${NATIVE_INSTALL_PATH})
 
 # Build and install the library
 execute_process(COMMAND
-    ${CMAKE_COMMAND} --build ${BUILD_PATH} --parallel --target install)
+    ${CMAKE_COMMAND} --build ${BUILD_PATH} --config ${BUILD_TYPE} ${PARALLEL} --target install)
+
+# Run the tests if TESTS option is TRUE
+if(TESTS)
+    execute_process(COMMAND ${CMAKE_COMMAND} --build ${BUILD_PATH} --config ${BUILD_TYPE} --target tests)
+endif()
 
 # Print a summary of the installation
 message("${BoldCyan}")
@@ -54,7 +70,7 @@ message("=======================================================================
 message("The library was built in ${BoldBlue}${BUILD_TYPE}${ColourReset} mode in:")
 message("    ${BoldYellow}${BUILD_PATH}${ColourReset}")
 message("The library was installed in:")
-message("    ${BoldYellow}${INSTALL_PATH}${ColourReset}")
+message("    ${BoldYellow}${NATIVE_INSTALL_PATH}${ColourReset}")
 message("${BoldCyan}----------------------------------------------------------------------------------------------------")
 message("How do I change the default build and install paths and build type?")
 message("----------------------------------------------------------------------------------------------------${ColourReset}")

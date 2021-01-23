@@ -17,6 +17,9 @@
 
 #include "EchelonizerExtended.hpp"
 
+// C++ includes
+#include <cmath>
+
 // Optima includes
 #include <Optima/Echelonizer.hpp>
 #include <Optima/Exception.hpp>

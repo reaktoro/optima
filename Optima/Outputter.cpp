@@ -24,13 +24,13 @@ namespace Optima {
 namespace {
 
 /// Return the width for std::setw to be used in Outputter
-auto colwidth(unsigned width, const std::string& str) -> unsigned
+auto colwidth(std::size_t width, const std::string& str) -> std::size_t
 {
     return width > str.size() + 4 ? width : str.size() + 4;
 }
 
 /// Return the bar string to be used in Outputter
-auto barstr(unsigned width, const std::string& str) -> std::string
+auto barstr(std::size_t width, const std::string& str) -> std::string
 {
     return std::string(colwidth(width, str), '=');
 }
@@ -56,9 +56,9 @@ void Outputter::addEntry(const std::string& name)
     entries.push_back(name);
 }
 
-void Outputter::addEntries(const std::string& prefix, unsigned size)
+void Outputter::addEntries(const std::string& prefix, std::size_t size)
 {
-    for(unsigned i = 0; i < size; ++i)
+    for(std::size_t i = 0; i < size; ++i)
     {
         std::stringstream ss;
         ss << prefix << "[" << i << "]";
@@ -66,7 +66,7 @@ void Outputter::addEntries(const std::string& prefix, unsigned size)
     }
 }
 
-void Outputter::addEntries(const std::string& prefix, unsigned size, const std::vector<std::string>& names)
+void Outputter::addEntries(const std::string& prefix, std::size_t size, const std::vector<std::string>& names)
 {
     if(names.size() != size)
         addEntries(prefix, size);

@@ -4,14 +4,14 @@ file(GLOB_RECURSE HPP_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.hpp)
 # Collect all source files from the current directory for the C++ library
 file(GLOB_RECURSE CPP_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cpp)
 
+# Enable automatic creation of a module definition (.def) file for a SHARED library on Windows.
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+
 # Compile Optima cpp files into a library
 add_library(Optima ${HPP_FILES} ${CPP_FILES})
 
 # Add an alias Optima::Optima to the target library Optima
 add_library(Optima::Optima ALIAS Optima)
-
-# Ensure Optima is compiled with c++17 features and propagate this to dependent codes
-target_compile_features(Optima PUBLIC cxx_std_17)
 
 # Set some target properties
 set_target_properties(Optima PROPERTIES

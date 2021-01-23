@@ -102,9 +102,7 @@ struct ResidualFunction::Impl
     auto update(MasterVectorView u) -> void
     {
         sanitycheck(u);
-        const auto status = updateFunctionEvals(u);
-        if(status == FAILED)
-            return;
+        succeeded = updateFunctionEvals(u); // currently, even if succeeded==false, let the remaining lines be executed, otherwise result() fails (at least in Windows).
         updateEchelonFormMatrixW(u);
         updateIndicesStableVariables(u);
         updateCanonicalFormJacobianMatrix(u);
@@ -114,9 +112,7 @@ struct ResidualFunction::Impl
     auto updateSkipJacobian(MasterVectorView u) -> void
     {
         sanitycheck(u);
-        const auto status = updateFunctionEvalsSkippingJacobianEvals(u);
-        if(status == FAILED)
-            return;
+        succeeded = updateFunctionEvalsSkippingJacobianEvals(u);
         updateEchelonFormMatrixW(u);
         updateIndicesStableVariables(u);
         updateCanonicalFormJacobianMatrix(u);

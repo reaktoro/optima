@@ -125,7 +125,7 @@ struct MasterSolver::Impl
         return result;
     }
 
-    auto setOptions(const Options& opts) -> bool
+    auto setOptions(const Options& opts) -> void
     {
         options = opts;
         newtonstep.setOptions(opts.newtonstep);
@@ -133,7 +133,7 @@ struct MasterSolver::Impl
         outputter.setOptions(opts.output);
     }
 
-    auto initialize(const MasterProblem& problem, MasterVectorRef u) -> bool
+    auto initialize(const MasterProblem& problem, MasterVectorRef u) -> void
     {
         sanitycheck(problem, u);
         result = {};
