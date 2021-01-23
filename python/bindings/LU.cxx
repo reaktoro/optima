@@ -43,12 +43,12 @@ void exportLU(py::module& m)
 
     auto P = [=](LU& self) -> Indices
     {
-        return self.P().indices().cast<Index>();
+        self.P().indices();
     };
 
     auto Q = [=](LU& self) -> Indices
     {
-        return self.Q().indices().cast<Index>();
+        self.Q().indices();
     };
 
     py::class_<LU>(m, "LU")

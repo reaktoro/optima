@@ -25,7 +25,7 @@ if(DEFINED ENV{CONDA_PREFIX})
         message(STATUS "CondaAware: PYTHON_EXECUTABLE=CONDA_PREFIX/bin/python (${PYTHON_EXECUTABLE})")
     endif()
 
-    # Set python executable to that in the conda environment (win)
+    # Set python executable to that in the conda environment (unix)
     if(WIN32 AND DEFINED ENV{CONDA_PYTHON_EXE})
         set(PYTHON_EXECUTABLE "$ENV{CONDA_PREFIX}\\python.exe")
         message(STATUS "CondaAware: PYTHON_EXECUTABLE=CONDA_PREFIX\\python.exe (${PYTHON_EXECUTABLE})")

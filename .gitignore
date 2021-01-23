@@ -25,6 +25,5 @@ __pycache__/
 .pytest_cache/
 
 # Visual Studio Code related files
-.vs
 .vscode
 .history

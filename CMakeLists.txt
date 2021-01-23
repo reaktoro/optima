@@ -13,9 +13,6 @@ project(Optima VERSION 0.1 LANGUAGES CXX)
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
 
-# Enable parallel build if MSVC is used
-add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/MP>)
-
 # Check if a conda environment is active
 include(CondaAware)
 
@@ -75,11 +72,10 @@ if(OPTIMA_BUILD_DOCS)
     add_subdirectory(docs)
 endif()
 
-# Process sub-directory tests
-add_subdirectory(tests)
-
-# Process sub-directory scripts
-add_subdirectory(scripts)
+# Add target "tests" for manual execution of tests, as `make tests`
+add_custom_target(tests
+    COMMAND pytest
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/tests")
 
 # Install the cmake config files that permit users to use find_package(Optima)
 include(OptimaInstallCMakeConfigFiles)

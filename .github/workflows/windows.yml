@@ -14,10 +14,8 @@ jobs:
   build:
 
     runs-on: windows-latest
-
     env:
       configuration: Release
-
     strategy:
       fail-fast: true
       max-parallel: 4
@@ -29,30 +27,16 @@ jobs:
           auto-update-conda: true
           auto-activate-base: true
           activate-environment: ''
-      - name: Configure
-        shell: powershell
-        run: |
-          conda config --set always_yes yes --set changeps1 no
-          conda config --add channels conda-forge
-          conda install conda-devenv
-          conda devenv
-          conda activate optima
-          cmake -S . -B .build
-      - name: Build
-        shell: powershell
-        run: |
-          conda activate optima
-          clcache -s
-          clcache -z
-          cmake --build .build --config ${{ env.configuration }}
-          clcache -s
       - name: Install
         shell: powershell
         run: |
+          conda install -c conda-forge conda-devenv
+          conda info -a
+          conda devenv
           conda activate optima
-          cmake --build .build --config ${{ env.configuration }} --target install
+          cmake -P install
       - name: Tests
         shell: powershell
         run: |
           conda activate optima
-          cmake --build .build --config ${{ env.configuration }} --target tests
+          pytest . -n auto

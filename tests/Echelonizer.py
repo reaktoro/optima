@@ -50,16 +50,16 @@ def check_canonical_form(echelonizer, A):
     assert_array_almost_equal(Cstar, C)
 
 
-def check_canonical_ordering(echelonizer, weights):
+def check_canonical_ordering(echelonizer, weigths):
     n = echelonizer.numVariables()
     nb = echelonizer.numBasicVariables()
     nn = echelonizer.numNonBasicVariables()
     ibasic = echelonizer.indicesBasicVariables()
     inonbasic = echelonizer.indicesNonBasicVariables()
     for i in range(1, nb):
-        assert weights[ibasic[i]] <= weights[ibasic[i - 1]]
+        assert weigths[ibasic[i]] <= weigths[ibasic[i - 1]]
     for i in range(1, nn):
-        assert weights[inonbasic[i]] <= weights[inonbasic[i - 1]]
+        assert weigths[inonbasic[i]] <= weigths[inonbasic[i - 1]]
 
 
 def check_new_ordering(echelonizer, Kb, Kn):
@@ -108,14 +108,14 @@ def check_echelonizer(echelonizer, A):
     #---------------------------------------------------------------------------
     # Set weights for the variables to update the basic/non-basic partition
     #---------------------------------------------------------------------------
-    weights = npy.linspace(n, 1, n)
+    weigths = random.rand(n)
 
-    echelonizer.updateWithPriorityWeights(weights)
+    echelonizer.updateWithPriorityWeights(weigths)
     echelonizer.cleanResidualRoundoffErrors()
 
     check_canonical_form(echelonizer, A)
 
-    check_canonical_ordering(echelonizer, weights)
+    check_canonical_ordering(echelonizer, weigths)
 
     #---------------------------------------------------------------------------
     # Check changing ordering of basic and non-basic variables work
@@ -149,8 +149,8 @@ def testEchelonizer(n, m, assembleA, jfixed):
     #==============================================================
     echelonizer = Echelonizer(A)
 
-    weights = npy.linspace(1, n, n)
-    echelonizer.updateWithPriorityWeights(weights)
+    weigths = random.rand(n)
+    echelonizer.updateWithPriorityWeights(weigths)
 
     R = npy.copy(echelonizer.R())
     S = npy.copy(echelonizer.S())
@@ -169,7 +169,7 @@ def testEchelonizer(n, m, assembleA, jfixed):
     assert npy.array_equal(Q, Qnew)
     assert npy.array_equal(C, Cnew)
 
-    A = npy.ones((m, n))  # change A, then ensure R, Q, C have changed accordingly
+    A = random.rand(m, n)  # change A, then ensure R, Q, C have changed accordingly
     echelonizer.compute(A)
 
     Rnew = npy.copy(echelonizer.R())

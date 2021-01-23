@@ -1,8 +1,8 @@
 # Developing
 
-To contribute to developing Optima, we have a structured developing mode to
+To contribute to developing `Optima`, we have a structured developing mode to
 have almost the same environment for everyone. Below we describe the workflow to develop
-Optima. All the instructions below should be executed inside the project root directory.
+`Optima`. All the instructions below should be executed inside the project root directory.
 
 ## Guidelines for developing mode installation
 
@@ -20,13 +20,13 @@ just execute in your console:
 
 ```console
 $ conda install -c conda-forge conda-devenv
-```
+``` 
 
 The above command will install `conda-devenv` in your `miniconda3` base environment.
 
-### 3. Creating an environment for Optima development
+### 3. Creating an environment for `Optima` development
 
-Now, we can create an environment to develop Optima, with all dependencies installed in this environment.
+Now, we can create an environment to develop `Optima`, with all dependencies installed in this environment.
 From your `miniconda3` base environment with `conda-devenv` installed, run the following in your console:
 
 ```console
@@ -61,7 +61,7 @@ Then run in your console:
 $ cmake -P install
 ```
 
-A successful installation will build Optima and install its Python bindings. If everything is fine, you are able
+A successful installation will build `Optima` and install its Python bindings. If everything is fine, you are able
 to execute the following in your console without errors:
 
 ```console
@@ -71,7 +71,7 @@ $ python -c 'import optima'
 ### 5. Testing Optima
 
 At last, but importantly, you have to run the tests. Every contribution to the code should be tested. The `master`
-branch should be always passing all the tests. With Optima and its Python bindings properly installed inside `optima`
+branch should be always passing all the tests. With `Optima` and its Python bindings properly installed inside `optima`
 conda environment, run in your console (in the project root directory):
 
 ```console

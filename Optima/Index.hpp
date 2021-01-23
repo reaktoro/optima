@@ -23,7 +23,7 @@
 namespace Optima {
 
 /// Define a type that represents an index.
-using Index = Eigen::Index;
+using Index = long int;
 
 /// Define a type that represents a vector of indices.
 using Indices = Eigen::VectorXl;

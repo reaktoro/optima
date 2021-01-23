@@ -3,7 +3,7 @@ name: optima
 {% set python_version = os.environ.get("PY_VER", "3.7") %}
 
 channels:
-  - conda-forge
+  - https://conda.anaconda.org/conda-forge/
 
 dependencies:
   # C++ compilers
@@ -33,3 +33,10 @@ dependencies:
   - ninja
   - ccache  # [unix]
   - clcache  # [win]
+
+environment:
+
+  PYTHONPATH:
+    - {{ root }}/build/lib/python{{ python_version }}/site-packages              # [unix]
+    - {{ root }}/build/lib64/python{{ python_version }}/site-packages            # [unix]
+    - {{ root }}\build\lib\python{{ python_version }}\site-packages              # [win]

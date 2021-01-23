@@ -18,7 +18,6 @@
 #include "Utils.hpp"
 
 // C++ includes
-#include <cmath>
 #include <limits>
 
 namespace Optima {
@@ -281,8 +280,8 @@ auto bfgs() -> std::function<Matrix(const Vector&, const Vector&)>
         x0.noalias() = x;
         g0.noalias() = g;
 
-        const auto n = x.size();
-        const auto a = dx.dot(dg);
+        const unsigned n = x.size();
+        const double a = dx.dot(dg);
         const auto I = Eigen::identity(n, n);
 
         H = (I - dx*tr(dg)/a)*H*(I - dg*tr(dx)/a) + dx*tr(dx)/a;
@@ -473,7 +472,7 @@ auto minimizeBrent(const std::function<double(double)>& f, double min, double ma
 auto inverseShermanMorrison(const Matrix& invA, const Vector& D) -> Matrix
 {
     Matrix invM = invA;
-    for(auto i = 0; i < D.rows(); ++i)
+    for(unsigned i = 0; i < D.rows(); ++i)
         invM = invM - (D[i]/(1 + D[i]*invM(i, i)))*invM.col(i)*invM.row(i);
     return invM;
 }
@@ -482,11 +481,11 @@ auto inverseShermanMorrison(const Matrix& invA, const Vector& D) -> Matrix
 /// This methods expects `0 <= x <= 1`.
 /// @param x The number for which the closest rational number is sought.
 /// @param n The maximum denominator that the rational number can have.
-auto farey(double x, std::size_t n) -> std::tuple<long, long>
+auto farey(double x, unsigned n) -> std::tuple<long, long>
 {
     long a = 0, b = 1;
     long c = 1, d = 1;
-    while(b <= n && d <= n)
+    while(b <= n and d <= n)
     {
         double mediant = double(a+c)/(b+d);
         if(x == mediant) {

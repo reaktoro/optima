@@ -1,0 +1,36 @@
+jobs:
+- job:
+  displayName: Ubuntu
+
+  pool:
+    vmImage: 'ubuntu-latest'
+  strategy:
+    matrix:
+      Python37:
+        python.version: '3.7'
+
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '$(python.version)'
+    displayName: 'Use Python $(python.version)'
+
+  - bash: echo "##vso[task.prependpath]$CONDA/bin"
+    displayName: 'Add conda to PATH'
+
+  - script: |
+      conda config --system --set always_yes yes --set changeps1 no
+      conda config --system --append channels conda-forge
+      conda install -n base conda-devenv
+    displayName: 'Configuring conda'
+
+  - script: |
+      conda info -a
+      conda devenv
+    displayName: 'Running conda devenv'
+
+  - script: |
+      source activate optima
+      cmake -P install
+      pytest . -n auto
+    displayName: 'Installation and tests'
