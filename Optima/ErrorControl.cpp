@@ -32,11 +32,8 @@ struct ErrorControl::Impl
     /// The line-search algorithm to correct steps producing significant large errors.
     LineSearch linesearch;
 
-
-    Impl(const MasterDims& dims)
-    : backtracksearch(dims), linesearch(dims)
-    {
-    }
+    Impl()
+    {}
 
     auto initialize(const MasterProblem& problem) -> void
     {
@@ -44,7 +41,7 @@ struct ErrorControl::Impl
 
     auto isBacktrackSearchNeeded(const ResidualErrors& E)
     {
-        return !std::isfinite(E.error);
+        return !std::isfinite(E.error());
     }
 
     auto isLineSearchNeeded(const ResidualErrors& E)
@@ -83,8 +80,8 @@ struct ErrorControl::Impl
     }
 };
 
-ErrorControl::ErrorControl(const MasterDims& dims)
-: pimpl(new Impl(dims))
+ErrorControl::ErrorControl()
+: pimpl(new Impl())
 {}
 
 ErrorControl::ErrorControl(const ErrorControl& other)

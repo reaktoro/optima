@@ -37,7 +37,7 @@ private:
 
 public:
     /// Construct a BacktrackSearch object.
-    BacktrackSearch(const MasterDims& dims);
+    BacktrackSearch();
 
     /// Construct a copy of a BacktrackSearch object.
     BacktrackSearch(const BacktrackSearch& other);

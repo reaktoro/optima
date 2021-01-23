@@ -264,7 +264,7 @@ struct Canonicalizer::Impl
     {
         const auto [nx, np, ny, nz, nw, nt] = dims;
 
-        const auto dims = CanonicalDims{nx, np, ny, nz, nw, ns, nu, nb, nn, nl, nbs, nbu, nns, nnu, nbe, nbi, nne, nni};
+        const auto dims = CanonicalDims{nx, np, ny, nz, nw, nt, ns, nu, nb, nn, nl, nbs, nbu, nns, nnu, nbe, nbi, nne, nni};
         const auto Hss = Hprime.topLeftCorner(ns, ns);
         const auto Hsp = Hprime.topRightCorner(ns, np);
         const auto Vps = Vprime.topLeftCorner(np, ns);

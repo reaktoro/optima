@@ -24,35 +24,35 @@ namespace Optima {
 
 struct ResidualErrors::Impl
 {
-    const MasterDims dims; ///< The dimensions of the master variables.
+    MasterDims dims; ///< The dimensions of the master variables.
 
     Vector xlower; ///< The lower bounds for variables *x*.
     Vector xupper; ///< The upper bounds for variables *x*.
     Vector plower; ///< The lower bounds for variables *p*.
     Vector pupper; ///< The upper bounds for variables *p*.
 
-    Vector ex;     ///< The residual errors associated with the first-order optimality conditions.
-    Vector ep;     ///< The residual errors associated with the external constraint equations.
-    Vector ew;     ///< The residual errors associated with the linear and non-linear constraint equations.
-    double errorx; ///< The maximum residual error associated with the first-order optimality conditions.
-    double errorp; ///< The maximum residual error associated with the external constraint equations.
-    double errorw; ///< The maximum residual error associated with the linear and non-linear constraint equations.
-    double error;  ///< The error norm sqrt(||ex||^2 + ||ep||^2 + ||ew||^2).
+    Vector ex; ///< The residual errors associated with the first-order optimality conditions.
+    Vector ep; ///< The residual errors associated with the external constraint equations.
+    Vector ew; ///< The residual errors associated with the linear and non-linear constraint equations.
 
-    Impl(const MasterDims& dims)
-    : dims(dims)
-    {
-        ex = zeros(dims.nx);
-        ep = zeros(dims.np);
-        ew = zeros(dims.nw);
-    }
+    double errorx = 0.0; ///< The maximum residual error associated with the first-order optimality conditions.
+    double errorp = 0.0; ///< The maximum residual error associated with the external constraint equations.
+    double errorw = 0.0; ///< The maximum residual error associated with the linear and non-linear constraint equations.
+    double error  = 0.0; ///< The error norm sqrt(||ex||^2 + ||ep||^2 + ||ew||^2).
+
+    Impl()
+    {}
 
     auto initialize(const MasterProblem& problem) -> void
     {
+        dims = problem.dims;
         xlower = problem.xlower;
         xupper = problem.xupper;
         plower = problem.plower;
         pupper = problem.pupper;
+        ex = zeros(dims.nx);
+        ep = zeros(dims.np);
+        ew = zeros(dims.nw);
     }
 
     auto update(MasterVectorView u, const ResidualFunction& F) -> void
@@ -125,26 +125,12 @@ struct ResidualErrors::Impl
     }
 };
 
-ResidualErrors::ResidualErrors(const MasterDims& dims)
-: pimpl(new Impl(dims)),
-  ex(pimpl->ex),
-  ep(pimpl->ep),
-  ew(pimpl->ew),
-  errorx(pimpl->errorx),
-  errorp(pimpl->errorp),
-  errorw(pimpl->errorw),
-  error(pimpl->error)
+ResidualErrors::ResidualErrors()
+: pimpl(new Impl())
 {}
 
 ResidualErrors::ResidualErrors(const ResidualErrors& other)
-: pimpl(new Impl(*other.pimpl)),
-  ex(pimpl->ex),
-  ep(pimpl->ep),
-  ew(pimpl->ew),
-  errorx(pimpl->errorx),
-  errorp(pimpl->errorp),
-  errorw(pimpl->errorw),
-  error(pimpl->error)
+: pimpl(new Impl(*other.pimpl))
 {}
 
 ResidualErrors::~ResidualErrors()
@@ -165,5 +151,14 @@ auto ResidualErrors::update(MasterVectorView u, const ResidualFunction& F) -> vo
 {
     pimpl->update(u, F);
 }
+
+auto ResidualErrors::ex() const -> VectorView { return pimpl->ex; }
+auto ResidualErrors::ep() const -> VectorView { return pimpl->ep; }
+auto ResidualErrors::ew() const -> VectorView { return pimpl->ew; }
+
+auto ResidualErrors::errorx() const -> double { return pimpl->errorx; }
+auto ResidualErrors::errorp() const -> double { return pimpl->errorp; }
+auto ResidualErrors::errorw() const -> double { return pimpl->errorw; }
+auto ResidualErrors::error() const -> double { return pimpl->error; }
 
 } // namespace Optima

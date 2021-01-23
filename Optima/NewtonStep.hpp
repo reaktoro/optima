@@ -37,7 +37,7 @@ private:
 
 public:
     /// Construct a NewtonStep object.
-    NewtonStep(const MasterDims& dims);
+    NewtonStep();
 
     /// Construct a copy of a NewtonStep object.
     NewtonStep(const NewtonStep& other);

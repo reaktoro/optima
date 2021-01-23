@@ -41,25 +41,14 @@ struct LinearSolverNullspace::Impl
     Vector rw;  ///< The workspace for the vector r in the decompose and solve methods.
     LU lu;      ///< The LU decomposition solver.
 
-    Impl(const MasterDims& dims)
-    {
-        const auto [nx, np, ny, nz, nw, nt] = dims;
-
-        ax.resize(nx);
-        ap.resize(np);
-        aw.resize(nw);
-        Hxx.resize(nx, nx);
-        Hxp.resize(nx, np);
-        Vpx.resize(np, nx);
-        Vpp.resize(np, np);
-        Mw.resize(nt, nt);
-        rw.resize(nt);
-    }
+    Impl()
+    {}
 
     auto decompose(CanonicalMatrix J) -> void
     {
         const auto dims = J.dims;
 
+        const auto nx  = dims.nx;
         const auto ns  = dims.ns;
         const auto nbs = dims.nbs;
         const auto nbe = dims.nbe;
@@ -69,6 +58,11 @@ struct LinearSolverNullspace::Impl
         const auto nni = dims.nni;
         const auto np  = dims.np;
         const auto nw  = dims.nw;
+        const auto nt  = dims.nt;
+
+        Hxx.resize(nx, nx);
+        Hxp.resize(nx, np);
+        Vpx.resize(np, nx);
 
         auto Hss = Hxx.topLeftCorner(ns, ns);
         auto Hsp = Hxp.topRows(ns);
@@ -122,6 +116,7 @@ struct LinearSolverNullspace::Impl
 
         const auto t = nbe + nns + np + nbe;
 
+        Mw.resize(nt, nt);
         auto M = Mw.topLeftCorner(t, t);
 
         auto M1 = M.topRows(nbe);
@@ -155,6 +150,7 @@ struct LinearSolverNullspace::Impl
     {
         const auto dims = J.dims;
 
+        const auto nx  = dims.nx;
         const auto ns  = dims.ns;
         const auto nbs = dims.nbs;
         const auto nbe = dims.nbe;
@@ -164,6 +160,7 @@ struct LinearSolverNullspace::Impl
         const auto nni = dims.nni;
         const auto np  = dims.np;
         const auto nw  = dims.nw;
+        const auto nt  = dims.nt;
 
         const auto Hss = Hxx.topLeftCorner(ns, ns);
         const auto Hsp = Hxp.topRows(ns);
@@ -195,12 +192,14 @@ struct LinearSolverNullspace::Impl
         const auto Sbep = Sbsp.topRows(nbe);
         const auto Sbip = Sbsp.bottomRows(nbi);
 
+        ax.resize(nx);
         auto as  = ax.head(ns);
         auto abs = as.head(nbs);
         auto ans = as.tail(nns);
         auto abe = abs.head(nbe);
         auto abi = abs.tail(nbi);
 
+        aw.resize(nw);
         auto awbs = aw.head(nbs);
         auto awbe = awbs.head(nbe);
         auto awbi = awbs.tail(nbi);
@@ -218,6 +217,7 @@ struct LinearSolverNullspace::Impl
 
         const auto t = nbe + nns + np + nbe;
 
+        rw.resize(nt);
         auto r = rw.head(t);
 
         auto dxbe = r.head(nbe);
@@ -241,8 +241,8 @@ struct LinearSolverNullspace::Impl
     }
 };
 
-LinearSolverNullspace::LinearSolverNullspace(const MasterDims& dims)
-: pimpl(new Impl(dims))
+LinearSolverNullspace::LinearSolverNullspace()
+: pimpl(new Impl())
 {}
 
 LinearSolverNullspace::LinearSolverNullspace(const LinearSolverNullspace& other)

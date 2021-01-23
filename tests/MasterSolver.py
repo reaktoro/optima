@@ -107,7 +107,10 @@ def testMasterSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
     xlower[juu] = 0.0  # this should be less than xupper[juu]
     xupper[juu] = 0.5  # this should be less than 1.0
 
+    dims = MasterDims(nx, np, ny, nz)
+
     problem = MasterProblem()
+    problem.dims = dims
     problem.f = objectivefn_f
     problem.h = constraintfn_h
     problem.v = constraintfn_v
@@ -127,9 +130,8 @@ def testMasterSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
         LinearSolverMethod.Rangespace if diagHxx else \
         LinearSolverMethod.Nullspace
 
-    dims = MasterDims(nx, np, ny, nz)
 
-    solver = MasterSolver(dims)
+    solver = MasterSolver()
     solver.setOptions(options)
 
     u = MasterVector(dims)

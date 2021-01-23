@@ -37,8 +37,8 @@ private:
     std::unique_ptr<Impl> pimpl;
 
 public:
-    /// Construct a MasterSolver object.
-    MasterSolver(const MasterDims& dims);
+    /// Construct a default MasterSolver object.
+    MasterSolver();
 
     /// Construct a copy of a MasterSolver object.
     MasterSolver(const MasterSolver& other);

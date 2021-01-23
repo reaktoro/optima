@@ -34,11 +34,8 @@ struct LinearSolverFullspace::Impl
     Vector vec; ///< The vector used as a workspace for the decompose and solve methods
     LU lu;      ///< The LU decomposition solver.
 
-    Impl(const MasterDims& dims)
-    : mat(dims.nt, dims.nt),
-      vec(dims.nt)
-    {
-    }
+    Impl()
+    {}
 
     auto decompose(CanonicalMatrix J) -> void
     {
@@ -49,9 +46,11 @@ struct LinearSolverFullspace::Impl
         const auto nns = dims.nns;
         const auto np  = dims.np;
         const auto nw  = dims.nw;
+        const auto nt  = dims.nt;
 
         const auto t = ns + np + nbs;
 
+        mat.resize(nt, nt);
         auto M = mat.topLeftCorner(t, t);
 
         auto M1 = M.topRows(nbs);
@@ -96,9 +95,11 @@ struct LinearSolverFullspace::Impl
         const auto nns = dims.nns;
         const auto np  = dims.np;
         const auto nw  = dims.nw;
+        const auto nt  = dims.nt;
 
         const auto t = ns + np + nbs;
 
+        vec.resize(nt);
         auto r = vec.head(t);
 
         auto xbs = r.head(nbs);
@@ -120,8 +121,8 @@ struct LinearSolverFullspace::Impl
     }
 };
 
-LinearSolverFullspace::LinearSolverFullspace(const MasterDims& dims)
-: pimpl(new Impl(dims))
+LinearSolverFullspace::LinearSolverFullspace()
+: pimpl(new Impl())
 {}
 
 LinearSolverFullspace::LinearSolverFullspace(const LinearSolverFullspace& other)

@@ -24,19 +24,18 @@ namespace Optima {
 
 struct TransformStep::Impl
 {
-    const MasterDims dims; ///< The dimensions of the master variables.
+    MasterDims dims;       ///< The dimensions of the master variables.
     MasterVector ubkp;     ///< The backup master variables in case of failure.
     Vector xlower;         ///< The lower bounds for variables *x*.
     Vector xupper;         ///< The upper bounds for variables *x*.
     TransformFunction phi; ///< The custom variable transformation function.
 
-    Impl(const MasterDims& dims)
-    : dims(dims), ubkp(dims)
-    {
-    }
+    Impl()
+    {}
 
     auto initialize(const MasterProblem& problem) -> void
     {
+        dims = problem.dims;
         xlower = problem.xlower;
         xupper = problem.xupper;
         phi = problem.phi;
@@ -60,12 +59,12 @@ struct TransformStep::Impl
 
         u.x.noalias() = min(max(u.x, xlower), xupper);
 
-        const auto errorcurr = E.error;
+        const auto errorcurr = E.error();
 
         F.update(u);
         E.update(u, F);
 
-        const auto errornext = E.error;
+        const auto errornext = E.error();
 
         if(errornext > errorcurr) {
             u = ubkp;
@@ -78,8 +77,8 @@ struct TransformStep::Impl
     }
 };
 
-TransformStep::TransformStep(const MasterDims& dims)
-: pimpl(new Impl(dims))
+TransformStep::TransformStep()
+: pimpl(new Impl())
 {}
 
 TransformStep::TransformStep(const TransformStep& other)

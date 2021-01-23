@@ -27,7 +27,7 @@ using namespace Optima;
 void exportLinearSolver(py::module& m)
 {
     py::class_<LinearSolver>(m, "LinearSolver")
-        .def(py::init<const MasterDims&>())
+        .def(py::init<>())
         .def("setOptions", &LinearSolver::setOptions)
         .def("options", &LinearSolver::options)
         .def("decompose", &LinearSolver::decompose)

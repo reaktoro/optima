@@ -38,6 +38,10 @@ struct MasterVectorBase
     Vec p; ///< The vector *p* in *u = (x, p, w)*.
     Vec w; ///< The vector *w* in *u = (x, p, w)*.
 
+    /// Construct a default MasterVectorBase object.
+    MasterVectorBase()
+    {}
+
     /// Construct a MasterVectorBase object.
     MasterVectorBase(const MasterDims& dims)
     : MasterVectorBase(dims.nx, dims.np, dims.nw) {}
@@ -103,6 +107,14 @@ struct MasterVectorBase
     auto operator/=(double s) -> MasterVectorBase&
     {
         x /= s; p /= s; w /= s; return *this;
+    }
+
+    /// Resise this MasterVectorBase object with given dimensions.
+    auto resize(const MasterDims& dims) -> void
+    {
+        x = zeros(dims.nx);
+        p = zeros(dims.np);
+        w = zeros(dims.nw);
     }
 
     /// Return the dot product of this MasterVectorBase object with another.

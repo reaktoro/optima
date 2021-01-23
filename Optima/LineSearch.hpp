@@ -38,7 +38,7 @@ private:
 
 public:
     /// Construct a LineSearch object.
-    LineSearch(const MasterDims& dims);
+    LineSearch();
 
     /// Construct a copy of a LineSearch object.
     LineSearch(const LineSearch& other);
