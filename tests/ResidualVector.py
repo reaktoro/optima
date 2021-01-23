@@ -51,7 +51,7 @@ def testResidualVector(nx, np, ny, nz, nl, nu):
 
     dims = params.dims
 
-    F = ResidualVector(dims)
+    F = ResidualVector()
 
     x = random.rand(nx)
     p = random.rand(np)

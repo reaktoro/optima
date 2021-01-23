@@ -28,7 +28,7 @@ namespace Optima {
 
 struct ResidualVector::Impl
 {
-    const MasterDims dims; ///< The dimensions of the master variables.
+    MasterDims dims; ///< The dimensions of the master variables.
 
     Index ns;  ///< The number of stable variables
     Index nu;  ///< The number of ustable variables
@@ -43,24 +43,20 @@ struct ResidualVector::Impl
     Vector awstar;  ///< The workspace for auxiliary vector aw(star)
     Vector xsu;
 
-    Impl(const MasterDims& dims)
-    : dims(dims)
+    Impl()
     {
-        const auto [nx, np, ny, nz, nw, nt] = dims;
-
-        ax.resize(nx);
-        aw.resize(nw);
-        ap.resize(np);
-        asu.resize(nx);
-        awbs.resize(nw);
-        awstar.resize(nw);
-        xsu.resize(nx);
     }
 
     auto update(ResidualVectorUpdateArgs args) -> void
     {
         const auto [Mc, Wx, Wp, x, p, y, z, g, v, b, h] = args;
-        const auto [nx, np, ny, nz, nw, nt] = dims;
+
+        const auto dims = Mc.dims;
+        const auto nx = dims.nx;
+        const auto np = dims.np;
+        const auto ny = dims.ny;
+        const auto nz = dims.nz;
+        const auto nw = ny + nz;
 
         assert(x.size() == nx);
         assert(p.size() == np);
@@ -96,12 +92,15 @@ struct ResidualVector::Impl
 
         const auto gs = g(js);
 
+        asu.resize(nx);
         auto as = asu.head(ns);
         auto au = asu.tail(nu);
 
+        xsu.resize(nx);
         auto xs = xsu.head(ns);
         auto xu = xsu.tail(nu);
 
+        aw.resize(nw);
         auto ay = aw.head(ny);
         auto az = aw.tail(nz);
 
@@ -111,6 +110,7 @@ struct ResidualVector::Impl
         xs = x(js);
         xu = x(ju);
 
+        ax.resize(nx);
         ax(js).noalias() = -(gs + tr(As)*y + tr(Js)*z);
         ax(ju).fill(0.0);
 
@@ -122,6 +122,7 @@ struct ResidualVector::Impl
 
         ap = -v;
 
+        awstar.resize(nw);
         awstar.head(ny) = b - Au*xu;
         awstar.tail(nz) = Js*xs + Jp*p - h;
 
@@ -142,8 +143,8 @@ struct ResidualVector::Impl
     }
 };
 
-ResidualVector::ResidualVector(const MasterDims& dims)
-: pimpl(new Impl(dims))
+ResidualVector::ResidualVector()
+: pimpl(new Impl())
 {}
 
 ResidualVector::ResidualVector(const ResidualVector& other)

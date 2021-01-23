@@ -53,8 +53,8 @@ private:
     std::unique_ptr<Impl> pimpl;
 
 public:
-    /// Construct a ResidualVector instance.
-    ResidualVector(const MasterDims& dims);
+    /// Construct a default ResidualVector instance.
+    ResidualVector();
 
     /// Construct a copy of a ResidualVector instance.
     ResidualVector(const ResidualVector& other);
