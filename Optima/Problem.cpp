@@ -22,64 +22,38 @@
 
 namespace Optima {
 
-struct Problem::Impl
-{
-    Matrix Aex;    ///< The coefficient matrix Aex in the linear equality constraints Aex*x + Aep*p = be.
-    Matrix Aep;    ///< The coefficient matrix Aep in the linear equality constraints Aex*x + Aep*p = be.
-    Matrix Agx;    ///< The coefficient matrix Agx in the linear inequality constraints Agx*x + Agp*p >= bg.
-    Matrix Agp;    ///< The coefficient matrix Agp in the linear inequality constraints Agx*x + Agp*p >= bg.
-    Vector be;     ///< The right-hand side vector \eq{b_{\mathrm{e}}} in the linear equality constraints Aex*x + Aep*p = be.
-    Vector bg;     ///< The right-hand side vector \eq{b_{\mathrm{g}}} in the linear inequality constraints Agx*x + Agp*p >= bg.
-    Vector xlower; ///< The lower bounds of the primal variables x.
-    Vector xupper; ///< The upper bounds of the primal variables x.
-    Vector plower; ///< The lower bounds of the paramter variables p.
-    Vector pupper; ///< The upper bounds of the paramter variables p.
-
-    /// Construct a default Problem::Impl instance.
-    Impl()
-    {}
-
-    /// Construct a Problem::Impl instance with given number of variables.
-    Impl(const Dims& dims)
-    : Aex(zeros(dims.be, dims.x)), Aep(zeros(dims.be, dims.p)),
-      Agx(zeros(dims.bg, dims.x)), Agp(zeros(dims.bg, dims.p)),
-      be(zeros(dims.be)), bg(zeros(dims.bg)),
-      xlower(constants(dims.x, -infinity())), xupper(constants(dims.x, infinity())),
-      plower(constants(dims.p, -infinity())), pupper(constants(dims.p, infinity()))
-    {}
-};
+Problem::Problem()
+{}
 
 Problem::Problem(const Dims& dims)
-: pimpl(new Impl(dims)),
-  dims(dims),
-  Aex(pimpl->Aex),
-  Aep(pimpl->Aep),
-  Agx(pimpl->Agx),
-  Agp(pimpl->Agp),
-  be(pimpl->be),
-  bg(pimpl->bg),
-  xlower(pimpl->xlower),
-  xupper(pimpl->xupper),
-  plower(pimpl->plower),
-  pupper(pimpl->pupper)
+: dims(dims),
+  Aex(zeros(dims.be, dims.x)),
+  Aep(zeros(dims.be, dims.p)),
+  Agx(zeros(dims.bg, dims.x)),
+  Agp(zeros(dims.bg, dims.p)),
+  be(zeros(dims.be)),
+  bg(zeros(dims.bg)),
+  xlower(constants(dims.x, -infinity())),
+  xupper(constants(dims.x, infinity())),
+  plower(constants(dims.p, -infinity())),
+  pupper(constants(dims.p, infinity()))
 {}
 
-Problem::Problem(const Problem& other)
-: pimpl(new Impl(*other.pimpl)),
-  dims(other.dims),
-  Aex(pimpl->Aex),
-  Aep(pimpl->Aep),
-  Agx(pimpl->Agx),
-  Agp(pimpl->Agp),
-  be(pimpl->be),
-  bg(pimpl->bg),
-  xlower(pimpl->xlower),
-  xupper(pimpl->xupper),
-  plower(pimpl->plower),
-  pupper(pimpl->pupper)
-{}
+auto Problem::operator=(const Problem& other) -> Problem&
+{
+    const_cast<Dims&>(dims) = other.dims;
+    Aex.__assign(other.Aex);
+    Aep.__assign(other.Aep);
+    Agx.__assign(other.Agx);
+    Agp.__assign(other.Agp);
+    be.__assign(other.be);
+    bg.__assign(other.bg);
+    xlower.__assign(other.xlower);
+    xupper.__assign(other.xupper);
+    plower.__assign(other.plower);
+    pupper.__assign(other.pupper);
 
-Problem::~Problem()
-{}
+    return *this;
+}
 
 } // namespace Optima

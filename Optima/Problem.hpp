@@ -32,80 +32,35 @@ namespace Optima {
 /// The class used to define an optimization problem.
 class Problem
 {
-private:
-    struct Impl;
-
-    std::unique_ptr<Impl> pimpl;
-
 public:
-    /// Construct a Problem instance with given dimension information.
-    Problem(const Dims& dims);
+    Dims const dims;       ///< The dimensions of the variables and constraints in the optimization problem.
+    ObjectiveFunction f;   ///< The objective function \eq{f(x, p)} of the optimization problem.
+    ConstraintFunction he; ///< The nonlinear equality constraint function \eq{h_{\mathrm{e}}(x, p)=0}.
+    ConstraintFunction hg; ///< The nonlinear inequality constraint function \eq{h_{\mathrm{g}}(x, p)\geq0}.
+    ConstraintFunction v;  ///< The external nonlinear constraint function \eq{v(x, p)=0}.
+    FixedMatrix Aex;       ///< The coefficient matrix \eq{A_{\mathrm{ex}}} in the linear equality constraints \eq{A_{\mathrm{ex}}x+A_{\mathrm{ep}}p=b_{\mathrm{e}}}.
+    FixedMatrix Aep;       ///< The coefficient matrix \eq{A_{\mathrm{ep}}} in the linear equality constraints \eq{A_{\mathrm{ex}}x+A_{\mathrm{ep}}p=b_{\mathrm{e}}}.
+    FixedMatrix Agx;       ///< The coefficient matrix \eq{A_{\mathrm{gx}}} in the linear inequality constraints \eq{A_{\mathrm{gx}}x+A_{\mathrm{gp}}p\geq b_{\mathrm{g}}}.
+    FixedMatrix Agp;       ///< The coefficient matrix \eq{A_{\mathrm{gp}}} in the linear inequality constraints \eq{A_{\mathrm{gx}}x+A_{\mathrm{gp}}p\geq b_{\mathrm{g}}}.
+    FixedVector be;        ///< The right-hand side vector \eq{b_{\mathrm{e}}} in the linear equality constraints \eq{A_{\mathrm{ex}}x+A_{\mathrm{ep}}p=b_{\mathrm{e}}}.
+    FixedVector bg;        ///< The right-hand side vector \eq{b_{\mathrm{g}}} in the linear inequality constraints \eq{A_{\mathrm{gx}}x+A_{\mathrm{gp}}p\geq b_{\mathrm{g}}}.
+    FixedVector xlower;    ///< The lower bounds of the primal variables \eq{x}.
+    FixedVector xupper;    ///< The upper bounds of the primal variables \eq{x}.
+    FixedVector plower;    ///< The lower bounds of the parameter variables \eq{p}.
+    FixedVector pupper;    ///< The upper bounds of the parameter variables \eq{p}.
+    FixedMatrix dfxdc;     ///< The derivatives *∂fx/∂c*.
+    FixedMatrix dbdc;      ///< The derivatives *∂b/∂c*.
+    FixedMatrix dhdc;      ///< The derivatives *∂h/∂c*.
+    FixedMatrix dvdc;      ///< The derivatives *∂v/∂c*.
 
-    /// Construct a copy of a Problem instance.
-    Problem(const Problem& other);
+    /// Construct a default Problem instance.
+    Problem();
 
-    /// Destroy this Problem instance.
-    virtual ~Problem();
+    /// Construct a Problem instance with given dimensions.
+    explicit Problem(const Dims& dims);
 
     /// Assign a Problem instance to this.
-    auto operator=(Problem other) -> Problem& = delete;
-
-    /// The dimension information of variables and constraints in the optimization problem.
-    Dims const dims;
-
-    /// The coefficient matrix \eq{A_{\mathrm{ex}}} in the linear equality constraints \eq{A_{\mathrm{ex}}x+A_{\mathrm{ep}}p=b_{\mathrm{e}}}.
-    MatrixRef Aex;
-
-    /// The coefficient matrix \eq{A_{\mathrm{ep}}} in the linear equality constraints \eq{A_{\mathrm{ex}}x+A_{\mathrm{ep}}p=b_{\mathrm{e}}}.
-    MatrixRef Aep;
-
-    /// The coefficient matrix \eq{A_{\mathrm{gx}}} in the linear inequality constraints \eq{A_{\mathrm{gx}}x+A_{\mathrm{gp}}p\geq b_{\mathrm{g}}}.
-    MatrixRef Agx;
-
-    /// The coefficient matrix \eq{A_{\mathrm{gp}}} in the linear inequality constraints \eq{A_{\mathrm{gx}}x+A_{\mathrm{gp}}p\geq b_{\mathrm{g}}}.
-    MatrixRef Agp;
-
-    /// The right-hand side vector \eq{b_{\mathrm{e}}} in the linear equality constraints \eq{A_{\mathrm{ex}}x+A_{\mathrm{ep}}p=b_{\mathrm{e}}}.
-    VectorRef be;
-
-    /// The right-hand side vector \eq{b_{\mathrm{g}}} in the linear inequality constraints \eq{A_{\mathrm{gx}}x+A_{\mathrm{gp}}p\geq b_{\mathrm{g}}}.
-    VectorRef bg;
-
-    /// The nonlinear equality constraint function \eq{h_{\mathrm{e}}(x, p)=0}.
-    ConstraintFunction he;
-
-    /// The nonlinear inequality constraint function \eq{h_{\mathrm{g}}(x, p)\geq0}.
-    ConstraintFunction hg;
-
-    /// The external nonlinear constraint function \eq{v(x, p)=0}.
-    ConstraintFunction v;
-
-    /// The objective function \eq{f(x, p)} of the optimization problem.
-    ObjectiveFunction f;
-
-    /// The lower bounds of the primal variables \eq{x}.
-    VectorRef xlower;
-
-    /// The upper bounds of the primal variables \eq{x}.
-    VectorRef xupper;
-
-    /// The lower bounds of the parameter variables \eq{p}.
-    VectorRef plower;
-
-    /// The upper bounds of the parameter variables \eq{p}.
-    VectorRef pupper;
-
-    /// The derivatives *∂fx/∂w*.
-    Matrix fxw;
-
-    /// The derivatives *∂b/∂w*.
-    Matrix bw;
-
-    /// The derivatives *∂h/∂w*.
-    Matrix hw;
-
-    /// The derivatives *∂v/∂w*.
-    Matrix vw;
+    auto operator=(const Problem& other) -> Problem&;
 };
 
 } // namespace Optima
