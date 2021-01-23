@@ -30,9 +30,9 @@ struct ResidualVector::Impl
 {
     MasterDims dims; ///< The dimensions of the master variables.
 
-    Index ns;  ///< The number of stable variables
-    Index nu;  ///< The number of ustable variables
-    Index nbs; ///< The number of stable basic variables
+    Index ns = 0;  ///< The number of stable variables
+    Index nu = 0;  ///< The number of ustable variables
+    Index nbs = 0; ///< The number of stable basic variables
 
     Vector ax;
     Vector aw;
