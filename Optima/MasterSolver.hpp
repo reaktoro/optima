@@ -54,6 +54,10 @@ public:
 
     /// Solve the given master optimization problem.
     auto solve(const MasterProblem& problem, MasterVectorRef u) -> Result;
+
+    // TODO: Implement MasterState class so that we have:
+    // `auto solve(const MasterProblem& problem, MasterState& state) -> Result;`
+    // which will permit other data to be exported from the solver, such as stabilities.
 };
 
 } // namespace Optima
