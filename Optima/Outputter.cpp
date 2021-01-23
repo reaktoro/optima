@@ -68,7 +68,11 @@ void Outputter::addEntries(const std::string& prefix, std::size_t size)
 
 void Outputter::addEntries(const std::string& prefix, std::size_t size, const std::vector<std::string>& names)
 {
-    if(names.size() != size)
+    errorif(names.size() != 0 && names.size() != size, "Mismatched number of "
+        "names given for variables with prefix `", prefix, "`. "
+        "It should have been ", size, ", but got ", names.size(), " instead.");
+
+    if(names.empty())
         addEntries(prefix, size);
     else
     {
