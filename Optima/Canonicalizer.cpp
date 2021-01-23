@@ -25,7 +25,7 @@ namespace Optima {
 
 struct Canonicalizer::Impl
 {
-    const MasterDims dims; ///< The dimensions of the variables x, p, y, z, w.
+    MasterDims dims;    ///< The dimensions of the variables x, p, y, z, w.
 
     Index ns = 0;       ///< The number of stable variables.
     Index nu = 0;       ///< The number of unstable variables.
@@ -60,27 +60,18 @@ struct Canonicalizer::Impl
 
     bool diagHxx = false; ///< The flag indicating whether Hxx is diagonal.
 
-    Impl(const MasterDims& dims)
-    : dims(dims)
-    {
-        const auto [nx, np, ny, nz, nw, nt] = dims;
-
-        S = zeros(nw, nx + np);
-        Hprime = zeros(nx, nx + np);
-        Vprime = zeros(np, nx + np);
-        Wprime = zeros(nw, nx + np);
-        jbn.resize(nx);
-        jsu.resize(nx);
-    }
+    Impl()
+    {}
 
     Impl(const MasterMatrix& M)
-    : Impl(M.dims)
     {
         update(M);
     }
 
     auto update(const MasterMatrix& M) -> void
     {
+        dims = M.dims;
+
         const auto [nx, np, ny, nz, nw, nt] = dims;
 
         const auto H   = M.H;
@@ -104,6 +95,7 @@ struct Canonicalizer::Impl
         // Initialize matrices R, Sbn, Sbp and indices of variables jbn
         //======================================================================
 
+        S.resize(nw, nx + np);
         auto Sbn = S.topLeftCorner(nb, nn);
         auto Sbp = S.topRightCorner(nb, np);
 
@@ -112,6 +104,7 @@ struct Canonicalizer::Impl
         Sbn = RWQ.Sbn;
         Sbp = RWQ.Sbp;
 
+        jbn.resize(nx);
         jbn << RWQ.jb, RWQ.jn; // the indices of the variables ordered as x = (xb, xn), but xb and xn not yet properly sorted
 
         auto jb = jbn.head(nb); // the indices of the basic variables
@@ -222,6 +215,7 @@ struct Canonicalizer::Impl
         const auto jnu = jn.tail(nnu);
 
         // Initialize jsu = (js, ju) = (jbs, jns, jbu, jnu)
+        jsu.resize(nx);
         jsu << jbs, jns, jbu, jnu;
 
         // The indices of the stable variables js = (jbs, jns) = (jbe, jbi, jne, jni)
@@ -233,6 +227,7 @@ struct Canonicalizer::Impl
         //=========================================================================================
         using Eigen::all;
 
+        Hprime.resize(nx, nx + np);
         auto Hss = Hprime.topLeftCorner(ns, ns);
         auto Hsp = Hprime.topRightCorner(ns, np);
 
@@ -244,6 +239,7 @@ struct Canonicalizer::Impl
         //=========================================================================================
         // Initialize matrices Vps, Vpp
         //=========================================================================================
+        Vprime.resize(np, nx + np);
         auto Vps = Vprime.topLeftCorner(np, ns);
         auto Vpp = Vprime.topRightCorner(np, np);
 
@@ -254,6 +250,7 @@ struct Canonicalizer::Impl
         // Initialize matrices Ws, Wu and Wp in W = [Ws Wu Wp] = [As Au Ap; Js Ju Jp]
         //=========================================================================================
 
+        Wprime.resize(nw, nx + np);
         auto Ws = Wprime.leftCols(ns);
         auto Wu = Wprime.middleCols(ns, nu);
         auto Wp = Wprime.rightCols(np);
@@ -284,8 +281,8 @@ struct Canonicalizer::Impl
     }
 };
 
-Canonicalizer::Canonicalizer(const MasterDims& dims)
-: pimpl(new Impl(dims))
+Canonicalizer::Canonicalizer()
+: pimpl(new Impl())
 {}
 
 Canonicalizer::Canonicalizer(const MasterMatrix& M)

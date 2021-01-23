@@ -23,7 +23,6 @@
 // Optima includes
 #include <Optima/CanonicalDims.hpp>
 #include <Optima/CanonicalMatrix.hpp>
-#include <Optima/MasterDims.hpp>
 #include <Optima/MasterMatrix.hpp>
 
 namespace Optima {
@@ -33,10 +32,10 @@ class Canonicalizer
 {
 public:
     /// Construct a Canonicalizer instance.
-    Canonicalizer(const MasterDims& dims);
+    Canonicalizer();
 
     /// Construct a Canonicalizer instance.
-    Canonicalizer(const MasterMatrix& M);
+    explicit Canonicalizer(const MasterMatrix& M);
 
     /// Construct a copy of a Canonicalizer instance.
     Canonicalizer(const Canonicalizer& other);

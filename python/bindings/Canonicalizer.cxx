@@ -30,7 +30,7 @@ using namespace Optima;
 void exportCanonicalizer(py::module& m)
 {
     py::class_<Canonicalizer>(m, "Canonicalizer")
-        .def(py::init<const MasterDims&>())
+        .def(py::init<>())
         .def(py::init<const MasterMatrix&>())
         .def(py::init<const Canonicalizer&>())
         .def("update", &Canonicalizer::update)
