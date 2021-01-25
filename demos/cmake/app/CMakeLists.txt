@@ -1,5 +1,5 @@
 # Specify the minimum cmake version
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.17)
 
 # Specify the name of your project
 project(app)
