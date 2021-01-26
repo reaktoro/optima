@@ -6,9 +6,9 @@ file(TO_NATIVE_PATH ${OPTIMA_PYTHON_PACKAGE_DIR} OPTIMA_PYTHON_PACKAGE_DIR)  # c
 
 if(WIN32)
     add_custom_target(tests
-        COMMAND ${CMAKE_COMMAND} -E echo "Ensure python package optima exists in ${OPTIMA_PYTHON_PACKAGE_DIR}"
-        COMMAND ${CMAKE_COMMAND} -E echo "Ensure Optima C++ library exists in ${OPTIMA_LIBRARY_DIR}\\$<CONFIG>"
-        COMMAND ${CMAKE_COMMAND} -E echo "Starting parallel execution of pytest..."
+        COMMENT "Ensure python package optima exists in ${OPTIMA_PYTHON_PACKAGE_DIR}"
+        COMMENT "Ensure Optima C++ library exists in ${OPTIMA_LIBRARY_DIR}\\$<CONFIG>"
+        COMMENT "Starting parallel execution of pytest..."
         COMMAND ${CMAKE_COMMAND} -E env
             "PATH=${OPTIMA_LIBRARY_DIR}\\$<CONFIG>;$ENV{PATH}"
             "PYTHONPATH=${OPTIMA_PYTHON_PACKAGE_DIR}"
@@ -16,9 +16,9 @@ if(WIN32)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 else() # UNIX
     add_custom_target(tests
-        COMMAND ${CMAKE_COMMAND} -E echo "Ensure python package optima exists in ${OPTIMA_PYTHON_PACKAGE_DIR}"
-        COMMAND ${CMAKE_COMMAND} -E echo "Ensure Optima C++ library exists in ${OPTIMA_LIBRARY_DIR}"
-        COMMAND ${CMAKE_COMMAND} -E echo "Starting parallel execution of pytest..."
+        COMMENT "Ensure python package optima exists in ${OPTIMA_PYTHON_PACKAGE_DIR}"
+        COMMENT "Ensure Optima C++ library exists in ${OPTIMA_LIBRARY_DIR}"
+        COMMENT "Starting parallel execution of pytest..."
         COMMAND ${CMAKE_COMMAND} -E env
             "PYTHONPATH=${OPTIMA_PYTHON_PACKAGE_DIR}"
                 pytest ${CMAKE_CURRENT_SOURCE_DIR} -n auto -x
