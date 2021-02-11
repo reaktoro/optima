@@ -42,7 +42,7 @@ struct EchelonizerW::Impl
     {
         dims = dimens;
 
-        const auto [nx, np, ny, nz, nw, nt, nc] = dims;
+        const auto [nx, np, ny, nz, nw, nt] = dims;
 
         assert(Ax.rows() == ny || ny == 0 || nx == 0);
         assert(Ax.cols() == nx || ny == 0 || nx == 0);
@@ -67,7 +67,7 @@ struct EchelonizerW::Impl
 
     auto update(MatrixView Jx, MatrixView Jp, VectorView weights) -> void
     {
-        const auto [nx, np, ny, nz, nw, nt, nc] = dims;
+        const auto [nx, np, ny, nz, nw, nt] = dims;
 
         assert( echelonizer.R().rows() );
 
@@ -105,7 +105,7 @@ struct EchelonizerW::Impl
     {
         assert(W.size());
 
-        const auto [nx, np, ny, nz, nw, nt, nc] = dims;
+        const auto [nx, np, ny, nz, nw, nt] = dims;
 
         const auto Wx = W.leftCols(nx);
         const auto Wp = W.rightCols(np);
@@ -121,7 +121,7 @@ struct EchelonizerW::Impl
     {
         assert(S.size());
 
-        const auto [nx, np, ny, nz, nw, nt, nc] = dims;
+        const auto [nx, np, ny, nz, nw, nt] = dims;
 
         const auto nb = echelonizer.numBasicVariables();
         const auto nn = echelonizer.numNonBasicVariables();

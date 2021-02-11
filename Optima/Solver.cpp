@@ -44,8 +44,6 @@ struct Solver::Impl
     Index ny    = 0;        ///< The number of Lagrange multipliers y (i.e., the dimension of vector b = (be, bg)).
     Index nz    = 0;        ///< The number of Lagrange multipliers z (i.e., the dimension of vector h = (he, hg)).
     Index nwbar = 0;        ///< The number of Lagrange multipliers in wbar = (ye, yg, ze, zg).
-    Vector xbar;            ///< The vector xbar = (x, u, v) in the master optimization problem.
-    Vector wbar;            ///< The vector wbar = (ye, yg, ze, zg) in the master optimization problem.
     Vector xbarlower;       ///< The lower bounds of vector xbar = (x, xbg, xhg) in the master optimization problem.
     Vector xbarupper;       ///< The upper bounds of vector xbar = (x, xbg, xhg) in the master optimization problem.
 
@@ -193,12 +191,15 @@ struct Solver::Impl
         };
 
         // Initialize xbar = (x, xbg, xhg)
-        xbar.resize(nxbar);
-        xbar << state.x, state.xbg, state.xhg;
+        mstate.u.x.resize(nxbar);
+        mstate.u.x << state.x, state.xbg, state.xhg;
 
         // Initialize wbar = (ye, yg, ze, zg)
-        wbar.resize(nwbar);
-        wbar << state.ye, state.yg, state.ze, state.zg;
+        mstate.u.w.resize(nwbar);
+        mstate.u.w << state.ye, state.yg, state.ze, state.zg;
+
+        // Initialize pbar = p
+        mstate.u.p = state.p;
 
         // Initialize the lower bounds of xbar = (x, xbg, xhg)
         xbarlower.resize(nxbar);
@@ -214,12 +215,15 @@ struct Solver::Impl
         mproblem.b.resize(ny);
         mproblem.b << problem.be, problem.bg;
 
+        // Initialize lower and upper bounds for x in the master problem
         mproblem.xlower = xbarlower;
         mproblem.xupper = xbarupper;
+
+        // Initialize lower and upper bounds for p in the master problem
         mproblem.plower = problem.plower;
         mproblem.pupper = problem.pupper;
 
-        // Create matrix Ax = [ [Aex, 0, 0], [Agx, I, 0] ]
+        // Initialize matrix Ax = [ [Aex, 0, 0], [Agx, I, 0] ] in the master problem
         mproblem.Ax.resize(ny, nxbar);
         if(mproblem.Ax.size()) {
             mproblem.Ax.leftCols(nx) << problem.Aex, problem.Agx;
@@ -227,34 +231,34 @@ struct Solver::Impl
             mproblem.Ax.rightCols(nxhg).fill(0.0);
         }
 
-        // Create matrix Ap = [ [Aep], [Agp] ]
+        // Initialize matrix Ap = [ [Aep], [Agp] ] in the master problem
         mproblem.Ap.resize(ny, np);
         if(mproblem.Ap.size())
             mproblem.Ap << problem.Aep, problem.Agp;
 
-        mstate.u.resize(mproblem.dims);
-        mstate.u.x = xbar;
-        mstate.u.p = state.p;
-        mstate.u.w = wbar;
+        // Initialize the sensitivity parameters *c* in the master problem
+        mproblem.c = problem.c;
+
+        // Initialize the Jacobian matrix ∂b/∂c = [ [∂be/∂c], [∂bg/∂c] ] in the master problem
+        mproblem.bc.topRows(dims.be) = problem.bec;
+        mproblem.bc.bottomRows(dims.bg) = problem.bgc;
 
         // Perform the master optimization calculation
-        // auto result = msolver.solve(mproblem, { xbar, state.p, wbar });
         auto result = msolver.solve(mproblem, mstate);
 
-        xbar    = mstate.u.x;
-        state.p = mstate.u.p;
-        wbar    = mstate.u.w;
-
         // Transfer computed xbar = (x, xbg, xhg) to state
-        state.x   = xbar.head(nx);
-        state.xbg = xbar.segment(nx, nxbg);
-        state.xhg = xbar.tail(nxhg);
+        state.x   = mstate.u.x.head(nx);
+        state.xbg = mstate.u.x.segment(nx, nxbg);
+        state.xhg = mstate.u.x.tail(nxhg);
 
         // Transfer computed wbar = (ye, yg, ze, zg) to state
-        state.ye = wbar.head(ny).head(dims.be);
-        state.yg = wbar.head(ny).tail(dims.bg);
-        state.ze = wbar.tail(nz).head(dims.he);
-        state.zg = wbar.tail(nz).tail(dims.hg);
+        state.ye = mstate.u.w.head(ny).head(dims.be);
+        state.yg = mstate.u.w.head(ny).tail(dims.bg);
+        state.ze = mstate.u.w.tail(nz).head(dims.he);
+        state.zg = mstate.u.w.tail(nz).tail(dims.hg);
+
+        // Transfer computed pbar = p to state
+        state.p = mstate.u.p;
 
         return result;
     }

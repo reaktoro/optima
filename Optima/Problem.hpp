@@ -48,6 +48,7 @@ public:
     FixedVector xupper;    ///< The upper bounds of the primal variables \eq{x}.
     FixedVector plower;    ///< The lower bounds of the parameter variables \eq{p}.
     FixedVector pupper;    ///< The upper bounds of the parameter variables \eq{p}.
+    FixedVector c;         ///< The sensitivity parameters *c*.
     FixedMatrix bec;       ///< The Jacobian matrix *∂be/∂c* with respect to sensitive parameters *c*.
     FixedMatrix bgc;       ///< The Jacobian matrix *∂bg/∂c* with respect to sensitive parameters *c*.
 

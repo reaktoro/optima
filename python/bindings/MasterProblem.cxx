@@ -48,6 +48,7 @@ void exportMasterProblem(py::module& m)
         .def_readwrite("plower", &MasterProblem::plower)
         .def_readwrite("pupper", &MasterProblem::pupper)
         .def_readwrite("phi"   , &MasterProblem::phi)
+        .def_readwrite("c"     , &MasterProblem::c)
         .def_property("bc"     , get_bc, set_bc)
         ;
 }

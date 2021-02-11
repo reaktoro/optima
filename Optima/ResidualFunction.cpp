@@ -86,10 +86,15 @@ struct ResidualFunction::Impl
 
     auto initialize(const MasterProblem& problem) -> void
     {
+        const auto nx = problem.dims.nx;
+        const auto np = problem.dims.np;
+        const auto ny = problem.dims.ny;
+        const auto nz = problem.dims.nz;
+        const auto nc = problem.c.size();
         dims = problem.dims;
-        fres.resize(dims.nx, dims.np, dims.nc);
-        hres.resize(dims.nz, dims.nx, dims.np, dims.nc);
-        vres.resize(dims.np, dims.nx, dims.np, dims.nc);
+        fres.resize(nx, np, nc);
+        hres.resize(nz, nx, np, nc);
+        vres.resize(np, nx, np, nc);
         echelonizerW.initialize(dims, problem.Ax, problem.Ap);
         f = problem.f;
         h = problem.h;
@@ -97,6 +102,7 @@ struct ResidualFunction::Impl
         b = problem.b;
         xlower = problem.xlower;
         xupper = problem.xupper;
+        c = problem.c;
     }
 
     auto update(MasterVectorView u) -> void
@@ -125,9 +131,9 @@ struct ResidualFunction::Impl
         const auto p = u.p;
         const auto RWQ = echelonizerW.RWQ();
         const auto ibasicvars = RWQ.jb;
-        ObjectiveOptions  fopts{{eval_ddx, eval_ddp && dims.np, eval_ddc && dims.nc}, ibasicvars};
-        ConstraintOptions hopts{{eval_ddx, eval_ddp && dims.np, eval_ddc && dims.nc}, ibasicvars};
-        ConstraintOptions vopts{{eval_ddx, eval_ddp && dims.np, eval_ddc && dims.nc}, ibasicvars};
+        ObjectiveOptions  fopts{{eval_ddx, eval_ddp && dims.np, eval_ddc}, ibasicvars};
+        ConstraintOptions hopts{{eval_ddx, eval_ddp && dims.np, eval_ddc}, ibasicvars};
+        ConstraintOptions vopts{{eval_ddx, eval_ddp && dims.np, eval_ddc}, ibasicvars};
         f(fres, x, p, c, fopts);
         h(hres, x, p, c, hopts);
         v(vres, x, p, c, vopts);

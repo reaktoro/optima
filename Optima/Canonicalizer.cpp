@@ -72,7 +72,7 @@ struct Canonicalizer::Impl
     {
         dims = M.dims;
 
-        const auto [nx, np, ny, nz, nw, nt, nc] = dims;
+        const auto [nx, np, ny, nz, nw, nt] = dims;
 
         const auto H   = M.H;
         const auto V   = M.V;
@@ -262,7 +262,7 @@ struct Canonicalizer::Impl
 
     auto canonicalMatrix() const -> CanonicalMatrix
     {
-        const auto [nx, np, ny, nz, nw, nt, nc] = dims;
+        const auto [nx, np, ny, nz, nw, nt] = dims;
 
         const auto dims = CanonicalDims{nx, np, ny, nz, nw, nt, ns, nu, nb, nn, nl, nbs, nbu, nns, nnu, nbe, nbi, nne, nni};
         const auto Hss = Hprime.topLeftCorner(ns, ns);

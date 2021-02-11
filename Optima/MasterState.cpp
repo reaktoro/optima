@@ -15,24 +15,30 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-// pybind11 includes
-#include <pybind11/pybind11.h>
-namespace py = pybind11;
+#include "MasterState.hpp"
 
-// Optima includes
-#include <Optima/MasterDims.hpp>
-using namespace Optima;
+namespace Optima {
 
-void exportMasterDims(py::module& m)
+MasterState::MasterState()
+{}
+
+MasterState::MasterState(const MasterDims& dims)
+: u(dims),
+  s(zeros(dims.nx))
+//   xc(zeros(dims.nx, dims.nc)),
+//   pc(zeros(dims.np, dims.nc)),
+//   wc(zeros(dims.nw, dims.nc)),
+//   sc(zeros(dims.nx, dims.nc))
+{}
+
+auto MasterState::resize(const MasterDims& dims) -> void
 {
-    py::class_<MasterDims>(m, "MasterDims")
-        .def(py::init<>())
-        .def(py::init<Index, Index, Index, Index>())
-        .def_readonly("nx", &MasterDims::nx)
-        .def_readonly("np", &MasterDims::np)
-        .def_readonly("ny", &MasterDims::ny)
-        .def_readonly("nz", &MasterDims::nz)
-        .def_readonly("nw", &MasterDims::nw)
-        .def_readonly("nt", &MasterDims::nt)
-        ;
+    u.resize(dims);
+    s.resize(dims.nx);
+    // xc.resize(dims.nx, dims.nc);
+    // pc.resize(dims.np, dims.nc);
+    // wc.resize(dims.nw, dims.nc);
+    // sc.resize(dims.nx, dims.nc);
 }
+
+} // namespace Optima
