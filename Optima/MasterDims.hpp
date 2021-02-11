@@ -25,12 +25,13 @@ namespace Optima {
 /// Used to represent the dimensions in a master matrix.
 struct MasterDims
 {
-    const Index nx; ///< The number of variables *x*.
-    const Index np; ///< The number of variables *p*.
-    const Index ny; ///< The number of variables *y*.
-    const Index nz; ///< The number of variables *z*.
-    const Index nw; ///< The number of variables *w = (y, z)*.
-    const Index nt; ///< The total number of variables in *(x, p, y, z)*.
+    const Index nx; ///< The number of primal variables *x*.
+    const Index np; ///< The number of unknonw parameter variables *p*.
+    const Index ny; ///< The number of Lagrange multiplier variables *y*.
+    const Index nz; ///< The number of Lagrange multiplier variables *z*.
+    const Index nw; ///< The number of Lagrange multiplier variables *w = (y, z)*.
+    const Index nt; ///< The total number of unknown variables in *u = (x, p, y, z)*.
+    const Index nc; ///< The number of known parameter variables *c* used to compute sensitivities.
 
     /// Construct a default MasterDims object.
     MasterDims()
@@ -38,7 +39,11 @@ struct MasterDims
 
     /// Construct a MasterDims object with given dimensions.
     MasterDims(Index nx, Index np, Index ny, Index nz)
-    : nx(nx), np(np), ny(ny), nz(nz), nw(ny + nz), nt(nx + np + nw) {}
+    : MasterDims(nx, np, ny, nz, 0) {}
+
+    /// Construct a MasterDims object with given dimensions.
+    MasterDims(Index nx, Index np, Index ny, Index nz, Index nc)
+    : nx(nx), np(np), ny(ny), nz(nz), nw(ny + nz), nt(nx + np + nw), nc(nc) {}
 
     /// Assign another MasterDims object to this.
     auto operator=(const MasterDims& other) -> MasterDims&
@@ -49,6 +54,7 @@ struct MasterDims
         const_cast<Index&>(nz) = other.nz;
         const_cast<Index&>(nw) = other.nw;
         const_cast<Index&>(nt) = other.nt;
+        const_cast<Index&>(nc) = other.nc;
         return *this;
     }
 };

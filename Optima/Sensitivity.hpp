@@ -29,15 +29,15 @@ class Sensitivity
 {
 public:
     Dims const dims;     ///< The dimensions of the variables and constraints in the optimization problem.
-    FixedMatrix dxdc;    ///< The sensitivity derivatives \eq{\partial x/\partial c} with respect to parameters \eq{c}.
-    FixedMatrix dpdc;    ///< The sensitivity derivatives \eq{\partial p/\partial c} with respect to parameters \eq{c}.
-    FixedMatrix dyedc;   ///< The sensitivity derivatives \eq{\partial y_{\mathrm{e}/\partial c} with respect to parameters \eq{c}.
-    FixedMatrix dygdc;   ///< The sensitivity derivatives \eq{\partial y_{\mathrm{g}/\partial c} with respect to parameters \eq{c}.
-    FixedMatrix dzedc;   ///< The sensitivity derivatives \eq{\partial z_{\mathrm{e}/\partial c} with respect to parameters \eq{c}.
-    FixedMatrix dzgdc;   ///< The sensitivity derivatives \eq{\partial z_{\mathrm{g}/\partial c} with respect to parameters \eq{c}.
-    FixedMatrix dsdc;    ///< The sensitivity derivatives \eq{\partial s/\partial c} with respect to parameters \eq{c}.
-    FixedMatrix dxbgdc;  ///< The sensitivity derivatives \eq{\partial x_{b_{\mathrm{g}}/\partial c} with respect to parameters \eq{c}.
-    FixedMatrix dxhgdc;  ///< The sensitivity derivatives \eq{\partial x_{h_{\mathrm{g}}/\partial c} with respect to parameters \eq{c}.
+    FixedMatrix xc;    ///< The sensitivity derivatives \eq{\partial x/\partial c} with respect to parameters \eq{c}.
+    FixedMatrix pc;    ///< The sensitivity derivatives \eq{\partial p/\partial c} with respect to parameters \eq{c}.
+    FixedMatrix yec;   ///< The sensitivity derivatives \eq{\partial y_{\mathrm{e}/\partial c} with respect to parameters \eq{c}.
+    FixedMatrix ygc;   ///< The sensitivity derivatives \eq{\partial y_{\mathrm{g}/\partial c} with respect to parameters \eq{c}.
+    FixedMatrix zec;   ///< The sensitivity derivatives \eq{\partial z_{\mathrm{e}/\partial c} with respect to parameters \eq{c}.
+    FixedMatrix zgc;   ///< The sensitivity derivatives \eq{\partial z_{\mathrm{g}/\partial c} with respect to parameters \eq{c}.
+    FixedMatrix sc;    ///< The sensitivity derivatives \eq{\partial s/\partial c} with respect to parameters \eq{c}.
+    FixedMatrix xbgc;  ///< The sensitivity derivatives \eq{\partial x_{b_{\mathrm{g}}/\partial c} with respect to parameters \eq{c}.
+    FixedMatrix xhgc;  ///< The sensitivity derivatives \eq{\partial x_{h_{\mathrm{g}}/\partial c} with respect to parameters \eq{c}.
 
     /// Construct a default Sensitivity object.
     Sensitivity();

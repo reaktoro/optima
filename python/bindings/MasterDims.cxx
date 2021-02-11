@@ -26,12 +26,15 @@ using namespace Optima;
 void exportMasterDims(py::module& m)
 {
     py::class_<MasterDims>(m, "MasterDims")
+        .def(py::init<>())
         .def(py::init<Index, Index, Index, Index>())
+        .def(py::init<Index, Index, Index, Index, Index>())
         .def_readonly("nx", &MasterDims::nx)
         .def_readonly("np", &MasterDims::np)
         .def_readonly("ny", &MasterDims::ny)
         .def_readonly("nz", &MasterDims::nz)
         .def_readonly("nw", &MasterDims::nw)
         .def_readonly("nt", &MasterDims::nt)
+        .def_readonly("nc", &MasterDims::nc)
         ;
 }

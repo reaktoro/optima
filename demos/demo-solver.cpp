@@ -30,7 +30,7 @@ int main(int argc, char **argv)
     Problem problem(dims);
     problem.Aex = Matrix{{ {1.0, -1.0} }};
     problem.be = Vector{{ 0.0 }};
-    problem.f = [](ObjectiveResultRef res, VectorView x, VectorView p, ObjectiveOptions opts)
+    problem.f = [](ObjectiveResultRef res, VectorView x, VectorView p, VectorView c, ObjectiveOptions opts)
     {
         res.f = (x[0] - 1)*(x[0] - 1) + (x[1] - 1)*(x[1] - 1);
         res.fx = 2.0 * (x - 1);

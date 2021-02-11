@@ -28,7 +28,7 @@ struct Dims
     /// The number of primal variables in \eq{x}.
     Index x = 0;
 
-    /// The number of parameter variables in \eq{p}.
+    /// The number of unknown parameter variables in \eq{p}.
     Index p = 0;
 
     /// The number of linear equality constraint equations in \eq{A_{\mathrm{ex}}x+A_{\mathrm{ep}}p=b_{\mathrm{e}}}.
@@ -42,6 +42,9 @@ struct Dims
 
     /// The number of non-linear inequality constraint equations in \eq{h_{\mathrm{g}}(x,p)\geq0}.
     Index hg = 0;
+
+    /// The number of known parameter variables in \eq{c} used to compute sensitivities.
+    Index c = 0;
 };
 
 } // namespace Optima

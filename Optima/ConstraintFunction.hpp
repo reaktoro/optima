@@ -31,14 +31,17 @@ namespace Optima {
 template<typename Bool, typename Vec, typename Mat>
 struct ConstraintResultBase
 {
-    /// The evaluated vector value of *c(x, p)*.
+    /// The evaluated vector value of *q(x, p, c)*.
     Vec val;
 
-    /// The evaluated Jacobian matrix of *c(x, p)* with respect to *x*.
+    /// The evaluated Jacobian matrix of *q(x, p, c)* with respect to *x*.
     Mat ddx;
 
-    /// The evaluated Jacobian matrix of *c(x, p)* with respect to *p*.
+    /// The evaluated Jacobian matrix of *q(x, p, c)* with respect to *p*.
     Mat ddp;
+
+    /// The evaluated Jacobian matrix of *q(x, p, c)* with respect to *c*.
+    Mat ddc;
 
     /// True if `ddx` is non-zero only on columns corresponding to basic varibles in *x*.
     Bool ddx4basicvars;
@@ -48,34 +51,37 @@ struct ConstraintResultBase
 
     /// Construct a default ConstraintResultBase object.
     ConstraintResultBase()
-    : ConstraintResultBase(0, 0, 0) {}
+    : ConstraintResultBase(0, 0, 0, 0) {}
 
     /// Construct a ConstraintResultBase object with given dimensions.
-    /// @param nc The number of constraint equations in *c(x, p)*.
+    /// @param nq The number of constraint equations in *q(x, p, c)*.
     /// @param nx The number of variables in *x*.
-    /// @param np The number of variables in *p*.
-    ConstraintResultBase(Index nc, Index nx, Index np)
-    : val(nc), ddx(nc, nx), ddp(nc, np), ddx4basicvars(false), succeeded(true) {}
+    /// @param np The number of parameters in *p*.
+    /// @param nc The number of sensitive parameters in *c*.
+    ConstraintResultBase(Index nq, Index nx, Index np, Index nc)
+    : val(nq), ddx(nq, nx), ddp(nq, np), ddc(nq, nc), ddx4basicvars(false), succeeded(true) {}
 
     /// Construct an ConstraintResultBase object from another.
     template<typename B, typename V, typename M>
     ConstraintResultBase(ConstraintResultBase<B, V, M>& other)
-    : val(other.val), ddx(other.ddx), ddp(other.ddp),
+    : val(other.val), ddx(other.ddx), ddp(other.ddp), ddc(other.ddc),
       ddx4basicvars(other.ddx4basicvars), succeeded(other.succeeded) {}
 
     /// Construct an ConstraintResultBase object with given data.
-    ConstraintResultBase(Vec val, Mat ddx, Mat ddp, Bool ddx4basicvars, Bool succeeded)
-    : val(val), ddx(ddx), ddp(ddp), ddx4basicvars(ddx4basicvars), succeeded(succeeded) {}
+    ConstraintResultBase(Vec val, Mat ddx, Mat ddp, Mat ddc, Bool ddx4basicvars, Bool succeeded)
+    : val(val), ddx(ddx), ddp(ddp), ddc(ddc), ddx4basicvars(ddx4basicvars), succeeded(succeeded) {}
 
     /// Resize this ConstraintResultBase object with given dimensions.
-    /// @param nc The number of constraint equations in *c(x, p)*.
+    /// @param nq The number of constraint equations in *q(x, p, c)*.
     /// @param nx The number of variables in *x*.
-    /// @param np The number of variables in *p*.
-    auto resize(Index nc, Index nx, Index np) -> void
+    /// @param np The number of parameters in *p*.
+    /// @param nc The number of sensitive parameters in *c*.
+    auto resize(Index nq, Index nx, Index np, Index nc) -> void
     {
-        val.resize(nc);
-        ddx.resize(nc, nx);
-        ddp.resize(nc, np);
+        val.resize(nq);
+        ddx.resize(nq, nx);
+        ddp.resize(nq, np);
+        ddc.resize(nq, nc);
     }
 };
 
@@ -91,8 +97,9 @@ struct ConstraintOptions
     /// Used to list the constraint function components that need to be evaluated.
     struct Eval
     {
-        bool ddx = true; ///< True if evaluating the Jacobian matrix of *c(x, p)* with respect to *x* is needed.
-        bool ddp = true; ///< True if evaluating the Jacobian matrix of *c(x, p)* with respect to *p* is needed.
+        bool ddx = true;  ///< True if evaluating the Jacobian matrix of *q(x, p, c)* with respect to *x* is needed.
+        bool ddp = true;  ///< True if evaluating the Jacobian matrix of *q(x, p, c)* with respect to *p* is needed.
+        bool ddc = false; ///< True if evaluating the Jacobian matrix of *q(x, p, c)* with respect to *p* is needed.
     };
 
     /// The constraint function components that need to be evaluated.
@@ -102,23 +109,25 @@ struct ConstraintOptions
     IndicesView ibasicvars;
 };
 
-/// Used to represent a constraint function *c(x, p)*.
+/// Used to represent a constraint function *q(x, p, c)*.
 class ConstraintFunction
 {
 public:
-    /// The main functional signature of a constraint function *c(x, p)*.
+    /// The main functional signature of a constraint function *q(x, p, c)*.
     /// @param[out] res The evaluated result of the constraint function and its derivatives.
     /// @param x The primal variables *x*.
     /// @param p The parameter variables *p*.
-    /// @param opts The options transmitted to the evaluation of *c(x, p)*.
-    using Signature = std::function<void(ConstraintResultRef res, VectorView x, VectorView p, ConstraintOptions opts)>;
+    /// @param c The sensitive parameter variables *c*.
+    /// @param opts The options transmitted to the evaluation of *q(x, p, c)*.
+    using Signature = std::function<void(ConstraintResultRef res, VectorView x, VectorView p, VectorView c, ConstraintOptions opts)>;
 
-    /// The functional signature of a constraint function *c(x, p)* incoming from Python.
+    /// The functional signature of a constraint function *q(x, p, c)* incoming from Python.
     /// @param[out] res The evaluated result of the constraint function and its derivatives.
     /// @param x The primal variables *x*.
     /// @param p The parameter variables *p*.
-    /// @param opts The options transmitted to the evaluation of *c(x, p)*.
-    using Signature4py = std::function<void(ConstraintResultRef* res, VectorView x, VectorView p, ConstraintOptions opts)>;
+    /// @param c The sensitive parameter variables *c*.
+    /// @param opts The options transmitted to the evaluation of *q(x, p, c)*.
+    using Signature4py = std::function<void(ConstraintResultRef* res, VectorView x, VectorView p, VectorView c, ConstraintOptions opts)>;
 
     /// Construct a default ConstraintFunction object.
     ConstraintFunction();
@@ -134,7 +143,7 @@ public:
     // : ConstraintFunction(fn) {}
 
     /// Evaluate the constraint function.
-    auto operator()(ConstraintResultRef res, VectorView x, VectorView p, ConstraintOptions opts) const -> void;
+    auto operator()(ConstraintResultRef res, VectorView x, VectorView p, VectorView c, ConstraintOptions opts) const -> void;
 
     /// Assign another constraint function to this.
     auto operator=(const Signature& fn) -> ConstraintFunction&;

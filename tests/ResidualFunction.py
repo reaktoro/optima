@@ -77,7 +77,7 @@ def testResidualFunction(nx, np, ny, nz, nl, nu, b1, b2, b3, b4, b5, b6, b7):
 
     cx[ju] = +1.0e4
 
-    def objectivefn_f(res, x, p, opts):
+    def objectivefn_f(res, x, p, c, opts):
         res.f   = 0.5 * (x.T @ Hxx @ x) + x.T @ Hxp @ p + cx.T @ x
         res.fx  = Hxx @ x + Hxp @ p + cx
         res.fxx = Hxx
@@ -86,14 +86,14 @@ def testResidualFunction(nx, np, ny, nz, nl, nu, b1, b2, b3, b4, b5, b6, b7):
         res.fxx4basicvars = b2
         res.succeeded = b3
 
-    def constraintfn_h(res, x, p, opts):
+    def constraintfn_h(res, x, p, c, opts):
         res.val = Jx @ x + Jp @ p + cz
         res.ddx = Jx
         res.ddp = Jp
         res.ddx4basicvars = b4
         res.succeeded = b5
 
-    def constraintfn_v(res, x, p, opts):
+    def constraintfn_v(res, x, p, c, opts):
         res.val = Vpx @ x + Vpp @ p + cp
         res.ddx = Vpx
         res.ddp = Vpp
