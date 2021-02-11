@@ -110,8 +110,9 @@ struct MasterSolver::Impl
         outputter.outputState();
     };
 
-    auto solve(const MasterProblem& problem, MasterVectorRef u) -> Result
+    auto solve(const MasterProblem& problem, MasterState& state) -> Result
     {
+        auto& u = state.u;
         initialize(problem, u);
         while(stepping(u))
             step(u);
@@ -220,9 +221,9 @@ auto MasterSolver::setOptions(const Options& options) -> void
     pimpl->setOptions(options);
 }
 
-auto MasterSolver::solve(const MasterProblem& problem, MasterVectorRef u) -> Result
+auto MasterSolver::solve(const MasterProblem& problem, MasterState& state) -> Result
 {
-    return pimpl->solve(problem, u);
+    return pimpl->solve(problem, state);
 }
 
 } // namespace Optima

@@ -35,6 +35,7 @@ struct Solver::Impl
 {
     MasterSolver msolver;   ///< The master optimization solver.
     MasterProblem mproblem; ///< The master optimization problem.
+    MasterState mstate;     ///< The master optimization state.
     Index nx    = 0;        ///< The number of variables x in xbar = (x, xbg, xhg).
     Index nxbg  = 0;        ///< The number of variables xbg in xbar = (x, xbg, xhg).
     Index nxhg  = 0;        ///< The number of variables xhg in xbar = (x, xbg, xhg).
@@ -231,8 +232,18 @@ struct Solver::Impl
         if(mproblem.Ap.size())
             mproblem.Ap << problem.Aep, problem.Agp;
 
+        mstate.u.resize(mproblem.dims);
+        mstate.u.x = xbar;
+        mstate.u.p = state.p;
+        mstate.u.w = wbar;
+
         // Perform the master optimization calculation
-        auto result = msolver.solve(mproblem, { xbar, state.p, wbar });
+        // auto result = msolver.solve(mproblem, { xbar, state.p, wbar });
+        auto result = msolver.solve(mproblem, mstate);
+
+        xbar    = mstate.u.x;
+        state.p = mstate.u.p;
+        wbar    = mstate.u.w;
 
         // Transfer computed xbar = (x, xbg, xhg) to state
         state.x   = xbar.head(nx);
