@@ -134,9 +134,10 @@ def testMasterSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
     solver = MasterSolver()
     solver.setOptions(options)
 
-    u = MasterVector(dims)
+    state = MasterState()
+    state.u = MasterVector(dims)
 
-    res = solver.solve(problem, u)
+    res = solver.solve(problem, state)
 
     if not res.succeeded:
         set_printoptions(linewidth=999999)

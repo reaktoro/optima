@@ -22,6 +22,7 @@
 
 // Optima includes
 #include <Optima/MasterProblem.hpp>
+#include <Optima/MasterState.hpp>
 #include <Optima/MasterVector.hpp>
 #include <Optima/Options.hpp>
 #include <Optima/Result.hpp>
@@ -53,11 +54,7 @@ public:
     auto setOptions(const Options& options) -> void;
 
     /// Solve the given master optimization problem.
-    auto solve(const MasterProblem& problem, MasterVectorRef u) -> Result;
-
-    // TODO: Implement MasterState class so that we have:
-    // `auto solve(const MasterProblem& problem, MasterState& state) -> Result;`
-    // which will permit other data to be exported from the solver, such as stabilities.
+    auto solve(const MasterProblem& problem, MasterState& state) -> Result;
 };
 
 } // namespace Optima
