@@ -22,6 +22,7 @@
 
 // Optima includes
 #include <Optima/MasterProblem.hpp>
+#include <Optima/MasterSensitivity.hpp>
 #include <Optima/MasterState.hpp>
 #include <Optima/MasterVector.hpp>
 #include <Optima/Options.hpp>
@@ -55,6 +56,9 @@ public:
 
     /// Solve the given master optimization problem.
     auto solve(const MasterProblem& problem, MasterState& state) -> Result;
+
+    /// Solve the given master optimization problem and compute the sensitivity derivatives at the end.
+    auto solve(const MasterProblem& problem, MasterState& state, MasterSensitivity& sensitivity) -> Result;
 };
 
 } // namespace Optima

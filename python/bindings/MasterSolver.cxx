@@ -29,6 +29,7 @@ void exportMasterSolver(py::module& m)
     py::class_<MasterSolver>(m, "MasterSolver")
         .def(py::init<>())
         .def("setOptions", &MasterSolver::setOptions)
-        .def("solve", &MasterSolver::solve)
+        .def("solve", py::overload_cast<const MasterProblem&, MasterState&>(&MasterSolver::solve))
+        .def("solve", py::overload_cast<const MasterProblem&, MasterState&, MasterSensitivity&>(&MasterSolver::solve))
         ;
 }
