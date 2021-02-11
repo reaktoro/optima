@@ -29,6 +29,7 @@
 #include <Optima/ResidualErrors.hpp>
 #include <Optima/ResidualFunction.hpp>
 #include <Optima/Result.hpp>
+#include <Optima/SensitivitySolver.hpp>
 #include <Optima/TransformStep.hpp>
 
 namespace Optima {
@@ -46,6 +47,7 @@ struct MasterSolver::Impl
     TransformStep transformstep;
     ErrorControl errorcontrol;
     Convergence convergence;
+    SensitivitySolver sensitivitysolver;
     Outputter outputter; ///< The object used to output the current state of the computation.
     Result result;
     Options options;
@@ -116,7 +118,14 @@ struct MasterSolver::Impl
         initialize(problem, u);
         while(stepping(u))
             step(u);
-        finalize();
+        finalize(state);
+        return result;
+    }
+
+    auto solve(const MasterProblem& problem, MasterState& state, MasterSensitivity& sensitity) -> Result
+    {
+        solve(problem, state);
+        sensitivitysolver.solve(F, state, sensitity);
         return result;
     }
 
@@ -142,6 +151,7 @@ struct MasterSolver::Impl
         newtonstep.initialize(problem);
         errorcontrol.initialize(problem);
         convergence.initialize(problem);
+        sensitivitysolver.initialize(problem);
         outputter.clear();
         outputHeaderTop();
     }
@@ -177,11 +187,17 @@ struct MasterSolver::Impl
         result.iterations += 1;
     }
 
-    auto finalize() -> void
+    auto finalize(MasterState& state) -> void
     {
         result.succeeded = convergence.converged();
         outputCurrentState();
         outputHeaderBottom();
+        auto ss = F.result().stabilitystatus;
+        state.s = ss.s;
+        state.js = ss.js;
+        state.ju = ss.ju;
+        state.jlu = ss.jlu;
+        state.juu = ss.juu;
     }
 
     auto sanitycheck(const MasterProblem& problem, MasterVectorRef u) -> void
@@ -224,6 +240,11 @@ auto MasterSolver::setOptions(const Options& options) -> void
 auto MasterSolver::solve(const MasterProblem& problem, MasterState& state) -> Result
 {
     return pimpl->solve(problem, state);
+}
+
+auto MasterSolver::solve(const MasterProblem& problem, MasterState& state, MasterSensitivity& sensitivity) -> Result
+{
+    return pimpl->solve(problem, state, sensitivity);
 }
 
 } // namespace Optima
