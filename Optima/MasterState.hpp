@@ -25,7 +25,13 @@ namespace Optima {
 /// Used to represent the master state of an optimization problem solution.
 struct MasterState
 {
-
+    MasterVector u; ///< The master vector *u = (x, p, w)*.
+    Vector s;       ///< The stabilities *s* of the primal variables *x*.
+    Vector c;       ///< The sensitivity parameters *c*.
+    Matrix xc;      ///< The sensitivity derivatives of *x* with respect to *c*.
+    Matrix pc;      ///< The sensitivity derivatives of *p* with respect to *c*.
+    Matrix wc;      ///< The sensitivity derivatives of *w* with respect to *c*.
+    Matrix sc;      ///< The sensitivity derivatives of *s* with respect to *c*.
 };
 
 } // namespace Optima
