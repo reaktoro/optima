@@ -23,22 +23,12 @@ MasterState::MasterState()
 {}
 
 MasterState::MasterState(const MasterDims& dims)
-: u(dims),
-  s(zeros(dims.nx))
-//   xc(zeros(dims.nx, dims.nc)),
-//   pc(zeros(dims.np, dims.nc)),
-//   wc(zeros(dims.nw, dims.nc)),
-//   sc(zeros(dims.nx, dims.nc))
+: u(dims)
 {}
 
 auto MasterState::resize(const MasterDims& dims) -> void
 {
     u.resize(dims);
-    s.resize(dims.nx);
-    // xc.resize(dims.nx, dims.nc);
-    // pc.resize(dims.np, dims.nc);
-    // wc.resize(dims.nw, dims.nc);
-    // sc.resize(dims.nx, dims.nc);
 }
 
 } // namespace Optima
