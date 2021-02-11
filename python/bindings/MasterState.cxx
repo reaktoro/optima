@@ -38,12 +38,13 @@ void exportMasterState(py::module& m)
 
     py::class_<MasterState>(m, "MasterState")
         .def(py::init<>())
+        .def(py::init<const MasterDims&>())
         .def_readwrite("u", &MasterState::u)
         .def_readwrite("s", &MasterState::s)
-        .def_readwrite("c", &MasterState::c)
         .def_property("xc", get_xc, set_xc)
         .def_property("pc", get_pc, set_pc)
         .def_property("wc", get_wc, set_wc)
         .def_property("sc", get_sc, set_sc)
+        .def("resize", &MasterState::resize)
         ;
 }

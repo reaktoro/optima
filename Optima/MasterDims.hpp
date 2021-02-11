@@ -31,7 +31,6 @@ struct MasterDims
     const Index nz; ///< The number of Lagrange multiplier variables *z*.
     const Index nw; ///< The number of Lagrange multiplier variables *w = (y, z)*.
     const Index nt; ///< The total number of unknown variables in *u = (x, p, y, z)*.
-    const Index nc; ///< The number of known parameter variables *c* used to compute sensitivities.
 
     /// Construct a default MasterDims object.
     MasterDims()
@@ -39,11 +38,7 @@ struct MasterDims
 
     /// Construct a MasterDims object with given dimensions.
     MasterDims(Index nx, Index np, Index ny, Index nz)
-    : MasterDims(nx, np, ny, nz, 0) {}
-
-    /// Construct a MasterDims object with given dimensions.
-    MasterDims(Index nx, Index np, Index ny, Index nz, Index nc)
-    : nx(nx), np(np), ny(ny), nz(nz), nw(ny + nz), nt(nx + np + nw), nc(nc) {}
+    : nx(nx), np(np), ny(ny), nz(nz), nw(ny + nz), nt(nx + np + nw) {}
 
     /// Assign another MasterDims object to this.
     auto operator=(const MasterDims& other) -> MasterDims&
@@ -54,7 +49,6 @@ struct MasterDims
         const_cast<Index&>(nz) = other.nz;
         const_cast<Index&>(nw) = other.nw;
         const_cast<Index&>(nt) = other.nt;
-        const_cast<Index&>(nc) = other.nc;
         return *this;
     }
 };

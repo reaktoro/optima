@@ -26,12 +26,20 @@ namespace Optima {
 struct MasterState
 {
     MasterVector u; ///< The master vector *u = (x, p, w)*.
-    Vector s;       ///< The stabilities *s* of the primal variables *x*.
-    Vector c;       ///< The sensitivity parameters *c*.
+    Vector s;       ///< The stabilities *s* of the primal variables.
     Matrix xc;      ///< The sensitivity derivatives of *x* with respect to *c*.
     Matrix pc;      ///< The sensitivity derivatives of *p* with respect to *c*.
     Matrix wc;      ///< The sensitivity derivatives of *w* with respect to *c*.
     Matrix sc;      ///< The sensitivity derivatives of *s* with respect to *c*.
+
+    /// Construct a default MasterState object.
+    MasterState();
+
+    /// Construct a default MasterState object.
+    MasterState(const MasterDims& dims);
+
+    /// Resise this MasterState object with given dimensions.
+    auto resize(const MasterDims& dims) -> void;
 };
 
 } // namespace Optima
