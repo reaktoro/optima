@@ -73,7 +73,7 @@ def testMasterSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
     Hxx[juu, juu] = 1e6  # this ensures variables expected on their upper bounds are marked as unstable
 
 
-    def objectivefn_f(res, x, p, opts):
+    def objectivefn_f(res, x, p, c, opts):
         dx = x - cx
         dp = p - cp
         res.f   = 0.5 * dx.T @ Hxx @ dx + dx.T @ Hxp @ dp
@@ -84,14 +84,14 @@ def testMasterSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
         res.fxx4basicvars = False
         res.succeeded = True
 
-    def constraintfn_h(res, x, p, opts):
+    def constraintfn_h(res, x, p, c, opts):
         res.val = Jx @ (x - cx) + Jp @ (p - cp)
         res.ddx = Jx
         res.ddp = Jp
         res.ddx4basicvars = False
         res.succeeded = True
 
-    def constraintfn_v(res, x, p, opts):
+    def constraintfn_v(res, x, p, c, opts):
         res.val = Vpx @ (x - cx) + Vpp @ (p - cp)
         res.ddx = Vpx
         res.ddp = Vpp

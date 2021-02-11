@@ -24,29 +24,29 @@ Sensitivity::Sensitivity()
 
 Sensitivity::Sensitivity(const Dims& dims, Index nc)
 : dims(dims),
-  dxdc(zeros(dims.x, nc)),
-  dpdc(zeros(dims.p, nc)),
-  dyedc(zeros(dims.be, nc)),
-  dygdc(zeros(dims.bg, nc)),
-  dzedc(zeros(dims.he, nc)),
-  dzgdc(zeros(dims.hg, nc)),
-  dsdc(zeros(dims.x, nc)),
-  dxbgdc(zeros(dims.bg, nc)),
-  dxhgdc(zeros(dims.hg, nc))
+  xc(zeros(dims.x, nc)),
+  pc(zeros(dims.p, nc)),
+  yec(zeros(dims.be, nc)),
+  ygc(zeros(dims.bg, nc)),
+  zec(zeros(dims.he, nc)),
+  zgc(zeros(dims.hg, nc)),
+  sc(zeros(dims.x, nc)),
+  xbgc(zeros(dims.bg, nc)),
+  xhgc(zeros(dims.hg, nc))
 {}
 
 auto Sensitivity::operator=(const Sensitivity& other) -> Sensitivity&
 {
     const_cast<Dims&>(dims) = other.dims;
-    dxdc.__assign(other.dxdc);
-    dpdc.__assign(other.dpdc);
-    dyedc.__assign(other.dyedc);
-    dygdc.__assign(other.dygdc);
-    dzedc.__assign(other.dzedc);
-    dzgdc.__assign(other.dzgdc);
-    dsdc.__assign(other.dsdc);
-    dxbgdc.__assign(other.dxbgdc);
-    dxhgdc.__assign(other.dxhgdc);
+    xc.__assign(other.xc);
+    pc.__assign(other.pc);
+    yec.__assign(other.yec);
+    ygc.__assign(other.ygc);
+    zec.__assign(other.zec);
+    zgc.__assign(other.zgc);
+    sc.__assign(other.sc);
+    xbgc.__assign(other.xbgc);
+    xhgc.__assign(other.xhgc);
     return *this;
 }
 

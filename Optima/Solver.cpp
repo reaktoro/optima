@@ -99,24 +99,26 @@ struct Solver::Impl
         mproblem.dims = MasterDims(nxbar, np, ny, nz);
 
         // Create the objective function for the master optimization problem
-        mproblem.f = [&](ObjectiveResultRef resbar, VectorView xbar, VectorView p, ObjectiveOptions opts)
+        mproblem.f = [&](ObjectiveResultRef resbar, VectorView xbar, VectorView p, VectorView c, ObjectiveOptions opts)
         {
             resbar.fx.fill(0.0);
             resbar.fxx.fill(0.0);
             resbar.fxp.fill(0.0);
+            resbar.fxc.fill(0.0);
 
             auto x   = xbar.head(nx);
             auto fx  = resbar.fx.head(nx);
             auto fxx = resbar.fxx.topLeftCorner(nx, nx);
             auto fxp = resbar.fxp.topRows(nx);
+            auto fxc = resbar.fxc.topRows(nx);
 
-            ObjectiveResultRef fres(resbar.f, fx, fxx, fxp, resbar.diagfxx, resbar.fxx4basicvars, resbar.succeeded);
+            ObjectiveResultRef fres(resbar.f, fx, fxx, fxp, fxc, resbar.diagfxx, resbar.fxx4basicvars, resbar.succeeded);
 
-            problem.f(fres, x, p, opts);
+            problem.f(fres, x, p, c, opts);
         };
 
         // Create the non-linear equality constraint for the master optimization problem
-        mproblem.h = [&](ConstraintResultRef resbar, VectorView xbar, VectorView p, ConstraintOptions opts)
+        mproblem.h = [&](ConstraintResultRef resbar, VectorView xbar, VectorView p, VectorView c, ConstraintOptions opts)
         {
             // Views to sub-vectors in xbar = (x, xbg, xhg)
             const auto x   = xbar.head(nx);
@@ -140,6 +142,10 @@ struct Solver::Impl
             auto he_p = resbar.ddp.topRows(dims.he);
             auto hg_p = resbar.ddp.bottomRows(dims.hg);
 
+            // Views to sub-matrices in dh/dc = [he_c; hg_c]
+            auto he_c = resbar.ddc.topRows(dims.he);
+            auto hg_c = resbar.ddc.bottomRows(dims.hg);
+
             // Set all blocks related to xbg and xhg to zero, except hg_xhg which is identity
             he_xbg.fill(0.0);
             he_xhg.fill(0.0);
@@ -147,19 +153,19 @@ struct Solver::Impl
             hg_xhg.fill(0.0);
             hg_xhg.diagonal().fill(1.0);
 
-            ConstraintResultRef heres(he, he_x, he_p, resbar.ddx4basicvars, resbar.succeeded);
+            ConstraintResultRef heres(he, he_x, he_p, he_c, resbar.ddx4basicvars, resbar.succeeded);
 
-            problem.he(heres, x, p, opts);
+            problem.he(heres, x, p, c, opts);
 
-            ConstraintResultRef hgres(hg, hg_x, hg_p, resbar.ddx4basicvars, resbar.succeeded);
+            ConstraintResultRef hgres(hg, hg_x, hg_p, hg_c, resbar.ddx4basicvars, resbar.succeeded);
 
-            problem.hg(hgres, x, p, opts);
+            problem.hg(hgres, x, p, c, opts);
 
             hg.noalias() += xhg;
         };
 
         // Create the external non-linear constraint for the master optimization problem
-        mproblem.v = [&](ConstraintResultRef res, VectorView xbar, VectorView p, ConstraintOptions opts)
+        mproblem.v = [&](ConstraintResultRef res, VectorView xbar, VectorView p, VectorView c, ConstraintOptions opts)
         {
             // Views to sub-vectors in xbar = (x, xbg, xhg)
             const auto x   = xbar.head(nx);
@@ -171,17 +177,18 @@ struct Solver::Impl
             auto v_xbg = res.ddx.middleCols(nx, nxbg);
             auto v_xhg = res.ddx.rightCols(nxhg);
 
-            // Auxiliary references to v and vp = dv/dp
+            // Auxiliary references to v, vp = dv/dp, vc = dv/dc
             auto v   = res.val;
             auto v_p = res.ddp;
+            auto v_c = res.ddc;
 
             // Set dv/dxbg = 0 and dv/dxhg = 0
             v_xbg.fill(0.0);
             v_xhg.fill(0.0);
 
-            ConstraintResult vres(v, v_x, v_p, res.ddx4basicvars, res.succeeded);
+            ConstraintResult vres(v, v_x, v_p, v_c, res.ddx4basicvars, res.succeeded);
 
-            problem.v(vres, x, p, opts);
+            problem.v(vres, x, p, c, opts);
         };
 
         // Initialize xbar = (x, xbg, xhg)

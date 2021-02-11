@@ -22,7 +22,7 @@ namespace Optima {
 MasterMatrix::operator Matrix() const
 {
     using Eigen::all;
-    const auto [nx, np, ny, nz, nw, nt] = dims;
+    const auto [nx, np, ny, nz, nw, nt, nc] = dims;
     const auto ns = js.rows();
     const auto nu = ju.rows();
     Matrix M = zeros(nt, nt);

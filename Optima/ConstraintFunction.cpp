@@ -24,7 +24,7 @@ namespace Optima {
 
 ConstraintFunction::ConstraintFunction()
 {
-    fn = [](ConstraintResultRef res, VectorView x, VectorView p, ConstraintOptions opts)
+    fn = [](ConstraintResultRef res, VectorView x, VectorView p, VectorView c, ConstraintOptions opts)
     {
         // initialized with a "do nothing function"!
     };
@@ -39,21 +39,22 @@ ConstraintFunction::ConstraintFunction(const Signature& func)
 ConstraintFunction::ConstraintFunction(const Signature4py& func)
 {
     error(func == nullptr, "ConstraintFunction cannot be constructed with a non-initialized function.");
-    fn = [=](ConstraintResultRef res, VectorView x, VectorView p, ConstraintOptions opts)
+    fn = [=](ConstraintResultRef res, VectorView x, VectorView p, VectorView c, ConstraintOptions opts)
     {
-        func(&res, x, p, opts);
+        func(&res, x, p, c, opts);
     };
 }
 
-auto ConstraintFunction::operator()(ConstraintResultRef res, VectorView x, VectorView p, ConstraintOptions opts) const -> void
+auto ConstraintFunction::operator()(ConstraintResultRef res, VectorView x, VectorView p, VectorView c, ConstraintOptions opts) const -> void
 {
     // Ensure clear state before evaluation
     res.val.fill(0.0);
     res.ddx.fill(0.0);
     res.ddp.fill(0.0);
+    res.ddc.fill(0.0);
     res.ddx4basicvars = false;
     res.succeeded = true;
-    fn(res, x, p, opts);
+    fn(res, x, p, c, opts);
 }
 
 auto ConstraintFunction::operator=(const Signature& func) -> ConstraintFunction&

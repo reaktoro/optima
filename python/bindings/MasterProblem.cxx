@@ -29,8 +29,10 @@ void exportMasterProblem(py::module& m)
 {
     auto get_Ax = [](const MasterProblem& s) { return s.Ax; };
     auto get_Ap = [](const MasterProblem& s) { return s.Ap; };
+    auto get_bc = [](const MasterProblem& s) { return s.bc; };
     auto set_Ax = [](MasterProblem& s, MatrixView4py Ax) { s.Ax = Ax; };
     auto set_Ap = [](MasterProblem& s, MatrixView4py Ap) { s.Ap = Ap; };
+    auto set_bc = [](MasterProblem& s, MatrixView4py bc) { s.bc = bc; };
 
     py::class_<MasterProblem>(m, "MasterProblem")
         .def(py::init<>())
@@ -46,5 +48,6 @@ void exportMasterProblem(py::module& m)
         .def_readwrite("plower", &MasterProblem::plower)
         .def_readwrite("pupper", &MasterProblem::pupper)
         .def_readwrite("phi"   , &MasterProblem::phi)
+        .def_property("bc"     , get_bc, set_bc)
         ;
 }

@@ -35,10 +35,8 @@ void exportProblem(py::module& m)
     auto set_Aep   = [](Problem& self, MatrixView4py Aep) { self.Aep = Aep; };
     auto set_Agx   = [](Problem& self, MatrixView4py Agx) { self.Agx = Agx; };
     auto set_Agp   = [](Problem& self, MatrixView4py Agp) { self.Agp = Agp; };
-    auto set_dfxdc = [](Problem& self, MatrixView4py dfxdc) { self.dfxdc = dfxdc; };
-    auto set_dbdc  = [](Problem& self, MatrixView4py dbdc) { self.dbdc = dbdc; };
-    auto set_dhdc  = [](Problem& self, MatrixView4py dhdc) { self.dhdc = dhdc; };
-    auto set_dvdc  = [](Problem& self, MatrixView4py dvdc) { self.dvdc = dvdc; };
+    auto set_bec   = [](Problem& self, MatrixView4py bec) { self.bec = bec; };
+    auto set_bgc   = [](Problem& self, MatrixView4py bgc) { self.bgc = bgc; };
 
     auto get_f     = [](Problem& self) { return self.f; };
     auto get_he    = [](Problem& self) { return self.he; };
@@ -48,10 +46,8 @@ void exportProblem(py::module& m)
     auto get_Aep   = [](Problem& self) { return self.Aep; };
     auto get_Agx   = [](Problem& self) { return self.Agx; };
     auto get_Agp   = [](Problem& self) { return self.Agp; };
-    auto get_dfxdc = [](Problem& self) { return self.dfxdc; };
-    auto get_dbdc  = [](Problem& self) { return self.dbdc; };
-    auto get_dhdc  = [](Problem& self) { return self.dhdc; };
-    auto get_dvdc  = [](Problem& self) { return self.dvdc; };
+    auto get_bec   = [](Problem& self) { return self.bec; };
+    auto get_bgc   = [](Problem& self) { return self.bgc; };
 
     py::class_<Problem>(m, "Problem")
         .def(py::init<const Dims&>())
@@ -70,9 +66,7 @@ void exportProblem(py::module& m)
         .def_readwrite("xupper", &Problem::xupper)
         .def_readwrite("plower", &Problem::plower)
         .def_readwrite("pupper", &Problem::pupper)
-        .def_property("dfxdc", get_dfxdc, set_dfxdc)
-        .def_property("dbdc", get_dbdc, set_dbdc)
-        .def_property("dhdc", get_dhdc, set_dhdc)
-        .def_property("dvdc", get_dvdc, set_dvdc)
+        .def_property("bec", get_bec, set_bec)
+        .def_property("bgc", get_bgc, set_bgc)
         ;
 }

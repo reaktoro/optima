@@ -75,6 +75,9 @@ struct ResidualFunction::Impl
     /// The upper bounds for variables *x*.
     Vector xupper;
 
+    /// The vector with the sensitive parameters *c*.
+    Vector c;
+
     /// True if the last update call succeeded.
     bool succeeded = false;
 
@@ -84,9 +87,9 @@ struct ResidualFunction::Impl
     auto initialize(const MasterProblem& problem) -> void
     {
         dims = problem.dims;
-        fres.resize(dims.nx, dims.np);
-        hres.resize(dims.nz, dims.nx, dims.np);
-        vres.resize(dims.np, dims.nx, dims.np);
+        fres.resize(dims.nx, dims.np, dims.nc);
+        hres.resize(dims.nz, dims.nx, dims.np, dims.nc);
+        vres.resize(dims.np, dims.nx, dims.np, dims.nc);
         echelonizerW.initialize(dims, problem.Ax, problem.Ap);
         f = problem.f;
         h = problem.h;
@@ -116,30 +119,31 @@ struct ResidualFunction::Impl
         updateResidualVector(u);
     }
 
-    template<bool evaljac>
-    auto updateFunctionEvalsAux(MasterVectorView u) -> bool
+    auto updateFunctionEvalsAux(MasterVectorView u, bool eval_ddx, bool eval_ddp, bool eval_ddc) -> bool
     {
         const auto x = u.x;
         const auto p = u.p;
         const auto RWQ = echelonizerW.RWQ();
         const auto ibasicvars = RWQ.jb;
-        ObjectiveOptions  fopts{{evaljac, evaljac && dims.np}, ibasicvars};
-        ConstraintOptions hopts{{evaljac, evaljac && dims.np}, ibasicvars};
-        ConstraintOptions vopts{{evaljac, evaljac && dims.np}, ibasicvars};
-        f(fres, x, p, fopts);
-        h(hres, x, p, hopts);
-        v(vres, x, p, vopts);
+        ObjectiveOptions  fopts{{eval_ddx, eval_ddp && dims.np, eval_ddc && dims.nc}, ibasicvars};
+        ConstraintOptions hopts{{eval_ddx, eval_ddp && dims.np, eval_ddc && dims.nc}, ibasicvars};
+        ConstraintOptions vopts{{eval_ddx, eval_ddp && dims.np, eval_ddc && dims.nc}, ibasicvars};
+        f(fres, x, p, c, fopts);
+        h(hres, x, p, c, hopts);
+        v(vres, x, p, c, vopts);
         return succeeded = fres.succeeded && hres.succeeded && vres.succeeded;
     }
 
     auto updateFunctionEvals(MasterVectorView u) -> bool
     {
-        return updateFunctionEvalsAux<true>(u);
+        bool eval_ddx = true, eval_ddp = true, eval_ddc = false;
+        return updateFunctionEvalsAux(u, eval_ddx, eval_ddp, eval_ddc);
     }
 
     auto updateFunctionEvalsSkippingJacobianEvals(MasterVectorView u) -> bool
     {
-        return updateFunctionEvalsAux<false>(u);
+        bool eval_ddx = false, eval_ddp = false, eval_ddc = false;
+        return updateFunctionEvalsAux(u, eval_ddx, eval_ddp, eval_ddc);
     }
 
     auto updateEchelonFormMatrixW(MasterVectorView u) -> void

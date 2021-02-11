@@ -30,16 +30,19 @@ void exportObjectiveResult(py::module& m)
     auto get_fx  = [](ObjectiveResult& s) -> VectorRef { return s.fx; };
     auto get_fxx = [](ObjectiveResult& s) -> MatrixRef { return s.fxx; };
     auto get_fxp = [](ObjectiveResult& s) -> MatrixRef { return s.fxp; };
+    auto get_fxc = [](ObjectiveResult& s) -> MatrixRef { return s.fxc; };
 
     auto set_fx  = [](ObjectiveResult& s, VectorView fx) { s.fx = fx; };
     auto set_fxx = [](ObjectiveResult& s, MatrixView4py fxx) { s.fxx = fxx; };
     auto set_fxp = [](ObjectiveResult& s, MatrixView4py fxp) { s.fxp = fxp; };
+    auto set_fxc = [](ObjectiveResult& s, MatrixView4py fxc) { s.fxc = fxc; };
 
     py::class_<ObjectiveResult>(m, "ObjectiveResult")
         .def_readwrite("f", &ObjectiveResult::f)
         .def_property("fx", get_fx, set_fx)
         .def_property("fxx", get_fxx, set_fxx)
         .def_property("fxp", get_fxp, set_fxp)
+        .def_property("fxc", get_fxc, set_fxc)
         .def_readwrite("diagfxx", &ObjectiveResult::diagfxx)
         .def_readwrite("fxx4basicvars", &ObjectiveResult::fxx4basicvars)
         .def_readwrite("succeeded", &ObjectiveResult::succeeded)
@@ -53,6 +56,7 @@ void exportObjectiveResultRef(py::module& m)
     auto get_fx            = [](ObjectiveResultRef& s) -> VectorRef { return s.fx; };
     auto get_fxx           = [](ObjectiveResultRef& s) -> MatrixRef { return s.fxx; };
     auto get_fxp           = [](ObjectiveResultRef& s) -> MatrixRef { return s.fxp; };
+    auto get_fxc           = [](ObjectiveResultRef& s) -> MatrixRef { return s.fxc; };
     auto get_diagfxx       = [](ObjectiveResultRef& s) -> bool& { return s.diagfxx; };
     auto get_fxx4basicvars = [](ObjectiveResultRef& s) -> bool& { return s.fxx4basicvars; };
     auto get_succeeded     = [](ObjectiveResultRef& s) -> bool& { return s.succeeded; };
@@ -61,6 +65,7 @@ void exportObjectiveResultRef(py::module& m)
     auto set_fx            = [](ObjectiveResultRef& s, VectorView fx) { s.fx = fx; };
     auto set_fxx           = [](ObjectiveResultRef& s, MatrixView4py fxx) { s.fxx = fxx; };
     auto set_fxp           = [](ObjectiveResultRef& s, MatrixView4py fxp) { s.fxp = fxp; };
+    auto set_fxc           = [](ObjectiveResultRef& s, MatrixView4py fxc) { s.fxc = fxc; };
     auto set_diagfxx       = [](ObjectiveResultRef& s, bool diagfxx) { s.diagfxx = diagfxx; };
     auto set_fxx4basicvars = [](ObjectiveResultRef& s, bool fxx4basicvars) { s.fxx4basicvars = fxx4basicvars; };
     auto set_succeeded     = [](ObjectiveResultRef& s, bool succeeded) { s.succeeded = succeeded; };
@@ -70,6 +75,7 @@ void exportObjectiveResultRef(py::module& m)
         .def_property("fx", get_fx, set_fx)
         .def_property("fxx", get_fxx, set_fxx)
         .def_property("fxp", get_fxp, set_fxp)
+        .def_property("fxc", get_fxc, set_fxc)
         .def_property("diagfxx", get_diagfxx, set_diagfxx)
         .def_property("fxx4basicvars", get_fxx4basicvars, set_fxx4basicvars)
         .def_property("succeeded", get_succeeded, set_succeeded)
@@ -86,6 +92,7 @@ void exportObjectiveFunction(py::module& m)
     py::class_<ObjectiveOptions::Eval>(m, "ObjectiveOptionsEval")
         .def_readwrite("fxx", &ObjectiveOptions::Eval::fxx, "True if evaluating the Jacobian matrix fxx is needed.")
         .def_readwrite("fxp", &ObjectiveOptions::Eval::fxp, "True if evaluating the Jacobian matrix fxp is needed.")
+        .def_readwrite("fxc", &ObjectiveOptions::Eval::fxc, "True if evaluating the Jacobian matrix fxc is needed.")
         ;
 
     py::class_<ObjectiveOptions>(m, "ObjectiveOptions")

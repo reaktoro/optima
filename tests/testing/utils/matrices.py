@@ -237,20 +237,20 @@ def createMasterProblem(M):
     cz = random.rand(dims.nz)
 
 
-    def objectivefn_f(res, x, p, opts):
+    def objectivefn_f(res, x, p, c, opts):
         res.f   = 0.5 * (x.T @ Hxx @ x) + x.T @ Hxp @ p + cx.T @ x
         res.fx  = Hxx @ x + Hxp @ p + cx
         res.fxx = Hxx
         res.fxp = Hxp
 
 
-    def constraintfn_h(res, x, p, opts):
+    def constraintfn_h(res, x, p, c, opts):
         res.val = Jx @ x + Jp @ p + cz
         res.ddx = Jx
         res.ddp = Jp
 
 
-    def constraintfn_v(res, x, p, opts):
+    def constraintfn_v(res, x, p, c, opts):
         res.val = Vpx @ x + Vpp @ p + cp
         res.ddx = Vpx
         res.ddp = Vpp
