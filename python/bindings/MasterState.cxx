@@ -26,25 +26,15 @@ using namespace Optima;
 
 void exportMasterState(py::module& m)
 {
-    auto get_xc = [](const MasterState& s) { return s.xc; };
-    auto get_pc = [](const MasterState& s) { return s.pc; };
-    auto get_wc = [](const MasterState& s) { return s.wc; };
-    auto get_sc = [](const MasterState& s) { return s.sc; };
-
-    auto set_xc = [](MasterState& s, MatrixView4py xc) { s.xc = xc; };
-    auto set_pc = [](MasterState& s, MatrixView4py pc) { s.pc = pc; };
-    auto set_wc = [](MasterState& s, MatrixView4py wc) { s.wc = wc; };
-    auto set_sc = [](MasterState& s, MatrixView4py sc) { s.sc = sc; };
-
     py::class_<MasterState>(m, "MasterState")
         .def(py::init<>())
         .def(py::init<const MasterDims&>())
         .def_readwrite("u", &MasterState::u)
         .def_readwrite("s", &MasterState::s)
-        .def_property("xc", get_xc, set_xc)
-        .def_property("pc", get_pc, set_pc)
-        .def_property("wc", get_wc, set_wc)
-        .def_property("sc", get_sc, set_sc)
+        .def_readwrite("js", &MasterState::js)
+        .def_readwrite("ju", &MasterState::ju)
+        .def_readwrite("jlu", &MasterState::jlu)
+        .def_readwrite("juu", &MasterState::juu)
         .def("resize", &MasterState::resize)
         ;
 }

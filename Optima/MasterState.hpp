@@ -19,6 +19,7 @@
 
 // Optima includes
 #include <Optima/MasterVector.hpp>
+#include <Optima/Stability.hpp>
 
 namespace Optima {
 
@@ -26,11 +27,11 @@ namespace Optima {
 struct MasterState
 {
     MasterVector u; ///< The master vector *u = (x, p, w)*.
-    Vector s;       ///< The stabilities *s* of the primal variables.
-    Matrix xc;      ///< The sensitivity derivatives of *x* with respect to *c*.
-    Matrix pc;      ///< The sensitivity derivatives of *p* with respect to *c*.
-    Matrix wc;      ///< The sensitivity derivatives of *w* with respect to *c*.
-    Matrix sc;      ///< The sensitivity derivatives of *s* with respect to *c*.
+    Vector s;       ///< The stability of the primal variables *x*.
+    Indices js;     ///< The indices of the stable variables in *x*.
+    Indices ju;     ///< The indices of the unstable variables in *x*.
+    Indices jlu;    ///< The indices of the lower unstable variables in *x*.
+    Indices juu;    ///< The indices of the upper unstable variables in *x*.
 
     /// Construct a default MasterState object.
     MasterState();
