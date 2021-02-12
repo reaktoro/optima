@@ -99,6 +99,13 @@ struct EchelonizerW::Impl
         Sbp = Rb * Wp;
 
         cleanResidualRoundoffErrors(Sbp);
+
+        const auto Rl = echelonizer.R().bottomRows(nw - nb);
+        errorif( norminf(Rl * Wp) > epsilon(),
+            "Your matrix Ax is rank-deficient and matrix Ap "
+            "is non-zero such that R*Ap = [Sbp, Slp] with Slp non-zero, "
+            "but it should be zero, otherwise there are p variables that "
+            "should become basic variables, but this is not supported!");
     }
 
     auto asMatrixViewW() const -> MatrixViewW
