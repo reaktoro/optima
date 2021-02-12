@@ -125,6 +125,16 @@ struct ResidualFunction::Impl
         updateResidualVector(u);
     }
 
+    auto updateOnlyJacobian(MasterVectorView u) -> void
+    {
+        sanitycheck(u);
+        succeeded = updateFunctionEvalsWithAllJacobianEvals(u);
+        updateEchelonFormMatrixW(u);
+        updateIndicesStableVariables(u);
+        updateCanonicalFormJacobianMatrix(u);
+        // no need to update residual vector here using `updateResidualVector(u);`
+    }
+
     auto updateFunctionEvalsAux(MasterVectorView u, bool eval_ddx, bool eval_ddp, bool eval_ddc) -> bool
     {
         const auto x = u.x;
@@ -142,14 +152,20 @@ struct ResidualFunction::Impl
 
     auto updateFunctionEvals(MasterVectorView u) -> bool
     {
-        bool eval_ddx = true, eval_ddp = true, eval_ddc = false;
-        return updateFunctionEvalsAux(u, eval_ddx, eval_ddp, eval_ddc);
+        bool ddx = true, ddp = true, ddc = false;
+        return updateFunctionEvalsAux(u, ddx, ddp, ddc);
     }
 
     auto updateFunctionEvalsSkippingJacobianEvals(MasterVectorView u) -> bool
     {
-        bool eval_ddx = false, eval_ddp = false, eval_ddc = false;
-        return updateFunctionEvalsAux(u, eval_ddx, eval_ddp, eval_ddc);
+        bool ddx = false, ddp = false, ddc = false;
+        return updateFunctionEvalsAux(u, ddx, ddp, ddc);
+    }
+
+    auto updateFunctionEvalsWithAllJacobianEvals(MasterVectorView u) -> bool
+    {
+        bool ddx = true, ddp = true, ddc = true;
+        return updateFunctionEvalsAux(u, ddx, ddp, ddc);
     }
 
     auto updateEchelonFormMatrixW(MasterVectorView u) -> void
@@ -275,6 +291,11 @@ auto ResidualFunction::update(MasterVectorView u) -> void
 auto ResidualFunction::updateSkipJacobian(MasterVectorView u) -> void
 {
     pimpl->updateSkipJacobian(u);
+}
+
+auto ResidualFunction::updateOnlyJacobian(MasterVectorView u) -> void
+{
+    pimpl->updateOnlyJacobian(u);
 }
 
 auto ResidualFunction::result() const -> ResidualFunctionResult
