@@ -23,6 +23,7 @@ namespace py = pybind11;
 
 // Optima includes
 #include <Optima/ConstraintFunction.hpp>
+#include <Optima/Utils.hpp>
 using namespace Optima;
 
 void exportConstraintResult(py::module& m)
@@ -32,10 +33,10 @@ void exportConstraintResult(py::module& m)
     auto get_ddp = [](ConstraintResult& s) -> MatrixRef { return s.ddp; };
     auto get_ddc = [](ConstraintResult& s) -> MatrixRef { return s.ddc; };
 
-    auto set_val = [](ConstraintResult& s, VectorView val) { s.val = val; };
-    auto set_ddx = [](ConstraintResult& s, MatrixView4py ddx) { s.ddx = ddx; };
-    auto set_ddp = [](ConstraintResult& s, MatrixView4py ddp) { s.ddp = ddp; };
-    auto set_ddc = [](ConstraintResult& s, MatrixView4py ddc) { s.ddc = ddc; };
+    auto set_val = [](ConstraintResult& s, VectorView val)    { assignOrError(s.val, val); };
+    auto set_ddx = [](ConstraintResult& s, MatrixView4py ddx) { assignOrError(s.ddx, ddx); };
+    auto set_ddp = [](ConstraintResult& s, MatrixView4py ddp) { assignOrError(s.ddp, ddp); };
+    auto set_ddc = [](ConstraintResult& s, MatrixView4py ddc) { assignOrError(s.ddc, ddc); };
 
     py::class_<ConstraintResult>(m, "ConstraintResult")
         .def_property("val", get_val, set_val)
@@ -57,10 +58,10 @@ void exportConstraintResultRef(py::module& m)
     auto get_ddx4basicvars = [](ConstraintResultRef& s) -> bool& { return s.ddx4basicvars; };
     auto get_succeeded     = [](ConstraintResultRef& s) -> bool& { return s.succeeded; };
 
-    auto set_val           = [](ConstraintResultRef& s, VectorView val) { s.val = val; };
-    auto set_ddx           = [](ConstraintResultRef& s, MatrixView4py ddx) { s.ddx = ddx; };
-    auto set_ddp           = [](ConstraintResultRef& s, MatrixView4py ddp) { s.ddp = ddp; };
-    auto set_ddc           = [](ConstraintResultRef& s, MatrixView4py ddc) { s.ddc = ddc; };
+    auto set_val           = [](ConstraintResultRef& s, VectorView val)    { assignOrError(s.val, val); };
+    auto set_ddx           = [](ConstraintResultRef& s, MatrixView4py ddx) { assignOrError(s.ddx, ddx); };
+    auto set_ddp           = [](ConstraintResultRef& s, MatrixView4py ddp) { assignOrError(s.ddp, ddp); };
+    auto set_ddc           = [](ConstraintResultRef& s, MatrixView4py ddc) { assignOrError(s.ddc, ddc); };
     auto set_ddx4basicvars = [](ConstraintResultRef& s, bool ddx4basicvars) { s.ddx4basicvars = ddx4basicvars; };
     auto set_succeeded     = [](ConstraintResultRef& s, bool succeeded) { s.succeeded = succeeded; };
 
