@@ -98,6 +98,9 @@ public:
     /// Update the residual function with given *u = (x, p, y, z)* skipping Jacobian evaluations.
     auto updateSkipJacobian(MasterVectorView u) -> void;
 
+    /// Update only the Jacobian matrices with respect to variables *x*, *p*, and *c*.
+    auto updateOnlyJacobian(MasterVectorView u) -> void;
+
     /// Return the result of the evaluation of the residual function.
     auto result() const -> ResidualFunctionResult;
 
