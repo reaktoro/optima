@@ -28,7 +28,7 @@ struct SensitivitySolver::Impl
     MasterDims dims;           ///< The dimensions of the master variables.
     LinearSolver linearsolver; ///< The linear solver for the master matrix equations.
     MasterVector r;            ///< The right-hand side vector in the linear system problems for sensitivity computation.
-    Matrix bc;                 ///< The Jacobian matrix *∂b/∂c* with respect to sensitive parameters *c*.
+    Index nc = 0;              ///< The number of sensitivity parameters *c*.
 
     Impl()
     {
@@ -40,68 +40,66 @@ struct SensitivitySolver::Impl
     auto initialize(const MasterProblem& problem) -> void
     {
         dims = problem.dims;
-        bc   = problem.bc;
         r.resize(dims);
+        nc = problem.c.size();
     }
 
     auto solve(const ResidualFunction& F, const MasterState& state, MasterSensitivity& sensitivity) -> void
     {
-        const auto res = F.result();
+        const auto [nx, np, ny, nz, nw, nt] = dims;
 
+        auto& [xc, pc, wc, sc, xb, pb, wb, sb] = sensitivity;
+
+        xc.resize(nx, nc);
+        pc.resize(np, nc);
+        wc.resize(nw, nc);
+        sc.resize(nx, nc);
+        xb.resize(nx, ny);
+        pb.resize(np, ny);
+        wb.resize(nw, ny);
+        sb.resize(nx, ny);
+
+        const auto& res = F.result();
         const auto& fxc = res.f.fxc;
-        const auto& hc = res.h.ddc;
-        const auto& vc = res.v.ddc;
-
-        auto& xc  = sensitivity.xc;
-        auto& pc  = sensitivity.pc;
-        auto& wc  = sensitivity.wc;
-        auto& sc  = sensitivity.sc;
-
-        const auto nx = dims.nx;
-        const auto np = dims.np;
-        const auto ny = dims.ny;
-        const auto nz = dims.nz;
-        const auto nw = dims.nw;
-        const auto nc = xc.cols();
+        const auto& hc  = res.h.ddc;
+        const auto& vc  = res.v.ddc;
 
         assert( fxc.rows() == nx );
         assert(  hc.rows() == nz );
         assert(  vc.rows() == np );
-        assert(  bc.rows() == ny );
-        assert(  xc.rows() == nx );
-        assert(  pc.rows() == np );
-        assert(  wc.rows() == nw );
-        assert(  sc.rows() == nx );
-        assert( fxc.cols() == nc );
-        assert(  hc.cols() == nc );
-        assert(  bc.cols() == nc );
-        assert(  vc.cols() == nc );
-        assert(  xc.cols() == nc );
-        assert(  pc.cols() == nc );
-        assert(  wc.cols() == nc );
-        assert(  sc.cols() == nc );
 
-        const auto& js = state.js;
-        const auto& ju = state.ju;
+        const auto& js = res.stabilitystatus.js;
+        const auto& ju = res.stabilitystatus.ju;
         const auto& Jc = res.Jc;
 
         linearsolver.decompose(Jc);
 
-        for(Index i = 0; i < nw; ++i)
+        for(Index i = 0; i < nc; ++i)
         {
             r.x(js) = -fxc.col(i)(js);
             r.x(ju).fill(0.0);
             r.p = -vc.col(i);
-            r.w.topRows(ny) = bc.col(i);
+            r.w.topRows(ny).fill(0.0);
             r.w.bottomRows(nz) = -hc.col(i);
-
             linearsolver.solve(Jc, r, { xc.col(i), pc.col(i), wc.col(i) });
+        }
+
+        for(Index i = 0; i < ny; ++i)
+        {
+            r.x.fill(0.0);
+            r.p.fill(0.0);
+            r.w.topRows(ny) = unit(ny, i);
+            r.w.bottomRows(nz).fill(0.0);
+            linearsolver.solve(Jc, r, { xb.col(i), pb.col(i), wb.col(i) });
         }
 
         const auto Wx = res.Jm.W.Wx;
 
         sc(js, all).fill(0.0);
         sc(ju, all) = fxc(ju, all) + tr(Wx(all, ju)) * wc;
+
+        sb(js, all).fill(0.0);
+        sb(ju, all) = tr(Wx(all, ju)) * wb;
     }
 };
 
