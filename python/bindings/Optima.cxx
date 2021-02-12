@@ -58,6 +58,7 @@ void exportResidualFunction(py::module& m);
 void exportResidualVector(py::module& m);
 void exportResult(py::module& m);
 void exportSensitivity(py::module& m);
+void exportSensitivitySolver(py::module& m);
 void exportSolver(py::module& m);
 void exportStablePartition(py::module& m);
 void exportStability(py::module& m);
@@ -106,6 +107,7 @@ PYBIND11_MODULE(optima4py, m)
     exportResidualVector(m);
     exportResult(m);
     exportSensitivity(m);
+    exportSensitivitySolver(m);
     exportSolver(m);
     exportStablePartition(m);
     exportStability(m);
