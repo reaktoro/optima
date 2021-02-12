@@ -75,7 +75,7 @@ def testResidualFunction(nx, np, ny, nz, nl, nu, b1, b2, b3, b4, b5, b6, b7):
     cp = random.rand(dims.np)
     cz = random.rand(dims.nz)
 
-    cx[ju] = +1.0e4
+    cx[ju] = +1.0e4  # large positive number to ensure the variables with ju indices are indeed unstable!
 
     def objectivefn_f(res, x, p, c, opts):
         res.f   = 0.5 * (x.T @ Hxx @ x) + x.T @ Hxp @ p + cx.T @ x
@@ -128,44 +128,50 @@ def testResidualFunction(nx, np, ny, nz, nl, nu, b1, b2, b3, b4, b5, b6, b7):
 
     result = F.result()
 
-    # x, p, w = u.x, u.p, u.w
+    x, p, w = u.x, u.p, u.w
 
-    # assert result.f.f             == approx(0.5 * (x.T @ Hxx @ x) + x.T @ Hxp @ p + cx.T @ x)
-    # assert result.f.fx            == approx(Hxx @ x + Hxp @ p + cx)
-    # assert result.f.fxx           == approx(Hxx)
-    # assert result.f.fxp           == approx(Hxp)
-    # assert result.f.diagfxx       == b1
-    # assert result.f.fxx4basicvars == b2
-    # assert result.f.succeeded     == b3
+    assert result.f.f             == approx(0.5 * (x.T @ Hxx @ x) + x.T @ Hxp @ p + cx.T @ x)
+    assert result.f.fx            == approx(Hxx @ x + Hxp @ p + cx)
+    assert result.f.fxx           == approx(Hxx)
+    assert result.f.fxp           == approx(Hxp)
+    assert result.f.diagfxx       == b1
+    assert result.f.fxx4basicvars == b2
+    assert result.f.succeeded     == b3
 
-    # assert result.h.val           == approx(Jx @ x + Jp @ p + cz)
-    # assert result.h.ddx           == approx(Jx)
-    # assert result.h.ddp           == approx(Jp)
-    # assert result.h.ddx4basicvars == b4
-    # assert result.h.succeeded     == b5
+    if nz > 0:
+        assert result.h.val           == approx(Jx @ x + Jp @ p + cz)
+        assert result.h.ddx           == approx(Jx)
+        assert result.h.ddp           == approx(Jp)
+        assert result.h.ddx4basicvars == b4
+        assert result.h.succeeded     == b5
 
-    # assert result.v.val           == approx(Vpx @ x + Vpp @ p + cp)
-    # assert result.v.ddx           == approx(Vpx)
-    # assert result.v.ddp           == approx(Vpp)
-    # assert result.v.ddx4basicvars == b6
-    # assert result.v.succeeded     == b7
+    if np > 0:
+        assert result.v.val           == approx(Vpx @ x + Vpp @ p + cp)
+        assert result.v.ddx           == approx(Vpx)
+        assert result.v.ddp           == approx(Vpp)
+        assert result.v.ddx4basicvars == b6
+        assert result.v.succeeded     == b7
 
-    # assert result.succeeded == all([b3, b5, b7])
+    assert result.succeeded == all([
+        result.f.succeeded,
+        result.h.succeeded,
+        result.v.succeeded
+    ])
 
-    # if not result.succeeded:
-    #     return
+    if not result.succeeded:
+        return
 
-    # Jm = result.Jm
-    # Jc = result.Jc
+    Jm = result.Jm
+    Jc = result.Jc
 
-    # assert set(M.js) == set(Jm.js)
-    # assert set(M.ju) == set(Jm.ju)
+    assert set(M.js) == set(Jm.js)
+    assert set(M.ju) == set(Jm.ju)
 
-    # jb  = Jm.RWQ.jb
-    # jn  = Jm.RWQ.jn
-    # Sbn = Jm.RWQ.Sbn
+    jb  = Jm.RWQ.jb
+    jn  = Jm.RWQ.jn
+    Sbn = Jm.RWQ.Sbn
 
-    # g = result.f.fx
+    g = result.f.fx
 
-    # assert result.stabilitystatus.s == approx(g + Wx.T @ w)
+    assert result.stabilitystatus.s == approx(g + Wx.T @ w)
 

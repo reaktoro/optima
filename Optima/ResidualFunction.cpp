@@ -139,14 +139,17 @@ struct ResidualFunction::Impl
     {
         const auto x = u.x;
         const auto p = u.p;
+        const auto np = dims.np;
+        const auto nz = dims.nz;
+        const auto nc = c.size();
         const auto RWQ = echelonizerW.RWQ();
         const auto ibasicvars = RWQ.jb;
-        ObjectiveOptions  fopts{{eval_ddx, eval_ddp && dims.np, eval_ddc}, ibasicvars};
-        ConstraintOptions hopts{{eval_ddx, eval_ddp && dims.np, eval_ddc}, ibasicvars};
-        ConstraintOptions vopts{{eval_ddx, eval_ddp && dims.np, eval_ddc}, ibasicvars};
+        ObjectiveOptions  fopts{{eval_ddx, eval_ddp && np, eval_ddc && nc}, ibasicvars};
+        ConstraintOptions hopts{{eval_ddx, eval_ddp && np, eval_ddc && nc}, ibasicvars};
+        ConstraintOptions vopts{{eval_ddx, eval_ddp && np, eval_ddc && nc}, ibasicvars};
         f(fres, x, p, c, fopts);
-        h(hres, x, p, c, hopts);
-        v(vres, x, p, c, vopts);
+        if(nz) h(hres, x, p, c, hopts);
+        if(np) v(vres, x, p, c, vopts);
         return succeeded = fres.succeeded && hres.succeeded && vres.succeeded;
     }
 

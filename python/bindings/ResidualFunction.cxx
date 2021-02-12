@@ -51,6 +51,7 @@ void exportResidualFunction(py::module& m)
         .def("initialize"                  , &ResidualFunction::initialize)
         .def("update"                      , &ResidualFunction::update)
         .def("updateSkipJacobian"          , &ResidualFunction::updateSkipJacobian)
+        .def("updateOnlyJacobian"          , &ResidualFunction::updateOnlyJacobian)
         .def("result"                      , &ResidualFunction::result, py::return_value_policy::reference_internal)
         ;
 }
