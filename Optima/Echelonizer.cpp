@@ -151,10 +151,8 @@ struct Echelonizer::Impl
 
         // Calculate the regularizer matrix R
         R = P.asPermutation();
-        // R.bottomRows(m - r).fill(0.0); // TODO: Decide on these temporary commented lines to ensure rows/cols in R corresponding to linearly dependent rows in A are zero.
         R.topRows(nb) = Lbb.solve(R.topRows(nb)); // [L] = 6x5, [R] = 6x6, [Lbb] = 5x5
         R.topRows(nb) = Ubb.solve(R.topRows(nb));
-        R.bottomRows(m - nb).fill(0.0);
 
         // Calculate matrix S
         S = Ubn;
