@@ -125,6 +125,7 @@ struct MasterSolver::Impl
     auto solve(const MasterProblem& problem, MasterState& state, MasterSensitivity& sensitity) -> Result
     {
         solve(problem, state);
+        F.updateOnlyJacobian(state.u); // update the Jacobian matrices wrt x, p, c
         sensitivitysolver.solve(F, state, sensitity);
         return result;
     }
