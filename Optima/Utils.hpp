@@ -24,8 +24,22 @@
 // Optima includes
 #include <Optima/Index.hpp>
 #include <Optima/Matrix.hpp>
+#include <Optima/Exception.hpp>
 
 namespace Optima {
+
+/// Assign matrix @p other to matrix @p mat only if both have  object to another ensuring that
+template<typename Derived, typename DerivedOther>
+auto assignOrError(Eigen::MatrixBase<Derived>& mat, const Eigen::MatrixBase<DerivedOther>& other) -> Eigen::MatrixBase<Derived>&
+{
+    if(mat.size() == 0 && other.size() == 0)
+        return mat; // do not assign if both are empty but possibly with different number of rows/cols, which causes error.
+    errorif(mat.rows() != other.rows(),
+        "Cannot assign a matrix with ", other.rows(), " rows to another with ", mat.rows(), ".");
+    errorif(mat.cols() != other.cols(),
+        "Cannot assign a matrix with ", other.cols(), " columns to another with ", mat.cols(), ".");
+    return mat = other;
+}
 
 /// Compute the largest step length @f$\alpha@f$ such that
 /// @f$\mathbf{p} + \alpha\Delta\mathbf{p}@f$ is on the
