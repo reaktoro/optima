@@ -128,6 +128,7 @@ def createMatrixViewW(params):
     Jp = random.rand(nz, np)
 
     Ax[ny - nl:ny, :] = 0.0  # set last nl rows to be zero so that we have nl linearly dependent rows in Ax
+    Ap[ny - nl:ny, :] = 0.0  # do the same to Ap, otherwise, expected error: Your matrix Ax is rank-deficient and matrix Ap is non-zero such that...
 
     Wx = npy.block([[Ax], [Jx]])
     Wp = npy.block([[Ap], [Jp]])

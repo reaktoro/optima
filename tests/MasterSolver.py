@@ -59,7 +59,9 @@ def testMasterSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
     Jx  = random.rand(nz, nx)
     Jp  = random.rand(nz, np)
 
-    Ax[ny-nl:, :] = 0.0  # last nl rows in Ax are forced to be linearly dependent
+    Ax[ny - nl:, :] = 0.0  # set last nl rows to be zero so that we have nl linearly dependent rows in Ax
+    Ap[ny - nl:, :] = 0.0  # do the same to Ap, otherwise, expected error: Your matrix Ax is rank-deficient and matrix Ap is non-zero such that...
+
     Hxx = Hxx.T @ Hxx    # this ensures Hxx is positive semi-definite or definite
 
     if diagHxx:
