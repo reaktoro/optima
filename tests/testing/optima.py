@@ -36,3 +36,6 @@ import pytest
 from pytest import approx
 
 import math
+
+# Ensure proper options for printing numpy arrays
+npy.set_printoptions(linewidth=1000)
