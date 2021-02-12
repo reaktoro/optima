@@ -42,7 +42,6 @@ struct MasterProblem
     Vector pupper;         ///< The upper bounds for variables *p*.
     TransformFunction phi; ///< The custom variable transformation function.
     Vector c;              ///< The sensitivity parameters *c*.
-    Matrix bc;             ///< The Jacobian matrix *∂b/∂c* with respect to sensitive parameters *c*.
 };
 
 } // namespace Optima
