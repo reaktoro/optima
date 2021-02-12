@@ -239,10 +239,6 @@ struct Solver::Impl
         // Initialize the sensitivity parameters *c* in the master problem
         mproblem.c = problem.c;
 
-        // Initialize the Jacobian matrix ∂b/∂c = [ [∂be/∂c], [∂bg/∂c] ] in the master problem
-        mproblem.bc.topRows(dims.be) = problem.bec;
-        mproblem.bc.bottomRows(dims.bg) = problem.bgc;
-
         // Perform the master optimization calculation
         auto result = msolver.solve(mproblem, mstate);
 

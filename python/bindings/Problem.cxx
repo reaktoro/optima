@@ -35,8 +35,6 @@ void exportProblem(py::module& m)
     auto set_Aep   = [](Problem& self, MatrixView4py Aep) { self.Aep = Aep; };
     auto set_Agx   = [](Problem& self, MatrixView4py Agx) { self.Agx = Agx; };
     auto set_Agp   = [](Problem& self, MatrixView4py Agp) { self.Agp = Agp; };
-    auto set_bec   = [](Problem& self, MatrixView4py bec) { self.bec = bec; };
-    auto set_bgc   = [](Problem& self, MatrixView4py bgc) { self.bgc = bgc; };
 
     auto get_f     = [](Problem& self) { return self.f; };
     auto get_he    = [](Problem& self) { return self.he; };
@@ -46,8 +44,6 @@ void exportProblem(py::module& m)
     auto get_Aep   = [](Problem& self) { return self.Aep; };
     auto get_Agx   = [](Problem& self) { return self.Agx; };
     auto get_Agp   = [](Problem& self) { return self.Agp; };
-    auto get_bec   = [](Problem& self) { return self.bec; };
-    auto get_bgc   = [](Problem& self) { return self.bgc; };
 
     py::class_<Problem>(m, "Problem")
         .def(py::init<const Dims&>())
@@ -67,7 +63,5 @@ void exportProblem(py::module& m)
         .def_readwrite("plower" , &Problem::plower)
         .def_readwrite("pupper" , &Problem::pupper)
         .def_readwrite("c"      , &Problem::c)
-        .def_property("bec"     , get_bec, set_bec)
-        .def_property("bgc"     , get_bgc, set_bgc)
         ;
 }
