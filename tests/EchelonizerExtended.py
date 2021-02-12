@@ -31,6 +31,10 @@ def check_canonical_form(echelonizer, A, J):
     # Check R*[A; J]*Q == C
     Cstar = R @ M[:,Q]
 
+    nb = echelonizer.numBasicVariables()
+    nl = m - nb
+    Cstar[nb:, :] = 0.0
+
     assert_array_almost_equal(Cstar, C)
 
 
