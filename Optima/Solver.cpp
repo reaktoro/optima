@@ -25,6 +25,7 @@
 #include <Optima/Options.hpp>
 #include <Optima/Problem.hpp>
 #include <Optima/Result.hpp>
+#include <Optima/Sensitivity.hpp>
 #include <Optima/State.hpp>
 #include <Optima/Timing.hpp>
 #include <Optima/Utils.hpp>
@@ -33,19 +34,21 @@ namespace Optima {
 
 struct Solver::Impl
 {
-    MasterSolver msolver;   ///< The master optimization solver.
-    MasterProblem mproblem; ///< The master optimization problem.
-    MasterState mstate;     ///< The master optimization state.
-    Index nx    = 0;        ///< The number of variables x in xbar = (x, xbg, xhg).
-    Index nxbg  = 0;        ///< The number of variables xbg in xbar = (x, xbg, xhg).
-    Index nxhg  = 0;        ///< The number of variables xhg in xbar = (x, xbg, xhg).
-    Index nxbar = 0;        ///< The number of variables in xbar = (x, xbg, xhg).
-    Index np    = 0;        ///< The number of parameter variables p.
-    Index ny    = 0;        ///< The number of Lagrange multipliers y (i.e., the dimension of vector b = (be, bg)).
-    Index nz    = 0;        ///< The number of Lagrange multipliers z (i.e., the dimension of vector h = (he, hg)).
-    Index nwbar = 0;        ///< The number of Lagrange multipliers in wbar = (ye, yg, ze, zg).
-    Vector xbarlower;       ///< The lower bounds of vector xbar = (x, xbg, xhg) in the master optimization problem.
-    Vector xbarupper;       ///< The upper bounds of vector xbar = (x, xbg, xhg) in the master optimization problem.
+    Dims dims;                      ///< The dimensions of the variables and constraints in the optimization problem.
+    MasterSolver msolver;           ///< The master optimization solver.
+    MasterProblem mproblem;         ///< The master optimization problem.
+    MasterState mstate;             ///< The master optimization state.
+    MasterSensitivity msensitivity; ///< The sensitivity derivatives of the master optimization state.
+    Index nx    = 0;                ///< The number of variables x in xbar = (x, xbg, xhg).
+    Index nxbg  = 0;                ///< The number of variables xbg in xbar = (x, xbg, xhg).
+    Index nxhg  = 0;                ///< The number of variables xhg in xbar = (x, xbg, xhg).
+    Index nxbar = 0;                ///< The number of variables in xbar = (x, xbg, xhg).
+    Index np    = 0;                ///< The number of parameter variables p.
+    Index ny    = 0;                ///< The number of Lagrange multipliers y (i.e., the dimension of vector b = (be, bg)).
+    Index nz    = 0;                ///< The number of Lagrange multipliers z (i.e., the dimension of vector h = (he, hg)).
+    Index nwbar = 0;                ///< The number of Lagrange multipliers in wbar = (ye, yg, ze, zg).
+    Vector xbarlower;               ///< The lower bounds of vector xbar = (x, xbg, xhg) in the master optimization problem.
+    Vector xbarupper;               ///< The upper bounds of vector xbar = (x, xbg, xhg) in the master optimization problem.
 
     /// Construct a Solver default instance.
     Impl()
@@ -58,13 +61,11 @@ struct Solver::Impl
         msolver.setOptions(options);
     }
 
-    /// Solve the optimization problem.
-    auto solve(const Problem& problem, State& state) -> Result
+    /// Update the master problem object `mproblem` with given Problem object.
+    auto updateMasterProblem(const Problem& problem) -> void
     {
-        // Auxiliary references
-        const auto& dims = problem.dims;
-
         // Initialize dimension variables
+        dims  = problem.dims;
         nx    = dims.x;
         nxbg  = dims.bg;
         nxhg  = dims.hg;
@@ -74,22 +75,22 @@ struct Solver::Impl
         nz    = dims.he + dims.hg;
         nwbar = ny + nz;
 
-        error(!problem.f.initialized(),
+        errorif(!problem.f.initialized(),
             "Cannot solve the optimization problem. "
             "You have not initialized the objective function. "
             "Ensure Problem::f is properly initialized.");
 
-        error(dims.he > 0 && !problem.he.initialized(),
+        errorif(dims.he > 0 && !problem.he.initialized(),
             "Cannot solve the optimization problem. "
             "You have not initialized the constraint function he(x, p). "
             "Ensure Problem::he is properly initialized.");
 
-        error(dims.hg > 0 && !problem.hg.initialized(),
+        errorif(dims.hg > 0 && !problem.hg.initialized(),
             "Cannot solve the optimization problem. "
             "You have not initialized the constraint function hg(x, p). "
             "Ensure Problem::hg is properly initialized.");
 
-        error(dims.p > 0 && !problem.v.initialized(),
+        errorif(dims.p > 0 && !problem.v.initialized(),
             "Cannot solve the optimization problem. "
             "You have not initialized the complementary constraint function v(x, p). "
             "Ensure Problem::v is properly initialized.");
@@ -190,17 +191,6 @@ struct Solver::Impl
             problem.v(vres, x, p, c, opts);
         };
 
-        // Initialize xbar = (x, xbg, xhg)
-        mstate.u.x.resize(nxbar);
-        mstate.u.x << state.x, state.xbg, state.xhg;
-
-        // Initialize wbar = (ye, yg, ze, zg)
-        mstate.u.w.resize(nwbar);
-        mstate.u.w << state.ye, state.yg, state.ze, state.zg;
-
-        // Initialize pbar = p
-        mstate.u.p = state.p;
-
         // Initialize the lower bounds of xbar = (x, xbg, xhg)
         xbarlower.resize(nxbar);
         xbarlower.head(nx) = problem.xlower;
@@ -238,24 +228,69 @@ struct Solver::Impl
 
         // Initialize the sensitivity parameters *c* in the master problem
         mproblem.c = problem.c;
+    }
 
-        // Perform the master optimization calculation
-        auto result = msolver.solve(mproblem, mstate);
+    /// Update the master state object `mstate` with given State object.
+    auto updateMasterState(const State& state) -> void
+    {
+        // Initialize xbar = (x, xbg, xhg)
+        mstate.u.x.resize(nxbar);
+        mstate.u.x << state.x, state.xbg, state.xhg;
 
-        // Transfer computed xbar = (x, xbg, xhg) to state
+        // Initialize wbar = (ye, yg, ze, zg)
+        mstate.u.w.resize(nwbar);
+        mstate.u.w << state.ye, state.yg, state.ze, state.zg;
+
+        // Initialize pbar = p
+        mstate.u.p = state.p;
+    }
+
+    /// Update the given State object with computed MasterState object `mstate`.
+    auto updateState(State& state) -> void
+    {
         state.x   = mstate.u.x.head(nx);
         state.xbg = mstate.u.x.segment(nx, nxbg);
         state.xhg = mstate.u.x.tail(nxhg);
+        state.ye  = mstate.u.w.head(ny).head(dims.be);
+        state.yg  = mstate.u.w.head(ny).tail(dims.bg);
+        state.ze  = mstate.u.w.tail(nz).head(dims.he);
+        state.zg  = mstate.u.w.tail(nz).tail(dims.hg);
+        state.p   = mstate.u.p;
+    }
 
-        // Transfer computed wbar = (ye, yg, ze, zg) to state
-        state.ye = mstate.u.w.head(ny).head(dims.be);
-        state.yg = mstate.u.w.head(ny).tail(dims.bg);
-        state.ze = mstate.u.w.tail(nz).head(dims.he);
-        state.zg = mstate.u.w.tail(nz).tail(dims.hg);
+    /// Update the given Sensitivity object with computed MasterSensitivity object `msensitivity`.
+    auto updateSensitivity(Sensitivity& sensitivity) -> void
+    {
+        sensitivity.resize(dims);
+        sensitivity.xc   = msensitivity.xc.topRows(nx);
+        sensitivity.pc   = msensitivity.pc;
+        sensitivity.xbgc = msensitivity.xc.middleRows(nx, nxbg);
+        sensitivity.xhgc = msensitivity.xc.bottomRows(nxhg);
+        sensitivity.yec  = msensitivity.wc.topRows(ny).topRows(dims.be);
+        sensitivity.ygc  = msensitivity.wc.topRows(ny).bottomRows(dims.bg);
+        sensitivity.zec  = msensitivity.wc.bottomRows(nz).topRows(dims.he);
+        sensitivity.zgc  = msensitivity.wc.bottomRows(nz).bottomRows(dims.hg);
+        sensitivity.sc   = msensitivity.sc.topRows(nx);
+    }
 
-        // Transfer computed pbar = p to state
-        state.p = mstate.u.p;
+    /// Solve the optimization problem.
+    auto solve(const Problem& problem, State& state) -> Result
+    {
+        updateMasterProblem(problem);
+        updateMasterState(state);
+        const auto result = msolver.solve(mproblem, mstate);
+        updateState(state);
+        return result;
+    }
 
+    /// Solve the optimization problem and compute the sensitivity derivatives at the end.
+    auto solve(const Problem& problem, State& state, Sensitivity& sensitivity) -> Result
+    {
+        updateMasterProblem(problem);
+        updateMasterState(state);
+        const auto result = msolver.solve(mproblem, mstate, msensitivity);
+        updateState(state);
+        updateSensitivity(sensitivity);
         return result;
     }
 };
@@ -285,6 +320,11 @@ auto Solver::setOptions(const Options& options) -> void
 auto Solver::solve(const Problem& problem, State& state) -> Result
 {
     return pimpl->solve(problem, state);
+}
+
+auto Solver::solve(const Problem& problem, State& state, Sensitivity& sensitivity) -> Result
+{
+    return pimpl->solve(problem, state, sensitivity);
 }
 
 } // namespace Optima

@@ -43,10 +43,13 @@ public:
     Sensitivity();
 
     /// Construct a Sensitivity object with given dimensions.
-    Sensitivity(const Dims& dims, Index nc);
+    Sensitivity(const Dims& dims);
 
     /// Assign a Sensitivity instance to this.
     auto operator=(const Sensitivity& other) -> Sensitivity&;
+
+    /// Resise this Sensitivity object with given dimensions.
+    auto resize(const Dims& dims) -> void;
 };
 
 } // namespace Optima

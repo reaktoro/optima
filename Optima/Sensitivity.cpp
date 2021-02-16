@@ -22,17 +22,17 @@ namespace Optima {
 Sensitivity::Sensitivity()
 {}
 
-Sensitivity::Sensitivity(const Dims& dims, Index nc)
+Sensitivity::Sensitivity(const Dims& dims)
 : dims(dims),
-  xc(zeros(dims.x, nc)),
-  pc(zeros(dims.p, nc)),
-  yec(zeros(dims.be, nc)),
-  ygc(zeros(dims.bg, nc)),
-  zec(zeros(dims.he, nc)),
-  zgc(zeros(dims.hg, nc)),
-  sc(zeros(dims.x, nc)),
-  xbgc(zeros(dims.bg, nc)),
-  xhgc(zeros(dims.hg, nc))
+  xc(zeros(dims.x, dims.c)),
+  pc(zeros(dims.p, dims.c)),
+  yec(zeros(dims.be, dims.c)),
+  ygc(zeros(dims.bg, dims.c)),
+  zec(zeros(dims.he, dims.c)),
+  zgc(zeros(dims.hg, dims.c)),
+  sc(zeros(dims.x, dims.c)),
+  xbgc(zeros(dims.bg, dims.c)),
+  xhgc(zeros(dims.hg, dims.c))
 {}
 
 auto Sensitivity::operator=(const Sensitivity& other) -> Sensitivity&
@@ -48,6 +48,20 @@ auto Sensitivity::operator=(const Sensitivity& other) -> Sensitivity&
     xbgc.__assign(other.xbgc);
     xhgc.__assign(other.xhgc);
     return *this;
+}
+
+auto Sensitivity::resize(const Dims& newdims) -> void
+{
+    const_cast<Dims&>(dims) = newdims;
+    xc.__resize(dims.x, dims.c);
+    pc.__resize(dims.p, dims.c);
+    yec.__resize(dims.be, dims.c);
+    ygc.__resize(dims.bg, dims.c);
+    zec.__resize(dims.he, dims.c);
+    zgc.__resize(dims.hg, dims.c);
+    sc.__resize(dims.x, dims.c);
+    xbgc.__resize(dims.bg, dims.c);
+    xhgc.__resize(dims.hg, dims.c);
 }
 
 } // namespace Optima

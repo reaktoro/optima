@@ -24,6 +24,7 @@ namespace py = pybind11;
 #include <Optima/Options.hpp>
 #include <Optima/Problem.hpp>
 #include <Optima/Result.hpp>
+#include <Optima/Sensitivity.hpp>
 #include <Optima/Solver.hpp>
 #include <Optima/State.hpp>
 using namespace Optima;
@@ -33,6 +34,7 @@ void exportSolver(py::module& m)
     py::class_<Solver>(m, "Solver")
         .def(py::init<>())
         .def("setOptions", &Solver::setOptions)
-        .def("solve", &Solver::solve)
+        .def("solve", py::overload_cast<const Problem&, State&>(&Solver::solve))
+        .def("solve", py::overload_cast<const Problem&, State&, Sensitivity&>(&Solver::solve))
         ;
 }

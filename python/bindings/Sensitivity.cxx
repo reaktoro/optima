@@ -28,7 +28,7 @@ void exportSensitivity(py::module& m)
 {
     py::class_<Sensitivity>(m, "Sensitivity")
         .def(py::init<>())
-        .def(py::init<const Dims&, Index>())
+        .def(py::init<const Dims&>())
         .def_readonly("dims", &Sensitivity::dims)
         .def_readwrite("xc", &Sensitivity::xc)
         .def_readwrite("pc", &Sensitivity::pc)
@@ -39,5 +39,6 @@ void exportSensitivity(py::module& m)
         .def_readwrite("sc", &Sensitivity::sc)
         .def_readwrite("xbgc", &Sensitivity::xbgc)
         .def_readwrite("xhgc", &Sensitivity::xhgc)
+        .def("resize", &Sensitivity::resize)
         ;
 }
