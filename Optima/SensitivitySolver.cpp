@@ -29,6 +29,7 @@ struct SensitivitySolver::Impl
     LinearSolver linearsolver; ///< The linear solver for the master matrix equations.
     MasterVector r;            ///< The right-hand side vector in the linear system problems for sensitivity computation.
     Index nc = 0;              ///< The number of sensitivity parameters *c*.
+    Matrix bc;                 ///< The Jacobian matrix of *b* with respect to the sensitivity parameters *c*.
 
     Impl()
     {
@@ -42,22 +43,21 @@ struct SensitivitySolver::Impl
         dims = problem.dims;
         r.resize(dims);
         nc = problem.c.size();
+        bc = problem.bc;
+        errorif(nc && bc.cols() != nc, "MasterProblem::bc has ", bc.cols(), " columns but expected is ", nc, ".");
+        errorif(nc && bc.rows() != dims.ny, "MasterProblem::bc has ", bc.rows(), " rows but expected is ", dims.ny, ".");
     }
 
     auto solve(const ResidualFunction& F, const MasterState& state, MasterSensitivity& sensitivity) -> void
     {
         const auto [nx, np, ny, nz, nw, nt] = dims;
 
-        auto& [xc, pc, wc, sc, xb, pb, wb, sb] = sensitivity;
+        auto& [xc, pc, wc, sc] = sensitivity;
 
         xc.resize(nx, nc);
         pc.resize(np, nc);
         wc.resize(nw, nc);
         sc.resize(nx, nc);
-        xb.resize(nx, ny);
-        pb.resize(np, ny);
-        wb.resize(nw, ny);
-        sb.resize(nx, ny);
 
         const auto& res = F.result();
         const auto& fxc = res.f.fxc;
@@ -79,27 +79,15 @@ struct SensitivitySolver::Impl
             r.x(js) = -fxc.col(i)(js);
             r.x(ju).fill(0.0);
             r.p = -vc.col(i);
-            r.w.topRows(ny).fill(0.0);
+            r.w.topRows(ny) = bc.col(i);
             r.w.bottomRows(nz) = -hc.col(i);
             linearsolver.solve(Jc, r, { xc.col(i), pc.col(i), wc.col(i) });
-        }
-
-        for(Index i = 0; i < ny; ++i)
-        {
-            r.x.fill(0.0);
-            r.p.fill(0.0);
-            r.w.topRows(ny) = unit(ny, i);
-            r.w.bottomRows(nz).fill(0.0);
-            linearsolver.solve(Jc, r, { xb.col(i), pb.col(i), wb.col(i) });
         }
 
         const auto Wx = res.Jm.W.Wx;
 
         sc(js, all).fill(0.0);
         sc(ju, all) = fxc(ju, all) + tr(Wx(all, ju)) * wc;
-
-        sb(js, all).fill(0.0);
-        sb(ju, all) = tr(Wx(all, ju)) * wb;
     }
 };
 

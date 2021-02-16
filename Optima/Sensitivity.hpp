@@ -28,7 +28,7 @@ namespace Optima {
 class Sensitivity
 {
 public:
-    Dims const dims;     ///< The dimensions of the variables and constraints in the optimization problem.
+    Dims const dims;   ///< The dimensions of the variables and constraints in the optimization problem.
     FixedMatrix xc;    ///< The sensitivity derivatives \eq{\partial x/\partial c} with respect to parameters \eq{c}.
     FixedMatrix pc;    ///< The sensitivity derivatives \eq{\partial p/\partial c} with respect to parameters \eq{c}.
     FixedMatrix yec;   ///< The sensitivity derivatives \eq{\partial y_{\mathrm{e}/\partial c} with respect to parameters \eq{c}.

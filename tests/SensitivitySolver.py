@@ -56,47 +56,56 @@ def testResidualFunction(nx, np, ny, nz, nl, nu):
 
     Ixx = npy.eye(nx)
     Oxp = npy.zeros((nx, np))
+    Oxy = npy.zeros((nx, ny))
     Oxz = npy.zeros((nx, nz))
 
     Opx = npy.zeros((np, nx))
     Ipp = npy.eye(np)
+    Opy = npy.zeros((np, ny))
     Opz = npy.zeros((np, nz))
+
+    Oyx = npy.zeros((ny, nx))
+    Oyp = npy.zeros((ny, np))
+    Iyy = npy.eye(ny)
+    Oyz = npy.zeros((ny, nz))
 
     Ozx = npy.zeros((nz, nx))
     Ozp = npy.zeros((nz, np))
+    Ozy = npy.zeros((nz, ny))
     Izz = npy.eye(nz)
 
     dims = params.dims
 
-    nc = nx + np + nz
+    nc = nx + np + ny + nz
 
-    c = random.rand(nc)  # the sensitive parameters used later for sensitivity derivative calculations
+    c = random.rand(nc)  # c = [cx, cp, cy, cz] -- the parameters used for sensitivity derivative calculations
 
-    cx, cp, cz = npy.split(c, [nx, nx + np])
-
-    cx[ju] = +1.0e4  # large positive number to ensure the variables with ju indices are indeed unstable!
+    c[:nx][ju] = +1.0e4  # large positive number to ensure x variables with ju indices are indeed unstable!
 
     def objectivefn_f(res, x, p, c, opts):
+        cx = c[:nx]
         res.f   = 0.5 * (x.T @ Hxx @ x) + x.T @ Hxp @ p + cx.T @ x
         res.fx  = Hxx @ x + Hxp @ p + cx
         res.fxx = Hxx
         res.fxp = Hxp
-        if opts.eval.fxc:  # compute d(fx)/dc = [d(fx)/d(cx), d(fx)/d(cp), d(fx)/d(cz)]
-            res.fxc = npy.hstack([Ixx, Oxp, Oxz])
+        if opts.eval.fxc:  # compute d(fx)/dc = [d(fx)/d(cx), d(fx)/d(cp), d(fx)/d(cy), d(fx)/d(cz)]
+            res.fxc = npy.hstack([Ixx, Oxp, Oxy, Oxz])
 
     def constraintfn_v(res, x, p, c, opts):
+        cp = c[nx:][:np]
         res.val = Vpx @ x + Vpp @ p + cp
         res.ddx = Vpx
         res.ddp = Vpp
-        if opts.eval.ddc:  # compute dv/dc = [dv/d(cx), dv/d(cp), dv/d(cz)]
-            res.ddc = npy.hstack([Opx, Ipp, Opz])
+        if opts.eval.ddc:  # compute dv/dc = [dv/d(cx), dv/d(cp), dv/d(cy), dv/d(cz)]
+            res.ddc = npy.hstack([Opx, Ipp, Opy, Opz])
 
     def constraintfn_h(res, x, p, c, opts):
+        cz = c[nx:][np:][ny:]
         res.val = Jx @ x + Jp @ p + cz
         res.ddx = Jx
         res.ddp = Jp
-        if opts.eval.ddc:  # compute dv/dc = [dv/d(cx), dv/d(cp), dv/d(cz)]
-            res.ddc = npy.hstack([Ozx, Ozp, Izz])
+        if opts.eval.ddc:  # compute dv/dc = [dv/d(cx), dv/d(cp), dv/d(cy), dv/d(cz)]
+            res.ddc = npy.hstack([Ozx, Ozp, Ozy, Izz])
 
     problem = MasterProblem()
     problem.dims = dims
@@ -105,11 +114,12 @@ def testResidualFunction(nx, np, ny, nz, nl, nu):
     problem.v = constraintfn_v
     problem.Ax = Ax
     problem.Ap = Ap
-    problem.b = random.rand(dims.ny)
+    problem.b = c[nx:][np:][:ny]
     problem.xlower = -abs(random.rand(dims.nx))
     problem.xupper =  abs(random.rand(dims.nx))
     problem.phi = None
     problem.c = c  # set here the sensitive parameters in the master optimization problem
+    problem.bc = npy.hstack([Oyx, Oyp, Iyy, Oyz])
 
     dims = params.dims
 
@@ -122,8 +132,7 @@ def testResidualFunction(nx, np, ny, nz, nl, nu):
 
     F = ResidualFunction()
     F.initialize(problem)
-
-    status = F.updateOnlyJacobian(u)  # compute Jacobian matrices d(fx)/dx, d(fx)/dp, d(fx)/dc, dv/dx, dv/dp, dv/dc, dh/dx, dh/dp, dh/dc
+    F.updateOnlyJacobian(u)  # compute Jacobian matrices d(fx)/dx, d(fx)/dp, d(fx)/dc, dv/dx, dv/dp, dv/dc, dh/dx, dh/dp, dh/dc
 
     sensitivity = MasterSensitivity()
     state = MasterState(dims)
@@ -136,33 +145,23 @@ def testResidualFunction(nx, np, ny, nz, nl, nu):
     res = F.result()
 
     fxc = res.f.fxc
-    hc  = res.h.ddc
-    vc  = res.v.ddc
-    bc  = npy.zeros((ny, nc))  # the derivatives of b with respect to c
     fxc[ju, :] = 0.0  # ensure rows corresponding to unstable variables are zero
 
-    fxb = npy.zeros((nx, ny))
-    hb  = npy.zeros((nz, ny))
-    vb  = npy.zeros((np, ny))
-    bb  = npy.eye(ny)  # the derivatives of b with respect to b itself
-    bb[ny - nl:] = 0.0  # otherwise the tests with linearly dependent rows do not pass
+    hc = res.h.ddc
+    vc = res.v.ddc
 
-    rb = npy.vstack([ -fxb, -vb, bb, -hb ])
+    bc = problem.bc  # the derivatives of b with respect to c
+    bc[ny - nl:] = 0.0  # set last nl rows to zero, otherwise the tests with linearly dependent rows do not pass
+
     rc = npy.vstack([ -fxc, -vc, bc, -hc ])
 
     xc = sensitivity.xc
     pc = sensitivity.pc
     wc = sensitivity.wc
     sc = sensitivity.sc
-    xb = sensitivity.xb
-    pb = sensitivity.pb
-    wb = sensitivity.wb
-    sb = sensitivity.sb
 
-    ub = npy.vstack([ xb, pb, wb ])
     uc = npy.vstack([ xc, pc, wc ])
 
     Jm = res.Jm.array()
 
-    assert_array_almost_equal(Jm @ ub, rb)
     assert_array_almost_equal(Jm @ uc, rc)

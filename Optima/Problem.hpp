@@ -49,6 +49,8 @@ public:
     FixedVector plower;    ///< The lower bounds of the parameter variables \eq{p}.
     FixedVector pupper;    ///< The upper bounds of the parameter variables \eq{p}.
     FixedVector c;         ///< The sensitivity parameters *c*.
+    FixedMatrix bec;       ///< The Jacobian matrix \eq{\partial b_{\mathrm{e}}/\partial c} for calculation of sensitivity derivatives with respect to *c*.
+    FixedMatrix bgc;       ///< The Jacobian matrix \eq{\partial b_{\mathrm{g}}/\partial c} for calculation of sensitivity derivatives with respect to *c*.
 
     /// Construct a default Problem instance.
     Problem();
