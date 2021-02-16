@@ -26,11 +26,7 @@ MasterSensitivity::MasterSensitivity(const MasterDims& dims, Index nc)
 : xc(zeros(dims.nx, nc)),
   pc(zeros(dims.np, nc)),
   wc(zeros(dims.nw, nc)),
-  sc(zeros(dims.nx, nc)),
-  xb(zeros(dims.nx, dims.ny)),
-  pb(zeros(dims.np, dims.ny)),
-  wb(zeros(dims.nw, dims.ny)),
-  sb(zeros(dims.nx, dims.ny))
+  sc(zeros(dims.nx, nc))
 {}
 
 auto MasterSensitivity::resize(const MasterDims& dims, Index nc) -> void
@@ -39,10 +35,6 @@ auto MasterSensitivity::resize(const MasterDims& dims, Index nc) -> void
     pc.resize(dims.np, nc);
     wc.resize(dims.nw, nc);
     sc.resize(dims.nx, nc);
-    xb.resize(dims.nx, dims.ny);
-    pb.resize(dims.np, dims.ny);
-    wb.resize(dims.nw, dims.ny);
-    sb.resize(dims.nx, dims.ny);
 }
 
 } // namespace Optima

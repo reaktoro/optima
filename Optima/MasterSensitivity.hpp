@@ -30,10 +30,6 @@ struct MasterSensitivity
     Matrix pc; ///< The sensitivity derivatives \eq{\partial p/\partial c} with respect to parameters \eq{c}.
     Matrix wc; ///< The sensitivity derivatives \eq{\partial w/\partial c} with respect to parameters \eq{c}.
     Matrix sc; ///< The sensitivity derivatives \eq{\partial s/\partial c} with respect to parameters \eq{c}.
-    Matrix xb; ///< The sensitivity derivatives \eq{\partial x/\partial c} with respect to \eq{b}.
-    Matrix pb; ///< The sensitivity derivatives \eq{\partial p/\partial c} with respect to \eq{b}.
-    Matrix wb; ///< The sensitivity derivatives \eq{\partial w/\partial c} with respect to \eq{b}.
-    Matrix sb; ///< The sensitivity derivatives \eq{\partial s/\partial c} with respect to \eq{b}.
 
     /// Construct a default MasterSensitivity object.
     MasterSensitivity();

@@ -35,13 +35,14 @@ struct MasterProblem
     ConstraintFunction v;  ///< The external nonlinear constraint function *v(x, p)*.
     Matrix Ax;             ///< The matrix *Ax* in *W = [Ax Ap; Jx Jp]*.
     Matrix Ap;             ///< The matrix *Ap* in *W = [Ax Ap; Jx Jp]*.
-    Vector b;              ///< The right-hand side vector b in the linear equality constraints.
+    Vector b;              ///< The right-hand side vector *b* in the linear equality constraints.
     Vector xlower;         ///< The lower bounds for variables *x*.
     Vector xupper;         ///< The upper bounds for variables *x*.
     Vector plower;         ///< The lower bounds for variables *p*.
     Vector pupper;         ///< The upper bounds for variables *p*.
     TransformFunction phi; ///< The custom variable transformation function.
     Vector c;              ///< The sensitivity parameters *c*.
+    Matrix bc;             ///< The Jacobian matrix of *b* with respect to the sensitivity parameters *c*.
 };
 
 } // namespace Optima

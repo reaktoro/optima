@@ -31,20 +31,10 @@ void exportMasterSensitivity(py::module& m)
     auto get_wc = [](const MasterSensitivity& s) { return s.wc; };
     auto get_sc = [](const MasterSensitivity& s) { return s.sc; };
 
-    auto get_xb = [](const MasterSensitivity& s) { return s.xb; };
-    auto get_pb = [](const MasterSensitivity& s) { return s.pb; };
-    auto get_wb = [](const MasterSensitivity& s) { return s.wb; };
-    auto get_sb = [](const MasterSensitivity& s) { return s.sb; };
-
     auto set_xc = [](MasterSensitivity& s, MatrixView4py xc) { s.xc = xc; };
     auto set_pc = [](MasterSensitivity& s, MatrixView4py pc) { s.pc = pc; };
     auto set_wc = [](MasterSensitivity& s, MatrixView4py wc) { s.wc = wc; };
     auto set_sc = [](MasterSensitivity& s, MatrixView4py sc) { s.sc = sc; };
-
-    auto set_xb = [](MasterSensitivity& s, MatrixView4py xb) { s.xb = xb; };
-    auto set_pb = [](MasterSensitivity& s, MatrixView4py pb) { s.pb = pb; };
-    auto set_wb = [](MasterSensitivity& s, MatrixView4py wb) { s.wb = wb; };
-    auto set_sb = [](MasterSensitivity& s, MatrixView4py sb) { s.sb = sb; };
 
     py::class_<MasterSensitivity>(m, "MasterSensitivity")
         .def(py::init<>())
@@ -53,10 +43,6 @@ void exportMasterSensitivity(py::module& m)
         .def_property("pc", get_pc, set_pc)
         .def_property("wc", get_wc, set_wc)
         .def_property("sc", get_sc, set_sc)
-        .def_property("xb", get_xb, set_xb)
-        .def_property("pb", get_pb, set_pb)
-        .def_property("wb", get_wb, set_wb)
-        .def_property("sb", get_sb, set_sb)
         .def("resize", &MasterSensitivity::resize)
         ;
 }
