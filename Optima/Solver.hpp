@@ -29,6 +29,7 @@ namespace Optima {
 class Options;
 class Problem;
 class Result;
+class Sensitivity;
 class State;
 struct Dims;
 
@@ -53,6 +54,9 @@ public:
 
     /// Solve the optimization problem.
     auto solve(const Problem& problem, State& state) -> Result;
+
+    /// Solve the optimization problem and compute the sensitivity derivatives at the end.
+    auto solve(const Problem& problem, State& state, Sensitivity& sensitivity) -> Result;
 
 private:
     struct Impl;
