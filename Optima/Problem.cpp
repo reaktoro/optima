@@ -37,7 +37,9 @@ Problem::Problem(const Dims& dims)
   xupper(constants(dims.x, infinity())),
   plower(constants(dims.p, -infinity())),
   pupper(constants(dims.p, infinity())),
-  c(zeros(dims.c))
+  c(zeros(dims.c)),
+  bec(zeros(dims.be, dims.c)),
+  bgc(zeros(dims.bg, dims.c))
 {}
 
 auto Problem::operator=(const Problem& other) -> Problem&
@@ -54,7 +56,8 @@ auto Problem::operator=(const Problem& other) -> Problem&
     plower.__assign(other.plower);
     pupper.__assign(other.pupper);
     c.__assign(other.c);
-
+    bec.__assign(other.bec);
+    bgc.__assign(other.bgc);
     return *this;
 }
 
