@@ -27,11 +27,12 @@ void exportDims(py::module& m)
 {
     py::class_<Dims>(m, "Dims")
         .def(py::init<>())
-        .def_readwrite("x", &Dims::x)
-        .def_readwrite("p", &Dims::p)
-        .def_readwrite("be", &Dims::be)
-        .def_readwrite("bg", &Dims::bg)
-        .def_readwrite("he", &Dims::he)
-        .def_readwrite("hg", &Dims::hg)
+        .def_readwrite("x", &Dims::x, "The number of primal variables in x")
+        .def_readwrite("p", &Dims::p, "The number of unknown parameter variables in p")
+        .def_readwrite("be", &Dims::be, "The number of linear equality constraint equations")
+        .def_readwrite("bg", &Dims::bg, "The number of linear inequality constraint equations")
+        .def_readwrite("he", &Dims::he, "The number of non-linear equality constraint equations")
+        .def_readwrite("hg", &Dims::hg, "The number of non-linear inequality constraint equations")
+        .def_readwrite("c", &Dims::c, "The number of known parameter variables in c used to compute sensitivities")
         ;
 }
