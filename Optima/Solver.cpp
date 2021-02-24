@@ -228,6 +228,11 @@ struct Solver::Impl
 
         // Initialize the sensitivity parameters *c* in the master problem
         mproblem.c = problem.c;
+
+        // Initialize the Jacobian matrix of *b* with respect to the sensitivity parameters *c*.
+        mproblem.bc.resize(ny, dims.c);
+        mproblem.bc.topRows(dims.be) = problem.bec;
+        mproblem.bc.bottomRows(dims.bg) = problem.bgc;
     }
 
     /// Update the master state object `mstate` with given State object.
