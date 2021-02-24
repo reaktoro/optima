@@ -46,8 +46,9 @@ def testMasterSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
     if nx <= nul + nuu + nw: return
     if ny <= nl: return
 
-    jul = range(nul)            # the indices of the expected lower unstable variables
+    jul = range(nul)             # the indices of the expected lower unstable variables
     juu = range(nul, nul + nuu)  # the indices of the expected upper unstable variables
+    ju = list(jul) + list(juu)
 
     Hxx = random.rand(nx, nx)
     Hxp = random.rand(nx, np)
@@ -65,10 +66,6 @@ def testMasterSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
 
     if diagHxx:
         Hxx = diag(random.rand(nx))
-
-    cx = ones(nx)
-    cp = ones(np)
-    cz = ones(nz)
 
     Hxx[jul, jul] = 1e6  # this ensures variables expected on their lower bounds are marked as unstable
     Hxx[juu, juu] = 1e6  # this ensures variables expected on their upper bounds are marked as unstable
@@ -95,30 +92,59 @@ def testMasterSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
 
     # print(f"Hxx = \n{Hxx}")
 
+    Ixx = npy.eye(nx)
+    Oxp = npy.zeros((nx, np))
+    Oxy = npy.zeros((nx, ny))
+    Oxz = npy.zeros((nx, nz))
+
+    Opx = npy.zeros((np, nx))
+    Ipp = npy.eye(np)
+    Opy = npy.zeros((np, ny))
+    Opz = npy.zeros((np, nz))
+
+    Oyx = npy.zeros((ny, nx))
+    Oyp = npy.zeros((ny, np))
+    Iyy = npy.eye(ny)
+    Oyz = npy.zeros((ny, nz))
+
+    Ozx = npy.zeros((nz, nx))
+    Ozp = npy.zeros((nz, np))
+    Ozy = npy.zeros((nz, ny))
+    Izz = npy.eye(nz)
+
+    nc = nx + np + ny + nz
+
+    cx = random.rand(nx)  # c = [cx, cp, cy, cz] -- the parameters used for sensitivity derivative calculations
+    cp = random.rand(np)
+    cy = Ax @ cx + Ap @ cp
+    cz = random.rand(nz)
+
+    cx[ju] = +1.0e4  # large positive number to ensure x variables with ju indices are indeed unstable!
+
     def objectivefn_f(res, x, p, c, opts):
-        dx = x - cx
-        dp = p - cp
-        res.f   = 0.5 * dx.T @ Hxx @ dx + dx.T @ Hxp @ dp
-        res.fx  = Hxx @ dx + Hxp @ dp
+        cx = c[:nx]
+        res.f   = 0.5 * (x.T @ Hxx @ x) + x.T @ Hxp @ p + cx.T @ x
+        res.fx  = Hxx @ x + Hxp @ p + cx
         res.fxx = Hxx
         res.fxp = Hxp
-        res.diagfxx = diagHxx
-        res.fxx4basicvars = False
-        res.succeeded = True
-
-    def constraintfn_h(res, x, p, c, opts):
-        res.val = Jx @ (x - cx) + Jp @ (p - cp)
-        res.ddx = Jx
-        res.ddp = Jp
-        res.ddx4basicvars = False
-        res.succeeded = True
+        if opts.eval.fxc:  # compute d(fx)/dc = [d(fx)/d(cx), d(fx)/d(cp), d(fx)/d(cy), d(fx)/d(cz)]
+            res.fxc = npy.hstack([Ixx, Oxp, Oxy, Oxz])
 
     def constraintfn_v(res, x, p, c, opts):
-        res.val = Vpx @ (x - cx) + Vpp @ (p - cp)
+        cp = c[nx:][:np]
+        res.val = Vpx @ x + Vpp @ p + cp
         res.ddx = Vpx
         res.ddp = Vpp
-        res.ddx4basicvars = False
-        res.succeeded = True
+        if opts.eval.ddc:  # compute dv/dc = [dv/d(cx), dv/d(cp), dv/d(cy), dv/d(cz)]
+            res.ddc = npy.hstack([Opx, Ipp, Opy, Opz])
+
+    def constraintfn_h(res, x, p, c, opts):
+        cz = c[nx:][np:][ny:]
+        res.val = Jx @ x + Jp @ p + cz
+        res.ddx = Jx
+        res.ddp = Jp
+        if opts.eval.ddc:  # compute dv/dc = [dv/d(cx), dv/d(cp), dv/d(cy), dv/d(cz)]
+            res.ddc = npy.hstack([Ozx, Ozp, Ozy, Izz])
 
     xlower = full(nx, -inf)
     xupper = full(nx,  inf)
@@ -130,10 +156,11 @@ def testMasterSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
     xupper[juu] = 0.5  # this should be less than 1.0
 
     dims = Dims()
-    dims.x = nx
-    dims.p = np
+    dims.x  = nx
+    dims.p  = np
     dims.be = ny
     dims.he = nz
+    dims.c  = nc
 
     problem = Problem(dims)
     problem.f = objectivefn_f
@@ -141,11 +168,13 @@ def testMasterSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
     problem.v = constraintfn_v
     problem.Aex = Ax
     problem.Aep = Ap
-    problem.be = Ax @ cx + Ap @ cp
+    problem.be = cy
     problem.xlower = xlower
     problem.xupper = xupper
     problem.plower = full(np, -inf)
     problem.pupper = full(np,  inf)
+    problem.c = npy.concatenate([cx, cp, cy, cz])  # set here the sensitive parameters in the optimization problem
+    problem.bec = npy.hstack([Oyx, Oyp, Iyy, Oyz])
 
     options = Options()
     # options.output.active = True
@@ -162,3 +191,18 @@ def testMasterSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
     res = solver.solve(problem, state)
 
     assert res.succeeded
+
+    sensitivity = Sensitivity()
+
+    res = solver.solve(problem, state, sensitivity)
+
+    assert res.succeeded
+
+    bec = problem.bec
+    bec[ny - nl:] = 0.0  # set last nl rows to zero, otherwise the tests with linearly dependent rows do not pass
+
+    xc = sensitivity.xc
+    pc = sensitivity.pc
+
+    assert_array_almost_equal(Ax @ xc + Ap @ pc, bec)
+

@@ -67,12 +67,12 @@ def testMasterSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
     if diagHxx:
         Hxx = diag(random.rand(nx))
 
+    Hxx[jul, jul] = 1e6  # this ensures variables expected on their lower bounds are marked as unstable
+    Hxx[juu, juu] = 1e6  # this ensures variables expected on their upper bounds are marked as unstable
+
     cx = ones(nx)
     cp = ones(np)
     cz = ones(nz)
-
-    Hxx[jul, jul] = 1e6  # this ensures variables expected on their lower bounds are marked as unstable
-    Hxx[juu, juu] = 1e6  # this ensures variables expected on their upper bounds are marked as unstable
 
 
     def objectivefn_f(res, x, p, c, opts):
@@ -159,5 +159,10 @@ def testMasterSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
         print(f"    Ap  = {repr(Ap)}")
         print(f"    Jx  = {repr(Jx)}")
         print(f"    Jp  = {repr(Jp)}")
+        assert False
+
+    sensitivity = MasterSensitivity()
+
+    res = solver.solve(problem, state, sensitivity)
 
     assert res.succeeded
