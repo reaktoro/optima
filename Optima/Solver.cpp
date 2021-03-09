@@ -186,7 +186,7 @@ struct Solver::Impl
             v_xbg.fill(0.0);
             v_xhg.fill(0.0);
 
-            ConstraintResult vres(v, v_x, v_p, v_c, res.ddx4basicvars, res.succeeded);
+            ConstraintResultRef vres(v, v_x, v_p, v_c, res.ddx4basicvars, res.succeeded);
 
             problem.v(vres, x, p, c, opts);
         };
