@@ -13,7 +13,7 @@ int main()
     Problem problem(dims);
     problem.Aex = Matrix{{ {1.0, -1.0} }};
     problem.be = Vector{{ 0.0 }};
-    problem.f = [](ObjectiveResultRef res, VectorView x, VectorView p, ObjectiveOptions opts)
+    problem.f = [](ObjectiveResultRef res, VectorView x, VectorView p, VectorView c, ObjectiveOptions opts)
     {
         res.f = (x[0] - 1)*(x[0] - 1) + (x[1] - 1)*(x[1] - 1);
         res.fx = 2.0 * (x - 1);
@@ -25,7 +25,7 @@ int main()
     Options options;
     options.output.active = true;
 
-    Solver solver(problem);
+    Solver solver;
     solver.setOptions(options);
 
     solver.solve(problem, state);
