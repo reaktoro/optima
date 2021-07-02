@@ -9,5 +9,8 @@ if(NOT TARGET Optima::Optima)
     include("@PACKAGE_OPTIMA_INSTALL_CONFIGDIR@/OptimaTargets.cmake")
 endif()
 
+# Find all dependencies below
+find_package(Eigen3 3.3.90 REQUIRED)
+
 # Recommended check at the end of a cmake config file.
 check_required_components(Optima)

@@ -18,10 +18,10 @@
 #pragma once
 
 // Eigen includes
-#include <Optima/deps/eigen3/Eigen/Core>
+#include <Eigen/Core>
+#include <Eigen/LU>
 #include <Optima/deps/eigenx/Eigen/Functions>
 #include <Optima/deps/eigenx/Eigen/Types>
-#include <Optima/deps/eigen3/Eigen/LU>
 
 extern template class Eigen::PartialPivLU<Eigen::MatrixXd>;
 extern template class Eigen::FullPivLU<Eigen::MatrixXd>;

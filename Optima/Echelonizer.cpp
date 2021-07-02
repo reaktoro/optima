@@ -18,7 +18,7 @@
 #include "Echelonizer.hpp"
 
 // Eigen includes
-#include <Optima/deps/eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 
 // Optima includes
 #include <Optima/Exception.hpp>

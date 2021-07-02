@@ -21,7 +21,7 @@
 #include <cassert>
 
 // Eigen includes
-#include <Optima/deps/eigen3/Eigen/src/LU/FullPivLU.h>
+#include <Eigen/src/LU/FullPivLU.h>
 
 // Optima includes
 #include <Optima/Macros.hpp>

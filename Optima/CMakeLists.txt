@@ -18,6 +18,9 @@ set_target_properties(Optima PROPERTIES
     POSITION_INDEPENDENT_CODE ON
     CXX_EXTENSIONS OFF)
 
+# Link Optima against its dependencies
+target_link_libraries(Optima PUBLIC Eigen3::Eigen)
+
 # Add the root directory of the project to the include list
 target_include_directories(Optima PRIVATE ${PROJECT_SOURCE_DIR})
 
