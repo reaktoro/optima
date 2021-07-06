@@ -1,14 +1,26 @@
 # How to execute the tests in Optima
 
-Once the library and the Python bindings have been built, update `PYTHONPATH`
-so that it knows the path to `optima`, the Optima package for Python:
+Once the library and the Python bindings have been built, Optima should be
+tested.
 
-~~~bash
-export PYTHONPATH=$HOME/codes/optima/build/release/python
+## Linux or macOS
+
+In the build directory, execute the following:
+
+~~~text
+make tests
 ~~~
 
-Now, from the root directory of the project, execute:
+## Windows
 
-~~~bash
-pytest .
+In the build directory, execute the following if Ninja was used as CMake generator:
+
+~~~text
+ninja tests
+~~~
+
+Alternatively, execute the following which works for any generator:
+
+~~~text
+cmake --build . --target tests
 ~~~
