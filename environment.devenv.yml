@@ -6,16 +6,18 @@ channels:
   - conda-forge
 
 dependencies:
-  # C++ compilers
-  - gxx_linux-64=7.3.0  # [linux]
-  - clangxx=9.0.0  # [osx]
-
-  # C++ libraries
-  - pybind11
-  - catch2
-
-  # Python
   - python={{ python_version }}
+  - gxx_linux-64=7.3.0            # [linux]
+  - clangxx=9.0.0                 # [osx]
+  - vs2019_win-64                 # [win]
+  - cmake>=3.13
+  - ninja
+  - ccache                        # [unix]
+  - clcache                       # [win]
+  - eigen4rkt
+  - pybind11
+  - pybind11-abi
+  - catch2
   - numpy
   - pip
   - pip:
@@ -23,13 +25,5 @@ dependencies:
     - mkdocs-material
     - mkdocs-macros-plugin
     - pytest-regressions
-
-  # Tests
   - pytest
   - pytest-xdist
-
-  # Applications
-  - cmake>=3.13
-  - ninja
-  - ccache  # [unix]
-  - clcache  # [win]
