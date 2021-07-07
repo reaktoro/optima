@@ -90,7 +90,21 @@ struct EchelonizerW::Impl
         const auto nb = echelonizer.numBasicVariables();
         const auto nn = echelonizer.numNonBasicVariables();
 
-        const auto Rb = echelonizer.R().topRows(nb);
+        //=============================================================================================================
+        // WARNING:
+        //=============================================================================================================
+        // For some reason, the commented line below does not play correctly with
+        // eigen commit 7b35638ddb99a0298c5d3450de506a8e8e0203d3 in Windows with Release mode.
+        // This problem does not exist in Linux and macOS, and also in Windows with Debug mode.
+        // The pytest tests fail with error message like this:
+        //   Windows fatal exception: access violation
+        //   Current thread 0x00002544 (most recent call first):
+        //   File "C:\Users\allan\codes\optima\tests\testing\utils\matrices.py", line 156 in createMatrixViewRWQ
+        // The solution was to avoid creating the topRows reference from the returned reference in echelonizer.R().
+        //=============================================================================================================
+        // const auto Rb = echelonizer.R().topRows(nb);  // WARNING: This
+        const auto R = echelonizer.R();
+        const auto Rb = R.topRows(nb);
 
         auto Sbn = S.topLeftCorner(nb, nn);
         auto Sbp = S.topRightCorner(nb, np);
