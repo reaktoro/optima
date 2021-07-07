@@ -56,8 +56,15 @@ if(NOT CMAKE_BUILD_TYPE)
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release MinSizeRel RelWithDebInfo)
 endif()
 
-# Find Eigen3 release from eigen4rkt (based on master, with support to IndexedView)
-find_package(Eigen3 3.3.90 REQUIRED)
+# Find Eigen3 either from the system, environment, or from the given directory OPTIMA_EIGEN_DIR
+if(DEFINED OPTIMA_EIGEN_DIR)
+    find_package(Eigen3 3.3.90 REQUIRED PATHS ${OPTIMA_EIGEN_DIR} NO_DEFAULT_PATH)
+else()
+    find_package(Eigen3 3.3.90 REQUIRED)
+endif()
+if(Eigen3_FOUND)
+    message(STATUS "Found Eigen3: ${Eigen3_DIR} (found version \"${Eigen3_VERSION}\")")
+endif()
 
 # Build the C++ library Optima
 add_subdirectory(Optima)
