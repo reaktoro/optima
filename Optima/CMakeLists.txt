@@ -18,6 +18,9 @@ set_target_properties(Optima PROPERTIES
     POSITION_INDEPENDENT_CODE ON
     CXX_EXTENSIONS OFF)
 
+# Set Optima compilation features to be propagated to client code.
+target_compile_features(Optima PUBLIC cxx_std_17)
+
 # Link Optima against its dependencies
 target_link_libraries(Optima PUBLIC Eigen3::Eigen)
 
