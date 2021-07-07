@@ -3,9 +3,8 @@
 @REM below will be update so that the python package and C++ libraries can
 @REM be found if necessary (e.g., to execute pytest).
 
-set PYTHONPATH=%CD%\python\package\installed\Debug\Lib\site-packages;%PYTHONPATH%
-set PATH=%CD%\Optima\Debug;%PATH%
+if not defined OPTIMA_BACKUP_PYTHONPATH set OPTIMA_BACKUP_PYTHONPATH=%PYTHONPATH%
+if not defined OPTIMA_BACKUP_PATH set OPTIMA_BACKUP_PATH=%PATH%
 
-echo The following environment variables have been updated:
-echo   PYTHONPATH = %PYTHONPATH%
-echo   PATH = %PATH%
+set PYTHONPATH=%CD%\python\package\installed\Debug\Lib\site-packages;%CD%\python\package\installed\Lib\site-packages;%OPTIMA_BACKUP_PYTHONPATH%
+set PATH=%CD%\Optima\Debug;%CD%\Optima;%OPTIMA_BACKUP_PATH%
