@@ -8,10 +8,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(CCache)
 
 # Set the name of the project
-project(Optima VERSION 0.1 LANGUAGES CXX)
-
-# Set C++ standard
-set(CMAKE_CXX_STANDARD 17)
+project(Optima VERSION 0.2.0 LANGUAGES CXX)
 
 # Enable parallel build if MSVC is used
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/MP>)
