@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+# This file will be copied by cmake to the root of the build directory.
+# Execute `source envs` from that directory and the environment variables
+# below will be update so that the python package and C++ libraries can
+# be found if necessary (e.g., to execute pytest).
+
+source_dir=${PROJECT_SOURCE_DIR}
+binary_dir=${PROJECT_BINARY_DIR}
+
+py_optima_dir=$binary_dir/python/package/build/lib  # the path to python package optima
+lib_optima_dir=$binary_dir/lib  # the path to Optima's libraries
+
+if [ -z ${OPTIMA_BACKUP_PYTHONPATH} ]; then export OPTIMA_BACKUP_PYTHONPATH=$PYTHONPATH; fi
+if [ -z ${OPTIMA_BACKUP_LD_LIBRARY_PATH} ]; then export OPTIMA_BACKUP_LD_LIBRARY_PATH=$LD_LIBRARY_PATH; fi
+
+export PYTHONPATH=$py_optima_dir:$OPTIMA_BACKUP_PYTHONPATH
+export LD_LIBRARY_PATH=$lib_optima_dir:$OPTIMA_BACKUP_LD_LIBRARY_PATH
+
+echo "The following environment variables have been updated:"
+echo "  PYTHONPATH = $PYTHONPATH"
+echo "  LD_LIBRARY_PATH = $LD_LIBRARY_PATH"
