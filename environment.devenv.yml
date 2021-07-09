@@ -11,7 +11,7 @@ dependencies:
   - clangxx_osx-64  # [osx]
   - clcache  # [win]
   - cmake
-  - eigen4rkt==3.3.90.2
+  - eigen4rkt
   - gxx_linux-64  # [linux]
   - ninja
   - numpy
