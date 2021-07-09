@@ -4,6 +4,7 @@ file(TO_NATIVE_PATH ${OPTIMA_PYTHON_PACKAGE_DIR} OPTIMA_PYTHON_PACKAGE_DIR)  # c
 
 if(WIN32)
     add_custom_target(tests
+        DEPENDS optima-setuptools
         COMMENT "Starting parallel execution of pytest..."
         COMMAND ${CMAKE_COMMAND} -E env
             "PATH=$<TARGET_FILE_DIR:Optima>;$ENV{PATH}"
@@ -12,6 +13,7 @@ if(WIN32)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 else() # UNIX
     add_custom_target(tests
+        DEPENDS optima-setuptools
         COMMENT "Starting parallel execution of pytest..."
         COMMAND ${CMAKE_COMMAND} -E env
             "PYTHONPATH=${OPTIMA_PYTHON_PACKAGE_DIR}"
