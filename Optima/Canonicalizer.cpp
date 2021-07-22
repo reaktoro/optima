@@ -35,8 +35,8 @@ struct Canonicalizer::Impl
     Index nl = 0;       ///< The number of linearly dependent rows in Wx = [Ax; Jx].
 
     Matrix R;           ///< The matrix R in RWQ = [Ibb Sbn Sbp].
-    Matrix S;           ///< The matrix S' = [Sbsns Sbsnu Sbsp; 0 Sbunu Sbup].
-    Indices jbn;        ///< The order of x variables as x = (xb, xn) = (xbs, xbu, xns, xnu) = (xbe, xbi, xbu, xne, xni, xnu).
+    Matrix S;           ///< The matrix S' = [Sbsns Sbsnu Sbsp].
+    Indices jbn;        ///< The order of x variables as x = (xb, xn) = (xbs, xns, xnu) = (xbe, xbi, xne, xni, xnu).
 
     Index nbs = 0;      ///< The number of basic stable variables.
     Index nbu = 0;      ///< The number of basic unstable variables.
@@ -49,10 +49,10 @@ struct Canonicalizer::Impl
     Index nni = 0;      ///< The number of implicit non-basic stable variables.
 
     Indices bs;         ///< The boolean flags that indicate which variables in x are stable.
-    Indices Kb;         ///< The permutation matrix used to order the basic variables as xb = (xbe, xbi, xbu) with `e` and `i` denoting pivot and non-pivot.
+    Indices Kb;         ///< The permutation matrix used to order the basic variables as xb = (xbe, xbi) with `e` and `i` denoting pivot and non-pivot.
     Indices Kn;         ///< The permutation matrix used to order the non-basic variables as xn = (xne, xni, xnu) with `e` and `i` denoting pivot and non-pivot.
 
-    Indices jsu;        ///< The order of x variables as x = (xs, xu) = (xbs, xns, xbu, xnu) = (xbe, xbi, xne, xni, xbu, xnu).
+    Indices jsu;        ///< The order of x variables as x = (xbs, xns, xnu) = (xbe, xbi, xne, xni, xnu).
 
     Matrix Hprime;      ///< The matrix H' = [Hss Hsp].
     Matrix Vprime;      ///< The matrix V' = [Vps Vpu Vpp].
@@ -207,16 +207,16 @@ struct Canonicalizer::Impl
         //=========================================================================================
 
         // The indices of the basic variables in xs and xu (jbs and jbu respectively)
-        const auto jbs = jb.head(nbs);
-        const auto jbu = jb.tail(nbu);
+        const auto jbs = jb.head(nbs); // nbs === nb
+        const auto jbu = jb.tail(nbu); // nbu === 0
 
         // The indices of the non-basic variables in xs and xu (jns and jnu respectively)
         const auto jns = jn.head(nns);
         const auto jnu = jn.tail(nnu);
 
-        // Initialize jsu = (js, ju) = (jbs, jns, jbu, jnu)
+        // Initialize jsu = (jbs, jns, jnu)
         jsu.resize(nx);
-        jsu << jbs, jns, jbu, jnu;
+        jsu << jbs, jns, jnu;
 
         // The indices of the stable variables js = (jbs, jns) = (jbe, jbi, jne, jni)
         const auto js = jsu.head(ns);
