@@ -46,38 +46,76 @@ auto Stability::update(StabilityUpdateArgs args) -> void
 
     auto is_lower_unstable = [&](Index i) { return args.x[i] == args.xlower[i] && s[i] > 0.0; };
     auto is_upper_unstable = [&](Index i) { return args.x[i] == args.xupper[i] && s[i] < 0.0; };
+    auto is_meta_stable    = [&](Index i) { return is_lower_unstable(i) || is_upper_unstable(i); };
 
-    // Note: In the code below, all basic variables are by default considered
-    // stable. It remains to identify which non-basic variables are unstable!
+    //---------------------------------------------------------------------------------------------
+    // NOTE
+    //---------------------------------------------------------------------------------------------
+    // In the code below, all basic variables are, by design, considered
+    // stable. It is possible, however, that some basic variables are located
+    // on their lower or upper bounds at the end of the calculation (in
+    // degenerate cases). For means of computation, these are still classified
+    // as stable (i.e., they are considered in the linear system of equations
+    // to compute a Newton direction). However, they are also classified as
+    // *meta-stable*. When we compute sensitivity derivatives for the optimum
+    // state with respect to input variables, the derivatives associated with
+    // the meta-stable variables are zero.
+    //
+    // The code below also identifies which non-basic variables are unstable
+    // and if they lower or upper unstable.
+    //---------------------------------------------------------------------------------------------
 
+    // Initialize the vector of indices jsu with ordered indices from 0 to `nx - 1`
     jsu.noalias() = indices(nx);
 
-    const auto nb = moveIntersectionLeft(jsu, jb);
+    // Move basic variables to the left, leaving non-basic ones on the right
+    // Initialize the number of basic stable variables (equivalent to number of basic variables)
+    nbs = moveIntersectionLeft(jsu, jb);
 
-    assert(nb == jb.size());
+    // Ensure there are no repeated basic indices in `jb`
+    assert(nbs == jb.size());
 
-    const auto nn = nx - nb; // the number of non-basic variables
+    // Create reference to the first `nbs` entries in `jsu`, which corresponds to stable basic variables.
+    auto jbs = jsu.head(nbs);
 
-    auto jnsu = jsu.tail(nn); // the non-basic variables organized as jnsu = (jns, jnu) = (stable, unstable)
+    // Move the meta-stable basic variables to the right in `jbs`, leaving the strictly stable basic variables on the left.
+    const auto nss = moveRightIf(jbs, is_meta_stable);
 
-    // Organize jsu = (js, jlu, juu) = (stable, lower unstable, upper unstable).
+    // Compute the number of non-basic variables (remember, all basic variables are stable, nb === nbs, but among some of these, there could be meta-stable basic variables).
+    const auto nn = nx - nbs;
+
+    // Create reference to the last `nn` entries in `jsu`, corresponding to the non-basic variables.
+    auto jnsu = jsu.tail(nn);
+
+    // Organize the non-basic variables in `jnsu` as (jns, jlu, juu) = (stable, lower unstable, upper unstable).
     const auto pos1 = moveRightIf(jnsu, is_upper_unstable);
     const auto pos2 = moveRightIf(jnsu.head(pos1), is_lower_unstable);
 
-    ns  = nb + pos2;
+    // Initialize the number of stable variables (accounting for both stable basic and non-basic)
+    ns  = nbs + pos2;
+
+    // Initialize the number of upper unstable non-basic variables
     nuu = nn - pos1;
+
+    // Initialize the number of lower unstable non-basic variables
     nlu = pos1 - pos2;
 
+    // Initialize the number of meta-stable basic variables `nms`.
+    nms = nbs - nss;
+
+    // Ensure the number of stable, upper unstable, and lower unstable equals number of variables x
     assert(ns + nuu + nlu == nx);
 }
 
 auto Stability::status() const -> StabilityStatus
 {
     const auto js = jsu.head(ns);
+    const auto jbs = js.head(nbs);
+    const auto jms = jbs.tail(nms);
     const auto ju = jsu.tail(nlu + nuu);
     const auto jlu = ju.head(nlu);
     const auto juu = ju.tail(nuu);
-    return {js, ju, jlu, juu, s};
+    return {js, ju, jlu, juu, jms, s};
 }
 
 } // namespace Optima
