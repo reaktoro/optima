@@ -48,6 +48,7 @@ struct StabilityStatus
     IndicesView ju;   ///< The indices of the unstable variables in x.
     IndicesView jlu;  ///< The indices of the lower unstable variables in x.
     IndicesView juu;  ///< The indices of the upper unstable variables in x.
+    IndicesView jms;  ///< The indices of the meta-stable basic variables in x.
     VectorView s;     ///< The stability \eq{s=g-W_{\mathrm{x}}^{T}\lambda} of the x variables.
 };
 
@@ -55,10 +56,12 @@ struct StabilityStatus
 class Stability
 {
 private:
-    Indices jsu;   ///< The indices of the x variables ordered as jsu = (js, ju) = (js, jlu, juu).
-    Index ns = 0;  ///< The number of stable stable variables in js.
+    Indices jsu;   ///< The indices of the x variables ordered as jsu = (js, jlu, juu).
+    Index ns  = 0; ///< The number of stable variables in js.
+    Index nbs = 0; ///< The number of stable basic variables in js.
     Index nlu = 0; ///< The number of lower unstable stable variables in jlu.
     Index nuu = 0; ///< The number of upper unstable stable variables in juu.
+    Index nms = 0; ///< The number of meta-stable basic variables in jbs.
     Vector s;      ///< The stability \eq{s=g+W_{\mathrm{x}}^{T}w} of the *x* variables.
 
 public:
