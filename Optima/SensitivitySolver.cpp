@@ -68,8 +68,10 @@ struct SensitivitySolver::Impl
         assert(  hc.rows() == nz );
         assert(  vc.rows() == np );
 
-        const auto& js = res.stabilitystatus.js;
-        const auto& ju = res.stabilitystatus.ju;
+        const auto& js  = res.stabilitystatus.js;
+        const auto& ju  = res.stabilitystatus.ju;
+        const auto& jms = res.stabilitystatus.jms;
+
         const auto& Jc = res.Jc;
 
         linearsolver.decompose(Jc);
@@ -83,6 +85,8 @@ struct SensitivitySolver::Impl
             r.w.bottomRows(nz) = -hc.col(i);
             linearsolver.solve(Jc, r, { xc.col(i), pc.col(i), wc.col(i) });
         }
+
+        xc(jms, all).fill(0.0); // remove derivatives associated with meta-stable basic variables!
 
         const auto Wx = res.Jm.W.Wx;
 
