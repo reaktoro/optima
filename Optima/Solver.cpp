@@ -98,6 +98,9 @@ struct Solver::Impl
         // Initialize the dimensions of the master optimization problem
         mproblem.dims = MasterDims(nxbar, np, ny, nz);
 
+        // Initialize the resources function in the master optimization problem
+        mproblem.r = problem.r;
+
         // Create the objective function for the master optimization problem
         mproblem.f = [&](ObjectiveResultRef resbar, VectorView xbar, VectorView p, VectorView c, ObjectiveOptions opts)
         {
