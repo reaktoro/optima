@@ -57,6 +57,9 @@ struct ResidualFunction::Impl
     /// The current state of the residual vector.
     ResidualVector residual;
 
+    /// The optional function that precomputes shared resources among f, h, v functions
+    ResourcesFunction r;
+
     /// The objective function *f(x, p)*.
     ObjectiveFunction f;
 
@@ -96,6 +99,7 @@ struct ResidualFunction::Impl
         hres.resize(nz, nx, np, nc);
         vres.resize(np, nx, np, nc);
         echelonizerW.initialize(dims, problem.Ax, problem.Ap);
+        r = problem.r;
         f = problem.f;
         h = problem.h;
         v = problem.v;
@@ -147,6 +151,7 @@ struct ResidualFunction::Impl
         ObjectiveOptions  fopts{{eval_ddx, eval_ddp && np, eval_ddc && nc}, ibasicvars};
         ConstraintOptions hopts{{eval_ddx, eval_ddp && np, eval_ddc && nc}, ibasicvars};
         ConstraintOptions vopts{{eval_ddx, eval_ddp && np, eval_ddc && nc}, ibasicvars};
+        r(x, p, c, fopts, hopts, vopts);
         f(fres, x, p, c, fopts);
         if(nz) h(hres, x, p, c, hopts);
         if(np) v(vres, x, p, c, vopts);
