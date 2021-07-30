@@ -56,6 +56,7 @@ void exportOptions(py::module& m);
 void exportProblem(py::module& m);
 void exportResidualFunction(py::module& m);
 void exportResidualVector(py::module& m);
+void exportResourcesFunction(py::module& m);
 void exportResult(py::module& m);
 void exportSensitivity(py::module& m);
 void exportSensitivitySolver(py::module& m);
@@ -105,6 +106,7 @@ PYBIND11_MODULE(optima4py, m)
     exportProblem(m);
     exportResidualFunction(m);
     exportResidualVector(m);
+    exportResourcesFunction(m);
     exportResult(m);
     exportSensitivity(m);
     exportSensitivitySolver(m);

@@ -74,10 +74,18 @@ def testMasterSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
     cp = ones(np)
     cz = ones(nz)
 
+    class Resources:
+        dx, dp = None, None
+        def __iter__(self): return iter((self.dx, self.dp))
+
+    resources = Resources()
+
+    def resourcesfn_r(x, p, c, fopts, hopts, vopts):
+        resources.dx = x - cx
+        resources.dp = p - cp
 
     def objectivefn_f(res, x, p, c, opts):
-        dx = x - cx
-        dp = p - cp
+        dx, dp = resources
         res.f   = 0.5 * dx.T @ Hxx @ dx + dx.T @ Hxp @ dp
         res.fx  = Hxx @ dx + Hxp @ dp
         res.fxx = Hxx
@@ -87,14 +95,16 @@ def testMasterSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
         res.succeeded = True
 
     def constraintfn_h(res, x, p, c, opts):
-        res.val = Jx @ (x - cx) + Jp @ (p - cp)
+        dx, dp = resources
+        res.val = Jx @ dx + Jp @ dp
         res.ddx = Jx
         res.ddp = Jp
         res.ddx4basicvars = False
         res.succeeded = True
 
     def constraintfn_v(res, x, p, c, opts):
-        res.val = Vpx @ (x - cx) + Vpp @ (p - cp)
+        dx, dp = resources
+        res.val = Vpx @ dx + Vpp @ dp
         res.ddx = Vpx
         res.ddp = Vpp
         res.ddx4basicvars = False
@@ -113,6 +123,7 @@ def testMasterSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
 
     problem = MasterProblem()
     problem.dims = dims
+    problem.r = resourcesfn_r
     problem.f = objectivefn_f
     problem.h = constraintfn_h
     problem.v = constraintfn_v

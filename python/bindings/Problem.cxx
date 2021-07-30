@@ -27,6 +27,7 @@ using namespace Optima;
 
 void exportProblem(py::module& m)
 {
+    auto set_r     = [](Problem& self, ResourcesFunction r) { self.r = r; };
     auto set_f     = [](Problem& self, ObjectiveFunction f) { self.f = f; };
     auto set_he    = [](Problem& self, ConstraintFunction he) { self.he = he; };
     auto set_hg    = [](Problem& self, ConstraintFunction hg) { self.hg = hg; };
@@ -38,6 +39,7 @@ void exportProblem(py::module& m)
     auto set_bec   = [](Problem& self, MatrixView4py bec) { self.bec = bec; };
     auto set_bgc   = [](Problem& self, MatrixView4py bgc) { self.bgc = bgc; };
 
+    auto get_r     = [](Problem& self) { return self.r; };
     auto get_f     = [](Problem& self) { return self.f; };
     auto get_he    = [](Problem& self) { return self.he; };
     auto get_hg    = [](Problem& self) { return self.hg; };
@@ -52,6 +54,7 @@ void exportProblem(py::module& m)
     py::class_<Problem>(m, "Problem")
         .def(py::init<const Dims&>())
         .def_readonly("dims"    , &Problem::dims)
+        .def_property("r"       , get_r, set_r)
         .def_property("f"       , get_f, set_f)
         .def_property("he"      , get_he, set_he)
         .def_property("hg"      , get_hg, set_hg)

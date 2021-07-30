@@ -26,6 +26,7 @@
 #include <Optima/Index.hpp>
 #include <Optima/Matrix.hpp>
 #include <Optima/ObjectiveFunction.hpp>
+#include <Optima/ResourcesFunction.hpp>
 
 namespace Optima {
 
@@ -34,6 +35,7 @@ class Problem
 {
 public:
     Dims const dims;       ///< The dimensions of the variables and constraints in the optimization problem.
+    ResourcesFunction r;   ///< The optional function that precomputes shared resources for objective and constraint functions.
     ObjectiveFunction f;   ///< The objective function \eq{f(x, p)} of the optimization problem.
     ConstraintFunction he; ///< The nonlinear equality constraint function \eq{h_{\mathrm{e}}(x, p)=0}.
     ConstraintFunction hg; ///< The nonlinear inequality constraint function \eq{h_{\mathrm{g}}(x, p)\geq0}.

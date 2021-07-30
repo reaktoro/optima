@@ -121,26 +121,38 @@ def testMasterSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
 
     cx[ju] = +1.0e4  # large positive number to ensure x variables with ju indices are indeed unstable!
 
-    def objectivefn_f(res, x, p, c, opts):
+    class Resources:
+        f, fx, v, h = None, None, None, None
+
+    resources = Resources()
+
+    def resourcesfn_r(x, p, c, fopts, hopts, vopts):
+        # Precompute here f, fx, v and h, to demonstrate shared resources among functions are correctly precalculated
         cx = c[:nx]
-        res.f   = 0.5 * (x.T @ Hxx @ x) + x.T @ Hxp @ p + cx.T @ x
-        res.fx  = Hxx @ x + Hxp @ p + cx
+        cp = c[nx:][:np]
+        cz = c[nx:][np:][ny:]
+        resources.f  = 0.5 * (x.T @ Hxx @ x) + x.T @ Hxp @ p + cx.T @ x
+        resources.fx = Hxx @ x + Hxp @ p + cx
+        resources.v  = Vpx @ x + Vpp @ p + cp
+        resources.h  =  Jx @ x +  Jp @ p + cz
+
+    def objectivefn_f(res, x, p, c, opts):
+        res.f   = resources.f  # already computed in the resources function
+        res.fx  = resources.fx  # already computed in the resources function
         res.fxx = Hxx
         res.fxp = Hxp
         if opts.eval.fxc:  # compute d(fx)/dc = [d(fx)/d(cx), d(fx)/d(cp), d(fx)/d(cy), d(fx)/d(cz)]
             res.fxc = npy.hstack([Ixx, Oxp, Oxy, Oxz])
 
     def constraintfn_v(res, x, p, c, opts):
-        cp = c[nx:][:np]
-        res.val = Vpx @ x + Vpp @ p + cp
+        res.val = resources.v  # already computed in the resources function
         res.ddx = Vpx
         res.ddp = Vpp
         if opts.eval.ddc:  # compute dv/dc = [dv/d(cx), dv/d(cp), dv/d(cy), dv/d(cz)]
             res.ddc = npy.hstack([Opx, Ipp, Opy, Opz])
 
     def constraintfn_h(res, x, p, c, opts):
-        cz = c[nx:][np:][ny:]
-        res.val = Jx @ x + Jp @ p + cz
+        res.val = resources.h  # already computed in the resources function
         res.ddx = Jx
         res.ddp = Jp
         if opts.eval.ddc:  # compute dv/dc = [dv/d(cx), dv/d(cp), dv/d(cy), dv/d(cz)]
@@ -163,6 +175,7 @@ def testMasterSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
     dims.c  = nc
 
     problem = Problem(dims)
+    problem.r = resourcesfn_r
     problem.f = objectivefn_f
     problem.he = constraintfn_h
     problem.v = constraintfn_v
