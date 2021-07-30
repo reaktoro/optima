@@ -22,6 +22,7 @@
 #include <Optima/MasterDims.hpp>
 #include <Optima/Matrix.hpp>
 #include <Optima/ObjectiveFunction.hpp>
+#include <Optima/ResourcesFunction.hpp>
 #include <Optima/TransformFunction.hpp>
 
 namespace Optima {
@@ -30,6 +31,7 @@ namespace Optima {
 struct MasterProblem
 {
     MasterDims dims;       ///< The dimensions of the master variables.
+    ResourcesFunction r;   ///< The optional function that precomputes shared resources for objective and constraint functions.
     ObjectiveFunction f;   ///< The objective function *f(x, p)*.
     ConstraintFunction h;  ///< The nonlinear equality constraint function *h(x, p)*.
     ConstraintFunction v;  ///< The external nonlinear constraint function *v(x, p)*.
