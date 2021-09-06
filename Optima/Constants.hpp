@@ -22,4 +22,10 @@ namespace Optima {
 constexpr auto SUCCEEDED = true;
 constexpr auto FAILED    = false;
 
+/// The floating-point representation of positive infinity
+constexpr auto inf = std::numeric_limits<double>::infinity();
+
+/// The floating-point representation of NaN
+constexpr auto NaN = std::numeric_limits<double>::quiet_NaN();
+
 } // namespace Optima
