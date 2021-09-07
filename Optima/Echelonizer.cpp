@@ -223,6 +223,11 @@ struct Echelonizer::Impl
     /// Update the existing canonical form with given priority weights for the columns.
     auto updateWithPriorityWeights(VectorView w) -> void
     {
+        // THE RESET BELOW IS IMPORTANT TO PREVENT ACCUMULATION OF ROUND-OFF
+        // ERRORS THAT MAY CAUSE THE OPTIMIZATION COMPUTATION TO FAIL FOR
+        // NON-OBVIOUS REASONS!
+        reset(); // Reset R, S, Q to R0, S0, Q0
+
         // Assert there are as many weights as there are variables
         assert(w.rows() == lu.cols() &&
             "Could not update the canonical form."
