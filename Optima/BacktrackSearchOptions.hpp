@@ -30,7 +30,7 @@ struct BacktrackSearchOptions
     /// is possible that the new direction vector from previous to updated `u`
     /// vector is not a descent direction, since the min-max fix alters its
     /// orientation.
-    bool apply_min_max_fix_and_accept = false;
+    bool apply_min_max_fix_and_accept = true;
 };
 
 } // namespace Optima
