@@ -28,6 +28,30 @@
 
 namespace Optima {
 
+//=================================================================================================
+// NOTE
+//
+// The Newton steps in Optima are currently generated in a way that prevents
+// line search operations in general. This is because some variables on the
+// bounds may have been considered in the Newton step calculation (because
+// stability analysis indicated that they could potentially further decrease
+// the object function if detached from their bounds). However, it may happen
+// that once we compute the Newton step, the step for a variable on a lower
+// bound is negative, or the step for a variable on the upper bound is
+// positive. This indicates that these variables should then indeed remain on
+// their bounds (at least for this iteration). Thus, the computed Newton step
+// vector must be zeroed out for these variables on the bounds, otherwise the
+// Newton step would cause these bounds to be violated. When we do this
+// alteration on the Newton step, we change its properties (e.g., conservative
+// properties if the linear constraints are mass/mole balance constraints). In
+// addition, the modified Newton step may no longer be a descent direction with
+// respect to the square of the residual errors.
+//
+// Thus, proper line search operations will require a recomputation of Newton
+// step assumming that all variables currently on the bounds should be ignored,
+// regardless of what the stability analysis is telling.
+//=================================================================================================
+
 /// Used to perform a line search minimization operation.
 class LineSearch
 {
