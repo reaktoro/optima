@@ -31,18 +31,6 @@ struct BacktrackSearchOptions
     /// vector is not a descent direction, since the min-max fix alters its
     /// orientation.
     bool apply_min_max_fix_and_accept = false;
-
-    /// Scale down the Newton step by a factor related to error growth before
-    /// starting the backtrack search loop. This option will cause the Newton
-    /// step to be divided by `new_error/old_error` if `new_error` is greater
-    /// than `old_error`.
-    bool scale_down_newton_step_based_on_error_growth = true;
-
-    /// The factor between 0 and 1 used to decrease the Newton length in each backtrack step iteration.
-    double factor = 0.1;
-
-    /// The maximum number of iterations during the backtrack search operations.
-    double maxiters = 10;
 };
 
 } // namespace Optima

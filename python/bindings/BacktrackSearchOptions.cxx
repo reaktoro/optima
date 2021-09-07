@@ -27,8 +27,6 @@ void exportBacktrackSearchOptions(py::module& m)
 {
     py::class_<BacktrackSearchOptions>(m, "BacktrackSearchOptions")
         .def(py::init<>())
-        .def_readwrite("scale_down_newton_step_based_on_error_growth", &BacktrackSearchOptions::scale_down_newton_step_based_on_error_growth)
-        .def_readwrite("factor", &BacktrackSearchOptions::factor)
-        .def_readwrite("maxiters", &BacktrackSearchOptions::maxiters)
+        .def_readwrite("apply_min_max_fix_and_accept", &BacktrackSearchOptions::apply_min_max_fix_and_accept)
         ;
 }
