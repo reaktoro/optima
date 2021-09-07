@@ -22,26 +22,16 @@
 #include <vector>
 
 // Optima includes
+#include <Optima/BacktrackSearchOptions.hpp>
 #include <Optima/ConvergenceOptions.hpp>
-#include <Optima/LineSearchOptions.hpp>
+#include <Optima/ErrorStatusOptions.hpp>
 #include <Optima/LinearSolverOptions.hpp>
+#include <Optima/LineSearchOptions.hpp>
 #include <Optima/NewtonStepOptions.hpp>
 #include <Optima/OutputterOptions.hpp>
 #include <Optima/TransformFunction.hpp>
 
 namespace Optima {
-
-/// The available stepping modes for some optimization algorithms.
-enum StepMode
-{
-    /// This mode ensures that Newton steps have direction preserved.
-    /// This is a more conservative approach, more often used in the optimization literature.
-    Conservative,
-
-    /// This mode permits that components of the Newton steps that would not violate bounds, are not affected.
-    /// Although not conventional, this more aggressive stepping approach results in faster convergence in many cases.
-    Aggressive
-};
 
 /// A type that describes the options for the output of a optimization calculation
 struct OutputOptions : OutputterOptions
@@ -78,16 +68,6 @@ struct OutputOptions : OutputterOptions
     std::vector<std::string> znames;
 };
 
-/// The options for the backtrack linear search operation.
-struct BacktrackSearchOptions
-{
-    /// The factor between 0 and 1 used to decrease the Newton length in each backtrack step.
-    double factor = 0.1;
-
-    /// The maximum number of iterations during the backtrack search operations.
-    double maxiters = 10;
-};
-
 /// The options for the steepest descent step operation when needed.
 struct SteepestDescentOptions
 {
@@ -106,16 +86,19 @@ public:
     OutputOptions output;
 
     /// The maximum number of iterations in the optimization calculations.
-    unsigned maxiterations = 200;
+    unsigned maxiters = 200;
+
+    /// The options for assessing error status.
+    ErrorStatusOptions errorstatus;
+
+    /// The options for the backtrack search operation.
+    BacktrackSearchOptions backtracksearch;
 
     /// The options for the linear search minimization operation.
     LineSearchOptions linesearch;
 
     /// The options for the steepest descent step operation when needed.
     SteepestDescentOptions steepestdescent;
-
-    /// The options for the backtrack linear search operation.
-    BacktrackSearchOptions backtrack;
 
     /// The options used for Newton step calculations.
     NewtonStepOptions newtonstep;
