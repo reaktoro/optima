@@ -19,17 +19,22 @@
 
 // Optima includes
 #include <Optima/Exception.hpp>
+#include <Optima/MasterMatrixOps.hpp>
 #include <Optima/Utils.hpp>
 
 namespace Optima {
 
 struct LineSearch::Impl
 {
-    /// The trial state of u = (x, p, y, z) during the line search minimization.
-    MasterVector utrial;
-
-    /// The options for the line search minimization.
-    LineSearchOptions options;
+    MasterDims dims;           ///< The dimensions of the master variables.
+    MasterVector utrial;       ///< The trial state of u = (x, p, y, z) during the line search minimization.
+    LineSearchOptions options; ///< The options for the line search minimization.
+    Vector xlower;             ///< The lower bounds for x.
+    Vector xupper;             ///< The upper bounds for x.
+    Vector plower;             ///< The lower bounds for p.
+    Vector pupper;             ///< The upper bounds for p.
+    MasterVector du;           ///< The Newton step du = u - uo
+    MasterVector Jdu;          ///< The multiplication J * du
 
     Impl()
     {}
@@ -39,8 +44,34 @@ struct LineSearch::Impl
         options = opts;
     }
 
-    auto start(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
+    auto initialize(const MasterProblem& problem) -> void
     {
+        dims   = problem.dims;
+        xlower = problem.xlower;
+        xupper = problem.xupper;
+        plower = problem.plower;
+        pupper = problem.pupper;
+        utrial.resize(dims);
+    }
+
+    auto isDescentDirection(MasterVectorView uo, MasterVectorView u, const ResidualFunction& F) -> bool
+    {
+        const auto res = F.result();
+        const auto Fm = res.Fm;
+        const auto Jm = res.Jm;
+        du = u - uo;
+        Jdu = Jm * du;
+        const auto slope = Fm.dot(Jdu);
+        return slope < 0.0;
+    }
+
+    auto execute(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
+    {
+        warningif(!isDescentDirection(uo, u, F), "Proceeding with linear-search algorithm even though current Newton step is not a descent direction.");
+
+        assert((u.x.array() <= xupper.array()).all());
+        assert((u.x.array() >= xlower.array()).all());
+
         auto phi = [&](auto alpha)
         {
             utrial = uo*(1 - alpha) + alpha*u;
@@ -56,6 +87,14 @@ struct LineSearch::Impl
         const auto alphamin = minimizeBrent(phi, 0.0, 1.0, tol, maxiters);
 
         u = uo*(1 - alphamin) + alphamin*u; // using uo + alpha*(u - uo) is sensitive to round-off errors!
+
+        F.update(u);
+        E.update(u, F);
+
+        // TODO: Consider instead setting u = utrial, since utrial has been
+        // updated inside phi calls, and its last update correspond to uo*(1 -
+        // alphamin) + alphamin*u. Also consider not updating F and E above in
+        // this case, which have also been done in the last phi call.
     }
 };
 
@@ -81,9 +120,14 @@ auto LineSearch::setOptions(const LineSearchOptions& options) -> void
     pimpl->setOptions(options);
 }
 
-auto LineSearch::start(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
+auto LineSearch::initialize(const MasterProblem& problem) -> void
 {
-    pimpl->start(uo, u, F, E);
+    pimpl->initialize(problem);
+}
+
+auto LineSearch::execute(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
+{
+    pimpl->execute(uo, u, F, E);
 }
 
 } // namespace Optima
