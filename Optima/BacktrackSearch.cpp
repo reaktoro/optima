@@ -22,15 +22,99 @@
 
 namespace Optima {
 
+using std::min;
+using std::max;
+using std::abs;
+using std::greater;
+
 struct BacktrackSearch::Impl
 {
+    MasterDims dims;         ///< The dimensions of the master variables.
+    MasterVector unew;       ///< The state of u = (x, p, y, z) right-after Newton step without any correction.
+    Vector xlower;           ///< The lower bounds for x.
+    Vector xupper;           ///< The upper bounds for x.
+    Vector plower;           ///< The lower bounds for p.
+    Vector pupper;           ///< The upper bounds for p.
+    Vector betas;            ///< The beta factors for x and p
+
     Impl()
     {
     }
 
-    auto start(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
+    auto initialize(const MasterProblem& problem) -> void
     {
+        dims   = problem.dims;
+        xlower = problem.xlower;
+        xupper = problem.xupper;
+        plower = problem.plower;
+        pupper = problem.pupper;
+        unew.resize(dims);
+    }
 
+    auto execute(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
+    {
+        const auto& xo = uo.x;
+        const auto& po = uo.p;
+        auto& x = u.x;
+        auto& p = u.p;
+
+        const auto error_prev = E.error(); // the error from the previous iteration (or initial error if first iteration)
+
+        betas.setOnes(dims.nx + dims.np);
+        auto betasx = betas.head(dims.nx);
+        auto betasp = betas.tail(dims.np);
+
+        for(auto i = 0; i < dims.nx; ++i)
+        {
+            assert(xo[i] <= xupper[i]);
+            assert(xo[i] >= xlower[i]);
+            if(x[i] != xo[i])
+                if(x[i] > xupper[i] && xo[i] < xupper[i])
+                    betasx[i] = (xupper[i] - xo[i])/(x[i] - xo[i]);
+                else if(x[i] < xlower[i] && xo[i] > xlower[i])
+                    betasx[i] = (xlower[i] - xo[i])/(x[i] - xo[i]);
+        }
+
+        for(auto i = 0; i < dims.np; ++i)
+        {
+            assert(po[i] <= pupper[i]);
+            assert(po[i] >= plower[i]);
+            if(p[i] != po[i])
+                if(p[i] > pupper[i] && po[i] < pupper[i])
+                    betasp[i] = (pupper[i] - po[i])/(p[i] - po[i]);
+                else if(p[i] < plower[i] && po[i] > plower[i])
+                    betasp[i] = (plower[i] - po[i])/(p[i] - po[i]);
+        }
+
+        std::sort(betas.begin(), betas.end(), greater<double>());
+
+        unew = u;
+
+        for(auto beta : betas)
+        {
+            if(beta == 1.0)
+                continue;
+
+            u = uo*(1 - beta) + beta*unew;
+            u.x.noalias() = min(max(u.x, xlower), xupper);
+            u.p.noalias() = min(max(u.p, plower), pupper);
+
+            F.updateSkipJacobian(u);
+            E.update(u, F);
+
+            if(E.error() < error_prev)
+                return; // at this point, F = F(u) and E = E(u)
+        }
+
+        const auto betamin = betas[betas.size() - 1];
+
+        if(betamin == 1.0) // in this case, all betas are greater than one
+        {
+            u.x.noalias() = min(max(u.x, xlower), xupper);
+            u.p.noalias() = min(max(u.p, plower), pupper);
+            F.updateSkipJacobian(u);
+            E.update(u, F);
+        }
     }
 };
 
@@ -51,9 +135,14 @@ auto BacktrackSearch::operator=(BacktrackSearch other) -> BacktrackSearch&
     return *this;
 }
 
-auto BacktrackSearch::start(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
+auto BacktrackSearch::initialize(const MasterProblem& problem) -> void
 {
+    pimpl->initialize(problem);
+}
 
+auto BacktrackSearch::execute(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
+{
+    pimpl->execute(uo, u, F, E);
 }
 
 } // namespace Optima
