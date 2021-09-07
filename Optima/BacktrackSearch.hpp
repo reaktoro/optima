@@ -27,7 +27,7 @@
 
 namespace Optima {
 
-/// Used to backtrack a just performed step that produces infinity errors.
+/// Used to backtrack a just performed step that produces out-of-bounds errors.
 class BacktrackSearch
 {
 private:
@@ -48,8 +48,11 @@ public:
     /// Assign a BacktrackSearch object to this.
     auto operator=(BacktrackSearch other) -> BacktrackSearch&;
 
-    /// Start the backtrack search until the error is no longer infinity.
-    auto start(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void;
+    /// Initialize this BacktrackSearch object once at the start of the optimization calculation.
+    auto initialize(const MasterProblem& problem) -> void;
+
+    /// Execute the backtrack search until `u` has no out-of-bounds and the new error has decreased.
+    auto execute(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void;
 };
 
 } // namespace Optima
