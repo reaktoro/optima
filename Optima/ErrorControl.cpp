@@ -20,63 +20,44 @@
 // Optima includes
 #include <Optima/Exception.hpp>
 #include <Optima/BacktrackSearch.hpp>
+#include <Optima/ErrorStatus.hpp>
 #include <Optima/LineSearch.hpp>
 
 namespace Optima {
 
 struct ErrorControl::Impl
 {
-    /// The backtrack algorithm to correct steps producing infinity errors.
-    BacktrackSearch backtracksearch;
-
-    /// The line-search algorithm to correct steps producing significant large errors.
-    LineSearch linesearch;
+    ErrorStatus errorstatus;         ///< The current error status of the calculation.
+    BacktrackSearch backtracksearch; ///< The backtrack algorithm to correct steps producing infinity errors.
+    LineSearch linesearch;           ///< The line-search algorithm to correct steps producing significant large errors.
 
     Impl()
     {}
 
+    auto setOptions(const ErrorControlOptions& options) -> void
+    {
+        errorstatus.setOptions(options.errorstatus);
+        backtracksearch.setOptions(options.backtracksearch);
+        linesearch.setOptions(options.linesearch);
+    }
+
     auto initialize(const MasterProblem& problem) -> void
     {
-    }
-
-    auto isBacktrackSearchNeeded(const ResidualErrors& E)
-    {
-        return !std::isfinite(E.error());
-    }
-
-    auto isLineSearchNeeded(const ResidualErrors& E)
-    {
-        // return E.errorHasIncreasedSignificantly();
-    }
-
-    auto executeBacktrackSearch(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
-    {
-
-    }
-
-    auto executeLineSearch(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
-    {
-
-    }
-
-    auto isDescentDirection(MasterVectorView uo, MasterVectorView u, const ResidualFunction& F) -> bool
-    {
-        const auto Fm = F.result().Fm;
-        const auto slope = Fm.dot(u - uo);
-        return slope < 0.0;
+        errorstatus.initialize();
+        backtracksearch.initialize(problem);
+        linesearch.initialize(problem);
     }
 
     auto execute(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
     {
-        // error(!isDescentDirection(uo, u, F), "Currently, Optima cannot handle Newton steps that are not descent directions.");
+        const auto error_prev = E.error();
 
-        // if(isBacktrackSearchNeeded(E)) {
-        //     backtracksearch.start(uo, u, F, E);
-        // }
+        backtracksearch.execute(uo, u, F, E);
 
-        // if(isLineSearchNeeded(E)) {
-        //     linesearch.start(uo, u, F, E);
-        // }
+        const auto error_new = E.error();
+
+        // if(error_new >= error_prev)
+        //     linesearch.execute(uo, u, F, E);
     }
 };
 
@@ -95,6 +76,11 @@ auto ErrorControl::operator=(ErrorControl other) -> ErrorControl&
 {
     pimpl = std::move(other.pimpl);
     return *this;
+}
+
+auto ErrorControl::setOptions(const ErrorControlOptions& options) -> void
+{
+    pimpl->setOptions(options);
 }
 
 auto ErrorControl::initialize(const MasterProblem& problem) -> void

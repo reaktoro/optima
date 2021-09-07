@@ -21,11 +21,27 @@
 #include <memory>
 
 // Optima includes
+#include <Optima/BacktrackSearchOptions.hpp>
+#include <Optima/ErrorStatusOptions.hpp>
+#include <Optima/LineSearchOptions.hpp>
 #include <Optima/MasterVector.hpp>
 #include <Optima/ResidualErrors.hpp>
 #include <Optima/ResidualFunction.hpp>
 
 namespace Optima {
+
+/// The options for error control in the optimization calculation.
+struct ErrorControlOptions
+{
+    /// The options for assessing error status.
+    ErrorStatusOptions errorstatus;
+
+    /// The options for the backtrack search operation.
+    BacktrackSearchOptions backtracksearch;
+
+    /// The options for the linear search minimization operation.
+    LineSearchOptions linesearch;
+};
 
 /// Used to reduce the error level of last performed step if needed.
 class ErrorControl
@@ -48,7 +64,10 @@ public:
     /// Assign a ErrorControl object to this.
     auto operator=(ErrorControl other) -> ErrorControl&;
 
-    /// Initialize this ErrorControl object once at the start of the optimization calculation.
+    /// Set the options for the error control in the optimization calculation.
+    auto setOptions(const ErrorControlOptions& options) -> void;
+
+    /// Initialize this error control object once at the start of the optimization calculation.
     auto initialize(const MasterProblem& problem) -> void;
 
     /// Execute the error control operation to potentially decrease error level.
