@@ -52,8 +52,11 @@ public:
     /// Set the options of this LineSearch object.
     auto setOptions(const LineSearchOptions& options) -> void;
 
-    /// Start the backtrack search until the error is no longer infinity.
-    auto start(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void;
+    /// Initialize this LineSearch object once at the start of the optimization calculation.
+    auto initialize(const MasterProblem& problem) -> void;
+
+    /// Execute the line-search operation to decrease the current error using a minimization along the Newton direction.
+    auto execute(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void;
 };
 
 } // namespace Optima
