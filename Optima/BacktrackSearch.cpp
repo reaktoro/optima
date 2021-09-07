@@ -52,45 +52,15 @@ struct BacktrackSearch::Impl
         unew.resize(dims);
     }
 
-    /**
     auto execute(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
     {
-        const auto error_old = E.error(); // the error from the previous iteration (or initial error if first iteration)
-
-        double beta = 1.0;
-
-        unew = u;
-
-        for(auto tentative = 0; tentative < options.maxiters; ++tentative)
+        if(options.apply_min_max_fix_and_accept)
         {
             u.x.noalias() = min(max(u.x, xlower), xupper);
             u.p.noalias() = min(max(u.p, plower), pupper);
-            F.updateSkipJacobian(u);
-            E.update(u, F);
-
-            if(options.apply_min_max_fix_and_accept)
-                return;
-
-            const auto error_new = E.error();
-
-            if(error_new < error_old)
-                return;
-
-            beta *= options.factor;
-
-            if(tentative == 0 && options.scale_down_newton_step_based_on_error_growth)
-                beta = error_old/error_new;
-
-            u = uo*(1 - beta) + beta*unew;
+            return;
         }
 
-        warningif(true, "Backtrack search was not successfull in decreasing error, but this is not necessarily an issue.");
-    }
-    //*/
-
-    /**/
-    auto execute(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
-    {
         const auto& xo = uo.x;
         const auto& po = uo.p;
         auto& x = u.x;
@@ -154,7 +124,6 @@ struct BacktrackSearch::Impl
             E.update(u, F);
         }
     }
-    //*/
 };
 
 BacktrackSearch::BacktrackSearch()
