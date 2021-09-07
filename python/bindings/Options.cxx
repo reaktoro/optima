@@ -26,23 +26,17 @@ using namespace Optima;
 
 void exportOptions(py::module& m)
 {
-    py::enum_<StepMode>(m, "StepMode")
-        .value("Conservative", StepMode::Conservative)
-        .value("Aggressive", StepMode::Aggressive)
-        ;
-
     py::class_<OutputOptions, OutputterOptions>(m, "OutputOptions")
         .def(py::init<>())
         .def_readwrite("xprefix", &OutputOptions::xprefix)
+        .def_readwrite("pprefix", &OutputOptions::pprefix)
         .def_readwrite("yprefix", &OutputOptions::yprefix)
         .def_readwrite("zprefix", &OutputOptions::zprefix)
+        .def_readwrite("sprefix", &OutputOptions::sprefix)
         .def_readwrite("xnames", &OutputOptions::xnames)
+        .def_readwrite("pnames", &OutputOptions::pnames)
         .def_readwrite("ynames", &OutputOptions::ynames)
-        ;
-
-    py::class_<BacktrackSearchOptions>(m, "BacktrackSearchOptions")
-        .def_readwrite("factor", &BacktrackSearchOptions::factor)
-        .def_readwrite("maxiters", &BacktrackSearchOptions::maxiters)
+        .def_readwrite("znames", &OutputOptions::znames)
         ;
 
     py::class_<SteepestDescentOptions>(m, "SteepestDescentOptions")
@@ -52,12 +46,13 @@ void exportOptions(py::module& m)
 
     py::class_<Options>(m, "Options")
         .def(py::init<>())
-        .def_readwrite("output", &Options::output)
-        .def_readwrite("maxiterations", &Options::maxiterations)
-        .def_readwrite("linesearch", &Options::linesearch)
-        .def_readwrite("steepestdescent", &Options::steepestdescent)
-        .def_readwrite("backtrack", &Options::backtrack)
-        .def_readwrite("newtonstep", &Options::newtonstep)
-        .def_readwrite("convergence", &Options::convergence)
+        .def_readwrite("output", &Options::output, "The options for the output of the optimization calculations")
+        .def_readwrite("maxiters", &Options::maxiters, "The maximum number of iterations in the optimization calculations.")
+        .def_readwrite("errorstatus", &Options::errorstatus, "The options for assessing error status.")
+        .def_readwrite("backtracksearch", &Options::backtracksearch, "The options for the backtrack search operation.")
+        .def_readwrite("linesearch", &Options::linesearch, "The options for the linear search minimization operation.")
+        .def_readwrite("steepestdescent", &Options::steepestdescent, "The options for the steepest descent step operation when needed.")
+        .def_readwrite("newtonstep", &Options::newtonstep, "The options used for Newton step calculations.")
+        .def_readwrite("convergence", &Options::convergence, "The options used for convergence analysis.")
         ;
 }

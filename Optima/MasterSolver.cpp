@@ -135,6 +135,7 @@ struct MasterSolver::Impl
         options = opts;
         newtonstep.setOptions(opts.newtonstep);
         convergence.setOptions(opts.convergence);
+        errorcontrol.setOptions({opts.errorstatus, opts.backtracksearch, opts.linesearch});
         outputter.setOptions(opts.output);
     }
 
@@ -159,7 +160,7 @@ struct MasterSolver::Impl
 
     auto stepping(MasterVectorRef u) -> bool
     {
-        if(result.iterations > options.maxiterations)
+        if(result.iterations > options.maxiters)
             return STOP;
 
         // At the beginning of each new iteration, evaluate the residual
@@ -182,7 +183,7 @@ struct MasterSolver::Impl
     {
         outputCurrentState();
         newtonstep.apply(F, uo, u);
-        transformstep.execute(uo, u, F, E);
+        transformstep.execute(uo, u, F, E); // TODO: Check if E should not be altered here, which could compromise errorcontrol logic!
         errorcontrol.execute(uo, u, F, E);
         uo = u;
         result.iterations += 1;
