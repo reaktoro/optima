@@ -62,7 +62,7 @@ template<typename... Args>
 auto warning(bool condition, Args... items) -> void
 {
     if(condition)
-        std::cerr << "\033[1;33m***OPTIMA WARNING***\n" << internal::str(items...) << "\n\033[0m";
+        std::cout << "\033[1;33m***OPTIMA WARNING***\n" << internal::str(items...) << "\n\033[0m";
 }
 
 /// Raise a runtime error if condition is true.
@@ -82,7 +82,7 @@ auto error(bool condition, Args... items) -> void
 #define warningif(condition, ...) \
     { \
         if((condition)) { \
-            std::cerr << "\033[1;33m***OPTIMA WARNING***\n" << internal::str(__VA_ARGS__) << "\n\033[0m"; \
+            std::cout << "\033[1;33m***OPTIMA WARNING***\n" << internal::str(__VA_ARGS__) << "\n\033[0m"; \
         } \
     }
 
