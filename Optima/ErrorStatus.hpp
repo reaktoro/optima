@@ -22,19 +22,9 @@
 
 // Optima includes
 #include <Optima/ErrorStatusOptions.hpp>
-#include <Optima/ResidualFunction.hpp>
+#include <Optima/ResidualErrors.hpp>
 
 namespace Optima {
-
-/// The arguments for method @ref ErrorStatus::initialize.
-struct ErrorStatusInitializeArgs
-{
-    /// The options for error analysis during an optimization calculation.
-    const ErrorStatusOptions options;
-
-    /// The error of the optimization calculation at first iteration corresponding to initial guess.
-    const double errorfirst;
-};
 
 /// Used to manage the current error status duing an optimization calculation.
 class ErrorStatus
@@ -57,11 +47,14 @@ public:
     /// Assign a ErrorStatus object to this.
     auto operator=(ErrorStatus other) -> ErrorStatus&;
 
-    /// Initialize this ErrorStatus object.
-    auto initialize(ErrorStatusInitializeArgs args) -> void;
+    /// Set the options for the error status checking.
+    auto setOptions(const ErrorStatusOptions& options) -> void;
+
+    /// Initialize this error status checker.
+    auto initialize() -> void;
 
     /// Update the error status.
-    auto update(const ResidualFunction& F) -> void;
+    auto update(const ResidualErrors& E) -> void;
 
     /// Return `true` if current error has decreased since last update.
     auto errorHasDecreased() const -> bool;
