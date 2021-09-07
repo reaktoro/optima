@@ -21,6 +21,7 @@
 #include <memory>
 
 // Optima includes
+#include <Optima/BacktrackSearchOptions.hpp>
 #include <Optima/MasterVector.hpp>
 #include <Optima/ResidualErrors.hpp>
 #include <Optima/ResidualFunction.hpp>
@@ -48,7 +49,10 @@ public:
     /// Assign a BacktrackSearch object to this.
     auto operator=(BacktrackSearch other) -> BacktrackSearch&;
 
-    /// Initialize this BacktrackSearch object once at the start of the optimization calculation.
+    /// Set the options for the backtrack search operation.
+    auto setOptions(const BacktrackSearchOptions& options) -> void;
+
+    /// Initialize this backtrack searcher once at the start of the optimization calculation.
     auto initialize(const MasterProblem& problem) -> void;
 
     /// Execute the backtrack search until `u` has no out-of-bounds and the new error has decreased.

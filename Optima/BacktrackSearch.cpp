@@ -29,13 +29,14 @@ using std::greater;
 
 struct BacktrackSearch::Impl
 {
-    MasterDims dims;         ///< The dimensions of the master variables.
-    MasterVector unew;       ///< The state of u = (x, p, y, z) right-after Newton step without any correction.
-    Vector xlower;           ///< The lower bounds for x.
-    Vector xupper;           ///< The upper bounds for x.
-    Vector plower;           ///< The lower bounds for p.
-    Vector pupper;           ///< The upper bounds for p.
-    Vector betas;            ///< The beta factors for x and p
+    BacktrackSearchOptions options;  ///< The options for the backtrack search operation.
+    MasterDims dims;                 ///< The dimensions of the master variables.
+    MasterVector unew;               ///< The state of u = (x, p, y, z) right-after Newton step without any correction.
+    Vector xlower;                   ///< The lower bounds for x.
+    Vector xupper;                   ///< The upper bounds for x.
+    Vector plower;                   ///< The lower bounds for p.
+    Vector pupper;                   ///< The upper bounds for p.
+    Vector betas;                    ///< The beta factors for x and p
 
     Impl()
     {
@@ -51,6 +52,43 @@ struct BacktrackSearch::Impl
         unew.resize(dims);
     }
 
+    /**
+    auto execute(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
+    {
+        const auto error_old = E.error(); // the error from the previous iteration (or initial error if first iteration)
+
+        double beta = 1.0;
+
+        unew = u;
+
+        for(auto tentative = 0; tentative < options.maxiters; ++tentative)
+        {
+            u.x.noalias() = min(max(u.x, xlower), xupper);
+            u.p.noalias() = min(max(u.p, plower), pupper);
+            F.updateSkipJacobian(u);
+            E.update(u, F);
+
+            if(options.apply_min_max_fix_and_accept)
+                return;
+
+            const auto error_new = E.error();
+
+            if(error_new < error_old)
+                return;
+
+            beta *= options.factor;
+
+            if(tentative == 0 && options.scale_down_newton_step_based_on_error_growth)
+                beta = error_old/error_new;
+
+            u = uo*(1 - beta) + beta*unew;
+        }
+
+        warningif(true, "Backtrack search was not successfull in decreasing error, but this is not necessarily an issue.");
+    }
+    //*/
+
+    /**/
     auto execute(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
     {
         const auto& xo = uo.x;
@@ -116,6 +154,7 @@ struct BacktrackSearch::Impl
             E.update(u, F);
         }
     }
+    //*/
 };
 
 BacktrackSearch::BacktrackSearch()
@@ -133,6 +172,11 @@ auto BacktrackSearch::operator=(BacktrackSearch other) -> BacktrackSearch&
 {
     pimpl = std::move(other.pimpl);
     return *this;
+}
+
+auto BacktrackSearch::setOptions(const BacktrackSearchOptions& options) -> void
+{
+    pimpl->options = options;
 }
 
 auto BacktrackSearch::initialize(const MasterProblem& problem) -> void
