@@ -18,6 +18,7 @@
 #include "ErrorStatus.hpp"
 
 // Optima includes
+#include <Optima/Constants.hpp>
 #include <Optima/Exception.hpp>
 
 namespace Optima {
@@ -28,31 +29,32 @@ struct ErrorStatus::Impl
     ErrorStatusOptions options;
 
     /// The error of the optimization calculation corresponding to initial guess.
-    double errorfirst = 0.0;
+    double errorfirst = inf;
 
     /// The error in the previous iteration of the optimization calculation.
-    double errorprev = 0.0;
+    double errorprev = inf;
 
     /// The current error in the optimization calculation.
-    double error = 0.0;
+    double error = inf;
 
     Impl()
     {
     }
 
-    auto initialize(ErrorStatusInitializeArgs args) -> void
+    auto initialize() -> void
     {
-        options = args.options;
-        errorfirst = args.errorfirst;
-        errorprev = args.errorfirst;
-        error = args.errorfirst;
+        errorfirst = inf;
+        errorprev = inf;
+        error = inf;
         sanitycheck();
     }
 
-    auto update(const ResidualFunction& F) -> void
+    auto update(const ResidualErrors& E) -> void
     {
+        if(std::isinf(errorfirst))
+            errorfirst = E.error();
         errorprev = error;
-        // error = F.residualErrors().error;
+        error = E.error();
         sanitycheck();
     }
 
@@ -109,9 +111,19 @@ auto ErrorStatus::operator=(ErrorStatus other) -> ErrorStatus&
     return *this;
 }
 
-auto ErrorStatus::update(const ResidualFunction& F) -> void
+auto ErrorStatus::setOptions(const ErrorStatusOptions& options) -> void
 {
-    pimpl->update(F);
+    pimpl->options = options;
+}
+
+auto ErrorStatus::initialize() -> void
+{
+    pimpl->initialize();
+}
+
+auto ErrorStatus::update(const ResidualErrors& E) -> void
+{
+    pimpl->update(E);
 }
 
 auto ErrorStatus::errorHasDecreased() const -> bool

@@ -19,7 +19,7 @@
 
 namespace Optima {
 
-/// Used to organize the options for error analysis during an optimization calculation.
+/// The options for assessing error status during an optimization calculation.
 struct ErrorStatusOptions
 {
     /// The factor used to determine if new error has significantly increased compared to previous error.
