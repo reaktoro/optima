@@ -62,8 +62,6 @@ struct NewtonStep::Impl
         u.x.noalias() = uo.x + du.x;
         u.p.noalias() = uo.p + du.p;
         u.w.noalias() = uo.w + du.w;
-        u.x.noalias() = min(max(u.x, xlower), xupper);
-        u.p.noalias() = min(max(u.p, plower), pupper);
     }
 
     auto sanitycheck() const -> void
