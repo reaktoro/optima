@@ -83,8 +83,8 @@ struct Echelonizer::Impl
     /// The backup permutation matrix Q used to reset this object to a state with non-accumulated round-off errors.
     Indices Q0;
 
-    /// The threshold used to compare numbers.
-    double threshold;
+    /// The threshold used to compare numbers in S matrix.
+    const double threshold = 1e-8;
 
     /// The number used for eliminating round-off errors during cleanup procedure.
     /// This is computed as 10**[1 + ceil(log10(maxAij))], where maxAij is the
@@ -162,9 +162,6 @@ struct Echelonizer::Impl
         Kb.setIdentity(nb);
         Kn.setIdentity(nn);
 
-        // Initialize the threshold value
-        threshold = std::abs(lu.maxPivot()) * lu.threshold() * std::max(A.rows(), A.cols());
-
         // Compute sigma for given matrix A
         sigma = A.size() ? A.cwiseAbs().maxCoeff() : 0.0;
         sigma = A.size() ? std::pow(10, 1 + std::ceil(std::log10(sigma))) : 0.0;
@@ -192,10 +189,10 @@ struct Echelonizer::Impl
             "Could not swap basic and non-basic variables. "
                 "Expecting an index of non-basic variable below `n - r`, where `r = rank(A)`.");
 
-        // Check if S(ib, in) is different than zero
+        // Check if S(ib, in) is large enough
         assert(std::abs(S(ib, in)) > threshold &&
             "Could not swap basic and non-basic variables. "
-                "Expecting a non-basic variable with non-zero pivot.");
+                "Expecting a non-basic variable with large enough S(ib, in) pivot.");
 
         // Initialize the matrix M
         M = S.col(in);
@@ -223,11 +220,6 @@ struct Echelonizer::Impl
     /// Update the existing canonical form with given priority weights for the columns.
     auto updateWithPriorityWeights(VectorView w) -> void
     {
-        // THE RESET BELOW IS IMPORTANT TO PREVENT ACCUMULATION OF ROUND-OFF
-        // ERRORS THAT MAY CAUSE THE OPTIMIZATION COMPUTATION TO FAIL FOR
-        // NON-OBVIOUS REASONS!
-        reset(); // Reset R, S, Q to R0, S0, Q0
-
         // Assert there are as many weights as there are variables
         assert(w.rows() == lu.cols() &&
             "Could not update the canonical form."
