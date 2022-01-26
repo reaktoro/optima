@@ -113,6 +113,10 @@ struct LU::Impl
 
         is_li.setOnes(n); // set all equations as linearly independent to start with
 
+        // Skip the rest if there is only one equation.
+        if(n == 1)
+            return;
+
         const auto D = U.diagonal().cwiseAbs();
         const auto eps = std::numeric_limits<double>::epsilon();
 
