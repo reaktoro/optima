@@ -14,9 +14,9 @@ add_custom_target(optima-setuptools ALL
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 # Ensure the path where the python package is installed is not empty
-if(NOT DEFINED REAKTORO_PYTHON_INSTALL_PREFIX)
-    file(TO_NATIVE_PATH ${CMAKE_INSTALL_PREFIX} REAKTORO_PYTHON_INSTALL_PREFIX)
+if(NOT DEFINED OPTIMA_PYTHON_INSTALL_PREFIX)
+    file(TO_NATIVE_PATH ${CMAKE_INSTALL_PREFIX} OPTIMA_PYTHON_INSTALL_PREFIX)
 endif()
 
 # Create an install target for the optima python package
-install(CODE "execute_process(COMMAND pip install . --no-deps --force-reinstall --no-compile --prefix=${REAKTORO_PYTHON_INSTALL_PREFIX} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})")
+install(CODE "execute_process(COMMAND pip install . --no-deps --force-reinstall --no-compile --prefix=${OPTIMA_PYTHON_INSTALL_PREFIX} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})")
