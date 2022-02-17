@@ -36,24 +36,17 @@ namespace Optima {
 /// A type that describes the options for the output of a optimization calculation
 struct OutputOptions : OutputterOptions
 {
-    /// The prefix for the primal variables `x`.
-    std::string xprefix = "x";
-
-    /// The prefix for the parameter variables `p`.
-    std::string pprefix = "p";
-
-    /// The prefix for the Lagrange multipliers `y`.
-    std::string yprefix = "y";
-
-    /// The prefix for the Lagrange multipliers `z`.
-    std::string zprefix = "z";
-
-    /// The prefix for the stability variables `s`.
-    std::string sprefix = "s";
-
     /// The names of the primal variables `x`.
     /// Numbers will be used if not properly set (e.g., `x[0]`, `x[1]`)
     std::vector<std::string> xnames;
+
+    /// The names of the primal slack variables `xbg` associated to linear inequality constraints.
+    /// Numbers will be used if not properly set (e.g., `x[bg:0]`, `x[bg:1]`)
+    std::vector<std::string> xbgnames;
+
+    /// The names of the primal slack variables `xhg` associated to non-linear inequality constraints.
+    /// Numbers will be used if not properly set (e.g., `x[hg:0]`, `x[hg:1]`)
+    std::vector<std::string> xhgnames;
 
     /// The names of the parameter variables `p`.
     /// Numbers will be used if not properly set (e.g., `p[0]`, `p[1]`)

@@ -65,11 +65,11 @@ struct MasterSolver::Impl
         outputter.addEntry("||ex||max");
         outputter.addEntry("||ep||max");
         outputter.addEntry("||ew||max");
-        outputter.addEntries(options.output.xprefix, dims.nx, options.output.xnames);
-        outputter.addEntries(options.output.pprefix, dims.np, options.output.pnames);
-        outputter.addEntries(options.output.yprefix, dims.ny, options.output.ynames);
-        outputter.addEntries(options.output.zprefix, dims.nz, options.output.znames);
-        outputter.addEntries(options.output.sprefix, dims.nx, options.output.xnames);
+        outputter.addEntries("x", dims.nx, options.output.xnames);
+        outputter.addEntries("p", dims.np, options.output.pnames);
+        outputter.addEntries("y", dims.ny, options.output.ynames);
+        outputter.addEntries("z", dims.nz, options.output.znames);
+        outputter.addEntries("s", dims.nx, options.output.xnames);
         outputter.addEntries("ex", dims.nx, options.output.xnames);
         outputter.addEntries("ep", dims.np, options.output.pnames);
         outputter.addEntries("ey", dims.ny, options.output.ynames);
