@@ -35,6 +35,7 @@ namespace Optima {
 struct Solver::Impl
 {
     Dims dims;                      ///< The dimensions of the variables and constraints in the optimization problem.
+    Options options;                ///< The options for the optimization problem.
     MasterSolver msolver;           ///< The master optimization solver.
     MasterProblem mproblem;         ///< The master optimization problem.
     MasterState mstate;             ///< The master optimization state.
@@ -56,9 +57,49 @@ struct Solver::Impl
     }
 
     /// Set the options for the optimization calculation.
-    auto setOptions(const Options& options) -> void
+    auto setOptions(const Options& opts) -> void
     {
-        msolver.setOptions(options);
+        options = opts;
+    }
+
+    /// Update the options for the master optimization problem.
+    auto updateMasterOptions() -> void
+    {
+        if(options.output.active)
+        {
+            // Check size conformance for given variable names
+            errorif(!options.output.xnames.empty() && options.output.xnames.size() != nx, "Expecting ", nx, " primal variable names in options.output.xnames, but got ", options.output.xnames.size(), " instead.");
+            errorif(!options.output.xbgnames.empty() && options.output.xbgnames.size() != nxbg, "Expecting ", nxbg, " primal slack variable names in options.output.xbgnames, but got ", options.output.xbgnames.size(), " instead.");
+            errorif(!options.output.xhgnames.empty() && options.output.xhgnames.size() != nxhg, "Expecting ", nxhg, " primal slack variable names in options.output.xhgnames, but got ", options.output.xhgnames.size(), " instead.");
+
+            Options opts(options);
+
+            // Clear incoming variable names because they will be set below for the MasterSolver.
+            opts.output.xnames.clear();
+            opts.output.xbgnames.clear();
+            opts.output.xhgnames.clear();
+
+            // Add x variable names into options.output.xnames
+            if(options.output.xnames.empty())
+                for(auto i = 0; i < nx; ++i)
+                    opts.output.xnames.push_back(std::to_string(i));
+            else opts.output.xnames = options.output.xnames;
+
+            // Add xbg variable names into options.output.xnames
+            if(options.output.xbgnames.empty())
+                for(auto i = 0; i < nxbg; ++i)
+                    opts.output.xnames.push_back("bg:" + std::to_string(i)); // x[bg:0], x[bg:1] for slack variables associated to linear inequality constraints
+            else opts.output.xnames.insert(opts.output.xnames.end(), options.output.xbgnames.begin(), options.output.xbgnames.end());
+
+            // Add xhg variable names into options.output.xnames
+            if(options.output.xhgnames.empty())
+                for(auto i = 0; i < nxhg; ++i)
+                    opts.output.xnames.push_back("hg:" + std::to_string(i)); // x[hg:0], x[hg:1] for slack variables associated to non-linear inequality constraints
+            else opts.output.xnames.insert(opts.output.xnames.end(), options.output.xhgnames.begin(), options.output.xhgnames.end());
+
+            msolver.setOptions(opts);
+        }
+        else msolver.setOptions(options);
     }
 
     /// Update the master problem object `mproblem` with given Problem object.
@@ -285,6 +326,7 @@ struct Solver::Impl
     auto solve(const Problem& problem, State& state) -> Result
     {
         updateMasterProblem(problem);
+        updateMasterOptions();
         updateMasterState(state);
         const auto result = msolver.solve(mproblem, mstate);
         updateState(state);
@@ -295,6 +337,7 @@ struct Solver::Impl
     auto solve(const Problem& problem, State& state, Sensitivity& sensitivity) -> Result
     {
         updateMasterProblem(problem);
+        updateMasterOptions();
         updateMasterState(state);
         const auto result = msolver.solve(mproblem, mstate, msensitivity);
         updateState(state);
