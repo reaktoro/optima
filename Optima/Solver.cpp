@@ -243,7 +243,7 @@ struct Solver::Impl
         // Initialize the upper bounds of xbar = (x, xbg, xhg)
         xbarupper.resize(nxbar);
         xbarupper.head(nx) = problem.xupper;
-        xbarlower.tail(nxbg + nxhg).fill(0.0);
+        xbarupper.tail(nxbg + nxhg).fill(0.0);
 
         // Initialize vector b = (be, bg)
         mproblem.b.resize(ny);
