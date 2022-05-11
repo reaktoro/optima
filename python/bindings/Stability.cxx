@@ -16,12 +16,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 // pybind11 includes
-#include <pybind11/pybind11.h>
-#include <pybind11/eigen.h>
-namespace py = pybind11;
-
-// pybindx includes
-#include "pybindx.hpp"
+#include "pybind11.hxx"
 
 // Optima includes
 #include <Optima/MasterMatrix.hpp>
@@ -54,6 +49,6 @@ void exportStability(py::module& m)
         .def(py::init<>())
         .def(py::init<Index>())
         .def("update", update)
-        .def("status", &Stability::status, PYBINDX_ENSURE_MUTUAL_EXISTENCE)
+        .def("status", &Stability::status, PYBIND_ENSURE_MUTUAL_EXISTENCE)
         ;
 }

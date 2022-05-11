@@ -16,13 +16,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 // pybind11 includes
-#include <pybind11/pybind11.h>
-#include <pybind11/eigen.h>
-namespace py = pybind11;
-
-// pybindx includes
-#include "pybindx.hpp"
-namespace pyx = pybindx;
+#include "pybind11.hxx"
 
 // Optima includes
 #include <Optima/MatrixViewH.hpp>
@@ -32,8 +26,8 @@ void exportMatrixViewH(py::module& m)
 {
     py::class_<MatrixViewH>(m, "MatrixViewH")
         .def(py::init<MatrixView4py, MatrixView4py, bool>(),
-            pyx::keep_argument_alive<0>(),
-            pyx::keep_argument_alive<1>())
+            keep_argument_alive<0>(),
+            keep_argument_alive<1>())
         .def_readonly("Hxx"      , &MatrixViewH::Hxx)
         .def_readonly("Hxp"      , &MatrixViewH::Hxp)
         .def_readonly("isHxxDiag", &MatrixViewH::isHxxDiag)

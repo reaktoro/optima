@@ -16,12 +16,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 // pybind11 includes
-#include <pybind11/pybind11.h>
-#include <pybind11/eigen.h>
-namespace py = pybind11;
-
-// pybindx includes
-#include "pybindx.hpp"
+#include "pybind11.hxx"
 
 // Optima includes
 #include <Optima/ResidualVector.hpp>
@@ -49,7 +44,7 @@ void exportResidualVector(py::module& m)
         .def(py::init<>())
         .def(py::init<const ResidualVector&>())
         .def("update", update)
-        .def("masterVector", &ResidualVector::masterVector, PYBINDX_ENSURE_MUTUAL_EXISTENCE)
-        .def("canonicalVector", &ResidualVector::canonicalVector, PYBINDX_ENSURE_MUTUAL_EXISTENCE)
+        .def("masterVector", &ResidualVector::masterVector, PYBIND_ENSURE_MUTUAL_EXISTENCE)
+        .def("canonicalVector", &ResidualVector::canonicalVector, PYBIND_ENSURE_MUTUAL_EXISTENCE)
         ;
 }
