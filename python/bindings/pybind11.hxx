@@ -15,16 +15,30 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+#pragma once
+
+//----------------------------------------------------------------------------------------------------------------
+// Add defines above to allow pybind11 packages produced with different compilers/versions to be used together.
+// https://github.com/pybind/pybind11/pull/2602
+//----------------------------------------------------------------------------------------------------------------
+#define PYBIND11_COMPILER_TYPE ""
+#define PYBIND11_STDLIB ""
+#define PYBIND11_BUILD_ABI ""
+//----------------------------------------------------------------------------------------------------------------
+
 // pybind11 includes
 #include <pybind11/pybind11.h>
-
-namespace pybindx {
-
+#include <pybind11/eigen.h>
+#include <pybind11/functional.h>
+#include <pybind11/operators.h>
+#include <pybind11/stl.h>
+#include <pybind11/numpy.h>
+#include <pybind11/chrono.h>
 namespace py = pybind11;
 
 /// Used to indicate that the returned object of a method and the parent/this
 /// object must both be kept alive while the other is alive.
-#define PYBINDX_ENSURE_MUTUAL_EXISTENCE \
+#define PYBIND_ENSURE_MUTUAL_EXISTENCE \
     py::keep_alive<1, 0>(), py::keep_alive<0, 1>()
 
 /// Used to indicate that the k-th argument in a method should be kept alive in Python.
@@ -33,5 +47,3 @@ namespace py = pybind11;
 /// Here, however, `0` denotes the first argument in C++, which is not the `this` pointer.
 template<size_t k>
 using keep_argument_alive = py::keep_alive<1, k + 2>;
-
-} // namespace pybindx

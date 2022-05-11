@@ -16,13 +16,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 // pybind11 includes
-#include <pybind11/pybind11.h>
-#include <pybind11/eigen.h>
-namespace py = pybind11;
-
-// pybindx includes
-#include "pybindx.hpp"
-namespace pyx = pybindx;
+#include "pybind11.hxx"
 
 // Optima includes
 #include <Optima/MatrixViewRWQ.hpp>
@@ -32,11 +26,11 @@ void exportMatrixViewRWQ(py::module& m)
 {
     py::class_<MatrixViewRWQ>(m, "MatrixViewRWQ")
         .def(py::init<MatrixView4py, MatrixView4py, MatrixView4py, IndicesView, IndicesView>(),
-            pyx::keep_argument_alive<0>(),
-            pyx::keep_argument_alive<1>(),
-            pyx::keep_argument_alive<2>(),
-            pyx::keep_argument_alive<3>(),
-            pyx::keep_argument_alive<4>())
+            keep_argument_alive<0>(),
+            keep_argument_alive<1>(),
+            keep_argument_alive<2>(),
+            keep_argument_alive<3>(),
+            keep_argument_alive<4>())
         .def_readonly("R"  , &MatrixViewRWQ::R)
         .def_readonly("Sbn", &MatrixViewRWQ::Sbn)
         .def_readonly("Sbp", &MatrixViewRWQ::Sbp)

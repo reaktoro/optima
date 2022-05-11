@@ -16,12 +16,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 // pybind11 includes
-#include <pybind11/pybind11.h>
-#include <pybind11/eigen.h>
-namespace py = pybind11;
-
-// pybindx includes
-#include "pybindx.hpp"
+#include "pybind11.hxx"
 
 // Optima includes
 #include <Optima/EchelonizerW.hpp>
@@ -43,7 +38,7 @@ void exportEchelonizerW(py::module& m)
         .def(py::init<>())
         .def("initialize", initialize)
         .def("update", update)
-        .def("W", &EchelonizerW::W, PYBINDX_ENSURE_MUTUAL_EXISTENCE)
-        .def("RWQ", &EchelonizerW::RWQ, PYBINDX_ENSURE_MUTUAL_EXISTENCE)
+        .def("W", &EchelonizerW::W, PYBIND_ENSURE_MUTUAL_EXISTENCE)
+        .def("RWQ", &EchelonizerW::RWQ, PYBIND_ENSURE_MUTUAL_EXISTENCE)
         ;
 }

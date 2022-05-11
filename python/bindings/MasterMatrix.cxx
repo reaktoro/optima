@@ -16,14 +16,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 // pybind11 includes
-#include <pybind11/pybind11.h>
-#include <pybind11/eigen.h>
-#include <pybind11/operators.h>
-namespace py = pybind11;
-
-// pybindx includes
-#include "pybindx.hpp"
-namespace pyx = pybindx;
+#include "pybind11.hxx"
 
 // Optima includes
 #include <Optima/MasterMatrix.hpp>
@@ -35,13 +28,13 @@ void exportMasterMatrix(py::module& m)
 {
     py::class_<MasterMatrix>(m, "MasterMatrix")
         .def(py::init<MasterDims, MatrixViewH, MatrixViewV, MatrixViewW, MatrixViewRWQ, IndicesView, IndicesView>(),
-            pyx::keep_argument_alive<0>(),
-            pyx::keep_argument_alive<1>(),
-            pyx::keep_argument_alive<2>(),
-            pyx::keep_argument_alive<3>(),
-            pyx::keep_argument_alive<4>(),
-            pyx::keep_argument_alive<5>(),
-            pyx::keep_argument_alive<6>())
+            keep_argument_alive<0>(),
+            keep_argument_alive<1>(),
+            keep_argument_alive<2>(),
+            keep_argument_alive<3>(),
+            keep_argument_alive<4>(),
+            keep_argument_alive<5>(),
+            keep_argument_alive<6>())
         .def_readonly("dims", &MasterMatrix::dims)
         .def_readonly("H"   , &MasterMatrix::H)
         .def_readonly("V"   , &MasterMatrix::V)
