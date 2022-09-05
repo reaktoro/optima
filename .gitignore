@@ -29,3 +29,5 @@ __pycache__/
 .env
 .vscode
 .history
+.cache
+compile_commands.json
