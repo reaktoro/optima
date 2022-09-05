@@ -32,6 +32,8 @@ struct MasterState
     Indices ju;     ///< The indices of the unstable variables in *x*.
     Indices jlu;    ///< The indices of the lower unstable variables in *x*.
     Indices juu;    ///< The indices of the upper unstable variables in *x*.
+    Indices jb;     ///< The indices of the basic variables in *x*.
+    Indices jn;     ///< The indices of the non-basic variables in *x*.
 
     /// Construct a default MasterState object.
     MasterState();

@@ -33,6 +33,8 @@ void exportMasterState(py::module& m)
         .def_readwrite("ju", &MasterState::ju)
         .def_readwrite("jlu", &MasterState::jlu)
         .def_readwrite("juu", &MasterState::juu)
+        .def_readwrite("jb", &MasterState::jb)
+        .def_readwrite("jn", &MasterState::jn)
         .def("resize", &MasterState::resize)
         ;
 }

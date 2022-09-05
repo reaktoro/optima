@@ -305,6 +305,8 @@ struct Solver::Impl
         state.ze  = mstate.u.w.tail(nz).head(dims.he);
         state.zg  = mstate.u.w.tail(nz).tail(dims.hg);
         state.p   = mstate.u.p;
+        state.jb  = mstate.jb;
+        state.jn  = mstate.jn;
     }
 
     /// Update the given Sensitivity object with computed MasterSensitivity object `msensitivity`.

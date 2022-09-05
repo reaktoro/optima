@@ -38,5 +38,7 @@ void exportState(py::module& m)
         .def_readwrite("xbg", &State::xbg)
         .def_readwrite("xhg", &State::xhg)
         .def_readwrite("stability", &State::stability)
+        .def_readwrite("jb", &State::jb)
+        .def_readwrite("jn", &State::jn)
         ;
 }

@@ -194,12 +194,15 @@ struct MasterSolver::Impl
         result.succeeded = convergence.converged();
         outputCurrentState();
         outputHeaderBottom();
-        auto ss = F.result().stabilitystatus;
+        auto const& Fresult = F.result();
+        auto const& ss = Fresult.stabilitystatus;
         state.s = ss.s;
         state.js = ss.js;
         state.ju = ss.ju;
         state.jlu = ss.jlu;
         state.juu = ss.juu;
+        state.jb = Fresult.Jc.jb;
+        state.jn = Fresult.Jc.jn;
     }
 
     auto sanitycheck(const MasterProblem& problem, MasterVectorRef u) -> void

@@ -40,6 +40,8 @@ public:
     FixedVector xbg;     ///< The variables \eq{x_{b_{\mathrm{g}}}} in \eq{(x,x_{\mathrm{b_{g}}},x_{\mathrm{h_{g}}})} of the basic optimization problem.
     FixedVector xhg;     ///< The variables \eq{x_{h_{\mathrm{g}}}} in \eq{(x,x_{\mathrm{b_{g}}},x_{\mathrm{h_{g}}})} of the basic optimization problem.
     Stability stability; ///< The stability state of the primal variables *x*.
+    Indices jb;          ///< The indices of the basic variables in *x*.
+    Indices jn;          ///< The indices of the non-basic variables in *x*.
 
     /// Construct a default State object.
     State();
