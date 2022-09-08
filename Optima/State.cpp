@@ -49,6 +49,8 @@ auto State::operator=(const State& other) -> State&
     xbg.__assign(other.xbg);
     xhg.__assign(other.xhg);
     stability = other.stability;
+    jb = other.jb;
+    jn = other.jn;
 
     return *this;
 }
