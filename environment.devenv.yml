@@ -13,6 +13,7 @@ dependencies:
   - cmake
   - eigen4rkt
   - gxx_linux-64  # [linux]
+  - lld  # [unix]
   - ninja
   - numpy
   - pip
