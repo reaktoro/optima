@@ -17,6 +17,9 @@
 
 #include "Outputter.hpp"
 
+// C++ includes
+#include <fstream>
+
 // Optima includes
 #include <Optima/Exception.hpp>
 
@@ -99,18 +102,20 @@ void Outputter::outputHeader()
 {
     if(options.active)
     {
-        for(const std::string& entry : entries)
-            std::cout << (entry == options.separator ? options.separator : barstr(options.width, entry));
-        std::cout << std::endl;
+        std::ofstream out("optima.log.txt", std::ios_base::app);
 
         for(const std::string& entry : entries)
-            if(entry == options.separator) std::cout << options.separator;
-            else std::cout << std::setw(colwidth(options.width, entry)) << std::left << entry;
-        std::cout << std::endl;
+            out << (entry == options.separator ? options.separator : barstr(options.width, entry));
+        out << '\n';
 
         for(const std::string& entry : entries)
-            std::cout << (entry == options.separator ? options.separator : barstr(options.width, entry));
-        std::cout << std::endl;
+            if(entry == options.separator) out << options.separator;
+            else out << std::setw(colwidth(options.width, entry)) << std::left << entry;
+        out << '\n';
+
+        for(const std::string& entry : entries)
+            out << (entry == options.separator ? options.separator : barstr(options.width, entry));
+        out << '\n';
     }
 }
 
@@ -118,12 +123,15 @@ void Outputter::outputState()
 {
     if(options.active)
     {
+        std::ofstream out("optima.log.txt", std::ios_base::app);
+
         assert(entries.size() == values.size());
+
         auto entry = entries.begin();
         for(const std::string& val : values)
-            if(val == options.separator) std::cout << options.separator;
-            else std::cout << std::setw(colwidth(options.width, *entry++)) << std::left << val;
-        std::cout << std::endl;
+            if(val == options.separator) out << options.separator;
+            else out << std::setw(colwidth(options.width, *entry++)) << std::left << val;
+        out << '\n';
 
         values.clear();
     }
@@ -131,7 +139,11 @@ void Outputter::outputState()
 
 void Outputter::outputMessage(const std::string& message)
 {
-    if(options.active) std::cout << message << std::endl;
+    if(options.active)
+    {
+        std::ofstream out("optima.log.txt", std::ios_base::app);
+        out << message << '\n';
+    }
 }
 
 } // namespace
