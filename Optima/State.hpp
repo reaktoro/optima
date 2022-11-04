@@ -21,7 +21,6 @@
 #include <Optima/Dims.hpp>
 #include <Optima/Index.hpp>
 #include <Optima/Matrix.hpp>
-#include <Optima/Stability.hpp>
 
 namespace Optima {
 
@@ -39,7 +38,10 @@ public:
     FixedVector s;       ///< The stability measures of variables \eq{x} defined as \eq{s=g+A_{\mathrm{ex}}^{T}y_{\mathrm{e}}+A_{\mathrm{gx}}^{T}y_{\mathrm{g}}+J_{\mathrm{ex}}^{T}z_{\mathrm{e}}+J_{\mathrm{gx}}^{T}z_{\mathrm{g}}}.
     FixedVector xbg;     ///< The variables \eq{x_{b_{\mathrm{g}}}} in \eq{(x,x_{\mathrm{b_{g}}},x_{\mathrm{h_{g}}})} of the basic optimization problem.
     FixedVector xhg;     ///< The variables \eq{x_{h_{\mathrm{g}}}} in \eq{(x,x_{\mathrm{b_{g}}},x_{\mathrm{h_{g}}})} of the basic optimization problem.
-    Stability stability; ///< The stability state of the primal variables *x*.
+    Indices js;          ///< The indices of the stable variables in *x*.
+    Indices ju;          ///< The indices of the unstable variables in *x*.
+    Indices jlu;         ///< The indices of the lower unstable variables in *x*.
+    Indices juu;         ///< The indices of the upper unstable variables in *x*.
     Indices jb;          ///< The indices of the basic variables in *x*.
     Indices jn;          ///< The indices of the non-basic variables in *x*.
 

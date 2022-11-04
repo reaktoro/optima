@@ -32,8 +32,7 @@ State::State(const Dims& dims)
   zg(zeros(dims.hg)),
   s(zeros(dims.x)),
   xbg(zeros(dims.bg)),
-  xhg(zeros(dims.hg)),
-  stability(dims.x)
+  xhg(zeros(dims.hg))
 {}
 
 auto State::operator=(const State& other) -> State&
@@ -48,7 +47,10 @@ auto State::operator=(const State& other) -> State&
     s.__assign(other.s);
     xbg.__assign(other.xbg);
     xhg.__assign(other.xhg);
-    stability = other.stability;
+    js = other.js;
+    ju = other.ju;
+    jlu = other.jlu;
+    juu = other.juu;
     jb = other.jb;
     jn = other.jn;
 
