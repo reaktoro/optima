@@ -68,6 +68,8 @@ inline auto stableMoveLeftIf(IndicesRef base, const std::function<bool(Index)>& 
 /// @see moveIntersectionRight
 inline auto moveIntersectionLeft(IndicesRef base, IndicesView p) -> Index
 {
+    if(p.size() == 0) // skip if p is empty
+        return base.size();
     return moveLeftIf(base, [=](Index i) { return contains(i, p); });
 }
 
@@ -98,6 +100,8 @@ inline auto stableMoveRightIf(IndicesRef base, const std::function<bool(Index)>&
 /// @see moveIntersectionLeft
 inline auto moveIntersectionRight(IndicesRef base, IndicesView p) -> Index
 {
+    if(p.size() == 0) // skip if p is empty
+        return base.size();
     return moveRightIf(base, [=](Index i) { return contains(i, p); });
 }
 
@@ -108,6 +112,10 @@ inline auto moveIntersectionRight(IndicesRef base, IndicesView p) -> Index
 /// @see moveIntersectionRight
 inline auto moveIntersectionLeftStable(IndicesRef base, IndicesView p) -> Index
 {
+    // Skip if p is empty
+    if(p.size() == 0)
+        return base.size();
+
     // The lambda function that returns true if variable i is in p
     auto in_group1 = [=](Index i) { return contains(i, p); };
 
@@ -122,6 +130,10 @@ inline auto moveIntersectionLeftStable(IndicesRef base, IndicesView p) -> Index
 /// @see moveIntersectionLeft
 inline auto moveIntersectionRightStable(IndicesRef base, IndicesView p) -> Index
 {
+    // Skip if p is empty
+    if(p.size() == 0)
+        return base.size();
+
     // The lambda function that returns true if variable i is not in p
     auto in_group1 = [=](Index i) { return !contains(i, p); };
 
