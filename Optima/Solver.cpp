@@ -305,8 +305,26 @@ struct Solver::Impl
         state.ze  = mstate.u.w.tail(nz).head(dims.he);
         state.zg  = mstate.u.w.tail(nz).tail(dims.hg);
         state.p   = mstate.u.p;
-        state.jb  = mstate.jb;
-        state.jn  = mstate.jn;
+        state.s   = mstate.s.head(nx);
+
+        auto const is_xbg_or_xhg = [=](Index i) { return i >= nx; };
+        std::function<Index(IndicesRef)> move_right_xbg_xhg_1 = [=](IndicesRef indices) -> Index { return moveRightIf(indices, is_xbg_or_xhg); };
+        std::function<Index(IndicesRef)> move_right_xbg_xhg_2 = [=](IndicesRef indices) -> Index { return indices.size(); };
+        auto move_right_xbg_xhg = nxbg + nxhg > 0 ? move_right_xbg_xhg_1 : move_right_xbg_xhg_2;
+
+        Index const ks  = move_right_xbg_xhg(mstate.js);  // Move indices corresponding to variables xbg and xhg to the end of js.
+        Index const ku  = move_right_xbg_xhg(mstate.ju);  // Move indices corresponding to variables xbg and xhg to the end of ju.
+        Index const klu = move_right_xbg_xhg(mstate.jlu); // Move indices corresponding to variables xbg and xhg to the end of jlu.
+        Index const kuu = move_right_xbg_xhg(mstate.juu); // Move indices corresponding to variables xbg and xhg to the end of juu.
+        Index const kb  = move_right_xbg_xhg(mstate.jb);  // Move indices corresponding to variables xbg and xhg to the end of jb.
+        Index const kn  = move_right_xbg_xhg(mstate.jn);  // Move indices corresponding to variables xbg and xhg to the end of jn.
+
+        state.js  = mstate.js.head(ks);
+        state.ju  = mstate.ju.head(ku);
+        state.jlu = mstate.jlu.head(klu);
+        state.juu = mstate.juu.head(kuu);
+        state.jb  = mstate.jb.head(kb);
+        state.jn  = mstate.jn.head(kn);
     }
 
     /// Update the given Sensitivity object with computed MasterSensitivity object `msensitivity`.
