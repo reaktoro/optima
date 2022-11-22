@@ -98,6 +98,7 @@ struct ResidualFunction::Impl
         fres.resize(nx, np, nc);
         hres.resize(nz, nx, np, nc);
         vres.resize(np, nx, np, nc);
+        wx.resize(nx);
         echelonizerW.initialize(dims, problem.Ax, problem.Ap);
         r = problem.r;
         f = problem.f;
@@ -182,9 +183,9 @@ struct ResidualFunction::Impl
         const auto& Jx = hres.ddx;
         const auto& Jp = hres.ddp;
 
-        wx.noalias() = abs(x);
-        wx.noalias() = (x.array() != xlower.array()).select(wx, -1.0); // Enforce weak priority for variables on the bounds.
-        wx.noalias() = (x.array() != xupper.array()).select(wx, -1.0); // Enforce weak priority for variables on the bounds.
+        for(auto i = 0; i < x.size(); ++i)
+            wx[i] = x[i] != xlower[i] && x[i] != xupper[i] ? std::abs(x[i]) : -1.0; // Enforce weak priority for variables on the bounds.
+
         echelonizerW.update(Jx, Jp, wx);
     }
 
