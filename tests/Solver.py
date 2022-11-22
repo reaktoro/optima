@@ -21,6 +21,9 @@ from testing.utils.matrices import *
 from numpy import *
 
 
+random.seed(0)
+
+
 tested_nx      = [10, 15, 20, 30] # The tested number of x variables
 tested_np      = [0, 5, 10, 15]   # The tested number of p variables
 tested_ny      = [5, 10]          # The tested number of y variables
@@ -38,7 +41,7 @@ tested_diagHxx = [False, True]    # The tested diagonal structure of Hxx matrix
 @pytest.mark.parametrize("nul"    , tested_nul)
 @pytest.mark.parametrize("nuu"    , tested_nuu)
 @pytest.mark.parametrize("diagHxx", tested_diagHxx)
-def testMasterSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
+def testSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
 
     nw = ny + nz
 
@@ -190,7 +193,7 @@ def testMasterSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
     problem.bec = npy.hstack([Oyx, Oyp, Iyy, Oyz])
 
     options = Options()
-    # options.output.active = True
+    options.output.active = True
 
     options.newtonstep.linearsolver.method = \
         LinearSolverMethod.Rangespace if diagHxx else \

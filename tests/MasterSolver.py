@@ -21,6 +21,9 @@ from testing.utils.matrices import *
 from numpy import *
 
 
+random.seed(0)
+
+
 tested_nx      = [10, 15, 20, 30] # The tested number of x variables
 tested_np      = [0, 5, 10, 15]   # The tested number of p variables
 tested_ny      = [5, 10]          # The tested number of y variables
