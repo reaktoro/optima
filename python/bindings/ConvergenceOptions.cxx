@@ -27,5 +27,6 @@ void exportConvergenceOptions(py::module& m)
     py::class_<ConvergenceOptions>(m, "ConvergenceOptions")
         .def(py::init<>())
         .def_readwrite("tolerance", &ConvergenceOptions::tolerance)
+        .def_readwrite("requires_at_least_one_iteration", &ConvergenceOptions::requires_at_least_one_iteration)
         ;
 }

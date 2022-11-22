@@ -174,7 +174,8 @@ struct MasterSolver::Impl
         convergence.update(E);
 
         if(convergence.converged())
-            return STOP;
+            if(result.iterations > 0 || !options.convergence.requires_at_least_one_iteration)
+                return STOP;
 
         return CONTINUE;
     }
