@@ -34,10 +34,11 @@ struct ResidualErrors::Impl
     Vector ex; ///< The residual errors associated with the first-order optimality conditions.
     Vector ep; ///< The residual errors associated with the external constraint equations.
     Vector ew; ///< The residual errors associated with the linear and non-linear constraint equations.
+    Vector ewbar; ///< The residual errors associated with the linear and non-linear constraint equations in canonical form.
 
     double errorx = 0.0; ///< The maximum residual error associated with the first-order optimality conditions.
     double errorp = 0.0; ///< The maximum residual error associated with the external constraint equations.
-    double errorw = 0.0; ///< The maximum residual error associated with the linear and non-linear constraint equations.
+    double errorw = 0.0; ///< The maximum residual error associated with the linear and non-linear constraint equations in canonical form.
     double error  = 0.0; ///< The error norm sqrt(||ex||^2 + ||ep||^2 + ||ew||^2).
 
     Impl()
@@ -53,6 +54,7 @@ struct ResidualErrors::Impl
         ex = zeros(dims.nx);
         ep = zeros(dims.np);
         ew = zeros(dims.nw);
+        ewbar = zeros(dims.nw);
     }
 
     auto update(MasterVectorView u, const ResidualFunction& F) -> void
@@ -63,6 +65,7 @@ struct ResidualErrors::Impl
 
         const auto Jc = res.Jc;
         const auto Fc = res.Fc;
+        const auto Fm = res.Fm;
 
         const auto nbs = Jc.dims.nbs;
         const auto nbl = Jc.dims.nl;
@@ -72,26 +75,23 @@ struct ResidualErrors::Impl
 
         const auto jbs = js.head(nbs);
 
-        const auto rs   = Fc.xs;
-        const auto rp   = Fc.p;
-        const auto rwbs = Fc.wbs;
-
         const auto x = u.x;
-        const auto gs = res.f.fx(js);
         const auto xbs = x(jbs);
         const auto xbslower = xlower(jbs);
         const auto xbsupper = xupper(jbs);
 
-        ex(js) = abs(rs);
-        ex(ju).fill(0.0);
+        ex = abs(Fm.x);
+        ep = abs(Fm.p);
+        ew = abs(Fm.w);
 
-        ep = rp;
+        auto ewbs = ewbar.head(nbs);
+        auto ewbl = ewbar.tail(nbl);
 
-        auto ewbs = ew.head(nbs);
-        auto ewbl = ew.tail(nbl);
-
-        ewbs.noalias() = abs(rwbs);
+        ewbs = abs(Fc.wbs);
         ewbl.fill(0.0);
+
+        // Ensure currently unstable x variables have zero optimality errors.
+        ex(ju).fill(0.0);
 
         // Note: If a basic variable is attached to its lower/upper bound, this
         // means the last iteration tried to further decrease/increase the
@@ -102,10 +102,10 @@ struct ResidualErrors::Impl
         ex(jbs) = (xbs.array() == xbslower.array()).select(0.0, ex(jbs));
         ex(jbs) = (xbs.array() == xbsupper.array()).select(0.0, ex(jbs));
 
-        errorx = norminf(ex(js));
-        errorp = norminf(rp);
-        errorw = norminf(ewbs);
-        error = std::sqrt(ex.squaredNorm() + rp.squaredNorm() + ewbs.squaredNorm());
+        errorx = norminf(ex);
+        errorp = norminf(ep);
+        errorw = norminf(ewbar); // prefer error check at the canonical level
+        error = std::sqrt(ex.squaredNorm() + ep.squaredNorm() + ew.squaredNorm());
     }
 
     auto sanitycheck() const -> void
@@ -151,6 +151,7 @@ auto ResidualErrors::update(MasterVectorView u, const ResidualFunction& F) -> vo
 auto ResidualErrors::ex() const -> VectorView { return pimpl->ex; }
 auto ResidualErrors::ep() const -> VectorView { return pimpl->ep; }
 auto ResidualErrors::ew() const -> VectorView { return pimpl->ew; }
+auto ResidualErrors::ewbar() const -> VectorView { return pimpl->ewbar; }
 
 auto ResidualErrors::errorx() const -> double { return pimpl->errorx; }
 auto ResidualErrors::errorp() const -> double { return pimpl->errorp; }

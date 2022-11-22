@@ -56,6 +56,7 @@ public:
     auto ex() const -> VectorView; ///< The residual errors associated with the first-order optimality conditions.
     auto ep() const -> VectorView; ///< The residual errors associated with the external constraint equations.
     auto ew() const -> VectorView; ///< The residual errors associated with the linear and non-linear constraint equations.
+    auto ewbar() const -> VectorView; ///< The residual errors associated with the linear and non-linear constraint equations.
 
     auto errorx() const -> double; ///< The error norm `max(|ex|)`.
     auto errorp() const -> double; ///< The error norm `max(|ep|)`.
