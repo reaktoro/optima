@@ -19,4 +19,4 @@ if(NOT DEFINED OPTIMA_PYTHON_INSTALL_PREFIX)
 endif()
 
 # Create an install target for the optima python package
-install(CODE "execute_process(COMMAND pip install . --no-deps --force-reinstall --no-compile --prefix=${OPTIMA_PYTHON_INSTALL_PREFIX} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})")
+install(CODE "execute_process(COMMAND pip install . --no-deps --force-reinstall --ignore-installed --no-compile --prefix=${OPTIMA_PYTHON_INSTALL_PREFIX} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})")
