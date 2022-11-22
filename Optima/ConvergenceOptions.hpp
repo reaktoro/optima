@@ -42,7 +42,7 @@ struct ConvergenceOptions
     /// solution of the original problem. Mass conservation would thus not be
     /// accurate to the level of machine precision. To avoid that this more
     /// recently added control breaks existing codes, the default is false.
-    double requires_at_least_one_iteration = false;
+    bool requires_at_least_one_iteration = false;
 };
 
 } // namespace Optima
