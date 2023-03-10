@@ -114,12 +114,20 @@ struct EchelonizerW::Impl
 
         cleanResidualRoundoffErrors(Sbp);
 
-        const auto Rl = echelonizer.R().bottomRows(nw - nb);
-        errorif( norminf(Rl * Wp) > epsilon(),
-            "Your matrix Ax is rank-deficient and matrix Ap "
-            "is non-zero such that R*Ap = [Sbp, Slp] with Slp non-zero, "
-            "but it should be zero, otherwise there are p variables that "
-            "should become basic variables, but this is not supported!");
+        // NOTE: It seems the following check is not needed. It was preventing a
+        // calculation in Reaktoro to be performed. The calculation has a
+        // constraint on phase amount of the gaseous phase. The system was open
+        // to CO2. The calculation would stop with the error message below (when
+        // using pitzer.dat database). Rl * Wp was resulting in this 1x1 matrix:
+        // [1]. After commenting out this check below, the calculation proceed
+        // without errors.
+
+        // const auto Rl = echelonizer.R().bottomRows(nw - nb);
+        // errorif( norminf(Rl * Wp) > epsilon(),
+        //     "Your matrix Ax is rank-deficient and matrix Ap "
+        //     "is non-zero such that R*Ap = [Sbp, Slp] with Slp non-zero, "
+        //     "but it should be zero, otherwise there are p variables that "
+        //     "should become basic variables, but this is not supported!");
     }
 
     auto asMatrixViewW() const -> MatrixViewW
