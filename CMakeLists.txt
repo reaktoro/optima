@@ -55,9 +55,9 @@ endif()
 
 # Find Eigen3 either from the system, environment, or from the given directory OPTIMA_EIGEN_DIR
 if(DEFINED OPTIMA_EIGEN_DIR)
-    find_package(Eigen3 3.3.90 REQUIRED PATHS ${OPTIMA_EIGEN_DIR} NO_DEFAULT_PATH)
+    find_package(Eigen3 3.4 REQUIRED PATHS ${OPTIMA_EIGEN_DIR} NO_DEFAULT_PATH)
 else()
-    find_package(Eigen3 3.3.90 REQUIRED)
+    find_package(Eigen3 3.4 REQUIRED)
 endif()
 if(Eigen3_FOUND)
     message(STATUS "Found Eigen3: ${Eigen3_DIR} (found version \"${Eigen3_VERSION}\")")
