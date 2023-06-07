@@ -75,17 +75,14 @@ pytest .
 
 # Contact
 
-Use the following channels of communication for contact:
-
-* **Use [Gitter]** for questions, discussing a feature request, feedback, etc.
-* **Use [GitHub Issues]** for reporting bugs and other issues.
+Use [GitHub Issues] for reporting bugs and other issues.
 
 [Gitter]: https://gitter.im/reaktoro/optima
 [GitHub Issues]: https://github.com/reaktoro/optima/issues/new
 
 # License
 
-Copyright © 2020 Allan Leal
+Copyright © 2020-2023 Allan Leal
 
 Optima is free software; you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation; either version 2.1 of the License, or (at your option) any later version.
 
