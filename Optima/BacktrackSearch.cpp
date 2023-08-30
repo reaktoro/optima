@@ -54,75 +54,42 @@ struct BacktrackSearch::Impl
 
     auto execute(MasterVectorView uo, MasterVectorRef u, ResidualFunction& F, ResidualErrors& E) -> void
     {
-        if(options.apply_min_max_fix_and_accept)
-        {
-            u.x.noalias() = min(max(u.x, xlower), xupper);
-            u.p.noalias() = min(max(u.p, plower), pupper);
-            return;
-        }
+        auto const& xo = uo.x;
+        auto const& po = uo.p;
+        auto const& x = u.x;
+        auto const& p = u.p;
 
-        const auto& xo = uo.x;
-        const auto& po = uo.p;
-        auto& x = u.x;
-        auto& p = u.p;
+        auto betamin = 1.0;
 
-        const auto error_prev = E.error(); // the error from the previous iteration (or initial error if first iteration)
-
-        betas.setOnes(dims.nx + dims.np);
-        auto betasx = betas.head(dims.nx);
-        auto betasp = betas.tail(dims.np);
+        assert((xupper - xo).minCoeff() >= 0.0);
+        assert((pupper - po).minCoeff() >= 0.0);
+        assert((xo - xlower).minCoeff() >= 0.0);
+        assert((po - plower).minCoeff() >= 0.0);
 
         for(auto i = 0; i < dims.nx; ++i)
         {
-            assert(xo[i] <= xupper[i]);
-            assert(xo[i] >= xlower[i]);
-            if(x[i] != xo[i])
-                if(x[i] > xupper[i] && xo[i] < xupper[i])
-                    betasx[i] = (xupper[i] - xo[i])/(x[i] - xo[i]);
-                else if(x[i] < xlower[i] && xo[i] > xlower[i])
-                    betasx[i] = (xlower[i] - xo[i])/(x[i] - xo[i]);
+            if(x[i] == xo[i])
+                continue;
+            if(x[i] > xupper[i] && xo[i] < xupper[i])
+                betamin = min(betamin, (xupper[i] - xo[i])/(x[i] - xo[i]));
+            else if(x[i] < xlower[i] && xo[i] > xlower[i])
+                betamin = min(betamin, (xlower[i] - xo[i])/(x[i] - xo[i]));
         }
 
         for(auto i = 0; i < dims.np; ++i)
         {
-            assert(po[i] <= pupper[i]);
-            assert(po[i] >= plower[i]);
-            if(p[i] != po[i])
-                if(p[i] > pupper[i] && po[i] < pupper[i])
-                    betasp[i] = (pupper[i] - po[i])/(p[i] - po[i]);
-                else if(p[i] < plower[i] && po[i] > plower[i])
-                    betasp[i] = (plower[i] - po[i])/(p[i] - po[i]);
-        }
-
-        std::sort(betas.begin(), betas.end(), greater<double>());
-
-        unew = u;
-
-        for(auto beta : betas)
-        {
-            if(beta == 1.0)
+            if(p[i] == po[i])
                 continue;
-
-            u = uo*(1 - beta) + beta*unew;
-            u.x.noalias() = min(max(u.x, xlower), xupper);
-            u.p.noalias() = min(max(u.p, plower), pupper);
-
-            F.updateSkipJacobian(u);
-            E.update(u, F);
-
-            if(E.error() < error_prev)
-                return; // at this point, F = F(u) and E = E(u)
+            if(p[i] > pupper[i] && po[i] < pupper[i])
+                betamin = min(betamin, (pupper[i] - po[i])/(p[i] - po[i]));
+            else if(p[i] < plower[i] && po[i] > plower[i])
+                betamin = min(betamin, (plower[i] - po[i])/(p[i] - po[i]));
         }
 
-        const auto betamin = betas[betas.size() - 1];
+        u = uo*(1 - betamin) + betamin*u;
 
-        if(betamin == 1.0) // in this case, all betas are greater than one
-        {
-            u.x.noalias() = min(max(u.x, xlower), xupper);
-            u.p.noalias() = min(max(u.p, plower), pupper);
-            F.updateSkipJacobian(u);
-            E.update(u, F);
-        }
+        u.x.noalias() = min(max(u.x, xlower), xupper);
+        u.p.noalias() = min(max(u.p, plower), pupper);
     }
 };
 
