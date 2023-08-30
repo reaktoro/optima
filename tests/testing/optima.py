@@ -39,3 +39,5 @@ import math
 
 # Ensure proper options for printing numpy arrays
 npy.set_printoptions(linewidth=1000)
+
+npy.random.seed(0)

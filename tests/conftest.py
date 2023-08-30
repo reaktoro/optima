@@ -20,3 +20,5 @@ from optima import *
 from numpy import *
 import pytest
 
+
+random.seed(0)
