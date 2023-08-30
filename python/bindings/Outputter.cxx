@@ -24,12 +24,13 @@ using namespace Optima;
 
 void exportOutputter(py::module& m)
 {
-    py::class_<OutputterOptions>(m, "OutputterOptions")
-        .def_readwrite("active", &OutputterOptions::active)
-        .def_readwrite("fixed", &OutputterOptions::fixed)
-        .def_readwrite("scientific", &OutputterOptions::scientific)
-        .def_readwrite("precision", &OutputterOptions::precision)
-        .def_readwrite("width", &OutputterOptions::width)
-        .def_readwrite("separator", &OutputterOptions::separator)
+    py::class_<OutputterOptions>(m, "OutputterOptions", "The type that describes the options for the output of an optimization calculation.")
+        .def_readwrite("active", &OutputterOptions::active, "The option that enable the output of the calculation.")
+        .def_readwrite("fixed", &OutputterOptions::fixed, "The option that indicates that the floating-point values should be in fixed notation.")
+        .def_readwrite("scientific", &OutputterOptions::scientific, "The option that indicates that the floating-point values should be in scientific notation.")
+        .def_readwrite("precision", &OutputterOptions::precision, "The precision of the floating-point values in the output.")
+        .def_readwrite("width", &OutputterOptions::width, "The width of the columns in the output.")
+        .def_readwrite("separator", &OutputterOptions::separator, "The string used to separate the columns in the output.")
+        .def_readwrite("filename", &OutputterOptions::filename, "The name of the file where the output will be written.")
         ;
 }

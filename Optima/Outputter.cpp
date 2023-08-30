@@ -102,7 +102,7 @@ void Outputter::outputHeader()
 {
     if(options.active)
     {
-        std::ofstream out("optima.log.txt", std::ios_base::app);
+        std::ofstream out(options.filename, std::ios_base::app);
 
         for(const std::string& entry : entries)
             out << (entry == options.separator ? options.separator : barstr(options.width, entry));
@@ -123,7 +123,7 @@ void Outputter::outputState()
 {
     if(options.active)
     {
-        std::ofstream out("optima.log.txt", std::ios_base::app);
+        std::ofstream out(options.filename, std::ios_base::app);
 
         assert(entries.size() == values.size());
 
@@ -141,7 +141,7 @@ void Outputter::outputMessage(const std::string& message)
 {
     if(options.active)
     {
-        std::ofstream out("optima.log.txt", std::ios_base::app);
+        std::ofstream out(options.filename, std::ios_base::app);
         out << message << '\n';
     }
 }
