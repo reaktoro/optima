@@ -60,10 +60,10 @@ def testStability(nx, np, ny, nz, nl, nlu, nuu, diagHxx):
 
     juu = list(set(juu) - set(jlu))  # ensure no upper unstable variable is also lower unstable!
 
-    x = abs(npy.random.rand(nx))  # abs is used only to simplify the logic in determining xlower and xupper below
+    x = abs(rng.rand(nx))  # abs is used only to simplify the logic in determining xlower and xupper below
 
-    xlower = abs(npy.random.rand(nx)) - x
-    xupper = abs(npy.random.rand(nx)) + x
+    xlower = abs(rng.rand(nx)) - x
+    xupper = abs(rng.rand(nx)) + x
 
     xlower[jlu] = x[jlu]  # attach the lower unstable variables to their lower bound
     xupper[juu] = x[juu]  # attach the upper unstable variables to their upper bound
@@ -74,11 +74,11 @@ def testStability(nx, np, ny, nz, nl, nlu, nuu, diagHxx):
     #==========================================================================
     # Initialize expected s = g + tr(Wx)*w considering the unstable variables
     #==========================================================================
-    s = npy.random.rand(nx)
+    s = rng.rand(nx)
     s[jlu] =  1.0  # ensure s[i] > 0 for lower unstable variables
     s[juu] = -1.0  # ensure s[i] < 0 for upper unstable variables
 
-    w = npy.random.rand(nw)
+    w = rng.rand(nw)
     g = s - Wx.T @ w
 
     #==========================================================================

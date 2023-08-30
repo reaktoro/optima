@@ -25,8 +25,8 @@ npy.set_printoptions(linewidth=1000)
 # Ensure common seed value for all random generated values
 npy.random.seed(0)
 
-# Intialise a random number generator
-rn = npy.random.default_rng(2021)
+# Intialise a random number generator (https://builtin.com/data-science/numpy-random-seed)
+rng = npy.random.RandomState(0)
 
 from numpy.testing import (
     assert_allclose,

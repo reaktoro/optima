@@ -79,10 +79,10 @@ def createMatrixViewH(params):
 
     diagHxx = params.diagHxx
 
-    Hxx = npy.diag(npy.random.rand(nx)) if diagHxx else npy.random.rand(nx, nx)
+    Hxx = npy.diag(rng.rand(nx)) if diagHxx else rng.rand(nx, nx)
     Hxx = Hxx.T @ Hxx  # create positive definite Hxx matrix
 
-    Hxp = npy.random.rand(nx, np)
+    Hxp = rng.rand(nx, np)
 
     return MatrixViewH(Hxx, Hxp, diagHxx)
 
@@ -99,8 +99,8 @@ def createMatrixViewV(params):
 
     nx = params.nx
     np = params.np
-    Vpx = npy.random.rand(np, nx)
-    Vpp = npy.random.rand(np, np)
+    Vpx = rng.rand(np, nx)
+    Vpp = rng.rand(np, np)
     return MatrixViewV(Vpx, Vpp)
 
 
@@ -122,10 +122,10 @@ def createMatrixViewW(params):
 
     dims = params.dims
 
-    Ax = npy.random.rand(ny, nx)
-    Ap = npy.random.rand(ny, np)
-    Jx = npy.random.rand(nz, nx)
-    Jp = npy.random.rand(nz, np)
+    Ax = rng.rand(ny, nx)
+    Ap = rng.rand(ny, np)
+    Jx = rng.rand(nz, nx)
+    Jp = rng.rand(nz, np)
 
     Ax[ny - nl:ny, :] = 0.0  # set last nl rows to be zero so that we have nl linearly dependent rows in Ax
     Ap[ny - nl:ny, :] = 0.0  # do the same to Ap, otherwise, expected error: Your matrix Ax is rank-deficient and matrix Ap is non-zero such that...
@@ -233,9 +233,9 @@ def createMasterProblem(M):
     Ap  = M.W.Ap
     Jx  = M.W.Jx
     Jp  = M.W.Jp
-    cx = npy.random.rand(dims.nx)
-    cp = npy.random.rand(dims.np)
-    cz = npy.random.rand(dims.nz)
+    cx = rng.rand(dims.nx)
+    cp = rng.rand(dims.np)
+    cz = rng.rand(dims.nz)
 
 
     def objectivefn_f(res, x, p, c, opts):
@@ -263,9 +263,9 @@ def createMasterProblem(M):
     problem.v = constraintfn_v()
     problem.Ax = Ax
     problem.Ap = Ax
-    problem.b = npy.random.rand(dims.ny)
-    problem.xlower = -abs(npy.random.rand(dims.nx))
-    problem.xupper =  abs(npy.random.rand(dims.nx))
+    problem.b = rng.rand(dims.ny)
+    problem.xlower = -abs(rng.rand(dims.nx))
+    problem.xupper =  abs(rng.rand(dims.nx))
     problem.phi = None
 
     return problem
