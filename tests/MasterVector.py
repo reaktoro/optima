@@ -30,14 +30,14 @@ tested_nw  = [5, 8]           # The tested number of w variables
 def testMasterVector(nx, np, nw):
 
     u = MasterVector(nx, np, nw)
-    u.x = npy.random.rand(nx)
-    u.p = npy.random.rand(np)
-    u.w = npy.random.rand(nw)
+    u.x = rng.rand(nx)
+    u.p = rng.rand(np)
+    u.w = rng.rand(nw)
 
     v = MasterVector(nx, np, nw)
-    v.x = npy.random.rand(nx)
-    v.p = npy.random.rand(np)
-    v.w = npy.random.rand(nw)
+    v.x = rng.rand(nx)
+    v.p = rng.rand(np)
+    v.w = rng.rand(nw)
 
     assert all(u.array() == npy.concatenate([u.x, u.p, u.w]))
 

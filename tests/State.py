@@ -78,15 +78,15 @@ def testState(nx, np, nbe, nbg, nhe, nhg):
     assert_array_equal(state.zg, npy.zeros(nhg))
     assert_array_equal(state.s, npy.zeros(nx))
 
-    x    = npy.random.rand(nx)
-    p    = npy.random.rand(np)
-    ye   = npy.random.rand(nbe)
-    yg   = npy.random.rand(nbg)
-    ze   = npy.random.rand(nhe)
-    zg   = npy.random.rand(nhg)
-    s    = npy.random.rand(nx)
-    xbg  = npy.random.rand(nbg)
-    xhg  = npy.random.rand(nhg)
+    x    = rng.rand(nx)
+    p    = rng.rand(np)
+    ye   = rng.rand(nbe)
+    yg   = rng.rand(nbg)
+    ze   = rng.rand(nhe)
+    zg   = rng.rand(nhg)
+    s    = rng.rand(nx)
+    xbg  = rng.rand(nbg)
+    xhg  = rng.rand(nhg)
 
     state.x = x
     state.p = p

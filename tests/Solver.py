@@ -49,14 +49,14 @@ def testSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
     juu = range(nul, nul + nuu)  # the indices of the expected upper unstable variables
     ju = list(jul) + list(juu)
 
-    Hxx = npy.random.rand(nx, nx)
-    Hxp = npy.random.rand(nx, np)
-    Vpx = npy.random.rand(np, nx)
-    Vpp = npy.random.rand(np, np)
-    Ax  = npy.random.rand(ny, nx)
-    Ap  = npy.random.rand(ny, np)
-    Jx  = npy.random.rand(nz, nx)
-    Jp  = npy.random.rand(nz, np)
+    Hxx = rng.rand(nx, nx)
+    Hxp = rng.rand(nx, np)
+    Vpx = rng.rand(np, nx)
+    Vpp = rng.rand(np, np)
+    Ax  = rng.rand(ny, nx)
+    Ap  = rng.rand(ny, np)
+    Jx  = rng.rand(nz, nx)
+    Jp  = rng.rand(nz, np)
 
     Ax[ny - nl:, :] = 0.0  # set last nl rows to be zero so that we have nl linearly dependent rows in Ax
     Ap[ny - nl:, :] = 0.0  # do the same to Ap, otherwise, expected error: Your matrix Ax is rank-deficient and matrix Ap is non-zero such that...
@@ -64,7 +64,7 @@ def testSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
     Hxx = Hxx.T @ Hxx    # this ensures Hxx is positive semi-definite or definite
 
     if diagHxx:
-        Hxx = npy.diag(npy.random.rand(nx))
+        Hxx = npy.diag(rng.rand(nx))
 
     Hxx[jul, jul] = 1e6  # this ensures variables expected on their lower bounds are marked as unstable
     Hxx[juu, juu] = 1e6  # this ensures variables expected on their upper bounds are marked as unstable
@@ -113,10 +113,10 @@ def testSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
 
     nc = nx + np + ny + nz
 
-    cx = npy.random.rand(nx)  # c = [cx, cp, cy, cz] -- the parameters used for sensitivity derivative calculations
-    cp = npy.random.rand(np)
+    cx = rng.rand(nx)  # c = [cx, cp, cy, cz] -- the parameters used for sensitivity derivative calculations
+    cp = rng.rand(np)
     cy = Ax @ cx + Ap @ cp
-    cz = npy.random.rand(nz)
+    cz = rng.rand(nz)
 
     cx[ju] = +1.0e4  # large positive number to ensure x variables with ju indices are indeed unstable!
 
@@ -190,6 +190,7 @@ def testSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
 
     options = Options()
     options.output.active = True
+    options.output.filename = f"output-solver-nx={nx}-np={np}-ny={ny}-nz={nz}-nl={nl}-nul={nul}-nuu={nuu}-diagHxx={diagHxx}.txt"
 
     options.newtonstep.linearsolver.method = \
         LinearSolverMethod.Rangespace if diagHxx else \
@@ -201,6 +202,9 @@ def testSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
     state = State(dims)
 
     res = solver.solve(problem, state)
+
+    if not res.succeeded:
+        print(f"Check output-solver-nx={nx}-np={np}-ny={ny}-nz={nz}-nl={nl}-nul={nul}-nuu={nuu}-diagHxx={diagHxx}.txt")
 
     assert res.succeeded
 

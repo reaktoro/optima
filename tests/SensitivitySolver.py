@@ -78,7 +78,7 @@ def testResidualFunction(nx, np, ny, nz, nl, nu):
 
     nc = nx + np + ny + nz
 
-    c = npy.random.rand(nc)  # c = [cx, cp, cy, cz] -- the parameters used for sensitivity derivative calculations
+    c = rng.rand(nc)  # c = [cx, cp, cy, cz] -- the parameters used for sensitivity derivative calculations
 
     c[:nx][ju] = +1.0e4  # large positive number to ensure x variables with ju indices are indeed unstable!
 
@@ -115,8 +115,8 @@ def testResidualFunction(nx, np, ny, nz, nl, nu):
     problem.Ax = Ax
     problem.Ap = Ap
     problem.b = c[nx:][np:][:ny]
-    problem.xlower = -abs(npy.random.rand(dims.nx))
-    problem.xupper =  abs(npy.random.rand(dims.nx))
+    problem.xlower = -abs(rng.rand(dims.nx))
+    problem.xupper =  abs(rng.rand(dims.nx))
     problem.phi = None
     problem.c = c  # set here the sensitive parameters in the master optimization problem
     problem.bc = npy.hstack([Oyx, Oyp, Iyy, Oyz])
@@ -125,8 +125,8 @@ def testResidualFunction(nx, np, ny, nz, nl, nu):
 
     u = MasterVector(dims)
     x = u.x = (problem.xlower + problem.xupper) * 0.5
-    p = u.p = npy.random.rand(dims.np)
-    w = u.w = npy.random.rand(dims.nw)
+    p = u.p = rng.rand(dims.np)
+    w = u.w = rng.rand(dims.nw)
 
     u.x[ju] = problem.xlower[ju]  # ensure the unstable variables are attached to lower bounds
 
