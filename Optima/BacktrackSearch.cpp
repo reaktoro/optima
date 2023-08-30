@@ -58,11 +58,17 @@ struct BacktrackSearch::Impl
         auto const& po = uo.p;
         auto const& x = u.x;
         auto const& p = u.p;
-
         assert((xupper.array() >= xo.array()).all());
         assert((xlower.array() <= xo.array()).all());
         assert((pupper.array() >= po.array()).all());
         assert((plower.array() <= po.array()).all());
+
+        if(options.apply_min_max_fix_and_accept)
+        {
+            u.x.noalias() = min(max(u.x, xlower), xupper);
+            u.p.noalias() = min(max(u.p, plower), pupper);
+            return;
+        }
 
         auto betamin = 1.0;
 

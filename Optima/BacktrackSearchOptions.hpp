@@ -22,6 +22,15 @@ namespace Optima {
 /// The options for the backtrack search operations.
 struct BacktrackSearchOptions
 {
+    /// The flag that indicates if a simpler approach for fixing out-of-bounds
+    /// variables should be used. Setting this option to true will cause the
+    /// updated variables `x` and `p` after a Newton step to be fixed with `x =
+    /// min(xlower, max(x, xupper))` and `p = min(plower, max(p, pupper))` and
+    /// immediately accepted. If line-search is to be performed afterwards, it
+    /// is possible that the new direction vector from previous to updated `u`
+    /// vector is not a descent direction, since the min-max fix alters its
+    /// orientation.
+    bool apply_min_max_fix_and_accept = false;
 };
 
 } // namespace Optima
