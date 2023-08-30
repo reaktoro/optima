@@ -26,5 +26,6 @@ void exportBacktrackSearchOptions(py::module& m)
 {
     py::class_<BacktrackSearchOptions>(m, "BacktrackSearchOptions")
         .def(py::init<>())
+        .def_readwrite("apply_min_max_fix_and_accept", &BacktrackSearchOptions::apply_min_max_fix_and_accept)
         ;
 }
