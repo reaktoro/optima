@@ -59,12 +59,12 @@ struct BacktrackSearch::Impl
         auto const& x = u.x;
         auto const& p = u.p;
 
-        auto betamin = 1.0;
+        assert((xupper.array() >= xo.array()).all());
+        assert((xlower.array() <= xo.array()).all());
+        assert((pupper.array() >= po.array()).all());
+        assert((plower.array() <= po.array()).all());
 
-        assert((xupper - xo).minCoeff() >= 0.0);
-        assert((pupper - po).minCoeff() >= 0.0);
-        assert((xo - xlower).minCoeff() >= 0.0);
-        assert((po - plower).minCoeff() >= 0.0);
+        auto betamin = 1.0;
 
         for(auto i = 0; i < dims.nx; ++i)
         {
