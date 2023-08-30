@@ -18,10 +18,6 @@
 
 from testing.optima import *
 from testing.utils.matrices import *
-from numpy import *
-
-
-random.seed(0)
 
 
 tested_nx      = [10, 15, 20, 30] # The tested number of x variables
@@ -53,14 +49,14 @@ def testSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
     juu = range(nul, nul + nuu)  # the indices of the expected upper unstable variables
     ju = list(jul) + list(juu)
 
-    Hxx = random.rand(nx, nx)
-    Hxp = random.rand(nx, np)
-    Vpx = random.rand(np, nx)
-    Vpp = random.rand(np, np)
-    Ax  = random.rand(ny, nx)
-    Ap  = random.rand(ny, np)
-    Jx  = random.rand(nz, nx)
-    Jp  = random.rand(nz, np)
+    Hxx = npy.random.rand(nx, nx)
+    Hxp = npy.random.rand(nx, np)
+    Vpx = npy.random.rand(np, nx)
+    Vpp = npy.random.rand(np, np)
+    Ax  = npy.random.rand(ny, nx)
+    Ap  = npy.random.rand(ny, np)
+    Jx  = npy.random.rand(nz, nx)
+    Jp  = npy.random.rand(nz, np)
 
     Ax[ny - nl:, :] = 0.0  # set last nl rows to be zero so that we have nl linearly dependent rows in Ax
     Ap[ny - nl:, :] = 0.0  # do the same to Ap, otherwise, expected error: Your matrix Ax is rank-deficient and matrix Ap is non-zero such that...
@@ -68,7 +64,7 @@ def testSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
     Hxx = Hxx.T @ Hxx    # this ensures Hxx is positive semi-definite or definite
 
     if diagHxx:
-        Hxx = diag(random.rand(nx))
+        Hxx = npy.diag(npy.random.rand(nx))
 
     Hxx[jul, jul] = 1e6  # this ensures variables expected on their lower bounds are marked as unstable
     Hxx[juu, juu] = 1e6  # this ensures variables expected on their upper bounds are marked as unstable
@@ -117,10 +113,10 @@ def testSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
 
     nc = nx + np + ny + nz
 
-    cx = random.rand(nx)  # c = [cx, cp, cy, cz] -- the parameters used for sensitivity derivative calculations
-    cp = random.rand(np)
+    cx = npy.random.rand(nx)  # c = [cx, cp, cy, cz] -- the parameters used for sensitivity derivative calculations
+    cp = npy.random.rand(np)
     cy = Ax @ cx + Ap @ cp
-    cz = random.rand(nz)
+    cz = npy.random.rand(nz)
 
     cx[ju] = +1.0e4  # large positive number to ensure x variables with ju indices are indeed unstable!
 
@@ -161,8 +157,8 @@ def testSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
         if opts.eval.ddc:  # compute dv/dc = [dv/d(cx), dv/d(cp), dv/d(cy), dv/d(cz)]
             res.ddc = npy.hstack([Ozx, Ozp, Ozy, Izz])
 
-    xlower = full(nx, -inf)
-    xupper = full(nx,  inf)
+    xlower = npy.full(nx, -npy.inf)
+    xupper = npy.full(nx,  npy.inf)
 
     xlower[jul] = 1.5  # this should be greater than 1.0
     xupper[jul] = 2.0  # this should be greater than xlower[jul]
@@ -187,8 +183,8 @@ def testSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
     problem.be = cy
     problem.xlower = xlower
     problem.xupper = xupper
-    problem.plower = full(np, -inf)
-    problem.pupper = full(np,  inf)
+    problem.plower = npy.full(np, -npy.inf)
+    problem.pupper = npy.full(np,  npy.inf)
     problem.c = npy.concatenate([cx, cp, cy, cz])  # set here the sensitive parameters in the optimization problem
     problem.bec = npy.hstack([Oyx, Oyp, Iyy, Oyz])
 
