@@ -1,4 +1,4 @@
-// Optima is a C++ library for solving Backtrackar and non-Backtrackar constrained optimization problems
+// Optima is a C++ library for solving linear and non-linear constrained optimization problems.
 //
 // Copyright © 2020-2023 Allan Leal
 //
