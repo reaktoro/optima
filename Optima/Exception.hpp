@@ -1,4 +1,4 @@
-// Optima is a unified framework for modeling chemically reactive systems.
+// Optima is a C++ library for solving linear and non-linear constrained optimization problems.
 //
 // Copyright © 2020-2023 Allan Leal
 //
