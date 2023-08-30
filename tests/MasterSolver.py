@@ -18,10 +18,6 @@
 
 from testing.optima import *
 from testing.utils.matrices import *
-from numpy import *
-
-
-random.seed(0)
 
 
 tested_nx      = [10, 15, 20, 30] # The tested number of x variables
@@ -53,14 +49,14 @@ def testMasterSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
     jul = range(nul)            # the indices of the expected lower unstable variables
     juu = range(nul, nul + nuu)  # the indices of the expected upper unstable variables
 
-    Hxx = random.rand(nx, nx)
-    Hxp = random.rand(nx, np)
-    Vpx = random.rand(np, nx)
-    Vpp = random.rand(np, np)
-    Ax  = random.rand(ny, nx)
-    Ap  = random.rand(ny, np)
-    Jx  = random.rand(nz, nx)
-    Jp  = random.rand(nz, np)
+    Hxx = npy.random.rand(nx, nx)
+    Hxp = npy.random.rand(nx, np)
+    Vpx = npy.random.rand(np, nx)
+    Vpp = npy.random.rand(np, np)
+    Ax  = npy.random.rand(ny, nx)
+    Ap  = npy.random.rand(ny, np)
+    Jx  = npy.random.rand(nz, nx)
+    Jp  = npy.random.rand(nz, np)
 
     Ax[ny - nl:, :] = 0.0  # set last nl rows to be zero so that we have nl linearly dependent rows in Ax
     Ap[ny - nl:, :] = 0.0  # do the same to Ap, otherwise, expected error: Your matrix Ax is rank-deficient and matrix Ap is non-zero such that...
@@ -68,14 +64,14 @@ def testMasterSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
     Hxx = Hxx.T @ Hxx    # this ensures Hxx is positive semi-definite or definite
 
     if diagHxx:
-        Hxx = diag(random.rand(nx))
+        Hxx = npy.diag(npy.random.rand(nx))
 
     Hxx[jul, jul] = 1e6  # this ensures variables expected on their lower bounds are marked as unstable
     Hxx[juu, juu] = 1e6  # this ensures variables expected on their upper bounds are marked as unstable
 
-    cx = ones(nx)
-    cp = ones(np)
-    cz = ones(nz)
+    cx = npy.ones(nx)
+    cp = npy.ones(np)
+    cz = npy.ones(nz)
 
     class Resources:
         dx, dp = None, None
@@ -113,8 +109,8 @@ def testMasterSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
         res.ddx4basicvars = False
         res.succeeded = True
 
-    xlower = full(nx, -inf)
-    xupper = full(nx,  inf)
+    xlower = npy.full(nx, -npy.inf)
+    xupper = npy.full(nx,  npy.inf)
 
     xlower[jul] = 1.5  # this should be greater than 1.0
     xupper[jul] = 2.0  # this should be greater than xlower[jul]
@@ -135,12 +131,12 @@ def testMasterSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
     problem.b = Ax @ cx + Ap @ cp
     problem.xlower = xlower
     problem.xupper = xupper
-    problem.plower = full(np, -inf)
-    problem.pupper = full(np,  inf)
+    problem.plower = npy.full(np, -npy.inf)
+    problem.pupper = npy.full(np,  npy.inf)
     problem.phi = None
 
     options = Options()
-    # options.output.active = True
+    options.output.active = True
 
     options.newtonstep.linearsolver.method = \
         LinearSolverMethod.Rangespace if diagHxx else \
@@ -156,7 +152,7 @@ def testMasterSolver(nx, np, ny, nz, nl, nul, nuu, diagHxx):
     res = solver.solve(problem, state)
 
     if not res.succeeded:
-        set_printoptions(linewidth=999999)
+        npy.set_printoptions(linewidth=999999)
         print(f"    nx = {nx}")
         print(f"    np = {np}")
         print(f"    ny = {ny}")

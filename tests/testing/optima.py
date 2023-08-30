@@ -19,10 +19,14 @@ from optima import *
 
 import numpy as npy
 
-from numpy import (
-    random,
-    linalg,
-)
+# Ensure proper options for printing numpy arrays
+npy.set_printoptions(linewidth=1000)
+
+# Ensure common seed value for all random generated values
+npy.random.seed(0)
+
+# Intialise a random number generator
+rn = npy.random.default_rng(2021)
 
 from numpy.testing import (
     assert_allclose,
@@ -37,7 +41,3 @@ from pytest import approx
 
 import math
 
-# Ensure proper options for printing numpy arrays
-npy.set_printoptions(linewidth=1000)
-
-npy.random.seed(0)

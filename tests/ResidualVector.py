@@ -53,14 +53,14 @@ def testResidualVector(nx, np, ny, nz, nl, nu):
 
     F = ResidualVector()
 
-    x = random.rand(nx)
-    p = random.rand(np)
-    y = random.rand(ny)
-    z = random.rand(nz)
-    g = random.rand(nx)
-    v = random.rand(np)
-    b = random.rand(ny)
-    h = random.rand(nz)
+    x = npy.random.rand(nx)
+    p = npy.random.rand(np)
+    y = npy.random.rand(ny)
+    z = npy.random.rand(nz)
+    g = npy.random.rand(nx)
+    v = npy.random.rand(np)
+    b = npy.random.rand(ny)
+    h = npy.random.rand(nz)
 
     F.update(Mc, Wx, Wp, x, p, y, z, g, v, b, h)
 

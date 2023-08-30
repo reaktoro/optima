@@ -71,9 +71,9 @@ def testResidualFunction(nx, np, ny, nz, nl, nu, b1, b2, b3, b4, b5, b6, b7):
 
     dims = params.dims
 
-    cx = random.rand(dims.nx)
-    cp = random.rand(dims.np)
-    cz = random.rand(dims.nz)
+    cx = npy.random.rand(dims.nx)
+    cp = npy.random.rand(dims.np)
+    cz = npy.random.rand(dims.nz)
 
     cx[ju] = +1.0e4  # large positive number to ensure the variables with ju indices are indeed unstable!
 
@@ -107,17 +107,17 @@ def testResidualFunction(nx, np, ny, nz, nl, nu, b1, b2, b3, b4, b5, b6, b7):
     problem.v = constraintfn_v
     problem.Ax = Ax
     problem.Ap = Ap
-    problem.b = random.rand(dims.ny)
-    problem.xlower = -abs(random.rand(dims.nx))
-    problem.xupper =  abs(random.rand(dims.nx))
+    problem.b = npy.random.rand(dims.ny)
+    problem.xlower = -abs(npy.random.rand(dims.nx))
+    problem.xupper =  abs(npy.random.rand(dims.nx))
     problem.phi = None
 
     dims = params.dims
 
     u = MasterVector(dims)
     x = u.x = (problem.xlower + problem.xupper) * 0.5
-    p = u.p = random.rand(dims.np)
-    w = u.w = random.rand(dims.nw)
+    p = u.p = npy.random.rand(dims.np)
+    w = u.w = npy.random.rand(dims.nw)
 
     u.x[ju] = problem.xlower[ju]  # ensure the unstable variables are attached to lower bounds
 

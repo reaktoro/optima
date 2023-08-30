@@ -30,14 +30,14 @@ tested_nw  = [5, 8]           # The tested number of w variables
 def testMasterVector(nx, np, nw):
 
     u = MasterVector(nx, np, nw)
-    u.x = random.rand(nx)
-    u.p = random.rand(np)
-    u.w = random.rand(nw)
+    u.x = npy.random.rand(nx)
+    u.p = npy.random.rand(np)
+    u.w = npy.random.rand(nw)
 
     v = MasterVector(nx, np, nw)
-    v.x = random.rand(nx)
-    v.p = random.rand(np)
-    v.w = random.rand(nw)
+    v.x = npy.random.rand(nx)
+    v.p = npy.random.rand(np)
+    v.w = npy.random.rand(nw)
 
     assert all(u.array() == npy.concatenate([u.x, u.p, u.w]))
 
@@ -70,8 +70,8 @@ def testMasterVector(nx, np, nw):
 
     assert u.dot(v) == approx(sum(u.array() * v.array()))
 
-    assert u.norm() == approx(linalg.norm(u.array()))
-    assert v.norm() == approx(linalg.norm(v.array()))
+    assert u.norm() == approx(npy.linalg.norm(u.array()))
+    assert v.norm() == approx(npy.linalg.norm(v.array()))
 
     assert u.squaredNorm() == approx(u.norm() * u.norm())
     assert v.squaredNorm() == approx(v.norm() * v.norm())

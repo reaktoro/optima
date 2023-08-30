@@ -79,10 +79,10 @@ def createMatrixViewH(params):
 
     diagHxx = params.diagHxx
 
-    Hxx = npy.diag(random.rand(nx)) if diagHxx else random.rand(nx, nx)
+    Hxx = npy.diag(npy.random.rand(nx)) if diagHxx else npy.random.rand(nx, nx)
     Hxx = Hxx.T @ Hxx  # create positive definite Hxx matrix
 
-    Hxp = random.rand(nx, np)
+    Hxp = npy.random.rand(nx, np)
 
     return MatrixViewH(Hxx, Hxp, diagHxx)
 
@@ -99,8 +99,8 @@ def createMatrixViewV(params):
 
     nx = params.nx
     np = params.np
-    Vpx = random.rand(np, nx)
-    Vpp = random.rand(np, np)
+    Vpx = npy.random.rand(np, nx)
+    Vpp = npy.random.rand(np, np)
     return MatrixViewV(Vpx, Vpp)
 
 
@@ -122,10 +122,10 @@ def createMatrixViewW(params):
 
     dims = params.dims
 
-    Ax = random.rand(ny, nx)
-    Ap = random.rand(ny, np)
-    Jx = random.rand(nz, nx)
-    Jp = random.rand(nz, np)
+    Ax = npy.random.rand(ny, nx)
+    Ap = npy.random.rand(ny, np)
+    Jx = npy.random.rand(nz, nx)
+    Jp = npy.random.rand(nz, np)
 
     Ax[ny - nl:ny, :] = 0.0  # set last nl rows to be zero so that we have nl linearly dependent rows in Ax
     Ap[ny - nl:ny, :] = 0.0  # do the same to Ap, otherwise, expected error: Your matrix Ax is rank-deficient and matrix Ap is non-zero such that...
@@ -233,9 +233,9 @@ def createMasterProblem(M):
     Ap  = M.W.Ap
     Jx  = M.W.Jx
     Jp  = M.W.Jp
-    cx = random.rand(dims.nx)
-    cp = random.rand(dims.np)
-    cz = random.rand(dims.nz)
+    cx = npy.random.rand(dims.nx)
+    cp = npy.random.rand(dims.np)
+    cz = npy.random.rand(dims.nz)
 
 
     def objectivefn_f(res, x, p, c, opts):
@@ -263,9 +263,9 @@ def createMasterProblem(M):
     problem.v = constraintfn_v()
     problem.Ax = Ax
     problem.Ap = Ax
-    problem.b = random.rand(dims.ny)
-    problem.xlower = -abs(random.rand(dims.nx))
-    problem.xupper =  abs(random.rand(dims.nx))
+    problem.b = npy.random.rand(dims.ny)
+    problem.xlower = -abs(npy.random.rand(dims.nx))
+    problem.xupper =  abs(npy.random.rand(dims.nx))
     problem.phi = None
 
     return problem
@@ -299,7 +299,7 @@ def matrix_with_linearly_independent_rows_only(m, n, ifixed=[]):
         [array] -- The matrix with asked structure.
     """
     t = max(m, n)
-    q,r = linalg.qr(pascal_matrix(t, t))
+    q,r = npy.linalg.qr(pascal_matrix(t, t))
     return q[:m, :] @ q[:, :n]
 
 
@@ -371,7 +371,7 @@ def matrix_with_two_zero_columns(m, n, ifixed=[]):
 
 
 def matrix_non_singular(n):
-    u,s,vh = linalg.svd(pascal_matrix(n, n))
+    u,s,vh = npy.linalg.svd(pascal_matrix(n, n))
     s = npy.linspace(1.0, n, num=n)
     q = u @ npy.diag(s) @ vh
     return q
