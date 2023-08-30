@@ -1,6 +1,6 @@
 // Optima is a C++ library for solving linear and non-linear constrained optimization problems
 //
-// Copyright (C) 2020 Allan Leal
+// Copyright © 2020-2023 Allan Leal
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -91,7 +91,7 @@ struct EchelonizerW::Impl
         const auto nb = echelonizer.numBasicVariables();
         const auto nn = echelonizer.numNonBasicVariables();
 
-        // const auto Rb = echelonizer.R().topRows(nb); // WARNING: This creates dangling references. 
+        // const auto Rb = echelonizer.R().topRows(nb); // WARNING: This creates dangling references.
         const auto R = echelonizer.R();
         const auto Rb = R.topRows(nb);
 
