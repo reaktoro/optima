@@ -68,6 +68,7 @@ add_subdirectory(Optima)
 
 # Build the python wrappers
 if(OPTIMA_BUILD_PYTHON)
+    find_package(Python COMPONENTS Interpreter Development)
     find_package(pybind11 REQUIRED)
     add_subdirectory(python)
 endif()
