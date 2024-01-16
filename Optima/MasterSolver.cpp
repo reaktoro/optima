@@ -116,8 +116,7 @@ struct MasterSolver::Impl
     {
         auto& u = state.u;
         initialize(problem, u);
-        while(stepping(u))
-            step(u);
+        do step(u); while(stepping(u));
         finalize(state);
         return result;
     }
@@ -148,7 +147,9 @@ struct MasterSolver::Impl
         u.p.noalias() = min(max(u.p, problem.plower), problem.pupper);
         uo = u;
         F.initialize(problem);
+        F.update(u);
         E.initialize(problem);
+        E.update(u, F);
         transformstep.initialize(problem);
         newtonstep.initialize(problem);
         errorcontrol.initialize(problem);
@@ -160,39 +161,29 @@ struct MasterSolver::Impl
 
     auto stepping(MasterVectorRef u) -> bool
     {
+        convergence.update(E);
         if(result.iterations > options.maxiters)
             return STOP;
-
-        // At the beginning of each new iteration, evaluate the residual
-        // function and the error. Stop if the error is already low enough.
-        // Note that this always produce a final state with update residual
-        // function and its derivatives should they be needed for calculation
-        // of the sensitity derivatives of the solution.
-
-        F.update(u);
-        E.update(u, F);
-        convergence.update(E);
-
-        if(convergence.converged())
-            if(result.iterations > 0 || !options.convergence.requires_at_least_one_iteration)
-                return STOP;
-
-        return CONTINUE;
+        ConvergenceCheckArgs args{dims, F, E, uo, u, result};
+        auto converged = convergence.converged(args);
+        uo = u;
+        return converged ? STOP : CONTINUE;
     }
 
     auto step(MasterVectorRef u) -> void
     {
         outputCurrentState();
-        newtonstep.apply(F, uo, u);
-        transformstep.execute(uo, u, F, E); // TODO: Check if E should not be altered here, which could compromise errorcontrol logic!
-        errorcontrol.execute(uo, u, F, E);
-        uo = u;
         result.iterations += 1;
+        newtonstep.apply(F, uo, u);
+        transformstep.execute(uo, u, F, E);
+        errorcontrol.execute(uo, u, F, E);
+        F.update(u);
+        E.update(u, F);
     }
 
     auto finalize(MasterState& state) -> void
     {
-        result.succeeded = convergence.converged();
+        result.succeeded = result.iterations <= options.maxiters;
         outputCurrentState();
         outputHeaderBottom();
         auto const& Fresult = F.result();
