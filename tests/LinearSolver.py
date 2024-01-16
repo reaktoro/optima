@@ -20,13 +20,13 @@ from testing.optima import *
 from testing.utils.matrices import *
 
 
-tested_nx      = [15, 20]       # The tested number of x variables
-tested_np      = [0, 5]         # The tested number of p variables
-tested_ny      = [5, 8]         # The tested number of y variables
-tested_nz      = [0, 5]         # The tested number of z variables
-tested_nl      = [0, 2]         # The tested number of linearly dependent rows in Ax
-tested_nu      = [0, 2]         # The tested number of unstable variables
-tested_diagHxx = [False, True]  # The tested options for Hxx structure
+tested_nx      = [15, 20, 30, 50]  # The tested number of x variables
+tested_np      = [0, 5]            # The tested number of p variables
+tested_ny      = [5, 8]            # The tested number of y variables
+tested_nz      = [0, 5]            # The tested number of z variables
+tested_nl      = [0, 2]            # The tested number of linearly dependent rows in Ax
+tested_nu      = [0, 2]            # The tested number of unstable variables
+tested_diagHxx = [False, True]     # The tested options for Hxx structure
 
 # Tested cases for the linear solver methods
 tested_methods = [
@@ -52,7 +52,7 @@ def testLinearSolver(nx, np, ny, nz, nl, nu, diagHxx, method):
     dims = params.dims
 
     if method == LinearSolverMethod.Rangespace and not diagHxx:
-        return  # Rangespace method onlf applicable to diagonal Hxx matrices
+        return  # Rangespace method only applicable to diagonal Hxx matrices - consider here only when both are true
 
     M = createMasterMatrix(params)
 

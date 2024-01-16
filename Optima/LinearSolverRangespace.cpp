@@ -186,7 +186,7 @@ struct LinearSolverRangespace::Impl
 
         M31.noalias() = Sbep - barHbep - barSbene*Hnep + Tbebi*Hbip;
         M32.noalias() = Tbebi*diag(Hbibi);
-        M33 = diag(inv(-Hbebe)); M33 -= Tbebe;
+        M33 = diag(inv(Hbebe)); M33 += Tbebe;
         M34.noalias() = Sbeni;
 
         M41.noalias() = Hnip - tr(Sbini)*Hbip;
