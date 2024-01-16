@@ -105,7 +105,7 @@ struct ResidualErrors::Impl
         errorx = norminf(ex);
         errorp = norminf(ep);
         errorw = norminf(ewbar); // prefer error check at the canonical level
-        error = std::sqrt((ex.squaredNorm() + ep.squaredNorm() + ew.squaredNorm())/(dims.nx + dims.np + dims.nw)); // Divide by Nx + Np + Nw since error can become large if number of variables increase due to the sum
+        error = std::max({errorx, errorp, errorw});
     }
 
     auto sanitycheck() const -> void
