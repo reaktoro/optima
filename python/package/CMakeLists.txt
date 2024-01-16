@@ -1,6 +1,15 @@
 # Configure the setup.py file
 configure_file(setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/setup.py)
 
+# Create pybind11-stubgen command string depending if this program has been found or not
+if(PYBIND11_STUBGEN)
+    set(STUBGEN_COMMAND1 ${CMAKE_COMMAND} -E env "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}" ${PYBIND11_STUBGEN} --ignore-all-errors optima)
+    set(STUBGEN_COMMAND2 ${CMAKE_COMMAND} -E copy_directory stubs/optima/ optima)
+else()
+    set(STUBGEN_COMMAND1 "")  # do nothing when it it's time to generate python stubs for optima in the target below
+    set(STUBGEN_COMMAND2 "")  # do nothing when it it's time to copy the generated stub directory
+endif()
+
 # Create a custom target to build the python package during build stage
 add_custom_target(optima-setuptools ALL
     DEPENDS optima4py
@@ -8,6 +17,8 @@ add_custom_target(optima-setuptools ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/optima optima
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:optima4py> optima
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:Optima> optima
+    COMMAND ${STUBGEN_COMMAND1}
+    COMMAND ${STUBGEN_COMMAND2}
     COMMAND ${PYTHON_EXECUTABLE} setup.py --quiet build --force
     COMMAND ${CMAKE_COMMAND} -E rm optima/$<TARGET_FILE_NAME:optima4py>
     COMMAND ${CMAKE_COMMAND} -E rm optima/$<TARGET_FILE_NAME:Optima>
