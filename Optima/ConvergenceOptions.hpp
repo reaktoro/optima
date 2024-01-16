@@ -17,6 +17,9 @@
 
 #pragma once
 
+// Optima includes
+#include <Optima/ConvergenceCheck.hpp>
+
 namespace Optima {
 
 /// Used to organize the options for convergence analysis.
@@ -25,24 +28,8 @@ struct ConvergenceOptions
     /// The tolerance for the optimality error.
     double tolerance = 1.0e-8;
 
-    /// The option that controls whether convergence can only be resolved if at
-    /// least one iteration was taken. The safest option is to ensure that at
-    /// least one Newton step is applied, even if the equation residuals at the
-    /// beginning of the calculation are below the stipulated tolerances.
-    /// Otherwise, the parameters of an existing problem can be slightly changed
-    /// and the corresponding solution is identical to the original problem,
-    /// while a a slightly different (though very similar) new solution was
-    /// expected. For example, in chemical equilibrium calculations, consider a
-    /// mineral already in equilibrium with respect to an aqueous phase, and a
-    /// new problem in which a small amount of the same mineral is added. When
-    /// solving this new problem, the solution should reflect this small
-    /// addition of the mineral. Nonetheless, the stipulated tolerance for
-    /// verification of convergence would not recognize that the problem is
-    /// slightly different, yielding a solution that is identical to the
-    /// solution of the original problem. Mass conservation would thus not be
-    /// accurate to the level of machine precision. To avoid that this more
-    /// recently added control breaks existing codes, the default is false.
-    bool requires_at_least_one_iteration = false;
+    /// An optional convergence check function to be used in addition to default check.
+    std::function<bool(ConvergenceCheckArgs const&)> check;
 };
 
 } // namespace Optima

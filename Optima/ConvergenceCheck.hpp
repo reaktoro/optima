@@ -15,17 +15,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-// pybind11 includes
-#include "pybind11.hxx"
+#pragma once
+
+// C++ includes
+#include <functional>
 
 // Optima includes
-#include <Optima/ConvergenceOptions.hpp>
-using namespace Optima;
+#include <Optima/MasterDims.hpp>
+#include <Optima/MasterVector.hpp>
+#include <Optima/ResidualErrors.hpp>
+#include <Optima/ResidualFunction.hpp>
+#include <Optima/Result.hpp>
 
-void exportConvergenceOptions(py::module& m)
+namespace Optima {
+
+/// Used to store arguments for a custom additional convergence check.
+struct ConvergenceCheckArgs
 {
-    py::class_<ConvergenceOptions>(m, "ConvergenceOptions")
-        .def(py::init<>())
-        .def_readwrite("tolerance", &ConvergenceOptions::tolerance)
-        ;
-}
+    MasterDims const& dims;
+    ResidualFunction const& F;
+    ResidualErrors const& E;
+    MasterVector const& uo;
+    MasterVector const& u;
+    Result const& result;
+};
+
+/// A type that describes a custom additional convergence check.
+using ConvergenceCheck = std::function<bool(ConvergenceCheckArgs const&)>;
+
+} // namespace Optima
