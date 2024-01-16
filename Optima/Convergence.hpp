@@ -57,7 +57,7 @@ public:
     auto update(const ResidualErrors& E) -> void;
 
     /// Return `true` if the optimization calculation has converged.
-    auto converged() const -> bool;
+    auto converged(ConvergenceCheckArgs const& args) const -> bool;
 
     /// Return the current convergence rate.
     auto rate() const -> double;
