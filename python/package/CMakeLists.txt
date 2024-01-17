@@ -19,7 +19,7 @@ add_custom_target(optima-setuptools ALL
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:Optima> optima
     COMMAND ${STUBGEN_COMMAND1}
     COMMAND ${STUBGEN_COMMAND2}
-    COMMAND ${PYTHON_EXECUTABLE} setup.py --quiet build --force
+    COMMAND ${Python_EXECUTABLE} setup.py --quiet build --force
     COMMAND ${CMAKE_COMMAND} -E rm optima/$<TARGET_FILE_NAME:optima4py>
     COMMAND ${CMAKE_COMMAND} -E rm optima/$<TARGET_FILE_NAME:Optima>
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
