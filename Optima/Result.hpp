@@ -35,6 +35,9 @@ public:
     /// The reason for the failure in the optimization calculation.
     std::string failure_reason;
 
+    /// The flag that indicates if the failure is fatal.
+    bool failure_fatal = false;
+
     /// The number of iterations in the optimization calculation.
     Index iterations = 0;
 

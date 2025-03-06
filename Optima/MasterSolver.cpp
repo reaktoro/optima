@@ -47,6 +47,7 @@ struct MasterSolver::Impl
     TransformStep transformstep;
     ErrorControl errorcontrol;
     Convergence convergence;
+    bool converged = false;
     SensitivitySolver sensitivitysolver;
     Outputter outputter; ///< The object used to output the current state of the computation.
     Result result;
@@ -165,7 +166,7 @@ struct MasterSolver::Impl
         if(result.iterations > options.maxiters)
             return STOP;
         ConvergenceCheckArgs args{dims, F, E, uo, u, result};
-        auto converged = convergence.converged(args);
+        converged = convergence.converged(args);
         uo = u;
         return converged ? STOP : CONTINUE;
     }
@@ -183,7 +184,24 @@ struct MasterSolver::Impl
 
     auto finalize(MasterState& state) -> void
     {
-        result.succeeded = result.iterations <= options.maxiters;
+        // Set the final values of the result object
+        result.succeeded = converged;
+        result.failure_reason = "";
+        result.failure_fatal = false;
+        result.error = E.error();
+        result.error_optimality = E.errorx();
+        result.error_feasibility = E.errorw();
+
+        if(!converged) {
+            if(result.iterations > options.maxiters) {
+                result.failure_reason = "Max iterations reached.";
+            }
+            else {
+                result.failure_reason = "An unknown fatal error occurred.";
+                result.failure_fatal = true;
+            }
+        }
+
         outputCurrentState();
         outputHeaderBottom();
         auto const& Fresult = F.result();

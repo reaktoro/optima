@@ -29,7 +29,7 @@ target_include_directories(Optima PRIVATE ${PROJECT_SOURCE_DIR})
 
 # Add the include paths to the Optima target and propagate to dependent codes
 target_include_directories(Optima
-    PRIVATE ${PROJECT_SOURCE_DIR}
+    PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
     PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 #==============================================================================

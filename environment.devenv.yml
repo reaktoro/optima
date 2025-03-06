@@ -1,6 +1,6 @@
 name: optima
 
-{% set python_version = os.environ.get("PY_VER", "3.10") %}
+{% set python_version = os.environ.get("PY_VER", "3.12") %}
 
 channels:
   - conda-forge
