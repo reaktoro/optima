@@ -23,10 +23,11 @@ jobs:
       max-parallel: 4
 
     steps:
-      - uses: actions/checkout@v1
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           auto-update-conda: true
+          miniforge-version: latest
           auto-activate-base: true
           activate-environment: ''
       - name: Configure
