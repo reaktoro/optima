@@ -10,56 +10,76 @@ on:
   schedule:
     - cron: "0 5 * * 1"  # runs at 05:00 UTC on Mondays
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
-
-    runs-on: macOS-latest
-
-    env:
-      os: MacOSX-x86_64
-      configuration: Release
-
+    name: ${{ matrix.config }} build on ${{ matrix.os }} (Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: true
       max-parallel: 4
+      matrix:
+        os: ["macos-latest"]
+        python-version: [3.9]
+        config: ["Release"]
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Timestamp  # Idea from https://tinyurl.com/47wz7vpv
+        id: timestamp
+        shell: cmake -P {0}
+        run: |
+          string(TIMESTAMP current_date "%Y-%m-%d-%H;%M;%S" UTC)
+          message("::set-output name=now::${current_date}")
+
+      - name: Configuring Cache
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            /Users/runner/Library/Caches/ccache
+            /Users/runner/conda_pkgs_dir
+          key:
+            ${{ runner.os }}-${{ matrix.config }}-${{ runner.python-version }}-${{ github.ref }}-ccache-${ { steps.timestamp.outputs.now } }
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.config }}-${{ runner.python-version }}-${{ github.ref }}-ccache-
+
       - uses: conda-incubator/setup-miniconda@v3
         with:
           auto-update-conda: true
           miniforge-version: latest
-      - name: Configure
-        shell: bash -l {0}
+          python-version: ${{ matrix.python-version }}
+
+      - shell: bash -el {0}
         run: |
-          conda config --set always_yes yes --set changeps1 no
-          conda config --add channels conda-forge
-          conda install conda-devenv
-          conda devenv
-          source activate optima
-          cmake -S . -B .build
-      - name: Cache
-        id: cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.ccache
-          key: ${{ runner.os }}-ccache-${{ hashFiles('hashFile.txt') }}  # https://github.community/t/caching-for-c-builds/124529/2
-          restore-keys: ${{ runner.os }}-ccache-
-      - name: Build
-        shell: bash -l {0}
+          conda info
+          conda list
+          conda config --show-sources
+          conda config --show
+          printenv | sort
+
+      - name: Configuring Conda Environment
+        shell: bash -el {0}
+        env:
+          PYTHON_VERSION: ${{ matrix.python-version }}
+        run: |
+          mamba install conda-devenv
+          conda devenv -e mamba
+
+      - name: Building, Testing & Installing Optima
+        shell: bash -el {0}
         run: |
           source activate optima
           ccache -s
           ccache -z
-          cmake --build .build --config ${{ env.configuration }} --parallel
+          mkdir .build && cd .build
+          cmake -GNinja .. -DCMAKE_BUILD_TYPE=${{ matrix.config }}
+          ninja
+          ninja tests
+          ninja examples/install
+          ninja install
           ccache -s
-      - name: Install
-        shell: bash -l {0}
-        run: |
-          source activate optima
-          cmake --build .build --config ${{ env.configuration }} --target install
-      - name: Tests
-        shell: bash -l {0}
-        run: |
-          source activate optima
-          cmake --build .build --config ${{ env.configuration }} --target tests
