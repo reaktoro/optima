@@ -7,7 +7,7 @@ channels:
 
 dependencies:
   - catch2 =2
-  - ccache  # [unix]
+  - ccache
   - clangxx  # [linux]
   - clangxx_osx-64  # [osx and not arm64]
   - clangxx_osx-arm64  # [osx and arm64]
