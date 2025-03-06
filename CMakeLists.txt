@@ -54,8 +54,10 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # Enable RUNPATH for executables and shared libraries on Linux for flexible library search paths
-SET(CMAKE_EXE_LINKER_FLAGS "-Wl,--enable-new-dtags")
-SET(CMAKE_SHARED_LINKER_FLAGS "-Wl,--enable-new-dtags")
+if(UNIX AND NOT APPLE)
+    SET(CMAKE_EXE_LINKER_FLAGS "-Wl,--enable-new-dtags")
+    SET(CMAKE_SHARED_LINKER_FLAGS "-Wl,--enable-new-dtags")
+endif()
 
 # Find Eigen3 either from the system, environment, or from the given directory OPTIMA_EIGEN_DIR
 if(DEFINED OPTIMA_EIGEN_DIR)
