@@ -6,10 +6,11 @@ channels:
   - conda-forge
 
 dependencies:
-  - catch2=2
+  - catch2 =2
   - ccache  # [unix]
-  - clangxx_osx-64  # [osx]
-  - clcache  # [win]
+  - clangxx  # [linux]
+  - clangxx_osx-64  # [osx and not arm64]
+  - clangxx_osx-arm64  # [osx and arm64]
   - cmake
   - eigen
   - gxx_linux-64  # [linux]
@@ -23,7 +24,7 @@ dependencies:
   - pybind11-stubgen
   - pytest
   - pytest-xdist
-  - python={{ python_version }}
+  - python ={{ python_version }}
   - vs2019_win-64  # [win]
   - pip:
     - mkdocs
